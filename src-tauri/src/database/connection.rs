@@ -74,6 +74,9 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
             created_at INTEGER NOT NULL
         );
 
+        CREATE INDEX IF NOT EXISTS idx_history_recent ON history(visited_at DESC, id DESC);
+        CREATE INDEX IF NOT EXISTS idx_downloads_recent ON downloads(created_at DESC, id DESC);
+
         CREATE TABLE IF NOT EXISTS tab_usage_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             tab_id TEXT NOT NULL,
@@ -81,6 +84,7 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
         );
         CREATE INDEX IF NOT EXISTS idx_tab_usage_events_tab_time
             ON tab_usage_events(tab_id, activated_at);
+        CREATE INDEX IF NOT EXISTS idx_tab_usage_time ON tab_usage_events(activated_at);
         ",
     )
     .map_err(|e| format!("Failed to initialize database schema: {}", e))?;

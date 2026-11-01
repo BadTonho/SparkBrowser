@@ -66,7 +66,7 @@ pub(super) fn create_tab_inner(
             tabs.push(new_tab);
         }
     }
-    state.record_new_tab_activation(&new_tab_id);
+    state.record_new_tab_activation(&new_tab_id)?;
 
     state.select_tab(&new_tab_id)?;
     if let Err(error) = ensure_active_content_webview(app) {
@@ -127,7 +127,7 @@ pub(super) fn switch_tab_inner(
     }
 
     if previous_active_id != tab_id {
-        state.record_tab_activation(&tab_id);
+        state.record_tab_activation(&tab_id)?;
     }
 
     sync_all_webviews(app, state)?;
@@ -195,7 +195,7 @@ pub async fn close_tab(
 
     if current_active == tab_id && !next_active_id.is_empty() {
         state.select_tab(&next_active_id)?;
-        state.record_tab_activation(&next_active_id);
+        state.record_tab_activation(&next_active_id)?;
         ensure_active_content_webview(&app)?;
         let _ = app.emit("content-url-changed", &next_active_url);
     }
@@ -304,7 +304,6 @@ pub async fn auto_hibernate_inactive_tabs(
     };
 
     let now = TabInfo::current_epoch_secs();
-    let tabs_snapshot = state.snapshot_tabs();
     let active_id = state
         .active_tab_id
         .lock()
@@ -315,12 +314,8 @@ pub async fn auto_hibernate_inactive_tabs(
     if adaptive {
         if let Ok(db_guard) = state.db.lock() {
             if let Some(conn) = db_guard.as_ref() {
-                let _ = tab_usage_repo::prune_expired(conn, now);
-                for tab in tabs_snapshot.iter().filter(|tab| tab.id != active_id) {
-                    if tab_usage_repo::is_frequently_used(conn, &tab.id, now).unwrap_or(false) {
-                        frequent_tabs.insert(tab.id.clone());
-                    }
-                }
+                tab_usage_repo::prune_expired(conn, now)?;
+                frequent_tabs = tab_usage_repo::frequent_tab_ids(conn, now)?;
             }
         }
     }
@@ -359,13 +354,18 @@ pub async fn reorder_tabs(
     let _operation = state.tab_operations.lock().await;
     {
         if let Ok(mut tabs) = state.tabs.lock() {
-            let mut ordered: Vec<TabInfo> = Vec::with_capacity(tabs.len());
-            for id in &tab_ids {
-                if let Some(pos) = tabs.iter().position(|t| &t.id == id) {
-                    ordered.push(tabs.remove(pos));
+            let previous = std::mem::take(&mut *tabs);
+            let original_ids: Vec<_> = previous.iter().map(|tab| tab.id.clone()).collect();
+            let mut by_id: std::collections::HashMap<_, _> = previous
+                .into_iter()
+                .map(|tab| (tab.id.clone(), tab))
+                .collect();
+            let mut ordered = Vec::with_capacity(by_id.len());
+            for id in tab_ids.iter().chain(original_ids.iter()) {
+                if let Some(tab) = by_id.remove(id) {
+                    ordered.push(tab);
                 }
             }
-            ordered.append(&mut *tabs);
             *tabs = ordered;
         }
     }

@@ -254,9 +254,9 @@ pub async fn delete_workspace(
     let should_record_activation = was_active && previous_active_tab != next_active_tab;
     if should_record_activation {
         if created_active_tab {
-            state.record_new_tab_activation(&next_active_tab);
+            state.record_new_tab_activation(&next_active_tab)?;
         } else {
-            state.record_tab_activation(&next_active_tab);
+            state.record_tab_activation(&next_active_tab)?;
         }
     }
     *state.active_tab_id.lock().map_err(|e| e.to_string())? = next_active_tab;

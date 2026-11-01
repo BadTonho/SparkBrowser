@@ -121,6 +121,9 @@ pub fn run() {
                 }
             }
 
+            app.manage(database::navigation_writer::NavigationWriter::start(
+                app.handle().clone(),
+            )?);
             spawn_content_webview(app.handle())?;
 
             Ok(())
@@ -164,6 +167,25 @@ pub fn run() {
             enqueue_download,
             clear_all_downloads
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Veloce Browser");
+        .build(tauri::generate_context!())
+        .expect("error while building Veloce Browser")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested {
+                code: None, api, ..
+            } = event
+            {
+                api.prevent_exit();
+                let app = app.clone();
+                std::thread::spawn(move || {
+                    if app
+                        .state::<database::navigation_writer::NavigationWriter>()
+                        .flush()
+                        .is_err()
+                    {
+                        eprintln!("Navigation persistence failed before shutdown");
+                    }
+                    app.exit(0);
+                });
+            }
+        });
 }

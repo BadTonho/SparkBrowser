@@ -60,11 +60,8 @@ pub fn list_downloads(conn: &Connection) -> Result<Vec<DownloadItem>, String> {
         })
         .map_err(|e| e.to_string())?;
 
-    let mut items = Vec::new();
-    for item in rows.flatten() {
-        items.push(item);
-    }
-    Ok(items)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
 }
 
 pub fn clear_downloads(conn: &Connection) -> Result<(), String> {

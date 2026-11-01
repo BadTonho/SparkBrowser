@@ -90,7 +90,7 @@ let fallbackCounter = 2;
 
 export function applyTabsSnapshot(snapshot: TabItem[]): void {
   if (!snapshot || snapshot.length === 0) return;
-  tabs.set(snapshot);
+  tabs.set(dragOrder ? orderedTabs(snapshot, dragOrder.preview) : snapshot);
   const active = snapshot.find((t) => t.is_active) ?? snapshot[0];
   if (active) {
     activeWorkspaceId.set(active.workspace_id);
@@ -195,35 +195,52 @@ export async function suspendInactiveTabs(mode?: AutoHibernateMode | 0): Promise
   applyTabsSnapshot(snapshot);
 }
 
-export async function reorderTabsList(orderedTabIds: string[]): Promise<void> {
-  const currentTabs = get(tabs);
-  const tabMap = new Map(currentTabs.map((t) => [t.id, t]));
-  const reordered: TabItem[] = [];
+function orderedTabs(items: TabItem[], ids: string[]): TabItem[] {
+  const byId = new Map(items.map(tab => [tab.id, tab]));
+  return [...new Set([...ids, ...items.map(tab => tab.id)])]
+    .flatMap(id => { const tab = byId.get(id); return tab ? [tab] : []; });
+}
 
-  for (const id of orderedTabIds) {
-    const item = tabMap.get(id);
-    if (item) {
-      reordered.push(item);
-      tabMap.delete(id);
-    }
-  }
+let dragOrder: { original: string[]; preview: string[] } | undefined;
+let reorderQueue: Promise<void> = Promise.resolve();
+let reorderRevision = 0;
 
-  for (const remaining of currentTabs) {
-    if (tabMap.has(remaining.id)) {
-      reordered.push(remaining);
-    }
-  }
+export function beginTabReorder(): void {
+  const ids = get(tabs).map(tab => tab.id);
+  dragOrder = { original: ids, preview: ids };
+}
 
-  tabs.set(reordered);
+export function previewTabReorder(ids: string[]): void {
+  if (!dragOrder) return;
+  const preview = orderedTabs(get(tabs), ids);
+  dragOrder.preview = preview.map(tab => tab.id);
+  tabs.set(preview);
+}
 
-  if (isTauriRuntime()) {
+export async function finishTabReorder(cancel = false): Promise<void> {
+  const drag = dragOrder;
+  dragOrder = undefined;
+  if (!drag) return;
+  if (cancel) { tabs.set(orderedTabs(get(tabs), drag.original)); return; }
+  if (drag.preview.join("\0") === drag.original.join("\0")) return;
+  await reorderTabsList(drag.preview, drag.original);
+}
+
+export async function reorderTabsList(ids: string[], rollback = get(tabs).map(tab => tab.id)): Promise<void> {
+  const revision = ++reorderRevision;
+  tabs.set(orderedTabs(get(tabs), ids));
+  if (!isTauriRuntime()) return;
+  const operation = reorderQueue.then(async () => {
     try {
-      const snapshot = await reorderTabs(orderedTabIds);
-      applyTabsSnapshot(snapshot);
-    } catch (err) {
-      console.error("Failed to reorder tabs:", err);
+      const snapshot = await reorderTabs(ids);
+      if (revision === reorderRevision) applyTabsSnapshot(snapshot);
+    } catch (error) {
+      if (revision === reorderRevision) tabs.set(orderedTabs(get(tabs), rollback));
+      throw error;
     }
-  }
+  });
+  reorderQueue = operation.catch(() => {});
+  await operation;
 }
 
 export async function changeTabWorkspace(

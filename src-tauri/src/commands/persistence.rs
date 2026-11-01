@@ -1,14 +1,16 @@
 use crate::database::bookmarks_repo::{self, BookmarkData};
 use crate::database::history_repo::{clear_all_history, get_recent_history, HistoryEntry};
 use crate::state::browser_state::BrowserState;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
-pub fn get_history(
+pub async fn get_history(
+    app: AppHandle,
     state: State<'_, BrowserState>,
     limit: Option<usize>,
 ) -> Result<Vec<HistoryEntry>, String> {
-    let max_items = limit.unwrap_or(50);
+    flush_navigation(app).await?;
+    let max_items = limit.unwrap_or(50).clamp(1, 200);
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db_guard.as_ref() {
         return get_recent_history(conn, max_items);
@@ -17,7 +19,11 @@ pub fn get_history(
 }
 
 #[tauri::command]
-pub fn clear_browsing_history(state: State<'_, BrowserState>) -> Result<(), String> {
+pub async fn clear_browsing_history(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+) -> Result<(), String> {
+    flush_navigation(app).await?;
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db_guard.as_ref() {
         clear_all_history(conn)?;
@@ -122,4 +128,13 @@ pub fn delete_bookmark_folder(
         bookmarks: Vec::new(),
         folders: Vec::new(),
     })
+}
+
+async fn flush_navigation(app: AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        app.state::<crate::database::navigation_writer::NavigationWriter>()
+            .flush()
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }

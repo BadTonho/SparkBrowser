@@ -10,17 +10,11 @@ pub fn reset_tab_history(conn: &Connection, tab_id: &str) -> Result<(), String> 
 }
 
 pub fn record_activation(conn: &Connection, tab_id: &str, activated_at: u64) -> Result<(), String> {
-    let cutoff = activated_at.saturating_sub(USAGE_WINDOW_SECS);
     conn.execute(
         "INSERT INTO tab_usage_events (tab_id, activated_at) VALUES (?1, ?2)",
         params![tab_id, activated_at as i64],
     )
     .map_err(|e| format!("Failed to record tab activation: {e}"))?;
-    conn.execute(
-        "DELETE FROM tab_usage_events WHERE activated_at < ?1",
-        [cutoff as i64],
-    )
-    .map_err(|e| format!("Failed to prune expired tab activations: {e}"))?;
     Ok(())
 }
 
@@ -35,6 +29,28 @@ pub fn is_frequently_used(conn: &Connection, tab_id: &str, now: u64) -> Result<b
         )
         .map_err(|e| format!("Failed to read tab activation history: {e}"))?;
     Ok(count >= FREQUENT_ACTIVATION_THRESHOLD)
+}
+
+pub fn frequent_tab_ids(
+    conn: &Connection,
+    now: u64,
+) -> Result<std::collections::HashSet<String>, String> {
+    let mut statement = conn
+        .prepare_cached(
+            "SELECT tab_id FROM tab_usage_events WHERE activated_at >= ?1
+         GROUP BY tab_id HAVING COUNT(*) >= ?2",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = statement
+        .query_map(
+            params![
+                now.saturating_sub(USAGE_WINDOW_SECS) as i64,
+                FREQUENT_ACTIVATION_THRESHOLD
+            ],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    rows.collect::<Result<_, _>>().map_err(|e| e.to_string())
 }
 
 pub fn prune_expired(conn: &Connection, now: u64) -> Result<(), String> {
@@ -77,6 +93,10 @@ mod tests {
         record_activation(&conn, "tab-1", now).unwrap();
         assert!(is_frequently_used(&conn, "tab-1", now).unwrap());
         assert!(!is_frequently_used(&conn, "tab-2", now).unwrap());
+        assert_eq!(
+            frequent_tab_ids(&conn, now).unwrap(),
+            std::collections::HashSet::from(["tab-1".into()])
+        );
     }
 
     #[test]

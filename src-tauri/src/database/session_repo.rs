@@ -15,24 +15,47 @@ pub fn save_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Stri
 }
 
 fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), String> {
-    conn.execute("DELETE FROM session_tabs", [])
+    let ids: std::collections::HashSet<_> = tabs.iter().map(|tab| tab.id.as_str()).collect();
+    if ids.len() != tabs.len() {
+        return Err("Duplicate session tab ID".into());
+    }
+    let existing = conn
+        .prepare_cached("SELECT tab_id FROM session_tabs")
+        .map_err(|e| e.to_string())?
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
-
+    let mut delete = conn
+        .prepare_cached("DELETE FROM session_tabs WHERE tab_id = ?1")
+        .map_err(|e| e.to_string())?;
+    for id in existing {
+        if !ids.contains(id.as_str()) {
+            delete.execute([id]).map_err(|e| e.to_string())?;
+        }
+    }
+    let mut upsert = conn.prepare_cached(
+        "INSERT INTO session_tabs (tab_id, title, url, workspace_id, is_active, is_hibernated, position)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         ON CONFLICT(tab_id) DO UPDATE SET title=excluded.title, url=excluded.url,
+           workspace_id=excluded.workspace_id, is_active=excluded.is_active,
+           is_hibernated=excluded.is_hibernated, position=excluded.position
+         WHERE title IS NOT excluded.title OR url IS NOT excluded.url
+           OR workspace_id IS NOT excluded.workspace_id OR is_active IS NOT excluded.is_active
+           OR is_hibernated IS NOT excluded.is_hibernated OR position IS NOT excluded.position"
+    ).map_err(|e| e.to_string())?;
     for (idx, tab) in tabs.iter().enumerate() {
-        conn.execute(
-            "INSERT INTO session_tabs (tab_id, title, url, workspace_id, is_active, is_hibernated, position)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![
+        upsert
+            .execute(params![
                 tab.id,
                 tab.title,
                 tab.url,
                 tab.workspace_id,
-                if tab.is_active { 1 } else { 0 },
-                if tab.is_hibernated { 1 } else { 0 },
+                tab.is_active,
+                tab.is_hibernated,
                 idx as i64
-            ],
-        )
-        .map_err(|e| e.to_string())?;
+            ])
+            .map_err(|e| e.to_string())?;
     }
 
     Ok(())
@@ -94,6 +117,25 @@ mod tests {
         )
         .unwrap();
         conn
+    }
+
+    #[test]
+    fn unchanged_sessions_write_no_rows_and_updates_touch_only_changed_tabs() {
+        let conn = database();
+        let mut tabs = vec![
+            TabInfo::new_default("a".into(), "https://example.test/".into(), true),
+            TabInfo::new_default("b".into(), "https://example.test/".into(), false),
+        ];
+        save_session_tabs(&conn, &tabs).unwrap();
+        let before = conn.total_changes();
+        save_session_tabs(&conn, &tabs).unwrap();
+        assert_eq!(conn.total_changes(), before);
+        tabs[1].title = "Changed".into();
+        save_session_tabs(&conn, &tabs).unwrap();
+        assert_eq!(conn.total_changes(), before + 1);
+        tabs.pop();
+        save_session_tabs(&conn, &tabs).unwrap();
+        assert_eq!(conn.total_changes(), before + 2);
     }
 
     #[test]

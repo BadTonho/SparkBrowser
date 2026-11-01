@@ -6,9 +6,14 @@ As mudanças são entregues em commits separados e validados. O comportamento na
 
 As medições do viewport são agrupadas por frame de animação. Há apenas uma solicitação de resize em andamento, com retenção da medida mais recente e descarte de atualizações idênticas já concluídas. Atualizações de geometria não aguardam operações de abas nem bloqueios do banco. A reconciliação completa do ciclo de vida usa um mapa de rótulos das WebViews em vez de buscas lineares repetidas.
 
+## Sessões e ordenação
+
+O salvamento de sessão usa upserts incrementais transacionais com instruções preparadas: linhas inalteradas não são regravadas e somente abas removidas são excluídas. O arraste altera uma prévia local, confirma uma vez ao soltar e restaura a ordem ao cancelar ou falhar. Solicitações de reordenação são serializadas. Histórico e downloads possuem índices cronológicos; a hibernação adaptativa obtém os IDs de abas frequentes em uma consulta agrupada e remove eventos expirados na passagem periódica. Falhas de leitura de linhas e de gravação de ativações são retornadas.
+
+Callbacks nativos de navegação enfileiram gravações de histórico/sessão em um worker. Consultas/limpeza do histórico e encerramento normal aguardam as gravações anteriores. Comandos explícitos de abas persistem antes de retornar. O worker não imprime URLs de páginas nos erros.
+
 ## Etapas restantes
 
-- Persistência incremental de sessão, índices SQL e confirmação de arraste.
 - Rascunhos de endereço, metadados de navegação e acessibilidade de modais.
 - Busca no histórico, classificação de comandos e armazenamento confiável.
 - Limite de WebViews residentes, tarefas de download e fronteiras de segurança locais.

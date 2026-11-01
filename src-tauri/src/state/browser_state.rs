@@ -155,39 +155,36 @@ impl BrowserState {
     }
 
     /// Records a visited URL into the SQLite browsing history table.
-    pub fn record_history_visit(&self, title: &str, url: &str) {
-        if let Ok(db_guard) = self.db.lock() {
-            if let Some(conn) = db_guard.as_ref() {
-                let _ = record_visit(conn, title, url);
-            }
-        }
+    pub fn record_history_visit(&self, title: &str, url: &str) -> Result<(), String> {
+        let db = self.db.lock().map_err(|e| e.to_string())?;
+        record_visit(
+            db.as_ref().ok_or("History database is not ready")?,
+            title,
+            url,
+        )
     }
 
-    /// Records a local activation event without storing page URLs or titles.
-    pub fn record_tab_activation(&self, tab_id: &str) {
-        if let Ok(db_guard) = self.db.lock() {
-            if let Some(conn) = db_guard.as_ref() {
-                let _ = crate::database::tab_usage_repo::record_activation(
-                    conn,
-                    tab_id,
-                    TabInfo::current_epoch_secs(),
-                );
-            }
-        }
+    /// Records activation without retaining page addresses.
+    pub fn record_tab_activation(&self, tab_id: &str) -> Result<(), String> {
+        let db = self.db.lock().map_err(|e| e.to_string())?;
+        crate::database::tab_usage_repo::record_activation(
+            db.as_ref().ok_or("Usage database is not ready")?,
+            tab_id,
+            TabInfo::current_epoch_secs(),
+        )
     }
 
-    /// Starts usage tracking for a newly created tab, clearing stale events if its ID was reused.
-    pub fn record_new_tab_activation(&self, tab_id: &str) {
-        if let Ok(db_guard) = self.db.lock() {
-            if let Some(conn) = db_guard.as_ref() {
-                let _ = crate::database::tab_usage_repo::reset_tab_history(conn, tab_id);
-                let _ = crate::database::tab_usage_repo::record_activation(
-                    conn,
-                    tab_id,
-                    TabInfo::current_epoch_secs(),
-                );
-            }
-        }
+    pub fn record_new_tab_activation(&self, tab_id: &str) -> Result<(), String> {
+        let db = self.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("Usage database is not ready")?;
+        let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        crate::database::tab_usage_repo::reset_tab_history(&tx, tab_id)?;
+        crate::database::tab_usage_repo::record_activation(
+            &tx,
+            tab_id,
+            TabInfo::current_epoch_secs(),
+        )?;
+        tx.commit().map_err(|e| e.to_string())
     }
 
     /// Computes a snapshot of current privacy & RAM hibernation metrics.

@@ -135,11 +135,15 @@ fn ensure_tab_webview(
                     return;
                 }
             }
-            state.record_history_visit(&title, &url);
-            if let Err(error) = state.persist_session() {
-                eprintln!("Failed to persist completed navigation: {error}");
-                let _ =
-                    app_for_page_load.emit("browser-error", "Could not save the current session");
+            if let Some(writer) = app_for_page_load
+                .try_state::<crate::database::navigation_writer::NavigationWriter>(
+            ) {
+                if writer.visit(title, url).is_err() {
+                    let _ = app_for_page_load.emit(
+                        "browser-error",
+                        "Navigation persistence queue is unavailable",
+                    );
+                }
             }
             let _ = app_for_page_load.emit("tabs-updated", state.snapshot_tabs());
         }

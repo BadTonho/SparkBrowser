@@ -53,12 +53,8 @@ pub fn get_recent_history(conn: &Connection, limit: usize) -> Result<Vec<History
         })
         .map_err(|e| e.to_string())?;
 
-    let mut entries = Vec::new();
-    for entry in rows.flatten() {
-        entries.push(entry);
-    }
-
-    Ok(entries)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
 }
 
 pub fn clear_all_history(conn: &Connection) -> Result<(), String> {

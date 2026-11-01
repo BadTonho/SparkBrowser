@@ -8,7 +8,9 @@
     selectTab,
     removeTab,
     suspendTab,
-    reorderTabsList,
+    beginTabReorder,
+    previewTabReorder,
+    finishTabReorder,
     changeTabWorkspace,
   } from "../../stores/browserStore";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
@@ -68,6 +70,7 @@
       return;
     }
 
+    beginTabReorder();
     dragTabId = tabId;
     dragStartY = event.clientY;
     hasMoved = false;
@@ -113,7 +116,7 @@
           const reordered = [...currentIds];
           const [moved] = reordered.splice(fromIdx, 1);
           reordered.splice(toIdx, 0, moved);
-          reorderTabsList(reordered);
+          previewTabReorder(reordered);
           dragStartY = event.clientY;
         }
       }
@@ -133,8 +136,10 @@
 
     const wasDragging = isDragging;
     const clickedTabId = dragTabId;
+    const cancelled = event.type === "pointercancel";
+    void finishTabReorder(cancelled);
 
-    if (wasDragging && clickedTabId) {
+    if (!cancelled && wasDragging && clickedTabId) {
       // Check if dropped onto a workspace pill
       const element = document.elementFromPoint(event.clientX, event.clientY);
       const wsPill = element?.closest<HTMLElement>(".ws-pill");
@@ -149,7 +154,7 @@
     hasMoved = false;
 
     // Normal click selection if not dragged
-    if (!wasDragging && clickedTabId) {
+    if (!cancelled && !wasDragging && clickedTabId) {
       selectTab(clickedTabId);
     }
   }
@@ -161,6 +166,7 @@
   }
 
   onDestroy(() => {
+    if (dragTabId) void finishTabReorder(true);
     window.removeEventListener("pointermove", handleWindowPointerMove);
     window.removeEventListener("pointerup", handleWindowPointerUp);
     window.removeEventListener("pointercancel", handleWindowPointerUp);

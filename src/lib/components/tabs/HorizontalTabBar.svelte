@@ -7,7 +7,9 @@
     addTab,
     selectTab,
     removeTab,
-    reorderTabsList,
+    beginTabReorder,
+    previewTabReorder,
+    finishTabReorder,
   } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
@@ -78,6 +80,7 @@
     const target = event.target as HTMLElement | null;
     if (target?.closest(".tab-close-btn")) return;
 
+    beginTabReorder();
     dragTabId = tabId;
     dragStartX = event.clientX;
     hasMoved = false;
@@ -116,14 +119,14 @@
           const reordered = [...currentIds];
           const [moved] = reordered.splice(fromIdx, 1);
           reordered.splice(toIdx, 0, moved);
-          reorderTabsList(reordered);
+          previewTabReorder(reordered);
           dragStartX = event.clientX;
         }
       }
     }
   }
 
-  function handleWindowPointerUp() {
+  function handleWindowPointerUp(event: PointerEvent) {
     window.removeEventListener("pointermove", handleWindowPointerMove);
     window.removeEventListener("pointerup", handleWindowPointerUp);
     window.removeEventListener("pointercancel", handleWindowPointerUp);
@@ -133,17 +136,20 @@
 
     const wasDragging = isDragging;
     const clickedTabId = dragTabId;
+    const cancelled = event.type === "pointercancel";
+    void finishTabReorder(cancelled);
 
     dragTabId = null;
     isDragging = false;
     hasMoved = false;
 
-    if (!wasDragging && clickedTabId) {
+    if (!cancelled && !wasDragging && clickedTabId) {
       selectTab(clickedTabId);
     }
   }
 
   onDestroy(() => {
+    if (dragTabId) void finishTabReorder(true);
     window.removeEventListener("pointermove", handleWindowPointerMove);
     window.removeEventListener("pointerup", handleWindowPointerUp);
     window.removeEventListener("pointercancel", handleWindowPointerUp);
