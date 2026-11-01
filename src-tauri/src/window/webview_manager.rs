@@ -292,42 +292,56 @@ fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String>
                     let state = app_for_handler.state::<BrowserState>();
 
                     // WebView2 may consume browser accelerators before they reach the
-                    // injected page listener. Capture configured navigation shortcuts here.
+                    // injected page listener. Capture every configured keyboard shortcut here.
                     if is_key_down {
-                        let matched_action =
+                        let matched_shortcut =
                             state.keyboard_shortcuts.lock().ok().and_then(|shortcuts| {
-                                [
-                                    "new-tab",
-                                    "navigate-back",
-                                    "navigate-forward",
-                                    "focus-address",
-                                ]
-                                .into_iter()
-                                .find(|action| {
-                                    let binding = shortcuts
-                                        .get(*action)
-                                        .and_then(serde_json::Value::as_array)
-                                        .and_then(|bindings| bindings.first());
-                                    binding.is_some_and(|binding| {
-                                        binding
+                                shortcuts.as_object().and_then(|shortcuts| {
+                                    shortcuts.iter().find_map(|(action, bindings)| {
+                                        if action == "workspace-picker" {
+                                            return None;
+                                        }
+
+                                        let binding = bindings
+                                            .as_array()
+                                            .and_then(|bindings| bindings.first())?;
+                                        let key = binding
                                             .get("key")
-                                            .and_then(serde_json::Value::as_str)
-                                            .and_then(shortcut_key_to_virtual_key)
+                                            .and_then(serde_json::Value::as_str)?;
+                                        let shortcut_key = if key == "Digit" {
+                                            let digit = match virtual_key {
+                                                0x31..=0x39 => virtual_key - 0x30,
+                                                0x61..=0x69 => virtual_key - 0x60,
+                                                _ => return None,
+                                            };
+                                            Some(Some(digit.to_string()))
+                                        } else if shortcut_key_to_virtual_key(key)
                                             == Some(virtual_key)
-                                            && shortcut_modifiers_match(binding)
+                                        {
+                                            Some(None)
+                                        } else {
+                                            None
+                                        }?;
+
+                                        if !shortcut_modifiers_match(binding) {
+                                            return None;
+                                        }
+
+                                        Some((action.clone(), shortcut_key))
                                     })
                                 })
                             });
 
-                        if let Some(action) = matched_action {
+                        if let Some((action, key)) = matched_shortcut {
                             unsafe {
                                 args.SetHandled(true)?;
                             }
                             if !is_repeat {
-                                let _ = app_for_handler.emit(
-                                    "browser-shortcut-action",
-                                    serde_json::json!({ "action": action }),
-                                );
+                                let mut payload = serde_json::json!({ "action": action });
+                                if let Some(key) = key {
+                                    payload["key"] = serde_json::json!(key);
+                                }
+                                let _ = app_for_handler.emit("browser-shortcut-action", payload);
                             }
                             return Ok(());
                         }
