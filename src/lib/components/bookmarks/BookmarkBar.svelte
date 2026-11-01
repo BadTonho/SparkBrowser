@@ -1,6 +1,11 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { bookmarks, bookmarkFolders, openBookmarkFolderManager } from "../../stores/persistenceStore";
+  import {
+    bookmarks,
+    bookmarkFolders,
+    showBookmarkContextMenu,
+    openBookmarkFolderManager,
+  } from "../../stores/persistenceStore";
   import { currentUrl, submitNavigation } from "../../stores/browserStore";
 
   let openFolderId = $state<number | null>(null);
@@ -27,6 +32,11 @@
     void submitNavigation(url);
   }
 
+  function showEmptyContextMenu(event: MouseEvent): void {
+    if (event.target instanceof Element && event.target.closest(".bookmark-item, .folder-menu-item")) return;
+    showBookmarkContextMenu(event, { kind: "empty" });
+  }
+
   const outsideListener = (event: PointerEvent) => closeOnOutside(event);
   $effect(() => {
     if (openFolderId !== null) window.addEventListener("pointerdown", outsideListener);
@@ -39,13 +49,14 @@
   let openFolderBookmarks = $derived($bookmarks.filter((item) => item.folder_id === openFolderId));
 </script>
 
-<nav class="bookmark-bar" aria-label="Bookmarks">
+<nav class="bookmark-bar" aria-label="Bookmarks" oncontextmenu={showEmptyContextMenu}>
   <div class="bookmark-list">
     {#each rootBookmarks as item (item.id)}
       <button
         class="bookmark-item"
         class:active={$currentUrl === item.url}
         onclick={() => navigate(item.url)}
+        oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
         title={item.url}
         aria-label="Open bookmark: {item.title}"
       >
@@ -59,6 +70,7 @@
           class="bookmark-item folder-button"
           class:folder-open={openFolderId === folder.id}
           onclick={(event) => toggleFolder(event, folder.id)}
+          oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "folder", folder })}
           aria-expanded={openFolderId === folder.id}
           aria-label="Open folder: {folder.name}"
         >
@@ -68,10 +80,6 @@
         </button>
       </div>
     {/each}
-    <button class="bookmark-manage" onclick={() => void openBookmarkFolderManager()} title="Manage bookmark folders" aria-label="Manage bookmark folders">＋</button>
-    {#if rootBookmarks.length === 0 && $bookmarkFolders.length === 0}
-      <span class="bookmark-empty">No bookmarks yet</span>
-    {/if}
   </div>
 </nav>
 
@@ -88,7 +96,13 @@
       <span class="bookmark-empty">This folder is empty</span>
     {:else}
       {#each openFolderBookmarks as item (item.id)}
-        <button class="folder-menu-item" role="menuitem" onclick={() => navigate(item.url)} title={item.url}>
+        <button
+          class="folder-menu-item"
+          role="menuitem"
+          onclick={() => navigate(item.url)}
+          oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
+          title={item.url}
+        >
           <span aria-hidden="true">{item.icon}</span><span>{item.title}</span>
         </button>
       {/each}
@@ -140,8 +154,6 @@
   .bookmark-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .folder-count { color: var(--text-muted); font-size: 9px; }
   .bookmark-empty { padding: 4px 8px; color: var(--text-muted); font-size: 11px; }
-  .bookmark-manage { flex: 0 0 auto; padding: 3px 8px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); }
-  .bookmark-manage:hover { color: var(--text-primary); background: var(--bg-glass-hover); }
   .bookmark-folder-menu {
     position: fixed;
     z-index: 1300;

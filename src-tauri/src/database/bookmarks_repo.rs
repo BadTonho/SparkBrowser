@@ -70,6 +70,47 @@ pub fn migrate_default_bookmarks_once(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+/// Removes legacy seeded bookmarks that used a trailing slash in their URL.
+/// The title and icon must also match the original seed so edited/custom items
+/// are left untouched, even when they point at one of the same sites.
+pub fn migrate_trailing_slash_default_bookmarks_once(conn: &Connection) -> Result<(), String> {
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|e| format!("Failed to start trailing-slash bookmark migration: {e}"))?;
+    let migrated: bool = tx
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM app_migrations WHERE name = 'remove_default_bookmarks_trailing_slash_v1')",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    if migrated {
+        return Ok(());
+    }
+
+    let defaults = [
+        ("DuckDuckGo", "https://duckduckgo.com/", "\u{1F986}"),
+        ("GitHub", "https://github.com/", "\u{1F419}"),
+        ("Rust Lang", "https://www.rust-lang.org/", "\u{1F980}"),
+        ("Wikipedia", "https://www.wikipedia.org/", "\u{1F310}"),
+    ];
+    for (title, url, icon) in defaults {
+        tx.execute(
+            "DELETE FROM bookmarks WHERE title = ?1 AND url = ?2 AND icon = ?3",
+            params![title, url, icon],
+        )
+        .map_err(|e| format!("Failed to remove a trailing-slash default bookmark: {e}"))?;
+    }
+    tx.execute(
+        "INSERT INTO app_migrations (name) VALUES ('remove_default_bookmarks_trailing_slash_v1')",
+        [],
+    )
+    .map_err(|e| format!("Failed to record trailing-slash bookmark migration: {e}"))?;
+    tx.commit()
+        .map_err(|e| format!("Failed to finish trailing-slash bookmark migration: {e}"))?;
+    Ok(())
+}
+
 pub fn list_bookmarks(conn: &Connection) -> Result<Vec<BookmarkItem>, String> {
     let mut stmt = conn
         .prepare("SELECT id, title, url, icon, folder_id FROM bookmarks ORDER BY id ASC")

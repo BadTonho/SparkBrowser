@@ -9,9 +9,11 @@ import {
   createBookmarkFolder as createBookmarkFolderCommand,
   renameBookmarkFolder as renameBookmarkFolderCommand,
   deleteBookmarkFolder as deleteBookmarkFolderCommand,
+  setBookmarkContextMenuOverlay,
   setOverlayVisibility,
   isTauriRuntime,
 } from "../services/tauri-bridge";
+import { overlayBlurPx } from "./settingsStore";
 
 export type BookmarkEditorState =
   | {
@@ -22,11 +24,20 @@ export type BookmarkEditorState =
       icon: string;
     }
   | { kind: "folders" }
+  | { kind: "create-folder" }
+  | { kind: "rename-folder"; folderId: number; name: string }
+  | null;
+
+export type BookmarkContextMenuState =
+  | { kind: "bookmark"; x: number; y: number; bookmark: BookmarkItem }
+  | { kind: "folder"; x: number; y: number; folder: BookmarkFolder }
+  | { kind: "empty"; x: number; y: number }
   | null;
 
 export const bookmarks = writable<BookmarkItem[]>([]);
 export const bookmarkFolders = writable<BookmarkFolder[]>([]);
 export const bookmarkEditorState = writable<BookmarkEditorState>(null);
+export const bookmarkContextMenuState = writable<BookmarkContextMenuState>(null);
 export const historyEntries = writable<HistoryEntry[]>([]);
 export const isHistoryDrawerOpen = writable<boolean>(false);
 
@@ -54,6 +65,61 @@ export async function openBookmarkEditor(title: string, url: string, icon = "⭐
 export async function openBookmarkFolderManager(): Promise<void> {
   bookmarkEditorState.set({ kind: "folders" });
   await setOverlayVisibility(true, "bookmark-editor");
+}
+
+export async function openCreateBookmarkFolder(): Promise<void> {
+  bookmarkEditorState.set({ kind: "create-folder" });
+  await setOverlayVisibility(true, "bookmark-editor");
+}
+
+export async function openBookmarkFolderEditor(folder: BookmarkFolder): Promise<void> {
+  bookmarkEditorState.set({ kind: "rename-folder", folderId: folder.id, name: folder.name });
+  await setOverlayVisibility(true, "bookmark-editor");
+}
+
+export function showBookmarkContextMenu(
+  event: MouseEvent,
+  target:
+    | { kind: "bookmark"; bookmark: BookmarkItem }
+    | { kind: "folder"; folder: BookmarkFolder }
+    | { kind: "empty" },
+): void {
+  event.preventDefault();
+  event.stopPropagation();
+  const menu: BookmarkContextMenuState = {
+    ...target,
+    x: Math.max(8, Math.min(event.clientX, window.innerWidth - 236)),
+    y: Math.max(8, Math.min(event.clientY, window.innerHeight - 180)),
+  };
+  bookmarkContextMenuState.set(menu);
+
+  if (!menu) return;
+  const actions = menu.kind === "bookmark"
+    ? [
+        { id: "edit-bookmark", label: "Edit bookmark" },
+        { id: "delete-bookmark", label: "Delete bookmark", danger: true },
+      ]
+    : menu.kind === "folder"
+      ? [
+          { id: "rename-folder", label: "Rename folder" },
+          { id: "delete-folder", label: "Delete folder", danger: true },
+        ]
+      : [
+          { id: "create-folder", label: "Create folder" },
+          { id: "manage-folders", label: "Manage folders" },
+        ];
+  void setBookmarkContextMenuOverlay(
+    true,
+    menu.x,
+    menu.y,
+    actions,
+    get(overlayBlurPx),
+  );
+}
+
+export function closeBookmarkContextMenu(): void {
+  bookmarkContextMenuState.set(null);
+  void setBookmarkContextMenuOverlay(false);
 }
 
 export async function closeBookmarkEditor(): Promise<void> {

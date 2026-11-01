@@ -109,6 +109,7 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     );
 
     crate::database::bookmarks_repo::migrate_default_bookmarks_once(&conn)?;
+    crate::database::bookmarks_repo::migrate_trailing_slash_default_bookmarks_once(&conn)?;
     crate::database::workspace_repo::initialize_workspace_table(&conn)?;
 
     Ok(conn)

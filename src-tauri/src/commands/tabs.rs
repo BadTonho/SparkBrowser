@@ -4,12 +4,13 @@ use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::WorkspaceItem;
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::window::webview_manager::{
-    build_workspace_switcher_update_script, create_internal_bridge_token, navigate_content_webview,
-    resolve_input_to_url, search_engine_home_url, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
-    WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+    build_bookmark_context_menu_script, build_workspace_switcher_update_script,
+    create_internal_bridge_token, navigate_content_webview, resolve_input_to_url,
+    search_engine_home_url, sync_all_webviews, BookmarkContextMenuAction, CONTENT_WEBVIEW_LABEL,
+    WORKSPACE_SWITCHER_WEBVIEW_LABEL, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
 };
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Rect, State};
 
 const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
 
@@ -435,6 +436,79 @@ pub async fn set_workspace_switcher_overlay(
         return Ok(());
     }
 
+    sync_all_webviews(&app, &state)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_bookmark_context_menu_overlay(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    x: Option<f64>,
+    y: Option<f64>,
+    actions: Option<Vec<BookmarkContextMenuAction>>,
+    backdrop_blur_px: Option<u8>,
+) -> Result<(), String> {
+    let webview = app
+        .get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL)
+        .ok_or_else(|| "Bookmark context menu WebView was not found".to_string())?;
+
+    if !visible {
+        if let Ok(mut token) = state.bookmark_context_menu_token.lock() {
+            *token = None;
+        }
+        if let Ok(mut allowed_actions) = state.bookmark_context_menu_actions.lock() {
+            allowed_actions.clear();
+        }
+        if let Ok(mut open) = state.bookmark_context_menu_open.lock() {
+            *open = false;
+        }
+        let _ = webview.hide();
+        sync_all_webviews(&app, &state)?;
+        return Ok(());
+    }
+
+    let token = create_internal_bridge_token();
+    let actions = actions.unwrap_or_default();
+    let script = build_bookmark_context_menu_script(
+        x.unwrap_or(8.0),
+        y.unwrap_or(8.0),
+        &actions,
+        &token,
+        true,
+        backdrop_blur_px.unwrap_or(16).min(24),
+    )?;
+
+    if let Ok(mut current_token) = state.bookmark_context_menu_token.lock() {
+        *current_token = Some(token);
+    }
+    if let Ok(mut allowed_actions) = state.bookmark_context_menu_actions.lock() {
+        *allowed_actions = actions.into_iter().map(|action| action.id).collect();
+    }
+    if let Ok(mut open) = state.bookmark_context_menu_open.lock() {
+        *open = true;
+    }
+
+    if let Some(window) = app.get_webview_window("main") {
+        let scale_factor = window.scale_factor().unwrap_or(1.0);
+        let logical_size = window
+            .inner_size()
+            .map(|size| size.to_logical::<f64>(scale_factor))
+            .unwrap_or_else(|_| LogicalSize::new(1200.0, 800.0));
+        webview
+            .set_bounds(Rect {
+                position: LogicalPosition::new(0.0, 0.0).into(),
+                size: logical_size.into(),
+            })
+            .map_err(|error| format!("Failed to size bookmark menu overlay: {error}"))?;
+    }
+    webview
+        .show()
+        .map_err(|error| format!("Failed to show bookmark menu overlay: {error}"))?;
+    webview
+        .eval(&script)
+        .map_err(|error| format!("Failed to render bookmark menu: {error}"))?;
     sync_all_webviews(&app, &state)?;
     Ok(())
 }

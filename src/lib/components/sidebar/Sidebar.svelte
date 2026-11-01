@@ -9,11 +9,16 @@
   import {
     bookmarks,
     bookmarkFolders,
-    openBookmarkFolderManager,
+    showBookmarkContextMenu,
   } from "../../stores/persistenceStore";
   import { tabLayout } from "../../stores/settingsStore";
 
   let rootBookmarks = $derived($bookmarks.filter((item) => item.folder_id == null));
+
+  function showEmptyContextMenu(event: MouseEvent): void {
+    if (event.target instanceof Element && event.target.closest(".quick-card, .bookmark-folder summary")) return;
+    showBookmarkContextMenu(event, { kind: "empty" });
+  }
 </script>
 
 <aside
@@ -25,10 +30,9 @@
     <WorkspaceSwitcher />
 
     <!-- SQLite Bookmarks Grid -->
-    <div class="bookmark-content">
+    <div class="bookmark-content" role="region" aria-label="Bookmarks" oncontextmenu={showEmptyContextMenu}>
       <div class="section-header">
         <span>BOOKMARKS ({$bookmarks.length})</span>
-        <button class="manage-folders" title="Manage bookmark folders" aria-label="Manage bookmark folders" onclick={() => void openBookmarkFolderManager()}>＋</button>
       </div>
 
     {#if rootBookmarks.length > 0}
@@ -38,6 +42,7 @@
             class="quick-card"
             class:active={$currentUrl === item.url}
             onclick={() => submitNavigation(item.url)}
+            oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
             title={item.url}
           >
             <span class="quick-icon">{item.icon}</span>
@@ -50,7 +55,9 @@
     {#each $bookmarkFolders as folder (folder.id)}
       {@const folderBookmarks = $bookmarks.filter((item) => item.folder_id === folder.id)}
       <details class="bookmark-folder" open={false}>
-        <summary><span aria-hidden="true">📁</span><span>{folder.name}</span><span class="folder-count">{folderBookmarks.length}</span></summary>
+        <summary oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "folder", folder })}>
+          <span aria-hidden="true">📁</span><span>{folder.name}</span><span class="folder-count">{folderBookmarks.length}</span>
+        </summary>
         {#if folderBookmarks.length > 0}
           <div class="quick-links-grid folder-links">
             {#each folderBookmarks as item (item.id)}
@@ -58,6 +65,7 @@
                 class="quick-card"
                 class:active={$currentUrl === item.url}
                 onclick={() => submitNavigation(item.url)}
+                oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
                 title={item.url}
               >
                 <span class="quick-icon">{item.icon}</span>
@@ -116,8 +124,6 @@
 
   .bookmark-content { min-height: 0; max-height: 40%; overflow-y: auto; scrollbar-width: thin; }
 
-  .manage-folders { padding: 0 5px; color: var(--text-muted); font-size: 15px; }
-  .manage-folders:hover { color: var(--text-primary); }
   .bookmark-folder { min-width: 0; }
   .bookmark-folder summary { display: flex; align-items: center; gap: 7px; padding: 5px 4px; color: var(--text-secondary); font-size: 11px; cursor: pointer; list-style: none; }
   .bookmark-folder summary::-webkit-details-marker { display: none; }

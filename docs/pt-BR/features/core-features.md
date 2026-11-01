@@ -38,10 +38,11 @@
 
 ## 7. 📑 Layouts Horizontal e Vertical do Navegador
 - Escolha **Horizontal** ou **Vertical** nas Configurações (`Ctrl + ,`); a seleção é lembrada ao reabrir o aplicativo.
-- **Horizontal:** As abas ficam no topo e os bookmarks salvos aparecem em uma barra horizontal abaixo da pesquisa. Escolha se os workspaces ficam como botões ao lado da pesquisa ou em um seletor flutuante aberto ao manter Alt pressionado. Oculte ou mostre a barra de bookmarks em Aparência e Layout ou pelo botão na barra superior; ocultá-la não remove os bookmarks.
+- **Horizontal:** As abas ficam no topo e os bookmarks salvos aparecem em uma barra horizontal abaixo da pesquisa. A barra fica oculta quando não há bookmarks nem pastas. Escolha se os workspaces ficam como botões ao lado da pesquisa ou em um seletor flutuante aberto ao manter Alt pressionado. Oculte ou mostre a barra de bookmarks em Aparência e Layout ou pelo botão na barra superior; ocultá-la não remove os bookmarks.
 - **Vertical:** Os espaços de trabalho, bookmarks salvos e abas verticais ficam juntos na barra lateral retrátil; a preferência de exibição dos workspaces altera somente o layout horizontal.
 - Salve uma página pela estrela da barra de endereço e escolha o título e a pasta. Ao selecionar um bookmark existente, o mesmo editor permite renomeá-lo, movê-lo para outra pasta ou removê-lo.
 - Crie, renomeie e exclua pastas de bookmarks de um nível. Elas aparecem como menus na barra horizontal e seções expansíveis na barra lateral vertical; excluir uma pasta move seus bookmarks para a raiz.
+- Clique com o botão direito em um bookmark para editá-lo ou apagá-lo, ou em uma área vazia da barra visível para criar e gerenciar pastas. Se a barra estiver vazia e oculta, crie uma pasta pelo editor de bookmark da barra de endereço. Clique com o botão direito em uma pasta para renomeá-la ou excluí-la; exclusões pedem confirmação.
 - Instalações novas começam sem bookmarks de exemplo. Bancos existentes removem uma única vez somente as entradas padrão originais do DuckDuckGo, GitHub, Rust Lang e Wikipedia; os demais bookmarks são preservados.
 
 ## 8. Configurações do Navegador Organizadas
@@ -49,7 +50,7 @@
 - Pesquise em todas as categorias, configurações e atalhos pelo campo ao lado do título Browser Settings; selecionar um resultado abre a categoria e destaca o destino.
 - Escolha Google ou DuckDuckGo como mecanismo de busca padrão em **Pesquisa e Navegação**. Google vem selecionado por padrão; a escolha vale para buscas na barra de endereço, na Command Bar e para novas guias.
 - Ajuste em Aparência e Layout o desfoque de fundo compartilhado pelos overlays temporários, de **0 a 24 px**; a preferência é aplicada imediatamente e lembrada após reiniciar.
-- Mostre ou oculte a barra horizontal de bookmarks em Aparência e Layout ou pelo botão na barra superior; a escolha é lembrada após reiniciar e não afeta os bookmarks da barra lateral vertical.
+- Mostre ou oculte a barra horizontal de bookmarks em Aparência e Layout ou pelo botão na barra superior; a escolha é lembrada após reiniciar e não afeta os bookmarks da barra lateral vertical. A barra só aparece quando há pelo menos um bookmark ou pasta.
 - Use a barra fixa de categorias para alternar entre os painéis; somente o painel selecionado é exibido e rola quando seu conteúdo ultrapassa a altura da janela.
 - A última categoria selecionada é restaurada ao reabrir o modal e também após reiniciar o aplicativo.
 - Em **Keyboard Shortcuts**, clique em um atalho e pressione uma combinação de teclas ou Mouse 4/5 para gravá-lo. O seletor de workspaces pode usar uma tecla modificadora mantida pressionada (Alt, Ctrl, Shift ou Meta); combinações duplicadas são rejeitadas. As alterações são salvas entre reinicializações e funcionam com foco na interface do navegador ou em uma página.

@@ -13,6 +13,7 @@
   import HorizontalTabBar from "./lib/components/tabs/HorizontalTabBar.svelte";
   import BookmarkBar from "./lib/components/bookmarks/BookmarkBar.svelte";
   import BookmarkEditor from "./lib/components/bookmarks/BookmarkEditor.svelte";
+  import BookmarkContextMenu from "./lib/components/bookmarks/BookmarkContextMenu.svelte";
   import {
     tabs,
     currentUrl,
@@ -32,6 +33,8 @@
   } from "./lib/stores/browserStore";
   import { toggleCommandBar, openCommandBar } from "./lib/stores/commandBarStore";
   import {
+    bookmarks,
+    bookmarkFolders,
     loadBookmarks,
     toggleHistoryDrawer,
   } from "./lib/stores/persistenceStore";
@@ -270,7 +273,7 @@
     <HorizontalTabBar />
   {/if}
   <Titlebar />
-  {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar}
+  {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar && ($bookmarks.length > 0 || $bookmarkFolders.length > 0)}
     <div
       class="bookmark-bar-transition"
       transition:slide={{ duration: prefersReducedMotion ? 0 : 180, easing: cubicOut }}
@@ -289,6 +292,7 @@
   <DownloadsDrawer />
   <SettingsModal />
   <BookmarkEditor />
+  <BookmarkContextMenu />
   <WorkspaceSwitcherOverlay />
 </div>
 

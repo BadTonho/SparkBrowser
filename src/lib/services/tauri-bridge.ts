@@ -176,6 +176,43 @@ export async function setWorkspaceSwitcherOverlay(
   await workspaceSwitcherSyncQueue;
 }
 
+export interface BookmarkContextMenuAction {
+  id: string;
+  label: string;
+  danger?: boolean;
+}
+
+let bookmarkContextMenuSyncQueue: Promise<void> = Promise.resolve();
+
+export async function setBookmarkContextMenuOverlay(
+  visible: boolean,
+  x = 8,
+  y = 8,
+  actions: BookmarkContextMenuAction[] = [],
+  backdropBlurPx = 16
+): Promise<void> {
+  if (!isTauriRuntime()) return;
+  bookmarkContextMenuSyncQueue = bookmarkContextMenuSyncQueue
+    .catch(() => undefined)
+    .then(() => invoke<void>("set_bookmark_context_menu_overlay", {
+      visible,
+      x,
+      y,
+      actions,
+      backdropBlurPx,
+    }));
+  await bookmarkContextMenuSyncQueue;
+}
+
+export async function onBookmarkContextMenuAction(
+  callback: (action: string) => void
+): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => {};
+  return await listen<string>("bookmark-context-menu-action", (event) => {
+    callback(event.payload);
+  });
+}
+
 export async function reorderTabs(tabIds: string[]): Promise<TabItem[]> {
   if (!isTauriRuntime()) return [];
   return await invoke<TabItem[]>("reorder_tabs", { tabIds });

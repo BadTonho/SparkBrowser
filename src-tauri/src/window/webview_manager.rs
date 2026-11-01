@@ -2,6 +2,7 @@ use crate::privacy::adblock_engine::{build_content_shield_script, should_block_u
 use crate::state::browser_state::{BrowserState, ViewportBounds, DEFAULT_HOME_URL};
 use crate::state::tab_model::{derive_title_from_url, TabInfo};
 use crate::state::workspace_model::WorkspaceItem;
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::RandomState;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -12,6 +13,16 @@ use tauri::{
 
 pub const CONTENT_WEBVIEW_LABEL: &str = "content-webview";
 pub const WORKSPACE_SWITCHER_WEBVIEW_LABEL: &str = "workspace-switcher-webview";
+pub const BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL: &str = "bookmark-context-menu-webview";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookmarkContextMenuAction {
+    pub id: String,
+    pub label: String,
+    #[serde(default)]
+    pub danger: bool,
+}
 
 pub fn create_internal_bridge_token() -> String {
     let mut hasher = RandomState::new().build_hasher();
@@ -41,6 +52,28 @@ pub fn build_workspace_switcher_update_script(
     .map_err(|error| format!("Failed to serialize workspace switcher: {error}"))?;
     Ok(format!(
         "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__veloceSetWorkspaceSwitcher === 'function') {{ window.__veloceSetWorkspaceSwitcher(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
+    ))
+}
+
+pub fn build_bookmark_context_menu_script(
+    x: f64,
+    y: f64,
+    actions: &[BookmarkContextMenuAction],
+    token: &str,
+    visible: bool,
+    backdrop_blur_px: u8,
+) -> Result<String, String> {
+    let payload = serde_json::to_string(&serde_json::json!({
+        "x": x,
+        "y": y,
+        "actions": actions,
+        "token": token,
+        "visible": visible,
+        "backdropBlurPx": backdrop_blur_px.min(24),
+    }))
+    .map_err(|error| format!("Failed to serialize bookmark context menu: {error}"))?;
+    Ok(format!(
+        "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__veloceSetBookmarkContextMenu === 'function') {{ window.__veloceSetBookmarkContextMenu(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
     ))
 }
 
@@ -576,7 +609,6 @@ fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Url) {
     let Some(state) = app.try_state::<BrowserState>() else {
         return;
     };
-
     let token_matches = request_token
         .as_deref()
         .and_then(|request_token| {
@@ -624,6 +656,64 @@ fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Url) {
     }
 }
 
+fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
+    if nav_url.scheme() != "veloce-internal"
+        || nav_url.host_str() != Some("bookmark-context-menu")
+    {
+        return;
+    }
+
+    let action = nav_url.path().trim_matches('/').to_string();
+    let request_token = nav_url
+        .query_pairs()
+        .find(|(key, _)| key == "token")
+        .map(|(_, value)| value.into_owned());
+    let Some(state) = app.try_state::<BrowserState>() else {
+        return;
+    };
+    let menu_is_open = state
+        .bookmark_context_menu_open
+        .lock()
+        .map(|open| *open)
+        .unwrap_or(false);
+    if !menu_is_open {
+        return;
+    }
+    let token_matches = request_token
+        .as_deref()
+        .and_then(|request_token| {
+            state
+                .bookmark_context_menu_token
+                .lock()
+                .ok()
+                .map(|token| token.as_deref() == Some(request_token))
+        })
+        .unwrap_or(false);
+    if !token_matches {
+        return;
+    }
+
+    if action != "dismiss"
+        && !state
+            .bookmark_context_menu_actions
+            .lock()
+            .map(|actions| actions.iter().any(|allowed| allowed == &action))
+            .unwrap_or(false)
+    {
+        return;
+    }
+
+    if let Ok(mut token) = state.bookmark_context_menu_token.lock() {
+        *token = None;
+    }
+    if let Ok(mut actions) = state.bookmark_context_menu_actions.lock() {
+        actions.clear();
+    }
+    // Let the frontend close the overlay after it receives the action. Hiding
+    // this WebView inside its own navigation callback can interrupt delivery.
+    let _ = app.emit("bookmark-context-menu-action", action);
+}
+
 fn spawn_workspace_switcher_webview(app: &AppHandle, bounds: ViewportBounds) -> Result<(), String> {
     if app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL).is_some() {
         return Ok(());
@@ -659,6 +749,45 @@ fn spawn_workspace_switcher_webview(app: &AppHandle, bounds: ViewportBounds) -> 
         let _ = webview.hide();
     }
 
+    Ok(())
+}
+
+fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(), String> {
+    if app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL).is_some() {
+        return Ok(());
+    }
+
+    let main_window = app
+        .get_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+    let app_for_navigation = app.clone();
+    let webview_builder = WebviewBuilder::new(
+        BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
+        WebviewUrl::App("bookmark-context-menu.html".into()),
+    )
+    .transparent(true)
+    .focused(false)
+    .on_navigation(move |nav_url| {
+        if nav_url.scheme() == "veloce-internal"
+            && nav_url.host_str() == Some("bookmark-context-menu")
+        {
+            handle_bookmark_context_menu_navigation(&app_for_navigation, nav_url);
+            return false;
+        }
+        true
+    });
+
+    main_window
+        .add_child(
+            webview_builder,
+            LogicalPosition::new(0.0, 0.0),
+            LogicalSize::new(1200.0, 800.0),
+        )
+        .map_err(|error| format!("Failed to create bookmark context menu WebView: {error}"))?;
+
+    if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
+        let _ = webview.hide();
+    }
     Ok(())
 }
 
@@ -908,6 +1037,7 @@ pub fn spawn_content_webview(
         .map_err(|e| format!("Failed to create content WebView: {}", e))?;
 
     spawn_workspace_switcher_webview(app, bounds)?;
+    spawn_bookmark_context_menu_webview(app)?;
 
     #[cfg(windows)]
     install_workspace_shortcut_accelerator(app)?;
@@ -993,6 +1123,11 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
         .lock()
         .map(|open| *open)
         .unwrap_or(false);
+    let bookmark_context_menu_open = state
+        .bookmark_context_menu_open
+        .lock()
+        .map(|open| *open)
+        .unwrap_or(false);
 
     if let Some(webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
         if overlay_open {
@@ -1012,6 +1147,25 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                 position: LogicalPosition::new(bounds.x, bounds.y).into(),
                 size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0)).into(),
             });
+            let _ = webview.show();
+        } else {
+            let _ = webview.hide();
+        }
+    }
+
+    if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
+        if bookmark_context_menu_open {
+            if let Some(window) = app.get_webview_window("main") {
+                let scale_factor = window.scale_factor().unwrap_or(1.0);
+                let logical_size = window
+                    .inner_size()
+                    .map(|size| size.to_logical::<f64>(scale_factor))
+                    .unwrap_or_else(|_| LogicalSize::new(1200.0, 800.0));
+                let _ = webview.set_bounds(Rect {
+                    position: LogicalPosition::new(0.0, 0.0).into(),
+                    size: logical_size.into(),
+                });
+            }
             let _ = webview.show();
         } else {
             let _ = webview.hide();

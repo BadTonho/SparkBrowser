@@ -38,10 +38,11 @@
 
 ## 7. 📑 Horizontal and Vertical Browser Layouts
 - Choose **Horizontal** or **Vertical** in Settings (`Ctrl + ,`); the selection is remembered across app restarts.
-- **Horizontal:** Tabs stay at the top, and saved bookmarks appear in a horizontal bar below the search bar. Choose whether workspace buttons sit beside the search bar or appear in a floating picker when holding Alt. Toggle the bookmarks bar from Appearance & Layout or the top toolbar; hiding it does not remove bookmarks.
+- **Horizontal:** Tabs stay at the top, and saved bookmarks appear in a horizontal bar below the search bar. The bar is hidden when there are no bookmarks or folders. Choose whether workspace buttons sit beside the search bar or appear in a floating picker when holding Alt. Toggle the bookmarks bar from Appearance & Layout or the top toolbar; hiding it does not remove bookmarks.
 - **Vertical:** Workspaces, saved bookmarks, and vertical tabs stay together in the collapsible sidebar; the workspace display preference only changes the horizontal layout.
 - Save a page with the address-bar star, then choose its title and folder. Selecting an existing bookmark opens the same editor so it can be renamed, moved to another folder, or removed.
 - Create, rename, and delete one-level bookmark folders. Folders appear as menus in the horizontal bookmarks bar and expandable sections in the vertical sidebar; deleting a folder moves its bookmarks to the root.
+- Right-click a bookmark to edit or delete it, or right-click an empty area of the visible bookmarks bar to create and manage folders. If the bar is empty and hidden, create a folder from the address-bar bookmark editor. Right-click a folder to rename or delete it; deletions require confirmation.
 - New installations start without sample bookmarks. Existing databases remove only the original DuckDuckGo, GitHub, Rust Lang, and Wikipedia starter entries once; other saved bookmarks are preserved.
 
 ## 8. Organized Browser Settings
@@ -49,7 +50,7 @@
 - Search all categories, settings, and keyboard shortcuts from the field beside the Browser Settings title; selecting a result opens its category and highlights the destination.
 - Choose Google or DuckDuckGo as the default search engine in **Search & Navigation**. Google is selected by default; the choice applies to Omnibox and Command Bar searches and to newly opened tabs.
 - Adjust the shared background blur for temporary overlays from **0–24 px** in Appearance & Layout; the preference is applied immediately and remembered across restarts.
-- Show or hide the horizontal bookmarks bar in Appearance & Layout or with the toolbar toggle; the choice is remembered across restarts and does not affect bookmarks in the vertical sidebar.
+- Show or hide the horizontal bookmarks bar in Appearance & Layout or with the toolbar toggle; the choice is remembered across restarts and does not affect bookmarks in the vertical sidebar. The bar appears only when at least one bookmark or folder exists.
 - Use the fixed category rail to switch between panels; only the selected panel is shown and scrolls when its content is taller than the window.
 - The last selected category is remembered when the dialog is reopened and across app restarts.
 - In **Keyboard Shortcuts**, click a shortcut and press a key combination or Mouse 4/5 to record it. The workspace picker can use a held modifier key (Alt, Ctrl, Shift, or Meta); duplicate combinations are rejected. Changes are saved across restarts and work while the browser interface or a page has focus.

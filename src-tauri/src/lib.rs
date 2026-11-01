@@ -15,7 +15,7 @@ use commands::shortcuts::set_keyboard_shortcuts;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
     hibernate_tab, move_tab_to_workspace, reorder_tabs, set_overlay_visibility,
-    set_workspace_switcher_overlay, switch_tab,
+    set_workspace_switcher_overlay, set_bookmark_context_menu_overlay, switch_tab,
 };
 use commands::workspaces::{
     create_workspace, delete_workspace, get_active_workspace, get_workspaces, switch_workspace,
@@ -27,7 +27,9 @@ use database::workspace_repo::list_workspaces;
 use state::browser_state::{BrowserState, ViewportBounds, DEFAULT_HOME_URL, INITIAL_TAB_ID};
 use tauri::{Emitter, Manager, WindowEvent};
 use window::vibrancy::apply_native_vibrancy;
-use window::webview_manager::spawn_content_webview;
+use window::webview_manager::{
+    spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
+};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -39,6 +41,21 @@ pub fn run() {
                     state
                         .workspace_alt_pressed
                         .store(false, std::sync::atomic::Ordering::SeqCst);
+                    if let Ok(mut token) = state.bookmark_context_menu_token.lock() {
+                        *token = None;
+                    }
+                    if let Ok(mut actions) = state.bookmark_context_menu_actions.lock() {
+                        actions.clear();
+                    }
+                    if let Ok(mut open) = state.bookmark_context_menu_open.lock() {
+                        *open = false;
+                    }
+                    if let Some(webview) = window
+                        .app_handle()
+                        .get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL)
+                    {
+                        let _ = webview.hide();
+                    }
                 }
                 let _ = window.emit("workspace-shortcut-cancel", ());
             }
@@ -122,6 +139,7 @@ pub fn run() {
             auto_hibernate_inactive_tabs,
             set_overlay_visibility,
             set_workspace_switcher_overlay,
+            set_bookmark_context_menu_overlay,
             set_keyboard_shortcuts,
             get_history,
             clear_browsing_history,

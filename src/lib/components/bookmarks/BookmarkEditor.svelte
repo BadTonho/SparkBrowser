@@ -15,18 +15,24 @@
   let url = $state("");
   let icon = $state("⭐");
   let selectedFolderId = $state<number | null>(null);
+  let folderName = $state("");
   let newFolderName = $state("");
   let folderDrafts = $state<Record<number, string>>({});
   let errorMessage = $state("");
   let isSaving = $state(false);
+  let pendingRemovalBookmarkId = $state<number | null>(null);
 
   $effect(() => {
     const editor = $bookmarkEditorState;
+    pendingRemovalBookmarkId = null;
     if (editor?.kind === "save") {
       title = editor.title;
       url = editor.url;
       icon = editor.icon;
       selectedFolderId = editor.bookmark?.folder_id ?? null;
+      errorMessage = "";
+    } else if (editor?.kind === "rename-folder") {
+      folderName = editor.name;
       errorMessage = "";
     }
   });
@@ -63,6 +69,11 @@
   async function handleRemove(): Promise<void> {
     const editor = get(bookmarkEditorState);
     if (editor?.kind !== "save" || !editor.bookmark) return;
+    if (pendingRemovalBookmarkId !== editor.bookmark.id) {
+      pendingRemovalBookmarkId = editor.bookmark.id;
+      errorMessage = "";
+      return;
+    }
     isSaving = true;
     errorMessage = "";
     try {
@@ -83,6 +94,9 @@
         selectedFolderId = createdFolder.id;
       }
       newFolderName = "";
+      if (get(bookmarkEditorState)?.kind === "create-folder") {
+        await closeBookmarkEditor();
+      }
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : String(error);
     }
@@ -98,9 +112,23 @@
   }
 
   async function handleDeleteFolder(folderId: number): Promise<void> {
+    const folder = get(bookmarkFolders).find((item) => item.id === folderId);
+    if (!folder || !window.confirm(`Delete folder “${folder.name}”? Its bookmarks will be moved to the root.`)) return;
     errorMessage = "";
     try {
       await deleteBookmarkFolder(folderId);
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  async function handleRenameCurrentFolder(): Promise<void> {
+    const editor = get(bookmarkEditorState);
+    if (editor?.kind !== "rename-folder") return;
+    errorMessage = "";
+    try {
+      await renameBookmarkFolder(editor.folderId, folderName);
+      await closeBookmarkEditor();
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : String(error);
     }
@@ -124,7 +152,11 @@
         <h2 id="bookmark-dialog-title">
           {$bookmarkEditorState.kind === "folders"
             ? "Manage Bookmark Folders"
-            : $bookmarkEditorState.bookmark ? "Edit Bookmark" : "Save Bookmark"}
+            : $bookmarkEditorState.kind === "create-folder"
+              ? "Create Bookmark Folder"
+            : $bookmarkEditorState.kind === "rename-folder"
+              ? "Rename Folder"
+              : $bookmarkEditorState.bookmark ? "Edit Bookmark" : "Save Bookmark"}
         </h2>
         <button class="icon-button" type="button" aria-label="Close" onclick={() => void closeBookmarkEditor()}>×</button>
       </header>
@@ -158,7 +190,15 @@
           {#if errorMessage}<p class="error-message" role="alert">{errorMessage}</p>{/if}
           <footer class="dialog-actions">
             {#if $bookmarkEditorState.bookmark}
-              <button class="danger-button" type="button" disabled={isSaving} onclick={handleRemove}>Remove bookmark</button>
+              <button
+                class="danger-button"
+                type="button"
+                disabled={isSaving}
+                aria-label={pendingRemovalBookmarkId === $bookmarkEditorState.bookmark.id ? "Confirm bookmark removal" : "Remove bookmark"}
+                onclick={handleRemove}
+              >
+                {pendingRemovalBookmarkId === $bookmarkEditorState.bookmark.id ? "Confirm removal" : "Remove bookmark"}
+              </button>
             {/if}
             <span class="action-spacer"></span>
             <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>Cancel</button>
@@ -167,7 +207,7 @@
             </button>
           </footer>
         </div>
-      {:else}
+      {:else if $bookmarkEditorState.kind === "folders"}
         <div class="dialog-content">
           <div class="create-folder-row">
             <input bind:value={newFolderName} maxlength="64" placeholder="New folder name" />
@@ -196,6 +236,32 @@
           <footer class="dialog-actions">
             <span class="action-spacer"></span>
             <button class="primary-button" type="button" onclick={() => void closeBookmarkEditor()}>Done</button>
+          </footer>
+        </div>
+      {:else if $bookmarkEditorState.kind === "create-folder"}
+        <div class="dialog-content">
+          <label>
+            <span>Folder name</span>
+            <input bind:value={newFolderName} maxlength="64" autocomplete="off" />
+          </label>
+          {#if errorMessage}<p class="error-message" role="alert">{errorMessage}</p>{/if}
+          <footer class="dialog-actions">
+            <span class="action-spacer"></span>
+            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>Cancel</button>
+            <button class="primary-button" type="button" disabled={!newFolderName.trim()} onclick={handleCreateFolder}>Create folder</button>
+          </footer>
+        </div>
+      {:else}
+        <div class="dialog-content">
+          <label>
+            <span>Folder name</span>
+            <input bind:value={folderName} maxlength="64" autocomplete="off" />
+          </label>
+          {#if errorMessage}<p class="error-message" role="alert">{errorMessage}</p>{/if}
+          <footer class="dialog-actions">
+            <span class="action-spacer"></span>
+            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>Cancel</button>
+            <button class="primary-button" type="button" disabled={!folderName.trim()} onclick={handleRenameCurrentFolder}>Save changes</button>
           </footer>
         </div>
       {/if}
