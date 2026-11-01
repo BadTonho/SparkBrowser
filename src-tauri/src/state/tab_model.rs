@@ -14,6 +14,28 @@ pub struct TabInfo {
     pub last_active_epoch: u64,
     #[serde(default)]
     pub navigation: NavigationState,
+    #[serde(default)]
+    pub is_pinned: bool,
+    #[serde(default)]
+    pub activity: TabActivity,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TabActivity {
+    pub dirty_form: bool,
+    pub playing_media: bool,
+    pub downloading: bool,
+}
+
+impl TabInfo {
+    pub fn protected_from_hibernation(&self) -> bool {
+        self.is_active
+            || self.is_pinned
+            || self.navigation.loading
+            || self.activity.dirty_form
+            || self.activity.playing_media
+            || self.activity.downloading
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -44,6 +66,8 @@ impl TabInfo {
             is_hibernated: false,
             last_active_epoch: Self::current_epoch_secs(),
             navigation: NavigationState::default(),
+            is_pinned: false,
+            activity: TabActivity::default(),
         }
     }
 

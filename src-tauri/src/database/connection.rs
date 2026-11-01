@@ -74,8 +74,6 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
             created_at INTEGER NOT NULL
         );
 
-        CREATE INDEX IF NOT EXISTS idx_history_recent ON history(visited_at DESC, id DESC);
-        CREATE INDEX IF NOT EXISTS idx_downloads_recent ON downloads(created_at DESC, id DESC);
 
         CREATE TABLE IF NOT EXISTS tab_usage_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,33 +82,25 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
         );
         CREATE INDEX IF NOT EXISTS idx_tab_usage_events_tab_time
             ON tab_usage_events(tab_id, activated_at);
-        CREATE INDEX IF NOT EXISTS idx_tab_usage_time ON tab_usage_events(activated_at);
         ",
     )
     .map_err(|e| format!("Failed to initialize database schema: {}", e))?;
 
-    let mut columns = conn
-        .prepare("PRAGMA table_info(bookmarks)")
-        .map_err(|e| format!("Failed to inspect bookmarks schema: {e}"))?;
-    let has_folder_id = columns
-        .query_map([], |row| row.get::<_, String>(1))
-        .map_err(|e| format!("Failed to read bookmarks schema: {e}"))?
-        .filter_map(Result::ok)
-        .any(|name| name == "folder_id");
-    drop(columns);
-    if !has_folder_id {
-        conn.execute(
-            "ALTER TABLE bookmarks ADD COLUMN folder_id INTEGER REFERENCES bookmark_folders(id) ON DELETE SET NULL",
-            [],
+    crate::database::migrations::apply(&conn, "bookmark-folders-column-v1", |conn| {
+        if !crate::database::migrations::has_column(conn, "bookmarks", "folder_id")? {
+            conn.execute_batch("ALTER TABLE bookmarks ADD COLUMN folder_id INTEGER REFERENCES bookmark_folders(id) ON DELETE SET NULL").map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    })?;
+    crate::database::migrations::upgrade_session(&conn)?;
+    crate::database::migrations::apply(&conn, "chronological-indexes-v1", |conn| {
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_history_recent ON history(visited_at DESC, id DESC);
+         CREATE INDEX IF NOT EXISTS idx_downloads_recent ON downloads(created_at DESC, id DESC);
+         CREATE INDEX IF NOT EXISTS idx_tab_usage_time ON tab_usage_events(activated_at);",
         )
-        .map_err(|e| format!("Failed to add bookmark folder support: {e}"))?;
-    }
-
-    // Ensure workspace_id column exists if upgrading from Phase 3 table
-    let _ = conn.execute(
-        "ALTER TABLE session_tabs ADD COLUMN workspace_id TEXT NOT NULL DEFAULT 'ws-personal'",
-        [],
-    );
+        .map_err(|e| e.to_string())
+    })?;
 
     crate::database::bookmarks_repo::migrate_default_bookmarks_once(&conn)?;
     crate::database::bookmarks_repo::migrate_trailing_slash_default_bookmarks_once(&conn)?;

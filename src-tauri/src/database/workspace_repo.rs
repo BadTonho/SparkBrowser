@@ -1,7 +1,6 @@
 use crate::state::workspace_model::WorkspaceItem;
 use rusqlite::{params, Connection, OptionalExtension};
 
-const WORKSPACE_PALETTE_MIGRATION_VERSION: i64 = 1;
 const LEGACY_DEFAULT_WORKSPACE_COLORS: [(&str, &str, &str); 4] = [
     ("ws-personal", "#6e8efb", "#a777e3"),
     ("ws-work", "#38bdf8", "#6366f1"),
@@ -51,39 +50,23 @@ pub fn initialize_workspace_table(conn: &Connection) -> Result<(), String> {
 }
 
 fn migrate_legacy_default_workspace_colors(conn: &Connection) -> Result<(), String> {
-    let current_version: i64 = conn
-        .pragma_query_value(None, "user_version", |row| row.get(0))
-        .map_err(|e| format!("Failed to read workspace palette version: {e}"))?;
-    if current_version >= WORKSPACE_PALETTE_MIGRATION_VERSION {
-        return Ok(());
-    }
-
-    let defaults = WorkspaceItem::default_workspaces();
-    let tx = conn
-        .unchecked_transaction()
-        .map_err(|e| format!("Failed to start workspace palette migration: {e}"))?;
-    for (workspace_id, legacy_primary, legacy_secondary) in LEGACY_DEFAULT_WORKSPACE_COLORS {
-        let Some(default) = defaults.iter().find(|item| item.id == workspace_id) else {
-            continue;
-        };
-        tx.execute(
-            "UPDATE workspaces SET accent_primary = ?1
-             WHERE id = ?2 AND lower(accent_primary) = ?3",
-            params![default.accent_primary, workspace_id, legacy_primary],
-        )
-        .map_err(|e| format!("Failed to migrate workspace primary color: {e}"))?;
-        tx.execute(
-            "UPDATE workspaces SET accent_secondary = ?1
-             WHERE id = ?2 AND lower(accent_secondary) = ?3",
-            params![default.accent_secondary, workspace_id, legacy_secondary],
-        )
-        .map_err(|e| format!("Failed to migrate workspace secondary color: {e}"))?;
-    }
-    tx.pragma_update(None, "user_version", WORKSPACE_PALETTE_MIGRATION_VERSION)
-        .map_err(|e| format!("Failed to record workspace palette migration: {e}"))?;
-    tx.commit()
-        .map_err(|e| format!("Failed to finish workspace palette migration: {e}"))?;
-    Ok(())
+    crate::database::migrations::apply(conn, "workspace-palette-v1", |tx| {
+        // Older releases used user_version for this migration. Import its marker without reapplying it.
+        let legacy_version: i64 = tx
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .map_err(|e| e.to_string())?;
+        if legacy_version >= 1 {
+            return Ok(());
+        }
+        let defaults = WorkspaceItem::default_workspaces();
+        for (id, primary, secondary) in LEGACY_DEFAULT_WORKSPACE_COLORS {
+            if let Some(default) = defaults.iter().find(|item| item.id == id) {
+                tx.execute("UPDATE workspaces SET accent_primary = ?1 WHERE id = ?2 AND lower(accent_primary) = ?3", params![default.accent_primary, id, primary]).map_err(|e| e.to_string())?;
+                tx.execute("UPDATE workspaces SET accent_secondary = ?1 WHERE id = ?2 AND lower(accent_secondary) = ?3", params![default.accent_secondary, id, secondary]).map_err(|e| e.to_string())?;
+            }
+        }
+        Ok(())
+    })
 }
 
 pub fn list_workspaces(conn: &Connection) -> Result<Vec<WorkspaceItem>, String> {
@@ -295,6 +278,11 @@ mod tests {
     fn migrates_only_legacy_default_colors_once() {
         let conn = database();
         conn.pragma_update(None, "user_version", 0).unwrap();
+        conn.execute(
+            "DELETE FROM app_migrations WHERE name = 'workspace-palette-v1'",
+            [],
+        )
+        .unwrap();
         conn.execute(
             "UPDATE workspaces SET accent_primary = '#6e8efb', accent_secondary = '#a777e3'
              WHERE id = 'ws-personal'",

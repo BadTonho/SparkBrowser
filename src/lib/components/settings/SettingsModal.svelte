@@ -11,6 +11,8 @@
     overlayBlurPx,
     setOverlayBlurPx,
     autoHibernateMode,
+    residentTabLimit,
+    setResidentTabLimit,
     setAutoHibernateMode,
     defaultSearchEngine,
     SEARCH_ENGINES,
@@ -574,6 +576,11 @@
           {:else if $activeSettingsCategory === "performance_privacy"}
             <section class="setting-group" aria-labelledby="performance-heading">
               <h2 class="group-title" id="performance-heading">🚀 Performance & Privacy</h2>
+
+              <div class="setting-row" id="setting-resident-limit" tabindex="-1">
+                <div class="row-text"><span class="row-label">Resident Tab Limit</span><span class="row-desc">Keep up to this many WebViews awake. Active, pinned, loading, media, download and edited-form tabs are protected.</span></div>
+                <input type="number" min="1" max="100" step="1" value={$residentTabLimit} aria-label="Resident tab limit" onchange={event => setResidentTabLimit(Number(event.currentTarget.value))} />
+              </div>
 
               <div class="setting-row" id="setting-adblock-shield" tabindex="-1">
                 <div class="row-text">

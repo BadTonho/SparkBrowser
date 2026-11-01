@@ -51,6 +51,8 @@
   import {
     toggleSettingsModal,
     autoHibernateMode,
+    residentTabLimit,
+    setResidentTabLimit,
     toggleZenMode,
     isZenMode,
     tabLayout,
@@ -95,7 +97,7 @@
     motionPreference.addEventListener("change", updateMotionPreference);
 
     initializeWorkspaces();
-    initializeTabs();
+    void initializeTabs().then(() => setResidentTabLimit(get(residentTabLimit)));
     loadBookmarks();
     initializePrivacyStats();
     initializeKeyboardShortcuts();
@@ -132,7 +134,7 @@
     // Apply the selected automatic hibernation policy once per minute.
     const hibernationInterval = setInterval(() => {
       const mode = get(autoHibernateMode);
-      if (mode !== "off") suspendInactiveTabs(mode);
+      void suspendInactiveTabs(mode);
     }, 60_000);
 
     const handleGlobalShortcuts = (event: KeyboardEvent) => {

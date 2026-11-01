@@ -18,7 +18,8 @@ use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
 use commands::shortcuts::set_keyboard_shortcuts;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
-    hibernate_tab, move_tab_to_workspace, reorder_tabs, switch_tab,
+    hibernate_tab, move_tab_to_workspace, reorder_tabs, set_resident_limit, set_tab_pinned,
+    switch_tab,
 };
 use commands::workspaces::{
     create_workspace, delete_workspace, get_active_workspace, get_workspaces, switch_workspace,
@@ -135,6 +136,8 @@ pub fn run() {
             reload_page,
             sync_viewport_bounds,
             get_tabs,
+            set_resident_limit,
+            set_tab_pinned,
             create_tab,
             switch_tab,
             close_tab,

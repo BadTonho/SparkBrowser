@@ -113,7 +113,7 @@ export function applyTabsSnapshot(packet: TabSnapshot): void {
   const snapshot = incoming.map(tab => {
     const old = byId.get(tab.id);
     return old && (old.navigation?.revision ?? 0) > (tab.navigation?.revision ?? 0)
-      ? { ...tab, url: old.url, title: old.title, navigation: old.navigation } : tab;
+      ? { ...tab, url: old.url, title: old.title, navigation: old.navigation, activity: old.activity } : tab;
   });
   tabs.set(dragOrder ? orderedTabs(snapshot, dragOrder.preview) : snapshot);
   const active = snapshot.find(tab => tab.is_active) ?? snapshot[0];
@@ -355,4 +355,12 @@ export async function triggerForward(): Promise<void> {
 
 export async function triggerReload(): Promise<void> {
   await reloadCurrentPage();
+}
+
+export async function toggleTabPin(tabId: string): Promise<void> {
+  const tab = get(tabs).find(tab => tab.id === tabId);
+  if (!tab) return;
+  if (!isTauriRuntime()) { tabs.update(items => items.map(item => item.id === tabId ? { ...item, is_pinned: !item.is_pinned } : item)); return; }
+  const { invoke } = await import("@tauri-apps/api/core");
+  applyTabsSnapshot(await invoke<TabSnapshot>("set_tab_pinned", { tabId, pinned: !tab.is_pinned }));
 }

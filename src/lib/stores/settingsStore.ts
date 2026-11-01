@@ -254,3 +254,17 @@ export function toggleZenMode(): void {
   }
 }
 
+
+const savedResidentLimit = Number(safeStorage.getItem("veloce_resident_limit"));
+export const residentTabLimit = writable(Number.isInteger(savedResidentLimit) && savedResidentLimit >= 1 && savedResidentLimit <= 100 ? savedResidentLimit : 8);
+export async function setResidentTabLimit(limit: number): Promise<void> {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) return;
+  const { isTauriRuntime } = await import("../services/tauri-bridge");
+  if (isTauriRuntime()) {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const { applyTabsSnapshot } = await import("./browserStore");
+    applyTabsSnapshot(await invoke("set_resident_limit", { limit }));
+  }
+  residentTabLimit.set(limit);
+  safeStorage.setItem("veloce_resident_limit", String(limit));
+}

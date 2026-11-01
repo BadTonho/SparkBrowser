@@ -37,6 +37,7 @@ pub struct TabSnapshot {
 }
 
 pub struct BrowserState {
+    pub resident_limit: std::sync::atomic::AtomicUsize,
     pub snapshot_revision: Mutex<u64>,
     pub tab_operations: tauri::async_runtime::Mutex<()>,
     pub workspaces: Mutex<Vec<WorkspaceItem>>,
@@ -68,6 +69,7 @@ impl Default for BrowserState {
             true,
         );
         Self {
+            resident_limit: std::sync::atomic::AtomicUsize::new(8),
             snapshot_revision: Mutex::new(0),
             tab_operations: tauri::async_runtime::Mutex::new(()),
             workspaces: Mutex::new(WorkspaceItem::default_workspaces()),

@@ -36,6 +36,8 @@ export interface TabItem {
   is_hibernated: boolean;
   last_active_epoch?: number;
   navigation?: NavigationState;
+  is_pinned?: boolean;
+  activity?: { dirty_form: boolean; playing_media: boolean; downloading: boolean };
 }
 
 export interface HistoryEntry {
@@ -97,4 +99,4 @@ export interface NavigationState {
   can_go_back: boolean | null;
   can_go_forward: boolean | null;
 }
-export interface NavigationPatch { id: string; url: string; title: string; navigation: NavigationState; }
+export interface NavigationPatch { activity?: TabItem["activity"]; id: string; url: string; title: string; navigation: NavigationState; }

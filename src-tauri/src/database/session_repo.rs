@@ -35,14 +35,14 @@ fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Strin
         }
     }
     let mut upsert = conn.prepare_cached(
-        "INSERT INTO session_tabs (tab_id, title, url, workspace_id, is_active, is_hibernated, position)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+        "INSERT INTO session_tabs (tab_id, title, url, workspace_id, is_active, is_hibernated, position, is_pinned)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
          ON CONFLICT(tab_id) DO UPDATE SET title=excluded.title, url=excluded.url,
            workspace_id=excluded.workspace_id, is_active=excluded.is_active,
-           is_hibernated=excluded.is_hibernated, position=excluded.position
+           is_hibernated=excluded.is_hibernated, position=excluded.position, is_pinned=excluded.is_pinned
          WHERE title IS NOT excluded.title OR url IS NOT excluded.url
            OR workspace_id IS NOT excluded.workspace_id OR is_active IS NOT excluded.is_active
-           OR is_hibernated IS NOT excluded.is_hibernated OR position IS NOT excluded.position"
+           OR is_hibernated IS NOT excluded.is_hibernated OR position IS NOT excluded.position OR is_pinned IS NOT excluded.is_pinned"
     ).map_err(|e| e.to_string())?;
     for (idx, tab) in tabs.iter().enumerate() {
         upsert
@@ -53,7 +53,8 @@ fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Strin
                 tab.workspace_id,
                 tab.is_active,
                 tab.is_hibernated,
-                idx as i64
+                idx as i64,
+                tab.is_pinned
             ])
             .map_err(|e| e.to_string())?;
     }
@@ -65,7 +66,7 @@ fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Strin
 pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT tab_id, title, url, workspace_id, is_active
+            "SELECT tab_id, title, url, workspace_id, is_active, is_pinned
              FROM session_tabs
              ORDER BY position ASC",
         )
@@ -87,6 +88,8 @@ pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
                 is_hibernated: !active_bool,
                 last_active_epoch: TabInfo::current_epoch_secs(),
                 navigation: Default::default(),
+                is_pinned: row.get(5)?,
+                activity: Default::default(),
             })
         })
         .map_err(|e| e.to_string())?;
@@ -113,7 +116,7 @@ mod tests {
             "CREATE TABLE session_tabs (
             tab_id TEXT PRIMARY KEY, title TEXT NOT NULL, url TEXT NOT NULL,
             workspace_id TEXT NOT NULL, is_active INTEGER NOT NULL,
-            is_hibernated INTEGER NOT NULL, position INTEGER NOT NULL
+            is_hibernated INTEGER NOT NULL, position INTEGER NOT NULL, is_pinned INTEGER NOT NULL DEFAULT 0
         )",
         )
         .unwrap();
@@ -132,8 +135,10 @@ mod tests {
         save_session_tabs(&conn, &tabs).unwrap();
         assert_eq!(conn.total_changes(), before);
         tabs[1].title = "Changed".into();
+        tabs[1].is_pinned = true;
         save_session_tabs(&conn, &tabs).unwrap();
         assert_eq!(conn.total_changes(), before + 1);
+        assert!(load_session_tabs(&conn).unwrap()[1].is_pinned);
         tabs.pop();
         save_session_tabs(&conn, &tabs).unwrap();
         assert_eq!(conn.total_changes(), before + 2);

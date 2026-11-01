@@ -32,13 +32,25 @@ pub(super) fn update_navigation(
     let Some(tab) = tabs.iter_mut().find(|tab| tab.id == tab_id) else {
         return;
     };
-    let before = (tab.url.clone(), tab.title.clone(), tab.navigation.clone());
+    let before = (
+        tab.url.clone(),
+        tab.title.clone(),
+        tab.navigation.clone(),
+        tab.activity.clone(),
+    );
     update(tab);
-    if before == (tab.url.clone(), tab.title.clone(), tab.navigation.clone()) {
+    if before
+        == (
+            tab.url.clone(),
+            tab.title.clone(),
+            tab.navigation.clone(),
+            tab.activity.clone(),
+        )
+    {
         return;
     }
     tab.navigation.revision += 1;
-    let payload = serde_json::json!({ "id": tab.id, "url": tab.url, "title": tab.title, "navigation": tab.navigation });
+    let payload = serde_json::json!({ "id": tab.id, "url": tab.url, "title": tab.title, "navigation": tab.navigation, "activity": tab.activity });
     drop(tabs);
     let _ = app.emit("tab-navigation-updated", payload);
 }

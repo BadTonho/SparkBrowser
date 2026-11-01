@@ -98,6 +98,10 @@ fn ensure_tab_webview(
     let app_handle_for_nav = app.clone();
 
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
+        .initialization_script(include_str!("page_activity.js").replace(
+            "__ACTIVITY_TOKEN__",
+            &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
+        ))
         .initialization_script(build_content_shield_script(shield_enabled))
         .initialization_script(WORKSPACE_SWITCHER_ESCAPE_SCRIPT);
 
@@ -128,6 +132,8 @@ fn ensure_tab_webview(
                 tab.navigation.loading = started;
                 if started {
                     tab.navigation.error = None;
+                    tab.activity.dirty_form = false;
+                    tab.activity.playing_media = false;
                 }
                 if matches!(payload.url().scheme(), "http" | "https") {
                     tab.url = payload.url().to_string();
@@ -202,6 +208,23 @@ fn ensure_tab_webview(
     let tab_for_nav = tab_id.to_string();
     let label_for_nav = label.clone();
     let webview_builder = webview_builder.on_navigation(move |nav_url| {
+        if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("page-activity") {
+            let values: std::collections::HashMap<_, _> = nav_url.query_pairs().collect();
+            if values.get("token").map(|v| v.as_ref()) == Some(keyboard_bridge_token.as_str()) {
+                update_navigation(
+                    &app_handle_for_nav,
+                    &tab_for_nav,
+                    &label_for_nav,
+                    &keyboard_bridge_token,
+                    |tab| {
+                        tab.activity.dirty_form = values.get("dirty").is_some_and(|v| v == "true");
+                        tab.activity.playing_media =
+                            values.get("media").is_some_and(|v| v == "true");
+                    },
+                );
+            }
+            return false;
+        }
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("workspace-switcher")
         {
             handle_workspace_switcher_navigation(&app_handle_for_nav, nav_url);
@@ -455,6 +478,12 @@ fn navigate_content_history(app: &AppHandle, go_back: bool) -> Result<(), String
 
 /// Synchronizes visibility and bounds of the child WebView.
 pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
+    crate::state::memory_policy::enforce_resident_limit(
+        &mut state.tabs.lock().map_err(|e| e.to_string())?,
+        state
+            .resident_limit
+            .load(std::sync::atomic::Ordering::Relaxed),
+    );
     let bounds = state.bounds.lock().map(|b| *b).unwrap_or_default();
     let overlay_open = state.is_overlay_open.lock().map(|o| *o).unwrap_or(false);
     let workspace_switcher_open = state

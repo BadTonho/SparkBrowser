@@ -25,7 +25,15 @@ History searches all stored visits with a bounded page size, literal wildcard es
 
 Command suggestions are computed only while open, ranked by title/URL relevance, normalized for accents and capped per category. Preference access uses an adapter that handles denied storage and quota errors, retains in-memory state and notifies the user without logging stored values.
 
+## Resident memory and migrations
+
+A configurable soft resident limit (default 8, range 1?100) hibernates the least recently used eligible tabs. Active, pinned, loading, edited-form, playing-media and downloading tabs are protected; the target can be exceeded when necessary. Pinned state survives session restoration. Automatic hibernation skips protected tabs and skips persistence/reconciliation when nothing changes. The resident cap still applies when the idle timer is off.
+
+Activity detection is best effort for top-level DOM forms and audio/video; it cannot guarantee detection of iframe state, Web Audio, custom editors or application-specific unsaved work. Pin important pages explicitly. Only boolean activity flags are transported, with per-view generation checks.
+
+Schema additions and chronological indexes use named transactional migrations. Existing palette `user_version` is imported into the shared migration ledger without reapplying a completed migration. Tests cover legacy session upgrades, idempotence, rollback and pin restoration.
+
 ## Remaining stages
 
-- Resident WebView limits, download tasks and local security boundaries.
+- Download tasks and local security boundaries.
 - Modularization, diagnostics, continuous validation and measured release guidance.

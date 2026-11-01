@@ -90,6 +90,12 @@ pub fn search_history(
         .map_err(|e| e.to_string())
 }
 
+pub fn clear_all_history(conn: &Connection) -> Result<(), String> {
+    conn.execute("DELETE FROM history", [])
+        .map_err(|e| format!("Failed to clear history: {}", e))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,10 +136,4 @@ mod tests {
         assert!(plan.contains("idx_history_recent"));
         assert!(!plan.contains("TEMP B-TREE"));
     }
-}
-
-pub fn clear_all_history(conn: &Connection) -> Result<(), String> {
-    conn.execute("DELETE FROM history", [])
-        .map_err(|e| format!("Failed to clear history: {}", e))?;
-    Ok(())
 }

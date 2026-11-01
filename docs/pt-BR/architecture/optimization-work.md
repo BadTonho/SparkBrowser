@@ -25,6 +25,14 @@ O hist?rico pesquisa todas as visitas armazenadas com p?ginas limitadas, escape 
 
 Sugest?es de comandos s?o calculadas somente com a barra aberta, classificadas pela relev?ncia de t?tulo/URL, normalizadas para acentos e limitadas por categoria. O acesso ?s prefer?ncias usa um adaptador que trata armazenamento negado e falta de espa?o, mant?m o estado em mem?ria e avisa o usu?rio sem registrar valores armazenados.
 
+## Mem?ria residente e migra??es
+
+Um limite flex?vel configur?vel de abas residentes (padr?o 8, intervalo 1?100) hiberna as abas eleg?veis menos usadas recentemente. Abas ativas, fixadas, carregando, com formul?rio alterado, m?dia reproduzindo ou download s?o protegidas; o alvo pode ser ultrapassado quando necess?rio. A fixa??o ? mantida na restaura??o da sess?o. A hiberna??o autom?tica ignora abas protegidas e evita persist?ncia/reconcilia??o quando nada mudou. O limite residente continua v?lido com o temporizador de inatividade desligado.
+
+A detec??o de atividade ? uma tentativa para formul?rios DOM e ?udio/v?deo do documento principal; n?o garante detectar estado de iframes, Web Audio, editores personalizados ou trabalho n?o salvo espec?fico da aplica??o. Fixe p?ginas importantes explicitamente. Somente sinalizadores booleanos s?o transmitidos, com verifica??o da gera??o de cada view.
+
+Adi??es de esquema e ?ndices cronol?gicos usam migra??es transacionais nomeadas. O `user_version` de paletas existente ? importado para o registro compartilhado sem reaplicar uma migra??o conclu?da. Testes cobrem atualiza??o de sess?es antigas, idempot?ncia, rollback e restaura??o de fixa??o.
+
 ## Etapas restantes
 
 - Busca no histórico, classificação de comandos e armazenamento confiável.
