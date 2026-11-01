@@ -51,7 +51,9 @@
       ondragover={(e) => handleDragOver(e, ws.id)}
       ondragleave={(e) => handleDragLeave(e, ws.id)}
       ondrop={(e) => handleDrop(e, ws.id)}
-      title="Switch to {ws.name} Workspace (Alt+{index + 1})"
+      title={index < 9
+        ? `Switch to ${ws.name} Workspace (Alt+${index + 1})`
+        : `Switch to ${ws.name} Workspace`}
       style="--ws-primary: {ws.accent_primary}; --ws-secondary: {ws.accent_secondary};"
     >
       <span class="ws-icon">{ws.icon}</span>
@@ -64,6 +66,8 @@
   .workspace-bar {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+    max-height: 150px;
+    overflow-y: auto;
     gap: 5px;
     padding: 4px;
     border-radius: var(--radius-md);
@@ -78,9 +82,22 @@
     padding: 2px;
     flex: 0 1 auto;
     min-width: 0;
+    max-width: min(36vw, 460px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(110, 142, 251, 0.45) transparent;
     background: transparent;
     border: 0;
   }
+
+  .workspace-bar.horizontal::-webkit-scrollbar { height: 4px; }
+  .workspace-bar.horizontal::-webkit-scrollbar-thumb {
+    border-radius: 99px;
+    background: rgba(110, 142, 251, 0.45);
+  }
+
+  .workspace-bar.horizontal .ws-pill { flex: 0 0 auto; }
 
   .ws-pill {
     position: relative;

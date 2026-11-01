@@ -37,6 +37,7 @@
   import {
     initializeWorkspaces,
     activeWorkspaceId,
+    workspaces,
     activateWorkspace,
   } from "./lib/stores/workspaceStore";
   import { toggleDownloadsDrawer } from "./lib/stores/downloadsStore";
@@ -103,23 +104,12 @@
         return;
       }
 
-      // Alt + 1, 2, 3, 4: Switch Workspaces (Personal, Work, Study, Gaming)
-      if (
-        event.altKey &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        ["1", "2", "3", "4"].includes(event.key)
-      ) {
-        event.preventDefault();
-        const wsMap: Record<string, string> = {
-          "1": "ws-personal",
-          "2": "ws-work",
-          "3": "ws-study",
-          "4": "ws-gaming",
-        };
-        const targetId = wsMap[event.key];
-        if (targetId) {
-          activateWorkspace(targetId);
+      // Alt + 1..9 selects a workspace by its current display order.
+      if (event.altKey && !event.ctrlKey && !event.metaKey && /^[1-9]$/.test(event.key)) {
+        const target = get(workspaces)[Number(event.key) - 1];
+        if (target) {
+          event.preventDefault();
+          activateWorkspace(target.id);
         }
         return;
       }

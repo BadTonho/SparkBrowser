@@ -21,6 +21,12 @@ export interface WorkspaceItem {
   accent_secondary: string;
 }
 
+export interface WorkspaceDeleteResult {
+  workspaces: WorkspaceItem[];
+  tabs: TabItem[];
+  active_workspace_id: string;
+}
+
 export interface TabItem {
   id: string;
   title: string;

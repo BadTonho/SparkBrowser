@@ -14,11 +14,7 @@
     setActiveSettingsCategory,
     type SettingsCategory,
   } from "../../stores/settingsStore";
-  import {
-    workspaces,
-    activeWorkspaceId,
-    activateWorkspace,
-  } from "../../stores/workspaceStore";
+  import WorkspaceSettings from "./WorkspaceSettings.svelte";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
 
   const categories: {
@@ -35,7 +31,7 @@
 
   const shortcutsList = [
     { keys: "Ctrl + 1..9", desc: "Switch to Tab 1–9 (Ctrl+9: Last Tab)" },
-    { keys: "Alt + 1..4", desc: "Switch Workspace (Personal, Work, Study, Gaming)" },
+    { keys: "Alt + 1..9", desc: "Switch to a workspace by its position in the list" },
     { keys: "Alt + ↑ / ↓", desc: "Move Active Tab Up / Down" },
     { keys: "Ctrl + T / Ctrl + K", desc: "Open Floating Command Bar" },
     { keys: "Ctrl + L", desc: "Edit Current URL in Command Bar" },
@@ -168,23 +164,7 @@
               </div>
             </section>
           {:else if $activeSettingsCategory === "workspaces"}
-            <section class="setting-group" aria-labelledby="workspaces-heading">
-              <h2 class="group-title" id="workspaces-heading">🎨 Active Workspace & Dynamic Theme</h2>
-              <div class="ws-selector">
-                {#each $workspaces as ws (ws.id)}
-                  <button
-                    class="ws-card"
-                    class:active={$activeWorkspaceId === ws.id}
-                    aria-pressed={$activeWorkspaceId === ws.id}
-                    onclick={() => activateWorkspace(ws.id)}
-                    style="--c1: {ws.accent_primary}; --c2: {ws.accent_secondary};"
-                  >
-                    <span class="ws-dot" aria-hidden="true"></span>
-                    <span>{ws.icon} {ws.name}</span>
-                  </button>
-                {/each}
-              </div>
-            </section>
+            <WorkspaceSettings />
           {:else if $activeSettingsCategory === "performance_privacy"}
             <section class="setting-group" aria-labelledby="performance-heading">
               <h2 class="group-title" id="performance-heading">🚀 Performance & Privacy</h2>
@@ -376,40 +356,6 @@
     text-transform: uppercase;
     letter-spacing: 0.7px;
     color: var(--text-muted);
-  }
-
-  .ws-selector {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 8px;
-  }
-
-  .ws-card {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 10px;
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-subtle);
-    font-size: 12px;
-    font-weight: 600;
-    text-align: left;
-    transition: transform 0.15s ease, border-color 0.15s ease;
-  }
-
-  .ws-card.active {
-    border-color: var(--c1);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .ws-dot {
-    width: 10px;
-    height: 10px;
-    flex: 0 0 10px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--c1), var(--c2));
   }
 
   .setting-row {

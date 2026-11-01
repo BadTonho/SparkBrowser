@@ -74,6 +74,7 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     );
 
     crate::database::bookmarks_repo::seed_default_bookmarks_if_empty(&conn)?;
+    crate::database::workspace_repo::initialize_workspace_table(&conn)?;
 
     Ok(conn)
 }

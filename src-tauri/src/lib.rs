@@ -9,12 +9,16 @@ use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_v
 use commands::persistence::{clear_browsing_history, get_bookmarks, get_history, toggle_bookmark};
 use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
 use commands::tabs::{
-    close_tab, create_tab, get_tabs, hibernate_inactive_tabs, hibernate_tab,
-    move_tab_to_workspace, reorder_tabs, set_overlay_visibility, switch_tab,
+    close_tab, create_tab, get_tabs, hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace,
+    reorder_tabs, set_overlay_visibility, switch_tab,
 };
-use commands::workspaces::{get_active_workspace, get_workspaces, switch_workspace};
+use commands::workspaces::{
+    create_workspace, delete_workspace, get_active_workspace, get_workspaces, switch_workspace,
+    update_workspace,
+};
 use database::connection::init_database;
 use database::session_repo::load_session_tabs;
+use database::workspace_repo::list_workspaces;
 use state::browser_state::{BrowserState, ViewportBounds, DEFAULT_HOME_URL, INITIAL_TAB_ID};
 use tauri::Manager;
 use window::vibrancy::apply_native_vibrancy;
@@ -36,7 +40,24 @@ pub fn run() {
             let mut active_tab_url = DEFAULT_HOME_URL.to_string();
 
             if let Ok(conn) = init_database(app.handle()) {
-                if let Ok(restored_tabs) = load_session_tabs(&conn) {
+                if let Ok(workspaces) = list_workspaces(&conn) {
+                    if !workspaces.is_empty() {
+                        if let Ok(mut workspace_guard) = state.workspaces.lock() {
+                            *workspace_guard = workspaces.clone();
+                        }
+                    }
+                }
+                if let Ok(mut restored_tabs) = load_session_tabs(&conn) {
+                    let valid_ids: Vec<String> = state
+                        .workspaces
+                        .lock()
+                        .map(|workspaces| workspaces.iter().map(|ws| ws.id.clone()).collect())
+                        .unwrap_or_default();
+                    for tab in &mut restored_tabs {
+                        if !valid_ids.iter().any(|id| id == &tab.workspace_id) {
+                            tab.workspace_id = "ws-personal".to_string();
+                        }
+                    }
                     if !restored_tabs.is_empty() {
                         if let Some(active) = restored_tabs.iter().find(|t| t.is_active) {
                             active_tab_id = active.id.clone();
@@ -93,6 +114,9 @@ pub fn run() {
             get_workspaces,
             get_active_workspace,
             switch_workspace,
+            create_workspace,
+            update_workspace,
+            delete_workspace,
             reorder_tabs,
             move_tab_to_workspace,
             get_downloads,

@@ -5,6 +5,9 @@ import {
   fetchActiveWorkspace,
   switchWorkspace,
   isTauriRuntime,
+  createWorkspaceProfile,
+  updateWorkspaceProfile,
+  deleteWorkspaceProfile,
 } from "../services/tauri-bridge";
 import { applyTabsSnapshot } from "./browserStore";
 
@@ -63,8 +66,8 @@ export async function initializeWorkspaces(): Promise<void> {
   if (wsList.length > 0) {
     workspaces.set(wsList);
   }
-  activeWorkspaceId.set(currentId);
   const found = wsList.find((w) => w.id === currentId) ?? wsList[0];
+  activeWorkspaceId.set(found?.id ?? currentId);
   if (found) {
     applyWorkspaceTheme(found);
   }
@@ -77,10 +80,80 @@ export async function activateWorkspace(workspaceId: string): Promise<void> {
   if (found) {
     applyWorkspaceTheme(found);
   }
+  if (typeof localStorage !== "undefined") {
+    if (!isTauriRuntime()) {
+      localStorage.setItem("veloce_active_workspace", workspaceId);
+    }
+  }
 
   if (isTauriRuntime()) {
     const updatedTabs = await switchWorkspace(workspaceId);
     applyTabsSnapshot(updatedTabs);
   }
+}
+
+export function createWorkspaceDraft(): WorkspaceItem {
+  const randomId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return {
+    id: `ws-custom-${randomId}`,
+    name: "New Workspace",
+    icon: "📁",
+    accent_primary: "#3b82f6",
+    accent_secondary: "#8b5cf6",
+  };
+}
+
+export async function saveWorkspaceProfile(
+  workspace: WorkspaceItem,
+  isNew: boolean
+): Promise<WorkspaceItem> {
+  const normalized = { ...workspace, name: workspace.name.trim() };
+  if (!normalized.name) throw new Error("Workspace name cannot be empty.");
+  const duplicate = get(workspaces).some(
+    (item) =>
+      item.id !== normalized.id &&
+      item.name.trim().toLocaleLowerCase() === normalized.name.toLocaleLowerCase()
+  );
+  if (duplicate) throw new Error("A workspace with this name already exists.");
+
+  const updated = isNew
+    ? await createWorkspaceProfile(normalized)
+    : await updateWorkspaceProfile(normalized);
+  workspaces.set(updated);
+  if (get(activeWorkspaceId) === normalized.id) {
+    const active = updated.find((item) => item.id === normalized.id);
+    if (active) applyWorkspaceTheme(active);
+  }
+  return normalized;
+}
+
+export async function removeWorkspaceProfile(
+  workspaceId: string,
+  action: "move" | "close",
+  targetWorkspaceId?: string
+): Promise<void> {
+  if (workspaceId === "ws-personal") {
+    throw new Error("The Personal workspace cannot be deleted.");
+  }
+  const result = await deleteWorkspaceProfile(
+    workspaceId,
+    action,
+    targetWorkspaceId
+  );
+  workspaces.set(result.workspaces);
+  activeWorkspaceId.set(result.active_workspace_id);
+  if (result.tabs.length > 0) applyTabsSnapshot(result.tabs);
+  if (typeof localStorage !== "undefined") {
+    if (!isTauriRuntime()) {
+      localStorage.setItem("veloce_active_workspace", result.active_workspace_id);
+    }
+  }
+  const active = result.workspaces.find(
+    (item) => item.id === result.active_workspace_id
+  );
+  if (active) applyWorkspaceTheme(active);
 }
 

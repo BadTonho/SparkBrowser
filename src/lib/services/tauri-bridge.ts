@@ -8,6 +8,7 @@ import type {
   PrivacyStats,
   TabItem,
   ViewportBounds,
+  WorkspaceDeleteResult,
   WorkspaceItem,
 } from "../types/browser";
 
@@ -119,6 +120,17 @@ export async function moveTabToWorkspace(
  */
 export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
   if (!isTauriRuntime()) {
+    if (typeof localStorage !== "undefined") {
+      const saved = localStorage.getItem("veloce_workspaces");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as WorkspaceItem[];
+          if (Array.isArray(parsed) && parsed.every(isWorkspaceItem)) return parsed;
+        } catch {
+          localStorage.removeItem("veloce_workspaces");
+        }
+      }
+    }
     return [
       {
         id: "ws-personal",
@@ -154,13 +166,131 @@ export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
 }
 
 export async function fetchActiveWorkspace(): Promise<string> {
-  if (!isTauriRuntime()) return "ws-personal";
+  if (!isTauriRuntime()) {
+    return typeof localStorage === "undefined"
+      ? "ws-personal"
+      : localStorage.getItem("veloce_active_workspace") ?? "ws-personal";
+  }
   return await invoke<string>("get_active_workspace");
 }
 
 export async function switchWorkspace(workspaceId: string): Promise<TabItem[]> {
   if (!isTauriRuntime()) return [];
   return await invoke<TabItem[]>("switch_workspace", { workspaceId });
+}
+
+export async function createWorkspaceProfile(
+  workspace: WorkspaceItem
+): Promise<WorkspaceItem[]> {
+  if (!isTauriRuntime()) {
+    const next = [...(await fetchWorkspaces()), workspace];
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("veloce_workspaces", JSON.stringify(next));
+    }
+    return next;
+  }
+  return await invoke<WorkspaceItem[]>("create_workspace", {
+    id: workspace.id,
+    name: workspace.name,
+    icon: workspace.icon,
+    accentPrimary: workspace.accent_primary,
+    accentSecondary: workspace.accent_secondary,
+  });
+}
+
+export async function updateWorkspaceProfile(
+  workspace: WorkspaceItem
+): Promise<WorkspaceItem[]> {
+  if (!isTauriRuntime()) {
+    const next = (await fetchWorkspaces()).map((item) =>
+      item.id === workspace.id ? workspace : item
+    );
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("veloce_workspaces", JSON.stringify(next));
+    }
+    return next;
+  }
+  return await invoke<WorkspaceItem[]>("update_workspace", {
+    id: workspace.id,
+    name: workspace.name,
+    icon: workspace.icon,
+    accentPrimary: workspace.accent_primary,
+    accentSecondary: workspace.accent_secondary,
+  });
+}
+
+export async function deleteWorkspaceProfile(
+  workspaceId: string,
+  action: "move" | "close",
+  targetWorkspaceId?: string
+): Promise<WorkspaceDeleteResult> {
+  if (isTauriRuntime()) {
+    return await invoke<WorkspaceDeleteResult>("delete_workspace", {
+      workspaceId,
+      action,
+      targetWorkspaceId: targetWorkspaceId ?? null,
+    });
+  }
+
+  const allWorkspaces = await fetchWorkspaces();
+  if (workspaceId === "ws-personal") {
+    throw new Error("The Personal workspace cannot be deleted");
+  }
+  const remaining = allWorkspaces.filter((item) => item.id !== workspaceId);
+  const savedTabs = await fetchTabs();
+  const activeId =
+    typeof localStorage === "undefined"
+      ? "ws-personal"
+      : localStorage.getItem("veloce_active_workspace") ?? "ws-personal";
+  const deletingActive = activeId === workspaceId;
+  const nextActiveId = deletingActive
+    ? action === "move"
+      ? targetWorkspaceId ?? "ws-personal"
+      : "ws-personal"
+    : activeId;
+  let nextTabs = savedTabs;
+  if (action === "move" && targetWorkspaceId) {
+    nextTabs = savedTabs.map((tab) =>
+      tab.workspace_id === workspaceId
+        ? { ...tab, workspace_id: targetWorkspaceId }
+        : tab
+    );
+  } else {
+    nextTabs = savedTabs.filter((tab) => tab.workspace_id !== workspaceId);
+    if (deletingActive && !nextTabs.some((tab) => tab.workspace_id === "ws-personal")) {
+      nextTabs.push({
+        id: `tab-${Date.now()}`,
+        title: "DuckDuckGo",
+        url: "https://duckduckgo.com",
+        workspace_id: "ws-personal",
+        is_active: false,
+        is_hibernated: false,
+      });
+    }
+  }
+  const activeTab = deletingActive
+    ? [...nextTabs].reverse().find((tab) => tab.workspace_id === nextActiveId)
+    : nextTabs.find((tab) => tab.is_active);
+  nextTabs = nextTabs.map((tab) => ({
+    ...tab,
+    is_active: tab.id === activeTab?.id,
+  }));
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem("veloce_workspaces", JSON.stringify(remaining));
+    localStorage.setItem("veloce_active_workspace", nextActiveId);
+  }
+  return {
+    workspaces: remaining,
+    tabs: nextTabs,
+    active_workspace_id: nextActiveId,
+  };
+}
+
+function isWorkspaceItem(value: unknown): value is WorkspaceItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<WorkspaceItem>;
+  return [item.id, item.name, item.icon, item.accent_primary, item.accent_secondary]
+    .every((field) => typeof field === "string");
 }
 
 /**

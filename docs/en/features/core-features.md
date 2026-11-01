@@ -16,8 +16,10 @@
 
 ## 4. 🎨 Workspaces & Dynamic Themes
 - Group tabs by context (e.g., *Work*, *Study*, *Personal*, *Gaming*).
-- Instant switching shortcuts: `Alt + 1` (Personal), `Alt + 2` (Work), `Alt + 3` (Study), and `Alt + 4` (Gaming).
-- Each Workspace can define its own accent colors and subtle gradient tints on the translucent window frame.
+- `Alt + 1` through `Alt + 9` switch to the first nine workspaces in their displayed order.
+- In Browser Settings, rename a workspace, change its emoji and theme colors, create workspaces, or delete them. Personal is protected.
+- When deleting a workspace with open tabs, move them to another workspace or close them; closed tabs remain in browsing history.
+- Each workspace has its own accent colors and subtle gradient tints on the translucent window frame. Editing a workspace in Settings does not activate it.
 
 ## 5. 📐 Zen / Focus Mode
 - A single shortcut hides all browser toolbars and sidebars, giving **100% of the screen** to the active website.
