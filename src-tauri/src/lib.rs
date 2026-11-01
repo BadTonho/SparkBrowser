@@ -18,6 +18,10 @@ use commands::persistence::{
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
 use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
+use commands::saved_sessions::{
+    delete_named_session, get_saved_sessions, rename_named_session, restore_named_session,
+    save_named_session,
+};
 use commands::shortcuts::set_keyboard_shortcuts;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
@@ -134,6 +138,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_saved_sessions,
+            save_named_session,
+            rename_named_session,
+            delete_named_session,
+            restore_named_session,
             get_diagnostics,
             navigate_to,
             go_back,

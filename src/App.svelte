@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
   import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -300,6 +301,7 @@
   <HistoryDrawer />
   <DownloadsDrawer />
   <SettingsModal />
+  <ToolsPanel />
   <BookmarkEditor />
   <BookmarkContextMenu />
   <WorkspaceSwitcherOverlay />

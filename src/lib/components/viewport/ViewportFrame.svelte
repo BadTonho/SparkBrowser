@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isToolsOpen } from "../../stores/toolsStore";
   import { onMount } from "svelte";
   import {
     tabs,
@@ -17,7 +18,7 @@
   const inTauri = isTauriRuntime();
 
   let anyOverlayOpen = $derived(
-    $isCommandBarOpen ||
+    $isToolsOpen || $isCommandBarOpen ||
       $isHistoryDrawerOpen ||
       $isDownloadsDrawerOpen ||
       $isSettingsModalOpen ||

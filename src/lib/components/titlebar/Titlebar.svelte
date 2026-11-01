@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { openTools } from "../../stores/toolsStore";
   import {
     addressInput,
     isAddressEditing,
@@ -177,6 +178,7 @@
 
     <!-- Top-Right Controls: Quick Tools, Settings & Window Controls -->
     <div class="titlebar-controls">
+      <button class="icon-btn" onclick={() => openTools()} title="Tools" aria-label="Tools">☷</button>
       {#if $tabLayout === "horizontal"}
         <button
           class="icon-btn"

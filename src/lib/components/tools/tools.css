@@ -1,0 +1,14 @@
+.tools-backdrop { position: fixed; inset: 0; z-index: 700; display: grid; place-items: center; padding: 24px; background: #0008; }
+.tools-panel { width: min(800px, 100%); max-height: 88vh; display: flex; flex-direction: column; padding: 22px; gap: 16px; background: var(--bg-primary, #17191f); color: var(--text-primary, #eee); border: 1px solid var(--border-subtle, #45454c); border-radius: var(--radius-lg, 16px); box-shadow: 0 16px 70px #0008; }
+.tools-panel header, .tools-panel nav, .tools-panel form, .tools-panel .tool-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tools-panel header { justify-content: space-between; }
+.tools-panel h2, .tools-panel h3 { margin: 0; }
+.tools-panel .tools-content { overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.tools-panel p, .tools-panel span { color: var(--text-secondary, #b9bdca); overflow-wrap: anywhere; }
+.tools-panel input, .tools-panel textarea, .tools-panel select { min-width: 0; padding: 10px; color: inherit; background: #ffffff08; border: 1px solid var(--border-subtle, #45454c); border-radius: 6px; }
+.tools-panel input { flex: 1; }
+.tools-panel button { padding: 8px 12px; color: inherit; background: #ffffff0d; border: 1px solid var(--border-subtle, #45454c); border-radius: 6px; cursor: pointer; }
+.tools-panel button[aria-pressed=true] { background: var(--accent-primary, #6659d6); }
+.tools-panel button:disabled { opacity: .45; cursor: default; }
+.tools-panel .tool-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--border-subtle, #45454c); border-radius: 8px; }
+.tools-panel :focus-visible { outline: 2px solid var(--accent-primary, #a89aff); outline-offset: 2px; }

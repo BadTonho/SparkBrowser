@@ -1,3 +1,5 @@
+export interface SavedSession { id: number; name: string; pages: { title: string; url: string; is_pinned: boolean; is_selected: boolean }[]; }
+
 export interface ViewportBounds {
   x: number;
   y: number;

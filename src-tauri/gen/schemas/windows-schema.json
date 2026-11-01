@@ -231,6 +231,12 @@
           "markdownDescription": "Enables the delete_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Enables the delete_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-named-session",
+          "markdownDescription": "Enables the delete_named_session command without any pre-configured scope."
+        },
+        {
           "description": "Enables the delete_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-delete-workspace",
@@ -283,6 +289,12 @@
           "type": "string",
           "const": "allow-get-privacy-stats",
           "markdownDescription": "Enables the get_privacy_stats command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_saved_sessions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-saved-sessions",
+          "markdownDescription": "Enables the get_saved_sessions command without any pre-configured scope."
         },
         {
           "description": "Enables the get_tabs command without any pre-configured scope.",
@@ -351,16 +363,34 @@
           "markdownDescription": "Enables the rename_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Enables the rename_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-rename-named-session",
+          "markdownDescription": "Enables the rename_named_session command without any pre-configured scope."
+        },
+        {
           "description": "Enables the reorder_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "allow-reorder-tabs",
           "markdownDescription": "Enables the reorder_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the restore_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-restore-named-session",
+          "markdownDescription": "Enables the restore_named_session command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_bookmark command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-bookmark",
           "markdownDescription": "Enables the save_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-named-session",
+          "markdownDescription": "Enables the save_named_session command without any pre-configured scope."
         },
         {
           "description": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope.",
@@ -483,6 +513,12 @@
           "markdownDescription": "Denies the delete_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Denies the delete_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-named-session",
+          "markdownDescription": "Denies the delete_named_session command without any pre-configured scope."
+        },
+        {
           "description": "Denies the delete_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "deny-delete-workspace",
@@ -535,6 +571,12 @@
           "type": "string",
           "const": "deny-get-privacy-stats",
           "markdownDescription": "Denies the get_privacy_stats command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_saved_sessions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-saved-sessions",
+          "markdownDescription": "Denies the get_saved_sessions command without any pre-configured scope."
         },
         {
           "description": "Denies the get_tabs command without any pre-configured scope.",
@@ -603,16 +645,34 @@
           "markdownDescription": "Denies the rename_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Denies the rename_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-rename-named-session",
+          "markdownDescription": "Denies the rename_named_session command without any pre-configured scope."
+        },
+        {
           "description": "Denies the reorder_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "deny-reorder-tabs",
           "markdownDescription": "Denies the reorder_tabs command without any pre-configured scope."
         },
         {
+          "description": "Denies the restore_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-restore-named-session",
+          "markdownDescription": "Denies the restore_named_session command without any pre-configured scope."
+        },
+        {
           "description": "Denies the save_bookmark command without any pre-configured scope.",
           "type": "string",
           "const": "deny-save-bookmark",
           "markdownDescription": "Denies the save_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_named_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-named-session",
+          "markdownDescription": "Denies the save_named_session command without any pre-configured scope."
         },
         {
           "description": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope.",

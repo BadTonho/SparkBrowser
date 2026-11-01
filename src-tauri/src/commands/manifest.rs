@@ -1,5 +1,10 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_saved_sessions",
+    "save_named_session",
+    "rename_named_session",
+    "delete_named_session",
+    "restore_named_session",
     "get_diagnostics",
     "navigate_to",
     "go_back",

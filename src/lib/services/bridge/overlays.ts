@@ -6,6 +6,7 @@ import type { WorkspaceItem } from "../../types/browser";
 import { isTauriRuntime } from "./runtime";
 
 export type OverlayId =
+  | "tools"
   | "command-bar"
   | "history"
   | "downloads"

@@ -3,6 +3,11 @@
   "identifier": "default",
   "description": "Default capabilities for the main browser shell window",
   "permissions": [
+    "allow-get-saved-sessions",
+    "allow-save-named-session",
+    "allow-rename-named-session",
+    "allow-delete-named-session",
+    "allow-restore-named-session",
     "allow-get-diagnostics",
     "core:window:allow-minimize",
     "core:window:allow-internal-toggle-maximize",

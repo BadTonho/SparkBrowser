@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { openTools } from "../../stores/toolsStore";
   import { rankCommands, normalizeSearch } from "../../services/command-ranking.js";
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
@@ -136,6 +137,7 @@
     }
 
     const browserCommands: CommandItem[] = [
+      ...(["sessions", "tabs", "notes"] as const).map(section => ({ id: `cmd-tools-${section}`, title: `Open ${section}`, subtitle: "Browser tools", icon: "\u2637", badge: "Tools", action: async () => { await closeCommandBar(); await openTools(section); } })),
       {
         id: "cmd-zen",
         title: "Toggle Zen Focus Mode",

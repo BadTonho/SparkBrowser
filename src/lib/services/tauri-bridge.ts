@@ -1,3 +1,4 @@
+export * from "./bridge/saved-sessions";
 /** Stable facade; implementation is separated by native domain. */
 export * from "./bridge/runtime";
 export * from "./bridge/navigation";
