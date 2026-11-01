@@ -139,7 +139,8 @@ let workspaceSwitcherSyncQueue: Promise<void> = Promise.resolve();
 export async function setWorkspaceSwitcherOverlay(
   visible: boolean,
   workspaces: WorkspaceItem[],
-  activeWorkspaceId: string
+  activeWorkspaceId: string,
+  backdropBlurPx: number
 ): Promise<void> {
   if (!isTauriRuntime()) return;
 
@@ -150,6 +151,7 @@ export async function setWorkspaceSwitcherOverlay(
         visible,
         workspaces,
         activeWorkspaceId,
+        backdropBlurPx,
       })
     );
   await workspaceSwitcherSyncQueue;

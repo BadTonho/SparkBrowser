@@ -12,6 +12,7 @@ import {
   activeWorkspaceId,
   workspaces,
 } from "./workspaceStore";
+import { overlayBlurPx } from "./settingsStore";
 
 export type WorkspaceSwitcherOverlay = { kind: "picker" };
 
@@ -49,7 +50,8 @@ function setOverlay(overlay: WorkspaceSwitcherOverlay | null): void {
     void setWorkspaceSwitcherOverlay(
       willBeOpen,
       get(workspaces),
-      get(activeWorkspaceId)
+      get(activeWorkspaceId),
+      get(overlayBlurPx)
     ).catch(() => undefined);
   }
 }

@@ -29,12 +29,14 @@ pub fn build_workspace_switcher_update_script(
     active_workspace_id: &str,
     token: &str,
     visible: bool,
+    backdrop_blur_px: u8,
 ) -> Result<String, String> {
     let payload = serde_json::to_string(&serde_json::json!({
         "workspaces": workspaces,
         "activeWorkspaceId": active_workspace_id,
         "token": token,
         "visible": visible,
+        "backdropBlurPx": backdrop_blur_px.min(24),
     }))
     .map_err(|error| format!("Failed to serialize workspace switcher: {error}"))?;
     Ok(format!(

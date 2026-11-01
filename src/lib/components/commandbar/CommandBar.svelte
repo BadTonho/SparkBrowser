@@ -327,7 +327,7 @@
     inset: 0;
     z-index: 999;
     background: rgba(8, 8, 8, 0.62);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(var(--overlay-backdrop-blur, 16px));
     display: flex;
     align-items: flex-start;
     justify-content: center;

@@ -1,4 +1,5 @@
 :root {
+  --overlay-backdrop-blur: 16px;
   --bg-glass-primary: rgba(12, 12, 12, 0.72);
   --bg-glass-elevated: rgba(28, 28, 28, 0.78);
   --bg-glass-hover: rgba(255, 255, 255, 0.08);

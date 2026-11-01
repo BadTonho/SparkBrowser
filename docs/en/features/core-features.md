@@ -42,5 +42,6 @@
 ## 8. Organized Browser Settings
 - Settings are split into **Appearance & Layout**, **Search & Navigation**, **Workspaces & Theme**, **Performance & Privacy**, and **Keyboard Shortcuts**.
 - Search all categories, settings, and keyboard shortcuts from the field beside the Browser Settings title; selecting a result opens its category and highlights the destination.
+- Adjust the shared background blur for temporary overlays from **0–24 px** in Appearance & Layout; the preference is applied immediately and remembered across restarts.
 - Use the fixed category rail to switch between panels; only the selected panel is shown and scrolls when its content is taller than the window.
 - The last selected category is remembered when the dialog is reopened and across app restarts.

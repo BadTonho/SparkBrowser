@@ -127,7 +127,7 @@
     box-shadow:
       0 12px 32px rgba(0, 0, 0, 0.4),
       0 0 24px color-mix(in srgb, var(--accent-primary) 14%, transparent);
-    backdrop-filter: blur(18px);
+    backdrop-filter: blur(var(--overlay-backdrop-blur, 16px));
   }
 
   .workspace-list {

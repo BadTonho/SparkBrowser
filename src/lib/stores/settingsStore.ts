@@ -12,6 +12,50 @@ export const isZenMode = writable<boolean>(false);
 export const autoHibernateMinutes = writable<number>(10);
 export const defaultSearchEngine = writable<string>("DuckDuckGo");
 
+export const DEFAULT_OVERLAY_BLUR_PX = 16;
+export const MAX_OVERLAY_BLUR_PX = 24;
+const OVERLAY_BLUR_STORAGE_KEY = "veloce_overlay_blur_px";
+
+function getInitialOverlayBlurPx(): number {
+  if (typeof localStorage === "undefined") return DEFAULT_OVERLAY_BLUR_PX;
+
+  try {
+    const saved = localStorage.getItem(OVERLAY_BLUR_STORAGE_KEY);
+    if (saved === null || saved.trim() === "") return DEFAULT_OVERLAY_BLUR_PX;
+
+    const value = Number(saved);
+    return Number.isInteger(value) && value >= 0 && value <= MAX_OVERLAY_BLUR_PX
+      ? value
+      : DEFAULT_OVERLAY_BLUR_PX;
+  } catch {
+    return DEFAULT_OVERLAY_BLUR_PX;
+  }
+}
+
+function applyOverlayBlurPx(value: number): void {
+  if (typeof document !== "undefined") {
+    document.documentElement.style.setProperty("--overlay-backdrop-blur", `${value}px`);
+  }
+}
+
+export const overlayBlurPx = writable<number>(getInitialOverlayBlurPx());
+applyOverlayBlurPx(get(overlayBlurPx));
+
+export function setOverlayBlurPx(value: number): void {
+  const rounded = Number.isFinite(value) ? Math.round(value) : DEFAULT_OVERLAY_BLUR_PX;
+  const next = Math.max(0, Math.min(MAX_OVERLAY_BLUR_PX, rounded));
+  overlayBlurPx.set(next);
+  applyOverlayBlurPx(next);
+
+  if (typeof localStorage !== "undefined") {
+    try {
+      localStorage.setItem(OVERLAY_BLUR_STORAGE_KEY, String(next));
+    } catch {
+      // Keep the current visual setting even when storage is unavailable.
+    }
+  }
+}
+
 export type SettingsCategory =
   | "appearance_layout"
   | "search_navigation"

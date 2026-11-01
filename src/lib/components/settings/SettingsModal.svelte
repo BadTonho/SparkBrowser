@@ -7,6 +7,8 @@
     closeSettingsModal,
     isZenMode,
     toggleZenMode,
+    overlayBlurPx,
+    setOverlayBlurPx,
     autoHibernateMinutes,
     defaultSearchEngine,
     tabLayout,
@@ -63,6 +65,14 @@
       category: "appearance_layout",
       targetId: "setting-browser-layout",
       keywords: "horizontal vertical tabs sidebar workspaces bookmarks",
+    },
+    {
+      id: "background-blur",
+      title: "Background Blur",
+      description: "Control the blur intensity behind browser overlays.",
+      category: "appearance_layout",
+      targetId: "setting-background-blur",
+      keywords: "overlay intensity transparency glass 0 24 px",
     },
     {
       id: "zen-mode",
@@ -340,6 +350,26 @@
                 </div>
               </div>
 
+              <div class="setting-row" id="setting-background-blur" tabindex="-1">
+                <div class="row-text">
+                  <span class="row-label">Background Blur</span>
+                  <span class="row-desc">Adjust blur behind browser overlays</span>
+                </div>
+                <div class="range-control">
+                  <input
+                    type="range"
+                    min="0"
+                    max="24"
+                    step="1"
+                    value={$overlayBlurPx}
+                    oninput={(event) => setOverlayBlurPx(Number(event.currentTarget.value))}
+                    aria-label="Background blur intensity"
+                    aria-valuetext={`${$overlayBlurPx} pixels`}
+                  />
+                  <output>{ $overlayBlurPx } px</output>
+                </div>
+              </div>
+
               <div class="setting-row" id="setting-zen-mode" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Zen / Focus Mode (Alt + Z)</span>
@@ -429,7 +459,7 @@
     inset: 0;
     z-index: 995;
     background: rgba(8, 8, 8, 0.62);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(var(--overlay-backdrop-blur, 16px));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -766,6 +796,29 @@
     gap: 4px;
   }
 
+  .range-control {
+    min-width: 160px;
+    flex: 0 1 280px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .range-control input {
+    min-width: 0;
+    flex: 1 1 auto;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+  }
+
+  .range-control output {
+    min-width: 42px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
   .mini-pill {
     padding: 5px 8px;
     border-radius: 6px;
@@ -899,8 +952,14 @@
 
     .timer-pills,
     .pill-action,
-    .engine-label {
+    .engine-label,
+    .range-control {
       align-self: flex-start;
+    }
+
+    .range-control {
+      width: 100%;
+      max-width: 340px;
     }
 
     .settings-search-result {

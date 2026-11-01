@@ -261,6 +261,7 @@ pub async fn set_workspace_switcher_overlay(
     visible: bool,
     workspaces: Vec<WorkspaceItem>,
     active_workspace_id: String,
+    backdrop_blur_px: u8,
 ) -> Result<(), String> {
     let webview = app
         .get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL)
@@ -274,6 +275,7 @@ pub async fn set_workspace_switcher_overlay(
         &active_workspace_id,
         &token,
         visible,
+        backdrop_blur_px.min(24),
     )?;
 
     if let Ok(mut current_token) = state.workspace_switcher_token.lock() {

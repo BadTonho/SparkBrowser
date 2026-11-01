@@ -97,7 +97,7 @@
     inset: 0;
     z-index: 990;
     background: rgba(8, 8, 8, 0.55);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(var(--overlay-backdrop-blur, 16px));
     display: flex;
     justify-content: flex-start;
     padding: 46px 0 12px 12px;
