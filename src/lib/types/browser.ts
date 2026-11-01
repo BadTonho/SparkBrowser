@@ -2,6 +2,8 @@ export interface SavedSession { id: number; name: string; pages: { title: string
 
 export interface SiteSearchShortcut { keyword: string; name: string; template: string; }
 
+export interface PageNote { url: string; title: string; text: string; updated_at: number; }
+
 export interface ViewportBounds {
   x: number;
   y: number;

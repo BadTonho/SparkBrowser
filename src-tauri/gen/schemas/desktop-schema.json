@@ -237,6 +237,12 @@
           "markdownDescription": "Enables the delete_named_session command without any pre-configured scope."
         },
         {
+          "description": "Enables the delete_page_note command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-page-note",
+          "markdownDescription": "Enables the delete_page_note command without any pre-configured scope."
+        },
+        {
           "description": "Enables the delete_site_search_shortcut command without any pre-configured scope.",
           "type": "string",
           "const": "allow-delete-site-search-shortcut",
@@ -289,6 +295,12 @@
           "type": "string",
           "const": "allow-get-history",
           "markdownDescription": "Enables the get_history command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_page_note command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-page-note",
+          "markdownDescription": "Enables the get_page_note command without any pre-configured scope."
         },
         {
           "description": "Enables the get_privacy_stats command without any pre-configured scope.",
@@ -405,10 +417,22 @@
           "markdownDescription": "Enables the save_named_session command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_page_note command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-page-note",
+          "markdownDescription": "Enables the save_page_note command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_site_search_shortcut command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-site-search-shortcut",
           "markdownDescription": "Enables the save_site_search_shortcut command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the search_page_notes command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-search-page-notes",
+          "markdownDescription": "Enables the search_page_notes command without any pre-configured scope."
         },
         {
           "description": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope.",
@@ -537,6 +561,12 @@
           "markdownDescription": "Denies the delete_named_session command without any pre-configured scope."
         },
         {
+          "description": "Denies the delete_page_note command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-page-note",
+          "markdownDescription": "Denies the delete_page_note command without any pre-configured scope."
+        },
+        {
           "description": "Denies the delete_site_search_shortcut command without any pre-configured scope.",
           "type": "string",
           "const": "deny-delete-site-search-shortcut",
@@ -589,6 +619,12 @@
           "type": "string",
           "const": "deny-get-history",
           "markdownDescription": "Denies the get_history command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_page_note command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-page-note",
+          "markdownDescription": "Denies the get_page_note command without any pre-configured scope."
         },
         {
           "description": "Denies the get_privacy_stats command without any pre-configured scope.",
@@ -705,10 +741,22 @@
           "markdownDescription": "Denies the save_named_session command without any pre-configured scope."
         },
         {
+          "description": "Denies the save_page_note command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-page-note",
+          "markdownDescription": "Denies the save_page_note command without any pre-configured scope."
+        },
+        {
           "description": "Denies the save_site_search_shortcut command without any pre-configured scope.",
           "type": "string",
           "const": "deny-save-site-search-shortcut",
           "markdownDescription": "Denies the save_site_search_shortcut command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the search_page_notes command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-search-page-notes",
+          "markdownDescription": "Denies the search_page_notes command without any pre-configured scope."
         },
         {
           "description": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope.",

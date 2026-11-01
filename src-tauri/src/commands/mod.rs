@@ -1,5 +1,6 @@
 pub mod downloads;
 pub mod navigation;
+pub mod notes;
 pub mod persistence;
 pub mod privacy;
 pub mod saved_sessions;

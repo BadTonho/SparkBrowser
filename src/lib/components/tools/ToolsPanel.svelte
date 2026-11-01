@@ -2,6 +2,7 @@
   import { focusDialog } from "../../actions/focusDialog";
   import { isToolsOpen, toolsSection, closeTools, type ToolsSection } from "../../stores/toolsStore";
   import SessionsPanel from "./SessionsPanel.svelte";
+  import NotesPanel from "./NotesPanel.svelte";
   import "./tools.css";
   const sections: { id: ToolsSection; label: string }[] = [{ id: "sessions", label: "Sessions" }, { id: "tabs", label: "Tabs" }, { id: "notes", label: "Notes" }];
 </script>
@@ -15,6 +16,7 @@
       </nav>
       <div class="tools-content">
         {#if $toolsSection === "sessions"}<SessionsPanel />
+        {:else if $toolsSection === "notes"}<NotesPanel />
         {:else}<p>This section will be available in the next implementation stages.</p>{/if}
       </div>
     </div>

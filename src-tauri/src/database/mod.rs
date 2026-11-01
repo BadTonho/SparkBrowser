@@ -4,6 +4,7 @@ pub mod downloads_repo;
 pub mod history_repo;
 pub mod migrations;
 pub mod navigation_writer;
+pub mod notes_repo;
 pub mod saved_sessions_repo;
 pub mod session_repo;
 pub mod site_search_repo;

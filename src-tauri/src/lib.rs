@@ -10,6 +10,7 @@ use commands::downloads::{
     cancel_download, clear_all_downloads, enqueue_download, get_download_tasks, get_downloads,
 };
 use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
+use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_overlay_visibility, set_workspace_switcher_overlay,
 };
@@ -149,6 +150,10 @@ pub fn run() {
             get_site_search_shortcuts,
             save_site_search_shortcut,
             delete_site_search_shortcut,
+            get_page_note,
+            search_page_notes,
+            save_page_note,
+            delete_page_note,
             get_diagnostics,
             navigate_to,
             go_back,
