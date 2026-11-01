@@ -81,12 +81,12 @@ export function setTabLayout(layout: TabLayout): void {
 
 export async function openSettingsModal(): Promise<void> {
   isSettingsModalOpen.set(true);
-  await setOverlayVisibility(true);
+  await setOverlayVisibility(true, "settings");
 }
 
 export async function closeSettingsModal(): Promise<void> {
   isSettingsModalOpen.set(false);
-  await setOverlayVisibility(false);
+  await setOverlayVisibility(false, "settings");
 }
 
 export async function toggleSettingsModal(): Promise<void> {

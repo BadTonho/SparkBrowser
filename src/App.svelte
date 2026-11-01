@@ -37,8 +37,6 @@
   import {
     initializeWorkspaces,
     activeWorkspaceId,
-    workspaces,
-    activateWorkspace,
   } from "./lib/stores/workspaceStore";
   import { toggleDownloadsDrawer } from "./lib/stores/downloadsStore";
   import {
@@ -53,6 +51,16 @@
     onTabsUpdated,
     onPrivacyStatsUpdated,
   } from "./lib/services/tauri-bridge";
+  import WorkspaceSwitcherOverlay from "./lib/components/workspaces/WorkspaceSwitcherOverlay.svelte";
+  import {
+    cancelWorkspaceAltHoldTimer,
+    dismissWorkspacePicker,
+    handleWorkspaceShortcutEvent,
+    initializeWorkspaceShortcutBridge,
+    releaseWorkspaceAlt,
+    startWorkspaceAltHold,
+    workspaceSwitcherOverlay,
+  } from "./lib/stores/workspaceSwitcherStore";
 
   onMount(() => {
     initializeWorkspaces();
@@ -63,6 +71,7 @@
     let unlistenUrl: (() => void) | undefined;
     let unlistenTabs: (() => void) | undefined;
     let unlistenPrivacy: (() => void) | undefined;
+    const stopWorkspaceShortcutBridge = initializeWorkspaceShortcutBridge();
 
     onContentUrlChanged((newUrl) => {
       currentUrl.set(newUrl);
@@ -89,7 +98,50 @@
       suspendInactiveTabs(thresholdSecs);
     }, 60_000);
 
+    const isAltKey = (event: KeyboardEvent) =>
+      event.key === "Alt" || event.code === "AltLeft" || event.code === "AltRight";
+
     const handleGlobalShortcuts = (event: KeyboardEvent) => {
+      const openWorkspaceOverlay = get(workspaceSwitcherOverlay);
+
+      if (event.key === "Escape" && openWorkspaceOverlay) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (openWorkspaceOverlay.kind === "picker") dismissWorkspacePicker();
+        return;
+      }
+
+      if (isAltKey(event)) {
+        if (!event.repeat) {
+          event.preventDefault();
+          startWorkspaceAltHold();
+        }
+        return;
+      }
+
+      if (
+        event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        /^[1-9]$/.test(event.key)
+      ) {
+        event.preventDefault();
+        if (!event.repeat) {
+          void handleWorkspaceShortcutEvent({
+            type: "select-index",
+            index: Number(event.key),
+          });
+        }
+        return;
+      }
+
+      if (openWorkspaceOverlay) return;
+
+      if (event.altKey) {
+        cancelWorkspaceAltHoldTimer();
+      }
+
       const isUp = event.key === "ArrowUp" || event.key === "Up";
       const isDown = event.key === "ArrowDown" || event.key === "Down";
       const isAltOrCtrlShift = event.altKey || (event.ctrlKey && event.shiftKey);
@@ -101,16 +153,6 @@
       } else if (isAltOrCtrlShift && isDown) {
         event.preventDefault();
         moveActiveTabDown(get(activeWorkspaceId));
-        return;
-      }
-
-      // Alt + 1..9 selects a workspace by its current display order.
-      if (event.altKey && !event.ctrlKey && !event.metaKey && /^[1-9]$/.test(event.key)) {
-        const target = get(workspaces)[Number(event.key) - 1];
-        if (target) {
-          event.preventDefault();
-          activateWorkspace(target.id);
-        }
         return;
       }
 
@@ -181,13 +223,22 @@
       }
     };
 
-    window.addEventListener("keydown", handleGlobalShortcuts);
+    const handleGlobalKeyup = (event: KeyboardEvent) => {
+      if (isAltKey(event)) {
+        releaseWorkspaceAlt();
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcuts, true);
+    window.addEventListener("keyup", handleGlobalKeyup, true);
     return () => {
       clearInterval(hibernationInterval);
       if (unlistenUrl) unlistenUrl();
       if (unlistenTabs) unlistenTabs();
       if (unlistenPrivacy) unlistenPrivacy();
-      window.removeEventListener("keydown", handleGlobalShortcuts);
+      stopWorkspaceShortcutBridge();
+      window.removeEventListener("keydown", handleGlobalShortcuts, true);
+      window.removeEventListener("keyup", handleGlobalKeyup, true);
     };
   });
 </script>
@@ -210,6 +261,7 @@
   <HistoryDrawer />
   <DownloadsDrawer />
   <SettingsModal />
+  <WorkspaceSwitcherOverlay />
 </div>
 
 <style>

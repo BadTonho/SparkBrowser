@@ -20,7 +20,7 @@ use database::connection::init_database;
 use database::session_repo::load_session_tabs;
 use database::workspace_repo::list_workspaces;
 use state::browser_state::{BrowserState, ViewportBounds, DEFAULT_HOME_URL, INITIAL_TAB_ID};
-use tauri::Manager;
+use tauri::{Emitter, Manager, WindowEvent};
 use window::vibrancy::apply_native_vibrancy;
 use window::webview_manager::spawn_content_webview;
 
@@ -28,6 +28,11 @@ use window::webview_manager::spawn_content_webview;
 pub fn run() {
     tauri::Builder::default()
         .manage(BrowserState::default())
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
+                let _ = window.emit("workspace-shortcut-cancel", ());
+            }
+        })
         .setup(|app| {
             if let Some(main_webview_window) = app.get_webview_window("main") {
                 apply_native_vibrancy(&main_webview_window);

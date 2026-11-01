@@ -16,7 +16,9 @@
 
 ## 4. 🎨 Workspaces & Dynamic Themes
 - Group tabs by context (e.g., *Work*, *Study*, *Personal*, *Gaming*).
-- `Alt + 1` through `Alt + 9` switch to the first nine workspaces in their displayed order.
+- Hold `Alt` for two seconds to open the centered workspace picker. Choose a workspace while holding Alt, or release Alt, press `Esc`, or click outside to dismiss it.
+- `Alt + 1` through `Alt + 9` switch immediately to the first nine workspaces in their displayed order and show a brief confirmation.
+- The picker and confirmation can appear temporarily in Zen Mode; closing them leaves Zen Mode enabled.
 - In Browser Settings, rename a workspace, change its emoji and theme colors, create workspaces, or delete them. Personal is protected.
 - When deleting a workspace with open tabs, move them to another workspace or close them; closed tabs remain in browsing history.
 - Each workspace has its own accent colors and subtle gradient tints on the translucent window frame. Editing a workspace in Settings does not activate it.

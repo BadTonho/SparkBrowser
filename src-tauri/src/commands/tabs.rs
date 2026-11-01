@@ -47,9 +47,6 @@ pub async fn create_tab(
         if let Ok(mut active) = state.active_tab_id.lock() {
             *active = new_tab_id;
         }
-        if let Ok(mut overlay) = state.is_overlay_open.lock() {
-            *overlay = false;
-        }
     }
 
     // Navigate the persistent child WebView after all state locks are dropped
@@ -91,9 +88,6 @@ pub async fn switch_tab(
         }
         if let Ok(mut active) = state.active_tab_id.lock() {
             *active = tab_id;
-        }
-        if let Ok(mut overlay) = state.is_overlay_open.lock() {
-            *overlay = false;
         }
     }
 

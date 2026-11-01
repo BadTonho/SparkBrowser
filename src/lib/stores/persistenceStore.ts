@@ -50,12 +50,12 @@ export async function wipeBrowsingHistory(): Promise<void> {
 export async function openHistoryDrawer(): Promise<void> {
   await loadHistory();
   isHistoryDrawerOpen.set(true);
-  await setOverlayVisibility(true);
+  await setOverlayVisibility(true, "history");
 }
 
 export async function closeHistoryDrawer(): Promise<void> {
   isHistoryDrawerOpen.set(false);
-  await setOverlayVisibility(false);
+  await setOverlayVisibility(false, "history");
 }
 
 export async function toggleHistoryDrawer(): Promise<void> {

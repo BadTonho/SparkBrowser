@@ -17,14 +17,14 @@ export async function openCommandBar(initialQuery = ""): Promise<void> {
   commandQuery.set(initialQuery);
   isCommandBarOpen.set(true);
   commandBarScale.set(1);
-  await setOverlayVisibility(true);
+  await setOverlayVisibility(true, "command-bar");
 }
 
 export async function closeCommandBar(): Promise<void> {
   commandBarScale.set(0.92);
   isCommandBarOpen.set(false);
   commandQuery.set("");
-  await setOverlayVisibility(false);
+  await setOverlayVisibility(false, "command-bar");
 }
 
 export async function toggleCommandBar(): Promise<void> {

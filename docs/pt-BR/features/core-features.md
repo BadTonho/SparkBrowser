@@ -16,7 +16,9 @@
 
 ## 4. 🎨 Workspaces (Espaços de Trabalho) e Temas Dinâmicos
 - Separação de abas por contexto (ex: *Trabalho*, *Estudo*, *Pessoal*, *Jogos*).
-- `Alt + 1` até `Alt + 9` alternam para os nove primeiros espaços de trabalho, conforme a ordem exibida.
+- Segure `Alt` por dois segundos para abrir o seletor central de espaços de trabalho. Escolha um perfil enquanto mantém Alt pressionado ou solte Alt, pressione `Esc` ou clique fora para fechar sem trocar.
+- `Alt + 1` até `Alt + 9` alternam imediatamente para os nove primeiros espaços, conforme a ordem exibida, e mostram uma confirmação breve.
+- O seletor e a confirmação também aparecem temporariamente no Modo Zen; ao fechá-los, o Modo Zen continua ativo.
 - Em Browser Settings, renomeie um espaço de trabalho, altere seu emoji e suas cores, crie novos ou exclua os existentes. Personal é protegido.
 - Ao excluir um espaço de trabalho com abas abertas, transfira-as para outro espaço ou feche-as; as abas fechadas continuam no histórico de navegação.
 - Cada espaço de trabalho tem suas próprias cores de destaque e gradientes na moldura translúcida da janela. Editá-lo nas configurações não o ativa.

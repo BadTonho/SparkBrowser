@@ -31,7 +31,8 @@
 
   const shortcutsList = [
     { keys: "Ctrl + 1..9", desc: "Switch to Tab 1–9 (Ctrl+9: Last Tab)" },
-    { keys: "Alt + 1..9", desc: "Switch to a workspace by its position in the list" },
+    { keys: "Hold Alt (2 sec)", desc: "Open the workspace picker" },
+    { keys: "Alt + 1..9", desc: "Switch workspaces by list order and show a confirmation" },
     { keys: "Alt + ↑ / ↓", desc: "Move Active Tab Up / Down" },
     { keys: "Ctrl + T / Ctrl + K", desc: "Open Floating Command Bar" },
     { keys: "Ctrl + L", desc: "Edit Current URL in Command Bar" },

@@ -9,6 +9,7 @@
   import { isHistoryDrawerOpen } from "../../stores/persistenceStore";
   import { isDownloadsDrawerOpen } from "../../stores/downloadsStore";
   import { isSettingsModalOpen, isZenMode } from "../../stores/settingsStore";
+  import { isWorkspaceSwitcherOverlayOpen } from "../../stores/workspaceSwitcherStore";
   import { syncViewportBounds, isTauriRuntime } from "../../services/tauri-bridge";
 
   let viewportEl: HTMLDivElement | undefined = $state();
@@ -18,7 +19,8 @@
     $isCommandBarOpen ||
       $isHistoryDrawerOpen ||
       $isDownloadsDrawerOpen ||
-      $isSettingsModalOpen
+      $isSettingsModalOpen ||
+      $isWorkspaceSwitcherOverlayOpen
   );
 
   function measureAndSync() {
@@ -60,19 +62,21 @@
 <main class="viewport-shell" class:zen={$isZenMode}>
   <div class="viewport-frame" bind:this={viewportEl}>
     {#if !inTauri || anyOverlayOpen}
-      <div class="browser-preview-fallback">
-        <div class="fallback-card">
-          <h2>🦀 Multi-WebView Viewport ({$tabs.length} {$tabs.length === 1 ? "Tab" : "Tabs"})</h2>
-          <p>Active URL: <strong>{$currentUrl}</strong></p>
-          <p class="hint">
-            {#if anyOverlayOpen}
-              Overlay Active — Press <kbd>ESC</kbd> to return to the active WebView.
-            {:else}
-              Run via <code>npm run tauri dev</code> to mount the native Rust child WebView inside this frame.
-            {/if}
-          </p>
+      {#if !inTauri || !$isWorkspaceSwitcherOverlayOpen}
+        <div class="browser-preview-fallback">
+          <div class="fallback-card">
+            <h2>🦀 Multi-WebView Viewport ({$tabs.length} {$tabs.length === 1 ? "Tab" : "Tabs"})</h2>
+            <p>Active URL: <strong>{$currentUrl}</strong></p>
+            <p class="hint">
+              {#if anyOverlayOpen}
+                Overlay Active — Press <kbd>ESC</kbd> to return to the active WebView.
+              {:else}
+                Run via <code>npm run tauri dev</code> to mount the native Rust child WebView inside this frame.
+              {/if}
+            </p>
+          </div>
         </div>
-      </div>
+      {/if}
     {/if}
   </div>
 </main>

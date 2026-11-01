@@ -48,12 +48,12 @@ export async function wipeDownloads(): Promise<void> {
 export async function openDownloadsDrawer(): Promise<void> {
   await loadDownloads();
   isDownloadsDrawerOpen.set(true);
-  await setOverlayVisibility(true);
+  await setOverlayVisibility(true, "downloads");
 }
 
 export async function closeDownloadsDrawer(): Promise<void> {
   isDownloadsDrawerOpen.set(false);
-  await setOverlayVisibility(false);
+  await setOverlayVisibility(false, "downloads");
 }
 
 export async function toggleDownloadsDrawer(): Promise<void> {

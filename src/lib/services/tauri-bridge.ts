@@ -97,9 +97,34 @@ export async function hibernateBackgroundTabs(
   });
 }
 
-export async function setOverlayVisibility(visible: boolean): Promise<void> {
+export type OverlayId =
+  | "command-bar"
+  | "history"
+  | "downloads"
+  | "settings"
+  | "workspace-switcher";
+
+const activeOverlayIds = new Set<OverlayId>();
+let overlaySyncQueue: Promise<void> = Promise.resolve();
+
+/** Keeps the native content WebView hidden while any browser overlay is open. */
+export async function setOverlayVisibility(
+  visible: boolean,
+  overlayId: OverlayId
+): Promise<void> {
+  if (visible) {
+    activeOverlayIds.add(overlayId);
+  } else {
+    activeOverlayIds.delete(overlayId);
+  }
+
   if (!isTauriRuntime()) return;
-  await invoke("set_overlay_visibility", { visible });
+
+  const shouldHideContent = activeOverlayIds.size > 0;
+  overlaySyncQueue = overlaySyncQueue
+    .catch(() => undefined)
+    .then(() => invoke("set_overlay_visibility", { visible: shouldHideContent }));
+  await overlaySyncQueue;
 }
 
 export async function reorderTabs(tabIds: string[]): Promise<TabItem[]> {
@@ -402,6 +427,27 @@ export async function onPrivacyStatsUpdated(
   return await listen<PrivacyStats>("privacy-stats-updated", (event) => {
     callback(event.payload);
   });
+}
+
+export interface WorkspaceShortcutEvent {
+  type: "alt-down" | "alt-up" | "alt-cancel" | "select-index";
+  index?: number;
+}
+
+export async function onWorkspaceShortcutEvent(
+  callback: (event: WorkspaceShortcutEvent) => void
+): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => {};
+  return await listen<WorkspaceShortcutEvent>("workspace-shortcut-event", (event) => {
+    callback(event.payload);
+  });
+}
+
+export async function onWorkspaceShortcutCancel(
+  callback: () => void
+): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => {};
+  return await listen("workspace-shortcut-cancel", callback);
 }
 
 /**
