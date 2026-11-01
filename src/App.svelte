@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { slide } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   import { get } from "svelte/store";
   import Titlebar from "./lib/components/titlebar/Titlebar.svelte";
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
@@ -73,7 +75,17 @@
     workspaceSwitcherOverlay,
   } from "./lib/stores/workspaceSwitcherStore";
 
+  let prefersReducedMotion = $state(
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+
   onMount(() => {
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => {
+      prefersReducedMotion = motionPreference.matches;
+    };
+    motionPreference.addEventListener("change", updateMotionPreference);
+
     initializeWorkspaces();
     initializeTabs();
     loadBookmarks();
@@ -167,6 +179,7 @@
       if (unlistenPrivacy) unlistenPrivacy();
       if (unlistenBrowserShortcut) unlistenBrowserShortcut();
       stopWorkspaceShortcutBridge();
+      motionPreference.removeEventListener("change", updateMotionPreference);
       window.removeEventListener("keydown", handleGlobalShortcuts, true);
       window.removeEventListener("keyup", handleGlobalKeyup, true);
     };
@@ -219,7 +232,12 @@
   {/if}
   <Titlebar />
   {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar}
-    <BookmarkBar />
+    <div
+      class="bookmark-bar-transition"
+      transition:slide={{ duration: prefersReducedMotion ? 0 : 180, easing: cubicOut }}
+    >
+      <BookmarkBar />
+    </div>
   {/if}
   <div class="browser-body">
     {#if $tabLayout === "vertical"}
@@ -247,6 +265,12 @@
   .browser-body {
     flex: 1;
     display: flex;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .bookmark-bar-transition {
+    flex: 0 0 auto;
     width: 100%;
     overflow: hidden;
   }
