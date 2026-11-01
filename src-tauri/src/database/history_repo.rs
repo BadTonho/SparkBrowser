@@ -66,4 +66,3 @@ pub fn clear_all_history(conn: &Connection) -> Result<(), String> {
         .map_err(|e| format!("Failed to clear history: {}", e))?;
     Ok(())
 }
-

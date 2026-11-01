@@ -119,7 +119,7 @@
     },
     {
       id: "adblock-shield",
-      title: "Native Rust AdBlock Shield",
+      title: "Privacy Shield",
       description: "Block ad domains and trackers at the network and DOM layers.",
       category: "performance_privacy",
       targetId: "setting-adblock-shield",
@@ -575,8 +575,8 @@
 
               <div class="setting-row" id="setting-adblock-shield" tabindex="-1">
                 <div class="row-text">
-                  <span class="row-label">Native Rust AdBlock Shield</span>
-                  <span class="row-desc">Blocks ad domains & trackers at the network/DOM layer</span>
+                  <span class="row-label">Privacy Shield</span>
+                  <span class="row-desc">Filters known tracker hosts. Changing protection reloads tabs and resets page state.</span>
                 </div>
                 <button
                   class="pill-action"

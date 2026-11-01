@@ -1,4 +1,5 @@
 import { writable, get } from "svelte/store";
+import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { spring } from "svelte/motion";
 import type { QuickLink, TabItem } from "../types/browser";
 import type { AutoHibernateMode } from "./settingsStore";
@@ -92,6 +93,7 @@ export function applyTabsSnapshot(snapshot: TabItem[]): void {
   tabs.set(snapshot);
   const active = snapshot.find((t) => t.is_active) ?? snapshot[0];
   if (active) {
+    activeWorkspaceId.set(active.workspace_id);
     currentUrl.set(active.url);
     addressInput.set(active.url);
   }
@@ -108,7 +110,7 @@ export async function initializeTabs(): Promise<void> {
 
 export async function addTab(
   targetUrl?: string,
-  workspaceId = "ws-personal"
+  workspaceId = get(activeWorkspaceId)
 ): Promise<void> {
   const urlToOpen = targetUrl?.trim() || getSearchEngineHomeUrl(get(defaultSearchEngine));
   isLoading.set(true);
@@ -127,7 +129,7 @@ export async function addTab(
       applyTabsSnapshot(updated);
       return;
     }
-    const snapshot = await createNewTab(urlToOpen);
+    const snapshot = await createNewTab(urlToOpen, get(defaultSearchEngine));
     applyTabsSnapshot(snapshot);
   } finally {
     setTimeout(() => isLoading.set(false), 300);
@@ -152,6 +154,7 @@ export async function removeTab(tabId: string): Promise<void> {
   if (!isTauriRuntime()) {
     const filtered = get(tabs).filter((t) => t.id !== tabId);
     if (filtered.length === 0) {
+      tabs.set([]);
       await addTab();
       return;
     }
@@ -231,14 +234,15 @@ export async function changeTabWorkspace(
   const updated = currentTabs.map((t) =>
     t.id === tabId ? { ...t, workspace_id: targetWorkspaceId } : t
   );
-  tabs.set(updated);
+  applyTabsSnapshot(updated);
 
   if (isTauriRuntime()) {
     try {
       const snapshot = await moveTabToWorkspace(tabId, targetWorkspaceId);
       applyTabsSnapshot(snapshot);
     } catch (err) {
-      console.error("Failed to move tab to workspace:", err);
+      applyTabsSnapshot(currentTabs);
+      throw err;
     }
   }
 }
@@ -298,8 +302,13 @@ export async function submitNavigation(rawInput: string): Promise<void> {
   isLoading.set(true);
   try {
     const resolvedUrl = await navigateToUrl(trimmed, get(defaultSearchEngine));
-    currentUrl.set(resolvedUrl);
-    addressInput.set(resolvedUrl);
+    if (!isTauriRuntime()) {
+      currentUrl.set(resolvedUrl);
+      addressInput.set(resolvedUrl);
+    }
+  } catch (error) {
+    addressInput.set(get(currentUrl));
+    throw error;
   } finally {
     setTimeout(() => isLoading.set(false), 350);
   }

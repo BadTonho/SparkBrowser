@@ -83,9 +83,9 @@ export async function fetchTabs(
   return await invoke<TabItem[]>("get_tabs");
 }
 
-export async function createNewTab(url?: string): Promise<TabItem[]> {
+export async function createNewTab(url?: string, searchEngine: SearchEngine = "google"): Promise<TabItem[]> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("create_tab", { url: url ?? null });
+  return await invoke<TabItem[]>("create_tab", { url: url ?? null, searchEngine });
 }
 
 export async function switchActiveTab(tabId: string): Promise<TabItem[]> {

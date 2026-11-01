@@ -20,21 +20,7 @@ export async function startDownloadFromUrl(url: string): Promise<void> {
   const trimmed = url.trim();
   if (!trimmed) return;
 
-  if (!isTauriRuntime()) {
-    const filename = trimmed.split("/").pop() || "downloaded-file.bin";
-    downloads.update((list) => [
-      {
-        id: Date.now(),
-        file_name: filename,
-        url: trimmed,
-        save_path: `~/Downloads/${filename}`,
-        status: "Completed",
-        created_at: Math.floor(Date.now() / 1000),
-      },
-      ...list,
-    ]);
-    return;
-  }
+  if (!isTauriRuntime()) throw new Error("Downloads require the desktop application.");
 
   const updated = await enqueueDownloadUrl(trimmed);
   downloads.set(updated);

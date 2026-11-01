@@ -19,7 +19,13 @@ export const workspaces = writable<WorkspaceItem[]>(
   DEFAULT_WORKSPACES.map((workspace) => ({ ...workspace }))
 );
 
-export const activeWorkspaceId = writable<string>("ws-personal");
+export { activeWorkspaceId } from "./workspaceSelectionStore";
+import { activeWorkspaceId } from "./workspaceSelectionStore";
+
+activeWorkspaceId.subscribe((id) => {
+  const workspace = get(workspaces).find((item) => item.id === id);
+  if (workspace) applyWorkspaceTheme(workspace);
+});
 
 function getRelativeLuminance(color: string): number {
   const match = /^#([\da-f]{6})$/i.exec(color);
@@ -86,22 +92,12 @@ export async function initializeWorkspaces(): Promise<void> {
 }
 
 export async function activateWorkspace(workspaceId: string): Promise<void> {
-  activeWorkspaceId.set(workspaceId);
-  const wsList = get(workspaces);
-  const found = wsList.find((w) => w.id === workspaceId);
-  if (found) {
-    applyWorkspaceTheme(found);
-  }
-  if (typeof localStorage !== "undefined") {
-    if (!isTauriRuntime()) {
-      localStorage.setItem("veloce_active_workspace", workspaceId);
-    }
-  }
-
   if (isTauriRuntime()) {
-    const updatedTabs = await switchWorkspace(workspaceId);
-    applyTabsSnapshot(updatedTabs);
+    applyTabsSnapshot(await switchWorkspace(workspaceId));
+    return;
   }
+  activeWorkspaceId.set(workspaceId);
+  if (typeof localStorage !== "undefined") localStorage.setItem("veloce_active_workspace", workspaceId);
 }
 
 export function createWorkspaceDraft(): WorkspaceItem {

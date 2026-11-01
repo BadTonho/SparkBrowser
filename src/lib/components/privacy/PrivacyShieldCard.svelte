@@ -16,7 +16,7 @@
       </span>
       <div class="shield-labels">
         <span class="shield-title">
-          {$privacyStats.shield_enabled ? "Rust AdBlock Active" : "Shield Paused"}
+          {$privacyStats.shield_enabled ? "Privacy Shield Active" : "Shield Paused"}
         </span>
         <span class="shield-sub">
           {$privacyStats.blocked_count} trackers blocked · {hibernatedCount} 💤 saved
@@ -28,12 +28,14 @@
       class="shield-toggle"
       class:on={$privacyStats.shield_enabled}
       onclick={flipAdblockShield}
-      title="Toggle Native Rust AdBlock Shield"
+      title="Toggle privacy protection. Reloads the active page and hibernates background tabs."
       aria-label="Toggle AdBlock Shield"
     >
       <span class="toggle-knob"></span>
     </button>
   </div>
+
+  <span class="shield-sub">Changing protection reloads tabs and resets page state.</span>
 
   {#if backgroundAwakeCount > 0}
     <button

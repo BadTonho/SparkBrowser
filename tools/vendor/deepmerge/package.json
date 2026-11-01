@@ -1,0 +1,8 @@
+{
+  "name": "@veloce/deepmerge",
+  "version": "4.3.1-patched.1",
+  "private": true,
+  "main": "index.cjs",
+  "license": "MIT",
+  "description": "Local deepmerge 4.3.1 backport for GHSA-gcqx-w48m-w2h4; see docs/en/security/dependency-notes.md"
+}

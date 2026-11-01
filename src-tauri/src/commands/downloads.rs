@@ -2,24 +2,7 @@ use crate::database::downloads_repo::{
     clear_downloads, list_downloads, record_download, DownloadItem,
 };
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Manager, State, Url};
-
-fn extract_filename_from_url(raw_url: &str) -> String {
-    if let Ok(parsed) = Url::parse(raw_url) {
-        if let Some(mut segments) = parsed.path_segments() {
-            if let Some(last) = segments.next_back() {
-                let clean = last.trim();
-                if !clean.is_empty() && clean.contains('.') {
-                    return clean.to_string();
-                }
-            }
-        }
-        if let Some(host) = parsed.host_str() {
-            return format!("{}-download.html", host.trim_start_matches("www."));
-        }
-    }
-    "downloaded-file.bin".to_string()
-}
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub fn get_downloads(state: State<'_, BrowserState>) -> Result<Vec<DownloadItem>, String> {
@@ -31,31 +14,31 @@ pub fn get_downloads(state: State<'_, BrowserState>) -> Result<Vec<DownloadItem>
 }
 
 #[tauri::command]
-pub fn enqueue_download(
+pub async fn enqueue_download(
     app: AppHandle,
     state: State<'_, BrowserState>,
     url: String,
 ) -> Result<Vec<DownloadItem>, String> {
-    let trimmed = url.trim();
-    if trimmed.is_empty() {
-        return Err("Download URL cannot be empty".to_string());
+    let destination = app.path().download_dir().map_err(|e| e.to_string())?;
+    let parsed = crate::downloads::transfer::validate_download_url(&url)?;
+    let shield_enabled = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
+    if crate::privacy::adblock_engine::should_block_url(parsed.as_str(), shield_enabled) {
+        return Err("Download blocked by the privacy shield".to_string());
     }
-
-    let file_name = extract_filename_from_url(trimmed);
-    let downloads_dir = app
-        .path()
-        .download_dir()
-        .unwrap_or_else(|_| std::env::temp_dir());
-
-    let target_path = downloads_dir.join(&file_name);
-    let save_path_str = target_path.to_string_lossy().to_string();
-
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return record_download(conn, &file_name, trimmed, &save_path_str, "Completed");
-    }
-
-    Ok(Vec::new())
+    let saved = tauri::async_runtime::spawn_blocking(move || {
+        crate::downloads::transfer::download_to_directory(&parsed, &destination, shield_enabled)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Download database is not ready")?;
+    record_download(
+        conn,
+        &saved.file_name,
+        &url,
+        &saved.path.to_string_lossy(),
+        "Completed",
+    )
 }
 
 #[tauri::command]
@@ -66,4 +49,3 @@ pub fn clear_all_downloads(state: State<'_, BrowserState>) -> Result<(), String>
     }
     Ok(())
 }
-

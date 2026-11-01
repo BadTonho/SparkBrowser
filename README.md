@@ -2,7 +2,7 @@
 
 > 🌍 **Language / Idioma:** **English (Main)** | [Português (pt-BR)](./docs/pt-BR/README.md)
 
-A next-generation, open-source web browser built with **Rust (Tauri v2 / Wry)** and **Svelte (TypeScript + Modern CSS)**. Designed from the ground up for **extreme speed, minimal RAM usage**, and **fluid 60/120 FPS animations** with native OS glassmorphism.
+An open-source desktop web browser built with **Rust (Tauri v2 / Wry)** and **Svelte (TypeScript)**, with persistent tab WebViews, local SQLite storage, and native window effects.
 
 ---
 
@@ -35,7 +35,9 @@ Our documentation is organized into modular categories and available in both **E
 
 ## ⚡ Key Highlights
 
-- **Ultra-Lightweight Core (Rust):** Powered by `Tauri v2` and `wry` Multi-WebView, resulting in a ~3–5 MB binary and instant startup.
+- **Rust Core:** Powered by `Tauri v2` and `wry` Multi-WebView, using the operating system WebView runtime. Binary size and memory usage depend on the platform and build profile.
 - **Spring-Physics UI (Svelte):** Compiled without a Virtual DOM, utilizing `svelte/motion` and modern CSS for effortless 60/120 FPS animations.
 - **Native Glassmorphism:** Hardware-accelerated **Mica / Acrylic** window effects via `window-vibrancy` in Rust.
-- **Privacy & Speed by Default:** Native Rust ad and tracker blocker (`adblock-rust`) and automatic inactive tab hibernation to save RAM.
+- **Privacy & Speed by Default:** Known-host navigation filtering, best-effort page request filtering, and real inactive-tab hibernation. See [privacy behavior](./docs/en/features/core-features.md) for coverage and reload behavior.
+
+On Windows PowerShell, use `npm.cmd` if the execution policy blocks `npm.ps1`. See [validation](./docs/en/contributing/validation.md) and [dependency notes](./docs/en/security/dependency-notes.md) for checks and platform limitations.

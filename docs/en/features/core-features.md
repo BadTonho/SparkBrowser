@@ -11,9 +11,11 @@
 - Automatically suspends background tabs after 5, 10, or 30 minutes, or with adaptive **Auto** mode. Auto hibernates regular tabs after 10 minutes and tabs activated at least 10 times in the last 7 days after 5 hours of inactivity.
 - **Off** disables automatic hibernation while keeping manual hibernation available. Local activation timestamps are kept in SQLite for the 7-day adaptive window without storing page URLs.
 
-## 3. 🛡️ Native Rust AdBlock & Privacy
-- Powered by `adblock-rust` to block intrusive ads, pop-ups, and tracking scripts before pages even render.
-- Drastically improves page load times and reduces bandwidth and memory consumption.
+## 3. Privacy Shield
+- Rust rejects navigation to exact known tracker hosts and their subdomains.
+- A best-effort page script filters fetch (including URL/Request inputs), XHR, and sendBeacon, and adds cosmetic CSS. This is not a complete network blocker: parser-loaded scripts/images, service workers, and hostile page modifications can bypass page-level hooks.
+- Changing protection rebuilds content WebViews: the active page reloads and background tabs hibernate. Page state and native back/forward stacks reset on this explicit policy change; ordinary tab switching preserves them.
+- The tracker count currently measures denied navigations only, not all filtered subresources.
 
 ## 4. 🎨 Workspaces & Dynamic Themes
 - Group tabs by context (e.g., *Work*, *Study*, *Personal*, *Gaming*).
@@ -55,3 +57,9 @@
 - The last selected category is remembered when the dialog is reopened and across app restarts.
 - In **Keyboard Shortcuts**, click a shortcut and press a key combination or Mouse 4/5 to record it. The workspace picker can use a held modifier key (Alt, Ctrl, Shift, or Meta); duplicate combinations are rejected. Changes are saved across restarts and work while the browser interface or a page has focus.
 - Mouse 4 and Mouse 5 go back and forward by default and can be reassigned in **Keyboard Shortcuts**. Use `Ctrl + E` to focus and select the current address in the combined address and search bar.
+
+## 9. Direct downloads
+
+The Download Manager transfers a direct HTTP/HTTPS resource in a background worker. It writes to a temporary file, verifies completion, and saves without replacing an existing file before recording **Completed**. The panel shows transfer errors and prevents duplicate submissions while a transfer is running.
+
+These URL downloads use an independent HTTP client without the page's authenticated cookie session, and save response bytes rather than a complete offline webpage archive. Downloads require the desktop app; browser preview reports an error instead of simulated success.

@@ -11,12 +11,23 @@
   import { currentUrl } from "../../stores/browserStore";
 
   let downloadUrlInput = $state("");
+  let isDownloading = $state(false);
+  let downloadError = $state("");
 
   async function handleQuickDownload() {
     const target = downloadUrlInput.trim() || $currentUrl;
     if (!target) return;
-    await startDownloadFromUrl(target);
-    downloadUrlInput = "";
+    if (isDownloading) return;
+    isDownloading = true;
+    downloadError = "";
+    try {
+      await startDownloadFromUrl(target);
+      downloadUrlInput = "";
+    } catch (error) {
+      downloadError = error instanceof Error ? error.message : String(error);
+    } finally {
+      isDownloading = false;
+    }
   }
 </script>
 
@@ -63,10 +74,12 @@
           onkeydown={(e) => e.key === "Enter" && handleQuickDownload()}
           spellcheck="false"
         />
-        <button class="download-btn" onclick={handleQuickDownload}>
-          Download
+        <button class="download-btn" onclick={handleQuickDownload} disabled={isDownloading}>
+          {isDownloading ? "Downloading…" : "Download"}
         </button>
       </div>
+
+      {#if downloadError}<p role="alert">{downloadError}</p>{/if}
 
       <div class="downloads-list">
         {#if $downloads.length === 0}

@@ -72,4 +72,3 @@ pub fn clear_downloads(conn: &Connection) -> Result<(), String> {
         .map_err(|e| format!("Failed to clear downloads: {}", e))?;
     Ok(())
 }
-

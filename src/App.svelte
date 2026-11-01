@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { get } from "svelte/store";
@@ -269,6 +270,7 @@
 </script>
 
 <div class="browser-root">
+  <BrowserErrorBanner />
   {#if $tabLayout === "horizontal" && !$isZenMode}
     <HorizontalTabBar />
   {/if}

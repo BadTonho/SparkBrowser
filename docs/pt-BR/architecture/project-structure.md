@@ -94,3 +94,17 @@ src-tauri/
         ├── persistence.rs             # Comandos IPC de Histórico e Favoritos em SQLite
         └── privacy.rs                 # Comandos IPC do AdBlock Shield e métricas de privacidade
 ```
+
+## 3. Ciclo de vida, downloads e testes de regressão
+
+- `window/keyboard_bridge.rs`: integração de teclado da página e do sistema.
+- `window/internal_overlays.rs`: WebViews dos overlays e transporte interno de mensagens.
+- `window/url_input.rs`: resolução de URLs e pesquisas.
+- `window/content_lifecycle.rs`: reconstrução das instâncias após mudanças de privacidade.
+- `commands/overlays.rs`: visibilidade dos overlays, separada das operações de abas.
+- `downloads/transfer.rs`: transferências HTTP, arquivos temporários e salvamento sem sobrescrita.
+- `privacy/content_shield.js`: hooks de requisições com a lista de hosts compartilhada do Rust.
+- `lib/stores/workspaceSelectionStore.ts`: seleção compartilhada sem ciclo de imports.
+- `lib/components/status/BrowserErrorBanner.svelte`: exibição de erros do backend e tarefas assíncronas.
+- `tests/`: testes JavaScript de regressão; testes Rust ficam junto aos módulos.
+- `tools/vendor/deepmerge/`: dependência de build com licença e correção local.

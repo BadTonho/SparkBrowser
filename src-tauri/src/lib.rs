@@ -1,11 +1,15 @@
 pub mod commands;
 pub mod database;
+pub mod downloads;
 pub mod privacy;
 pub mod state;
 pub mod window;
 
 use commands::downloads::{clear_all_downloads, enqueue_download, get_downloads};
 use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
+use commands::overlays::{
+    set_bookmark_context_menu_overlay, set_overlay_visibility, set_workspace_switcher_overlay,
+};
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
@@ -14,8 +18,7 @@ use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
 use commands::shortcuts::set_keyboard_shortcuts;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
-    hibernate_tab, move_tab_to_workspace, reorder_tabs, set_overlay_visibility,
-    set_workspace_switcher_overlay, set_bookmark_context_menu_overlay, switch_tab,
+    hibernate_tab, move_tab_to_workspace, reorder_tabs, switch_tab,
 };
 use commands::workspaces::{
     create_workspace, delete_workspace, get_active_workspace, get_workspaces, switch_workspace,
@@ -24,12 +27,10 @@ use commands::workspaces::{
 use database::connection::init_database;
 use database::session_repo::load_session_tabs;
 use database::workspace_repo::list_workspaces;
-use state::browser_state::{BrowserState, ViewportBounds, DEFAULT_HOME_URL, INITIAL_TAB_ID};
+use state::browser_state::{BrowserState, INITIAL_TAB_ID};
 use tauri::{Emitter, Manager, WindowEvent};
 use window::vibrancy::apply_native_vibrancy;
-use window::webview_manager::{
-    spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
-};
+use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -66,12 +67,11 @@ pub fn run() {
             }
 
             let state = app.state::<BrowserState>();
-            let initial_bounds = ViewportBounds::default();
 
             let mut active_tab_id = INITIAL_TAB_ID.to_string();
-            let mut active_tab_url = DEFAULT_HOME_URL.to_string();
 
-            if let Ok(conn) = init_database(app.handle()) {
+            {
+                let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
                 if let Ok(workspaces) = list_workspaces(&conn) {
                     if !workspaces.is_empty() {
                         if let Ok(mut workspace_guard) = state.workspaces.lock() {
@@ -79,7 +79,9 @@ pub fn run() {
                         }
                     }
                 }
-                if let Ok(mut restored_tabs) = load_session_tabs(&conn) {
+                {
+                    let mut restored_tabs =
+                        load_session_tabs(&conn).map_err(std::io::Error::other)?;
                     let valid_ids: Vec<String> = state
                         .workspaces
                         .lock()
@@ -93,7 +95,6 @@ pub fn run() {
                     if !restored_tabs.is_empty() {
                         if let Some(active) = restored_tabs.iter().find(|t| t.is_active) {
                             active_tab_id = active.id.clone();
-                            active_tab_url = active.url.clone();
                             if let Ok(mut ws_guard) = state.active_workspace_id.lock() {
                                 *ws_guard = active.workspace_id.clone();
                             }
@@ -120,7 +121,7 @@ pub fn run() {
                 }
             }
 
-            spawn_content_webview(app.handle(), &active_tab_url, initial_bounds)?;
+            spawn_content_webview(app.handle())?;
 
             Ok(())
         })

@@ -1,819 +1,73 @@
+use super::internal_overlays::{
+    handle_workspace_switcher_navigation, spawn_bookmark_context_menu_webview,
+    spawn_workspace_switcher_webview,
+};
+#[cfg(windows)]
+use super::keyboard_bridge::install_workspace_shortcut_accelerator;
+use super::keyboard_bridge::{build_workspace_shortcut_script, WORKSPACE_SWITCHER_ESCAPE_SCRIPT};
 use crate::privacy::adblock_engine::{build_content_shield_script, should_block_url};
-use crate::state::browser_state::{BrowserState, ViewportBounds, DEFAULT_HOME_URL};
-use crate::state::tab_model::{derive_title_from_url, TabInfo};
-use crate::state::workspace_model::WorkspaceItem;
-use serde::{Deserialize, Serialize};
-use std::collections::hash_map::RandomState;
-use std::hash::{BuildHasher, Hash, Hasher};
-use std::time::{SystemTime, UNIX_EPOCH};
+use crate::state::browser_state::{BrowserState, ViewportBounds};
+use crate::state::tab_model::{derive_title_from_url, webview_label_for_tab};
 use tauri::{
-    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Rect, Url,
-    WebviewUrl,
+    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Rect,
+    Webview, WebviewUrl,
 };
 
-pub const CONTENT_WEBVIEW_LABEL: &str = "content-webview";
+pub use super::content_lifecycle::reset_content_webviews;
+pub use super::internal_overlays::{
+    build_bookmark_context_menu_script, build_workspace_switcher_update_script,
+    create_internal_bridge_token, BookmarkContextMenuAction,
+};
+pub use super::url_input::{resolve_input_to_url_with_search_engine, search_engine_home_url};
+pub const CONTENT_WEBVIEW_PREFIX: &str = "content-webview-";
 pub const WORKSPACE_SWITCHER_WEBVIEW_LABEL: &str = "workspace-switcher-webview";
 pub const BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL: &str = "bookmark-context-menu-webview";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BookmarkContextMenuAction {
-    pub id: String,
-    pub label: String,
-    #[serde(default)]
-    pub danger: bool,
+pub fn active_content_webview(app: &AppHandle) -> Option<Webview> {
+    let state = app.try_state::<BrowserState>()?;
+    let id = state.active_tab_id.lock().ok()?.clone();
+    app.get_webview(&webview_label_for_tab(&id))
 }
 
-pub fn create_internal_bridge_token() -> String {
-    let mut hasher = RandomState::new().build_hasher();
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos()
-        .hash(&mut hasher);
-    std::process::id().hash(&mut hasher);
-    format!("{:016x}", hasher.finish())
-}
-
-pub fn build_workspace_switcher_update_script(
-    workspaces: &[WorkspaceItem],
-    active_workspace_id: &str,
-    token: &str,
-    visible: bool,
-    backdrop_blur_px: u8,
-) -> Result<String, String> {
-    let payload = serde_json::to_string(&serde_json::json!({
-        "workspaces": workspaces,
-        "activeWorkspaceId": active_workspace_id,
-        "token": token,
-        "visible": visible,
-        "backdropBlurPx": backdrop_blur_px.min(24),
-    }))
-    .map_err(|error| format!("Failed to serialize workspace switcher: {error}"))?;
-    Ok(format!(
-        "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__veloceSetWorkspaceSwitcher === 'function') {{ window.__veloceSetWorkspaceSwitcher(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
-    ))
-}
-
-pub fn build_bookmark_context_menu_script(
-    x: f64,
-    y: f64,
-    actions: &[BookmarkContextMenuAction],
-    token: &str,
-    visible: bool,
-    backdrop_blur_px: u8,
-) -> Result<String, String> {
-    let payload = serde_json::to_string(&serde_json::json!({
-        "x": x,
-        "y": y,
-        "actions": actions,
-        "token": token,
-        "visible": visible,
-        "backdropBlurPx": backdrop_blur_px.min(24),
-    }))
-    .map_err(|error| format!("Failed to serialize bookmark context menu: {error}"))?;
-    Ok(format!(
-        "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__veloceSetBookmarkContextMenu === 'function') {{ window.__veloceSetBookmarkContextMenu(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
-    ))
-}
-
-pub const WORKSPACE_SWITCHER_ESCAPE_SCRIPT: &str = r#"
-  (() => {
-    window.__veloceWorkspaceSwitcherOpen = false;
-    window.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape" || !window.__veloceWorkspaceSwitcherOpen) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      window.location.href = "veloce-internal://workspace-switcher/dismiss";
-    }, true);
-  })();
-"#;
-
-fn build_workspace_shortcut_script(token: &str, native_alt_capture: bool) -> String {
-    format!(
-        r#"
-        (() => {{
-          if (window.top !== window) return;
-          const bridgeToken = "{token}";
-          const nativeAltCapture = {native_alt_capture};
-          let shortcuts = {{}};
-          let holdPressed = false;
-          let nextSequence = 0;
-          let requestInFlight = false;
-          const requestQueue = [];
-
-          function flushRequestQueue() {{
-            if (requestInFlight || requestQueue.length === 0) return;
-            requestInFlight = true;
-            const request = requestQueue[0];
-            const query = new URLSearchParams({{
-              token: bridgeToken,
-              sequence: String(request.sequence)
-            }});
-            if (request.index !== undefined) query.set("index", String(request.index));
-            if (request.action) query.set("action", request.action);
-            if (request.key) query.set("key", request.key);
-            window.location.href = `veloce-internal://keyboard-shortcut/${{request.type}}?${{query.toString()}}`;
-          }}
-
-          function notifyBrowser(type, action, key) {{
-            requestQueue.push({{ type, action, key, sequence: ++nextSequence }});
-            flushRequestQueue();
-          }}
-
-          function normalizeKey(key) {{
-            return key.length === 1 ? key.toUpperCase() : key;
-          }}
-
-          function modifierMatch(event, binding) {{
-            return event.ctrlKey === binding.ctrl && event.altKey === binding.alt &&
-              event.shiftKey === binding.shift && event.metaKey === binding.meta;
-          }}
-
-          function isHoldKey(event, binding) {{
-            return binding && event.key === binding.key;
-          }}
-
-          function resetHold(type) {{
-            if (!holdPressed) return;
-            holdPressed = false;
-            notifyBrowser(type);
-          }}
-
-          Object.defineProperty(window, "__veloceSetKeyboardShortcuts", {{
-            configurable: false,
-            enumerable: false,
-            writable: false,
-            value: (secret, value) => {{ if (secret === bridgeToken) shortcuts = value || {{}}; }}
-          }});
-
-          Object.defineProperty(window, "__veloceWorkspaceShortcutAck", {{
-            configurable: false,
-            enumerable: false,
-            writable: false,
-            value: (sequence) => {{
-              if (!requestInFlight || requestQueue[0]?.sequence !== sequence) return;
-              requestQueue.shift();
-              requestInFlight = false;
-              flushRequestQueue();
-            }}
-          }});
-
-          window.addEventListener("keydown", (event) => {{
-            if (!event.isTrusted) return;
-
-            if (event.key === "Escape" && window.__veloceWorkspaceSwitcherOpen) {{
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              window.location.href = "veloce-internal://workspace-switcher/dismiss";
-              return;
-            }}
-
-            const holdBinding = shortcuts["workspace-picker"]?.[0];
-            if (isHoldKey(event, holdBinding)) {{
-              if (nativeAltCapture && holdBinding.key === "Alt") return;
-              if (!event.repeat && !holdPressed) {{
-                holdPressed = true;
-                event.preventDefault();
-                notifyBrowser("alt-down");
-              }}
-              return;
-            }}
-
-            if (holdPressed) resetHold("alt-up");
-
-            if (event.repeat) return;
-            for (const [action, bindings] of Object.entries(shortcuts)) {{
-              if (action === "workspace-picker" || !Array.isArray(bindings)) continue;
-              const binding = bindings[0];
-              if (!binding || !modifierMatch(event, binding)) continue;
-              if (
-                nativeAltCapture && action === "switch-workspaces" &&
-                binding.key === "Digit" && binding.alt && !binding.ctrl && !binding.shift && !binding.meta
-              ) return;
-              const keyMatches = binding.key === "Digit"
-                ? /^[1-9]$/.test(event.key)
-                : normalizeKey(event.key) === normalizeKey(binding.key);
-              if (!keyMatches) continue;
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              notifyBrowser("action", action, event.key);
-              return;
-            }}
-          }}, true);
-
-          window.addEventListener("keyup", (event) => {{
-            if (!event.isTrusted) return;
-            const holdBinding = shortcuts["workspace-picker"]?.[0];
-            if (!isHoldKey(event, holdBinding)) return;
-            if (nativeAltCapture && holdBinding.key === "Alt") return;
-            resetHold("alt-up");
-          }}, true);
-
-          window.addEventListener("mousedown", (event) => {{
-            if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            const mouseKey = event.button === 3 ? "Mouse4" : "Mouse5";
-            for (const [action, bindings] of Object.entries(shortcuts)) {{
-              if (!Array.isArray(bindings)) continue;
-              const binding = bindings[0];
-              if (!binding || binding.key !== mouseKey || !modifierMatch(event, binding)) continue;
-              notifyBrowser("action", action);
-              return;
-            }}
-          }}, true);
-
-          window.addEventListener("auxclick", (event) => {{
-            if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }}, true);
-
-          window.addEventListener("focus", () => {{
-            holdPressed = false;
-          }}, true);
-          document.addEventListener("visibilitychange", () => {{
-            if (document.visibilityState === "hidden") resetHold("alt-cancel");
-            else holdPressed = false;
-          }}, true);
-        }})();
-        "#,
-        token = token,
-        native_alt_capture = native_alt_capture
-    )
-}
-
-/// Captures WebView2 accelerator events before the browser consumes the bare Alt key.
-#[cfg(windows)]
-fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String> {
-    use std::sync::atomic::Ordering;
-    use tauri::webview::PlatformWebview;
-    use webview2_com::{
-        AcceleratorKeyPressedEventHandler,
-        Microsoft::Web::WebView2::Win32::{
-            COREWEBVIEW2_KEY_EVENT_KIND, COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN,
-            COREWEBVIEW2_KEY_EVENT_KIND_KEY_UP, COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN,
-            COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_UP,
-        },
-    };
-
-    let webview = app
-        .get_webview(CONTENT_WEBVIEW_LABEL)
-        .ok_or_else(|| "Content WebView was not found for keyboard setup".to_string())?;
-    let app_for_registration = app.clone();
-    webview
-        .with_webview(move |platform: PlatformWebview| {
-            let app_for_handler = app_for_registration.clone();
-            let handler =
-                AcceleratorKeyPressedEventHandler::create(Box::new(move |_sender, args| {
-                    let Some(args) = args else {
-                        return Ok(());
-                    };
-
-                    let mut event_kind = COREWEBVIEW2_KEY_EVENT_KIND::default();
-                    let mut virtual_key = 0_u32;
-                    let mut key_lparam = 0_i32;
-                    unsafe {
-                        args.KeyEventKind(&mut event_kind)?;
-                        args.VirtualKey(&mut virtual_key)?;
-                        args.KeyEventLParam(&mut key_lparam)?;
-                    }
-
-                    let is_key_down = event_kind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN
-                        || event_kind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN;
-                    let is_key_up = event_kind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_UP
-                        || event_kind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_UP;
-                    if !is_key_down && !is_key_up {
-                        return Ok(());
-                    }
-
-                    let is_repeat = is_key_down && (key_lparam & (1 << 30)) != 0;
-                    let state = app_for_handler.state::<BrowserState>();
-
-                    // WebView2 may consume browser accelerators before they reach the
-                    // injected page listener. Capture every configured keyboard shortcut here.
-                    if is_key_down {
-                        let matched_shortcut =
-                            state.keyboard_shortcuts.lock().ok().and_then(|shortcuts| {
-                                shortcuts.as_object().and_then(|shortcuts| {
-                                    shortcuts.iter().find_map(|(action, bindings)| {
-                                        if action == "workspace-picker" {
-                                            return None;
-                                        }
-
-                                        let binding = bindings
-                                            .as_array()
-                                            .and_then(|bindings| bindings.first())?;
-                                        let key = binding
-                                            .get("key")
-                                            .and_then(serde_json::Value::as_str)?;
-                                        let shortcut_key = if key == "Digit" {
-                                            let digit = match virtual_key {
-                                                0x31..=0x39 => virtual_key - 0x30,
-                                                0x61..=0x69 => virtual_key - 0x60,
-                                                _ => return None,
-                                            };
-                                            Some(Some(digit.to_string()))
-                                        } else if shortcut_key_to_virtual_key(key)
-                                            == Some(virtual_key)
-                                        {
-                                            Some(None)
-                                        } else {
-                                            None
-                                        }?;
-
-                                        if !shortcut_modifiers_match(binding) {
-                                            return None;
-                                        }
-
-                                        Some((action.clone(), shortcut_key))
-                                    })
-                                })
-                            });
-
-                        if let Some((action, key)) = matched_shortcut {
-                            unsafe {
-                                args.SetHandled(true)?;
-                            }
-                            if !is_repeat {
-                                let mut payload = serde_json::json!({ "action": action });
-                                if let Some(key) = key {
-                                    payload["key"] = serde_json::json!(key);
-                                }
-                                let _ = app_for_handler.emit("browser-shortcut-action", payload);
-                            }
-                            return Ok(());
-                        }
-                    }
-
-                    if is_key_down
-                        && virtual_key == 0x1B
-                        && state
-                            .workspace_switcher_open
-                            .lock()
-                            .map(|open| *open)
-                            .unwrap_or(false)
-                    {
-                        unsafe {
-                            args.SetHandled(true)?;
-                        }
-                        let _ = app_for_handler.emit("workspace-switcher-dismissed", ());
-                        return Ok(());
-                    }
-
-                    // WebView2 reports the modifier as a native accelerator. Capture Alt only
-                    // when it is still configured as the workspace-picker hold key.
-                    let configured_hold_key = state
-                        .workspace_picker_hold_key
-                        .lock()
-                        .map(|key| key.as_str() == "Alt")
-                        .unwrap_or(false);
-                    let workspace_shortcut_is_alt_digit = state
-                        .keyboard_shortcuts
-                        .lock()
-                        .ok()
-                        .and_then(|shortcuts| {
-                            shortcuts
-                                .get("switch-workspaces")
-                                .and_then(serde_json::Value::as_array)
-                                .and_then(|bindings| bindings.first())
-                                .map(|binding| {
-                                    binding.get("key").and_then(serde_json::Value::as_str)
-                                        == Some("Digit")
-                                        && binding.get("alt").and_then(serde_json::Value::as_bool)
-                                            == Some(true)
-                                        && binding.get("ctrl").and_then(serde_json::Value::as_bool)
-                                            == Some(false)
-                                        && binding.get("shift").and_then(serde_json::Value::as_bool)
-                                            == Some(false)
-                                        && binding.get("meta").and_then(serde_json::Value::as_bool)
-                                            == Some(false)
-                                })
-                        })
-                        .unwrap_or(false);
-                    if virtual_key == 0x12
-                        && (configured_hold_key || workspace_shortcut_is_alt_digit)
-                    {
-                        let payload = if configured_hold_key {
-                            if is_key_down {
-                                if !is_repeat
-                                    && !state.workspace_alt_pressed.swap(true, Ordering::SeqCst)
-                                {
-                                    Some(serde_json::json!({ "type": "alt-down" }))
-                                } else {
-                                    None
-                                }
-                            } else if state.workspace_alt_pressed.swap(false, Ordering::SeqCst) {
-                                Some(serde_json::json!({ "type": "alt-up" }))
-                            } else {
-                                None
-                            }
-                        } else {
-                            if is_key_down && !is_repeat {
-                                state.workspace_alt_pressed.store(true, Ordering::SeqCst);
-                            } else if is_key_up {
-                                state.workspace_alt_pressed.store(false, Ordering::SeqCst);
-                            }
-                            None
-                        };
-
-                        // WebView2 invokes this callback synchronously. Mark Alt handled
-                        // before notifying the UI so its browser accelerator cannot flash.
-                        unsafe {
-                            args.SetHandled(true)?;
-                        }
-
-                        if let Some(payload) = payload {
-                            let _ = app_for_handler.emit("workspace-shortcut-event", payload);
-                        }
-                        return Ok(());
-                    }
-
-                    if is_key_down
-                        && workspace_shortcut_is_alt_digit
-                        && state.workspace_alt_pressed.load(Ordering::SeqCst)
-                    {
-                        let index = match virtual_key {
-                            49..=57 => Some((virtual_key - 48) as u8),
-                            97..=105 => Some((virtual_key - 96) as u8),
-                            _ => None,
-                        };
-                        if let Some(index) = index {
-                            unsafe {
-                                args.SetHandled(true)?;
-                            }
-                            if !is_repeat {
-                                let _ = app_for_handler.emit(
-                                    "browser-shortcut-action",
-                                    serde_json::json!({
-                                        "action": "switch-workspaces",
-                                        "key": index.to_string()
-                                    }),
-                                );
-                            }
-                            return Ok(());
-                        }
-                    }
-
-                    Ok(())
-                }));
-
-            let mut event_token = 0_i64;
-            let result = unsafe {
-                platform
-                    .controller()
-                    .add_AcceleratorKeyPressed(&handler, &mut event_token)
-            };
-            if let Err(error) = result {
-                eprintln!("Failed to install workspace keyboard handler: {error}");
-            }
-        })
-        .map_err(|error| format!("Failed to install workspace keyboard handler: {error}"))?;
-
-    Ok(())
-}
-
-#[cfg(windows)]
-fn is_windows_key_down(virtual_key: i32) -> bool {
-    #[link(name = "user32")]
-    unsafe extern "system" {
-        fn GetKeyState(nvirtkey: i32) -> i16;
-    }
-
-    unsafe { GetKeyState(virtual_key) < 0 }
-}
-
-#[cfg(windows)]
-fn shortcut_modifiers_match(binding: &serde_json::Value) -> bool {
-    binding
-        .get("ctrl")
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or(false)
-        == is_windows_key_down(0x11)
-        && binding
-            .get("alt")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false)
-            == is_windows_key_down(0x12)
-        && binding
-            .get("shift")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false)
-            == is_windows_key_down(0x10)
-        && binding
-            .get("meta")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false)
-            == (is_windows_key_down(0x5B) || is_windows_key_down(0x5C))
-}
-
-#[cfg(windows)]
-fn shortcut_key_to_virtual_key(key: &str) -> Option<u32> {
-    let named_key = match key {
-        "Space" => Some(0x20),
-        "Enter" => Some(0x0D),
-        "Escape" => Some(0x1B),
-        "Backspace" => Some(0x08),
-        "Tab" => Some(0x09),
-        "Delete" => Some(0x2E),
-        "Insert" => Some(0x2D),
-        "Home" => Some(0x24),
-        "End" => Some(0x23),
-        "PageUp" => Some(0x21),
-        "PageDown" => Some(0x22),
-        "ArrowLeft" => Some(0x25),
-        "ArrowUp" => Some(0x26),
-        "ArrowRight" => Some(0x27),
-        "ArrowDown" => Some(0x28),
-        _ if key.len() == 1 && key.as_bytes()[0].is_ascii_alphanumeric() => {
-            key.as_bytes().first().copied().map(u32::from)
-        }
-        _ => None,
-    };
-    if named_key.is_some() {
-        return named_key;
-    }
-
-    if let Some(number) = key
-        .strip_prefix('F')
-        .and_then(|number| number.parse::<u32>().ok())
-        .filter(|number| (1..=24).contains(number))
-    {
-        return Some(0x6F + number);
-    }
-
-    let mut chars = key.encode_utf16();
-    let character = chars.next()?;
-    if chars.next().is_some() {
-        return None;
-    }
-
-    #[link(name = "user32")]
-    unsafe extern "system" {
-        fn VkKeyScanW(ch: u16) -> i16;
-    }
-
-    let mapped = unsafe { VkKeyScanW(character) };
-    (mapped != -1).then_some((mapped as u16 & 0xFF) as u32)
-}
-
-/// Parses user omnibox input into a valid URL or a Google search query.
-pub fn resolve_input_to_url(raw_input: &str) -> Result<Url, String> {
-    resolve_input_to_url_with_search_engine(raw_input, "google")
-}
-
-/// Parses user omnibox input using one of the supported search engines.
-pub fn resolve_input_to_url_with_search_engine(
-    raw_input: &str,
-    search_engine: &str,
-) -> Result<Url, String> {
-    let trimmed = raw_input.trim();
-    if trimmed.is_empty() {
-        return Url::parse(DEFAULT_HOME_URL).map_err(|e| e.to_string());
-    }
-
-    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
-        if let Ok(parsed) = Url::parse(trimmed) {
-            return Ok(parsed);
-        }
-    }
-
-    if !trimmed.contains(' ') && trimmed.contains('.') {
-        let with_https = format!("https://{}", trimmed);
-        if let Ok(parsed) = Url::parse(&with_https) {
-            return Ok(parsed);
-        }
-    }
-
-    let search_url_base = match search_engine {
-        "duckduckgo" => "https://duckduckgo.com/",
-        _ => "https://www.google.com/search",
-    };
-    let mut search_url = Url::parse(search_url_base).map_err(|e| e.to_string())?;
-    search_url.query_pairs_mut().append_pair("q", trimmed);
-    Ok(search_url)
-}
-
-pub fn search_engine_home_url(search_engine: Option<&str>) -> &'static str {
-    match search_engine {
-        Some("duckduckgo") => "https://duckduckgo.com/",
-        _ => "https://www.google.com/",
-    }
-}
-
-fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Url) {
-    if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("workspace-switcher") {
-        return;
-    }
-
-    let action = nav_url.path().trim_matches('/');
-    let request_token = nav_url
-        .query_pairs()
-        .find(|(key, _)| key == "token")
-        .map(|(_, value)| value.into_owned());
-    let window_is_focused = app
-        .get_webview_window("main")
-        .and_then(|window| window.is_focused().ok())
-        .unwrap_or(false);
-    if !window_is_focused {
-        return;
-    }
-
-    let Some(state) = app.try_state::<BrowserState>() else {
-        return;
-    };
-    let token_matches = request_token
-        .as_deref()
-        .and_then(|request_token| {
-            state
-                .workspace_switcher_token
-                .lock()
-                .ok()
-                .map(|token| token.as_deref() == Some(request_token))
-        })
-        .unwrap_or(false);
-
-    match action {
-        "select" if token_matches => {
-            let workspace_id = nav_url
-                .query_pairs()
-                .find(|(key, _)| key == "workspace_id")
-                .map(|(_, value)| value.into_owned());
-            let Some(workspace_id) = workspace_id else {
-                return;
-            };
-            let is_valid_workspace = state
-                .workspaces
-                .lock()
-                .map(|workspaces| workspaces.iter().any(|item| item.id == workspace_id))
-                .unwrap_or(false);
-            if !is_valid_workspace {
-                return;
-            }
-            if let Ok(mut token) = state.workspace_switcher_token.lock() {
-                *token = None;
-            }
-            let _ = app.emit("workspace-switcher-selected", workspace_id);
-        }
-        "dismiss" => {
-            let is_open = state
-                .workspace_switcher_open
-                .lock()
-                .map(|open| *open)
-                .unwrap_or(false);
-            if is_open {
-                let _ = app.emit("workspace-switcher-dismissed", ());
-            }
-        }
-        _ => {}
-    }
-}
-
-fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
-    if nav_url.scheme() != "veloce-internal"
-        || nav_url.host_str() != Some("bookmark-context-menu")
-    {
-        return;
-    }
-
-    let action = nav_url.path().trim_matches('/').to_string();
-    let request_token = nav_url
-        .query_pairs()
-        .find(|(key, _)| key == "token")
-        .map(|(_, value)| value.into_owned());
-    let Some(state) = app.try_state::<BrowserState>() else {
-        return;
-    };
-    let menu_is_open = state
-        .bookmark_context_menu_open
+pub fn ensure_active_content_webview(app: &AppHandle) -> Result<(), String> {
+    let state = app.state::<BrowserState>();
+    let id = state
+        .active_tab_id
         .lock()
-        .map(|open| *open)
-        .unwrap_or(false);
-    if !menu_is_open {
-        return;
-    }
-    let token_matches = request_token
-        .as_deref()
-        .and_then(|request_token| {
-            state
-                .bookmark_context_menu_token
-                .lock()
-                .ok()
-                .map(|token| token.as_deref() == Some(request_token))
-        })
-        .unwrap_or(false);
-    if !token_matches {
-        return;
-    }
-
-    if action != "dismiss"
-        && !state
-            .bookmark_context_menu_actions
-            .lock()
-            .map(|actions| actions.iter().any(|allowed| allowed == &action))
-            .unwrap_or(false)
-    {
-        return;
-    }
-
-    if let Ok(mut token) = state.bookmark_context_menu_token.lock() {
-        *token = None;
-    }
-    if let Ok(mut actions) = state.bookmark_context_menu_actions.lock() {
-        actions.clear();
-    }
-    // Let the frontend close the overlay after it receives the action. Hiding
-    // this WebView inside its own navigation callback can interrupt delivery.
-    let _ = app.emit("bookmark-context-menu-action", action);
+        .map_err(|e| e.to_string())?
+        .clone();
+    let tab = state
+        .tabs
+        .lock()
+        .map_err(|e| e.to_string())?
+        .iter()
+        .find(|tab| tab.id == id)
+        .cloned()
+        .ok_or("Active tab was not found")?;
+    let bounds = *state.bounds.lock().map_err(|e| e.to_string())?;
+    ensure_tab_webview(app, &tab.id, &tab.url, bounds)
 }
 
-fn spawn_workspace_switcher_webview(app: &AppHandle, bounds: ViewportBounds) -> Result<(), String> {
-    if app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL).is_some() {
-        return Ok(());
-    }
-
-    let main_window = app
-        .get_window("main")
-        .ok_or_else(|| "Main window not found".to_string())?;
-    let app_for_navigation = app.clone();
-    let webview_builder = WebviewBuilder::new(
-        WORKSPACE_SWITCHER_WEBVIEW_LABEL,
-        WebviewUrl::App("workspace-switcher.html".into()),
-    )
-    .transparent(true)
-    .focused(false)
-    .on_navigation(move |nav_url| {
-        if nav_url.scheme() == "veloce-internal" {
-            handle_workspace_switcher_navigation(&app_for_navigation, nav_url);
-            return false;
-        }
-        true
-    });
-
-    main_window
-        .add_child(
-            webview_builder,
-            LogicalPosition::new(bounds.x, bounds.y),
-            LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0)),
-        )
-        .map_err(|error| format!("Failed to create workspace switcher WebView: {error}"))?;
-
-    if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
-        let _ = webview.hide();
-    }
-
+pub fn spawn_content_webview(app: &AppHandle) -> Result<(), String> {
+    ensure_active_content_webview(app)?;
+    let bounds = *app
+        .state::<BrowserState>()
+        .bounds
+        .lock()
+        .map_err(|e| e.to_string())?;
+    spawn_workspace_switcher_webview(app, bounds)?;
+    spawn_bookmark_context_menu_webview(app)?;
     Ok(())
 }
 
-fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(), String> {
-    if app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL).is_some() {
-        return Ok(());
-    }
-
-    let main_window = app
-        .get_window("main")
-        .ok_or_else(|| "Main window not found".to_string())?;
-    let app_for_navigation = app.clone();
-    let webview_builder = WebviewBuilder::new(
-        BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
-        WebviewUrl::App("bookmark-context-menu.html".into()),
-    )
-    .transparent(true)
-    .focused(false)
-    .on_navigation(move |nav_url| {
-        if nav_url.scheme() == "veloce-internal"
-            && nav_url.host_str() == Some("bookmark-context-menu")
-        {
-            handle_bookmark_context_menu_navigation(&app_for_navigation, nav_url);
-            return false;
-        }
-        true
-    });
-
-    main_window
-        .add_child(
-            webview_builder,
-            LogicalPosition::new(0.0, 0.0),
-            LogicalSize::new(1200.0, 800.0),
-        )
-        .map_err(|error| format!("Failed to create bookmark context menu WebView: {error}"))?;
-
-    if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
-        let _ = webview.hide();
-    }
-    Ok(())
-}
-
-/// Spawns the single persistent child WebView during application startup.
-/// Using a single multiplexed child WebView completely avoids Windows WebView2
-/// COM controller creation deadlocks when opening or switching tabs at runtime.
-pub fn spawn_content_webview(
+fn ensure_tab_webview(
     app: &AppHandle,
+    tab_id: &str,
     initial_url_str: &str,
     bounds: ViewportBounds,
 ) -> Result<(), String> {
-    if app.get_webview(CONTENT_WEBVIEW_LABEL).is_some() {
+    let label = webview_label_for_tab(tab_id);
+    if app.get_webview(&label).is_some() {
         return Ok(());
     }
 
@@ -821,15 +75,18 @@ pub fn spawn_content_webview(
         .get_window("main")
         .ok_or_else(|| "Main window not found".to_string())?;
 
-    let initial_url = resolve_input_to_url(initial_url_str)?;
+    let initial_url = resolve_input_to_url_with_search_engine(initial_url_str, "google")?;
     let shield_enabled = app
         .try_state::<BrowserState>()
         .and_then(|s| s.shield_enabled.lock().ok().map(|v| *v))
         .unwrap_or(true);
+    if should_block_url(initial_url.as_str(), shield_enabled) {
+        return Err("Navigation blocked by the privacy shield".to_string());
+    }
     let keyboard_bridge_token = create_internal_bridge_token();
     if let Some(state) = app.try_state::<BrowserState>() {
-        if let Ok(mut token) = state.keyboard_bridge_token.lock() {
-            *token = Some(keyboard_bridge_token.clone());
+        if let Ok(mut tokens) = state.keyboard_bridge_tokens.lock() {
+            tokens.insert(label.clone(), keyboard_bridge_token.clone());
         }
     }
     #[cfg(windows)]
@@ -839,10 +96,9 @@ pub fn spawn_content_webview(
 
     let app_handle_for_nav = app.clone();
 
-    let webview_builder =
-        WebviewBuilder::new(CONTENT_WEBVIEW_LABEL, WebviewUrl::External(initial_url))
-            .initialization_script(&build_content_shield_script(shield_enabled))
-            .initialization_script(WORKSPACE_SWITCHER_ESCAPE_SCRIPT);
+    let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
+        .initialization_script(build_content_shield_script(shield_enabled))
+        .initialization_script(WORKSPACE_SWITCHER_ESCAPE_SCRIPT);
 
     let webview_builder = webview_builder.initialization_script(build_workspace_shortcut_script(
         &keyboard_bridge_token,
@@ -851,6 +107,8 @@ pub fn spawn_content_webview(
 
     let app_for_page_load = app.clone();
     let keyboard_token_for_load = keyboard_bridge_token.clone();
+    let tab_for_load = tab_id.to_string();
+    let label_for_load = label.clone();
     let webview_builder = webview_builder.on_page_load(move |webview, payload| {
         if payload.event() != tauri::webview::PageLoadEvent::Finished {
             return;
@@ -858,17 +116,46 @@ pub fn spawn_content_webview(
         let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
             return;
         };
+        if !state
+            .keyboard_bridge_tokens
+            .lock()
+            .map(|tokens| tokens.get(&label_for_load) == Some(&keyboard_token_for_load))
+            .unwrap_or(false)
+        {
+            return;
+        }
+        let url = payload.url().to_string();
+        if matches!(payload.url().scheme(), "http" | "https") {
+            let title = derive_title_from_url(&url);
+            if let Ok(mut tabs) = state.tabs.lock() {
+                if let Some(tab) = tabs.iter_mut().find(|tab| tab.id == tab_for_load) {
+                    tab.url = url.clone();
+                    tab.title = title.clone();
+                } else {
+                    return;
+                }
+            }
+            state.record_history_visit(&title, &url);
+            if let Err(error) = state.persist_session() {
+                eprintln!("Failed to persist completed navigation: {error}");
+                let _ =
+                    app_for_page_load.emit("browser-error", "Could not save the current session");
+            }
+            let _ = app_for_page_load.emit("tabs-updated", state.snapshot_tabs());
+        }
         let Ok(shortcuts) = state.keyboard_shortcuts.lock() else {
             return;
         };
         if let Ok(serialized) = serde_json::to_string(&*shortcuts) {
-            let _ = webview.eval(&format!(
+            let _ = webview.eval(format!(
                 "window.__veloceSetKeyboardShortcuts?.(\"{}\", {serialized});",
                 keyboard_token_for_load
             ));
         }
     });
 
+    let tab_for_nav = tab_id.to_string();
+    let label_for_nav = label.clone();
     let webview_builder = webview_builder.on_navigation(move |nav_url| {
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("workspace-switcher")
         {
@@ -890,9 +177,15 @@ pub fn spawn_content_webview(
             let token_matches = app_handle_for_nav
                 .try_state::<BrowserState>()
                 .and_then(|state| {
-                    state.keyboard_bridge_token.lock().ok().map(|token| {
-                        token.as_deref() == request_token
-                            && token.as_deref() == Some(keyboard_bridge_token.as_str())
+                    let is_active = state
+                        .active_tab_id
+                        .lock()
+                        .map(|id| *id == tab_for_nav)
+                        .unwrap_or(false);
+                    state.keyboard_bridge_tokens.lock().ok().map(|tokens| {
+                        is_active
+                            && tokens.get(&label_for_nav).map(String::as_str) == request_token
+                            && request_token == Some(keyboard_bridge_token.as_str())
                     })
                 })
                 .unwrap_or(false);
@@ -956,9 +249,9 @@ pub fn spawn_content_webview(
             }
 
             if let Some(sequence) = sequence {
-                if let Some(webview) = app_handle_for_nav.get_webview(CONTENT_WEBVIEW_LABEL) {
+                if let Some(webview) = app_handle_for_nav.get_webview(&label_for_nav) {
                     let _ =
-                        webview.eval(&format!("window.__veloceWorkspaceShortcutAck({sequence});"));
+                        webview.eval(format!("window.__veloceWorkspaceShortcutAck({sequence});"));
                 }
             }
             return false;
@@ -972,19 +265,15 @@ pub fn spawn_content_webview(
 
         let workspace_picker_is_open = app_handle_for_nav
             .try_state::<BrowserState>()
-            .and_then(|state| {
-                state
-                    .workspace_switcher_open
-                    .lock()
-                    .ok()
-                    .map(|open| *open)
-            })
+            .and_then(|state| state.workspace_switcher_open.lock().ok().map(|open| *open))
             .unwrap_or(false);
 
-        // Switching workspaces navigates the shared content WebView. Keep the
-        // picker and held-modifier state intact during that navigation so the
-        // user can continue switching before releasing the modifier.
-        if !workspace_picker_is_open {
+        let is_active = app_handle_for_nav
+            .try_state::<BrowserState>()
+            .and_then(|state| state.active_tab_id.lock().ok().map(|id| *id == tab_for_nav))
+            .unwrap_or(false);
+        // Background pages must not cancel a picker held over the active tab.
+        if is_active && !workspace_picker_is_open {
             if let Some(state) = app_handle_for_nav.try_state::<BrowserState>() {
                 state
                     .workspace_alt_pressed
@@ -1000,6 +289,11 @@ pub fn spawn_content_webview(
             let _ = app_handle_for_nav.emit("workspace-switcher-dismissed", ());
         }
 
+        if !matches!(nav_url.scheme(), "http" | "https")
+            || nav_url.host_str() == Some("tauri.localhost")
+        {
+            return false;
+        }
         let new_url_str = nav_url.to_string();
 
         if let Some(state) = app_handle_for_nav.try_state::<BrowserState>() {
@@ -1013,31 +307,6 @@ pub fn spawn_content_webview(
                 let _ = app_handle_for_nav.emit("privacy-stats-updated", &stats);
                 return false;
             }
-
-            let active_id = state
-                .active_tab_id
-                .lock()
-                .map(|id| id.clone())
-                .unwrap_or_default();
-
-            let new_title = derive_title_from_url(&new_url_str);
-            {
-                if let Ok(mut tabs) = state.tabs.lock() {
-                    if let Some(tab) = tabs.iter_mut().find(|t| t.id == active_id) {
-                        tab.url = new_url_str.clone();
-                        tab.title = new_title.clone();
-                        tab.is_hibernated = false;
-                        tab.last_active_epoch = TabInfo::current_epoch_secs();
-                    }
-                }
-            }
-
-            state.record_history_visit(&new_title, &new_url_str);
-            state.persist_session();
-
-            let snapshot = state.snapshot_tabs();
-            let _ = app_handle_for_nav.emit("tabs-updated", &snapshot);
-            let _ = app_handle_for_nav.emit("content-url-changed", new_url_str);
         }
         true
     });
@@ -1050,11 +319,11 @@ pub fn spawn_content_webview(
         )
         .map_err(|e| format!("Failed to create content WebView: {}", e))?;
 
-    spawn_workspace_switcher_webview(app, bounds)?;
-    spawn_bookmark_context_menu_webview(app)?;
-
     #[cfg(windows)]
-    install_workspace_shortcut_accelerator(app)?;
+    install_workspace_shortcut_accelerator(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+    )?;
 
     Ok(())
 }
@@ -1072,12 +341,16 @@ pub fn navigate_content_webview_with_search_engine(
 ) -> Result<String, String> {
     let parsed_url = resolve_input_to_url_with_search_engine(target_url_str, search_engine)?;
     let resolved_str = parsed_url.to_string();
-
-    if let Some(webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
-        webview
-            .navigate(parsed_url)
-            .map_err(|e| format!("Navigation error: {}", e))?;
+    let state = app.state::<BrowserState>();
+    let enabled = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
+    if should_block_url(&resolved_str, enabled) {
+        return Err("Navigation blocked by the privacy shield".to_string());
     }
+
+    active_content_webview(app)
+        .ok_or("Active WebView was not found")?
+        .navigate(parsed_url)
+        .map_err(|e| format!("Navigation error: {e}"))?;
 
     Ok(resolved_str)
 }
@@ -1091,9 +364,8 @@ pub fn go_forward_content_webview(app: &AppHandle) -> Result<(), String> {
 }
 
 fn navigate_content_history(app: &AppHandle, go_back: bool) -> Result<(), String> {
-    let webview = app
-        .get_webview(CONTENT_WEBVIEW_LABEL)
-        .ok_or_else(|| "Content WebView was not found".to_string())?;
+    let webview =
+        active_content_webview(app).ok_or_else(|| "Content WebView was not found".to_string())?;
 
     #[cfg(windows)]
     {
@@ -1143,15 +415,43 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
         .map(|open| *open)
         .unwrap_or(false);
 
-    if let Some(webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
-        if overlay_open {
-            let _ = webview.hide();
-        } else {
-            let _ = webview.set_bounds(Rect {
-                position: LogicalPosition::new(bounds.x, bounds.y).into(),
-                size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0)).into(),
-            });
-            let _ = webview.show();
+    let tabs = state.snapshot_tabs();
+    for (label, webview) in app.webviews() {
+        if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
+            continue;
+        }
+        let tab = tabs
+            .iter()
+            .find(|tab| webview_label_for_tab(&tab.id) == label);
+        match tab {
+            None
+            | Some(crate::state::tab_model::TabInfo {
+                is_hibernated: true,
+                ..
+            }) => {
+                webview.close().map_err(|e| e.to_string())?;
+                state
+                    .keyboard_bridge_tokens
+                    .lock()
+                    .map_err(|e| e.to_string())?
+                    .remove(&label);
+            }
+            Some(tab)
+                if tab.is_active
+                    && !overlay_open
+                    && !workspace_switcher_open
+                    && !bookmark_context_menu_open =>
+            {
+                webview
+                    .set_bounds(Rect {
+                        position: LogicalPosition::new(bounds.x, bounds.y).into(),
+                        size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0))
+                            .into(),
+                    })
+                    .map_err(|e| e.to_string())?;
+                webview.show().map_err(|e| e.to_string())?;
+            }
+            Some(_) => webview.hide().map_err(|e| e.to_string())?,
         }
     }
 

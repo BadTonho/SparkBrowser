@@ -1,9 +1,9 @@
-use crate::commands::tabs::create_tab;
+use crate::commands::tabs::{create_tab_inner, switch_tab_inner};
 use crate::database::{session_repo::save_session_tabs, workspace_repo};
 use crate::state::browser_state::{BrowserState, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::WorkspaceItem;
-use crate::window::webview_manager::{navigate_content_webview, sync_all_webviews};
+use crate::window::webview_manager::{ensure_active_content_webview, sync_all_webviews};
 use rusqlite::Connection;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
@@ -39,6 +39,7 @@ pub async fn switch_workspace(
     state: State<'_, BrowserState>,
     workspace_id: String,
 ) -> Result<Vec<TabInfo>, String> {
+    let _operation = state.tab_operations.lock().await;
     let exists = state
         .workspaces
         .lock()
@@ -48,45 +49,22 @@ pub async fn switch_workspace(
     if !exists {
         return Err("Workspace not found".to_string());
     }
-    if let Ok(mut active_ws) = state.active_workspace_id.lock() {
-        *active_ws = workspace_id.clone();
-    }
-    let previous_active_id = state
-        .active_tab_id
+    let existing_tab_id = state
+        .tabs
         .lock()
-        .map(|id| id.clone())
-        .unwrap_or_default();
-
-    let existing_tab = {
-        state.tabs.lock().ok().and_then(|mut tabs| {
-            if let Some(found) = tabs.iter_mut().find(|t| t.workspace_id == workspace_id) {
-                found.is_hibernated = false;
-                found.last_active_epoch = TabInfo::current_epoch_secs();
-                Some(found.clone())
-            } else {
-                None
-            }
-        })
-    };
-
-    if let Some(tab) = existing_tab {
-        if let Ok(mut active_id) = state.active_tab_id.lock() {
-            *active_id = tab.id.clone();
-        }
-        if previous_active_id != tab.id {
-            state.record_tab_activation(&tab.id);
-        }
-        let _ = navigate_content_webview(&app, &tab.url);
-        sync_all_webviews(&app, &state)?;
-        state.persist_session();
-
-        let snapshot = state.snapshot_tabs();
-        let _ = app.emit("tabs-updated", &snapshot);
-        let _ = app.emit("content-url-changed", &tab.url);
-        return Ok(snapshot);
+        .map_err(|e| e.to_string())?
+        .iter()
+        .find(|tab| tab.workspace_id == workspace_id)
+        .map(|tab| tab.id.clone());
+    if let Some(tab_id) = existing_tab_id {
+        return switch_tab_inner(&app, &state, tab_id);
     }
+    *state
+        .active_workspace_id
+        .lock()
+        .map_err(|e| e.to_string())? = workspace_id;
 
-    create_tab(app, state, Some(DEFAULT_HOME_URL.to_string())).await
+    create_tab_inner(&app, &state, Some(DEFAULT_HOME_URL.to_string()), None)
 }
 
 #[tauri::command]
@@ -149,6 +127,7 @@ pub async fn delete_workspace(
     action: String,
     target_workspace_id: Option<String>,
 ) -> Result<WorkspaceDeleteResult, String> {
+    let _operation = state.tab_operations.lock().await;
     if workspace_id == "ws-personal" {
         return Err("The Personal workspace cannot be deleted".to_string());
     }
@@ -242,6 +221,10 @@ pub async fn delete_workspace(
     }
     for tab in &mut next_tabs {
         tab.is_active = tab.id == next_active_tab;
+        if tab.is_active {
+            tab.is_hibernated = false;
+            tab.last_active_epoch = TabInfo::current_epoch_secs();
+        }
     }
     let active_url = next_tabs
         .iter()
@@ -280,7 +263,7 @@ pub async fn delete_workspace(
     *state.next_tab_counter.lock().map_err(|e| e.to_string())? = next_counter;
 
     if was_active {
-        let _ = navigate_content_webview(&app, &active_url);
+        ensure_active_content_webview(&app)?;
         let _ = app.emit("content-url-changed", &active_url);
     }
     sync_all_webviews(&app, &state)?;

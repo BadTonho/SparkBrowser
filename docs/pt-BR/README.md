@@ -13,10 +13,13 @@ Bem-vindo à documentação oficial em Português do projeto de Navegador Open-S
 - [Estrutura de Diretórios do Projeto](./architecture/project-structure.md): Organização modular de `src/` (Svelte) e `src-tauri/` (Rust).
 
 ### 2. [✨ Funcionalidades Principais e Experiência Visual](./features/core-features.md)
-Especificações da Command Bar flutuante (`Ctrl + T`), hibernação inteligente de abas, AdBlock nativo em Rust, Workspaces e Modo Zen.
+Especificações da Command Bar flutuante (`Ctrl + T`), hibernação inteligente de abas, Privacy Shield, Workspaces e Modo Zen.
 
 ### 3. [🗺️ Roadmap de Desenvolvimento](./roadmap/phases.md)
 Etapas passo a passo desde a Fase 1 (Protótipo Base / MVP) até a Fase 4 (Polimento e Recursos Avançados).
 
 ### 4. [🛡️ Regras e Padrões do Projeto](./contributing/rules-and-standards.md)
 Diretrizes obrigatórias do repositório cobrindo segurança (política de vazamento zero), organização de pastas e manutenção da documentação bilíngue.
+
+- [Validação](./contributing/validation.md)
+- [Dependencias](./security/dependency-notes.md)

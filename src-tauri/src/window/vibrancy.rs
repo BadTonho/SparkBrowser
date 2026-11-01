@@ -17,4 +17,3 @@ pub fn apply_native_vibrancy(window: &WebviewWindow) {
         let _ = apply_vibrancy(window, NSVisualEffectMaterial::HudWindow, None, None);
     }
 }
-

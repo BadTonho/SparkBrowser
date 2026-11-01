@@ -15,7 +15,7 @@
 
 ## Phase 3: Performance, Privacy & Persistence — ✅ Completed
 - [x] Integrate `rusqlite` for local History, Bookmarks, and Session Restoration.
-- [x] Integrate native Rust Ad & Tracker Blocker (`privacy/adblock_engine.rs`).
+- [x] Add known-host navigation checks and best-effort fetch/XHR/beacon filtering (`privacy/`).
 - [x] Implement automatic and manual **Tab Hibernation** for RAM optimization.
 
 ## Phase 4: Polish & Advanced Capabilities — ✅ Completed

@@ -62,9 +62,7 @@ fn migrate_legacy_default_workspace_colors(conn: &Connection) -> Result<(), Stri
     let tx = conn
         .unchecked_transaction()
         .map_err(|e| format!("Failed to start workspace palette migration: {e}"))?;
-    for (workspace_id, legacy_primary, legacy_secondary) in
-        LEGACY_DEFAULT_WORKSPACE_COLORS
-    {
+    for (workspace_id, legacy_primary, legacy_secondary) in LEGACY_DEFAULT_WORKSPACE_COLORS {
         let Some(default) = defaults.iter().find(|item| item.id == workspace_id) else {
             continue;
         };
@@ -81,12 +79,8 @@ fn migrate_legacy_default_workspace_colors(conn: &Connection) -> Result<(), Stri
         )
         .map_err(|e| format!("Failed to migrate workspace secondary color: {e}"))?;
     }
-    tx.pragma_update(
-        None,
-        "user_version",
-        WORKSPACE_PALETTE_MIGRATION_VERSION,
-    )
-    .map_err(|e| format!("Failed to record workspace palette migration: {e}"))?;
+    tx.pragma_update(None, "user_version", WORKSPACE_PALETTE_MIGRATION_VERSION)
+        .map_err(|e| format!("Failed to record workspace palette migration: {e}"))?;
     tx.commit()
         .map_err(|e| format!("Failed to finish workspace palette migration: {e}"))?;
     Ok(())
@@ -324,10 +318,7 @@ mod tests {
         assert_eq!(personal.accent_primary, "#f5f5f5");
         assert_eq!(personal.accent_secondary, "#a3a3a3");
 
-        let work = workspaces
-            .iter()
-            .find(|item| item.id == "ws-work")
-            .unwrap();
+        let work = workspaces.iter().find(|item| item.id == "ws-work").unwrap();
         assert_eq!(work.accent_primary, "#123456");
         assert_eq!(work.accent_secondary, "#8a8a8a");
 

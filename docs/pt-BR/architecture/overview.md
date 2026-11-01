@@ -4,11 +4,11 @@
 
 ## 1. Core / Backend (100% Rust)
 - **Framework Base:** **Tauri v2** + **Wry (Multi-WebView)** + **Tao**
-  - Usa o motor nativo do sistema (WebView2 / Chromium no Windows, WebKit no macOS/Linux), gerando um executável de apenas **3 MB a 5 MB** e inicialização instantânea.
+  - Usa o WebView do sistema. Tamanho e desempenho variam conforme o build e o sistema operacional.
 - **Efeitos Visuais Nativos:** `window-vibrancy`
   - Ativa transparência borrada acelerada por hardware (**Mica / Acrylic** no Windows 10/11) com custo zero de CPU.
-- **Bloqueador Nativo de Anúncios e Rastreadores:** `adblock` (`adblock-rust`, o mesmo motor open-source usado pelo Brave)
-  - Intercepta e bloqueia anúncios e trackers diretamente no Rust antes mesmo de a página renderizar.
+- **Privacy Shield:** verificações de navegação em Rust e uma lista compartilhada de hosts conhecidos.
+  - Um script de página filtra fetch/XHR/sendBeacon e aplica CSS. A implementação atual não inclui adblock-rust nem interceptação completa da rede.
 - **Persistência Local:** `rusqlite` (SQLite embarcado)
   - Armazenamento local ultrarrápido para histórico, favoritos, espaços de trabalho e restauração de sessão.
 
@@ -40,5 +40,13 @@
 1. **Camada Base (Janela Principal em Rust + Svelte):**
    - Renderiza a barra de título customizada, **Barra Lateral (Sidebar)** retrátil, controles de navegação, barra de URL e favoritos sobre um fundo de vidro fosco nativo.
 2. **Quadro de Conteúdo Web (Multi-WebView controlada pelo Rust):**
-   - Os sites abertos rodam em instâncias isoladas de WebView encaixadas dentro da moldura do navegador.
+   - Cada aba desperta possui sua própria WebView filha, com estado do documento e histórico nativo de voltar/avançar. As instâncias usam o motor do sistema e compartilham o perfil normal do navegador; isso não implica perfis de cookies ou processos do sistema separados.
    - Sincronização em tempo real: quando a barra lateral expande ou recolhe, o Rust redimensiona dinamicamente a área do site em sincronia com a animação.
+
+## 4. Ciclo de vida e persistência
+
+A seleção normal mostra a WebView existente da aba sem navegar novamente. Hibernar ou fechar destrói somente a instância afetada. Abas restauradas em segundo plano são criadas sob demanda. Overlays nativos ocultam temporariamente as páginas para evitar conflitos de sobreposição entre plataformas.
+
+Somente o callback de carregamento concluído confirma URLs e histórico, usando o ID da aba de origem mesmo quando outra aba já está ativa. Navegações rejeitadas não substituem o endereço confirmado. A gravação da sessão é atômica e participa da transação de exclusão de workspace; falhas do banco são informadas.
+
+Alterar o escudo recria as WebViews porque seus scripts de inicialização são imutáveis. A página ativa recarrega, abas em segundo plano hibernam e o estado das páginas e o histórico de voltar/avançar reiniciam. Essa operação explícita é explicada junto aos controles.

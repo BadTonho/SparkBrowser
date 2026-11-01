@@ -11,9 +11,11 @@
 - Suspende automaticamente abas em segundo plano após 5, 10 ou 30 minutos, ou usa o modo adaptativo **Auto**. No Auto, abas comuns hibernam após 10 minutos; abas ativadas pelo menos 10 vezes nos últimos 7 dias hibernam após 5 horas sem uso.
 - **Off** desativa a hibernação automática, mantendo a hibernação manual disponível. Os horários locais de ativação são mantidos no SQLite para a janela adaptativa de 7 dias, sem armazenar URLs.
 
-## 3. 🛡️ AdBlock e Privacidade Nativa em Rust
-- Baseado no `adblock-rust` para bloquear anúncios intrusivos, pop-ups e scripts de rastreamento diretamente na camada de rede.
-- Melhora drasticamente a velocidade de carregamento dos sites e reduz o consumo de memória e internet.
+## 3. Privacy Shield
+- O Rust rejeita navegações para hosts conhecidos de rastreamento e seus subdomínios exatos.
+- Um script de página filtra fetch (incluindo objetos URL/Request), XHR e sendBeacon, e adiciona CSS. A cobertura não equivale a um bloqueador completo da rede: scripts/imagens do parser, service workers e alterações feitas pela página podem contornar esses hooks.
+- Alterar a proteção recria as WebViews: a página ativa recarrega e as abas em segundo plano hibernam. O estado da página e o histórico nativo de voltar/avançar são reiniciados nessa mudança explícita; a troca normal de abas os preserva.
+- O contador mede navegações rejeitadas, não todos os recursos filtrados.
 
 ## 4. 🎨 Workspaces (Espaços de Trabalho) e Temas Dinâmicos
 - Separação de abas por contexto (ex: *Trabalho*, *Estudo*, *Pessoal*, *Jogos*).
@@ -55,3 +57,9 @@
 - A última categoria selecionada é restaurada ao reabrir o modal e também após reiniciar o aplicativo.
 - Em **Keyboard Shortcuts**, clique em um atalho e pressione uma combinação de teclas ou Mouse 4/5 para gravá-lo. O seletor de workspaces pode usar uma tecla modificadora mantida pressionada (Alt, Ctrl, Shift ou Meta); combinações duplicadas são rejeitadas. As alterações são salvas entre reinicializações e funcionam com foco na interface do navegador ou em uma página.
 - Mouse 4 e Mouse 5 voltam e avançam por padrão e podem ser reconfigurados em **Keyboard Shortcuts**. Use `Ctrl + E` para focar e selecionar o endereço atual na barra combinada de endereço e busca.
+
+## 9. Downloads diretos
+
+O gerenciador transfere recursos HTTP/HTTPS em segundo plano. Ele grava um arquivo temporário, verifica a conclusão e salva sem substituir arquivos existentes antes de registrar **Completed**. O painel mostra erros e impede envios duplicados durante a transferência.
+
+O cliente HTTP é independente da sessão autenticada da página e salva os bytes da resposta, sem criar um arquivo completo da página para uso offline. Downloads exigem o aplicativo desktop; o preview no navegador informa um erro em vez de simular sucesso.

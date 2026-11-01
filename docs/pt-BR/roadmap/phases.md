@@ -15,7 +15,7 @@
 
 ## Fase 3: Performance, Privacidade e Persistência — ✅ Concluída
 - [x] Integrar `rusqlite` para Histórico, Favoritos e Restauração de Sessão.
-- [x] Integrar bloqueador nativo de anúncios e rastreadores em Rust (`privacy/adblock_engine.rs`).
+- [x] Adicionar verificacoes de hosts na navegacao e filtragem de fetch/XHR/beacon (`privacy/`).
 - [x] Implementar o sistema automático e manual de **Hibernação de Abas** para otimização de RAM.
 
 ## Fase 4: Polimento e Recursos Avançados — ✅ Concluída

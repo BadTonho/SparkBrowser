@@ -4,11 +4,11 @@
 
 ## 1. Core / Backend (100% Rust)
 - **Base Framework:** **Tauri v2** + **Wry (Multi-WebView)** + **Tao**
-  - Leverages the operating system's native web engine (WebView2 / Chromium on Windows, WebKit on macOS/Linux), producing a tiny **3 MB to 5 MB** executable with near-instant startup.
+  - Uses the system WebView runtime. Size and performance vary by build and operating system.
 - **Native Window Effects:** `window-vibrancy`
   - Enables hardware-accelerated translucent blur (**Mica / Acrylic** on Windows 10/11) with zero CPU overhead.
-- **Native Ad & Tracker Blocker:** `adblock` (`adblock-rust`, the open-source engine used by Brave)
-  - Intercepts and blocks ads and trackers at the network layer directly in Rust.
+- **Privacy Shield:** Rust navigation checks and a shared known-host list.
+  - A page script filters fetch/XHR/sendBeacon and applies cosmetic CSS. No adblock-rust dependency or complete network interception is currently included.
 - **Local Persistence:** `rusqlite` (Embedded SQLite)
   - High-speed local storage for browsing history, bookmarks, workspaces, and session restoration.
 
@@ -40,5 +40,13 @@
 1. **Base Layer (Main Window in Rust + Svelte):**
    - Renders the custom titlebar, collapsible **Sidebar** (or Top Bar), navigation controls, URL bar, and bookmarks over a native translucent glass background.
 2. **Web Content Frame (Multi-WebView managed by Rust):**
-   - Active websites run inside isolated child WebView instances framed inside the browser shell.
+   - Each awake tab owns a child WebView with its own document state and native back/forward stack. The views use the system engine and share the normal browser profile; this does not imply separate cookie profiles or OS processes.
    - Real-time synchronization: when the sidebar expands or collapses, Rust dynamically resizes the web content viewport in sync with the animation.
+
+## 4. Lifecycle and persistence
+
+Ordinary selection shows the existing tab WebView without navigating again. Hibernation or closing destroys only the affected view. Restored background tabs remain lazy until selected. Native overlays temporarily hide content views to avoid platform-dependent native stacking conflicts.
+
+Only the completed-page callback commits navigation URLs and history, using the originating tab ID even if a different tab has become active. Denied navigation does not replace the committed address. Session replacement is atomic and participates in workspace-deletion transactions; database failures are reported.
+
+Changing the shield rebuilds content WebViews because their initialization scripts are immutable. The active page reloads, background tabs hibernate, and in-page state/back-forward stacks reset. This explicit operation is described beside the UI controls.

@@ -75,7 +75,7 @@ src-tauri/
     │   └── session_repo.rs            # Automatic workspace-aware session persistence & lazy restore
     ├── privacy/
     │   ├── mod.rs
-    │   └── adblock_engine.rs          # Native Rust Ad/Tracker network filter & cosmetic shield script
+    │   └── adblock_engine.rs          # Known-host navigation filtering and shared shield script
     ├── state/
     │   ├── mod.rs
     │   ├── browser_state.rs           # Thread-safe workspaces, tabs, SQLite connection & AdBlock stats
@@ -94,3 +94,17 @@ src-tauri/
         ├── persistence.rs             # SQLite History & Bookmarks IPC commands
         └── privacy.rs                 # AdBlock Shield & privacy stats IPC commands
 ```
+
+## 3. Lifecycle, downloads, and regression tests
+
+- `window/keyboard_bridge.rs`: page/native keyboard integration.
+- `window/internal_overlays.rs`: native overlay views and their internal message transport.
+- `window/url_input.rs`: URL/search resolution.
+- `window/content_lifecycle.rs`: rebuilding views after privacy-policy changes.
+- `commands/overlays.rs`: overlay visibility commands, separate from tab operations.
+- `downloads/transfer.rs`: HTTP transfers, temporary files, and collision-safe persistence.
+- `privacy/content_shield.js`: request hooks generated with Rust's shared host list.
+- `lib/stores/workspaceSelectionStore.ts`: shared selection without a module import cycle.
+- `lib/components/status/BrowserErrorBanner.svelte`: surfaced backend and asynchronous errors.
+- `tests/`: JavaScript regression tests; Rust tests remain beside their modules.
+- `tools/vendor/deepmerge/`: licensed, locally patched build dependency.

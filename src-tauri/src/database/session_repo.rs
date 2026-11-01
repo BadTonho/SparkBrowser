@@ -4,6 +4,17 @@ use rusqlite::{params, Connection};
 
 /// Persists the current open tabs snapshot into SQLite for automatic session restoration.
 pub fn save_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), String> {
+    // Workspace deletion already owns a transaction. Reuse it rather than
+    // opening a nested transaction; standalone saves must also be atomic.
+    if !conn.is_autocommit() {
+        return replace_session_tabs(conn, tabs);
+    }
+    let transaction = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    replace_session_tabs(&transaction, tabs)?;
+    transaction.commit().map_err(|e| e.to_string())
+}
+
+fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), String> {
     conn.execute("DELETE FROM session_tabs", [])
         .map_err(|e| e.to_string())?;
 
@@ -56,10 +67,9 @@ pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
         })
         .map_err(|e| e.to_string())?;
 
-    let mut restored = Vec::new();
-    for item in rows.flatten() {
-        restored.push(item);
-    }
+    let mut restored = rows
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
 
     if !restored.is_empty() && !restored.iter().any(|t| t.is_active) {
         restored[0].is_active = true;
@@ -67,4 +77,50 @@ pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
     }
 
     Ok(restored)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn database() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE session_tabs (
+            tab_id TEXT PRIMARY KEY, title TEXT NOT NULL, url TEXT NOT NULL,
+            workspace_id TEXT NOT NULL, is_active INTEGER NOT NULL,
+            is_hibernated INTEGER NOT NULL, position INTEGER NOT NULL
+        )",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn failed_save_preserves_the_previous_complete_session() {
+        let conn = database();
+        let original =
+            TabInfo::new_default("original".into(), "https://example.test/".into(), true);
+        save_session_tabs(&conn, &[original]).unwrap();
+        let duplicate =
+            TabInfo::new_default("duplicate".into(), "https://example.test/new".into(), true);
+        assert!(save_session_tabs(&conn, &[duplicate.clone(), duplicate]).is_err());
+        let restored = load_session_tabs(&conn).unwrap();
+        assert_eq!(restored.len(), 1);
+        assert_eq!(restored[0].id, "original");
+    }
+
+    #[test]
+    fn save_participates_in_an_outer_transaction() {
+        let conn = database();
+        let tab = TabInfo::new_default("original".into(), "https://example.test/".into(), true);
+        save_session_tabs(&conn, &[tab]).unwrap();
+        {
+            let tx = conn.unchecked_transaction().unwrap();
+            save_session_tabs(&tx, &[]).unwrap();
+            assert!(load_session_tabs(&tx).unwrap().is_empty());
+            // Dropping the outer transaction must restore its session changes.
+        }
+        assert_eq!(load_session_tabs(&conn).unwrap()[0].id, "original");
+    }
 }
