@@ -11,6 +11,7 @@
   import { isSettingsModalOpen, isZenMode } from "../../stores/settingsStore";
   import { isWorkspaceSwitcherOverlayOpen } from "../../stores/workspaceSwitcherStore";
   import { syncViewportBounds, isTauriRuntime } from "../../services/tauri-bridge";
+  import { createViewportSync } from "../../services/viewport-sync.js";
 
   let viewportEl: HTMLDivElement | undefined = $state();
   const inTauri = isTauriRuntime();
@@ -23,16 +24,17 @@
       $isWorkspaceSwitcherOverlayOpen
   );
 
-  function measureAndSync() {
+  const viewportSync = createViewportSync(() => {
     if (!viewportEl) return;
     const rect = viewportEl.getBoundingClientRect();
-    syncViewportBounds({
+    return {
       x: Math.round(rect.left),
       y: Math.round(rect.top),
       width: Math.max(100, Math.round(rect.width)),
       height: Math.max(100, Math.round(rect.height)),
-    });
-  }
+    };
+  }, syncViewportBounds, (error) => console.error("Viewport resize failed", error));
+  const measureAndSync = () => viewportSync.schedule();
 
   $effect(() => {
     void $sidebarWidth;
@@ -54,6 +56,7 @@
     window.addEventListener("resize", measureAndSync);
     return () => {
       resizeObserver.disconnect();
+      viewportSync.dispose();
       window.removeEventListener("resize", measureAndSync);
     };
   });

@@ -11,7 +11,7 @@ use std::sync::Mutex;
 pub const DEFAULT_HOME_URL: &str = "https://www.google.com/";
 pub const INITIAL_TAB_ID: &str = "tab-1";
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct ViewportBounds {
     pub x: f64,
     pub y: f64,

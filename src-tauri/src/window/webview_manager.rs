@@ -415,14 +415,16 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
         .map(|open| *open)
         .unwrap_or(false);
 
-    let tabs = state.snapshot_tabs();
+    let tabs: std::collections::HashMap<_, _> = state
+        .snapshot_tabs()
+        .into_iter()
+        .map(|tab| (webview_label_for_tab(&tab.id), tab))
+        .collect();
     for (label, webview) in app.webviews() {
         if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
             continue;
         }
-        let tab = tabs
-            .iter()
-            .find(|tab| webview_label_for_tab(&tab.id) == label);
+        let tab = tabs.get(&label);
         match tab {
             None
             | Some(crate::state::tab_model::TabInfo {

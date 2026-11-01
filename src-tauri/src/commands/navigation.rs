@@ -1,7 +1,8 @@
 use crate::state::browser_state::{BrowserState, ViewportBounds};
+use crate::window::viewport::resize_visible_webviews;
 use crate::window::webview_manager::{
     active_content_webview, go_back_content_webview, go_forward_content_webview,
-    navigate_content_webview_with_search_engine, sync_all_webviews,
+    navigate_content_webview_with_search_engine,
 };
 use tauri::{AppHandle, State};
 
@@ -42,9 +43,20 @@ pub async fn sync_viewport_bounds(
     state: State<'_, BrowserState>,
     bounds: ViewportBounds,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
-    if let Ok(mut stored_bounds) = state.bounds.lock() {
+    if ![bounds.x, bounds.y, bounds.width, bounds.height]
+        .iter()
+        .all(|v| v.is_finite())
+        || bounds.width < 100.0
+        || bounds.height < 100.0
+    {
+        return Err("Invalid viewport bounds".into());
+    }
+    {
+        let mut stored_bounds = state.bounds.lock().map_err(|e| e.to_string())?;
+        if *stored_bounds == bounds {
+            return Ok(());
+        }
         *stored_bounds = bounds;
     }
-    sync_all_webviews(&app, &state)
+    resize_visible_webviews(&app, &state)
 }
