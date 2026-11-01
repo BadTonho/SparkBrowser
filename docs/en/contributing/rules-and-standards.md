@@ -1,0 +1,27 @@
+# 🛡️ Project Rules & Engineering Standards
+
+> 🌍 **Language:** **English** | [Português (pt-BR)](../../pt-BR/contributing/rules-and-standards.md)
+
+To maintain a high-quality, secure, and scalable open-source project, all contributors and automated agents must follow these five core rules:
+
+---
+
+## Rule 1: Zero Sensitive Data in Version Control
+- **Never upload or commit sensitive files** to GitHub (including `.env`, API keys, private keys, certificates, credentials, or local `.db`/`.sqlite` user files).
+- **Mandatory End-of-Process Audit:** At the end of every development task and prior to any commit, verify `git status`, `git diff`, and `.gitignore` to ensure zero sensitive data exposure.
+
+## Rule 2: Impeccable Project Organization
+- Keep the directory tree clean, modular, and intuitive at all times.
+- Create dedicated folders and split files whenever necessary so each module has a single, clear responsibility.
+
+## Rule 3: Modular & Well-Structured Documentation
+- Never let documentation become a single cluttered file.
+- Organize documentation into logical subdirectories (`architecture/`, `features/`, `roadmap/`, `contributing/`) and keep every topic concise and up to date.
+
+## Rule 4: Bilingual Documentation (English Primary + Portuguese Translation)
+- **English (`docs/en/` and root `README.md`)** is the primary documentation language.
+- **Portuguese (`docs/pt-BR/`)** must always be maintained in parallel, mirroring the exact folder and file structure of `docs/en/`.
+
+## Rule 5: Strict User Authorization (No Unprompted Actions)
+- **Never start coding, modifying files, or taking actions without an explicit request from the user.**
+- When the user asks a question, clarify or answer directly. Never preemptively edit codebase files unless explicitly requested.

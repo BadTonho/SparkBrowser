@@ -1,0 +1,22 @@
+[package]
+name = "veloce-browser"
+version = "0.1.0"
+description = "Open-source modern web browser built with Rust (Tauri v2) and Svelte"
+authors = ["Open-Source Contributors"]
+edition = "2021"
+
+[lib]
+name = "veloce_browser_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["unstable", "macos-private-api"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2.5"
+window-vibrancy = "0.8"
+rusqlite = { version = "0.32", features = ["bundled"] }
+

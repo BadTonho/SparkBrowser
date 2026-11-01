@@ -1,0 +1,22 @@
+# 📖 Índice da Documentação (Português)
+
+> 🌍 **Idioma:** [English (Main)](../en/README.md) | **Português (pt-BR)**
+
+Bem-vindo à documentação oficial em Português do projeto de Navegador Open-Source. Toda a documentação é dividida em subpastas temáticas para manter a organização impecável.
+
+---
+
+## 📂 Seções
+
+### 1. 🏗️ Arquitetura e Stack Tecnológica
+- [Visão Geral da Arquitetura](./architecture/overview.md): Explicação detalhada da arquitetura híbrida **Rust (Tauri v2 / Wry)** + **Svelte**, composição de janela Multi-WebView e efeitos de vidro nativos na GPU.
+- [Estrutura de Diretórios do Projeto](./architecture/project-structure.md): Organização modular de `src/` (Svelte) e `src-tauri/` (Rust).
+
+### 2. [✨ Funcionalidades Principais e Experiência Visual](./features/core-features.md)
+Especificações da Command Bar flutuante (`Ctrl + T`), hibernação inteligente de abas, AdBlock nativo em Rust, Workspaces e Modo Zen.
+
+### 3. [🗺️ Roadmap de Desenvolvimento](./roadmap/phases.md)
+Etapas passo a passo desde a Fase 1 (Protótipo Base / MVP) até a Fase 4 (Polimento e Recursos Avançados).
+
+### 4. [🛡️ Regras e Padrões do Projeto](./contributing/rules-and-standards.md)
+Diretrizes obrigatórias do repositório cobrindo segurança (política de vazamento zero), organização de pastas e manutenção da documentação bilíngue.

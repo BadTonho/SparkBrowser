@@ -1,0 +1,41 @@
+# ✨ Funcionalidades Principais e Experiência Visual
+
+> 🌍 **Idioma:** [English (Main)](../../en/features/core-features.md) | **Português (pt-BR)**
+
+## 1. ⚡ Command Bar Flutuante (`Ctrl + T` / `Ctrl + K`)
+- Barra central flutuante estilo *Spotlight* animada com física de mola.
+- Permite abrir URLs rapidamente, pesquisar na web, alternar entre abas abertas e executar comandos rápidos do navegador.
+
+## 2. 💤 Hibernação Inteligente de Abas (Economia de RAM)
+- Gerenciada nativamente em Rust.
+- Suspende automaticamente abas em segundo plano após um tempo configurável de inatividade, liberando memória RAM do sistema enquanto mantém a aba visível e pronta para uso na barra lateral.
+
+## 3. 🛡️ AdBlock e Privacidade Nativa em Rust
+- Baseado no `adblock-rust` para bloquear anúncios intrusivos, pop-ups e scripts de rastreamento diretamente na camada de rede.
+- Melhora drasticamente a velocidade de carregamento dos sites e reduz o consumo de memória e internet.
+
+## 4. 🎨 Workspaces (Espaços de Trabalho) e Temas Dinâmicos
+- Separação de abas por contexto (ex: *Trabalho*, *Estudo*, *Pessoal*, *Jogos*).
+- Atalhos rápidos de alternância: `Alt + 1` (Personal), `Alt + 2` (Work), `Alt + 3` (Study) e `Alt + 4` (Gaming).
+- Cada Workspace pode ter sua própria paleta de cores e gradiente suave na moldura translúcida da janela.
+
+## 5. 📐 Modo Zen / Foco
+- Um único atalho recolhe todas as barras do navegador, entregando **100% da tela** para o site ativo.
+- No layout Vertical, sair do Modo Zen restaura a barra lateral.
+
+## 6. 🔀 Reordenação de Guias por Arrastar (Drag-and-Drop) e Movimentação entre Workspaces
+- Reordene abas na barra horizontal ou na barra lateral usando arrastar e soltar (drag-and-drop).
+- Navegação rápida entre abas: pressione `Ctrl + 1` até `Ctrl + 8` para ir diretamente para a aba correspondente, e `Ctrl + 9` para ir para a última aba.
+- Atalhos de teclado globais: pressione `Alt + ↑` e `Alt + ↓` (ou `Ctrl + Shift + ↑` / `↓`) em qualquer lugar da aplicação para mover a guia ativa para cima ou para baixo imediatamente.
+- No layout Vertical, arraste abas sobre as pílulas de Workspace (*Personal*, *Work*, *Study*, *Gaming*) para transferi-las entre contextos.
+- Atualização em tempo real na interface com persistência automática no SQLite em Rust (`reorder_tabs`, `move_tab_to_workspace`).
+
+## 7. 📑 Layouts Horizontal e Vertical do Navegador
+- Escolha **Horizontal** ou **Vertical** nas Configurações (`Ctrl + ,`); a seleção é lembrada ao reabrir o aplicativo.
+- **Horizontal:** As abas ficam no topo, os botões dos espaços de trabalho ficam ao lado da barra de pesquisa e os bookmarks salvos aparecem em uma barra horizontal abaixo dela.
+- **Vertical:** Os espaços de trabalho, bookmarks salvos e abas verticais ficam juntos na barra lateral retrátil.
+
+## 8. Configurações do Navegador Organizadas
+- As configurações são divididas em **Aparência e Layout**, **Pesquisa e Navegação**, **Espaços de Trabalho e Tema**, **Desempenho e Privacidade** e **Atalhos de Teclado**.
+- Use a barra fixa de categorias para alternar entre os painéis; somente o painel selecionado é exibido e rola quando seu conteúdo ultrapassa a altura da janela.
+- A última categoria selecionada é restaurada ao reabrir o modal e também após reiniciar o aplicativo.

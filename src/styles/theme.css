@@ -1,0 +1,74 @@
+:root {
+  --bg-glass-primary: rgba(14, 16, 24, 0.72);
+  --bg-glass-elevated: rgba(24, 28, 42, 0.78);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --bg-glass-active: rgba(255, 255, 255, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.09);
+  --border-glow: rgba(110, 142, 251, 0.45);
+
+  --text-primary: #f3f5f9;
+  --text-secondary: #9ba3b8;
+  --text-muted: #646d82;
+
+  --accent-primary: #6e8efb;
+  --accent-secondary: #a777e3;
+  --accent-gradient: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.36);
+
+  font-family: "Inter", "Segoe UI Variable Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+}
+
+button,
+input {
+  font-family: inherit;
+  color: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Subtle custom scrollbar for sidebar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
