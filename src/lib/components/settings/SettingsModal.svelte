@@ -11,6 +11,8 @@
     setOverlayBlurPx,
     autoHibernateMinutes,
     defaultSearchEngine,
+    SEARCH_ENGINES,
+    setDefaultSearchEngine,
     tabLayout,
     setTabLayout,
     showBookmarksBar,
@@ -18,6 +20,7 @@
     activeSettingsCategory,
     setActiveSettingsCategory,
     type SettingsCategory,
+    type SearchEngine,
   } from "../../stores/settingsStore";
   import WorkspaceSettings from "./WorkspaceSettings.svelte";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
@@ -91,7 +94,7 @@
       description: "Used when typing search queries in the Omnibox.",
       category: "search_navigation",
       targetId: "setting-default-search-engine",
-      keywords: "search omnibox web duckduckgo",
+      keywords: "search omnibox web google duckduckgo engine",
     },
     {
       id: "workspace-profile",
@@ -481,7 +484,16 @@
                   <span class="row-label">Default Search Engine</span>
                   <span class="row-desc">Used when typing search queries in the Omnibox</span>
                 </div>
-                <span class="engine-label">{$defaultSearchEngine}</span>
+                <select
+                  class="engine-select"
+                  value={$defaultSearchEngine}
+                  onchange={(event) => setDefaultSearchEngine(event.currentTarget.value as SearchEngine)}
+                  aria-label="Default search engine"
+                >
+                  {#each SEARCH_ENGINES as engine (engine.id)}
+                    <option value={engine.id}>{engine.label}</option>
+                  {/each}
+                </select>
               </div>
             </section>
           {:else if $activeSettingsCategory === "workspaces"}
@@ -943,11 +955,16 @@
     color: var(--accent-foreground);
   }
 
-  .engine-label {
+  .engine-select {
     flex: 0 0 auto;
+    min-width: 130px;
+    padding: 7px 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--bg-glass-secondary);
+    color: var(--text-primary);
     font-size: 11.5px;
     font-weight: 600;
-    color: var(--accent-primary);
   }
 
   .shortcuts-grid {
@@ -1087,7 +1104,7 @@
 
     .timer-pills,
     .pill-action,
-    .engine-label,
+    .engine-select,
     .range-control {
       align-self: flex-start;
     }

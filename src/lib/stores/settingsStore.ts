@@ -10,7 +10,12 @@ import {
 export const isSettingsModalOpen = writable<boolean>(false);
 export const isZenMode = writable<boolean>(false);
 export const autoHibernateMinutes = writable<number>(10);
-export const defaultSearchEngine = writable<string>("DuckDuckGo");
+export {
+  defaultSearchEngine,
+  SEARCH_ENGINES,
+  setDefaultSearchEngine,
+  type SearchEngine,
+} from "./searchEngineStore";
 
 const BOOKMARKS_BAR_STORAGE_KEY = "veloce_show_bookmarks_bar";
 

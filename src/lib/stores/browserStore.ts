@@ -1,6 +1,7 @@
 import { writable, get } from "svelte/store";
 import { spring } from "svelte/motion";
 import type { QuickLink, TabItem } from "../types/browser";
+import { defaultSearchEngine } from "./searchEngineStore";
 import {
   navigateToUrl,
   navigateBack,
@@ -284,7 +285,7 @@ export async function submitNavigation(rawInput: string): Promise<void> {
 
   isLoading.set(true);
   try {
-    const resolvedUrl = await navigateToUrl(trimmed);
+    const resolvedUrl = await navigateToUrl(trimmed, get(defaultSearchEngine));
     currentUrl.set(resolvedUrl);
     addressInput.set(resolvedUrl);
   } finally {

@@ -365,8 +365,16 @@ fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String>
     Ok(())
 }
 
-/// Parses user omnibox input into a valid URL or a DuckDuckGo search query.
+/// Parses user omnibox input into a valid URL or a Google search query.
 pub fn resolve_input_to_url(raw_input: &str) -> Result<Url, String> {
+    resolve_input_to_url_with_search_engine(raw_input, "google")
+}
+
+/// Parses user omnibox input using one of the supported search engines.
+pub fn resolve_input_to_url_with_search_engine(
+    raw_input: &str,
+    search_engine: &str,
+) -> Result<Url, String> {
     let trimmed = raw_input.trim();
     if trimmed.is_empty() {
         return Url::parse(DEFAULT_HOME_URL).map_err(|e| e.to_string());
@@ -385,7 +393,11 @@ pub fn resolve_input_to_url(raw_input: &str) -> Result<Url, String> {
         }
     }
 
-    let mut search_url = Url::parse("https://duckduckgo.com/").map_err(|e| e.to_string())?;
+    let search_url_base = match search_engine {
+        "duckduckgo" => "https://duckduckgo.com/",
+        _ => "https://www.google.com/search",
+    };
+    let mut search_url = Url::parse(search_url_base).map_err(|e| e.to_string())?;
     search_url.query_pairs_mut().append_pair("q", trimmed);
     Ok(search_url)
 }
@@ -733,7 +745,16 @@ pub fn spawn_content_webview(
 
 /// Navigates the persistent child WebView to the specified URL without holding any state locks.
 pub fn navigate_content_webview(app: &AppHandle, target_url_str: &str) -> Result<String, String> {
-    let parsed_url = resolve_input_to_url(target_url_str)?;
+    navigate_content_webview_with_search_engine(app, target_url_str, "google")
+}
+
+/// Navigates the persistent child WebView using a supported search engine for text queries.
+pub fn navigate_content_webview_with_search_engine(
+    app: &AppHandle,
+    target_url_str: &str,
+    search_engine: &str,
+) -> Result<String, String> {
+    let parsed_url = resolve_input_to_url_with_search_engine(target_url_str, search_engine)?;
     let resolved_str = parsed_url.to_string();
 
     if let Some(webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {

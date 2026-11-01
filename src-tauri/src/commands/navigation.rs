@@ -1,7 +1,7 @@
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::tab_model::{derive_title_from_url, TabInfo};
 use crate::window::webview_manager::{
-    navigate_content_webview, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
+    navigate_content_webview_with_search_engine, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
 };
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -10,8 +10,13 @@ pub async fn navigate_to(
     app: AppHandle,
     state: State<'_, BrowserState>,
     input: String,
+    search_engine: Option<String>,
 ) -> Result<String, String> {
-    let url_string = navigate_content_webview(&app, &input)?;
+    let url_string = navigate_content_webview_with_search_engine(
+        &app,
+        &input,
+        search_engine.as_deref().unwrap_or("google"),
+    )?;
 
     let active_id = state
         .active_tab_id

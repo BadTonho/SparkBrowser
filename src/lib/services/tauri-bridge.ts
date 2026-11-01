@@ -11,6 +11,7 @@ import type {
   WorkspaceDeleteResult,
   WorkspaceItem,
 } from "../types/browser";
+import type { SearchEngine } from "../stores/searchEngineStore";
 import {
   DEFAULT_WORKSPACES,
   WORKSPACE_PALETTE_MIGRATION_VERSION,
@@ -29,11 +30,14 @@ export function isTauriRuntime(): boolean {
 /**
  * Navigates the active Rust child WebView to a URL or search query.
  */
-export async function navigateToUrl(input: string): Promise<string> {
+export async function navigateToUrl(
+  input: string,
+  searchEngine: SearchEngine = "google"
+): Promise<string> {
   if (!isTauriRuntime()) {
     return input.startsWith("http") ? input : `https://${input}`;
   }
-  return await invoke<string>("navigate_to", { input });
+  return await invoke<string>("navigate_to", { input, searchEngine });
 }
 
 export async function navigateBack(): Promise<void> {

@@ -29,6 +29,7 @@
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
+  import { defaultSearchEngine } from "../../stores/searchEngineStore";
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import {
     minimizeWindow,
@@ -142,7 +143,7 @@
           bind:value={$addressInput}
           onkeydown={handleKeydown}
           onfocus={handleFocus}
-          placeholder="Search DuckDuckGo or enter URL..."
+          placeholder="Search {$defaultSearchEngine} or enter URL..."
           spellcheck="false"
         />
         <button
