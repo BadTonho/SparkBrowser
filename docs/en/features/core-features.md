@@ -37,13 +37,14 @@
 
 ## 7. 📑 Horizontal and Vertical Browser Layouts
 - Choose **Horizontal** or **Vertical** in Settings (`Ctrl + ,`); the selection is remembered across app restarts.
-- **Horizontal:** Tabs stay at the top, workspace buttons sit beside the search bar, and saved bookmarks appear in a horizontal bar below it.
+- **Horizontal:** Tabs stay at the top, workspace buttons sit beside the search bar, and saved bookmarks appear in a horizontal bar below it. Toggle the bar from Appearance & Layout or the top toolbar; hiding it does not remove bookmarks.
 - **Vertical:** Workspaces, saved bookmarks, and vertical tabs stay together in the collapsible sidebar.
 
 ## 8. Organized Browser Settings
 - Settings are split into **Appearance & Layout**, **Search & Navigation**, **Workspaces & Theme**, **Performance & Privacy**, and **Keyboard Shortcuts**.
 - Search all categories, settings, and keyboard shortcuts from the field beside the Browser Settings title; selecting a result opens its category and highlights the destination.
 - Adjust the shared background blur for temporary overlays from **0–24 px** in Appearance & Layout; the preference is applied immediately and remembered across restarts.
+- Show or hide the horizontal bookmarks bar in Appearance & Layout or with the toolbar toggle; the choice is remembered across restarts and does not affect bookmarks in the vertical sidebar.
 - Use the fixed category rail to switch between panels; only the selected panel is shown and scrolls when its content is taller than the window.
 - The last selected category is remembered when the dialog is reopened and across app restarts.
 - In **Keyboard Shortcuts**, click a shortcut and press the new key combination to record it. The workspace picker can use a held modifier key (Alt, Ctrl, Shift, or Meta); duplicate combinations are rejected. Changes are saved across restarts and work while the browser interface or a page has focus.

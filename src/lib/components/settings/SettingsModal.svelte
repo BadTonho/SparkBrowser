@@ -13,6 +13,8 @@
     defaultSearchEngine,
     tabLayout,
     setTabLayout,
+    showBookmarksBar,
+    setShowBookmarksBar,
     activeSettingsCategory,
     setActiveSettingsCategory,
     type SettingsCategory,
@@ -66,6 +68,14 @@
       category: "appearance_layout",
       targetId: "setting-background-blur",
       keywords: "overlay intensity transparency glass 0 24 px",
+    },
+    {
+      id: "bookmarks-bar",
+      title: "Bookmarks Bar",
+      description: "Show or hide the horizontal bookmarks bar below the address bar.",
+      category: "appearance_layout",
+      targetId: "setting-bookmarks-bar",
+      keywords: "favorites show hide visibility toolbar horizontal",
     },
     {
       id: "zen-mode",
@@ -432,6 +442,21 @@
                   />
                   <output>{ $overlayBlurPx } px</output>
                 </div>
+              </div>
+
+              <div class="setting-row" id="setting-bookmarks-bar" tabindex="-1">
+                <div class="row-text">
+                  <span class="row-label">Bookmarks Bar</span>
+                  <span class="row-desc">Show or hide the horizontal bookmarks bar without removing saved bookmarks</span>
+                </div>
+                <button
+                  class="pill-action"
+                  class:active={$showBookmarksBar}
+                  aria-pressed={$showBookmarksBar}
+                  onclick={() => setShowBookmarksBar(!$showBookmarksBar)}
+                >
+                  {$showBookmarksBar ? "Visible" : "Hidden"}
+                </button>
               </div>
 
               <div class="setting-row" id="setting-zen-mode" tabindex="-1">

@@ -37,13 +37,14 @@
 
 ## 7. 📑 Layouts Horizontal e Vertical do Navegador
 - Escolha **Horizontal** ou **Vertical** nas Configurações (`Ctrl + ,`); a seleção é lembrada ao reabrir o aplicativo.
-- **Horizontal:** As abas ficam no topo, os botões dos espaços de trabalho ficam ao lado da barra de pesquisa e os bookmarks salvos aparecem em uma barra horizontal abaixo dela.
+- **Horizontal:** As abas ficam no topo, os botões dos espaços de trabalho ficam ao lado da barra de pesquisa e os bookmarks salvos aparecem em uma barra horizontal abaixo dela. Oculte ou mostre essa barra em Aparência e Layout ou pelo botão na barra superior; ocultá-la não remove os bookmarks.
 - **Vertical:** Os espaços de trabalho, bookmarks salvos e abas verticais ficam juntos na barra lateral retrátil.
 
 ## 8. Configurações do Navegador Organizadas
 - As configurações são divididas em **Aparência e Layout**, **Pesquisa e Navegação**, **Espaços de Trabalho e Tema**, **Desempenho e Privacidade** e **Atalhos de Teclado**.
 - Pesquise em todas as categorias, configurações e atalhos pelo campo ao lado do título Browser Settings; selecionar um resultado abre a categoria e destaca o destino.
 - Ajuste em Aparência e Layout o desfoque de fundo compartilhado pelos overlays temporários, de **0 a 24 px**; a preferência é aplicada imediatamente e lembrada após reiniciar.
+- Mostre ou oculte a barra horizontal de bookmarks em Aparência e Layout ou pelo botão na barra superior; a escolha é lembrada após reiniciar e não afeta os bookmarks da barra lateral vertical.
 - Use a barra fixa de categorias para alternar entre os painéis; somente o painel selecionado é exibido e rola quando seu conteúdo ultrapassa a altura da janela.
 - A última categoria selecionada é restaurada ao reabrir o modal e também após reiniciar o aplicativo.
 - Em **Keyboard Shortcuts**, clique em um atalho e pressione a nova combinação para gravá-la. O seletor de workspaces pode usar uma tecla modificadora mantida pressionada (Alt, Ctrl, Shift ou Meta); combinações duplicadas são rejeitadas. As alterações são salvas entre reinicializações e funcionam com foco na interface do navegador ou em uma página.

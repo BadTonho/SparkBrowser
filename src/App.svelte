@@ -45,6 +45,7 @@
     toggleZenMode,
     isZenMode,
     tabLayout,
+    showBookmarksBar,
   } from "./lib/stores/settingsStore";
   import {
     SHORTCUT_DEFINITIONS,
@@ -217,7 +218,7 @@
     <HorizontalTabBar />
   {/if}
   <Titlebar />
-  {#if $tabLayout === "horizontal" && !$isZenMode}
+  {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar}
     <BookmarkBar />
   {/if}
   <div class="browser-body">

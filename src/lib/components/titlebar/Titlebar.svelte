@@ -23,6 +23,8 @@
     toggleZenMode,
     openSettingsModal,
     tabLayout,
+    showBookmarksBar,
+    toggleBookmarksBar,
   } from "../../stores/settingsStore";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
@@ -165,6 +167,22 @@
 
     <!-- Top-Right Controls: Quick Tools, Settings & Window Controls -->
     <div class="titlebar-controls">
+      {#if $tabLayout === "horizontal"}
+        <button
+          class="icon-btn"
+          class:active={$showBookmarksBar}
+          onclick={toggleBookmarksBar}
+          title={$showBookmarksBar ? "Hide bookmarks bar" : "Show bookmarks bar"}
+          aria-label={$showBookmarksBar ? "Hide bookmarks bar" : "Show bookmarks bar"}
+          aria-pressed={$showBookmarksBar}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M4 5.5h16M4 12h16M4 18.5h16" stroke-linecap="round" />
+            <path d="M7 3.5v4M17 3.5v4" stroke-linecap="round" />
+          </svg>
+        </button>
+      {/if}
+
       <button
         class="icon-btn"
         onclick={() => openCommandBar()}

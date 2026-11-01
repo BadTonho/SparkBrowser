@@ -12,6 +12,38 @@ export const isZenMode = writable<boolean>(false);
 export const autoHibernateMinutes = writable<number>(10);
 export const defaultSearchEngine = writable<string>("DuckDuckGo");
 
+const BOOKMARKS_BAR_STORAGE_KEY = "veloce_show_bookmarks_bar";
+
+function getInitialShowBookmarksBar(): boolean {
+  if (typeof localStorage === "undefined") return true;
+
+  try {
+    const saved = localStorage.getItem(BOOKMARKS_BAR_STORAGE_KEY);
+    if (saved === "true") return true;
+    if (saved === "false") return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+export const showBookmarksBar = writable<boolean>(getInitialShowBookmarksBar());
+
+export function setShowBookmarksBar(visible: boolean): void {
+  showBookmarksBar.set(visible);
+  if (typeof localStorage === "undefined") return;
+
+  try {
+    localStorage.setItem(BOOKMARKS_BAR_STORAGE_KEY, String(visible));
+  } catch {
+    // Keep the current visual setting even when storage is unavailable.
+  }
+}
+
+export function toggleBookmarksBar(): void {
+  setShowBookmarksBar(!get(showBookmarksBar));
+}
+
 export const DEFAULT_OVERLAY_BLUR_PX = 16;
 export const MAX_OVERLAY_BLUR_PX = 24;
 const OVERLAY_BLUR_STORAGE_KEY = "veloce_overlay_blur_px";
