@@ -19,6 +19,15 @@
   } from "../../stores/settingsStore";
   import WorkspaceSettings from "./WorkspaceSettings.svelte";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
+  import {
+    SHORTCUT_DEFINITIONS,
+    formatShortcut,
+    getShortcutBinding,
+    keyboardShortcuts,
+    recordingShortcutId,
+    setShortcutBinding,
+    type ShortcutCombo,
+  } from "../../stores/shortcutsStore";
 
   const categories: {
     id: SettingsCategory;
@@ -30,22 +39,6 @@
     { id: "workspaces", icon: "🎨", label: "Workspaces & Theme" },
     { id: "performance_privacy", icon: "🚀", label: "Performance & Privacy" },
     { id: "shortcuts", icon: "⌨️", label: "Keyboard Shortcuts" },
-  ];
-
-  const shortcutsList = [
-    { id: "shortcut-switch-tabs", keys: "Ctrl + 1..9", desc: "Switch to Tab 1–9 (Ctrl+9: Last Tab)" },
-    { id: "shortcut-workspace-picker", keys: "Hold Alt (0.4 sec)", desc: "Open the workspace picker" },
-    { id: "shortcut-switch-workspaces", keys: "Alt + 1..9", desc: "Switch workspaces by list order and show a confirmation" },
-    { id: "shortcut-move-tab", keys: "Alt + ↑ / ↓", desc: "Move Active Tab Up / Down" },
-    { id: "shortcut-command-bar", keys: "Ctrl + T / Ctrl + K", desc: "Open Floating Command Bar" },
-    { id: "shortcut-edit-url", keys: "Ctrl + L", desc: "Edit Current URL in Command Bar" },
-    { id: "shortcut-sidebar", keys: "Ctrl + B", desc: "Toggle Sidebar (Vertical Layout)" },
-    { id: "shortcut-zen", keys: "Alt + Z", desc: "Toggle Fullscreen Zen / Focus Mode" },
-    { id: "shortcut-history", keys: "Ctrl + H", desc: "Open SQLite Browsing History" },
-    { id: "shortcut-downloads", keys: "Ctrl + J", desc: "Open Download Manager" },
-    { id: "shortcut-settings", keys: "Ctrl + ,", desc: "Open Settings & Shortcuts Panel" },
-    { id: "shortcut-close-tab", keys: "Ctrl + W", desc: "Close Active Tab" },
-    { id: "shortcut-reload-tab", keys: "Ctrl + R", desc: "Reload Active Tab" },
   ];
 
   type SearchEntry = {
@@ -114,12 +107,12 @@
       targetId: "setting-auto-hibernate",
       keywords: "performance memory ram 5m 10m 30m",
     },
-    ...shortcutsList.map((shortcut) => ({
-      id: shortcut.id,
-      title: shortcut.desc,
-      description: shortcut.keys,
+    ...SHORTCUT_DEFINITIONS.map((shortcut) => ({
+      id: `setting-${shortcut.id}`,
+      title: shortcut.label,
+      description: shortcut.description,
       category: "shortcuts" as const,
-      targetId: shortcut.id,
+      targetId: `shortcut-${shortcut.id}`,
       keywords: "keyboard shortcut",
     })),
   ];
@@ -132,7 +125,20 @@
     const tokens = normalizeSearchText(searchQuery).trim().split(/\s+/).filter(Boolean);
     if (tokens.length === 0) return [];
 
-    return searchableSettings.filter((entry) => {
+    const entries = searchableSettings.map((entry) => {
+      const shortcutId = entry.targetId.startsWith("shortcut-")
+        ? entry.targetId.slice("shortcut-".length)
+        : undefined;
+      if (!shortcutId) return entry;
+      const definition = SHORTCUT_DEFINITIONS.find((item) => item.id === shortcutId);
+      const binding = getShortcutBinding($keyboardShortcuts, shortcutId);
+      return {
+        ...entry,
+        description: definition && binding ? formatShortcut(binding, definition.sequence) : entry.description,
+      };
+    });
+
+    return entries.filter((entry) => {
       const category = categories.find((item) => item.id === entry.category);
       const searchableText = normalizeSearchText(
         `${entry.title} ${entry.description} ${entry.keywords ?? ""} ${category?.label ?? ""}`
@@ -150,6 +156,7 @@
 
   function selectCategory(category: SettingsCategory): void {
     searchQuery = "";
+    recordingShortcutId.set(null);
     setActiveSettingsCategory(category);
   }
 
@@ -170,6 +177,7 @@
 
   async function selectSearchResult(entry: SearchEntry): Promise<void> {
     searchQuery = "";
+    recordingShortcutId.set(null);
     setActiveSettingsCategory(entry.category);
     await tick();
 
@@ -195,14 +203,69 @@
 
   $effect(() => {
     if ($isSettingsModalOpen) searchQuery = "";
+    else recordingShortcutId.set(null);
   });
 
   onDestroy(() => {
+    recordingShortcutId.set(null);
     if (highlightedTargetTimer) clearTimeout(highlightedTargetTimer);
     highlightedTarget?.classList.remove("search-target-highlight");
   });
 
+  function processShortcutRecording(event: KeyboardEvent): boolean {
+    const id = $recordingShortcutId;
+    if (!id) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const definition = SHORTCUT_DEFINITIONS.find((item) => item.id === id);
+    if (!definition) return true;
+
+    if (event.key === "Escape") {
+      recordingShortcutId.set(null);
+      recordingError = "";
+      return true;
+    }
+
+    const modifierKeys = ["Alt", "Control", "Shift", "Meta"];
+    let binding: ShortcutCombo;
+    if (definition.hold) {
+      if (!modifierKeys.includes(event.key)) {
+        recordingError = "Choose Alt, Ctrl, Shift, or Meta.";
+        return true;
+      }
+      binding = { key: event.key, ctrl: false, alt: false, shift: false, meta: false };
+    } else {
+      if (modifierKeys.includes(event.key)) return true;
+      const key = definition.sequence ? "Digit" : event.key.length === 1 ? event.key.toUpperCase() : event.key;
+      binding = {
+        key,
+        ctrl: event.ctrlKey,
+        alt: event.altKey,
+        shift: event.shiftKey,
+        meta: event.metaKey,
+      };
+    }
+
+    const error = setShortcutBinding(id, binding);
+    if (error) {
+      recordingError = error;
+    } else {
+      recordingError = "";
+      recordingShortcutId.set(null);
+    }
+    return true;
+  }
+
+  let recordingError = $state("");
+
+  function startRecording(id: string): void {
+    recordingError = "";
+    recordingShortcutId.set(id);
+  }
+
   function handleDialogKeydown(event: KeyboardEvent): void {
+    if (processShortcutRecording(event)) return;
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
@@ -213,6 +276,7 @@
   }
 
   function handleWindowKeydown(event: KeyboardEvent): void {
+    if (processShortcutRecording(event)) return;
     if ($isSettingsModalOpen && event.key === "Escape") {
       event.preventDefault();
       closeSettingsModal();
@@ -372,7 +436,7 @@
 
               <div class="setting-row" id="setting-zen-mode" tabindex="-1">
                 <div class="row-text">
-                  <span class="row-label">Zen / Focus Mode (Alt + Z)</span>
+                  <span class="row-label">Zen / Focus Mode ({$keyboardShortcuts && formatShortcut(getShortcutBinding($keyboardShortcuts, "zen")!)})</span>
                   <span class="row-desc">Hides all browser chrome so websites use 100% of the viewport</span>
                 </div>
                 <button
@@ -438,10 +502,31 @@
             <section class="setting-group" aria-labelledby="shortcuts-heading">
               <h2 class="group-title" id="shortcuts-heading">⌨️ Keyboard Shortcuts</h2>
               <div class="shortcuts-grid">
-                {#each shortcutsList as item}
-                  <div class="shortcut-row" id={item.id} tabindex="-1">
-                    <span class="sc-desc">{item.desc}</span>
-                    <kbd class="sc-keys">{item.keys}</kbd>
+                {#each SHORTCUT_DEFINITIONS as item}
+                  {@const binding = getShortcutBinding($keyboardShortcuts, item.id)}
+                  <div class="shortcut-row" id={`shortcut-${item.id}`} tabindex="-1">
+                    <span class="sc-desc">{item.label}</span>
+                    <div class="shortcut-editor">
+                      <button
+                        type="button"
+                        class="sc-keys"
+                        class:recording={$recordingShortcutId === item.id}
+                        aria-label={`Change shortcut for ${item.label}`}
+                        aria-pressed={$recordingShortcutId === item.id}
+                        onclick={() => startRecording(item.id)}
+                      >
+                        {$recordingShortcutId === item.id
+                          ? "Press shortcut… (Esc cancels)"
+                          : item.hold
+                            ? `Hold ${binding?.key === "Control" ? "Ctrl" : binding?.key ?? "Alt"} (0.4 sec)`
+                            : binding
+                              ? formatShortcut(binding, item.sequence)
+                              : "Unassigned"}
+                      </button>
+                      {#if $recordingShortcutId === item.id && recordingError}
+                        <span class="shortcut-error" role="status">{recordingError}</span>
+                      {/if}
+                    </div>
                   </div>
                 {/each}
               </div>
@@ -875,6 +960,31 @@
     border: 1px solid var(--border-subtle);
     font-size: 10.5px;
     color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .sc-keys:hover,
+  .sc-keys:focus-visible {
+    border-color: var(--accent-primary);
+    outline: none;
+  }
+
+  .sc-keys.recording {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+  }
+
+  .shortcut-editor {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .shortcut-error {
+    max-width: 220px;
+    color: var(--status-danger, #f87171);
+    font-size: 10px;
   }
 
   @media (max-width: 720px) {

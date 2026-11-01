@@ -8,6 +8,7 @@ use commands::downloads::{clear_all_downloads, enqueue_download, get_downloads};
 use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
 use commands::persistence::{clear_browsing_history, get_bookmarks, get_history, toggle_bookmark};
 use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
+use commands::shortcuts::set_keyboard_shortcuts;
 use commands::tabs::{
     close_tab, create_tab, get_tabs, hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace,
     reorder_tabs, set_overlay_visibility, set_workspace_switcher_overlay, switch_tab,
@@ -116,6 +117,7 @@ pub fn run() {
             hibernate_inactive_tabs,
             set_overlay_visibility,
             set_workspace_switcher_overlay,
+            set_keyboard_shortcuts,
             get_history,
             clear_browsing_history,
             get_bookmarks,

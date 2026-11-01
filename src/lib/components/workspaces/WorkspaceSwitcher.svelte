@@ -5,6 +5,12 @@
     activateWorkspace,
   } from "../../stores/workspaceStore";
   import { changeTabWorkspace } from "../../stores/browserStore";
+  import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../stores/shortcutsStore";
+
+  function workspaceShortcut(index: number): string {
+    const binding = getShortcutBinding($keyboardShortcuts, "switch-workspaces");
+    return binding ? formatShortcut({ ...binding, key: String(index) }) : "";
+  }
 
   let { horizontal = false }: { horizontal?: boolean } = $props();
 
@@ -52,7 +58,7 @@
       ondragleave={(e) => handleDragLeave(e, ws.id)}
       ondrop={(e) => handleDrop(e, ws.id)}
       title={index < 9
-        ? `Switch to ${ws.name} Workspace (Alt+${index + 1})`
+        ? `Switch to ${ws.name} Workspace (${workspaceShortcut(index + 1)})`
         : `Switch to ${ws.name} Workspace`}
       style="--ws-primary: {ws.accent_primary}; --ws-secondary: {ws.accent_secondary};"
     >

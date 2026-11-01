@@ -47,9 +47,19 @@
     tabLayout,
   } from "./lib/stores/settingsStore";
   import {
+    SHORTCUT_DEFINITIONS,
+    getShortcutBinding,
+    initializeKeyboardShortcuts,
+    isWorkspacePickerHoldKey,
+    keyboardShortcuts,
+    matchesShortcut,
+    recordingShortcutId,
+  } from "./lib/stores/shortcutsStore";
+  import {
     onContentUrlChanged,
     onTabsUpdated,
     onPrivacyStatsUpdated,
+    onBrowserShortcutAction,
   } from "./lib/services/tauri-bridge";
   import WorkspaceSwitcherOverlay from "./lib/components/workspaces/WorkspaceSwitcherOverlay.svelte";
   import {
@@ -67,10 +77,12 @@
     initializeTabs();
     loadBookmarks();
     initializePrivacyStats();
+    initializeKeyboardShortcuts();
 
     let unlistenUrl: (() => void) | undefined;
     let unlistenTabs: (() => void) | undefined;
     let unlistenPrivacy: (() => void) | undefined;
+    let unlistenBrowserShortcut: (() => void) | undefined;
     const stopWorkspaceShortcutBridge = initializeWorkspaceShortcutBridge();
 
     onContentUrlChanged((newUrl) => {
@@ -92,16 +104,20 @@
       unlistenPrivacy = fn;
     });
 
+    onBrowserShortcutAction((action, key) => {
+      dispatchShortcut(action, key);
+    }).then((fn) => {
+      unlistenBrowserShortcut = fn;
+    });
+
     // Automatic Tab Hibernation check every 60s using configurable threshold
     const hibernationInterval = setInterval(() => {
       const thresholdSecs = get(autoHibernateMinutes) * 60;
       suspendInactiveTabs(thresholdSecs);
     }, 60_000);
 
-    const isAltKey = (event: KeyboardEvent) =>
-      event.key === "Alt" || event.code === "AltLeft" || event.code === "AltRight";
-
     const handleGlobalShortcuts = (event: KeyboardEvent) => {
+      if (get(recordingShortcutId)) return;
       const openWorkspaceOverlay = get(workspaceSwitcherOverlay);
 
       if (event.key === "Escape" && openWorkspaceOverlay) {
@@ -111,7 +127,7 @@
         return;
       }
 
-      if (isAltKey(event)) {
+      if (isWorkspacePickerHoldKey(event)) {
         if (!event.repeat) {
           event.preventDefault();
           startWorkspaceAltHold();
@@ -119,112 +135,24 @@
         return;
       }
 
-      if (
-        event.altKey &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.shiftKey &&
-        /^[1-9]$/.test(event.key)
-      ) {
+      const config = get(keyboardShortcuts);
+      for (const definition of SHORTCUT_DEFINITIONS) {
+        const binding = getShortcutBinding(config, definition.id);
+        if (!binding || definition.hold || !matchesShortcut(event, binding, definition.sequence)) continue;
+        if (openWorkspaceOverlay && definition.id !== "switch-workspaces") return;
         event.preventDefault();
-        if (!event.repeat) {
-          void handleWorkspaceShortcutEvent({
-            type: "select-index",
-            index: Number(event.key),
-          });
-        }
+        if (definition.id !== "switch-workspaces") cancelWorkspaceAltHoldTimer();
+        if (!event.repeat) dispatchShortcut(definition.id, event.key);
         return;
       }
 
-      if (openWorkspaceOverlay) return;
-
-      if (event.altKey) {
+      if (!openWorkspaceOverlay && (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey)) {
         cancelWorkspaceAltHoldTimer();
-      }
-
-      const isUp = event.key === "ArrowUp" || event.key === "Up";
-      const isDown = event.key === "ArrowDown" || event.key === "Down";
-      const isAltOrCtrlShift = event.altKey || (event.ctrlKey && event.shiftKey);
-
-      if (isAltOrCtrlShift && isUp) {
-        event.preventDefault();
-        moveActiveTabUp(get(activeWorkspaceId));
-        return;
-      } else if (isAltOrCtrlShift && isDown) {
-        event.preventDefault();
-        moveActiveTabDown(get(activeWorkspaceId));
-        return;
-      }
-
-      // Ctrl + 1..9: Switch to Tab by index (Ctrl+9 switches to the last tab)
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        !event.altKey &&
-        !event.shiftKey &&
-        /^[1-9]$/.test(event.key)
-      ) {
-        event.preventDefault();
-        const num = parseInt(event.key, 10);
-        const currentTabs = get(tabs);
-        const currentWs = get(activeWorkspaceId);
-        const wsTabs = currentTabs.filter(
-          (t) => !t.workspace_id || t.workspace_id === currentWs
-        );
-        if (wsTabs.length === 0) return;
-
-        if (num === 9) {
-          const lastTab = wsTabs[wsTabs.length - 1];
-          if (lastTab) selectTab(lastTab.id);
-        } else {
-          const targetIndex = num - 1;
-          if (targetIndex < wsTabs.length) {
-            selectTab(wsTabs[targetIndex].id);
-          }
-        }
-        return;
-      }
-
-      const key = event.key.toLowerCase();
-      if (event.altKey && key === "z") {
-        event.preventDefault();
-        toggleZenMode();
-      } else if ((event.ctrlKey || event.metaKey) && key === "b") {
-        event.preventDefault();
-        if (get(tabLayout) === "vertical") {
-          toggleSidebar();
-        }
-      } else if ((event.ctrlKey || event.metaKey) && key === "r") {
-        event.preventDefault();
-        triggerReload();
-      } else if ((event.ctrlKey || event.metaKey) && key === "t") {
-        event.preventDefault();
-        addTab("https://duckduckgo.com", get(activeWorkspaceId));
-      } else if ((event.ctrlKey || event.metaKey) && key === "k") {
-        event.preventDefault();
-        toggleCommandBar();
-      } else if ((event.ctrlKey || event.metaKey) && key === "l") {
-        event.preventDefault();
-        openCommandBar(get(currentUrl));
-      } else if ((event.ctrlKey || event.metaKey) && key === "h") {
-        event.preventDefault();
-        toggleHistoryDrawer();
-      } else if ((event.ctrlKey || event.metaKey) && key === "j") {
-        event.preventDefault();
-        toggleDownloadsDrawer();
-      } else if ((event.ctrlKey || event.metaKey) && event.key === ",") {
-        event.preventDefault();
-        toggleSettingsModal();
-      } else if ((event.ctrlKey || event.metaKey) && key === "w") {
-        event.preventDefault();
-        const active = get(tabs).find((t) => t.is_active);
-        if (active) {
-          removeTab(active.id);
-        }
       }
     };
 
     const handleGlobalKeyup = (event: KeyboardEvent) => {
-      if (isAltKey(event)) {
+      if (isWorkspacePickerHoldKey(event)) {
         releaseWorkspaceAlt();
       }
     };
@@ -236,11 +164,52 @@
       if (unlistenUrl) unlistenUrl();
       if (unlistenTabs) unlistenTabs();
       if (unlistenPrivacy) unlistenPrivacy();
+      if (unlistenBrowserShortcut) unlistenBrowserShortcut();
       stopWorkspaceShortcutBridge();
       window.removeEventListener("keydown", handleGlobalShortcuts, true);
       window.removeEventListener("keyup", handleGlobalKeyup, true);
     };
   });
+
+  function dispatchShortcut(action: string, key?: string): void {
+    switch (action) {
+      case "switch-tabs": {
+        const num = Number(key);
+        const currentWs = get(activeWorkspaceId);
+        const wsTabs = get(tabs).filter((tab) => !tab.workspace_id || tab.workspace_id === currentWs);
+        if (wsTabs.length === 0) return;
+        const target = num === 9 ? wsTabs.at(-1) : wsTabs[num - 1];
+        if (target) selectTab(target.id);
+        break;
+      }
+      case "workspace-picker":
+        startWorkspaceAltHold();
+        break;
+      case "switch-workspaces":
+        if (key && /^[1-9]$/.test(key)) {
+          void handleWorkspaceShortcutEvent({ type: "select-index", index: Number(key) });
+        }
+        break;
+      case "move-tab-up":
+      case "move-tab-up-ctrl-shift": moveActiveTabUp(get(activeWorkspaceId)); break;
+      case "move-tab-down":
+      case "move-tab-down-ctrl-shift": moveActiveTabDown(get(activeWorkspaceId)); break;
+      case "new-tab": addTab("https://duckduckgo.com", get(activeWorkspaceId)); break;
+      case "command-bar": toggleCommandBar(); break;
+      case "edit-url": openCommandBar(get(currentUrl)); break;
+      case "sidebar": if (get(tabLayout) === "vertical") toggleSidebar(); break;
+      case "zen": toggleZenMode(); break;
+      case "history": toggleHistoryDrawer(); break;
+      case "downloads": toggleDownloadsDrawer(); break;
+      case "settings": toggleSettingsModal(); break;
+      case "close-tab": {
+        const active = get(tabs).find((tab) => tab.is_active);
+        if (active) removeTab(active.id);
+        break;
+      }
+      case "reload-tab": triggerReload(); break;
+    }
+  }
 </script>
 
 <div class="browser-root">

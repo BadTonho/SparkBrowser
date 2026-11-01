@@ -2,7 +2,7 @@
 
 > 🌍 **Idioma:** [English (Main)](../../en/features/core-features.md) | **Português (pt-BR)**
 
-## 1. ⚡ Command Bar Flutuante (`Ctrl + T` / `Ctrl + K`)
+## 1. ⚡ Command Bar Flutuante (`Ctrl + K` por padrão)
 - Barra central flutuante estilo *Spotlight* animada com física de mola.
 - Permite abrir URLs rapidamente, pesquisar na web, alternar entre abas abertas e executar comandos rápidos do navegador.
 
@@ -18,6 +18,7 @@
 - Separação de abas por contexto (ex: *Trabalho*, *Estudo*, *Pessoal*, *Jogos*).
 - Segure `Alt` por 0,4 segundo para abrir o seletor central de espaços de trabalho. Escolha um perfil enquanto mantém Alt pressionado ou solte Alt, pressione `Esc` ou clique fora para fechar sem trocar.
 - `Alt + 1` até `Alt + 9` alternam imediatamente para os nove primeiros espaços, conforme a ordem exibida, e mostram uma confirmação breve.
+- Esses atalhos de workspace podem ser alterados em Browser Settings; o seletor usa uma tecla modificadora configurável que deve ser mantida pressionada.
 - O seletor e a confirmação também aparecem temporariamente no Modo Zen; ao fechá-los, o Modo Zen continua ativo.
 - Em Browser Settings, renomeie um espaço de trabalho, altere seu emoji e suas cores, crie novos ou exclua os existentes. Personal é protegido.
 - Ao excluir um espaço de trabalho com abas abertas, transfira-as para outro espaço ou feche-as; as abas fechadas continuam no histórico de navegação.
@@ -30,7 +31,7 @@
 ## 6. 🔀 Reordenação de Guias por Arrastar (Drag-and-Drop) e Movimentação entre Workspaces
 - Reordene abas na barra horizontal ou na barra lateral usando arrastar e soltar (drag-and-drop).
 - Navegação rápida entre abas: pressione `Ctrl + 1` até `Ctrl + 8` para ir diretamente para a aba correspondente, e `Ctrl + 9` para ir para a última aba.
-- Atalhos de teclado globais: pressione `Alt + ↑` e `Alt + ↓` (ou `Ctrl + Shift + ↑` / `↓`) em qualquer lugar da aplicação para mover a guia ativa para cima ou para baixo imediatamente.
+- Por padrão, pressione `Alt + ↑` ou `Alt + ↓` (ou `Ctrl + Shift + ↑` / `↓`) para mover a aba ativa. Cada atalho pode ser personalizado em Browser Settings.
 - No layout Vertical, arraste abas sobre as pílulas de Workspace (*Personal*, *Work*, *Study*, *Gaming*) para transferi-las entre contextos.
 - Atualização em tempo real na interface com persistência automática no SQLite em Rust (`reorder_tabs`, `move_tab_to_workspace`).
 
@@ -45,3 +46,4 @@
 - Ajuste em Aparência e Layout o desfoque de fundo compartilhado pelos overlays temporários, de **0 a 24 px**; a preferência é aplicada imediatamente e lembrada após reiniciar.
 - Use a barra fixa de categorias para alternar entre os painéis; somente o painel selecionado é exibido e rola quando seu conteúdo ultrapassa a altura da janela.
 - A última categoria selecionada é restaurada ao reabrir o modal e também após reiniciar o aplicativo.
+- Em **Keyboard Shortcuts**, clique em um atalho e pressione a nova combinação para gravá-la. O seletor de workspaces pode usar uma tecla modificadora mantida pressionada (Alt, Ctrl, Shift ou Meta); combinações duplicadas são rejeitadas. As alterações são salvas entre reinicializações e funcionam com foco na interface do navegador ou em uma página.

@@ -12,6 +12,7 @@
     changeTabWorkspace,
   } from "../../stores/browserStore";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
+  import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
 
   let workspaceTabs = $derived(
     $tabs.filter(
@@ -176,10 +177,10 @@
     <button
       class="new-tab-pill"
       onclick={() => addTab("https://duckduckgo.com", $activeWorkspaceId)}
-      title="Create New Tab (Ctrl+T)"
+      title={`Create New Tab (${ $keyboardShortcuts && shortcutLabel("new-tab") })`}
     >
       <span>+ New</span>
-      <kbd>Ctrl+T</kbd>
+      <kbd>{$keyboardShortcuts && shortcutLabel("new-tab")}</kbd>
     </button>
   </div>
 
@@ -195,7 +196,7 @@
         onkeydown={(e) => handleKeydown(e, tab.id)}
         role="button"
         tabindex="0"
-        title="{tab.title} (Drag to reorder · Alt+↑/↓)"
+        title="{tab.title} (Drag to reorder · {$keyboardShortcuts && shortcutLabel('move-tab-up')} / {$keyboardShortcuts && shortcutLabel('move-tab-down')})"
         transition:slide={{ duration: 220, easing: cubicOut }}
       >
         <div class="drag-grip" title="Drag to reorder">
@@ -231,7 +232,7 @@
           <button
             class="tab-action-btn close-btn"
             onclick={(e) => handleCloseClick(e, tab.id)}
-            title="Close Tab (Ctrl+W)"
+            title={`Close Tab (${ $keyboardShortcuts && shortcutLabel("close-tab") })`}
             aria-label="Close Tab"
             transition:fade={{ duration: 120 }}
           >

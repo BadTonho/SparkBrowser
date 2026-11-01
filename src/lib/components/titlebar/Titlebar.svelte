@@ -26,6 +26,7 @@
   } from "../../stores/settingsStore";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
+  import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import {
     minimizeWindow,
@@ -67,7 +68,7 @@
           class="icon-btn sidebar-toggle"
           class:active={$isSidebarOpen}
           onclick={toggleSidebar}
-          title="Toggle Sidebar (Ctrl+B)"
+          title={`Toggle Sidebar (${ $keyboardShortcuts && shortcutLabel("sidebar") })`}
           aria-label="Toggle Sidebar"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -121,7 +122,7 @@
           class="nav-btn"
           class:spinning={$isLoading}
           onclick={triggerReload}
-          title="Reload (Ctrl+R)"
+          title={`Reload (${ $keyboardShortcuts && shortcutLabel("reload-tab") })`}
           aria-label="Reload"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -167,7 +168,7 @@
       <button
         class="icon-btn"
         onclick={() => openCommandBar()}
-        title="Open Command Bar (Ctrl+K)"
+        title={`Open Command Bar (${ $keyboardShortcuts && shortcutLabel("command-bar") })`}
         aria-label="Command Bar"
       >
         ⚡
@@ -176,7 +177,7 @@
       <button
         class="icon-btn"
         onclick={openHistoryDrawer}
-        title="Browsing History (Ctrl+H)"
+        title={`Browsing History (${ $keyboardShortcuts && shortcutLabel("history") })`}
         aria-label="Browsing History"
       >
         🕒
@@ -185,7 +186,7 @@
       <button
         class="icon-btn"
         onclick={openDownloadsDrawer}
-        title="Download Manager (Ctrl+J)"
+        title={`Download Manager (${ $keyboardShortcuts && shortcutLabel("downloads") })`}
         aria-label="Downloads"
       >
         📥
@@ -207,7 +208,7 @@
       <button
         class="icon-btn"
         onclick={openSettingsModal}
-        title="Settings & Shortcuts (Ctrl+,)"
+        title={`Settings & Shortcuts (${ $keyboardShortcuts && shortcutLabel("settings") })`}
         aria-label="Settings"
       >
         ⚙️
@@ -216,7 +217,7 @@
       <button
         class="icon-btn"
         onclick={toggleZenMode}
-        title="Enter Zen Focus Mode (Alt+Z)"
+        title={`Enter Zen Focus Mode (${ $keyboardShortcuts && shortcutLabel("zen") })`}
         aria-label="Zen Mode"
       >
         🧘

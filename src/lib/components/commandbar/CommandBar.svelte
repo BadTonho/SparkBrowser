@@ -26,6 +26,7 @@
     toggleZenMode,
     tabLayout,
   } from "../../stores/settingsStore";
+  import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
 
   let inputEl: HTMLInputElement | undefined = $state();
   let selectedIndex = $state(0);
@@ -41,6 +42,7 @@
   });
 
   function buildSuggestions(query: string): CommandItem[] {
+    const shortcuts = $keyboardShortcuts;
     const q = query.trim().toLowerCase();
     const items: CommandItem[] = [];
 
@@ -135,7 +137,7 @@
       {
         id: "cmd-zen",
         title: "Toggle Zen Focus Mode",
-        subtitle: "Hide all browser toolbars for 100% fullscreen web (Alt+Z)",
+        subtitle: `Hide all browser toolbars for 100% fullscreen web (${shortcuts && shortcutLabel("zen")})`,
         icon: "🧘",
         badge: "Zen Mode",
         action: async () => {
@@ -146,7 +148,7 @@
       {
         id: "cmd-downloads",
         title: "Open Download Manager",
-        subtitle: "View downloaded files or save a URL (Ctrl+J)",
+        subtitle: `View downloaded files or save a URL (${shortcutLabel("downloads")})`,
         icon: "📥",
         badge: "Downloads",
         action: async () => {
@@ -157,7 +159,7 @@
       {
         id: "cmd-settings",
         title: "Open Browser Settings & Shortcuts",
-        subtitle: "Customize themes, hibernation timer & view shortcuts (Ctrl+,)",
+        subtitle: `Customize themes, hibernation timer & view shortcuts (${shortcutLabel("settings")})`,
         icon: "⚙️",
         badge: "Settings",
         action: async () => {
@@ -179,7 +181,7 @@
       {
         id: "cmd-history",
         title: "Open Browsing History",
-        subtitle: "Search or clear local SQLite history (Ctrl+H)",
+        subtitle: `Search or clear local SQLite history (${shortcutLabel("history")})`,
         icon: "🕒",
         badge: "SQLite",
         action: async () => {
@@ -201,7 +203,7 @@
       {
         id: "cmd-toggle-sidebar",
         title: "Toggle Sidebar",
-        subtitle: "Collapse or expand the vertical tab bar (Ctrl+B)",
+        subtitle: `Collapse or expand the vertical tab bar (${shortcutLabel("sidebar")})`,
         icon: "📐",
         badge: "Command",
         action: async () => {
@@ -212,7 +214,7 @@
       {
         id: "cmd-reload",
         title: "Reload Active Tab",
-        subtitle: "Refresh the current web page (Ctrl+R)",
+        subtitle: `Refresh the current web page (${shortcutLabel("reload-tab")})`,
         icon: "🔄",
         badge: "Command",
         action: async () => {
@@ -315,7 +317,7 @@
       <div class="command-footer">
         <span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
         <span><kbd>↵</kbd> to execute</span>
-        <span><kbd>Ctrl+T</kbd> / <kbd>Ctrl+K</kbd> anytime</span>
+        <span><kbd>{$keyboardShortcuts && shortcutLabel("command-bar")}</kbd> anytime</span>
       </div>
     </div>
   </div>

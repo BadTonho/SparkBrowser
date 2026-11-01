@@ -469,6 +469,20 @@ export async function onWorkspaceShortcutEvent(
   });
 }
 
+export async function setKeyboardShortcuts(shortcuts: Record<string, unknown>): Promise<void> {
+  if (!isTauriRuntime()) return;
+  await invoke<void>("set_keyboard_shortcuts", { shortcuts });
+}
+
+export async function onBrowserShortcutAction(
+  callback: (action: string, key?: string) => void
+): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => {};
+  return await listen<{ action: string; key?: string }>("browser-shortcut-action", (event) => {
+    callback(event.payload.action, event.payload.key);
+  });
+}
+
 export async function onWorkspaceShortcutCancel(
   callback: () => void
 ): Promise<UnlistenFn> {

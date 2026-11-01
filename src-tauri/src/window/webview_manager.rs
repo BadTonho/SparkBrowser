@@ -56,14 +56,15 @@ pub const WORKSPACE_SWITCHER_ESCAPE_SCRIPT: &str = r#"
   })();
 "#;
 
-#[cfg(not(windows))]
-fn build_workspace_shortcut_script(token: &str) -> String {
+fn build_workspace_shortcut_script(token: &str, native_alt_capture: bool) -> String {
     format!(
         r#"
         (() => {{
           if (window.top !== window) return;
           const bridgeToken = "{token}";
-          let altPressed = false;
+          const nativeAltCapture = {native_alt_capture};
+          let shortcuts = {{}};
+          let holdPressed = false;
           let nextSequence = 0;
           let requestInFlight = false;
           const requestQueue = [];
@@ -77,13 +78,41 @@ fn build_workspace_shortcut_script(token: &str) -> String {
               sequence: String(request.sequence)
             }});
             if (request.index !== undefined) query.set("index", String(request.index));
-            window.location.href = `veloce-internal://workspace-shortcut/${{request.type}}?${{query.toString()}}`;
+            if (request.action) query.set("action", request.action);
+            if (request.key) query.set("key", request.key);
+            window.location.href = `veloce-internal://keyboard-shortcut/${{request.type}}?${{query.toString()}}`;
           }}
 
-          function notifyBrowser(type, index) {{
-            requestQueue.push({{ type, index, sequence: ++nextSequence }});
+          function notifyBrowser(type, action, key) {{
+            requestQueue.push({{ type, action, key, sequence: ++nextSequence }});
             flushRequestQueue();
           }}
+
+          function normalizeKey(key) {{
+            return key.length === 1 ? key.toUpperCase() : key;
+          }}
+
+          function modifierMatch(event, binding) {{
+            return event.ctrlKey === binding.ctrl && event.altKey === binding.alt &&
+              event.shiftKey === binding.shift && event.metaKey === binding.meta;
+          }}
+
+          function isHoldKey(event, binding) {{
+            return binding && event.key === binding.key;
+          }}
+
+          function resetHold(type) {{
+            if (!holdPressed) return;
+            holdPressed = false;
+            notifyBrowser(type);
+          }}
+
+          Object.defineProperty(window, "__veloceSetKeyboardShortcuts", {{
+            configurable: false,
+            enumerable: false,
+            writable: false,
+            value: (secret, value) => {{ if (secret === bridgeToken) shortcuts = value || {{}}; }}
+          }});
 
           Object.defineProperty(window, "__veloceWorkspaceShortcutAck", {{
             configurable: false,
@@ -97,16 +126,6 @@ fn build_workspace_shortcut_script(token: &str) -> String {
             }}
           }});
 
-          function isAltKey(event) {{
-            return event.key === "Alt" || event.code === "AltLeft" || event.code === "AltRight";
-          }}
-
-          function resetAltForPageHidden() {{
-            if (!altPressed) return;
-            altPressed = false;
-            notifyBrowser("alt-cancel");
-          }}
-
           window.addEventListener("keydown", (event) => {{
             if (!event.isTrusted) return;
 
@@ -117,50 +136,58 @@ fn build_workspace_shortcut_script(token: &str) -> String {
               return;
             }}
 
-            if (isAltKey(event)) {{
-              if (!event.repeat && !altPressed) {{
-                altPressed = true;
+            const holdBinding = shortcuts["workspace-picker"]?.[0];
+            if (isHoldKey(event, holdBinding)) {{
+              if (nativeAltCapture && holdBinding.key === "Alt") return;
+              if (!event.repeat && !holdPressed) {{
+                holdPressed = true;
                 event.preventDefault();
                 notifyBrowser("alt-down");
               }}
               return;
             }}
 
-            if (
-              event.altKey &&
-              !event.ctrlKey &&
-              !event.metaKey &&
-              !event.shiftKey &&
-              /^[1-9]$/.test(event.key)
-            ) {{
+            if (holdPressed) resetHold("alt-up");
+
+            if (event.repeat) return;
+            for (const [action, bindings] of Object.entries(shortcuts)) {{
+              if (action === "workspace-picker" || !Array.isArray(bindings)) continue;
+              const binding = bindings[0];
+              if (!binding || !modifierMatch(event, binding)) continue;
+              if (
+                nativeAltCapture && action === "switch-workspaces" &&
+                binding.key === "Digit" && binding.alt && !binding.ctrl && !binding.shift && !binding.meta
+              ) return;
+              const keyMatches = binding.key === "Digit"
+                ? /^[1-9]$/.test(event.key)
+                : normalizeKey(event.key) === normalizeKey(binding.key);
+              if (!keyMatches) continue;
               event.preventDefault();
-              if (event.repeat) return;
-              altPressed = false;
-              notifyBrowser("select-index", Number(event.key));
+              event.stopImmediatePropagation();
+              notifyBrowser("action", action, event.key);
               return;
             }}
-
-            if (!altPressed) return;
-            altPressed = false;
-            notifyBrowser("alt-up");
           }}, true);
 
           window.addEventListener("keyup", (event) => {{
-            if (!event.isTrusted || !isAltKey(event) || !altPressed) return;
-            altPressed = false;
-            notifyBrowser("alt-up");
+            if (!event.isTrusted) return;
+            const holdBinding = shortcuts["workspace-picker"]?.[0];
+            if (!isHoldKey(event, holdBinding)) return;
+            if (nativeAltCapture && holdBinding.key === "Alt") return;
+            resetHold("alt-up");
           }}, true);
 
           window.addEventListener("focus", () => {{
-            altPressed = false;
+            holdPressed = false;
           }}, true);
           document.addEventListener("visibilitychange", () => {{
-            if (document.visibilityState === "hidden") resetAltForPageHidden();
-            else altPressed = false;
+            if (document.visibilityState === "hidden") resetHold("alt-cancel");
+            else holdPressed = false;
           }}, true);
         }})();
         "#,
-        token = token
+        token = token,
+        native_alt_capture = native_alt_capture
     )
 }
 
@@ -226,19 +253,59 @@ fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String>
                         return Ok(());
                     }
 
-                    // VK_MENU is sent for both left and right Alt by WebView2.
-                    if virtual_key == 0x12 {
-                        let payload = if is_key_down {
-                            if !is_repeat
-                                && !state.workspace_alt_pressed.swap(true, Ordering::SeqCst)
-                            {
-                                Some(serde_json::json!({ "type": "alt-down" }))
+                    // WebView2 reports the modifier as a native accelerator. Capture Alt only
+                    // when it is still configured as the workspace-picker hold key.
+                    let configured_hold_key = state
+                        .workspace_picker_hold_key
+                        .lock()
+                        .map(|key| key.as_str() == "Alt")
+                        .unwrap_or(false);
+                    let workspace_shortcut_is_alt_digit = state
+                        .keyboard_shortcuts
+                        .lock()
+                        .ok()
+                        .and_then(|shortcuts| {
+                            shortcuts
+                                .get("switch-workspaces")
+                                .and_then(serde_json::Value::as_array)
+                                .and_then(|bindings| bindings.first())
+                                .map(|binding| {
+                                    binding.get("key").and_then(serde_json::Value::as_str)
+                                        == Some("Digit")
+                                        && binding.get("alt").and_then(serde_json::Value::as_bool)
+                                            == Some(true)
+                                        && binding.get("ctrl").and_then(serde_json::Value::as_bool)
+                                            == Some(false)
+                                        && binding.get("shift").and_then(serde_json::Value::as_bool)
+                                            == Some(false)
+                                        && binding.get("meta").and_then(serde_json::Value::as_bool)
+                                            == Some(false)
+                                })
+                        })
+                        .unwrap_or(false);
+                    if virtual_key == 0x12
+                        && (configured_hold_key || workspace_shortcut_is_alt_digit)
+                    {
+                        let payload = if configured_hold_key {
+                            if is_key_down {
+                                if !is_repeat
+                                    && !state.workspace_alt_pressed.swap(true, Ordering::SeqCst)
+                                {
+                                    Some(serde_json::json!({ "type": "alt-down" }))
+                                } else {
+                                    None
+                                }
+                            } else if state.workspace_alt_pressed.swap(false, Ordering::SeqCst) {
+                                Some(serde_json::json!({ "type": "alt-up" }))
                             } else {
                                 None
                             }
-                        } else if state.workspace_alt_pressed.swap(false, Ordering::SeqCst) {
-                            Some(serde_json::json!({ "type": "alt-up" }))
                         } else {
+                            if is_key_down && !is_repeat {
+                                state.workspace_alt_pressed.store(true, Ordering::SeqCst);
+                            } else if is_key_up {
+                                state.workspace_alt_pressed.store(false, Ordering::SeqCst);
+                            }
                             None
                         };
 
@@ -254,24 +321,29 @@ fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String>
                         return Ok(());
                     }
 
-                    if is_key_down && state.workspace_alt_pressed.load(Ordering::SeqCst) {
+                    if is_key_down
+                        && workspace_shortcut_is_alt_digit
+                        && state.workspace_alt_pressed.load(Ordering::SeqCst)
+                    {
                         let index = match virtual_key {
-                            49..=57 => Some((virtual_key - 48) as u8), // Main keyboard 1-9
-                            97..=105 => Some((virtual_key - 96) as u8), // Numpad 1-9
+                            49..=57 => Some((virtual_key - 48) as u8),
+                            97..=105 => Some((virtual_key - 96) as u8),
                             _ => None,
                         };
-
                         if let Some(index) = index {
-                            // Suppress repeats too, but only emit the first keydown.
                             unsafe {
                                 args.SetHandled(true)?;
                             }
                             if !is_repeat {
                                 let _ = app_for_handler.emit(
-                                    "workspace-shortcut-event",
-                                    serde_json::json!({ "type": "select-index", "index": index }),
+                                    "browser-shortcut-action",
+                                    serde_json::json!({
+                                        "action": "switch-workspaces",
+                                        "key": index.to_string()
+                                    }),
                                 );
                             }
+                            return Ok(());
                         }
                     }
 
@@ -446,8 +518,16 @@ pub fn spawn_content_webview(
         .try_state::<BrowserState>()
         .and_then(|s| s.shield_enabled.lock().ok().map(|v| *v))
         .unwrap_or(true);
-    #[cfg(not(windows))]
     let keyboard_bridge_token = create_internal_bridge_token();
+    if let Some(state) = app.try_state::<BrowserState>() {
+        if let Ok(mut token) = state.keyboard_bridge_token.lock() {
+            *token = Some(keyboard_bridge_token.clone());
+        }
+    }
+    #[cfg(windows)]
+    let native_alt_capture = true;
+    #[cfg(not(windows))]
+    let native_alt_capture = false;
 
     let app_handle_for_nav = app.clone();
 
@@ -456,9 +536,30 @@ pub fn spawn_content_webview(
             .initialization_script(&build_content_shield_script(shield_enabled))
             .initialization_script(WORKSPACE_SWITCHER_ESCAPE_SCRIPT);
 
-    #[cfg(not(windows))]
-    let webview_builder = webview_builder
-        .initialization_script(build_workspace_shortcut_script(&keyboard_bridge_token));
+    let webview_builder = webview_builder.initialization_script(build_workspace_shortcut_script(
+        &keyboard_bridge_token,
+        native_alt_capture,
+    ));
+
+    let app_for_page_load = app.clone();
+    let keyboard_token_for_load = keyboard_bridge_token.clone();
+    let webview_builder = webview_builder.on_page_load(move |webview, payload| {
+        if payload.event() != tauri::webview::PageLoadEvent::Finished {
+            return;
+        }
+        let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
+            return;
+        };
+        let Ok(shortcuts) = state.keyboard_shortcuts.lock() else {
+            return;
+        };
+        if let Ok(serialized) = serde_json::to_string(&*shortcuts) {
+            let _ = webview.eval(&format!(
+                "window.__veloceSetKeyboardShortcuts?.(\"{}\", {serialized});",
+                keyboard_token_for_load
+            ));
+        }
+    });
 
     let webview_builder = webview_builder.on_navigation(move |nav_url| {
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("workspace-switcher")
@@ -467,63 +568,89 @@ pub fn spawn_content_webview(
             return false;
         }
 
-        #[cfg(not(windows))]
+        if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("keyboard-shortcut")
         {
-            if nav_url.scheme() == "veloce-internal" {
-                if nav_url.host_str() == Some("workspace-shortcut") {
-                    let token_matches = nav_url
-                        .query_pairs()
-                        .find(|(key, _)| key == "token")
-                        .map(|(_, value)| value == keyboard_bridge_token)
-                        .unwrap_or(false);
-                    let window_is_focused = app_handle_for_nav
-                        .get_webview_window("main")
-                        .and_then(|window| window.is_focused().ok())
-                        .unwrap_or(false);
+            let params = nav_url.query_pairs().collect::<Vec<_>>();
+            let request_token = params
+                .iter()
+                .find(|(key, _)| key == "token")
+                .map(|(_, value)| value.as_ref());
+            let sequence = params
+                .iter()
+                .find(|(key, _)| key == "sequence")
+                .and_then(|(_, value)| value.parse::<u64>().ok());
+            let token_matches = app_handle_for_nav
+                .try_state::<BrowserState>()
+                .and_then(|state| {
+                    state.keyboard_bridge_token.lock().ok().map(|token| {
+                        token.as_deref() == request_token
+                            && token.as_deref() == Some(keyboard_bridge_token.as_str())
+                    })
+                })
+                .unwrap_or(false);
+            let focused = app_handle_for_nav
+                .get_webview_window("main")
+                .and_then(|window| window.is_focused().ok())
+                .unwrap_or(false);
 
-                    if token_matches {
-                        let event_type = nav_url.path().trim_matches('/');
-                        let payload = match event_type {
-                            "alt-down" => Some(serde_json::json!({ "type": "alt-down" })),
-                            "alt-up" => Some(serde_json::json!({ "type": "alt-up" })),
-                            "alt-cancel" => Some(serde_json::json!({ "type": "alt-cancel" })),
-                            "select-index" => nav_url
-                                .query_pairs()
-                                .find(|(key, _)| key == "index")
-                                .and_then(|(_, value)| value.parse::<u8>().ok())
-                                .filter(|index| (1..=9).contains(index))
-                                .map(|index| {
-                                    serde_json::json!({ "type": "select-index", "index": index })
-                                }),
-                            _ => None,
-                        };
-
-                        if window_is_focused {
-                            if let Some(payload) = payload {
-                                let _ =
-                                    app_handle_for_nav.emit("workspace-shortcut-event", payload);
-                            }
-                        } else {
-                            let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
-                        }
-
-                        if let Some(sequence) = nav_url
-                            .query_pairs()
-                            .find(|(key, _)| key == "sequence")
-                            .and_then(|(_, value)| value.parse::<u64>().ok())
-                        {
-                            if let Some(webview) =
-                                app_handle_for_nav.get_webview(CONTENT_WEBVIEW_LABEL)
-                            {
-                                let _ = webview.eval(&format!(
-                                    "window.__veloceWorkspaceShortcutAck({sequence});"
-                                ));
-                            }
+            if token_matches && focused {
+                let event_type = nav_url.path().trim_matches('/');
+                match event_type {
+                    "alt-down" | "alt-up" | "alt-cancel" => {
+                        let _ = app_handle_for_nav.emit(
+                            "workspace-shortcut-event",
+                            serde_json::json!({ "type": event_type }),
+                        );
+                    }
+                    "action" => {
+                        let action = params
+                            .iter()
+                            .find(|(key, _)| key == "action")
+                            .map(|(_, value)| value.as_ref());
+                        let key = params
+                            .iter()
+                            .find(|(key, _)| key == "key")
+                            .map(|(_, value)| value.as_ref());
+                        if let Some(action) = action.filter(|action| {
+                            matches!(
+                                *action,
+                                "switch-tabs"
+                                    | "switch-workspaces"
+                                    | "move-tab-up"
+                                    | "move-tab-up-ctrl-shift"
+                                    | "move-tab-down"
+                                    | "move-tab-down-ctrl-shift"
+                                    | "new-tab"
+                                    | "command-bar"
+                                    | "edit-url"
+                                    | "sidebar"
+                                    | "zen"
+                                    | "history"
+                                    | "downloads"
+                                    | "settings"
+                                    | "close-tab"
+                                    | "reload-tab"
+                            )
+                        }) {
+                            let _ = app_handle_for_nav.emit(
+                                "browser-shortcut-action",
+                                serde_json::json!({ "action": action, "key": key }),
+                            );
                         }
                     }
+                    _ => {}
                 }
-                return false;
+            } else if !focused {
+                let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
             }
+
+            if let Some(sequence) = sequence {
+                if let Some(webview) = app_handle_for_nav.get_webview(CONTENT_WEBVIEW_LABEL) {
+                    let _ =
+                        webview.eval(&format!("window.__veloceWorkspaceShortcutAck({sequence});"));
+                }
+            }
+            return false;
         }
 
         // No internal URL is a supported keyboard transport on Windows; keep

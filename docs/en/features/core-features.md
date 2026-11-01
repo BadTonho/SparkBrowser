@@ -2,7 +2,7 @@
 
 > 🌍 **Language:** **English** | [Português (pt-BR)](../../pt-BR/features/core-features.md)
 
-## 1. ⚡ Floating Command Bar (`Ctrl + T` / `Ctrl + K`)
+## 1. ⚡ Floating Command Bar (`Ctrl + K` by default)
 - A Spotlight-inspired, spring-animated floating bar centered on the screen.
 - Allows instant URL navigation, web search, switching between open tabs, and executing quick browser actions.
 
@@ -18,6 +18,7 @@
 - Group tabs by context (e.g., *Work*, *Study*, *Personal*, *Gaming*).
 - Hold `Alt` for 0.4 seconds to open the centered workspace picker. Choose a workspace while holding Alt, or release Alt, press `Esc`, or click outside to dismiss it.
 - `Alt + 1` through `Alt + 9` switch immediately to the first nine workspaces in their displayed order and show a brief confirmation.
+- These workspace shortcuts can be changed in Browser Settings; the picker uses a configurable held modifier key.
 - The picker and confirmation can appear temporarily in Zen Mode; closing them leaves Zen Mode enabled.
 - In Browser Settings, rename a workspace, change its emoji and theme colors, create workspaces, or delete them. Personal is protected.
 - When deleting a workspace with open tabs, move them to another workspace or close them; closed tabs remain in browsing history.
@@ -30,7 +31,7 @@
 ## 6. 🔀 Drag-and-Drop Tab Reordering & Workspace Assignment
 - Reorder tabs in the horizontal tab bar or the vertical sidebar using drag-and-drop.
 - Quick tab navigation: press `Ctrl + 1` through `Ctrl + 8` to jump to a specific tab, and `Ctrl + 9` to jump to the last tab.
-- Global keyboard shortcuts: press `Alt + ↑` and `Alt + ↓` (or `Ctrl + Shift + ↑` / `↓`) anywhere in the application to move the active tab up or down immediately.
+- By default, press `Alt + ↑` or `Alt + ↓` (or `Ctrl + Shift + ↑` / `↓`) to move the active tab. Each shortcut can be customized in Browser Settings.
 - In Vertical layout, drag tabs onto Workspace pills (*Personal*, *Work*, *Study*, *Gaming*) to reassign them between contexts.
 - Real-time Svelte state updating coupled with automatic Rust SQLite session persistence (`reorder_tabs`, `move_tab_to_workspace`).
 
@@ -45,3 +46,4 @@
 - Adjust the shared background blur for temporary overlays from **0–24 px** in Appearance & Layout; the preference is applied immediately and remembered across restarts.
 - Use the fixed category rail to switch between panels; only the selected panel is shown and scrolls when its content is taller than the window.
 - The last selected category is remembered when the dialog is reopened and across app restarts.
+- In **Keyboard Shortcuts**, click a shortcut and press the new key combination to record it. The workspace picker can use a held modifier key (Alt, Ctrl, Shift, or Meta); duplicate combinations are rejected. Changes are saved across restarts and work while the browser interface or a page has focus.

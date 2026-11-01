@@ -8,6 +8,7 @@
     reorderTabsList,
   } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceStore";
+  import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import {
     minimizeWindow,
     toggleMaximizeWindow,
@@ -158,7 +159,7 @@
         <button
           class="tab-close-btn"
           onclick={(e) => handleCloseClick(e, tab.id)}
-          title="Close tab (Ctrl+W)"
+          title={`Close tab (${ $keyboardShortcuts && shortcutLabel("close-tab") })`}
           aria-label="Close tab"
         >
           ✕
@@ -169,7 +170,7 @@
     <button
       class="new-tab-btn"
       onclick={() => addTab("https://duckduckgo.com", $activeWorkspaceId)}
-      title="Create New Tab (Ctrl+T)"
+      title={`Create New Tab (${ $keyboardShortcuts && shortcutLabel("new-tab") })`}
       aria-label="Create New Tab"
     >
       +
