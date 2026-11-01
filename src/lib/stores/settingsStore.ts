@@ -12,6 +12,8 @@ export const isZenMode = writable<boolean>(false);
 export const autoHibernateMinutes = writable<number>(10);
 export {
   defaultSearchEngine,
+  getSearchEngineHomeUrl,
+  getSearchEngineLabel,
   SEARCH_ENGINES,
   setDefaultSearchEngine,
   type SearchEngine,

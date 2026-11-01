@@ -176,7 +176,7 @@
     </span>
     <button
       class="new-tab-pill"
-      onclick={() => addTab("https://duckduckgo.com", $activeWorkspaceId)}
+      onclick={() => addTab(undefined, $activeWorkspaceId)}
       title={`Create New Tab (${ $keyboardShortcuts && shortcutLabel("new-tab") })`}
     >
       <span>+ New</span>

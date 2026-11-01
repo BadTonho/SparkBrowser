@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
 
-pub const DEFAULT_HOME_URL: &str = "https://duckduckgo.com";
+pub const DEFAULT_HOME_URL: &str = "https://www.google.com/";
 pub const INITIAL_TAB_ID: &str = "tab-1";
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

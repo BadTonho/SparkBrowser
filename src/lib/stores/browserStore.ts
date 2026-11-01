@@ -1,7 +1,11 @@
 import { writable, get } from "svelte/store";
 import { spring } from "svelte/motion";
 import type { QuickLink, TabItem } from "../types/browser";
-import { defaultSearchEngine } from "./searchEngineStore";
+import {
+  defaultSearchEngine,
+  getSearchEngineHomeUrl,
+  getSearchEngineLabel,
+} from "./searchEngineStore";
 import {
   navigateToUrl,
   navigateBack,
@@ -27,16 +31,16 @@ export const SIDEBAR_COLLAPSED_WIDTH = 0;
 export const tabs = writable<TabItem[]>([
   {
     id: "tab-1",
-    title: "DuckDuckGo",
-    url: "https://duckduckgo.com",
+    title: getSearchEngineLabel(get(defaultSearchEngine)),
+    url: getSearchEngineHomeUrl(get(defaultSearchEngine)),
     workspace_id: "ws-personal",
     is_active: true,
     is_hibernated: false,
   },
 ]);
 
-export const currentUrl = writable<string>("https://duckduckgo.com");
-export const addressInput = writable<string>("https://duckduckgo.com");
+export const currentUrl = writable<string>(getSearchEngineHomeUrl(get(defaultSearchEngine)));
+export const addressInput = writable<string>(getSearchEngineHomeUrl(get(defaultSearchEngine)));
 export const isLoading = writable<boolean>(false);
 export const isSidebarOpen = writable<boolean>(true);
 
@@ -92,7 +96,11 @@ export function applyTabsSnapshot(snapshot: TabItem[]): void {
 }
 
 export async function initializeTabs(): Promise<void> {
-  const initial = await fetchTabs();
+  const engine = get(defaultSearchEngine);
+  const initial = await fetchTabs(
+    getSearchEngineHomeUrl(engine),
+    getSearchEngineLabel(engine)
+  );
   applyTabsSnapshot(initial);
 }
 
@@ -100,7 +108,7 @@ export async function addTab(
   targetUrl?: string,
   workspaceId = "ws-personal"
 ): Promise<void> {
-  const urlToOpen = targetUrl?.trim() || "https://duckduckgo.com";
+  const urlToOpen = targetUrl?.trim() || getSearchEngineHomeUrl(get(defaultSearchEngine));
   isLoading.set(true);
   try {
     if (!isTauriRuntime()) {
@@ -142,7 +150,7 @@ export async function removeTab(tabId: string): Promise<void> {
   if (!isTauriRuntime()) {
     const filtered = get(tabs).filter((t) => t.id !== tabId);
     if (filtered.length === 0) {
-      await addTab("https://duckduckgo.com");
+      await addTab();
       return;
     }
     if (!filtered.some((t) => t.is_active)) {
@@ -152,7 +160,7 @@ export async function removeTab(tabId: string): Promise<void> {
     applyTabsSnapshot(filtered);
     return;
   }
-  const snapshot = await closeExistingTab(tabId);
+  const snapshot = await closeExistingTab(tabId, get(defaultSearchEngine));
   applyTabsSnapshot(snapshot);
 }
 

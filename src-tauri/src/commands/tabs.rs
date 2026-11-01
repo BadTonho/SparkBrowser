@@ -4,7 +4,7 @@ use crate::state::workspace_model::WorkspaceItem;
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::window::webview_manager::{
     build_workspace_switcher_update_script, create_internal_bridge_token, navigate_content_webview,
-    resolve_input_to_url, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
+    resolve_input_to_url, search_engine_home_url, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
     WORKSPACE_SWITCHER_WEBVIEW_LABEL,
 };
 use std::time::Duration;
@@ -115,6 +115,7 @@ pub async fn close_tab(
     app: AppHandle,
     state: State<'_, BrowserState>,
     tab_id: String,
+    search_engine: Option<String>,
 ) -> Result<Vec<TabInfo>, String> {
     let active_ws_id = state
         .active_workspace_id
@@ -146,7 +147,8 @@ pub async fn close_tab(
     }
 
     if remaining_in_ws == 0 {
-        return create_tab(app, state, Some(DEFAULT_HOME_URL.to_string())).await;
+        let home_url = search_engine_home_url(search_engine.as_deref()).to_string();
+        return create_tab(app, state, Some(home_url)).await;
     }
 
     let current_active = state

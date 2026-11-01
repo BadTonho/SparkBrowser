@@ -169,7 +169,7 @@
 
     <button
       class="new-tab-btn"
-      onclick={() => addTab("https://duckduckgo.com", $activeWorkspaceId)}
+      onclick={() => addTab(undefined, $activeWorkspaceId)}
       title={`Create New Tab (${ $keyboardShortcuts && shortcutLabel("new-tab") })`}
       aria-label="Create New Tab"
     >

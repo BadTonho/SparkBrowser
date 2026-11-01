@@ -7,6 +7,19 @@ export const SEARCH_ENGINES = [
 
 export type SearchEngine = (typeof SEARCH_ENGINES)[number]["id"];
 
+const SEARCH_ENGINE_HOME_URLS: Record<SearchEngine, string> = {
+  google: "https://www.google.com/",
+  duckduckgo: "https://duckduckgo.com/",
+};
+
+export function getSearchEngineHomeUrl(engine: SearchEngine): string {
+  return SEARCH_ENGINE_HOME_URLS[engine];
+}
+
+export function getSearchEngineLabel(engine: SearchEngine): string {
+  return SEARCH_ENGINES.find((item) => item.id === engine)?.label ?? "Google";
+}
+
 const SEARCH_ENGINE_STORAGE_KEY = "veloce_default_search_engine";
 const DEFAULT_SEARCH_ENGINE: SearchEngine = "google";
 

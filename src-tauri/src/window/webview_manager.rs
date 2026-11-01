@@ -402,6 +402,13 @@ pub fn resolve_input_to_url_with_search_engine(
     Ok(search_url)
 }
 
+pub fn search_engine_home_url(search_engine: Option<&str>) -> &'static str {
+    match search_engine {
+        Some("duckduckgo") => "https://duckduckgo.com/",
+        _ => "https://www.google.com/",
+    }
+}
+
 fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Url) {
     if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("workspace-switcher") {
         return;

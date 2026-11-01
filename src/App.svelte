@@ -208,7 +208,7 @@
       case "move-tab-up-ctrl-shift": moveActiveTabUp(get(activeWorkspaceId)); break;
       case "move-tab-down":
       case "move-tab-down-ctrl-shift": moveActiveTabDown(get(activeWorkspaceId)); break;
-      case "new-tab": addTab("https://duckduckgo.com", get(activeWorkspaceId)); break;
+      case "new-tab": addTab(undefined, get(activeWorkspaceId)); break;
       case "command-bar": toggleCommandBar(); break;
       case "edit-url": openCommandBar(get(currentUrl)); break;
       case "sidebar": if (get(tabLayout) === "vertical") toggleSidebar(); break;

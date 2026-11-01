@@ -63,13 +63,16 @@ export async function syncViewportBounds(bounds: ViewportBounds): Promise<void> 
 /**
  * Multi-Tab & Hibernation IPC commands
  */
-export async function fetchTabs(): Promise<TabItem[]> {
+export async function fetchTabs(
+  fallbackUrl = "https://www.google.com/",
+  fallbackTitle = "Google"
+): Promise<TabItem[]> {
   if (!isTauriRuntime()) {
     return [
       {
         id: "tab-1",
-        title: "DuckDuckGo",
-        url: "https://duckduckgo.com",
+        title: fallbackTitle,
+        url: fallbackUrl,
         workspace_id: "ws-personal",
         is_active: true,
         is_hibernated: false,
@@ -89,9 +92,12 @@ export async function switchActiveTab(tabId: string): Promise<TabItem[]> {
   return await invoke<TabItem[]>("switch_tab", { tabId });
 }
 
-export async function closeExistingTab(tabId: string): Promise<TabItem[]> {
+export async function closeExistingTab(
+  tabId: string,
+  searchEngine: SearchEngine = "google"
+): Promise<TabItem[]> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("close_tab", { tabId });
+  return await invoke<TabItem[]>("close_tab", { tabId, searchEngine });
 }
 
 export async function hibernateSingleTab(tabId: string): Promise<TabItem[]> {
