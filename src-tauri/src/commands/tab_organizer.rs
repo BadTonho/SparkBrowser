@@ -1,0 +1,88 @@
+use crate::{
+    state::{
+        browser_state::{BrowserState, TabSnapshot},
+        tab_model::TabInfo,
+    },
+    window::webview_manager::sync_all_webviews,
+};
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, State};
+#[derive(Serialize)]
+pub struct PreservedTab {
+    pub id: String,
+    pub reason: String,
+}
+#[derive(Serialize)]
+pub struct BulkCloseResult {
+    pub snapshot: TabSnapshot,
+    pub closed: Vec<String>,
+    pub preserved: Vec<PreservedTab>,
+}
+pub fn close_candidates(tabs: &[TabInfo], ids: &[String]) -> (Vec<String>, Vec<PreservedTab>) {
+    let mut closed = Vec::new();
+    let mut preserved = Vec::new();
+    for id in ids.iter().collect::<std::collections::BTreeSet<_>>() {
+        match tabs.iter().find(|t| &t.id == id) {
+            Some(tab) if !tab.protected_from_hibernation() => closed.push(id.clone()),
+            Some(_) => preserved.push(PreservedTab {
+                id: id.clone(),
+                reason: "Active, pinned, loading, edited form, media or download".into(),
+            }),
+            None => preserved.push(PreservedTab {
+                id: id.clone(),
+                reason: "Tab no longer exists".into(),
+            }),
+        }
+    }
+    (closed, preserved)
+}
+#[tauri::command]
+pub async fn close_tabs_reviewed(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    tab_ids: Vec<String>,
+) -> Result<BulkCloseResult, String> {
+    let _operation = state.tab_operations.lock().await;
+    let previous = state.snapshot_tabs();
+    let (closed, preserved) = {
+        let mut tabs = state.tabs.lock().map_err(|e| e.to_string())?;
+        let result = close_candidates(&tabs, &tab_ids);
+        tabs.retain(|t| !result.0.contains(&t.id));
+        result
+    };
+    if !closed.is_empty() {
+        if let Err(error) = state.persist_session() {
+            *state.tabs.lock().map_err(|e| e.to_string())? = previous;
+            return Err(error);
+        }
+        sync_all_webviews(&app, &state)?;
+    }
+    let snapshot = state.snapshot_packet();
+    let _ = app.emit("tabs-updated", &snapshot);
+    Ok(BulkCloseResult {
+        snapshot,
+        closed,
+        preserved,
+    })
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn batch_closing_revalidates_protection_and_deduplicates_ids() {
+        let mut tabs: Vec<_> = (0..7)
+            .map(|i| TabInfo::new_default(format!("t{i}"), "https://example.test/".into(), i == 0))
+            .collect();
+        tabs[1].is_pinned = true;
+        tabs[2].activity.dirty_form = true;
+        tabs[3].activity.playing_media = true;
+        tabs[4].activity.downloading = true;
+        tabs[5].navigation.loading = true;
+        let mut ids: Vec<_> = tabs.iter().map(|t| t.id.clone()).collect();
+        ids.push("t6".into());
+        ids.push("missing".into());
+        let (closed, preserved) = close_candidates(&tabs, &ids);
+        assert_eq!(closed, vec!["t6"]);
+        assert_eq!(preserved.len(), 7);
+    }
+}

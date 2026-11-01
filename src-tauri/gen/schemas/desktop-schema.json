@@ -207,6 +207,12 @@
           "markdownDescription": "Enables the close_tab command without any pre-configured scope."
         },
         {
+          "description": "Enables the close_tabs_reviewed command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-close-tabs-reviewed",
+          "markdownDescription": "Enables the close_tabs_reviewed command without any pre-configured scope."
+        },
+        {
           "description": "Enables the create_bookmark_folder command without any pre-configured scope.",
           "type": "string",
           "const": "allow-create-bookmark-folder",
@@ -529,6 +535,12 @@
           "type": "string",
           "const": "deny-close-tab",
           "markdownDescription": "Denies the close_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the close_tabs_reviewed command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-close-tabs-reviewed",
+          "markdownDescription": "Denies the close_tabs_reviewed command without any pre-configured scope."
         },
         {
           "description": "Denies the create_bookmark_folder command without any pre-configured scope.",

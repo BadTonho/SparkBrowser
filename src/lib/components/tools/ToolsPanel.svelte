@@ -1,6 +1,7 @@
 <script lang="ts">
   import { focusDialog } from "../../actions/focusDialog";
   import { isToolsOpen, toolsSection, closeTools, type ToolsSection } from "../../stores/toolsStore";
+  import TabsPanel from "./TabsPanel.svelte";
   import SessionsPanel from "./SessionsPanel.svelte";
   import NotesPanel from "./NotesPanel.svelte";
   import "./tools.css";
@@ -17,7 +18,7 @@
       <div class="tools-content">
         {#if $toolsSection === "sessions"}<SessionsPanel />
         {:else if $toolsSection === "notes"}<NotesPanel />
-        {:else}<p>This section will be available in the next implementation stages.</p>{/if}
+        {:else}<TabsPanel />{/if}
       </div>
     </div>
   </div>

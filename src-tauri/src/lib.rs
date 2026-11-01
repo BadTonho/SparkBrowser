@@ -27,6 +27,7 @@ use commands::shortcuts::set_keyboard_shortcuts;
 use commands::site_search::{
     delete_site_search_shortcut, get_site_search_shortcuts, save_site_search_shortcut,
 };
+use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
     hibernate_tab, move_tab_to_workspace, reorder_tabs, set_resident_limit, set_tab_pinned,
@@ -154,6 +155,7 @@ pub fn run() {
             search_page_notes,
             save_page_note,
             delete_page_note,
+            close_tabs_reviewed,
             get_diagnostics,
             navigate_to,
             go_back,
