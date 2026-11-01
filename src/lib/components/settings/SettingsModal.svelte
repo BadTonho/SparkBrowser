@@ -961,10 +961,23 @@
     padding: 7px 10px;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
-    background: var(--bg-glass-secondary);
+    background: #202020;
     color: var(--text-primary);
+    color-scheme: dark;
     font-size: 11.5px;
     font-weight: 600;
+  }
+
+  .engine-select option {
+    background-color: #202020;
+    color: #f5f5f5;
+  }
+
+  .engine-select option:checked,
+  .engine-select option:hover,
+  .engine-select option:focus {
+    background-color: #e5e5e5;
+    color: #111111;
   }
 
   .shortcuts-grid {
