@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { checkFeatures } from '../../tests/native/features.mjs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
@@ -121,6 +122,7 @@ try {
     await until(() => script('return !document.querySelector("[role=dialog]")'), 'Escape closes dialog');
     await until(() => script('return document.activeElement?.getAttribute("aria-label") === arguments[0]', label), 'return focus to opener');
   }
+  await checkFeatures(invoke, until, fixture, a, b);
   for (const [width, height] of [[900, 700], [1400, 900]]) {
     await request('POST', `/session/${session}/window/rect`, { width, height });
     await until(() => script('const box = document.querySelector(".viewport-frame").getBoundingClientRect(); return box.width >= 100 && box.height >= 100;'), 'viewport after resize');
@@ -129,10 +131,13 @@ try {
   await invoke('get_history', { limit: 10 }); // Flush navigation writes before restart.
   await closeSession();
   await openSession();
-  const restored = (await invoke('get_tabs')).tabs;
+  const restoredPacket = await invoke('get_tabs');
+  const restored = restoredPacket.tabs;
+  assert.equal(restoredPacket.split_layout.ratio, 0.65);
+  assert.equal(restoredPacket.split_layout.left_tab_id, a.id);
   assert.ok(restored.some(tab => tab.id === a.id));
   assert.equal(restored.find(tab => tab.id === b.id)?.is_pinned, true);
-  assert.ok(restored.filter(tab => !tab.is_active).every(tab => tab.is_hibernated));
+  assert.ok(restored.filter(tab => !tab.is_active).every(tab => tab.is_hibernated || tab.is_visible));
   console.log('Native smoke passed: tabs, SPA history, form state, protected memory, draft, dialogs, resize and restoration.');
 } finally {
   await closeSession().catch(() => {});

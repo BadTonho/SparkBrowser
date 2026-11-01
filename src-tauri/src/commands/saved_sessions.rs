@@ -75,6 +75,11 @@ pub async fn restore_named_session(
         repo::pages(db.as_ref().ok_or("Database is not ready")?, id)?
     };
     let previous = state.snapshot_tabs();
+    let previous_layouts = state
+        .split_layouts
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     let previous_active = state
         .active_tab_id
         .lock()
@@ -141,6 +146,7 @@ pub async fn restore_named_session(
     }
     if let Err(error) = state.persist_session() {
         *state.tabs.lock().map_err(|e| e.to_string())? = previous;
+        *state.split_layouts.lock().map_err(|e| e.to_string())? = previous_layouts;
         state.select_tab(&previous_active)?;
         let _ = sync_all_webviews(&app, &state);
         return Err(error);

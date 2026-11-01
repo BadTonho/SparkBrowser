@@ -8,5 +8,6 @@ pub mod notes_repo;
 pub mod saved_sessions_repo;
 pub mod session_repo;
 pub mod site_search_repo;
+pub mod split_repo;
 pub mod tab_usage_repo;
 pub mod workspace_repo;

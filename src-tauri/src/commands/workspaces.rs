@@ -56,6 +56,13 @@ pub async fn switch_workspace(
         .iter()
         .find(|tab| tab.workspace_id == workspace_id)
         .map(|tab| tab.id.clone());
+    let existing_tab_id = state
+        .split_layouts
+        .lock()
+        .map_err(|e| e.to_string())?
+        .get(&workspace_id)
+        .map(|layout| layout.focused_tab_id.clone())
+        .or(existing_tab_id);
     if let Some(tab_id) = existing_tab_id {
         return switch_tab_inner(&app, &state, tab_id);
     }

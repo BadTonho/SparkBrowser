@@ -109,5 +109,6 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     crate::database::saved_sessions_repo::migrate(&conn)?;
     crate::database::site_search_repo::migrate(&conn)?;
     crate::database::notes_repo::migrate(&conn)?;
+    crate::database::split_repo::migrate(&conn)?;
     Ok(conn)
 }

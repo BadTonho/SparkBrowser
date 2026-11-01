@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SplitControls from "./SplitControls.svelte";
   import { tabs, applyTabsSnapshot, selectTab } from "../../stores/browserStore";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
   import { closeTools } from "../../stores/toolsStore";
@@ -19,6 +20,7 @@
     catch (error) { message = String(error); } finally { busy = false; }
   }
 </script>
+<SplitControls />
 <h3>Tab organizer</h3>
 <div class="tool-actions">
   <label><input type="checkbox" bind:checked={allWorkspaces} /> All workspaces</label>

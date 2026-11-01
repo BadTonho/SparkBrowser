@@ -35,7 +35,7 @@ export async function reloadCurrentPage(): Promise<void> {
 
 export async function syncViewportBounds(bounds: ViewportBounds): Promise<void> {
   if(!isTauriRuntime()) return;
-  await invoke("sync_viewport_bounds", { bounds });
+  await invoke("sync_viewport_bounds", { bounds, splitRatio: bounds.split_ratio ?? null, splitKey: bounds.split_key ?? null });
 }
 
 export async function setResidentLimit(limit: number): Promise<TabSnapshot> {

@@ -85,6 +85,7 @@ pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
                 url: row.get(2)?,
                 workspace_id: ws_id,
                 is_active: active_bool,
+                is_visible: active_bool,
                 is_hibernated: !active_bool,
                 last_active_epoch: TabInfo::current_epoch_secs(),
                 navigation: Default::default(),

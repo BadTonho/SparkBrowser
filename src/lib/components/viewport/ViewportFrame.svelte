@@ -1,4 +1,6 @@
 <script lang="ts">
+  import SplitDivider from "./SplitDivider.svelte";
+  import { splitLayout, splitDragRatio, splitKey } from "../../stores/splitViewStore";
   import { isToolsOpen } from "../../stores/toolsStore";
   import { onMount } from "svelte";
   import {
@@ -29,6 +31,8 @@
     if (!viewportEl) return;
     const rect = viewportEl.getBoundingClientRect();
     return {
+      split_ratio: $splitLayout ? $splitDragRatio ?? $splitLayout.ratio : undefined,
+      split_key: $splitLayout ? splitKey($splitLayout) : undefined,
       x: Math.round(rect.left),
       y: Math.round(rect.top),
       width: Math.max(100, Math.round(rect.width)),
@@ -38,6 +42,8 @@
   const measureAndSync = () => viewportSync.schedule();
 
   $effect(() => {
+    void $splitLayout;
+    void $splitDragRatio;
     void $sidebarWidth;
     void $isZenMode;
     measureAndSync();
@@ -65,6 +71,7 @@
 
 <main class="viewport-shell" class:zen={$isZenMode}>
   <div class="viewport-frame" bind:this={viewportEl}>
+    {#if inTauri && !anyOverlayOpen && viewportEl && $splitLayout}<SplitDivider frame={viewportEl} flush={viewportSync.flush} />{/if}
     {#if !inTauri || anyOverlayOpen}
       {#if !inTauri || !$isWorkspaceSwitcherOverlayOpen}
         <div class="browser-preview-fallback">

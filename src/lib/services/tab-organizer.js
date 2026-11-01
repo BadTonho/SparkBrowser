@@ -1,6 +1,6 @@
 /** @param {import('../types/browser').TabItem} tab */
 export function protectedTab(tab) {
-  return Boolean(tab.is_active || tab.is_pinned || tab.navigation?.loading || tab.activity?.dirty_form || tab.activity?.playing_media || tab.activity?.downloading);
+  return Boolean(tab.is_visible || tab.is_active || tab.is_pinned || tab.navigation?.loading || tab.activity?.dirty_form || tab.activity?.playing_media || tab.activity?.downloading);
 }
 /** @param {string} raw */
 export function tabUrlKey(raw) { try { return new URL(raw).href; } catch { return raw; } }

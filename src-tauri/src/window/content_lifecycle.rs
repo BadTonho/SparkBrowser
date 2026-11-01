@@ -44,6 +44,16 @@ pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(
 
 /// Synchronizes visibility and bounds of the child WebView.
 pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
+    state.refresh_visible_tabs()?;
+    let pane_bounds = super::viewport::visible_bounds(state)?;
+    for (id, bounds) in &pane_bounds {
+        let tab = state
+            .snapshot_tabs()
+            .into_iter()
+            .find(|t| &t.id == id)
+            .ok_or("Visible tab not found")?;
+        super::webview_manager::ensure_tab_webview(app, id, &tab.url, *bounds)?;
+    }
     crate::state::memory_policy::enforce_resident_limit(
         &mut state.tabs.lock().map_err(|e| e.to_string())?,
         state
@@ -92,11 +102,16 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                     .remove(&label);
             }
             Some(tab)
-                if tab.is_active
+                if tab.is_visible
                     && !overlay_open
                     && !workspace_switcher_open
                     && !bookmark_context_menu_open =>
             {
+                let bounds = pane_bounds
+                    .iter()
+                    .find(|(id, _)| id == &tab.id)
+                    .map(|(_, rect)| *rect)
+                    .unwrap_or(bounds);
                 webview
                     .set_bounds(Rect {
                         position: LogicalPosition::new(bounds.x, bounds.y).into(),

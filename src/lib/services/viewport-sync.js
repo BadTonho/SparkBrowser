@@ -13,6 +13,7 @@ export function createViewportSync(measure, send, onError, frame = requestAnimat
   /** @type {T | undefined} */
   let pending;
   let last = "";
+  /** @type {(() => void)[]} */ let idle = [];
   async function drain() {
     if (sending || disposed) return;
     sending = true;
@@ -31,6 +32,7 @@ export function createViewportSync(measure, send, onError, frame = requestAnimat
       }
     } finally {
       sending = false;
+      const waiting = idle; idle = []; waiting.forEach(resolve => resolve());
     }
   }
   return {
@@ -41,6 +43,13 @@ export function createViewportSync(measure, send, onError, frame = requestAnimat
         pending = measure();
         void drain();
       });
+    },
+    async flush() {
+      if (disposed) return;
+      if (frameId) { cancel(frameId); frameId = 0; }
+      pending = measure();
+      void drain();
+      if (sending) await new Promise(resolve => idle.push(() => resolve(undefined)));
     },
     dispose() {
       disposed = true;

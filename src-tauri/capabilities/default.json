@@ -16,6 +16,8 @@
     "allow-save-page-note",
     "allow-delete-page-note",
     "allow-close-tabs-reviewed",
+    "allow-set-split-view",
+    "allow-commit-split-ratio",
     "allow-get-diagnostics",
     "core:window:allow-minimize",
     "core:window:allow-internal-toggle-maximize",

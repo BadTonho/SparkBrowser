@@ -155,6 +155,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
           }}, true);
 
           window.addEventListener("focus", () => {{
+            if (!nativeAltCapture) window.location.href = "veloce-internal://pane-focus?token=" + encodeURIComponent(bridgeToken);
             holdPressed = false;
           }}, true);
           document.addEventListener("visibilitychange", () => {{

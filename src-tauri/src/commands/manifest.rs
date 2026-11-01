@@ -13,6 +13,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "save_page_note",
     "delete_page_note",
     "close_tabs_reviewed",
+    "set_split_view",
+    "commit_split_ratio",
     "get_diagnostics",
     "navigate_to",
     "go_back",

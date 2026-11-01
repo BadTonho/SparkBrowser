@@ -1,5 +1,5 @@
 use super::webview_manager::{
-    active_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL, WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+    BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL, WORKSPACE_SWITCHER_WEBVIEW_LABEL,
 };
 use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect};
@@ -11,8 +11,14 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
         position: LogicalPosition::new(bounds.x, bounds.y).into(),
         size: LogicalSize::new(bounds.width, bounds.height).into(),
     };
-    if let Some(view) = active_content_webview(app) {
-        view.set_bounds(rect).map_err(|e| e.to_string())?;
+    for (id, bounds) in visible_bounds(state)? {
+        if let Some(view) = app.get_webview(&crate::state::tab_model::webview_label_for_tab(&id)) {
+            view.set_bounds(Rect {
+                position: LogicalPosition::new(bounds.x, bounds.y).into(),
+                size: LogicalSize::new(bounds.width, bounds.height).into(),
+            })
+            .map_err(|e| e.to_string())?;
+        }
     }
     if *state
         .workspace_switcher_open
@@ -44,4 +50,21 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
         }
     }
     Ok(())
+}
+
+pub fn visible_bounds(
+    state: &BrowserState,
+) -> Result<Vec<(String, crate::state::browser_state::ViewportBounds)>, String> {
+    let bounds = *state.bounds.lock().map_err(|e| e.to_string())?;
+    if let Some(layout) = state.current_split() {
+        return Ok(crate::state::split_layout::pane_bounds(bounds, &layout).into());
+    }
+    Ok(vec![(
+        state
+            .active_tab_id
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone(),
+        bounds,
+    )])
 }

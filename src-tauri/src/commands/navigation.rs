@@ -42,6 +42,8 @@ pub async fn sync_viewport_bounds(
     app: AppHandle,
     state: State<'_, BrowserState>,
     bounds: ViewportBounds,
+    split_ratio: Option<f64>,
+    split_key: Option<String>,
 ) -> Result<(), String> {
     if ![bounds.x, bounds.y, bounds.width, bounds.height]
         .iter()
@@ -51,9 +53,15 @@ pub async fn sync_viewport_bounds(
     {
         return Err("Invalid viewport bounds".into());
     }
+    let ratio_changed = match (split_ratio, split_key) {
+        (Some(ratio), Some(key)) => {
+            crate::commands::split_view::update_ratio(&state, &key, ratio).is_ok()
+        }
+        _ => false,
+    };
     {
         let mut stored_bounds = state.bounds.lock().map_err(|e| e.to_string())?;
-        if *stored_bounds == bounds {
+        if *stored_bounds == bounds && !ratio_changed {
             return Ok(());
         }
         *stored_bounds = bounds;

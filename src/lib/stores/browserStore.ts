@@ -1,3 +1,4 @@
+import { splitLayout } from "./splitViewStore";
 import { writable, derived, get } from "svelte/store";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { spring } from "svelte/motion";
@@ -108,6 +109,7 @@ export function applyNavigationPatch(patch: NavigationPatch): void {
 export function applyTabsSnapshot(packet: TabSnapshot): void {
   const incoming = acceptSnapshot(packet);
   if (!incoming?.length) return;
+  splitLayout.set(Array.isArray(packet) ? null : packet.split_layout ?? null);
   const previous = get(tabs);
   const previousActive = previous.find(tab => tab.is_active)?.id;
   const byId = new Map(previous.map(tab => [tab.id, tab]));

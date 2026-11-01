@@ -164,6 +164,23 @@ pub async fn close_tab(
         .map(|ws| ws.clone())
         .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string());
 
+    let partner = state
+        .current_split()
+        .filter(|layout| layout.contains(&tab_id))
+        .map(|layout| {
+            if layout.left_tab_id == tab_id {
+                layout.right_tab_id
+            } else {
+                layout.left_tab_id
+            }
+        });
+    if partner.is_some() {
+        state
+            .split_layouts
+            .lock()
+            .map_err(|e| e.to_string())?
+            .retain(|_, layout| !layout.contains(&tab_id));
+    }
     let mut remaining_in_ws = 0;
     let mut next_active_id = String::new();
     let mut next_active_url = String::new();
@@ -183,7 +200,11 @@ pub async fn close_tab(
                 .filter(|t| t.workspace_id == active_ws_id)
                 .collect();
             remaining_in_ws = ws_tabs.len();
-            if let Some(last_ws_tab) = ws_tabs.into_iter().last() {
+            let preferred = partner
+                .as_ref()
+                .and_then(|id| ws_tabs.iter().position(|tab| &tab.id == id))
+                .unwrap_or(ws_tabs.len().saturating_sub(1));
+            if let Some(last_ws_tab) = ws_tabs.into_iter().nth(preferred) {
                 if current_active == tab_id {
                     last_ws_tab.is_hibernated = false;
                     last_ws_tab.last_active_epoch = TabInfo::current_epoch_secs();

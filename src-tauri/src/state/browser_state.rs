@@ -34,9 +34,11 @@ impl Default for ViewportBounds {
 pub struct TabSnapshot {
     pub revision: u64,
     pub tabs: Vec<TabInfo>,
+    pub split_layout: Option<super::split_layout::SplitLayout>,
 }
 
 pub struct BrowserState {
+    pub split_layouts: Mutex<std::collections::HashMap<String, super::split_layout::SplitLayout>>,
     pub diagnostics: super::diagnostics::Diagnostics,
     pub resident_limit: std::sync::atomic::AtomicUsize,
     pub snapshot_revision: Mutex<u64>,
@@ -71,6 +73,7 @@ impl Default for BrowserState {
             true,
         );
         Self {
+            split_layouts: Mutex::new(Default::default()),
             diagnostics: super::diagnostics::Diagnostics::default(),
             resident_limit: std::sync::atomic::AtomicUsize::new(8),
             snapshot_revision: Mutex::new(0),
@@ -109,6 +112,20 @@ impl BrowserState {
             .position(|tab| tab.id == tab_id)
             .ok_or("Tab was not found")?;
         let mut workspace = self.active_workspace_id.lock().map_err(|e| e.to_string())?;
+        {
+            let mut layouts = self.split_layouts.lock().map_err(|e| e.to_string())?;
+            layouts.retain(|_, layout| layout.valid(&tabs));
+            if let Some(layout) = layouts.get_mut(&tabs[index].workspace_id) {
+                if !layout.contains(tab_id) {
+                    if layout.focused_tab_id == layout.left_tab_id {
+                        layout.left_tab_id = tab_id.to_string();
+                    } else {
+                        layout.right_tab_id = tab_id.to_string();
+                    }
+                }
+                layout.focused_tab_id = tab_id.to_string();
+            }
+        }
         let now = TabInfo::current_epoch_secs();
         for tab in tabs.iter_mut() {
             if tab.id == *active || tab.id == tab_id {
@@ -138,6 +155,10 @@ impl BrowserState {
             .iter_mut()
             .find(|tab| tab.id == tab_id)
             .ok_or("Tab was not found")?;
+        self.split_layouts
+            .lock()
+            .map_err(|e| e.to_string())?
+            .retain(|_, layout| !layout.contains(tab_id));
         tab.workspace_id = workspace_id.to_string();
         if *active == tab_id {
             *self.active_workspace_id.lock().map_err(|e| e.to_string())? = workspace_id.to_string();
@@ -166,21 +187,35 @@ impl BrowserState {
             .snapshot_revision
             .lock()
             .expect("snapshot revision poisoned");
+        self.refresh_visible_tabs()
+            .expect("visible tab state poisoned");
         let tabs = self.snapshot_tabs();
         *revision += 1;
         TabSnapshot {
             revision: *revision,
             tabs,
+            split_layout: self.current_split(),
         }
     }
 
     pub fn persist_session(&self) -> Result<(), String> {
         let mut span = self.diagnostics.span("session.persist");
+        self.refresh_visible_tabs()?;
         let snapshot = self.snapshot_tabs();
+        let layouts = self
+            .split_layouts
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
         let db_guard = self.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard.as_ref().ok_or("Session database is not ready")?;
         let before = conn.total_changes();
-        let result = save_session_tabs(conn, &snapshot);
+        let result = (|| {
+            let transaction = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+            save_session_tabs(&transaction, &snapshot)?;
+            crate::database::split_repo::save(&transaction, &layouts)?;
+            transaction.commit().map_err(|e| e.to_string())
+        })();
         span.finish(result.is_ok(), conn.total_changes().saturating_sub(before));
         result
     }

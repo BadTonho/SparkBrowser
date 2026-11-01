@@ -58,10 +58,11 @@ pub fn spawn_content_webview(app: &AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     spawn_workspace_switcher_webview(app, bounds)?;
     spawn_bookmark_context_menu_webview(app)?;
+    sync_all_webviews(app, &app.state::<BrowserState>())?;
     Ok(())
 }
 
-fn ensure_tab_webview(
+pub(super) fn ensure_tab_webview(
     app: &AppHandle,
     tab_id: &str,
     initial_url_str: &str,
@@ -97,7 +98,14 @@ fn ensure_tab_webview(
 
     let app_handle_for_nav = app.clone();
 
+    let focused = app
+        .state::<BrowserState>()
+        .active_tab_id
+        .lock()
+        .map(|id| *id == tab_id)
+        .unwrap_or(false);
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
+        .focused(focused)
         .on_download(crate::downloads::native::handler(
             app.clone(),
             tab_id.to_string(),
@@ -165,6 +173,20 @@ fn ensure_tab_webview(
             return false;
         }
 
+        if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("pane-focus") {
+            if nav_url
+                .query_pairs()
+                .any(|(key, value)| key == "token" && value == keyboard_bridge_token)
+            {
+                super::split_focus::focus_pane(
+                    &app_handle_for_nav,
+                    &tab_for_nav,
+                    &label_for_nav,
+                    &keyboard_bridge_token,
+                );
+            }
+            return false;
+        }
         // No internal URL is a supported keyboard transport on Windows; keep
         // the channel scheme from ever reaching the web content as navigation.
         if nav_url.scheme() == "veloce-internal" {
@@ -233,6 +255,13 @@ fn ensure_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
     )?;
 
+    #[cfg(windows)]
+    super::split_focus::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
+    )?;
     #[cfg(windows)]
     super::navigation_state::install_native_navigation(
         app,

@@ -27,6 +27,7 @@ use commands::shortcuts::set_keyboard_shortcuts;
 use commands::site_search::{
     delete_site_search_shortcut, get_site_search_shortcuts, save_site_search_shortcut,
 };
+use commands::split_view::{commit_split_ratio, set_split_view};
 use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
@@ -130,6 +131,14 @@ pub fn run() {
                         }
                     }
                 }
+                *state
+                    .split_layouts
+                    .lock()
+                    .map_err(|e| std::io::Error::other(e.to_string()))? =
+                    database::split_repo::load(&conn).map_err(std::io::Error::other)?;
+                state
+                    .refresh_visible_tabs()
+                    .map_err(std::io::Error::other)?;
                 if let Ok(mut db_guard) = state.db.lock() {
                     *db_guard = Some(conn);
                 }
@@ -156,6 +165,8 @@ pub fn run() {
             save_page_note,
             delete_page_note,
             close_tabs_reviewed,
+            set_split_view,
+            commit_split_ratio,
             get_diagnostics,
             navigate_to,
             go_back,

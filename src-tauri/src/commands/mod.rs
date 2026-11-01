@@ -6,6 +6,7 @@ pub mod privacy;
 pub mod saved_sessions;
 pub mod shortcuts;
 pub mod site_search;
+pub mod split_view;
 pub mod tab_organizer;
 pub mod tabs;
 pub mod workspaces;

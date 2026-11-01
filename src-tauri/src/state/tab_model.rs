@@ -10,6 +10,8 @@ pub struct TabInfo {
     pub url: String,
     pub workspace_id: String,
     pub is_active: bool,
+    #[serde(default)]
+    pub is_visible: bool,
     pub is_hibernated: bool,
     pub last_active_epoch: u64,
     #[serde(default)]
@@ -29,7 +31,8 @@ pub struct TabActivity {
 
 impl TabInfo {
     pub fn protected_from_hibernation(&self) -> bool {
-        self.is_active
+        self.is_visible
+            || self.is_active
             || self.is_pinned
             || self.navigation.loading
             || self.activity.dirty_form
@@ -63,6 +66,7 @@ impl TabInfo {
             url,
             workspace_id,
             is_active,
+            is_visible: false,
             is_hibernated: false,
             last_active_epoch: Self::current_epoch_secs(),
             navigation: NavigationState::default(),

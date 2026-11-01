@@ -1,0 +1,148 @@
+use super::{
+    browser_state::{BrowserState, ViewportBounds},
+    tab_model::TabInfo,
+};
+use serde::{Deserialize, Serialize};
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct SplitLayout {
+    pub workspace_id: String,
+    pub left_tab_id: String,
+    pub right_tab_id: String,
+    pub ratio: f64,
+    pub focused_tab_id: String,
+}
+impl SplitLayout {
+    pub fn contains(&self, id: &str) -> bool {
+        self.left_tab_id == id || self.right_tab_id == id
+    }
+    pub fn key(&self) -> String {
+        format!(
+            "{}:{}:{}",
+            self.workspace_id, self.left_tab_id, self.right_tab_id
+        )
+    }
+    pub fn valid(&self, tabs: &[TabInfo]) -> bool {
+        self.left_tab_id != self.right_tab_id
+            && self.ratio.is_finite()
+            && self.contains(&self.focused_tab_id)
+            && [&self.left_tab_id, &self.right_tab_id].iter().all(|id| {
+                tabs.iter()
+                    .any(|t| &t.id == *id && t.workspace_id == self.workspace_id)
+            })
+    }
+}
+pub fn pane_bounds(bounds: ViewportBounds, layout: &SplitLayout) -> [(String, ViewportBounds); 2] {
+    let available = (bounds.width - 8.0).max(200.0);
+    let left = (available * layout.ratio.clamp(0.2, 0.8)).clamp(100.0, available - 100.0);
+    [
+        (
+            layout.left_tab_id.clone(),
+            ViewportBounds {
+                width: left,
+                ..bounds
+            },
+        ),
+        (
+            layout.right_tab_id.clone(),
+            ViewportBounds {
+                x: bounds.x + left + 8.0,
+                width: available - left,
+                ..bounds
+            },
+        ),
+    ]
+}
+impl BrowserState {
+    pub fn current_split(&self) -> Option<SplitLayout> {
+        let ws = self.active_workspace_id.lock().ok()?.clone();
+        self.split_layouts.lock().ok()?.get(&ws).cloned()
+    }
+    pub fn refresh_visible_tabs(&self) -> Result<(), String> {
+        let workspace = self
+            .active_workspace_id
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
+        let mut tabs = self.tabs.lock().map_err(|e| e.to_string())?;
+        let mut layouts = self.split_layouts.lock().map_err(|e| e.to_string())?;
+        layouts.retain(|_, layout| layout.valid(&tabs));
+        for tab in tabs.iter_mut() {
+            tab.is_visible = tab.is_active
+                || layouts
+                    .get(&workspace)
+                    .is_some_and(|layout| layout.contains(&tab.id));
+            if tab.is_visible {
+                tab.is_hibernated = false;
+            }
+        }
+        Ok(())
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn selection_replaces_only_focused_pane_and_moving_a_member_dissolves_pair() {
+        let state = BrowserState::default();
+        let workspace = "ws-personal";
+        for id in ["b", "c"] {
+            state.tabs.lock().unwrap().push(TabInfo::new(
+                id.into(),
+                "https://example.test/".into(),
+                workspace.into(),
+                false,
+            ));
+        }
+        state.split_layouts.lock().unwrap().insert(
+            workspace.into(),
+            SplitLayout {
+                workspace_id: workspace.into(),
+                left_tab_id: "tab-1".into(),
+                right_tab_id: "b".into(),
+                focused_tab_id: "tab-1".into(),
+                ratio: 0.6,
+            },
+        );
+        state.refresh_visible_tabs().unwrap();
+        assert_eq!(
+            state
+                .snapshot_tabs()
+                .iter()
+                .filter(|t| t.is_visible)
+                .count(),
+            2
+        );
+        state.select_tab("c").unwrap();
+        state.refresh_visible_tabs().unwrap();
+        assert_eq!(state.current_split().unwrap().left_tab_id, "c");
+        assert_eq!(state.current_split().unwrap().right_tab_id, "b");
+        assert!(state
+            .snapshot_tabs()
+            .iter()
+            .filter(|t| t.is_visible)
+            .all(|t| t.protected_from_hibernation()));
+        state.move_tab("b", "ws-work").unwrap();
+        state.refresh_visible_tabs().unwrap();
+        assert!(state.current_split().is_none());
+    }
+    #[test]
+    fn geometry_has_gap_and_preserves_minimum_sizes() {
+        let layout = SplitLayout {
+            workspace_id: "ws".into(),
+            left_tab_id: "a".into(),
+            right_tab_id: "b".into(),
+            focused_tab_id: "a".into(),
+            ratio: 0.2,
+        };
+        let rect = ViewportBounds {
+            x: 10.0,
+            y: 20.0,
+            width: 380.0,
+            height: 600.0,
+        };
+        let panes = pane_bounds(rect, &layout);
+        assert_eq!(panes[0].1.width, 100.0);
+        assert_eq!(panes[1].1.x, 118.0);
+        assert_eq!(panes[1].1.width, 272.0);
+    }
+}

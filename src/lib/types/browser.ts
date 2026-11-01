@@ -4,7 +4,11 @@ export interface SiteSearchShortcut { keyword: string; name: string; template: s
 
 export interface PageNote { url: string; title: string; text: string; updated_at: number; }
 
+export interface SplitLayout { workspace_id: string; left_tab_id: string; right_tab_id: string; ratio: number; focused_tab_id: string; }
+
 export interface ViewportBounds {
+  split_ratio?: number;
+  split_key?: string;
   x: number;
   y: number;
   width: number;
@@ -39,6 +43,7 @@ export interface TabItem {
   url: string;
   workspace_id: string;
   is_active: boolean;
+  is_visible?: boolean;
   is_hibernated: boolean;
   last_active_epoch?: number;
   navigation?: NavigationState;
@@ -110,7 +115,7 @@ export interface CommandItem {
 }
 
 /** Browser preview uses arrays; the native runtime sends revisioned snapshots. */
-export type TabSnapshot = TabItem[] | { revision: number; tabs: TabItem[] };
+export type TabSnapshot = TabItem[] | { revision: number; tabs: TabItem[]; split_layout?: SplitLayout | null };
 
 export interface NavigationState {
   revision: number;
