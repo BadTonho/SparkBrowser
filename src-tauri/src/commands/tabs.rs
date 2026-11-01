@@ -1,3 +1,4 @@
+use crate::database::tab_usage_repo;
 use crate::state::browser_state::{BrowserState, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::WorkspaceItem;
@@ -46,9 +47,10 @@ pub async fn create_tab(
             tabs.push(new_tab);
         }
         if let Ok(mut active) = state.active_tab_id.lock() {
-            *active = new_tab_id;
+            *active = new_tab_id.clone();
         }
     }
+    state.record_new_tab_activation(&new_tab_id);
 
     // Navigate the persistent child WebView after all state locks are dropped
     let _ = navigate_content_webview(&app, &resolved_url);
@@ -70,6 +72,11 @@ pub async fn switch_tab(
 ) -> Result<Vec<TabInfo>, String> {
     let mut active_url = String::new();
     let mut target_ws_id = String::new();
+    let previous_active_id = state
+        .active_tab_id
+        .lock()
+        .map(|id| id.clone())
+        .unwrap_or_default();
 
     {
         if let Ok(mut tabs) = state.tabs.lock() {
@@ -88,8 +95,12 @@ pub async fn switch_tab(
             }
         }
         if let Ok(mut active) = state.active_tab_id.lock() {
-            *active = tab_id;
+            *active = tab_id.clone();
         }
+    }
+
+    if previous_active_id != tab_id {
+        state.record_tab_activation(&tab_id);
     }
 
     if !active_url.is_empty() {
@@ -159,8 +170,9 @@ pub async fn close_tab(
 
     if current_active == tab_id && !next_active_id.is_empty() {
         if let Ok(mut active) = state.active_tab_id.lock() {
-            *active = next_active_id;
+            *active = next_active_id.clone();
         }
+        state.record_tab_activation(&next_active_id);
         let _ = navigate_content_webview(&app, &next_active_url);
         let _ = app.emit("content-url-changed", &next_active_url);
     }
@@ -240,6 +252,72 @@ pub async fn hibernate_inactive_tabs(
     let _ = app.emit("tabs-updated", &snapshot);
     let _ = app.emit("privacy-stats-updated", &stats);
 
+    Ok(snapshot)
+}
+
+#[tauri::command]
+pub async fn auto_hibernate_inactive_tabs(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    mode: String,
+) -> Result<Vec<TabInfo>, String> {
+    const FIVE_HOURS_SECS: u64 = 5 * 60 * 60;
+    let mode = match mode.as_str() {
+        "5" => Some((5 * 60, false)),
+        "10" => Some((10 * 60, false)),
+        "30" => Some((30 * 60, false)),
+        "auto" => Some((10 * 60, true)),
+        "off" => None,
+        _ => return Err("Invalid automatic hibernation mode".to_string()),
+    };
+
+    let Some((regular_threshold, adaptive)) = mode else {
+        return Ok(state.snapshot_tabs());
+    };
+
+    let now = TabInfo::current_epoch_secs();
+    let tabs_snapshot = state.snapshot_tabs();
+    let active_id = state
+        .active_tab_id
+        .lock()
+        .map(|id| id.clone())
+        .unwrap_or_default();
+    let mut frequent_tabs = std::collections::HashSet::new();
+
+    if adaptive {
+        if let Ok(db_guard) = state.db.lock() {
+            if let Some(conn) = db_guard.as_ref() {
+                let _ = tab_usage_repo::prune_expired(conn, now);
+                for tab in tabs_snapshot.iter().filter(|tab| tab.id != active_id) {
+                    if tab_usage_repo::is_frequently_used(conn, &tab.id, now).unwrap_or(false) {
+                        frequent_tabs.insert(tab.id.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    if let Ok(mut tabs) = state.tabs.lock() {
+        for tab in tabs.iter_mut() {
+            if tab.id == active_id || tab.is_hibernated {
+                continue;
+            }
+            let threshold = if adaptive && frequent_tabs.contains(&tab.id) {
+                FIVE_HOURS_SECS
+            } else {
+                regular_threshold
+            };
+            if now.saturating_sub(tab.last_active_epoch) >= threshold {
+                tab.is_hibernated = true;
+            }
+        }
+    }
+
+    state.persist_session();
+    let snapshot = state.snapshot_tabs();
+    let stats = state.snapshot_privacy_stats();
+    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = app.emit("privacy-stats-updated", &stats);
     Ok(snapshot)
 }
 

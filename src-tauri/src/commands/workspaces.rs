@@ -51,6 +51,11 @@ pub async fn switch_workspace(
     if let Ok(mut active_ws) = state.active_workspace_id.lock() {
         *active_ws = workspace_id.clone();
     }
+    let previous_active_id = state
+        .active_tab_id
+        .lock()
+        .map(|id| id.clone())
+        .unwrap_or_default();
 
     let existing_tab = {
         state.tabs.lock().ok().and_then(|mut tabs| {
@@ -66,7 +71,10 @@ pub async fn switch_workspace(
 
     if let Some(tab) = existing_tab {
         if let Ok(mut active_id) = state.active_tab_id.lock() {
-            *active_id = tab.id;
+            *active_id = tab.id.clone();
+        }
+        if previous_active_id != tab.id {
+            state.record_tab_activation(&tab.id);
         }
         let _ = navigate_content_webview(&app, &tab.url);
         sync_all_webviews(&app, &state)?;
@@ -208,7 +216,7 @@ pub async fn delete_workspace(
     } else if next_tabs.iter().any(|tab| {
         tab.id == previous_active_tab && (!was_active || tab.workspace_id == next_active_workspace)
     }) {
-        previous_active_tab
+        previous_active_tab.clone()
     } else {
         next_tabs
             .iter()
@@ -219,6 +227,7 @@ pub async fn delete_workspace(
     };
 
     let mut next_counter = *state.next_tab_counter.lock().map_err(|e| e.to_string())?;
+    let mut created_active_tab = false;
     if next_active_tab.is_empty() {
         let new_id = format!("tab-{next_counter}");
         next_counter += 1;
@@ -229,6 +238,7 @@ pub async fn delete_workspace(
             true,
         ));
         next_active_tab = new_id;
+        created_active_tab = true;
     }
     for tab in &mut next_tabs {
         tab.is_active = tab.id == next_active_tab;
@@ -258,6 +268,14 @@ pub async fn delete_workspace(
         .active_workspace_id
         .lock()
         .map_err(|e| e.to_string())? = next_active_workspace.clone();
+    let should_record_activation = was_active && previous_active_tab != next_active_tab;
+    if should_record_activation {
+        if created_active_tab {
+            state.record_new_tab_activation(&next_active_tab);
+        } else {
+            state.record_tab_activation(&next_active_tab);
+        }
+    }
     *state.active_tab_id.lock().map_err(|e| e.to_string())? = next_active_tab;
     *state.next_tab_counter.lock().map_err(|e| e.to_string())? = next_counter;
 

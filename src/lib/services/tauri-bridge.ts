@@ -12,6 +12,7 @@ import type {
   WorkspaceItem,
 } from "../types/browser";
 import type { SearchEngine } from "../stores/searchEngineStore";
+import type { AutoHibernateMode } from "../stores/settingsStore";
 import {
   DEFAULT_WORKSPACES,
   WORKSPACE_PALETTE_MIGRATION_VERSION,
@@ -112,6 +113,13 @@ export async function hibernateBackgroundTabs(
   return await invoke<TabItem[]>("hibernate_inactive_tabs", {
     minIdleSecs: minIdleSecs ?? null,
   });
+}
+
+export async function autoHibernateBackgroundTabs(
+  mode: AutoHibernateMode
+): Promise<TabItem[]> {
+  if (!isTauriRuntime()) return [];
+  return await invoke<TabItem[]>("auto_hibernate_inactive_tabs", { mode: String(mode) });
 }
 
 export type OverlayId =

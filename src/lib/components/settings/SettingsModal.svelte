@@ -9,7 +9,8 @@
     toggleZenMode,
     overlayBlurPx,
     setOverlayBlurPx,
-    autoHibernateMinutes,
+    autoHibernateMode,
+    setAutoHibernateMode,
     defaultSearchEngine,
     SEARCH_ENGINES,
     setDefaultSearchEngine,
@@ -47,6 +48,8 @@
     { id: "performance_privacy", icon: "🚀", label: "Performance & Privacy" },
     { id: "shortcuts", icon: "⌨️", label: "Keyboard Shortcuts" },
   ];
+
+  const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
 
   type SearchEntry = {
     id: string;
@@ -125,10 +128,10 @@
     {
       id: "auto-hibernate",
       title: "Auto-Hibernate Inactive Tabs",
-      description: "Suspend background WebViews after an idle threshold.",
+      description: "Choose 5, 10, or 30 minutes, adaptive Auto mode, or turn automatic hibernation Off.",
       category: "performance_privacy",
       targetId: "setting-auto-hibernate",
-      keywords: "performance memory ram 5m 10m 30m",
+      keywords: "performance memory ram 5m 10m 30m auto frequent frequently used 7 days 5 hours disabled off",
     },
     ...SHORTCUT_DEFINITIONS.map((shortcut) => ({
       id: `setting-${shortcut.id}`,
@@ -587,17 +590,25 @@
               <div class="setting-row" id="setting-auto-hibernate" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Auto-Hibernate Inactive Tabs</span>
-                  <span class="row-desc">Suspends background WebViews after idle threshold ({$autoHibernateMinutes} min)</span>
+                  <span class="row-desc">
+                    {#if $autoHibernateMode === "off"}
+                      Automatic hibernation is off; manual hibernation remains available.
+                    {:else if $autoHibernateMode === "auto"}
+                      Hibernates regular tabs after 10 min and frequently used tabs after 5 hours.
+                    {:else}
+                      Suspends background WebViews after {$autoHibernateMode} min of inactivity.
+                    {/if}
+                  </span>
                 </div>
                 <div class="timer-pills">
-                  {#each [5, 10, 30] as mins}
+                  {#each autoHibernateOptions as mode}
                     <button
                       class="mini-pill"
-                      class:selected={$autoHibernateMinutes === mins}
-                      aria-pressed={$autoHibernateMinutes === mins}
-                      onclick={() => autoHibernateMinutes.set(mins)}
+                      class:selected={$autoHibernateMode === mode}
+                      aria-pressed={$autoHibernateMode === mode}
+                      onclick={() => setAutoHibernateMode(mode)}
                     >
-                      {mins}m
+                      {typeof mode === "number" ? `${mode}m` : mode === "auto" ? "Auto" : "Off"}
                     </button>
                   {/each}
                 </div>

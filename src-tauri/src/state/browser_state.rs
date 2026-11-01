@@ -114,6 +114,33 @@ impl BrowserState {
         }
     }
 
+    /// Records a local activation event without storing page URLs or titles.
+    pub fn record_tab_activation(&self, tab_id: &str) {
+        if let Ok(db_guard) = self.db.lock() {
+            if let Some(conn) = db_guard.as_ref() {
+                let _ = crate::database::tab_usage_repo::record_activation(
+                    conn,
+                    tab_id,
+                    TabInfo::current_epoch_secs(),
+                );
+            }
+        }
+    }
+
+    /// Starts usage tracking for a newly created tab, clearing stale events if its ID was reused.
+    pub fn record_new_tab_activation(&self, tab_id: &str) {
+        if let Ok(db_guard) = self.db.lock() {
+            if let Some(conn) = db_guard.as_ref() {
+                let _ = crate::database::tab_usage_repo::reset_tab_history(conn, tab_id);
+                let _ = crate::database::tab_usage_repo::record_activation(
+                    conn,
+                    tab_id,
+                    TabInfo::current_epoch_secs(),
+                );
+            }
+        }
+    }
+
     /// Computes a snapshot of current privacy & RAM hibernation metrics.
     pub fn snapshot_privacy_stats(&self) -> PrivacyStats {
         let shield_enabled = self.shield_enabled.lock().map(|s| *s).unwrap_or(true);

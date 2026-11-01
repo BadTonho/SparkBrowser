@@ -8,7 +8,8 @@
 
 ## 2. 💤 Smart Tab Hibernation (RAM Saver)
 - Managed natively in Rust.
-- Automatically suspends background tabs after a configurable period of inactivity, freeing up system RAM while keeping the tab visible and ready to restore in the sidebar.
+- Automatically suspends background tabs after 5, 10, or 30 minutes, or with adaptive **Auto** mode. Auto hibernates regular tabs after 10 minutes and tabs activated at least 10 times in the last 7 days after 5 hours of inactivity.
+- **Off** disables automatic hibernation while keeping manual hibernation available. Local activation timestamps are kept in SQLite for the 7-day adaptive window without storing page URLs.
 
 ## 3. 🛡️ Native Rust AdBlock & Privacy
 - Powered by `adblock-rust` to block intrusive ads, pop-ups, and tracking scripts before pages even render.

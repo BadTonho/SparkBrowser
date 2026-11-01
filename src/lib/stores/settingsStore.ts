@@ -9,7 +9,38 @@ import {
 
 export const isSettingsModalOpen = writable<boolean>(false);
 export const isZenMode = writable<boolean>(false);
-export const autoHibernateMinutes = writable<number>(10);
+export type AutoHibernateMode = 5 | 10 | 30 | "auto" | "off";
+
+const AUTO_HIBERNATE_STORAGE_KEY = "veloce_auto_hibernate_mode";
+const AUTO_HIBERNATE_MODES: AutoHibernateMode[] = [5, 10, 30, "auto", "off"];
+
+function getInitialAutoHibernateMode(): AutoHibernateMode {
+  if (typeof localStorage === "undefined") return 10;
+
+  try {
+    const saved = localStorage.getItem(AUTO_HIBERNATE_STORAGE_KEY);
+    if (saved === "5" || saved === "10" || saved === "30") return Number(saved) as 5 | 10 | 30;
+    return AUTO_HIBERNATE_MODES.includes(saved as AutoHibernateMode)
+      ? (saved as AutoHibernateMode)
+      : 10;
+  } catch {
+    return 10;
+  }
+}
+
+export const autoHibernateMode = writable<AutoHibernateMode>(getInitialAutoHibernateMode());
+
+export function setAutoHibernateMode(mode: AutoHibernateMode): void {
+  if (!AUTO_HIBERNATE_MODES.includes(mode)) return;
+  autoHibernateMode.set(mode);
+
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(AUTO_HIBERNATE_STORAGE_KEY, String(mode));
+  } catch {
+    // Keep the current setting when storage is unavailable.
+  }
+}
 export {
   defaultSearchEngine,
   getSearchEngineHomeUrl,

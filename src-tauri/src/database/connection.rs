@@ -63,6 +63,14 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
             status TEXT NOT NULL,
             created_at INTEGER NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS tab_usage_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tab_id TEXT NOT NULL,
+            activated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_tab_usage_events_tab_time
+            ON tab_usage_events(tab_id, activated_at);
         ",
     )
     .map_err(|e| format!("Failed to initialize database schema: {}", e))?;

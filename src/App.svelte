@@ -45,7 +45,7 @@
   import { toggleDownloadsDrawer } from "./lib/stores/downloadsStore";
   import {
     toggleSettingsModal,
-    autoHibernateMinutes,
+    autoHibernateMode,
     toggleZenMode,
     isZenMode,
     tabLayout,
@@ -126,10 +126,10 @@
       unlistenBrowserShortcut = fn;
     });
 
-    // Automatic Tab Hibernation check every 60s using configurable threshold
+    // Apply the selected automatic hibernation policy once per minute.
     const hibernationInterval = setInterval(() => {
-      const thresholdSecs = get(autoHibernateMinutes) * 60;
-      suspendInactiveTabs(thresholdSecs);
+      const mode = get(autoHibernateMode);
+      if (mode !== "off") suspendInactiveTabs(mode);
     }, 60_000);
 
     const handleGlobalShortcuts = (event: KeyboardEvent) => {

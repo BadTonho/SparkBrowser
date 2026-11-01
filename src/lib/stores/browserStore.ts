@@ -1,6 +1,7 @@
 import { writable, get } from "svelte/store";
 import { spring } from "svelte/motion";
 import type { QuickLink, TabItem } from "../types/browser";
+import type { AutoHibernateMode } from "./settingsStore";
 import {
   defaultSearchEngine,
   getSearchEngineHomeUrl,
@@ -17,6 +18,7 @@ import {
   closeExistingTab,
   hibernateSingleTab,
   hibernateBackgroundTabs,
+  autoHibernateBackgroundTabs,
   reorderTabs,
   moveTabToWorkspace,
   isTauriRuntime,
@@ -176,7 +178,7 @@ export async function suspendTab(tabId: string): Promise<void> {
   applyTabsSnapshot(snapshot);
 }
 
-export async function suspendInactiveTabs(minIdleSecs?: number): Promise<void> {
+export async function suspendInactiveTabs(mode?: AutoHibernateMode | 0): Promise<void> {
   if (!isTauriRuntime()) {
     const updated = get(tabs).map((t) =>
       !t.is_active ? { ...t, is_hibernated: true } : t
@@ -184,7 +186,9 @@ export async function suspendInactiveTabs(minIdleSecs?: number): Promise<void> {
     applyTabsSnapshot(updated);
     return;
   }
-  const snapshot = await hibernateBackgroundTabs(minIdleSecs);
+  const snapshot = mode === undefined || mode === 0
+    ? await hibernateBackgroundTabs(0)
+    : await autoHibernateBackgroundTabs(mode);
   applyTabsSnapshot(snapshot);
 }
 

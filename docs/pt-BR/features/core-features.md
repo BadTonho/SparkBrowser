@@ -8,7 +8,8 @@
 
 ## 2. 💤 Hibernação Inteligente de Abas (Economia de RAM)
 - Gerenciada nativamente em Rust.
-- Suspende automaticamente abas em segundo plano após um tempo configurável de inatividade, liberando memória RAM do sistema enquanto mantém a aba visível e pronta para uso na barra lateral.
+- Suspende automaticamente abas em segundo plano após 5, 10 ou 30 minutos, ou usa o modo adaptativo **Auto**. No Auto, abas comuns hibernam após 10 minutos; abas ativadas pelo menos 10 vezes nos últimos 7 dias hibernam após 5 horas sem uso.
+- **Off** desativa a hibernação automática, mantendo a hibernação manual disponível. Os horários locais de ativação são mantidos no SQLite para a janela adaptativa de 7 dias, sem armazenar URLs.
 
 ## 3. 🛡️ AdBlock e Privacidade Nativa em Rust
 - Baseado no `adblock-rust` para bloquear anúncios intrusivos, pop-ups e scripts de rastreamento diretamente na camada de rede.

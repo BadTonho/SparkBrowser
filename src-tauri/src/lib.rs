@@ -10,8 +10,9 @@ use commands::persistence::{clear_browsing_history, get_bookmarks, get_history, 
 use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
 use commands::shortcuts::set_keyboard_shortcuts;
 use commands::tabs::{
-    close_tab, create_tab, get_tabs, hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace,
-    reorder_tabs, set_overlay_visibility, set_workspace_switcher_overlay, switch_tab,
+    auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
+    hibernate_tab, move_tab_to_workspace, reorder_tabs, set_overlay_visibility,
+    set_workspace_switcher_overlay, switch_tab,
 };
 use commands::workspaces::{
     create_workspace, delete_workspace, get_active_workspace, get_workspaces, switch_workspace,
@@ -115,6 +116,7 @@ pub fn run() {
             close_tab,
             hibernate_tab,
             hibernate_inactive_tabs,
+            auto_hibernate_inactive_tabs,
             set_overlay_visibility,
             set_workspace_switcher_overlay,
             set_keyboard_shortcuts,
