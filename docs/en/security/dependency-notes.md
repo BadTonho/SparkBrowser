@@ -18,7 +18,7 @@ The affected glib iterator is fixed upstream in `glib >=0.20`, outside the GTK3 
 
 ## Platform validation
 
-Automated validation in this change targets Windows. macOS/Linux builds, native WebView behavior, and installers require their own checks. The multi-WebView API uses Tauri's `unstable` feature and system engines differ between platforms. No cross-platform runtime guarantee or fixed executable-size claim is made.
+Local automated validation in this change targets Windows, including an isolated release WebDriver suite. CI is configured for Windows, macOS and Linux builds/checks, with a separate Windows native job; remote jobs have not yet been run from this environment. macOS/Linux native WebView behavior and installers require their own checks. The multi-WebView API uses Tauri's `unstable` feature and system engines differ between platforms. No cross-platform runtime guarantee or fixed executable-size claim is made.
 
 ## Local data
 

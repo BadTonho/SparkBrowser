@@ -15,6 +15,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --offline
 cargo clippy --manifest-path src-tauri/Cargo.toml --offline --all-targets -- -D warnings
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 npm audit
+npm run security:check
 cargo audit --no-fetch --file src-tauri/Cargo.lock
 ```
 
@@ -23,6 +24,8 @@ On Windows PowerShell, use `npm.cmd` when execution policy blocks `npm.ps1`. Rus
 Regression tests cover session rollback after an insertion error and participation in an outer transaction; workspace/tab selection; the selected search engine; tracker matching, URL/Request inputs, XHR reuse and beacon requests; the vendored dependency security fix; and real local HTTP transfers, failed or interrupted responses, redirect policy, and filename collisions. Transfer tests use loopback HTTP and temporary directories rather than the user's Downloads directory.
 
 ## Native smoke checks
+
+The isolated release WebDriver suite and CI setup are documented in [native integration](native-tests.md). The following broader checks complement that automated coverage.
 
 These checks require an interactive desktop and are separate from unit/build results:
 

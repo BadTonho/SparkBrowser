@@ -15,6 +15,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --offline
 cargo clippy --manifest-path src-tauri/Cargo.toml --offline --all-targets -- -D warnings
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 npm audit
+npm run security:check
 cargo audit --no-fetch --file src-tauri/Cargo.lock
 ```
 
@@ -23,6 +24,8 @@ No PowerShell do Windows, use `npm.cmd` quando a política de execução bloquea
 Os testes de regressão cobrem rollback de sessão após erro de inserção e participação em transação externa; seleção de abas/workspaces; buscador escolhido; correspondência de hosts, entradas URL/Request, reutilização de XHR e beacons; correção da dependência local; e transferências HTTP reais locais, respostas de erro ou interrompidas, política de redirecionamento e colisões de nomes. Os testes de transferência usam HTTP em loopback e diretórios temporários, preservando a pasta Downloads do usuário.
 
 ## Verificações nativas
+
+A suíte WebDriver de release isolada e a configuração da CI estão documentadas em [integração nativa](native-tests.md). As verificações mais amplas abaixo complementam essa cobertura automatizada.
 
 Estas verificações exigem uma área de trabalho interativa e são separadas dos testes e builds:
 

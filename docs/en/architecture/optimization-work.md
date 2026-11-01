@@ -27,7 +27,7 @@ Command suggestions are computed only while open, ranked by title/URL relevance,
 
 ## Resident memory and migrations
 
-A configurable soft resident limit (default 8, range 1?100) hibernates the least recently used eligible tabs. Active, pinned, loading, edited-form, playing-media and downloading tabs are protected; the target can be exceeded when necessary. Pinned state survives session restoration. Automatic hibernation skips protected tabs and skips persistence/reconciliation when nothing changes. The resident cap still applies when the idle timer is off.
+A configurable soft resident limit (default 8, range 1–100) hibernates the least recently used eligible tabs. Active, pinned, loading, edited-form, playing-media and downloading tabs are protected; the target can be exceeded when necessary. Pinned state survives session restoration. Automatic hibernation skips protected tabs and skips persistence/reconciliation when nothing changes. The resident cap still applies when the idle timer is off.
 
 Activity detection is best effort for top-level DOM forms and audio/video; it cannot guarantee detection of iframe state, Web Audio, custom editors or application-specific unsaved work. Pin important pages explicitly. Only boolean activity flags are transported, with per-view generation checks.
 
@@ -51,9 +51,9 @@ The bridge facade delegates to transport modules for navigation, overlays, works
 
 Settings categories, shortcut recording, the search catalog and shared scoped CSS are separate modules. Navigation page hooks, keyboard routing and content lifecycle reconciliation have separate Rust owners. Event listeners are registered before initialization; late registrations clean themselves up after unmount. The navigation writer has a bounded 256-message queue and coalesces session-only requests.
 
-## Remaining stages
+## Continuous and native validation
 
-- Continuous validation and native integration scenarios.
+CI checks Windows, Linux and macOS, with a separate isolated Windows WebDriver job. The local Windows release suite passed resident tab/form/scroll preservation, SPA history, shield updates, protected memory, address drafts, dialog focus, resize and session restoration. See [native tests](../contributing/native-tests.md) for setup and scope. Remote CI jobs and other platform runtimes have not been executed in the implementation environment. Multi-monitor DPI, interactive latency and aggregate RAM comparisons remain measurement work; no savings are inferred from compilation or view counts.
 
 ## Local diagnostics
 

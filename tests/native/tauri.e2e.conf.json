@@ -1,0 +1,18 @@
+{
+  "identifier": "org.veloce.browser.native-tests",
+  "productName": "Veloce Native Tests",
+  "app": {
+    "windows": [{
+      "label": "main",
+      "title": "Veloce Native Tests",
+      "width": 1280,
+      "height": 820,
+      "minWidth": 680,
+      "minHeight": 480,
+      "decorations": false,
+      "transparent": true,
+      "center": true
+    }]
+  },
+  "bundle": { "active": false }
+}
