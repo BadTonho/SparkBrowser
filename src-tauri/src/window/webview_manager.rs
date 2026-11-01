@@ -827,19 +827,35 @@ pub fn spawn_content_webview(
             return false;
         }
 
-        if let Some(state) = app_handle_for_nav.try_state::<BrowserState>() {
-            state
-                .workspace_alt_pressed
-                .store(false, std::sync::atomic::Ordering::SeqCst);
-            if let Ok(mut token) = state.workspace_switcher_token.lock() {
-                *token = None;
+        let workspace_picker_is_open = app_handle_for_nav
+            .try_state::<BrowserState>()
+            .and_then(|state| {
+                state
+                    .workspace_switcher_open
+                    .lock()
+                    .ok()
+                    .map(|open| *open)
+            })
+            .unwrap_or(false);
+
+        // Switching workspaces navigates the shared content WebView. Keep the
+        // picker and held-modifier state intact during that navigation so the
+        // user can continue switching before releasing the modifier.
+        if !workspace_picker_is_open {
+            if let Some(state) = app_handle_for_nav.try_state::<BrowserState>() {
+                state
+                    .workspace_alt_pressed
+                    .store(false, std::sync::atomic::Ordering::SeqCst);
+                if let Ok(mut token) = state.workspace_switcher_token.lock() {
+                    *token = None;
+                }
+                if let Ok(mut open) = state.workspace_switcher_open.lock() {
+                    *open = false;
+                }
             }
-            if let Ok(mut open) = state.workspace_switcher_open.lock() {
-                *open = false;
-            }
+            let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
+            let _ = app_handle_for_nav.emit("workspace-switcher-dismissed", ());
         }
-        let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
-        let _ = app_handle_for_nav.emit("workspace-switcher-dismissed", ());
 
         let new_url_str = nav_url.to_string();
 

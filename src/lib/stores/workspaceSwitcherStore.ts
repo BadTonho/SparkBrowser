@@ -26,7 +26,7 @@ export const isWorkspaceSwitcherOverlayOpen = derived(
 const HOLD_DURATION_MS = 400;
 
 let altIsHeld = false;
-let pickerSelectionInProgress = false;
+let pickerSelectionsInProgress = 0;
 let holdTimer: ReturnType<typeof setTimeout> | undefined;
 
 function clearHoldTimer(): void {
@@ -53,6 +53,25 @@ function setOverlay(overlay: WorkspaceSwitcherOverlay | null): void {
       get(activeWorkspaceId),
       get(overlayBlurPx)
     ).catch(() => undefined);
+  }
+}
+
+function refreshOpenOverlay(): void {
+  if (get(workspaceSwitcherOverlay) === null) return;
+  void setWorkspaceSwitcherOverlay(
+    true,
+    get(workspaces),
+    get(activeWorkspaceId),
+    get(overlayBlurPx)
+  ).catch(() => undefined);
+}
+
+function finishPickerSelection(): void {
+  if (get(workspaceSwitcherOverlay)?.kind !== "picker") return;
+  if (altIsHeld) {
+    refreshOpenOverlay();
+  } else if (pickerSelectionsInProgress === 0) {
+    setOverlay(null);
   }
 }
 
@@ -88,7 +107,7 @@ export function releaseWorkspaceAlt(): void {
   clearHoldTimer();
   if (
     get(workspaceSwitcherOverlay)?.kind === "picker" &&
-    !pickerSelectionInProgress
+    pickerSelectionsInProgress === 0
   ) {
     setOverlay(null);
   }
@@ -111,34 +130,32 @@ export function dismissWorkspacePicker(): void {
 async function selectWorkspaceFromPicker(workspaceId: string): Promise<void> {
   if (get(workspaceSwitcherOverlay)?.kind !== "picker") return;
   clearHoldTimer();
-  altIsHeld = false;
-  pickerSelectionInProgress = true;
+  pickerSelectionsInProgress += 1;
   try {
     await activateWorkspace(workspaceId);
   } finally {
-    pickerSelectionInProgress = false;
-    if (get(workspaceSwitcherOverlay)?.kind === "picker") {
-      setOverlay(null);
-    }
+    pickerSelectionsInProgress -= 1;
+    finishPickerSelection();
   }
 }
 
 async function selectWorkspaceByIndex(index: number): Promise<void> {
   clearHoldTimer();
-  altIsHeld = false;
 
   if (!Number.isInteger(index) || index < 1 || index > 9) return;
   const target = get(workspaces)[index - 1];
   if (!target) return;
 
   const pickerWasOpen = get(workspaceSwitcherOverlay)?.kind === "picker";
+  if (pickerWasOpen) pickerSelectionsInProgress += 1;
   try {
     await activateWorkspace(target.id);
   } catch {
     // The shortcut is fire-and-forget; avoid an unhandled rejection if switching fails.
   } finally {
-    if (pickerWasOpen && get(workspaceSwitcherOverlay)?.kind === "picker") {
-      setOverlay(null);
+    if (pickerWasOpen) {
+      pickerSelectionsInProgress -= 1;
+      finishPickerSelection();
     }
   }
 }

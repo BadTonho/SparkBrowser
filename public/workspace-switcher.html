@@ -149,6 +149,7 @@
 
         window.__veloceSetWorkspaceSwitcher = (payload) => {
           const shouldOpen = Boolean(payload.visible);
+          const wasVisible = isOpen && root.style.display !== "none";
           const transition = ++transitionSequence;
           requestSent = false;
           activeToken = payload.token || "";
@@ -180,13 +181,25 @@
 
           isOpen = true;
           root.setAttribute("aria-hidden", "false");
-          list.replaceChildren();
           root.style.display = "flex";
           list.style.pointerEvents = "auto";
+
+          if (wasVisible) {
+            for (const button of list.querySelectorAll("button[data-workspace-id]")) {
+              button.setAttribute(
+                "aria-current",
+                String(button.dataset.workspaceId === payload.activeWorkspaceId)
+              );
+            }
+            return;
+          }
+
+          list.replaceChildren();
 
           for (const workspace of payload.workspaces || []) {
             const button = document.createElement("button");
             button.type = "button";
+            button.dataset.workspaceId = workspace.id;
             button.setAttribute(
               "aria-current",
               String(workspace.id === payload.activeWorkspaceId)
