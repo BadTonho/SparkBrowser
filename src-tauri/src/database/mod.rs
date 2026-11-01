@@ -6,5 +6,6 @@ pub mod migrations;
 pub mod navigation_writer;
 pub mod saved_sessions_repo;
 pub mod session_repo;
+pub mod site_search_repo;
 pub mod tab_usage_repo;
 pub mod workspace_repo;

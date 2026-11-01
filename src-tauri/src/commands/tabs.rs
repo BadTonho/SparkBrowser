@@ -3,8 +3,7 @@ use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::window::webview_manager::{
-    ensure_active_content_webview, resolve_input_to_url_with_search_engine, search_engine_home_url,
-    sync_all_webviews,
+    ensure_active_content_webview, search_engine_home_url, sync_all_webviews,
 };
 use tauri::{AppHandle, Emitter, State};
 
@@ -34,7 +33,8 @@ pub(super) fn create_tab_inner(
     search_engine: Option<String>,
 ) -> Result<TabSnapshot, String> {
     let raw_target = url.unwrap_or_else(|| DEFAULT_HOME_URL.to_string());
-    let resolved_url = resolve_input_to_url_with_search_engine(
+    let resolved_url = crate::window::url_input::resolve_browser_input(
+        app,
         &raw_target,
         search_engine.as_deref().unwrap_or("google"),
     )?

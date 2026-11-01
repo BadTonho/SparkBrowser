@@ -1,5 +1,7 @@
 export interface SavedSession { id: number; name: string; pages: { title: string; url: string; is_pinned: boolean; is_selected: boolean }[]; }
 
+export interface SiteSearchShortcut { keyword: string; name: string; template: string; }
+
 export interface ViewportBounds {
   x: number;
   y: number;

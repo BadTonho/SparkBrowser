@@ -255,7 +255,7 @@ pub fn navigate_content_webview_with_search_engine(
     target_url_str: &str,
     search_engine: &str,
 ) -> Result<String, String> {
-    let parsed_url = resolve_input_to_url_with_search_engine(target_url_str, search_engine)?;
+    let parsed_url = super::url_input::resolve_browser_input(app, target_url_str, search_engine)?;
     let resolved_str = parsed_url.to_string();
     let state = app.state::<BrowserState>();
     let enabled = *state.shield_enabled.lock().map_err(|e| e.to_string())?;

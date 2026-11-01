@@ -1,4 +1,5 @@
 <script lang="ts">
+import SiteSearchSettings from "./SiteSearchSettings.svelte";
 import {
   defaultSearchEngine,
   SEARCH_ENGINES,
@@ -26,3 +27,5 @@ import {
     </select>
   </div>
 </section>
+
+<SiteSearchSettings />

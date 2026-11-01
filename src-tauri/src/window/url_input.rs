@@ -75,3 +75,22 @@ mod tests {
         );
     }
 }
+
+/// Resolve explicit shell input through stored site searches before the default parser.
+pub fn resolve_browser_input(
+    app: &tauri::AppHandle,
+    input: &str,
+    engine: &str,
+) -> Result<Url, String> {
+    use tauri::Manager;
+    if input.trim().contains(char::is_whitespace) {
+        let state = app.state::<crate::state::browser_state::BrowserState>();
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        if let Some(conn) = db.as_ref() {
+            if let Some(url) = crate::database::site_search_repo::resolve(conn, input)? {
+                return Ok(url);
+            }
+        }
+    }
+    resolve_input_to_url_with_search_engine(input, engine)
+}

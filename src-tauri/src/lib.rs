@@ -23,6 +23,9 @@ use commands::saved_sessions::{
     save_named_session,
 };
 use commands::shortcuts::set_keyboard_shortcuts;
+use commands::site_search::{
+    delete_site_search_shortcut, get_site_search_shortcuts, save_site_search_shortcut,
+};
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
     hibernate_tab, move_tab_to_workspace, reorder_tabs, set_resident_limit, set_tab_pinned,
@@ -143,6 +146,9 @@ pub fn run() {
             rename_named_session,
             delete_named_session,
             restore_named_session,
+            get_site_search_shortcuts,
+            save_site_search_shortcut,
+            delete_site_search_shortcut,
             get_diagnostics,
             navigate_to,
             go_back,

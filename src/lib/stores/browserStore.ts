@@ -137,12 +137,13 @@ export async function addTab(
 ): Promise<void> {
   const urlToOpen = targetUrl?.trim() || getSearchEngineHomeUrl(get(defaultSearchEngine));
   if (!isTauriRuntime()) {
+    const resolved = await navigateToUrl(urlToOpen, get(defaultSearchEngine));
     const newId = `tab-${fallbackCounter++}`;
     const updated = get(tabs).map((t) => ({ ...t, is_active: false }));
     updated.push({
       id: newId,
-      title: urlToOpen.replace(/^https?:\/\//, ""),
-      url: urlToOpen,
+      title: resolved.replace(/^https?:\/\//, ""),
+      url: resolved,
       workspace_id: workspaceId,
       is_active: true,
       is_hibernated: false,

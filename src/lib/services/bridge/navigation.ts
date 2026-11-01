@@ -1,3 +1,5 @@
+import { fetchSiteSearchShortcuts } from "./site-search";
+import { resolvePreviewInput } from "../site-search.js";
 import { invoke } from "./runtime";
 
 import type { TabSnapshot, ViewportBounds } from "../../types/browser";
@@ -11,7 +13,7 @@ export async function navigateToUrl(
   searchEngine: SearchEngine = "google"
 ): Promise<string> {
   if(!isTauriRuntime()) {
-    return input.startsWith("http") ? input : `https://${input}`;
+    return resolvePreviewInput(input, await fetchSiteSearchShortcuts(), searchEngine);
   }
   return await invoke<string>("navigate_to", { input, searchEngine });
 }
