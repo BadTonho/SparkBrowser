@@ -327,6 +327,12 @@
           "markdownDescription": "Enables the get_saved_sessions command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_site_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-site-permissions",
+          "markdownDescription": "Enables the get_site_permissions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_site_search_shortcuts command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-site-search-shortcuts",
@@ -411,6 +417,12 @@
           "markdownDescription": "Enables the reorder_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the respond_site_permission command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-respond-site-permission",
+          "markdownDescription": "Enables the respond_site_permission command without any pre-configured scope."
+        },
+        {
           "description": "Enables the restore_named_session command without any pre-configured scope.",
           "type": "string",
           "const": "allow-restore-named-session",
@@ -469,6 +481,12 @@
           "type": "string",
           "const": "allow-set-resident-limit",
           "markdownDescription": "Enables the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_site_permission command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-site-permission",
+          "markdownDescription": "Enables the set_site_permission command without any pre-configured scope."
         },
         {
           "description": "Enables the set_split_view command without any pre-configured scope.",
@@ -669,6 +687,12 @@
           "markdownDescription": "Denies the get_saved_sessions command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_site_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-site-permissions",
+          "markdownDescription": "Denies the get_site_permissions command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_site_search_shortcuts command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-site-search-shortcuts",
@@ -753,6 +777,12 @@
           "markdownDescription": "Denies the reorder_tabs command without any pre-configured scope."
         },
         {
+          "description": "Denies the respond_site_permission command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-respond-site-permission",
+          "markdownDescription": "Denies the respond_site_permission command without any pre-configured scope."
+        },
+        {
           "description": "Denies the restore_named_session command without any pre-configured scope.",
           "type": "string",
           "const": "deny-restore-named-session",
@@ -811,6 +841,12 @@
           "type": "string",
           "const": "deny-set-resident-limit",
           "markdownDescription": "Denies the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_site_permission command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-site-permission",
+          "markdownDescription": "Denies the set_site_permission command without any pre-configured scope."
         },
         {
           "description": "Denies the set_split_view command without any pre-configured scope.",

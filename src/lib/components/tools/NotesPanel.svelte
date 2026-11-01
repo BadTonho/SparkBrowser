@@ -14,7 +14,7 @@
     loading = true; error = "";
     void (async () => {
       try {
-        const url = noteUrl(raw); const note = await fetchPageNote(url);
+        const url = noteUrl(raw); const note = noteWriter.drafts.has(url) ? null : await fetchPageNote(url);
         if (revision !== loadRevision) return;
         editingUrl = url; title = pageTitle; noteWriter.seed(url, pageTitle, note?.text ?? "");
         notesRevision.update(value => value + 1);

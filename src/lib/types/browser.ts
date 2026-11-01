@@ -6,6 +6,10 @@ export interface PageNote { url: string; title: string; text: string; updated_at
 
 export interface SplitLayout { workspace_id: string; left_tab_id: string; right_tab_id: string; ratio: number; focused_tab_id: string; }
 
+export interface SitePermission { origin: string; kind: "camera" | "microphone" | "location" | "notifications"; state: "ask" | "allow" | "block"; }
+export interface PermissionRequest { id: string; tab_id: string; origin: string; top_origin: string; frame_origin: string | null; kind: SitePermission["kind"]; }
+export interface PermissionSnapshot { supported: boolean; message: string; settings: SitePermission[]; requests: PermissionRequest[]; }
+
 export interface ViewportBounds {
   split_ratio?: number;
   split_key?: string;

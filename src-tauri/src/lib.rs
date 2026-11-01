@@ -2,6 +2,7 @@ pub mod commands;
 pub mod database;
 pub mod downloads;
 pub mod privacy;
+pub mod site_permissions;
 pub mod state;
 pub mod window;
 
@@ -24,6 +25,9 @@ use commands::saved_sessions::{
     save_named_session,
 };
 use commands::shortcuts::set_keyboard_shortcuts;
+use commands::site_permissions::{
+    get_site_permissions, respond_site_permission, set_site_permission,
+};
 use commands::site_search::{
     delete_site_search_shortcut, get_site_search_shortcuts, save_site_search_shortcut,
 };
@@ -50,6 +54,7 @@ use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVI
 pub fn run() {
     tauri::Builder::default()
         .manage(BrowserState::default())
+        .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
             if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
@@ -167,6 +172,9 @@ pub fn run() {
             close_tabs_reviewed,
             set_split_view,
             commit_split_ratio,
+            get_site_permissions,
+            set_site_permission,
+            respond_site_permission,
             get_diagnostics,
             navigate_to,
             go_back,

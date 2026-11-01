@@ -8,7 +8,7 @@ export async function createFixture() {
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
     const id = url.pathname.split('/')[2] ?? 'a';
-    if (!/^[ab]$/.test(id)) { response.writeHead(404).end(); return; }
+    if (!/^[abpi]$/.test(id)) { response.writeHead(404).end(); return; }
     if (url.pathname.startsWith('/report/')) {
       let body = '';
       for await (const chunk of request) {
@@ -35,13 +35,21 @@ export async function createFixture() {
           field.value = 'artificial-test-draft';
           if (id === 'a') field.dispatchEvent(new Event('input', { bubbles: true }));
           scrollTo(0, 600);
-          let busy = false;
+          let busy = false; let permission = null;
+          async function mediaPermission() {
+            try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); stream.getTracks().forEach(track => track.stop()); permission = 'granted'; }
+            catch { permission = 'denied'; }
+          }
+          if (id === 'i') mediaPermission();
           async function tick() {
             if (busy) return; busy = true;
             try {
               const command = await fetch('/control/' + id).then(response => response.json());
               if (command === 'spa') { history.pushState({}, '', '/page/' + id + '/spa'); document.title = 'Native SPA ' + id; }
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, scroll: scrollY, url: location.pathname, dirty: id === 'a' }) });
+              if (command === 'microphone') { permission = null; void mediaPermission(); }
+              if (command === 'iframe') { const frame = document.createElement('iframe'); frame.allow = 'microphone'; frame.src = location.origin.replace('127.0.0.1', 'localhost') + '/page/i'; document.body.prepend(frame); }
+              if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();

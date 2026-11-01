@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { openSitePermissions } from "../../stores/sitePermissionsStore";
+  import { setActiveSettingsCategory } from "../../stores/settingsStore";
   import { openTools } from "../../stores/toolsStore";
   import { rankCommands, normalizeSearch } from "../../services/command-ranking.js";
   import { focusDialog } from "../../actions/focusDialog";
@@ -137,6 +139,9 @@
     }
 
     const browserCommands: CommandItem[] = [
+      { id: "cmd-site-permissions", title: "Open Site Permissions", subtitle: "Manage permissions for the focused page", icon: "\u26BF", badge: "Privacy", action: async () => { await closeCommandBar(); await openSitePermissions(); } },
+      { id: "cmd-site-search", title: "Configure Site Search Shortcuts", subtitle: "Add keyword searches", icon: "\u2315", badge: "Search", action: async () => { await closeCommandBar(); setActiveSettingsCategory("search_navigation"); await openSettingsModal(); } },
+      { id: "cmd-split-view", title: "Configure Split View", subtitle: "Choose two workspace tabs", icon: "\u25EB", badge: "Tabs", action: async () => { await closeCommandBar(); await openTools("tabs"); } },
       ...(["sessions", "tabs", "notes"] as const).map(section => ({ id: `cmd-tools-${section}`, title: `Open ${section}`, subtitle: "Browser tools", icon: "\u2637", badge: "Tools", action: async () => { await closeCommandBar(); await openTools(section); } })),
       {
         id: "cmd-zen",

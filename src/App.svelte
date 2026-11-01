@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import SitePermissionsPanel from "./lib/components/permissions/SitePermissionsPanel.svelte";
+  import PermissionPrompt from "./lib/components/permissions/PermissionPrompt.svelte";
+  import { initializePermissionEvents } from "./lib/stores/sitePermissionsStore";
   import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
   import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
   import { slide } from "svelte/transition";
@@ -91,6 +94,7 @@
   );
 
   onMount(() => {
+    const stopPermissionEvents = initializePermissionEvents();
     const stopDownloadEvents = initializeDownloadEvents();
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const updateMotionPreference = () => {
@@ -215,6 +219,7 @@
     window.addEventListener("mousedown", handleGlobalMousedown, true);
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
+      stopPermissionEvents();
       stopDownloadEvents();
       clearInterval(hibernationInterval);
       disposed = true;
@@ -302,6 +307,8 @@
   <DownloadsDrawer />
   <SettingsModal />
   <ToolsPanel />
+  <SitePermissionsPanel />
+  <PermissionPrompt />
   <BookmarkEditor />
   <BookmarkContextMenu />
   <WorkspaceSwitcherOverlay />

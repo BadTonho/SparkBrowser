@@ -4038,6 +4038,7 @@ dependencies = [
  "url",
  "webview2-com",
  "window-vibrancy",
+ "windows-core",
 ]
 
 [[package]]

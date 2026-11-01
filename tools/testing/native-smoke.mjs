@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { checkNotesUi } from '../../tests/native/notes-ui.mjs';
+import { checkPermissions } from '../../tests/native/permissions.mjs';
 import { checkFeatures } from '../../tests/native/features.mjs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -36,7 +38,7 @@ async function request(method, path, body) {
   const result = await fetch(endpoint + path, { method, headers: { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(60_000) });
   const payload = await result.json();
-  if (!result.ok || payload.value?.error) throw new Error(`WebDriver ${path}: ${payload.value?.message ?? result.status}`);
+  if (!result.ok || (typeof payload.value?.error === 'string' && typeof payload.value?.message === 'string')) throw new Error(`WebDriver ${path}: ${payload.value?.message ?? result.status}`);
   return payload.value;
 }
 async function script(code, ...args) { return request('POST', `/session/${session}/execute/sync`, { script: code, args }); }
@@ -53,7 +55,9 @@ async function invoke(command, args = {}) {
   return result.value;
 }
 async function openSession() {
-  const result = await request('POST', '/session', { capabilities: { alwaysMatch: { 'tauri:options': { application: binary } } } });
+  const options = { application: binary };
+  if (process.platform === 'win32') options.webviewOptions = { userDataFolder: resolve('.cache/native-profile'), additionalBrowserArguments: ['--use-fake-device-for-media-stream'] };
+  const result = await request('POST', '/session', { capabilities: { alwaysMatch: { 'tauri:options': options } } });
   session = result.sessionId;
   await until(() => script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))'), 'isolated test shell');
   await request('POST', `/session/${session}/timeouts`, { script: 30_000, implicit: 0, pageLoad: 30_000 });
@@ -71,7 +75,11 @@ try {
   await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'tauri-driver ready');
   await openSession();
   await invoke('set_resident_limit', { limit: 8 });
+  const fixtureWorkspace = 'native-fixture-' + Date.now();
+  await invoke('create_workspace', { id: fixtureWorkspace, name: 'Native fixture', icon: 'T', accentPrimary: '#6e8efb', accentSecondary: '#8b949e' });
   const a = (await invoke('create_tab', { url: fixture.origin + '/page/a', searchEngine: 'google' })).tabs.find(tab => tab.is_active);
+  await invoke('move_tab_to_workspace', { tabId: a.id, workspaceId: fixtureWorkspace });
+  a.workspace_id = fixtureWorkspace;
   await until(() => fixture.reports.get('a')?.value === 'artificial-test-draft', 'fixture form report');
   await until(async () => (await invoke('get_tabs')).tabs.find(tab => tab.id === a.id)?.activity.dirty_form, 'edited form protection');
   fixture.commands.set('a', 'spa');
@@ -122,15 +130,24 @@ try {
     await until(() => script('return !document.querySelector("[role=dialog]")'), 'Escape closes dialog');
     await until(() => script('return document.activeElement?.getAttribute("aria-label") === arguments[0]', label), 'return focus to opener');
   }
+  await checkNotesUi(invoke, until, script, fixture.origin);
   await checkFeatures(invoke, until, fixture, a, b);
+  await checkPermissions(invoke, until, fixture, a, b, script);
   for (const [width, height] of [[900, 700], [1400, 900]]) {
     await request('POST', `/session/${session}/window/rect`, { width, height });
     await until(() => script('const box = document.querySelector(".viewport-frame").getBoundingClientRect(); return box.width >= 100 && box.height >= 100;'), 'viewport after resize');
   }
 
   await invoke('get_history', { limit: 10 }); // Flush navigation writes before restart.
-  await closeSession();
+  // Match a normal user exit so the native engine can close and persist its profile.
+  await script(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }); return null;`).catch(() => {});
+  await until(async () => { try { return !(await request('GET', `/session/${session}/window/handles`)).length; } catch { return true; } }, 'native window closes normally');
+  await closeSession().catch(() => {});
   await openSession();
+  if (process.platform === 'win32') {
+    assert.ok((await invoke('get_site_permissions')).settings.some(row => row.origin === fixture.origin && row.kind === 'microphone' && row.state === 'allow'));
+    await invoke('set_site_permission', { origin: fixture.origin, kind: 'microphone', state: 'ask' });
+  }
   const restoredPacket = await invoke('get_tabs');
   const restored = restoredPacket.tabs;
   assert.equal(restoredPacket.split_layout.ratio, 0.65);
@@ -138,7 +155,8 @@ try {
   assert.ok(restored.some(tab => tab.id === a.id));
   assert.equal(restored.find(tab => tab.id === b.id)?.is_pinned, true);
   assert.ok(restored.filter(tab => !tab.is_active).every(tab => tab.is_hibernated || tab.is_visible));
-  console.log('Native smoke passed: tabs, SPA history, form state, protected memory, draft, dialogs, resize and restoration.');
+  await invoke('delete_workspace', { workspaceId: fixtureWorkspace, action: 'close', targetWorkspaceId: null });
+  console.log('Native smoke passed: navigation, forms, dialogs, named sessions, site search, notes, organizer, split view, permissions and restart.');
 } finally {
   await closeSession().catch(() => {});
   driver.kill();

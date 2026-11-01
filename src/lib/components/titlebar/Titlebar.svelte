@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { openSitePermissions } from "../../stores/sitePermissionsStore";
   import { openTools } from "../../stores/toolsStore";
   import {
     addressInput,
@@ -145,7 +146,7 @@
       </div>
 
       <div class="omnibox-wrapper" class:loading={$isLoading} title={$activeNavigation?.error ?? undefined}>
-        <span class="omnibox-icon" title={$currentUrl.startsWith("https:") ? "HTTPS connection" : "Unencrypted connection"}>{$currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</span>
+        <button class="omnibox-icon" onclick={openSitePermissions} aria-label="Site permissions" title={$currentUrl.startsWith("https:") ? "HTTPS connection · Site permissions" : "Unencrypted connection · Site permissions"}>{$currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</button>
         <input
           class="omnibox-input"
           type="text"

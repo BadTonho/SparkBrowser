@@ -24,6 +24,7 @@ export type SearchEntry = {
 };
 
 export const searchableSettings: SearchEntry[] = [
+  { id: "site-permissions", title: "Site Permissions", description: "Control saved camera, microphone, location and notification decisions.", category: "performance_privacy", targetId: "site-permissions-heading", keywords: "origin camera microphone location notifications allow block ask" },
   { id: "site-search", title: "Site Search Shortcuts", description: "Configure keyword searches for websites.", category: "search_navigation", targetId: "site-search-heading", keywords: "keyword template custom search" },
   { id: "resident-limit", title: "Resident Tab Limit", description: "Choose how many eligible WebViews stay awake.", category: "performance_privacy", targetId: "setting-resident-limit", keywords: "memory ram lru pinned forms media downloads" },
   { id: "local-diagnostics", title: "Local Diagnostics", description: "Inspect IPC timings, failures and session rows written.", category: "diagnostics", targetId: "diagnostics-heading", keywords: "performance latency p95 metrics database" },

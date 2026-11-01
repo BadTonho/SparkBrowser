@@ -104,6 +104,10 @@ pub(super) fn ensure_tab_webview(
         .lock()
         .map(|id| *id == tab_id)
         .unwrap_or(false);
+    #[cfg(windows)]
+    let initial_target = initial_url.to_string();
+    #[cfg(windows)]
+    let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
         .focused(focused)
         .on_download(crate::downloads::native::handler(
@@ -270,6 +274,14 @@ pub(super) fn ensure_tab_webview(
         &navigation_registration_token,
     )?;
 
+    #[cfg(windows)]
+    crate::site_permissions::requests::install_and_navigate(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
+        initial_target,
+    )?;
     Ok(())
 }
 

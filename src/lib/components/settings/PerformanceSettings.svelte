@@ -1,4 +1,5 @@
 <script lang="ts">
+import PermissionSettings from "../permissions/PermissionSettings.svelte";
 import {
   autoHibernateMode,
   residentTabLimit,
@@ -58,3 +59,5 @@ const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
     </div>
   </div>
 </section>
+
+<PermissionSettings />

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isSitePermissionsOpen, permissionRequests } from "../../stores/sitePermissionsStore";
   import SplitDivider from "./SplitDivider.svelte";
   import { splitLayout, splitDragRatio, splitKey } from "../../stores/splitViewStore";
   import { isToolsOpen } from "../../stores/toolsStore";
@@ -20,7 +21,7 @@
   const inTauri = isTauriRuntime();
 
   let anyOverlayOpen = $derived(
-    $isToolsOpen || $isCommandBarOpen ||
+    $isSitePermissionsOpen || $permissionRequests.length > 0 || $isToolsOpen || $isCommandBarOpen ||
       $isHistoryDrawerOpen ||
       $isDownloadsDrawerOpen ||
       $isSettingsModalOpen ||
