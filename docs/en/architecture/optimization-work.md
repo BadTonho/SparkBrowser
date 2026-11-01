@@ -53,4 +53,8 @@ Settings categories, shortcut recording, the search catalog and shared scoped CS
 
 ## Remaining stages
 
-- Diagnostics, continuous validation and measured release guidance.
+- Continuous validation and native integration scenarios.
+
+## Local diagnostics
+
+Settings exposes bounded in-memory IPC timing samples, cumulative call/error counts, native operation spans, session rows written and resident/protected tab counts. Diagnostic payloads omit arguments, page URLs, titles and tokens. See [performance validation](../contributing/performance.md) for repeatable comparisons and measurement limits.

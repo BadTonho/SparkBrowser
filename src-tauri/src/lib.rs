@@ -5,6 +5,7 @@ pub mod privacy;
 pub mod state;
 pub mod window;
 
+use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
     cancel_download, clear_all_downloads, enqueue_download, get_download_tasks, get_downloads,
 };
@@ -133,6 +134,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_diagnostics,
             navigate_to,
             go_back,
             go_forward,

@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./runtime";
 
 import type { TabSnapshot, ViewportBounds } from "../../types/browser";
 import type { SearchEngine } from "../../stores/searchEngineStore";

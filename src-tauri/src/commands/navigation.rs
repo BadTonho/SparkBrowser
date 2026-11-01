@@ -58,5 +58,8 @@ pub async fn sync_viewport_bounds(
         }
         *stored_bounds = bounds;
     }
-    resize_visible_webviews(&app, &state)
+    let mut span = state.diagnostics.span("viewport.resize");
+    let result = resize_visible_webviews(&app, &state);
+    span.finish(result.is_ok(), 0);
+    result
 }

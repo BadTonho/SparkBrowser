@@ -7,7 +7,7 @@ const rust = readFileSync(new URL("../src-tauri/src/privacy/adblock_engine.rs", 
 const domains = [...rust.match(/const BLOCKED_DOMAINS:[\s\S]*?= &\[([\s\S]*?)\];/)[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 const template = readFileSync(new URL("../src-tauri/src/privacy/content_shield.js", import.meta.url), "utf8");
 
-function page(enabled) {
+function page(enabled, replacementEnabled) {
   let fetches = 0, sends = 0, beacons = 0, aborted = 0;
   function XMLHttpRequest() {}
   XMLHttpRequest.prototype.open = function() {};
@@ -16,8 +16,12 @@ function page(enabled) {
   const window = { fetch: async () => { fetches++; return { status: 200 }; } };
   const navigator = { sendBeacon: () => { beacons++; return true; } };
   const document = { baseURI: "https://example.test/", readyState: "loading", addEventListener() {} };
-  vm.runInNewContext(template.replace("__SHIELD_TOKEN__", JSON.stringify("test-policy")).replace("__SHIELD_ENABLED__", String(enabled)).replace("__BLOCKED_DOMAINS__", JSON.stringify(domains)), { window, navigator, document, XMLHttpRequest, URL, DOMException });
-  return { window, navigator, XMLHttpRequest, counts: () => ({ fetches, sends, beacons, aborted }) };
+  const source = value => template.replace("__SHIELD_TOKEN__", JSON.stringify("test-policy")).replace("__SHIELD_ENABLED__", String(value)).replace("__BLOCKED_DOMAINS__", JSON.stringify(domains));
+  const context = vm.createContext({ window, navigator, document, XMLHttpRequest, URL, DOMException });
+  const replacement = value => `if (typeof window.__veloceSetShieldPolicy === 'function') { window.__veloceSetShieldPolicy("test-policy", ${value}); } else { ${source(value)} }`;
+  if (replacementEnabled !== undefined) vm.runInContext(replacement(replacementEnabled), context);
+  vm.runInContext(source(enabled), context);
+  return { window, navigator, XMLHttpRequest, replace: value => vm.runInContext(replacement(value), context), counts: () => ({ fetches, sends, beacons, aborted }) };
 }
 
 test("blocks tracker strings, URL and Request objects while allowing unrelated paths and hosts", async () => {
@@ -64,4 +68,18 @@ test("live policy changes require the generation token and affect existing XHR/f
   assert.equal(p.navigator.sendBeacon("https://doubleclick.net/ad"), true);
   p.window.__veloceSetShieldPolicy("test-policy", true);
   await assert.rejects(p.window.fetch("https://doubleclick.net/ad"));
+});
+
+test("future-document policy works before or after the immutable base initializer", async () => {
+  for (const base of [true, false]) {
+    const before = page(base, !base);
+    const after = page(base); after.replace(!base);
+    for (const p of [before, after]) {
+      if (base) assert.equal((await p.window.fetch("https://doubleclick.net/ad")).status, 200);
+      else await assert.rejects(p.window.fetch("https://doubleclick.net/ad"));
+      p.replace(base);
+      if (base) await assert.rejects(p.window.fetch("https://doubleclick.net/ad"));
+      else assert.equal((await p.window.fetch("https://doubleclick.net/ad")).status, 200);
+    }
+  }
 });

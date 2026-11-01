@@ -1,5 +1,6 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_diagnostics",
     "navigate_to",
     "go_back",
     "go_forward",

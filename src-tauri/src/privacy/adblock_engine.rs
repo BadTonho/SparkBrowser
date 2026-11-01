@@ -74,6 +74,13 @@ pub fn build_content_shield_script(shield_enabled: bool, token: &str) -> String 
         )
 }
 
+/// Both possible document-created ordering sequences converge to the new policy.
+pub fn build_replacement_shield_script(enabled: bool, token: &str) -> String {
+    let encoded = serde_json::to_string(token).expect("token serializable");
+    let initialize = build_content_shield_script(enabled, token);
+    format!("if (typeof window.__veloceSetShieldPolicy === 'function') {{ window.__veloceSetShieldPolicy({encoded}, {enabled}); }} else {{ {initialize} }}")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

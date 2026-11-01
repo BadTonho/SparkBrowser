@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./runtime";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type { DownloadItem, DownloadTask } from "../../types/browser";

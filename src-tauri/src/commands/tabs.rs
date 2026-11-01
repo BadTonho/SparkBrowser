@@ -20,8 +20,11 @@ pub async fn create_tab(
     url: Option<String>,
     search_engine: Option<String>,
 ) -> Result<TabSnapshot, String> {
+    let mut span = state.diagnostics.span("tabs.create");
     let _operation = state.tab_operations.lock().await;
-    create_tab_inner(&app, &state, url, search_engine)
+    let result = create_tab_inner(&app, &state, url, search_engine);
+    span.finish(result.is_ok(), 0);
+    result
 }
 
 pub(super) fn create_tab_inner(
@@ -96,8 +99,11 @@ pub async fn switch_tab(
     state: State<'_, BrowserState>,
     tab_id: String,
 ) -> Result<TabSnapshot, String> {
+    let mut span = state.diagnostics.span("tabs.switch");
     let _operation = state.tab_operations.lock().await;
-    switch_tab_inner(&app, &state, tab_id)
+    let result = switch_tab_inner(&app, &state, tab_id);
+    span.finish(result.is_ok(), 0);
+    result
 }
 
 pub(super) fn switch_tab_inner(

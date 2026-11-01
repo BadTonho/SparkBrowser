@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "./runtime";
 import { isTauriRuntime } from './runtime';
 import type { TabItem, TabSnapshot, WorkspaceDeleteResult, WorkspaceItem } from '../../types/browser';
 import * as preview from '../preview/workspaces';

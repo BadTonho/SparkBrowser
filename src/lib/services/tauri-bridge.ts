@@ -8,3 +8,4 @@ export * from "./bridge/persistence";
 export * from "./bridge/privacy";
 export * from "./bridge/events";
 export * from "./bridge/windows";
+export * from "./bridge/diagnostics";

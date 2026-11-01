@@ -7,4 +7,5 @@ pub mod tabs;
 pub mod workspaces;
 
 pub mod access;
+pub mod diagnostics;
 pub mod overlays;

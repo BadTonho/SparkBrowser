@@ -1,4 +1,6 @@
 (() => {
+  // A replacement native policy script can run before Tauri's immutable initializer.
+  if (typeof window.__veloceSetShieldPolicy === "function") return;
   let enabled = __SHIELD_ENABLED__;
   const token = __SHIELD_TOKEN__;
   const domains = __BLOCKED_DOMAINS__;

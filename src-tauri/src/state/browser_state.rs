@@ -37,6 +37,7 @@ pub struct TabSnapshot {
 }
 
 pub struct BrowserState {
+    pub diagnostics: super::diagnostics::Diagnostics,
     pub resident_limit: std::sync::atomic::AtomicUsize,
     pub snapshot_revision: Mutex<u64>,
     pub tab_operations: tauri::async_runtime::Mutex<()>,
@@ -70,6 +71,7 @@ impl Default for BrowserState {
             true,
         );
         Self {
+            diagnostics: super::diagnostics::Diagnostics::default(),
             resident_limit: std::sync::atomic::AtomicUsize::new(8),
             snapshot_revision: Mutex::new(0),
             tab_operations: tauri::async_runtime::Mutex::new(()),
@@ -173,10 +175,14 @@ impl BrowserState {
     }
 
     pub fn persist_session(&self) -> Result<(), String> {
+        let mut span = self.diagnostics.span("session.persist");
         let snapshot = self.snapshot_tabs();
         let db_guard = self.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard.as_ref().ok_or("Session database is not ready")?;
-        save_session_tabs(conn, &snapshot)
+        let before = conn.total_changes();
+        let result = save_session_tabs(conn, &snapshot);
+        span.finish(result.is_ok(), conn.total_changes().saturating_sub(before));
+        result
     }
 
     /// Records a visited URL into the SQLite browsing history table.

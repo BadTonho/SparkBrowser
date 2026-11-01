@@ -6,6 +6,7 @@ import AppearanceSettings from "./AppearanceSettings.svelte";
 import NavigationSettings from "./NavigationSettings.svelte";
 import PerformanceSettings from "./PerformanceSettings.svelte";
 import ShortcutSettings from "./ShortcutSettings.svelte";
+  import DiagnosticsSettings from "./DiagnosticsSettings.svelte";
 import { focusDialog } from "../../actions/focusDialog";
 import { onDestroy, tick } from "svelte";
 import { fade, fly } from "svelte/transition";
@@ -254,6 +255,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             <PerformanceSettings />
           {:else if $activeSettingsCategory === "shortcuts"}
             <ShortcutSettings error={recorder.error} onStart={recorder.start} />
+          {:else if $activeSettingsCategory === "diagnostics"}
+            <DiagnosticsSettings />
           {/if}
         </main>
       </div>

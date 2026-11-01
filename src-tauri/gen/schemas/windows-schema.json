@@ -255,6 +255,12 @@
           "markdownDescription": "Enables the get_bookmark_data command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_diagnostics command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-diagnostics",
+          "markdownDescription": "Enables the get_diagnostics command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_download_tasks command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-download-tasks",
@@ -499,6 +505,12 @@
           "type": "string",
           "const": "deny-get-bookmark-data",
           "markdownDescription": "Denies the get_bookmark_data command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_diagnostics command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-diagnostics",
+          "markdownDescription": "Denies the get_diagnostics command without any pre-configured scope."
         },
         {
           "description": "Denies the get_download_tasks command without any pre-configured scope.",

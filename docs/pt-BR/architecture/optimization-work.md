@@ -52,4 +52,8 @@ Categorias de configurações, gravação de atalhos, catálogo de busca e CSS c
 
 ## Etapas restantes
 
-- Diagnósticos, validação contínua e orientações de release com medições.
+- Validação contínua e cenários de integração nativa.
+
+## Diagnósticos locais
+
+As configurações exibem amostras limitadas de tempo de IPC em memória, contagens acumuladas de chamadas/erros, duração de operações nativas, linhas de sessão gravadas e contagens de abas residentes/protegidas. Os dados de diagnóstico omitem argumentos, URLs, títulos e tokens. Veja [validação de desempenho](../contributing/performance.md) para comparações reproduzíveis e limites de medição.

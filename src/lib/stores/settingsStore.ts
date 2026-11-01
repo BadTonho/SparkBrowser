@@ -133,7 +133,8 @@ export type SettingsCategory =
   | "search_navigation"
   | "workspaces"
   | "performance_privacy"
-  | "shortcuts";
+  | "shortcuts"
+  | "diagnostics";
 
 const settingsCategories: SettingsCategory[] = [
   "appearance_layout",
@@ -141,6 +142,7 @@ const settingsCategories: SettingsCategory[] = [
   "workspaces",
   "performance_privacy",
   "shortcuts",
+  "diagnostics",
 ];
 
 function getInitialSettingsCategory(): SettingsCategory {

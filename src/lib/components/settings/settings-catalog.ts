@@ -6,6 +6,7 @@ export const categories: {
   icon: string;
   label: string;
 }[] = [
+    { id: "diagnostics", icon: "◷", label: "Local Diagnostics" },
     { id: "appearance_layout", icon: "🖥️", label: "Appearance & Layout" },
     { id: "search_navigation", icon: "🔎", label: "Search & Navigation" },
     { id: "workspaces", icon: "🎨", label: "Workspaces & Theme" },
@@ -23,6 +24,8 @@ export type SearchEntry = {
 };
 
 export const searchableSettings: SearchEntry[] = [
+  { id: "resident-limit", title: "Resident Tab Limit", description: "Choose how many eligible WebViews stay awake.", category: "performance_privacy", targetId: "setting-resident-limit", keywords: "memory ram lru pinned forms media downloads" },
+  { id: "local-diagnostics", title: "Local Diagnostics", description: "Inspect IPC timings, failures and session rows written.", category: "diagnostics", targetId: "diagnostics-heading", keywords: "performance latency p95 metrics database" },
   {
     id: "browser-layout",
     title: "Browser Layout",

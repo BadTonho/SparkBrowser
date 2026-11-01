@@ -30,7 +30,8 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
         let (send, receive) = tokio::sync::oneshot::channel();
         let send = std::sync::Arc::new(std::sync::Mutex::new(Some(send)));
         let initial_send = send.clone();
-        let initial_script = script.clone();
+        let initial_script =
+            crate::privacy::adblock_engine::build_replacement_shield_script(enabled, &token);
         view.with_webview(move |platform| {
             let result = (|| {
                 let core = unsafe { platform.controller().CoreWebView2()? };
