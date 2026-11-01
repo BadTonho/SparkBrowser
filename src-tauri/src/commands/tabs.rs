@@ -7,7 +7,10 @@ use crate::window::webview_manager::{
     resolve_input_to_url, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
     WORKSPACE_SWITCHER_WEBVIEW_LABEL,
 };
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, State};
+
+const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
 
 #[tauri::command]
 pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<Vec<TabInfo>, String> {
@@ -263,23 +266,22 @@ pub async fn set_workspace_switcher_overlay(
         .get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL)
         .ok_or_else(|| "Workspace switcher WebView was not found".to_string())?;
 
-    let token = if visible {
-        Some(create_internal_bridge_token())
-    } else {
-        None
-    };
+    // A fresh token also identifies this close animation, so a stale delayed
+    // hide cannot hide the WebView after the picker has been reopened.
+    let token = create_internal_bridge_token();
     let script = build_workspace_switcher_update_script(
         &workspaces,
         &active_workspace_id,
-        token.as_deref().unwrap_or_default(),
+        &token,
         visible,
     )?;
 
     if let Ok(mut current_token) = state.workspace_switcher_token.lock() {
-        *current_token = token.clone();
+        *current_token = Some(token.clone());
     }
     if let Ok(mut open) = state.workspace_switcher_open.lock() {
-        *open = visible;
+        // Keep the native WebView shown during its exit animation.
+        *open = true;
     }
 
     if let Some(content_webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
@@ -302,25 +304,56 @@ pub async fn set_workspace_switcher_overlay(
         return Err(format!("Failed to show workspace switcher: {error}"));
     }
 
-    sync_all_webviews(&app, &state)?;
-    let another_overlay_open = state
-        .is_overlay_open
-        .lock()
-        .map(|overlay| *overlay)
-        .unwrap_or(true);
-    let app_is_focused = app
-        .get_webview_window("main")
-        .and_then(|window| window.is_focused().ok())
-        .unwrap_or(false);
-    if !visible && app_is_focused {
-        if another_overlay_open {
-            if let Some(main_window) = app.get_webview_window("main") {
-                let _ = main_window.set_focus();
+    if !visible {
+        let app_for_hide = app.clone();
+        let closing_token = token;
+        std::thread::spawn(move || {
+            std::thread::sleep(WORKSPACE_SWITCHER_CLOSE_ANIMATION);
+            let Some(state) = app_for_hide.try_state::<BrowserState>() else {
+                return;
+            };
+
+            // Serialize the token check and state update with a possible reopen.
+            let Ok(mut current_token) = state.workspace_switcher_token.lock() else {
+                return;
+            };
+            if current_token.as_deref() != Some(closing_token.as_str()) {
+                return;
             }
-        } else if let Some(content_webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
-            let _ = content_webview.set_focus();
-        }
+            let Ok(mut open) = state.workspace_switcher_open.lock() else {
+                return;
+            };
+            *current_token = None;
+            *open = false;
+            drop(open);
+            drop(current_token);
+
+            let _ = sync_all_webviews(&app_for_hide, &state);
+            let another_overlay_open = state
+                .is_overlay_open
+                .lock()
+                .map(|overlay| *overlay)
+                .unwrap_or(true);
+            let app_is_focused = app_for_hide
+                .get_webview_window("main")
+                .and_then(|window| window.is_focused().ok())
+                .unwrap_or(false);
+            if app_is_focused {
+                if another_overlay_open {
+                    if let Some(main_window) = app_for_hide.get_webview_window("main") {
+                        let _ = main_window.set_focus();
+                    }
+                } else if let Some(content_webview) =
+                    app_for_hide.get_webview(CONTENT_WEBVIEW_LABEL)
+                {
+                    let _ = content_webview.set_focus();
+                }
+            }
+        });
+        return Ok(());
     }
+
+    sync_all_webviews(&app, &state)?;
     Ok(())
 }
 

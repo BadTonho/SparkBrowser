@@ -22,7 +22,7 @@ export const isWorkspaceSwitcherOverlayOpen = derived(
   (overlay) => overlay !== null
 );
 
-const HOLD_DURATION_MS = 600;
+const HOLD_DURATION_MS = 400;
 
 let altIsHeld = false;
 let pickerSelectionInProgress = false;

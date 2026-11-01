@@ -16,7 +16,7 @@
 
 ## 4. 🎨 Workspaces & Dynamic Themes
 - Group tabs by context (e.g., *Work*, *Study*, *Personal*, *Gaming*).
-- Hold `Alt` for 0.6 seconds to open the centered workspace picker. Choose a workspace while holding Alt, or release Alt, press `Esc`, or click outside to dismiss it.
+- Hold `Alt` for 0.4 seconds to open the centered workspace picker. Choose a workspace while holding Alt, or release Alt, press `Esc`, or click outside to dismiss it.
 - `Alt + 1` through `Alt + 9` switch immediately to the first nine workspaces in their displayed order and show a brief confirmation.
 - The picker and confirmation can appear temporarily in Zen Mode; closing them leaves Zen Mode enabled.
 - In Browser Settings, rename a workspace, change its emoji and theme colors, create workspaces, or delete them. Personal is protected.

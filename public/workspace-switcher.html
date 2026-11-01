@@ -23,7 +23,7 @@
       #overlay {
         position: fixed;
         inset: 0;
-        display: flex;
+        display: none;
         justify-content: center;
         align-items: flex-start;
         padding: 9px 12px 12px;
@@ -103,6 +103,29 @@
         let activeToken = "";
         let isOpen = false;
         let requestSent = false;
+        let transitionSequence = 0;
+        let listAnimation;
+
+        const OPEN_DURATION_MS = 180;
+        const CLOSE_DURATION_MS = 140;
+        const EASING = "cubic-bezier(0.16, 1, 0.3, 1)";
+
+        function animateList(from, to, duration) {
+          listAnimation?.cancel();
+          listAnimation = undefined;
+
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            list.style.opacity = String(to.opacity);
+            list.style.transform = to.transform;
+            return;
+          }
+
+          listAnimation = list.animate([from, to], {
+            duration,
+            easing: EASING,
+            fill: "both",
+          });
+        }
 
         function sendRequest(action, workspaceId) {
           if (!isOpen || requestSent) return;
@@ -125,13 +148,36 @@
         }
 
         window.__veloceSetWorkspaceSwitcher = (payload) => {
-          isOpen = Boolean(payload.visible);
+          const shouldOpen = Boolean(payload.visible);
+          const transition = ++transitionSequence;
           requestSent = false;
           activeToken = payload.token || "";
-          root.setAttribute("aria-hidden", String(!isOpen));
+
+          if (!shouldOpen) {
+            if (!isOpen && root.style.display === "none") return;
+
+            isOpen = false;
+            root.setAttribute("aria-hidden", "true");
+            list.style.pointerEvents = "none";
+            animateList(
+              { opacity: 1, transform: "translateY(0)" },
+              { opacity: 0, transform: "translateY(-10px)" },
+              CLOSE_DURATION_MS
+            );
+            window.setTimeout(() => {
+              if (transition === transitionSequence && !isOpen) {
+                root.style.display = "none";
+                list.style.pointerEvents = "auto";
+              }
+            }, CLOSE_DURATION_MS);
+            return;
+          }
+
+          isOpen = true;
+          root.setAttribute("aria-hidden", "false");
           list.replaceChildren();
-          root.style.display = isOpen ? "flex" : "none";
-          if (!isOpen) return;
+          root.style.display = "flex";
+          list.style.pointerEvents = "auto";
 
           for (const workspace of payload.workspaces || []) {
             const button = document.createElement("button");
@@ -162,6 +208,12 @@
             });
             list.appendChild(button);
           }
+
+          animateList(
+            { opacity: 0, transform: "translateY(-10px)" },
+            { opacity: 1, transform: "translateY(0)" },
+            OPEN_DURATION_MS
+          );
         };
 
         document.addEventListener("pointerdown", handlePointerDown, true);
