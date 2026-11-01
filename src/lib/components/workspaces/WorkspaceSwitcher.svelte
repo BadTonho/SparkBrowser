@@ -122,6 +122,21 @@
       box-shadow 0.2s ease;
   }
 
+  .ws-pill::after {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 9px;
+    bottom: 9px;
+    width: 2px;
+    border-radius: 99px;
+    background: var(--ws-primary);
+    opacity: 0;
+    transform: scaleY(0.35);
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
   .ws-pill:hover {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text-primary);
@@ -145,12 +160,31 @@
     box-shadow: inset 0 0 0 1px var(--ws-primary);
   }
 
+  .ws-pill.active::after {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
   .workspace-bar.horizontal .ws-pill {
     flex-direction: row;
     gap: 5px;
     min-width: 0;
     padding: 5px 7px;
     white-space: nowrap;
+  }
+
+  .workspace-bar.horizontal .ws-pill::after {
+    left: 9px;
+    right: 9px;
+    top: auto;
+    bottom: 2px;
+    width: auto;
+    height: 2px;
+    transform: scaleX(0.35);
+  }
+
+  .workspace-bar.horizontal .ws-pill.active::after {
+    transform: scaleX(1);
   }
 
   .ws-icon {
@@ -172,6 +206,18 @@
       width: 30px;
       justify-content: center;
       padding: 5px 4px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ws-pill,
+    .ws-pill::after {
+      transition: none !important;
+    }
+
+    .ws-pill:hover,
+    .ws-pill.drop-hover {
+      transform: none;
     }
   }
 </style>

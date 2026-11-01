@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { cubicOut } from "svelte/easing";
+  import { fly } from "svelte/transition";
   import {
     tabs,
     addTab,
@@ -20,6 +22,20 @@
       (t) => !t.workspace_id || t.workspace_id === $activeWorkspaceId
     )
   );
+
+  let prefersReducedMotion = $state(false);
+
+  onMount(() => {
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => {
+      prefersReducedMotion = motionQuery.matches;
+    };
+
+    updateMotionPreference();
+    motionQuery.addEventListener("change", updateMotionPreference);
+
+    return () => motionQuery.removeEventListener("change", updateMotionPreference);
+  });
 
   function getTabHost(rawUrl: string): string {
     try {
@@ -148,6 +164,7 @@
         class:active={tab.is_active}
         class:hibernated={tab.is_hibernated}
         class:is-dragging={dragTabId === tab.id && isDragging}
+        transition:fly={{ y: 6, duration: prefersReducedMotion ? 0 : 180, easing: cubicOut }}
         onpointerdown={(e) => handleTabPointerDown(e, tab.id)}
         onmouseup={(e) => e.button === 1 && removeTab(tab.id)}
         role="button"
@@ -375,5 +392,19 @@
   .win-btn.close-btn:hover {
     background: #e81123;
     color: #ffffff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .h-tab,
+    .tab-close-btn,
+    .new-tab-btn,
+    .win-btn {
+      transition: none !important;
+    }
+
+    .h-tab.is-dragging,
+    .new-tab-btn:hover {
+      transform: none;
+    }
   }
 </style>
