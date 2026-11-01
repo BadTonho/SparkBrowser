@@ -1,6 +1,6 @@
-# Integração nativa e CI
+# Integração nativa local
 
-O workflow de validação verifica testes Node, Svelte/TypeScript, build do frontend, testes Rust, formatação, Clippy, alertas npm e segurança do repositório em Windows, Linux e macOS. As Actions estão fixadas em hashes de commits revisados. Um job separado no Windows exercita a aplicação de release pelo [WebDriver do Tauri](https://v2.tauri.app/develop/tests/webdriver/). Ter o workflow configurado não comprova que os jobs remotos passaram.
+A validação é executada localmente sob demanda pelos comandos em [validação](validation.md). O repositório não possui workflow do GitHub Actions. A suíte nativa do Windows exercita a aplicação de release pelo [WebDriver do Tauri](https://v2.tauri.app/develop/tests/webdriver/).
 
 ## Execução isolada no Windows
 
@@ -19,7 +19,7 @@ O instalador do driver Edge baixa a versão correspondente ao runtime WebView2 i
 
 A suíte usa um servidor HTTP local e verifica troca de abas residentes sem perda de formulário/rolagem, voltar/avançar em SPA, proteção contra hibernação, atualização do shield no Windows, rascunhos de endereço, foco/Escape em diálogos, redimensionamento e restauração de sessão. Usa comandos existentes e handlers reais do DOM, sem permissões IPC exclusivas de teste. Um pequeno campo de diagnóstico identifica a configuração da aplicação sem expor dados de navegação.
 
-O executor direto também aceita instalações Linux de `tauri-driver`/WebKitWebDriver pelas variáveis `VELOCE_TAURI_DRIVER` e `VELOCE_NATIVE_DRIVER`; esse caminho não está coberto pelo job de integração do Windows. O macOS precisa de um serviço WebDriver embarcado separado. Transições de DPI entre monitores, gestos de arraste, latência de renderização e memória agregada dos processos ainda precisam de validação específica.
+O executor direto também aceita instalações Linux de `tauri-driver`/WebKitWebDriver pelas variáveis `VELOCE_TAURI_DRIVER` e `VELOCE_NATIVE_DRIVER`; esse caminho ainda não foi validado localmente. O macOS precisa de um serviço WebDriver embarcado separado. Transições de DPI entre monitores, gestos de arraste, latência de renderização e memória agregada dos processos ainda precisam de validação específica.
 
 ## Medições
 

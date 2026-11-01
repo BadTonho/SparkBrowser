@@ -1,6 +1,6 @@
-# Native integration and CI
+# Local native integration
 
-The validation workflow checks Node tests, Svelte/TypeScript, the frontend build, Rust tests, formatting, Clippy, npm advisories and repository security on Windows, Linux and macOS. Actions are pinned to reviewed commit hashes. A separate Windows job exercises the release application through [Tauri WebDriver](https://v2.tauri.app/develop/tests/webdriver/). A configured workflow is not evidence that remote jobs have passed.
+Validation runs locally on demand using the commands in [validation](validation.md). The repository has no GitHub Actions workflow. The Windows native suite exercises the release application through [Tauri WebDriver](https://v2.tauri.app/develop/tests/webdriver/).
 
 ## Isolated Windows run
 
@@ -19,7 +19,7 @@ The Edge driver installer downloads the driver matching the installed WebView2 r
 
 The suite uses a local HTTP fixture, checks resident tab switching without form/scroll loss, SPA back/forward, protected hibernation, live Windows shield updates, address drafts, dialog focus/Escape, resizing and session restoration. It uses existing commands and real DOM handlers, with no test-only IPC grants. A small diagnostics field identifies the application configuration without exposing browsing data.
 
-The direct runner also accepts a Linux `tauri-driver`/WebKitWebDriver installation through `VELOCE_TAURI_DRIVER` and `VELOCE_NATIVE_DRIVER`; that path is not covered by the Windows integration job. macOS needs a separate embedded WebDriver service. Multi-monitor DPI transitions, pointer drag gestures, rendering latency and aggregate process memory still require dedicated validation.
+The direct runner also accepts a Linux `tauri-driver`/WebKitWebDriver installation through `VELOCE_TAURI_DRIVER` and `VELOCE_NATIVE_DRIVER`; that path has not been validated locally. macOS needs a separate embedded WebDriver service. Multi-monitor DPI transitions, pointer drag gestures, rendering latency and aggregate process memory still require dedicated validation.
 
 ## Measurements
 

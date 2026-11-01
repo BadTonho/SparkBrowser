@@ -22,7 +22,7 @@ Etapas passo a passo desde a Fase 1 (Protótipo Base / MVP) até a Fase 4 (Polim
 Diretrizes obrigatórias do repositório cobrindo segurança (política de vazamento zero), organização de pastas e manutenção da documentação bilíngue.
 
 - [Validação](./contributing/validation.md)
-- [Integração nativa e CI](./contributing/native-tests.md)
+- [Integração nativa local](./contributing/native-tests.md)
 - [Validação de desempenho](./contributing/performance.md)
 - [Otimizações implementadas](./architecture/optimization-work.md)
 - [Dependencias](./security/dependency-notes.md)

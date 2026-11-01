@@ -51,9 +51,9 @@ The bridge facade delegates to transport modules for navigation, overlays, works
 
 Settings categories, shortcut recording, the search catalog and shared scoped CSS are separate modules. Navigation page hooks, keyboard routing and content lifecycle reconciliation have separate Rust owners. Event listeners are registered before initialization; late registrations clean themselves up after unmount. The navigation writer has a bounded 256-message queue and coalesces session-only requests.
 
-## Continuous and native validation
+## Local and native validation
 
-CI checks Windows, Linux and macOS, with a separate isolated Windows WebDriver job. The local Windows release suite passed resident tab/form/scroll preservation, SPA history, shield updates, protected memory, address drafts, dialog focus, resize and session restoration. See [native tests](../contributing/native-tests.md) for setup and scope. Remote CI jobs and other platform runtimes have not been executed in the implementation environment. Multi-monitor DPI, interactive latency and aggregate RAM comparisons remain measurement work; no savings are inferred from compilation or view counts.
+Checks run locally on demand; the GitHub Actions workflow was removed to avoid consuming hosted runner minutes. The local Windows release suite passed resident tab/form/scroll preservation, SPA history, shield updates, protected memory, address drafts, dialog focus, resize and session restoration. See [native tests](../contributing/native-tests.md) for setup and scope. Other platform builds and runtimes have not been validated in the implementation environment. Multi-monitor DPI, interactive latency and aggregate RAM comparisons remain measurement work; no savings are inferred from compilation or view counts.
 
 ## Local diagnostics
 

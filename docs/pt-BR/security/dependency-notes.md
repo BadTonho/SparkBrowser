@@ -18,7 +18,7 @@ O iterador afetado do glib foi corrigido em `glib >=0.20`, fora da faixa compat�
 
 ## Validação por plataforma
 
-A validação automatizada local desta alteração foi realizada no Windows, incluindo uma suíte WebDriver de release isolada. CI está configurada para builds/verificações em Windows, macOS e Linux, com um job nativo separado no Windows; os jobs remotos ainda não foram executados por este ambiente. Comportamento nativo das WebViews no macOS/Linux e instaladores exigem verificações próprias. A API de múltiplas WebViews usa a feature `unstable` do Tauri e os motores variam conforme o sistema. Não há garantia de execução em todas as plataformas nem promessa de tamanho fixo do executável.
+A validação automatizada local desta alteração foi realizada no Windows, incluindo uma suíte WebDriver de release isolada. As verificações são executadas localmente sob demanda; não há workflow do GitHub Actions configurado. Builds, comportamento nativo das WebViews no macOS/Linux e instaladores exigem verificações próprias. A API de múltiplas WebViews usa a feature `unstable` do Tauri e os motores variam conforme o sistema. Não há garantia de execução em todas as plataformas nem promessa de tamanho fixo do executável.
 
 ## Dados locais
 

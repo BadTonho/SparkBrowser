@@ -22,7 +22,7 @@ Step-by-step milestones from Phase 1 (MVP Prototype) to Phase 4 (Advanced Polish
 Mandatory repository guidelines covering security (zero-leak policy), folder organization, and bilingual documentation maintenance.
 
 - [Validation](./contributing/validation.md)
-- [Native integration and CI](./contributing/native-tests.md)
+- [Local native integration](./contributing/native-tests.md)
 - [Performance validation](./contributing/performance.md)
 - [Optimization work](./architecture/optimization-work.md)
 - [Dependency notes](./security/dependency-notes.md)

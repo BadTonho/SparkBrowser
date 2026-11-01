@@ -25,7 +25,7 @@ Os testes de regressão cobrem rollback de sessão após erro de inserção e pa
 
 ## Verificações nativas
 
-A suíte WebDriver de release isolada e a configuração da CI estão documentadas em [integração nativa](native-tests.md). As verificações mais amplas abaixo complementam essa cobertura automatizada.
+A suíte WebDriver local de release isolada está documentada em [integração nativa](native-tests.md). As verificações mais amplas abaixo complementam essa cobertura automatizada.
 
 Estas verificações exigem uma área de trabalho interativa e são separadas dos testes e builds:
 

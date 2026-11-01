@@ -25,7 +25,7 @@ Regression tests cover session rollback after an insertion error and participati
 
 ## Native smoke checks
 
-The isolated release WebDriver suite and CI setup are documented in [native integration](native-tests.md). The following broader checks complement that automated coverage.
+The local isolated release WebDriver suite is documented in [native integration](native-tests.md). The following broader checks complement that automated coverage.
 
 These checks require an interactive desktop and are separate from unit/build results:
 

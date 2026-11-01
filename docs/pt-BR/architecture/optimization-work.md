@@ -50,9 +50,9 @@ A fachada da bridge delega para módulos de transporte de navegação, overlays,
 
 Categorias de configurações, gravação de atalhos, catálogo de busca e CSS compartilhado restrito ao modal possuem módulos separados. Hooks de páginas, roteamento de teclado e reconciliação do ciclo de vida têm módulos Rust próprios. Listeners são registrados antes da inicialização; registros tardios são removidos após a desmontagem. O writer de navegação tem fila limitada a 256 mensagens e agrupa solicitações que salvam somente a sessão.
 
-## Validação contínua e nativa
+## Validação local e nativa
 
-CI verifica Windows, Linux e macOS, com um job WebDriver separado e isolado no Windows. A suíte local de release no Windows passou na preservação de abas/formulário/rolagem, histórico SPA, atualização do shield, proteção de memória, rascunhos de endereço, foco de diálogos, resize e restauração de sessão. Veja [testes nativos](../contributing/native-tests.md) para configuração e escopo. Jobs remotos de CI e runtimes de outras plataformas não foram executados no ambiente de implementação. DPI entre monitores, latência interativa e comparações de RAM agregada continuam como trabalho de medição; compilação ou contagens de views não comprovam ganhos.
+As verificações são executadas localmente sob demanda; o workflow do GitHub Actions foi removido para evitar o consumo de minutos dos runners hospedados. A suíte local de release no Windows passou na preservação de abas/formulário/rolagem, histórico SPA, atualização do shield, proteção de memória, rascunhos de endereço, foco de diálogos, resize e restauração de sessão. Veja [testes nativos](../contributing/native-tests.md) para configuração e escopo. Builds e runtimes de outras plataformas não foram validados no ambiente de implementação. DPI entre monitores, latência interativa e comparações de RAM agregada continuam como trabalho de medição; compilação ou contagens de views não comprovam ganhos.
 
 ## Diagnósticos locais
 
