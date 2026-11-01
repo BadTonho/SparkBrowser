@@ -270,6 +270,35 @@
     return true;
   }
 
+  function processMouseShortcutRecording(event: MouseEvent): boolean {
+    const id = $recordingShortcutId;
+    if (!id || (event.button !== 3 && event.button !== 4)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    const definition = SHORTCUT_DEFINITIONS.find((item) => item.id === id);
+    if (definition?.hold || definition?.sequence) {
+      recordingError = definition.hold
+        ? "Choose Alt, Ctrl, Shift, or Meta."
+        : "This shortcut requires a number key.";
+      return true;
+    }
+    const binding: ShortcutCombo = {
+      key: event.button === 3 ? "Mouse4" : "Mouse5",
+      ctrl: event.ctrlKey,
+      alt: event.altKey,
+      shift: event.shiftKey,
+      meta: event.metaKey,
+    };
+    const error = setShortcutBinding(id, binding);
+    if (error) {
+      recordingError = error;
+    } else {
+      recordingError = "";
+      recordingShortcutId.set(null);
+    }
+    return true;
+  }
+
   let recordingError = $state("");
 
   function startRecording(id: string): void {
@@ -295,9 +324,13 @@
       closeSettingsModal();
     }
   }
+
+  function handleWindowMousedown(event: MouseEvent): void {
+    processMouseShortcutRecording(event);
+  }
 </script>
 
-<svelte:window onkeydown={handleWindowKeydown} />
+<svelte:window onkeydown={handleWindowKeydown} onmousedown={handleWindowMousedown} />
 
 {#if $isSettingsModalOpen}
   <div
@@ -553,7 +586,7 @@
                         onclick={() => startRecording(item.id)}
                       >
                         {$recordingShortcutId === item.id
-                          ? "Press shortcut… (Esc cancels)"
+                          ? "Press a key or Mouse 4/5… (Esc cancels)"
                           : item.hold
                             ? `Hold ${binding?.key === "Control" ? "Ctrl" : binding?.key ?? "Alt"} (0.4 sec)`
                             : binding

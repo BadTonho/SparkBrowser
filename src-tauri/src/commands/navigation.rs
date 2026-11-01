@@ -1,6 +1,7 @@
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::tab_model::{derive_title_from_url, TabInfo};
 use crate::window::webview_manager::{
+    go_back_content_webview, go_forward_content_webview,
     navigate_content_webview_with_search_engine, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
 };
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -48,22 +49,12 @@ pub async fn navigate_to(
 
 #[tauri::command]
 pub async fn go_back(app: AppHandle) -> Result<(), String> {
-    if let Some(webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
-        webview
-            .eval("window.history.back();")
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
+    go_back_content_webview(&app)
 }
 
 #[tauri::command]
 pub async fn go_forward(app: AppHandle) -> Result<(), String> {
-    if let Some(webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
-        webview
-            .eval("window.history.forward();")
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
+    go_forward_content_webview(&app)
 }
 
 #[tauri::command]

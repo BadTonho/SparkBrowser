@@ -177,6 +177,26 @@ fn build_workspace_shortcut_script(token: &str, native_alt_capture: bool) -> Str
             resetHold("alt-up");
           }}, true);
 
+          window.addEventListener("mousedown", (event) => {{
+            if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const mouseKey = event.button === 3 ? "Mouse4" : "Mouse5";
+            for (const [action, bindings] of Object.entries(shortcuts)) {{
+              if (!Array.isArray(bindings)) continue;
+              const binding = bindings[0];
+              if (!binding || binding.key !== mouseKey || !modifierMatch(event, binding)) continue;
+              notifyBrowser("action", action);
+              return;
+            }}
+          }}, true);
+
+          window.addEventListener("auxclick", (event) => {{
+            if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }}, true);
+
           window.addEventListener("focus", () => {{
             holdPressed = false;
           }}, true);
@@ -238,59 +258,45 @@ fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String>
                     let is_repeat = is_key_down && (key_lparam & (1 << 30)) != 0;
                     let state = app_for_handler.state::<BrowserState>();
 
-                    // WebView2 may consume Ctrl+T before it reaches the injected page
-                    // listener. Capture the configured new-tab shortcut here as well.
+                    // WebView2 may consume browser accelerators before they reach the
+                    // injected page listener. Capture configured navigation shortcuts here.
                     if is_key_down {
-                        let new_tab_binding = state
-                            .keyboard_shortcuts
-                            .lock()
-                            .ok()
-                            .and_then(|shortcuts| {
-                                shortcuts
-                                    .get("new-tab")
-                                    .and_then(serde_json::Value::as_array)
-                                    .and_then(|bindings| bindings.first())
-                                    .cloned()
+                        let matched_action =
+                            state.keyboard_shortcuts.lock().ok().and_then(|shortcuts| {
+                                [
+                                    "new-tab",
+                                    "navigate-back",
+                                    "navigate-forward",
+                                    "focus-address",
+                                ]
+                                .into_iter()
+                                .find(|action| {
+                                    let binding = shortcuts
+                                        .get(*action)
+                                        .and_then(serde_json::Value::as_array)
+                                        .and_then(|bindings| bindings.first());
+                                    binding.is_some_and(|binding| {
+                                        binding
+                                            .get("key")
+                                            .and_then(serde_json::Value::as_str)
+                                            .and_then(shortcut_key_to_virtual_key)
+                                            == Some(virtual_key)
+                                            && shortcut_modifiers_match(binding)
+                                    })
+                                })
                             });
 
-                        if let Some(binding) = new_tab_binding {
-                            let expected_key = binding
-                                .get("key")
-                                .and_then(serde_json::Value::as_str)
-                                .and_then(shortcut_key_to_virtual_key);
-                            let modifiers_match = binding
-                                .get("ctrl")
-                                .and_then(serde_json::Value::as_bool)
-                                .unwrap_or(false)
-                                == is_windows_key_down(0x11)
-                                && binding
-                                    .get("alt")
-                                    .and_then(serde_json::Value::as_bool)
-                                    .unwrap_or(false)
-                                    == is_windows_key_down(0x12)
-                                && binding
-                                    .get("shift")
-                                    .and_then(serde_json::Value::as_bool)
-                                    .unwrap_or(false)
-                                    == is_windows_key_down(0x10)
-                                && binding
-                                    .get("meta")
-                                    .and_then(serde_json::Value::as_bool)
-                                    .unwrap_or(false)
-                                    == (is_windows_key_down(0x5B) || is_windows_key_down(0x5C));
-
-                            if expected_key == Some(virtual_key) && modifiers_match {
-                                unsafe {
-                                    args.SetHandled(true)?;
-                                }
-                                if !is_repeat {
-                                    let _ = app_for_handler.emit(
-                                        "browser-shortcut-action",
-                                        serde_json::json!({ "action": "new-tab" }),
-                                    );
-                                }
-                                return Ok(());
+                        if let Some(action) = matched_action {
+                            unsafe {
+                                args.SetHandled(true)?;
                             }
+                            if !is_repeat {
+                                let _ = app_for_handler.emit(
+                                    "browser-shortcut-action",
+                                    serde_json::json!({ "action": action }),
+                                );
+                            }
+                            return Ok(());
                         }
                     }
 
@@ -429,6 +435,30 @@ fn is_windows_key_down(virtual_key: i32) -> bool {
     }
 
     unsafe { GetKeyState(virtual_key) < 0 }
+}
+
+#[cfg(windows)]
+fn shortcut_modifiers_match(binding: &serde_json::Value) -> bool {
+    binding
+        .get("ctrl")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+        == is_windows_key_down(0x11)
+        && binding
+            .get("alt")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+            == is_windows_key_down(0x12)
+        && binding
+            .get("shift")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+            == is_windows_key_down(0x10)
+        && binding
+            .get("meta")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+            == (is_windows_key_down(0x5B) || is_windows_key_down(0x5C))
 }
 
 #[cfg(windows)]
@@ -756,8 +786,11 @@ pub fn spawn_content_webview(
                                     | "move-tab-down"
                                     | "move-tab-down-ctrl-shift"
                                     | "new-tab"
+                                    | "navigate-back"
+                                    | "navigate-forward"
                                     | "command-bar"
                                     | "edit-url"
+                                    | "focus-address"
                                     | "sidebar"
                                     | "zen"
                                     | "history"
@@ -887,6 +920,52 @@ pub fn navigate_content_webview_with_search_engine(
     }
 
     Ok(resolved_str)
+}
+
+pub fn go_back_content_webview(app: &AppHandle) -> Result<(), String> {
+    navigate_content_history(app, true)
+}
+
+pub fn go_forward_content_webview(app: &AppHandle) -> Result<(), String> {
+    navigate_content_history(app, false)
+}
+
+fn navigate_content_history(app: &AppHandle, go_back: bool) -> Result<(), String> {
+    let webview = app
+        .get_webview(CONTENT_WEBVIEW_LABEL)
+        .ok_or_else(|| "Content WebView was not found".to_string())?;
+
+    #[cfg(windows)]
+    {
+        use tauri::webview::PlatformWebview;
+
+        let operation = webview.with_webview(move |platform: PlatformWebview| {
+            let result = unsafe {
+                platform.controller().CoreWebView2().and_then(|core| {
+                    if go_back {
+                        core.GoBack()
+                    } else {
+                        core.GoForward()
+                    }
+                })
+            };
+            if let Err(error) = result {
+                eprintln!("Failed to navigate content history: {error}");
+            }
+        });
+        operation.map_err(|error| format!("Failed to access content WebView: {error}"))?;
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
+    {
+        let script = if go_back {
+            "window.history.back();"
+        } else {
+            "window.history.forward();"
+        };
+        webview.eval(script).map_err(|error| error.to_string())
+    }
 }
 
 /// Synchronizes visibility and bounds of the child WebView.

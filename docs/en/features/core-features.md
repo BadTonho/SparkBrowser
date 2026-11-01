@@ -48,4 +48,5 @@
 - Show or hide the horizontal bookmarks bar in Appearance & Layout or with the toolbar toggle; the choice is remembered across restarts and does not affect bookmarks in the vertical sidebar.
 - Use the fixed category rail to switch between panels; only the selected panel is shown and scrolls when its content is taller than the window.
 - The last selected category is remembered when the dialog is reopened and across app restarts.
-- In **Keyboard Shortcuts**, click a shortcut and press the new key combination to record it. The workspace picker can use a held modifier key (Alt, Ctrl, Shift, or Meta); duplicate combinations are rejected. Changes are saved across restarts and work while the browser interface or a page has focus.
+- In **Keyboard Shortcuts**, click a shortcut and press a key combination or Mouse 4/5 to record it. The workspace picker can use a held modifier key (Alt, Ctrl, Shift, or Meta); duplicate combinations are rejected. Changes are saved across restarts and work while the browser interface or a page has focus.
+- Mouse 4 and Mouse 5 go back and forward by default and can be reassigned in **Keyboard Shortcuts**. Use `Ctrl + E` to focus and select the current address in the combined address and search bar.

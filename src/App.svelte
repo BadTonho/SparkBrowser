@@ -23,6 +23,8 @@
     selectTab,
     suspendInactiveTabs,
     toggleSidebar,
+    triggerBack,
+    triggerForward,
     triggerReload,
     moveActiveTabUp,
     moveActiveTabDown,
@@ -56,6 +58,7 @@
     isWorkspacePickerHoldKey,
     keyboardShortcuts,
     matchesShortcut,
+    matchesMouseShortcut,
     recordingShortcutId,
   } from "./lib/stores/shortcutsStore";
   import {
@@ -170,8 +173,36 @@
       }
     };
 
+    const handleGlobalMousedown = (event: MouseEvent) => {
+      if (event.button !== 3 && event.button !== 4) return;
+      event.preventDefault();
+
+      if (get(recordingShortcutId)) {
+        // Let Settings capture the side-button binding while preventing native navigation.
+        return;
+      }
+
+      const config = get(keyboardShortcuts);
+      for (const definition of SHORTCUT_DEFINITIONS) {
+        const binding = getShortcutBinding(config, definition.id);
+        if (!binding || !matchesMouseShortcut(event, binding)) continue;
+        event.stopImmediatePropagation();
+        dispatchShortcut(definition.id);
+        return;
+      }
+    };
+
+    const handleGlobalAuxClick = (event: MouseEvent) => {
+      if (event.button === 3 || event.button === 4) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+
     window.addEventListener("keydown", handleGlobalShortcuts, true);
     window.addEventListener("keyup", handleGlobalKeyup, true);
+    window.addEventListener("mousedown", handleGlobalMousedown, true);
+    window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
       clearInterval(hibernationInterval);
       if (unlistenUrl) unlistenUrl();
@@ -182,6 +213,8 @@
       motionPreference.removeEventListener("change", updateMotionPreference);
       window.removeEventListener("keydown", handleGlobalShortcuts, true);
       window.removeEventListener("keyup", handleGlobalKeyup, true);
+      window.removeEventListener("mousedown", handleGlobalMousedown, true);
+      window.removeEventListener("auxclick", handleGlobalAuxClick, true);
     };
   });
 
@@ -209,8 +242,13 @@
       case "move-tab-down":
       case "move-tab-down-ctrl-shift": moveActiveTabDown(get(activeWorkspaceId)); break;
       case "new-tab": addTab(undefined, get(activeWorkspaceId)); break;
+      case "navigate-back": void triggerBack(); break;
+      case "navigate-forward": void triggerForward(); break;
       case "command-bar": toggleCommandBar(); break;
       case "edit-url": openCommandBar(get(currentUrl)); break;
+      case "focus-address":
+        document.querySelector<HTMLInputElement>(".omnibox-input")?.focus();
+        break;
       case "sidebar": if (get(tabLayout) === "vertical") toggleSidebar(); break;
       case "zen": toggleZenMode(); break;
       case "history": toggleHistoryDrawer(); break;

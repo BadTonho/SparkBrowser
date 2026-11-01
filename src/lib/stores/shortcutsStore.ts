@@ -35,8 +35,11 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
   { id: "move-tab-up-ctrl-shift", label: "Move Active Tab Up (alternate)", description: "Alternate shortcut to move the active tab up", defaults: [combo("ArrowUp", { ctrl: true, shift: true })] },
   { id: "move-tab-down-ctrl-shift", label: "Move Active Tab Down (alternate)", description: "Alternate shortcut to move the active tab down", defaults: [combo("ArrowDown", { ctrl: true, shift: true })] },
   { id: "new-tab", label: "Open a new tab", description: "Create a new tab", defaults: [combo("T", { ctrl: true })] },
+  { id: "navigate-back", label: "Go Back", description: "Go to the previous page", defaults: [combo("Mouse4")] },
+  { id: "navigate-forward", label: "Go Forward", description: "Go to the next page", defaults: [combo("Mouse5")] },
   { id: "command-bar", label: "Open Floating Command Bar", description: "Open the command bar", defaults: [combo("K", { ctrl: true })] },
   { id: "edit-url", label: "Edit Current URL in Command Bar", description: "Focus the current URL in the command bar", defaults: [combo("L", { ctrl: true })] },
+  { id: "focus-address", label: "Focus Address and Search Bar", description: "Focus and select the current address or search text", defaults: [combo("E", { ctrl: true })] },
   { id: "sidebar", label: "Toggle Sidebar (Vertical Layout)", description: "Show or hide the sidebar", defaults: [combo("B", { ctrl: true })] },
   { id: "zen", label: "Toggle Fullscreen Zen / Focus Mode", description: "Toggle Zen mode", defaults: [combo("Z", { alt: true })] },
   { id: "history", label: "Open SQLite Browsing History", description: "Open browsing history", defaults: [combo("H", { ctrl: true })] },
@@ -102,7 +105,7 @@ export function formatShortcut(binding: ShortcutCombo, sequence?: "digit"): stri
   ];
   if (sequence === "digit") parts.push("1…9");
   else {
-    const key = binding.key === "Control" ? "Ctrl" : binding.key === "ArrowUp" ? "↑" : binding.key === "ArrowDown" ? "↓" : binding.key;
+    const key = binding.key === "Control" ? "Ctrl" : binding.key === "ArrowUp" ? "↑" : binding.key === "ArrowDown" ? "↓" : binding.key === "Mouse4" ? "Mouse 4" : binding.key === "Mouse5" ? "Mouse 5" : binding.key;
     parts.push(key);
   }
   return parts.join(" + ");
@@ -154,6 +157,12 @@ export function matchesShortcut(event: KeyboardEvent, binding: ShortcutCombo, se
     if (!/^[1-9]$/.test(event.key)) return false;
   } else if (event.key.toLowerCase() !== binding.key.toLowerCase()) return false;
   return event.ctrlKey === binding.ctrl && event.altKey === binding.alt && event.shiftKey === binding.shift && event.metaKey === binding.meta;
+}
+
+export function matchesMouseShortcut(event: MouseEvent, binding: ShortcutCombo): boolean {
+  const key = event.button === 3 ? "Mouse4" : event.button === 4 ? "Mouse5" : undefined;
+  return key === binding.key && event.ctrlKey === binding.ctrl && event.altKey === binding.alt &&
+    event.shiftKey === binding.shift && event.metaKey === binding.meta;
 }
 
 export function initializeKeyboardShortcuts(): void {
