@@ -20,3 +20,6 @@ url = "2.5"
 window-vibrancy = "0.8"
 rusqlite = { version = "0.32", features = ["bundled"] }
 
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+

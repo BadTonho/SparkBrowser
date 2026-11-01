@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workspace switcher</title>
+    <style>
+      :root,
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: transparent !important;
+      }
+
+      body {
+        color: #e8eaf2;
+        font: 12px/1.2 system-ui, sans-serif;
+      }
+
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 9px 12px 12px;
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+
+      #workspace-list {
+        max-width: min(760px, 100%);
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        padding: 5px;
+        border: 1px solid rgba(110, 142, 251, 0.6);
+        border-radius: 12px;
+        background: rgba(20, 24, 36, 0.94);
+        box-shadow:
+          0 12px 32px rgba(0, 0, 0, 0.4),
+          0 0 24px rgba(110, 142, 251, 0.14);
+        backdrop-filter: blur(18px);
+        pointer-events: auto;
+        scrollbar-width: thin;
+      }
+
+      button {
+        min-width: 0;
+        max-width: 190px;
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: #aeb4c5;
+        font: 600 11px/1.2 system-ui, sans-serif;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      button:hover,
+      button:focus-visible {
+        outline: none;
+        border-color: rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.07);
+        color: #fff;
+      }
+
+      button[aria-current="true"] {
+        border-color: rgba(110, 142, 251, 0.85);
+        background: rgba(110, 142, 251, 0.2);
+        color: #fff;
+      }
+
+      .icon {
+        flex: 0 0 auto;
+        font-size: 15px;
+        line-height: 1;
+      }
+
+      .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="overlay" aria-hidden="true">
+      <div id="workspace-list" role="toolbar" aria-label="Choose a workspace"></div>
+    </div>
+    <script>
+      (() => {
+        const root = document.getElementById("overlay");
+        const list = document.getElementById("workspace-list");
+        let activeToken = "";
+        let isOpen = false;
+        let requestSent = false;
+
+        function sendRequest(action, workspaceId) {
+          if (!isOpen || requestSent) return;
+          requestSent = true;
+          const url = new URL(`veloce-internal://workspace-switcher/${action}`);
+          url.searchParams.set("token", activeToken);
+          if (workspaceId) url.searchParams.set("workspace_id", workspaceId);
+          window.location.href = url.toString();
+        }
+
+        function handlePointerDown(event) {
+          if (!list.contains(event.target)) sendRequest("dismiss");
+        }
+
+        function handleKeyDown(event) {
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          sendRequest("dismiss");
+        }
+
+        window.__veloceSetWorkspaceSwitcher = (payload) => {
+          isOpen = Boolean(payload.visible);
+          requestSent = false;
+          activeToken = payload.token || "";
+          root.setAttribute("aria-hidden", String(!isOpen));
+          list.replaceChildren();
+          root.style.display = isOpen ? "flex" : "none";
+          if (!isOpen) return;
+
+          for (const workspace of payload.workspaces || []) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.setAttribute(
+              "aria-current",
+              String(workspace.id === payload.activeWorkspaceId)
+            );
+
+            const icon = document.createElement("span");
+            icon.className = "icon";
+            icon.setAttribute("aria-hidden", "true");
+            icon.textContent = workspace.icon;
+
+            const name = document.createElement("span");
+            name.className = "name";
+            name.textContent = workspace.name;
+
+            button.append(icon, name);
+            button.addEventListener("pointerdown", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            });
+            button.addEventListener("click", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              sendRequest("select", workspace.id);
+            });
+            list.appendChild(button);
+          }
+        };
+
+        document.addEventListener("pointerdown", handlePointerDown, true);
+        window.addEventListener("keydown", handleKeyDown, true);
+      })();
+    </script>
+  </body>
+</html>

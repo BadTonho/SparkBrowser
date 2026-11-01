@@ -1,10 +1,13 @@
 use crate::state::browser_state::{BrowserState, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
+use crate::state::workspace_model::WorkspaceItem;
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::window::webview_manager::{
-    navigate_content_webview, resolve_input_to_url, sync_all_webviews,
+    build_workspace_switcher_update_script, create_internal_bridge_token, navigate_content_webview,
+    resolve_input_to_url, sync_all_webviews, CONTENT_WEBVIEW_LABEL,
+    WORKSPACE_SWITCHER_WEBVIEW_LABEL,
 };
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[tauri::command]
 pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<Vec<TabInfo>, String> {
@@ -33,12 +36,7 @@ pub async fn create_tab(
         .map(|ws| ws.clone())
         .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string());
 
-    let new_tab = TabInfo::new(
-        new_tab_id.clone(),
-        resolved_url.clone(),
-        active_ws_id,
-        true,
-    );
+    let new_tab = TabInfo::new(new_tab_id.clone(), resolved_url.clone(), active_ws_id, true);
 
     {
         if let Ok(mut tabs) = state.tabs.lock() {
@@ -249,7 +247,81 @@ pub async fn set_overlay_visibility(
     if let Ok(mut overlay) = state.is_overlay_open.lock() {
         *overlay = visible;
     }
-    sync_all_webviews(&app, &state)
+    sync_all_webviews(&app, &state)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_workspace_switcher_overlay(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    workspaces: Vec<WorkspaceItem>,
+    active_workspace_id: String,
+) -> Result<(), String> {
+    let webview = app
+        .get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL)
+        .ok_or_else(|| "Workspace switcher WebView was not found".to_string())?;
+
+    let token = if visible {
+        Some(create_internal_bridge_token())
+    } else {
+        None
+    };
+    let script = build_workspace_switcher_update_script(
+        &workspaces,
+        &active_workspace_id,
+        token.as_deref().unwrap_or_default(),
+        visible,
+    )?;
+
+    if let Ok(mut current_token) = state.workspace_switcher_token.lock() {
+        *current_token = token.clone();
+    }
+    if let Ok(mut open) = state.workspace_switcher_open.lock() {
+        *open = visible;
+    }
+
+    if let Some(content_webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
+        let _ = content_webview.eval(&format!(
+            "window.__veloceWorkspaceSwitcherOpen = {visible};"
+        ));
+    }
+
+    if let Err(error) = webview.eval(&script) {
+        if let Ok(mut current_token) = state.workspace_switcher_token.lock() {
+            *current_token = None;
+        }
+        if let Ok(mut open) = state.workspace_switcher_open.lock() {
+            *open = false;
+        }
+        if let Some(content_webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
+            let _ = content_webview.eval("window.__veloceWorkspaceSwitcherOpen = false;");
+        }
+        let _ = sync_all_webviews(&app, &state);
+        return Err(format!("Failed to show workspace switcher: {error}"));
+    }
+
+    sync_all_webviews(&app, &state)?;
+    let another_overlay_open = state
+        .is_overlay_open
+        .lock()
+        .map(|overlay| *overlay)
+        .unwrap_or(true);
+    let app_is_focused = app
+        .get_webview_window("main")
+        .and_then(|window| window.is_focused().ok())
+        .unwrap_or(false);
+    if !visible && app_is_focused {
+        if another_overlay_open {
+            if let Some(main_window) = app.get_webview_window("main") {
+                let _ = main_window.set_focus();
+            }
+        } else if let Some(content_webview) = app.get_webview(CONTENT_WEBVIEW_LABEL) {
+            let _ = content_webview.set_focus();
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]

@@ -5,6 +5,7 @@ use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::{WorkspaceItem, DEFAULT_WORKSPACE_ID};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
 
 pub const DEFAULT_HOME_URL: &str = "https://duckduckgo.com";
@@ -37,6 +38,9 @@ pub struct BrowserState {
     pub next_tab_counter: Mutex<u64>,
     pub bounds: Mutex<ViewportBounds>,
     pub is_overlay_open: Mutex<bool>,
+    pub workspace_alt_pressed: AtomicBool,
+    pub workspace_switcher_token: Mutex<Option<String>>,
+    pub workspace_switcher_open: Mutex<bool>,
     pub shield_enabled: Mutex<bool>,
     pub blocked_count: Mutex<u64>,
     pub db: Mutex<Option<Connection>>,
@@ -57,6 +61,9 @@ impl Default for BrowserState {
             next_tab_counter: Mutex::new(2),
             bounds: Mutex::new(ViewportBounds::default()),
             is_overlay_open: Mutex::new(false),
+            workspace_alt_pressed: AtomicBool::new(false),
+            workspace_switcher_token: Mutex::new(None),
+            workspace_switcher_open: Mutex::new(false),
             shield_enabled: Mutex::new(true),
             blocked_count: Mutex::new(0),
             db: Mutex::new(None),

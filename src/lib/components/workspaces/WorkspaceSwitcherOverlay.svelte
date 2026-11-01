@@ -2,6 +2,7 @@
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
+  import { isTauriRuntime } from "../../services/tauri-bridge";
   import {
     chooseWorkspaceFromPicker,
     dismissWorkspacePicker,
@@ -12,24 +13,13 @@
   let lastFocusedElement: HTMLElement | null = null;
   let hadOverlay = false;
   let pickerTop = $state(12);
-
-  let confirmationWorkspace = $derived(
-    $workspaceSwitcherOverlay?.kind === "confirmation"
-      ? $workspaces.find(
-          (workspace) =>
-            workspace.id === $workspaceSwitcherOverlay?.workspaceId
-        )
-      : undefined
-  );
+  const inTauri = isTauriRuntime();
 
   $effect(() => {
     const overlay = $workspaceSwitcherOverlay;
 
     if (overlay && !hadOverlay) {
       lastFocusedElement = document.activeElement as HTMLElement | null;
-    }
-
-    if (overlay?.kind === "picker") {
       requestAnimationFrame(() => {
         pickerEl
           ?.querySelector<HTMLButtonElement>(".workspace-option")
@@ -75,10 +65,9 @@
   }
 </script>
 
-{#if $workspaceSwitcherOverlay}
+{#if $workspaceSwitcherOverlay && !inTauri}
   <div
     class="workspace-switcher-backdrop"
-    class:confirmation={$workspaceSwitcherOverlay.kind === "confirmation"}
     style={`--workspace-picker-top: ${pickerTop}px`}
     transition:fade={{ duration: 100 }}
     onclick={handleBackdropClick}
@@ -104,7 +93,6 @@
               class:active={$activeWorkspaceId === workspace.id}
               aria-pressed={$activeWorkspaceId === workspace.id}
               aria-label={workspace.name}
-              title={workspace.name}
               onclick={() => chooseWorkspaceFromPicker(workspace.id)}
             >
               <span class="workspace-icon" aria-hidden="true">{workspace.icon}</span>
@@ -112,17 +100,6 @@
             </button>
           {/each}
         </div>
-      </div>
-    {:else if confirmationWorkspace}
-      <div
-        class="workspace-confirmation"
-        in:fly={{ y: -5, duration: 120, easing: cubicOut }}
-        out:fade={{ duration: 80 }}
-        role="status"
-        aria-live="polite"
-      >
-        <span class="confirmation-icon" aria-hidden="true">{confirmationWorkspace.icon}</span>
-        <strong>{confirmationWorkspace.name}</strong>
       </div>
     {/if}
   </div>
@@ -138,10 +115,6 @@
     justify-content: center;
     padding: var(--workspace-picker-top, 12px) 12px 12px;
     background: transparent;
-  }
-
-  .workspace-switcher-backdrop.confirmation {
-    pointer-events: none;
   }
 
   .workspace-picker {
@@ -199,8 +172,7 @@
     color: var(--text-primary);
   }
 
-  .workspace-icon,
-  .confirmation-icon {
+  .workspace-icon {
     flex: 0 0 auto;
     font-size: 15px;
     line-height: 1;
@@ -215,25 +187,4 @@
     white-space: nowrap;
   }
 
-  .workspace-confirmation {
-    max-width: min(260px, 100%);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 13px;
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-subtle));
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--bg-glass-elevated) 96%, transparent);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
-    backdrop-filter: blur(18px);
-    color: var(--text-primary);
-    font-size: 12px;
-    font-weight: 650;
-  }
-
-  .workspace-confirmation strong {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 </style>

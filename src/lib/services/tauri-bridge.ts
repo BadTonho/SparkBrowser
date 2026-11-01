@@ -101,8 +101,7 @@ export type OverlayId =
   | "command-bar"
   | "history"
   | "downloads"
-  | "settings"
-  | "workspace-switcher";
+  | "settings";
 
 const activeOverlayIds = new Set<OverlayId>();
 let overlaySyncQueue: Promise<void> = Promise.resolve();
@@ -125,6 +124,28 @@ export async function setOverlayVisibility(
     .catch(() => undefined)
     .then(() => invoke("set_overlay_visibility", { visible: shouldHideContent }));
   await overlaySyncQueue;
+}
+
+let workspaceSwitcherSyncQueue: Promise<void> = Promise.resolve();
+
+/** Shows the workspace picker in its transparent native overlay WebView. */
+export async function setWorkspaceSwitcherOverlay(
+  visible: boolean,
+  workspaces: WorkspaceItem[],
+  activeWorkspaceId: string
+): Promise<void> {
+  if (!isTauriRuntime()) return;
+
+  workspaceSwitcherSyncQueue = workspaceSwitcherSyncQueue
+    .catch(() => undefined)
+    .then(() =>
+      invoke<void>("set_workspace_switcher_overlay", {
+        visible,
+        workspaces,
+        activeWorkspaceId,
+      })
+    );
+  await workspaceSwitcherSyncQueue;
 }
 
 export async function reorderTabs(tabIds: string[]): Promise<TabItem[]> {
@@ -449,6 +470,23 @@ export async function onWorkspaceShortcutCancel(
   if (!isTauriRuntime()) return () => {};
   return await listen("workspace-shortcut-cancel", callback);
 }
+
+export async function onWorkspaceSwitcherSelected(
+  callback: (workspaceId: string) => void
+): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => {};
+  return await listen<string>("workspace-switcher-selected", (event) => {
+    callback(event.payload);
+  });
+}
+
+export async function onWorkspaceSwitcherDismissed(
+  callback: () => void
+): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => {};
+  return await listen("workspace-switcher-dismissed", callback);
+}
+
 
 /**
  * Window control helpers for custom frameless titlebar.

@@ -2,14 +2,18 @@ import { derived, get, writable } from "svelte/store";
 import {
   onWorkspaceShortcutCancel,
   onWorkspaceShortcutEvent,
-  setOverlayVisibility,
+  onWorkspaceSwitcherDismissed,
+  onWorkspaceSwitcherSelected,
+  setWorkspaceSwitcherOverlay,
   type WorkspaceShortcutEvent,
 } from "../services/tauri-bridge";
-import { activateWorkspace, workspaces } from "./workspaceStore";
+import {
+  activateWorkspace,
+  activeWorkspaceId,
+  workspaces,
+} from "./workspaceStore";
 
-export type WorkspaceSwitcherOverlay =
-  | { kind: "picker" }
-  | { kind: "confirmation"; workspaceId: string };
+export type WorkspaceSwitcherOverlay = { kind: "picker" };
 
 export const workspaceSwitcherOverlay =
   writable<WorkspaceSwitcherOverlay | null>(null);
@@ -18,14 +22,11 @@ export const isWorkspaceSwitcherOverlayOpen = derived(
   (overlay) => overlay !== null
 );
 
-const HOLD_DURATION_MS = 2_000;
-const CONFIRMATION_DURATION_MS = 1_500;
+const HOLD_DURATION_MS = 600;
 
 let altIsHeld = false;
 let pickerSelectionInProgress = false;
-let workspaceSelectionSequence = 0;
 let holdTimer: ReturnType<typeof setTimeout> | undefined;
-let confirmationTimer: ReturnType<typeof setTimeout> | undefined;
 
 function clearHoldTimer(): void {
   if (holdTimer !== undefined) {
@@ -34,20 +35,22 @@ function clearHoldTimer(): void {
   }
 }
 
-function clearConfirmationTimer(): void {
-  if (confirmationTimer !== undefined) {
-    clearTimeout(confirmationTimer);
-    confirmationTimer = undefined;
-  }
-}
-
 function setOverlay(overlay: WorkspaceSwitcherOverlay | null): void {
+  if (overlay === null) {
+    clearHoldTimer();
+    altIsHeld = false;
+  }
+
   const wasOpen = get(workspaceSwitcherOverlay) !== null;
   const willBeOpen = overlay !== null;
   workspaceSwitcherOverlay.set(overlay);
 
   if (wasOpen !== willBeOpen) {
-    void setOverlayVisibility(willBeOpen, "workspace-switcher");
+    void setWorkspaceSwitcherOverlay(
+      willBeOpen,
+      get(workspaces),
+      get(activeWorkspaceId)
+    ).catch(() => undefined);
   }
 }
 
@@ -74,7 +77,6 @@ export function releaseWorkspaceAlt(): void {
     get(workspaceSwitcherOverlay)?.kind === "picker" &&
     !pickerSelectionInProgress
   ) {
-    clearConfirmationTimer();
     setOverlay(null);
   }
 }
@@ -96,7 +98,7 @@ export function dismissWorkspacePicker(): void {
 async function selectWorkspaceFromPicker(workspaceId: string): Promise<void> {
   if (get(workspaceSwitcherOverlay)?.kind !== "picker") return;
   clearHoldTimer();
-  clearConfirmationTimer();
+  altIsHeld = false;
   pickerSelectionInProgress = true;
   try {
     await activateWorkspace(workspaceId);
@@ -116,29 +118,16 @@ async function selectWorkspaceByIndex(index: number): Promise<void> {
   const target = get(workspaces)[index - 1];
   if (!target) return;
 
-  const selectionSequence = ++workspaceSelectionSequence;
-  clearConfirmationTimer();
-  setOverlay({ kind: "confirmation", workspaceId: target.id });
+  const pickerWasOpen = get(workspaceSwitcherOverlay)?.kind === "picker";
   try {
     await activateWorkspace(target.id);
   } catch {
-    if (
-      selectionSequence === workspaceSelectionSequence &&
-      get(workspaceSwitcherOverlay)?.kind === "confirmation"
-    ) {
+    // The shortcut is fire-and-forget; avoid an unhandled rejection if switching fails.
+  } finally {
+    if (pickerWasOpen && get(workspaceSwitcherOverlay)?.kind === "picker") {
       setOverlay(null);
     }
-    return;
   }
-
-  if (selectionSequence !== workspaceSelectionSequence) return;
-  clearConfirmationTimer();
-  confirmationTimer = setTimeout(() => {
-    confirmationTimer = undefined;
-    if (get(workspaceSwitcherOverlay)?.kind === "confirmation") {
-      setOverlay(null);
-    }
-  }, CONFIRMATION_DURATION_MS);
 }
 
 export async function handleWorkspaceShortcutEvent(
@@ -159,6 +148,8 @@ export function initializeWorkspaceShortcutBridge(): () => void {
   let disposed = false;
   let unlistenEvent: (() => void) | undefined;
   let unlistenCancel: (() => void) | undefined;
+  let unlistenSelection: (() => void) | undefined;
+  let unlistenDismiss: (() => void) | undefined;
 
   void onWorkspaceShortcutEvent((event) => {
     void handleWorkspaceShortcutEvent(event);
@@ -170,13 +161,23 @@ export function initializeWorkspaceShortcutBridge(): () => void {
     if (disposed) stopListening();
     else unlistenCancel = stopListening;
   });
-
+  void onWorkspaceSwitcherSelected((workspaceId) => {
+    void chooseWorkspaceFromPicker(workspaceId);
+  }).then((stopListening) => {
+    if (disposed) stopListening();
+    else unlistenSelection = stopListening;
+  });
+  void onWorkspaceSwitcherDismissed(() => dismissWorkspacePicker()).then((stopListening) => {
+    if (disposed) stopListening();
+    else unlistenDismiss = stopListening;
+  });
   return () => {
     disposed = true;
     unlistenEvent?.();
     unlistenCancel?.();
+    unlistenSelection?.();
+    unlistenDismiss?.();
     cancelWorkspaceAltHold();
-    clearConfirmationTimer();
     if (get(workspaceSwitcherOverlay) !== null) setOverlay(null);
   };
 }
