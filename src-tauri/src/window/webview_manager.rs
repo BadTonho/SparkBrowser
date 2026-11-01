@@ -238,6 +238,62 @@ fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String>
                     let is_repeat = is_key_down && (key_lparam & (1 << 30)) != 0;
                     let state = app_for_handler.state::<BrowserState>();
 
+                    // WebView2 may consume Ctrl+T before it reaches the injected page
+                    // listener. Capture the configured new-tab shortcut here as well.
+                    if is_key_down {
+                        let new_tab_binding = state
+                            .keyboard_shortcuts
+                            .lock()
+                            .ok()
+                            .and_then(|shortcuts| {
+                                shortcuts
+                                    .get("new-tab")
+                                    .and_then(serde_json::Value::as_array)
+                                    .and_then(|bindings| bindings.first())
+                                    .cloned()
+                            });
+
+                        if let Some(binding) = new_tab_binding {
+                            let expected_key = binding
+                                .get("key")
+                                .and_then(serde_json::Value::as_str)
+                                .and_then(shortcut_key_to_virtual_key);
+                            let modifiers_match = binding
+                                .get("ctrl")
+                                .and_then(serde_json::Value::as_bool)
+                                .unwrap_or(false)
+                                == is_windows_key_down(0x11)
+                                && binding
+                                    .get("alt")
+                                    .and_then(serde_json::Value::as_bool)
+                                    .unwrap_or(false)
+                                    == is_windows_key_down(0x12)
+                                && binding
+                                    .get("shift")
+                                    .and_then(serde_json::Value::as_bool)
+                                    .unwrap_or(false)
+                                    == is_windows_key_down(0x10)
+                                && binding
+                                    .get("meta")
+                                    .and_then(serde_json::Value::as_bool)
+                                    .unwrap_or(false)
+                                    == (is_windows_key_down(0x5B) || is_windows_key_down(0x5C));
+
+                            if expected_key == Some(virtual_key) && modifiers_match {
+                                unsafe {
+                                    args.SetHandled(true)?;
+                                }
+                                if !is_repeat {
+                                    let _ = app_for_handler.emit(
+                                        "browser-shortcut-action",
+                                        serde_json::json!({ "action": "new-tab" }),
+                                    );
+                                }
+                                return Ok(());
+                            }
+                        }
+                    }
+
                     if is_key_down
                         && virtual_key == 0x1B
                         && state
@@ -363,6 +419,66 @@ fn install_workspace_shortcut_accelerator(app: &AppHandle) -> Result<(), String>
         .map_err(|error| format!("Failed to install workspace keyboard handler: {error}"))?;
 
     Ok(())
+}
+
+#[cfg(windows)]
+fn is_windows_key_down(virtual_key: i32) -> bool {
+    #[link(name = "user32")]
+    unsafe extern "system" {
+        fn GetKeyState(nvirtkey: i32) -> i16;
+    }
+
+    unsafe { GetKeyState(virtual_key) < 0 }
+}
+
+#[cfg(windows)]
+fn shortcut_key_to_virtual_key(key: &str) -> Option<u32> {
+    let named_key = match key {
+        "Space" => Some(0x20),
+        "Enter" => Some(0x0D),
+        "Escape" => Some(0x1B),
+        "Backspace" => Some(0x08),
+        "Tab" => Some(0x09),
+        "Delete" => Some(0x2E),
+        "Insert" => Some(0x2D),
+        "Home" => Some(0x24),
+        "End" => Some(0x23),
+        "PageUp" => Some(0x21),
+        "PageDown" => Some(0x22),
+        "ArrowLeft" => Some(0x25),
+        "ArrowUp" => Some(0x26),
+        "ArrowRight" => Some(0x27),
+        "ArrowDown" => Some(0x28),
+        _ if key.len() == 1 && key.as_bytes()[0].is_ascii_alphanumeric() => {
+            key.as_bytes().first().copied().map(u32::from)
+        }
+        _ => None,
+    };
+    if named_key.is_some() {
+        return named_key;
+    }
+
+    if let Some(number) = key
+        .strip_prefix('F')
+        .and_then(|number| number.parse::<u32>().ok())
+        .filter(|number| (1..=24).contains(number))
+    {
+        return Some(0x6F + number);
+    }
+
+    let mut chars = key.encode_utf16();
+    let character = chars.next()?;
+    if chars.next().is_some() {
+        return None;
+    }
+
+    #[link(name = "user32")]
+    unsafe extern "system" {
+        fn VkKeyScanW(ch: u16) -> i16;
+    }
+
+    let mapped = unsafe { VkKeyScanW(character) };
+    (mapped != -1).then_some((mapped as u16 & 0xFF) as u32)
 }
 
 /// Parses user omnibox input into a valid URL or a Google search query.
