@@ -1,5 +1,4 @@
 use crate::state::browser_state::BrowserState;
-#[cfg(windows)]
 use tauri::{AppHandle, Emitter, Manager};
 
 pub const WORKSPACE_SWITCHER_ESCAPE_SCRIPT: &str = r#"
@@ -481,4 +480,101 @@ fn shortcut_key_to_virtual_key(key: &str) -> Option<u32> {
 
     let mapped = unsafe { VkKeyScanW(character) };
     (mapped != -1).then_some((mapped as u16 & 0xFF) as u32)
+}
+
+pub(super) fn handle_keyboard_navigation(
+    app_handle_for_nav: &AppHandle,
+    nav_url: &tauri::Url,
+    tab_for_nav: &str,
+    label_for_nav: &str,
+    keyboard_bridge_token: &str,
+) {
+    let params = nav_url.query_pairs().collect::<Vec<_>>();
+    let request_token = params
+        .iter()
+        .find(|(key, _)| key == "token")
+        .map(|(_, value)| value.as_ref());
+    let sequence = params
+        .iter()
+        .find(|(key, _)| key == "sequence")
+        .and_then(|(_, value)| value.parse::<u64>().ok());
+    let token_matches = app_handle_for_nav
+        .try_state::<BrowserState>()
+        .and_then(|state| {
+            let is_active = state
+                .active_tab_id
+                .lock()
+                .map(|id| *id == tab_for_nav)
+                .unwrap_or(false);
+            state.keyboard_bridge_tokens.lock().ok().map(|tokens| {
+                is_active
+                    && tokens.get(label_for_nav).map(String::as_str) == request_token
+                    && request_token == Some(keyboard_bridge_token)
+            })
+        })
+        .unwrap_or(false);
+    let focused = app_handle_for_nav
+        .get_webview_window("main")
+        .and_then(|window| window.is_focused().ok())
+        .unwrap_or(false);
+
+    if token_matches && focused {
+        let event_type = nav_url.path().trim_matches('/');
+        match event_type {
+            "alt-down" | "alt-up" | "alt-cancel" => {
+                let _ = app_handle_for_nav.emit(
+                    "workspace-shortcut-event",
+                    serde_json::json!({ "type": event_type }),
+                );
+            }
+            "action" => {
+                let action = params
+                    .iter()
+                    .find(|(key, _)| key == "action")
+                    .map(|(_, value)| value.as_ref());
+                let key = params
+                    .iter()
+                    .find(|(key, _)| key == "key")
+                    .map(|(_, value)| value.as_ref());
+                if let Some(action) = action.filter(|action| {
+                    matches!(
+                        *action,
+                        "switch-tabs"
+                            | "switch-workspaces"
+                            | "move-tab-up"
+                            | "move-tab-up-ctrl-shift"
+                            | "move-tab-down"
+                            | "move-tab-down-ctrl-shift"
+                            | "new-tab"
+                            | "navigate-back"
+                            | "navigate-forward"
+                            | "command-bar"
+                            | "edit-url"
+                            | "focus-address"
+                            | "sidebar"
+                            | "zen"
+                            | "history"
+                            | "downloads"
+                            | "settings"
+                            | "close-tab"
+                            | "reload-tab"
+                    )
+                }) {
+                    let _ = app_handle_for_nav.emit(
+                        "browser-shortcut-action",
+                        serde_json::json!({ "action": action, "key": key }),
+                    );
+                }
+            }
+            _ => {}
+        }
+    } else if !focused {
+        let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
+    }
+
+    if let Some(sequence) = sequence {
+        if let Some(webview) = app_handle_for_nav.get_webview(label_for_nav) {
+            let _ = webview.eval(format!("window.__veloceWorkspaceShortcutAck({sequence});"));
+        }
+    }
 }

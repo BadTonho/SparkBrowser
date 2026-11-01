@@ -10,11 +10,11 @@ use crate::privacy::adblock_engine::{build_content_shield_script, should_block_u
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::tab_model::webview_label_for_tab;
 use tauri::{
-    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Rect,
-    Webview, WebviewUrl,
+    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Webview,
+    WebviewUrl,
 };
 
-pub use super::content_lifecycle::reset_content_webviews;
+pub use super::content_lifecycle::{reset_content_webviews, sync_all_webviews};
 pub use super::internal_overlays::{
     build_bookmark_context_menu_script, build_workspace_switcher_update_script,
     create_internal_bridge_token, BookmarkContextMenuAction,
@@ -117,98 +117,13 @@ fn ensure_tab_webview(
         native_alt_capture,
     ));
 
-    let app_for_page_load = app.clone();
-    let keyboard_token_for_load = keyboard_bridge_token.clone();
-    let tab_for_load = tab_id.to_string();
-    let label_for_load = label.clone();
-    let webview_builder = webview_builder.on_page_load(move |webview, payload| {
-        if !super::navigation_state::is_current_generation(
-            &app_for_page_load,
-            &label_for_load,
-            &keyboard_token_for_load,
-        ) {
-            return;
-        }
-        let started = payload.event() == tauri::webview::PageLoadEvent::Started;
-        update_navigation(
-            &app_for_page_load,
-            &tab_for_load,
-            &label_for_load,
-            &keyboard_token_for_load,
-            |tab| {
-                tab.navigation.loading = started;
-                if started {
-                    tab.navigation.error = None;
-                    tab.activity.dirty_form = false;
-                    tab.activity.playing_media = false;
-                }
-                if matches!(payload.url().scheme(), "http" | "https") {
-                    tab.url = payload.url().to_string();
-                }
-            },
-        );
-        if started {
-            return;
-        }
-        let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
-            return;
-        };
-        let title = state
-            .tabs
-            .lock()
-            .ok()
-            .and_then(|tabs| {
-                tabs.iter()
-                    .find(|tab| tab.id == tab_for_load)
-                    .map(|tab| tab.title.clone())
-            })
-            .unwrap_or_default();
-        if matches!(payload.url().scheme(), "http" | "https") {
-            if let Some(writer) = app_for_page_load
-                .try_state::<crate::database::navigation_writer::NavigationWriter>(
-            ) {
-                if writer.visit(title, payload.url().to_string()).is_err() {
-                    let _ = app_for_page_load.emit(
-                        "browser-error",
-                        "Navigation persistence queue is unavailable",
-                    );
-                }
-            }
-        }
-        let Ok(shortcuts) = state.keyboard_shortcuts.lock() else {
-            return;
-        };
-        if let Ok(serialized) = serde_json::to_string(&*shortcuts) {
-            let _ = webview.eval(format!(
-                "window.__veloceSetKeyboardShortcuts?.(\"{}\", {serialized});",
-                keyboard_token_for_load
-            ));
-        }
-    });
-
-    let (title_app, title_tab, title_label, title_token) = (
-        app.clone(),
-        tab_id.to_string(),
-        label.clone(),
-        keyboard_bridge_token.clone(),
+    let webview_builder = super::navigation_state::with_page_events(
+        webview_builder,
+        app,
+        tab_id,
+        &label,
+        &keyboard_bridge_token,
     );
-    let webview_builder = webview_builder.on_document_title_changed(move |_, title| {
-        if !super::navigation_state::is_current_generation(&title_app, &title_label, &title_token) {
-            return;
-        }
-        update_navigation(&title_app, &title_tab, &title_label, &title_token, |tab| {
-            if !title.trim().is_empty() {
-                tab.title = title.chars().take(512).collect();
-            }
-        });
-        if let Some(writer) =
-            title_app.try_state::<crate::database::navigation_writer::NavigationWriter>()
-        {
-            if writer.session().is_err() {
-                let _ = title_app.emit("browser-error", "Session persistence queue is unavailable");
-            }
-        }
-    });
 
     #[cfg(windows)]
     let navigation_registration_token = keyboard_bridge_token.clone();
@@ -240,95 +155,13 @@ fn ensure_tab_webview(
 
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("keyboard-shortcut")
         {
-            let params = nav_url.query_pairs().collect::<Vec<_>>();
-            let request_token = params
-                .iter()
-                .find(|(key, _)| key == "token")
-                .map(|(_, value)| value.as_ref());
-            let sequence = params
-                .iter()
-                .find(|(key, _)| key == "sequence")
-                .and_then(|(_, value)| value.parse::<u64>().ok());
-            let token_matches = app_handle_for_nav
-                .try_state::<BrowserState>()
-                .and_then(|state| {
-                    let is_active = state
-                        .active_tab_id
-                        .lock()
-                        .map(|id| *id == tab_for_nav)
-                        .unwrap_or(false);
-                    state.keyboard_bridge_tokens.lock().ok().map(|tokens| {
-                        is_active
-                            && tokens.get(&label_for_nav).map(String::as_str) == request_token
-                            && request_token == Some(keyboard_bridge_token.as_str())
-                    })
-                })
-                .unwrap_or(false);
-            let focused = app_handle_for_nav
-                .get_webview_window("main")
-                .and_then(|window| window.is_focused().ok())
-                .unwrap_or(false);
-
-            if token_matches && focused {
-                let event_type = nav_url.path().trim_matches('/');
-                match event_type {
-                    "alt-down" | "alt-up" | "alt-cancel" => {
-                        let _ = app_handle_for_nav.emit(
-                            "workspace-shortcut-event",
-                            serde_json::json!({ "type": event_type }),
-                        );
-                    }
-                    "action" => {
-                        let action = params
-                            .iter()
-                            .find(|(key, _)| key == "action")
-                            .map(|(_, value)| value.as_ref());
-                        let key = params
-                            .iter()
-                            .find(|(key, _)| key == "key")
-                            .map(|(_, value)| value.as_ref());
-                        if let Some(action) = action.filter(|action| {
-                            matches!(
-                                *action,
-                                "switch-tabs"
-                                    | "switch-workspaces"
-                                    | "move-tab-up"
-                                    | "move-tab-up-ctrl-shift"
-                                    | "move-tab-down"
-                                    | "move-tab-down-ctrl-shift"
-                                    | "new-tab"
-                                    | "navigate-back"
-                                    | "navigate-forward"
-                                    | "command-bar"
-                                    | "edit-url"
-                                    | "focus-address"
-                                    | "sidebar"
-                                    | "zen"
-                                    | "history"
-                                    | "downloads"
-                                    | "settings"
-                                    | "close-tab"
-                                    | "reload-tab"
-                            )
-                        }) {
-                            let _ = app_handle_for_nav.emit(
-                                "browser-shortcut-action",
-                                serde_json::json!({ "action": action, "key": key }),
-                            );
-                        }
-                    }
-                    _ => {}
-                }
-            } else if !focused {
-                let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
-            }
-
-            if let Some(sequence) = sequence {
-                if let Some(webview) = app_handle_for_nav.get_webview(&label_for_nav) {
-                    let _ =
-                        webview.eval(format!("window.__veloceWorkspaceShortcutAck({sequence});"));
-                }
-            }
+            super::keyboard_bridge::handle_keyboard_navigation(
+                &app_handle_for_nav,
+                nav_url,
+                &tab_for_nav,
+                &label_for_nav,
+                &keyboard_bridge_token,
+            );
             return false;
         }
 
@@ -481,106 +314,4 @@ fn navigate_content_history(app: &AppHandle, go_back: bool) -> Result<(), String
         };
         webview.eval(script).map_err(|error| error.to_string())
     }
-}
-
-/// Synchronizes visibility and bounds of the child WebView.
-pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
-    crate::state::memory_policy::enforce_resident_limit(
-        &mut state.tabs.lock().map_err(|e| e.to_string())?,
-        state
-            .resident_limit
-            .load(std::sync::atomic::Ordering::Relaxed),
-    );
-    let bounds = state.bounds.lock().map(|b| *b).unwrap_or_default();
-    let overlay_open = state.is_overlay_open.lock().map(|o| *o).unwrap_or(false);
-    let workspace_switcher_open = state
-        .workspace_switcher_open
-        .lock()
-        .map(|open| *open)
-        .unwrap_or(false);
-    let bookmark_context_menu_open = state
-        .bookmark_context_menu_open
-        .lock()
-        .map(|open| *open)
-        .unwrap_or(false);
-
-    let tabs: std::collections::HashMap<_, _> = state
-        .snapshot_tabs()
-        .into_iter()
-        .map(|tab| (webview_label_for_tab(&tab.id), tab))
-        .collect();
-    for (label, webview) in app.webviews() {
-        if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
-            continue;
-        }
-        let tab = tabs.get(&label);
-        match tab {
-            None
-            | Some(crate::state::tab_model::TabInfo {
-                is_hibernated: true,
-                ..
-            }) => {
-                webview.close().map_err(|e| e.to_string())?;
-                state
-                    .keyboard_bridge_tokens
-                    .lock()
-                    .map_err(|e| e.to_string())?
-                    .remove(&label);
-                state
-                    .shield_script_ids
-                    .lock()
-                    .map_err(|e| e.to_string())?
-                    .remove(&label);
-            }
-            Some(tab)
-                if tab.is_active
-                    && !overlay_open
-                    && !workspace_switcher_open
-                    && !bookmark_context_menu_open =>
-            {
-                webview
-                    .set_bounds(Rect {
-                        position: LogicalPosition::new(bounds.x, bounds.y).into(),
-                        size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0))
-                            .into(),
-                    })
-                    .map_err(|e| e.to_string())?;
-                webview.show().map_err(|e| e.to_string())?;
-            }
-            Some(_) => webview.hide().map_err(|e| e.to_string())?,
-        }
-    }
-
-    if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
-        if workspace_switcher_open {
-            let _ = webview.set_bounds(Rect {
-                position: LogicalPosition::new(bounds.x, bounds.y).into(),
-                size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0)).into(),
-            });
-            let _ = webview.show();
-        } else {
-            let _ = webview.hide();
-        }
-    }
-
-    if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
-        if bookmark_context_menu_open {
-            if let Some(window) = app.get_webview_window("main") {
-                let scale_factor = window.scale_factor().unwrap_or(1.0);
-                let logical_size = window
-                    .inner_size()
-                    .map(|size| size.to_logical::<f64>(scale_factor))
-                    .unwrap_or_else(|_| LogicalSize::new(1200.0, 800.0));
-                let _ = webview.set_bounds(Rect {
-                    position: LogicalPosition::new(0.0, 0.0).into(),
-                    size: logical_size.into(),
-                });
-            }
-            let _ = webview.show();
-        } else {
-            let _ = webview.hide();
-        }
-    }
-
-    Ok(())
 }

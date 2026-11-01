@@ -97,11 +97,6 @@
     };
     motionPreference.addEventListener("change", updateMotionPreference);
 
-    initializeWorkspaces();
-    void initializeTabs().then(() => setResidentTabLimit(get(residentTabLimit)));
-    loadBookmarks();
-    initializePrivacyStats();
-    initializeKeyboardShortcuts();
 
     let unlistenNavigation: (() => void) | undefined;
     let unlistenTabs: (() => void) | undefined;
@@ -110,26 +105,35 @@
     const stopWorkspaceShortcutBridge = initializeWorkspaceShortcutBridge();
 
     let disposed = false;
-    onNavigationUpdated(applyNavigationPatch).then(fn => {
+    const navigationListener = onNavigationUpdated(applyNavigationPatch).then(fn => {
       if (disposed) fn(); else unlistenNavigation = fn;
     });
 
-    onTabsUpdated((updatedTabs) => {
+    const tabsListener = onTabsUpdated((updatedTabs) => {
       applyTabsSnapshot(updatedTabs);
     }).then((fn) => {
       if (disposed) fn(); else unlistenTabs = fn;
     });
 
-    onPrivacyStatsUpdated((stats) => {
+    const privacyListener = onPrivacyStatsUpdated((stats) => {
       privacyStats.set(stats);
     }).then((fn) => {
       if (disposed) fn(); else unlistenPrivacy = fn;
     });
 
-    onBrowserShortcutAction((action, key) => {
+    const shortcutListener = onBrowserShortcutAction((action, key) => {
       dispatchShortcut(action, key);
     }).then((fn) => {
       if (disposed) fn(); else unlistenBrowserShortcut = fn;
+    });
+
+    void Promise.all([navigationListener, tabsListener, privacyListener, shortcutListener]).then(async () => {
+      if (disposed) return;
+      await initializeWorkspaces();
+      if (disposed) return;
+      await initializeTabs();
+      if (disposed) return;
+      await Promise.all([setResidentTabLimit(get(residentTabLimit)), loadBookmarks(), initializePrivacyStats(), initializeKeyboardShortcuts()]);
     });
 
     // Apply the selected automatic hibernation policy once per minute.

@@ -1,5 +1,9 @@
 use crate::state::browser_state::BrowserState;
-use std::sync::mpsc::{self, Sender};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    mpsc::{self, Sender, SyncSender},
+    Arc,
+};
 use tauri::{AppHandle, Emitter, Manager};
 
 enum Write {
@@ -9,11 +13,16 @@ enum Write {
 }
 
 /// One ordered worker keeps SQLite I/O out of native WebView callbacks.
-pub struct NavigationWriter(Sender<Write>);
+pub struct NavigationWriter {
+    send: SyncSender<Write>,
+    session_queued: Arc<AtomicBool>,
+}
 
 impl NavigationWriter {
     pub fn start(app: AppHandle) -> Result<Self, String> {
-        let (send, receive) = mpsc::channel();
+        let (send, receive) = mpsc::sync_channel(256);
+        let session_queued = Arc::new(AtomicBool::new(false));
+        let queued_for_worker = session_queued.clone();
         std::thread::Builder::new()
             .name("navigation-writer".into())
             .spawn(move || {
@@ -21,6 +30,7 @@ impl NavigationWriter {
                 for write in receive {
                     match write {
                         Write::Session => {
+                            queued_for_worker.store(false, Ordering::Release);
                             let state = app.state::<BrowserState>();
                             let _operation = state.tab_operations.blocking_lock();
                             if let Err(error) = state.persist_session() {
@@ -48,23 +58,35 @@ impl NavigationWriter {
                 }
             })
             .map_err(|e| e.to_string())?;
-        Ok(Self(send))
+        Ok(Self {
+            send,
+            session_queued,
+        })
     }
 
     pub fn visit(&self, title: String, url: String) -> Result<(), String> {
-        self.0
-            .send(Write::Visit { title, url })
+        self.send
+            .try_send(Write::Visit { title, url })
             .map_err(|e| e.to_string())
     }
 
     pub fn session(&self) -> Result<(), String> {
-        self.0.send(Write::Session).map_err(|e| e.to_string())
+        if self.session_queued.swap(true, Ordering::AcqRel) {
+            return Ok(());
+        }
+        if let Err(error) = self.send.try_send(Write::Session) {
+            self.session_queued.store(false, Ordering::Release);
+            return Err(error.to_string());
+        }
+        Ok(())
     }
 
     /// Call off the UI thread; acknowledges all earlier writes and their failures.
     pub fn flush(&self) -> Result<(), String> {
         let (send, receive) = mpsc::channel();
-        self.0.send(Write::Flush(send)).map_err(|e| e.to_string())?;
+        self.send
+            .send(Write::Flush(send))
+            .map_err(|e| e.to_string())?;
         receive.recv().map_err(|e| e.to_string())?
     }
 }

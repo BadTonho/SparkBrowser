@@ -1,6 +1,10 @@
-use super::webview_manager::{ensure_active_content_webview, CONTENT_WEBVIEW_PREFIX};
+use super::webview_manager::{
+    ensure_active_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL, CONTENT_WEBVIEW_PREFIX,
+    WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+};
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Manager};
+use crate::state::tab_model::webview_label_for_tab;
+use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect};
 
 /// Rebuild views when their immutable initialization policy changes.
 pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
@@ -36,4 +40,106 @@ pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(
         }
     }
     ensure_active_content_webview(app)
+}
+
+/// Synchronizes visibility and bounds of the child WebView.
+pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
+    crate::state::memory_policy::enforce_resident_limit(
+        &mut state.tabs.lock().map_err(|e| e.to_string())?,
+        state
+            .resident_limit
+            .load(std::sync::atomic::Ordering::Relaxed),
+    );
+    let bounds = state.bounds.lock().map(|b| *b).unwrap_or_default();
+    let overlay_open = state.is_overlay_open.lock().map(|o| *o).unwrap_or(false);
+    let workspace_switcher_open = state
+        .workspace_switcher_open
+        .lock()
+        .map(|open| *open)
+        .unwrap_or(false);
+    let bookmark_context_menu_open = state
+        .bookmark_context_menu_open
+        .lock()
+        .map(|open| *open)
+        .unwrap_or(false);
+
+    let tabs: std::collections::HashMap<_, _> = state
+        .snapshot_tabs()
+        .into_iter()
+        .map(|tab| (webview_label_for_tab(&tab.id), tab))
+        .collect();
+    for (label, webview) in app.webviews() {
+        if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
+            continue;
+        }
+        let tab = tabs.get(&label);
+        match tab {
+            None
+            | Some(crate::state::tab_model::TabInfo {
+                is_hibernated: true,
+                ..
+            }) => {
+                webview.close().map_err(|e| e.to_string())?;
+                state
+                    .keyboard_bridge_tokens
+                    .lock()
+                    .map_err(|e| e.to_string())?
+                    .remove(&label);
+                state
+                    .shield_script_ids
+                    .lock()
+                    .map_err(|e| e.to_string())?
+                    .remove(&label);
+            }
+            Some(tab)
+                if tab.is_active
+                    && !overlay_open
+                    && !workspace_switcher_open
+                    && !bookmark_context_menu_open =>
+            {
+                webview
+                    .set_bounds(Rect {
+                        position: LogicalPosition::new(bounds.x, bounds.y).into(),
+                        size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0))
+                            .into(),
+                    })
+                    .map_err(|e| e.to_string())?;
+                webview.show().map_err(|e| e.to_string())?;
+            }
+            Some(_) => webview.hide().map_err(|e| e.to_string())?,
+        }
+    }
+
+    if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
+        if workspace_switcher_open {
+            let _ = webview.set_bounds(Rect {
+                position: LogicalPosition::new(bounds.x, bounds.y).into(),
+                size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0)).into(),
+            });
+            let _ = webview.show();
+        } else {
+            let _ = webview.hide();
+        }
+    }
+
+    if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
+        if bookmark_context_menu_open {
+            if let Some(window) = app.get_webview_window("main") {
+                let scale_factor = window.scale_factor().unwrap_or(1.0);
+                let logical_size = window
+                    .inner_size()
+                    .map(|size| size.to_logical::<f64>(scale_factor))
+                    .unwrap_or_else(|_| LogicalSize::new(1200.0, 800.0));
+                let _ = webview.set_bounds(Rect {
+                    position: LogicalPosition::new(0.0, 0.0).into(),
+                    size: logical_size.into(),
+                });
+            }
+            let _ = webview.show();
+        } else {
+            let _ = webview.hide();
+        }
+    }
+
+    Ok(())
 }

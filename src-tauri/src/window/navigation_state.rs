@@ -162,3 +162,106 @@ pub(super) fn install_native_navigation(
     })
     .map_err(|e| e.to_string())
 }
+
+pub(super) fn with_page_events(
+    webview_builder: tauri::webview::WebviewBuilder<tauri::Wry>,
+    app: &AppHandle,
+    tab_id: &str,
+    label: &str,
+    keyboard_bridge_token: &str,
+) -> tauri::webview::WebviewBuilder<tauri::Wry> {
+    let app_for_page_load = app.clone();
+    let keyboard_token_for_load = keyboard_bridge_token.to_owned();
+    let tab_for_load = tab_id.to_string();
+    let label_for_load = label.to_owned();
+    let webview_builder = webview_builder.on_page_load(move |webview, payload| {
+        if !super::navigation_state::is_current_generation(
+            &app_for_page_load,
+            &label_for_load,
+            &keyboard_token_for_load,
+        ) {
+            return;
+        }
+        let started = payload.event() == tauri::webview::PageLoadEvent::Started;
+        update_navigation(
+            &app_for_page_load,
+            &tab_for_load,
+            &label_for_load,
+            &keyboard_token_for_load,
+            |tab| {
+                tab.navigation.loading = started;
+                if started {
+                    tab.navigation.error = None;
+                    tab.activity.dirty_form = false;
+                    tab.activity.playing_media = false;
+                }
+                if matches!(payload.url().scheme(), "http" | "https") {
+                    tab.url = payload.url().to_string();
+                }
+            },
+        );
+        if started {
+            return;
+        }
+        let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
+            return;
+        };
+        let title = state
+            .tabs
+            .lock()
+            .ok()
+            .and_then(|tabs| {
+                tabs.iter()
+                    .find(|tab| tab.id == tab_for_load)
+                    .map(|tab| tab.title.clone())
+            })
+            .unwrap_or_default();
+        if matches!(payload.url().scheme(), "http" | "https") {
+            if let Some(writer) = app_for_page_load
+                .try_state::<crate::database::navigation_writer::NavigationWriter>(
+            ) {
+                if writer.visit(title, payload.url().to_string()).is_err() {
+                    let _ = app_for_page_load.emit(
+                        "browser-error",
+                        "Navigation persistence queue is unavailable",
+                    );
+                }
+            }
+        }
+        let Ok(shortcuts) = state.keyboard_shortcuts.lock() else {
+            return;
+        };
+        if let Ok(serialized) = serde_json::to_string(&*shortcuts) {
+            let _ = webview.eval(format!(
+                "window.__veloceSetKeyboardShortcuts?.(\"{}\", {serialized});",
+                keyboard_token_for_load
+            ));
+        }
+    });
+
+    let (title_app, title_tab, title_label, title_token) = (
+        app.clone(),
+        tab_id.to_string(),
+        label.to_owned(),
+        keyboard_bridge_token.to_owned(),
+    );
+    let webview_builder = webview_builder.on_document_title_changed(move |_, title| {
+        if !super::navigation_state::is_current_generation(&title_app, &title_label, &title_token) {
+            return;
+        }
+        update_navigation(&title_app, &title_tab, &title_label, &title_token, |tab| {
+            if !title.trim().is_empty() {
+                tab.title = title.chars().take(512).collect();
+            }
+        });
+        if let Some(writer) =
+            title_app.try_state::<crate::database::navigation_writer::NavigationWriter>()
+        {
+            if writer.session().is_err() {
+                let _ = title_app.emit("browser-error", "Session persistence queue is unavailable");
+            }
+        }
+    });
+
+    webview_builder
+}

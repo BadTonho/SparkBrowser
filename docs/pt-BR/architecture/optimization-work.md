@@ -44,6 +44,12 @@ Comandos da aplicação são declarados no manifesto de build do Tauri e concedi
 
 O Windows substitui seu script de política registrado no WebView2 para documentos futuros e atualiza os interceptadores da página atual, preservando formulários, posição de rolagem e histórico nativo. Alterações malsucedidas tentam restaurar a política anterior. Outros motores usam o fallback de recriação documentado, recusam alterações enquanto formulários/mídia/downloads detectados estiverem protegidos e exibem o aviso de reinicialização. A filtragem continua sendo uma tentativa; transferências de rede existentes não são desfeitas retroativamente.
 
+## Fronteiras dos módulos e inicialização
+
+A fachada da bridge delega para módulos de transporte de navegação, overlays, workspaces, downloads, persistência, privacidade, eventos e controles da janela. Armazenamento/migrações do preview de workspaces são separados do IPC nativo e validam os perfis restaurados. A exclusão no preview recebe as abas atuais em vez de inventar uma sessão inicial.
+
+Categorias de configurações, gravação de atalhos, catálogo de busca e CSS compartilhado restrito ao modal possuem módulos separados. Hooks de páginas, roteamento de teclado e reconciliação do ciclo de vida têm módulos Rust próprios. Listeners são registrados antes da inicialização; registros tardios são removidos após a desmontagem. O writer de navegação tem fila limitada a 256 mensagens e agrupa solicitações que salvam somente a sessão.
+
 ## Etapas restantes
 
-- Modularização, diagnósticos, validação contínua e orientações de release com medições.
+- Diagnósticos, validação contínua e orientações de release com medições.

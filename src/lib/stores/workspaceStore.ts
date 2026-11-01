@@ -10,7 +10,7 @@ import {
   updateWorkspaceProfile,
   deleteWorkspaceProfile,
 } from "../services/tauri-bridge";
-import { applyTabsSnapshot } from "./browserStore";
+import { applyTabsSnapshot, tabs } from "./browserStore";
 import {
   DEFAULT_WORKSPACES,
   NEW_WORKSPACE_DEFAULT_COLORS,
@@ -149,10 +149,10 @@ export async function removeWorkspaceProfile(
   const result = await deleteWorkspaceProfile(
     workspaceId,
     action,
-    targetWorkspaceId
+    targetWorkspaceId,
+    get(tabs)
   );
   workspaces.set(result.workspaces);
-  activeWorkspaceId.set(result.active_workspace_id);
   applyTabsSnapshot(result.tabs);
   if (typeof safeStorage !== "undefined") {
     if (!isTauriRuntime()) {

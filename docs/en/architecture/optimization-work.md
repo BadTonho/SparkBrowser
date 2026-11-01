@@ -45,6 +45,12 @@ Application commands are declared in the Tauri build manifest and explicitly gra
 
 Windows replaces its owned WebView2 document-created policy script and updates the live page wrappers, preserving forms, scroll position and native navigation history. Failed changes attempt to restore the previous policy. Other engines use the documented rebuild fallback, refuse changes while detected forms/media/downloads are protected and display the reset notice. Filtering remains best effort; existing network transfers are not retroactively undone.
 
+## Module boundaries and startup
+
+The bridge facade delegates to transport modules for navigation, overlays, workspaces, downloads, persistence, privacy, events and window controls. Workspace preview storage/migrations are separate from native IPC and validate restored profiles. Preview deletion receives the current tabs instead of inventing an initial session.
+
+Settings categories, shortcut recording, the search catalog and shared scoped CSS are separate modules. Navigation page hooks, keyboard routing and content lifecycle reconciliation have separate Rust owners. Event listeners are registered before initialization; late registrations clean themselves up after unmount. The navigation writer has a bounded 256-message queue and coalesces session-only requests.
+
 ## Remaining stages
 
-- Modularization, diagnostics, continuous validation and measured release guidance.
+- Diagnostics, continuous validation and measured release guidance.
