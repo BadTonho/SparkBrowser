@@ -4,12 +4,14 @@
   import { cubicOut } from "svelte/easing";
   import {
     downloads,
+    downloadTasks,
     isDownloadsDrawerOpen,
     closeDownloadsDrawer,
     startDownloadFromUrl,
     wipeDownloads,
   } from "../../stores/downloadsStore";
   import { currentUrl } from "../../stores/browserStore";
+  import { cancelDownload } from "../../services/tauri-bridge";
 
   let downloadUrlInput = $state("");
   let isDownloading = $state(false);
@@ -84,6 +86,21 @@
       {#if downloadError}<p role="alert">{downloadError}</p>{/if}
 
       <div class="downloads-list">
+        {#each $downloadTasks.filter(task => task.status !== "Completed") as task (task.id)}
+          <div class="download-card">
+            <div class="download-meta">
+              <span class="file-name">{task.file_name}</span>
+              <span>{task.status} · {Math.round(task.received / 1024)} KiB{task.total ? ` / ${Math.round(task.total / 1024)} KiB` : ""}</span>
+              {#if task.status === "Downloading"}
+                {#if task.total}<progress value={task.received} max={task.total} aria-label="Download progress"></progress>{:else}<progress aria-label="Downloading"></progress>{/if}
+              {/if}
+              {#if task.error}<span role="alert">{task.error}</span>{/if}
+            </div>
+            {#if task.cancellable && ["Queued", "Downloading", "Cancelling"].includes(task.status)}
+              <button disabled={task.status === "Cancelling"} onclick={() => cancelDownload(task.id)}>Cancel</button>
+            {/if}
+          </div>
+        {/each}
         {#if $downloads.length === 0}
           <div class="empty-state">
             <p>No downloads recorded yet.</p>

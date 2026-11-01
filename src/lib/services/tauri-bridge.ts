@@ -5,6 +5,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type {
   BookmarkData,
   DownloadItem,
+  DownloadTask,
   HistoryEntry,
   PrivacyStats,
   TabSnapshot,
@@ -61,6 +62,13 @@ export async function reloadCurrentPage(): Promise<void> {
 export async function syncViewportBounds(bounds: ViewportBounds): Promise<void> {
   if (!isTauriRuntime()) return;
   await invoke("sync_viewport_bounds", { bounds });
+}
+
+export async function setResidentLimit(limit: number): Promise<TabSnapshot> {
+  return isTauriRuntime() ? invoke<TabSnapshot>("set_resident_limit", { limit }) : [];
+}
+export async function setTabPinned(tabId: string, pinned: boolean): Promise<TabSnapshot> {
+  return invoke<TabSnapshot>("set_tab_pinned", { tabId, pinned });
 }
 
 /**
@@ -411,9 +419,21 @@ export async function fetchDownloads(): Promise<DownloadItem[]> {
   return await invoke<DownloadItem[]>("get_downloads");
 }
 
-export async function enqueueDownloadUrl(url: string): Promise<DownloadItem[]> {
-  if (!isTauriRuntime()) return [];
-  return await invoke<DownloadItem[]>("enqueue_download", { url });
+export async function enqueueDownloadUrl(url: string): Promise<DownloadTask> {
+  return await invoke<DownloadTask>("enqueue_download", { url });
+}
+
+export async function fetchDownloadTasks(): Promise<DownloadTask[]> {
+  return isTauriRuntime() ? invoke<DownloadTask[]>("get_download_tasks") : [];
+}
+export async function cancelDownload(taskId: string): Promise<void> {
+  await invoke("cancel_download", { taskId });
+}
+export async function onDownloadTaskUpdated(callback: (task: DownloadTask) => void): Promise<UnlistenFn> {
+  return isTauriRuntime() ? listen<DownloadTask>("download-task-updated", event => callback(event.payload)) : () => {};
+}
+export async function onDownloadsUpdated(callback: () => void): Promise<UnlistenFn> {
+  return isTauriRuntime() ? listen("downloads-updated", callback) : () => {};
 }
 
 export async function clearAllDownloads(): Promise<void> {

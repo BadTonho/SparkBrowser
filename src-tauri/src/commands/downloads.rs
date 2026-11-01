@@ -1,51 +1,37 @@
-use crate::database::downloads_repo::{
-    clear_downloads, list_downloads, record_download, DownloadItem,
-};
+use crate::database::downloads_repo::{clear_downloads, list_downloads, DownloadItem};
+use crate::downloads::manager::{DownloadManager, DownloadTask};
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 
 #[tauri::command]
-pub fn get_downloads(state: State<'_, BrowserState>) -> Result<Vec<DownloadItem>, String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return list_downloads(conn);
-    }
-    Ok(Vec::new())
+pub async fn get_downloads(state: State<'_, BrowserState>) -> Result<Vec<DownloadItem>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    list_downloads(db.as_ref().ok_or("Download database is not ready")?)
 }
-
+#[tauri::command]
+pub async fn get_download_tasks(
+    manager: State<'_, DownloadManager>,
+) -> Result<Vec<DownloadTask>, String> {
+    manager.list()
+}
 #[tauri::command]
 pub async fn enqueue_download(
     app: AppHandle,
-    state: State<'_, BrowserState>,
+    manager: State<'_, DownloadManager>,
     url: String,
-) -> Result<Vec<DownloadItem>, String> {
-    let destination = app.path().download_dir().map_err(|e| e.to_string())?;
-    let parsed = crate::downloads::transfer::validate_download_url(&url)?;
-    let shield_enabled = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
-    if crate::privacy::adblock_engine::should_block_url(parsed.as_str(), shield_enabled) {
-        return Err("Download blocked by the privacy shield".to_string());
-    }
-    let saved = tauri::async_runtime::spawn_blocking(move || {
-        crate::downloads::transfer::download_to_directory(&parsed, &destination, shield_enabled)
-    })
-    .await
-    .map_err(|e| e.to_string())??;
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    let conn = db.as_ref().ok_or("Download database is not ready")?;
-    record_download(
-        conn,
-        &saved.file_name,
-        &url,
-        &saved.path.to_string_lossy(),
-        "Completed",
-    )
+) -> Result<DownloadTask, String> {
+    manager.enqueue(&app, &url)
 }
-
 #[tauri::command]
-pub fn clear_all_downloads(state: State<'_, BrowserState>) -> Result<(), String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        clear_downloads(conn)?;
-    }
-    Ok(())
+pub async fn cancel_download(
+    app: AppHandle,
+    manager: State<'_, DownloadManager>,
+    task_id: String,
+) -> Result<(), String> {
+    manager.cancel(&app, &task_id)
+}
+#[tauri::command]
+pub async fn clear_all_downloads(state: State<'_, BrowserState>) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    clear_downloads(db.as_ref().ok_or("Download database is not ready")?)
 }

@@ -47,7 +47,7 @@
     initializeWorkspaces,
     activeWorkspaceId,
   } from "./lib/stores/workspaceStore";
-  import { toggleDownloadsDrawer } from "./lib/stores/downloadsStore";
+  import { toggleDownloadsDrawer, initializeDownloadEvents } from "./lib/stores/downloadsStore";
   import {
     toggleSettingsModal,
     autoHibernateMode,
@@ -90,6 +90,7 @@
   );
 
   onMount(() => {
+    const stopDownloadEvents = initializeDownloadEvents();
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const updateMotionPreference = () => {
       prefersReducedMotion = motionPreference.matches;
@@ -209,6 +210,7 @@
     window.addEventListener("mousedown", handleGlobalMousedown, true);
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
+      stopDownloadEvents();
       clearInterval(hibernationInterval);
       disposed = true;
       if (unlistenNavigation) unlistenNavigation();

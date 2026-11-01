@@ -1,19 +1,44 @@
 import { writable, get } from "svelte/store";
-import type { DownloadItem } from "../types/browser";
+import type { DownloadItem, DownloadTask } from "../types/browser";
 import {
   fetchDownloads,
   enqueueDownloadUrl,
   clearAllDownloads,
   setOverlayVisibility,
   isTauriRuntime,
+  fetchDownloadTasks,
+  onDownloadTaskUpdated,
+  onDownloadsUpdated,
 } from "../services/tauri-bridge";
 
 export const downloads = writable<DownloadItem[]>([]);
+export const downloadTasks = writable<DownloadTask[]>([]);
 export const isDownloadsDrawerOpen = writable<boolean>(false);
+let loadRevision = 0;
+
+function applyTask(task: DownloadTask): void {
+  downloadTasks.update(tasks => {
+    const previous = tasks.find(item => item.id === task.id);
+    if (previous && previous.revision >= task.revision) return tasks;
+    return [task, ...tasks.filter(item => item.id !== task.id)].sort((a, b) => b.id.localeCompare(a.id)).slice(0, 164);
+  });
+}
+
+export function initializeDownloadEvents(): () => void {
+  let disposed = false;
+  const stops: (() => void)[] = [];
+  for (const promise of [onDownloadTaskUpdated(applyTask), onDownloadsUpdated(() => void loadDownloads())]) {
+    void promise.then(stop => { if (disposed) stop(); else stops.push(stop); });
+  }
+  return () => { disposed = true; stops.forEach(stop => stop()); };
+}
 
 export async function loadDownloads(): Promise<void> {
-  const list = await fetchDownloads();
+  const revision = ++loadRevision;
+  const [list, tasks] = await Promise.all([fetchDownloads(), fetchDownloadTasks()]);
+  if (revision !== loadRevision) return;
   downloads.set(list);
+  tasks.forEach(applyTask);
 }
 
 export async function startDownloadFromUrl(url: string): Promise<void> {
@@ -22,12 +47,13 @@ export async function startDownloadFromUrl(url: string): Promise<void> {
 
   if (!isTauriRuntime()) throw new Error("Downloads require the desktop application.");
 
-  const updated = await enqueueDownloadUrl(trimmed);
-  downloads.set(updated);
+  applyTask(await enqueueDownloadUrl(trimmed));
 }
 
 export async function wipeDownloads(): Promise<void> {
+  ++loadRevision;
   await clearAllDownloads();
+  ++loadRevision;
   downloads.set([]);
 }
 

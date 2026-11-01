@@ -1,12 +1,18 @@
 use std::{
+    io::{Read, Write},
     path::{Path, PathBuf},
-    time::Duration,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        OnceLock,
+    },
+    time::{Duration, Instant},
 };
 use tauri::Url;
 
 pub struct SavedDownload {
     pub file_name: String,
     pub path: PathBuf,
+    pub bytes: u64,
 }
 
 pub fn validate_download_url(raw: &str) -> Result<Url, String> {
@@ -21,7 +27,7 @@ pub fn validate_download_url(raw: &str) -> Result<Url, String> {
     Ok(url)
 }
 
-fn file_name(url: &Url) -> String {
+pub fn file_name(url: &Url) -> String {
     let raw = url
         .path_segments()
         .and_then(|mut parts| parts.next_back())
@@ -45,20 +51,19 @@ fn file_name(url: &Url) -> String {
     }
 }
 
-pub fn download_to_directory(
-    url: &Url,
-    destination: &Path,
-    shield_enabled: bool,
-) -> Result<SavedDownload, String> {
-    validate_download_url(url.as_str())?;
-    if crate::privacy::adblock_engine::should_block_url(url.as_str(), shield_enabled) {
-        return Err("Download blocked by the privacy shield".into());
-    }
-    std::fs::create_dir_all(destination)
-        .map_err(|e| format!("Could not open Downloads folder: {e}"))?;
-    let client = reqwest::blocking::Client::builder()
+fn shared_client(shield_enabled: bool) -> Result<&'static reqwest::blocking::Client, String> {
+    static ENABLED: OnceLock<Result<reqwest::blocking::Client, String>> = OnceLock::new();
+    static DISABLED: OnceLock<Result<reqwest::blocking::Client, String>> = OnceLock::new();
+    (if shield_enabled { &ENABLED } else { &DISABLED })
+        .get_or_init(|| build_client(shield_enabled))
+        .as_ref()
+        .map_err(Clone::clone)
+}
+
+fn build_client(shield_enabled: bool) -> Result<reqwest::blocking::Client, String> {
+    reqwest::blocking::Client::builder()
         .connect_timeout(Duration::from_secs(20))
-        .timeout(Duration::from_secs(3600))
+        .timeout(Duration::from_secs(15))
         .redirect(reqwest::redirect::Policy::custom(move |attempt| {
             if attempt.previous().len() >= 10 {
                 attempt.error("Too many download redirects")
@@ -74,7 +79,40 @@ pub fn download_to_directory(
             }
         }))
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())
+}
+
+pub fn download_to_directory(
+    url: &Url,
+    destination: &Path,
+    shield_enabled: bool,
+) -> Result<SavedDownload, String> {
+    download_with_control(
+        url,
+        destination,
+        shield_enabled,
+        &AtomicBool::new(false),
+        |_, _| {},
+    )
+}
+
+pub fn download_with_control(
+    url: &Url,
+    destination: &Path,
+    shield_enabled: bool,
+    cancel: &AtomicBool,
+    mut progress: impl FnMut(u64, Option<u64>),
+) -> Result<SavedDownload, String> {
+    if cancel.load(Ordering::Relaxed) {
+        return Err("Download cancelled".into());
+    }
+    validate_download_url(url.as_str())?;
+    if crate::privacy::adblock_engine::should_block_url(url.as_str(), shield_enabled) {
+        return Err("Download blocked by the privacy shield".into());
+    }
+    std::fs::create_dir_all(destination)
+        .map_err(|e| format!("Could not open Downloads folder: {e}"))?;
+    let client = shared_client(shield_enabled)?;
     let mut response = client
         .get(url.clone())
         .send()
@@ -87,9 +125,34 @@ pub fn download_to_directory(
             )
         })?;
     let mut temporary = tempfile::NamedTempFile::new_in(destination).map_err(|e| e.to_string())?;
-    response
-        .copy_to(temporary.as_file_mut())
-        .map_err(|_| "Download interrupted before completion")?;
+    let total = response.content_length();
+    let mut received = 0;
+    let started = Instant::now();
+    let mut buffer = [0; 64 * 1024];
+    progress(0, total);
+    loop {
+        if cancel.load(Ordering::Relaxed) {
+            return Err("Download cancelled".into());
+        }
+        if started.elapsed() > Duration::from_secs(3600) {
+            return Err("Download time limit exceeded".into());
+        }
+        let count = response
+            .read(&mut buffer)
+            .map_err(|_| "Download interrupted before completion")?;
+        if count == 0 {
+            break;
+        }
+        temporary
+            .as_file_mut()
+            .write_all(&buffer[..count])
+            .map_err(|e| e.to_string())?;
+        received += count as u64;
+        progress(received, total);
+    }
+    if cancel.load(Ordering::Relaxed) {
+        return Err("Download cancelled".into());
+    }
     temporary.as_file().sync_all().map_err(|e| e.to_string())?;
     let base_name = file_name(response.url());
     for number in 0..10_000 {
@@ -104,6 +167,7 @@ pub fn download_to_directory(
                 return Ok(SavedDownload {
                     file_name: name,
                     path,
+                    bytes: received,
                 })
             }
             Err(error) if error.error.kind() == std::io::ErrorKind::AlreadyExists => {
@@ -122,6 +186,28 @@ mod tests {
         io::{Read, Write},
         net::TcpListener,
     };
+
+    #[test]
+    fn cancellation_removes_partial_files_and_client_pools_are_reused() {
+        let directory = tempfile::tempdir().unwrap();
+        let cancel = AtomicBool::new(false);
+        let url = server("200 OK", &"a".repeat(200_000));
+        let result = download_with_control(&url, directory.path(), true, &cancel, |received, _| {
+            if received > 0 {
+                cancel.store(true, Ordering::Relaxed);
+            }
+        });
+        assert_eq!(result.err().as_deref(), Some("Download cancelled"));
+        assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 0);
+        assert!(std::ptr::eq(
+            shared_client(true).unwrap(),
+            shared_client(true).unwrap()
+        ));
+        assert!(!std::ptr::eq(
+            shared_client(true).unwrap(),
+            shared_client(false).unwrap()
+        ));
+    }
 
     fn server(status: &str, body: &str) -> Url {
         raw_server(format!(

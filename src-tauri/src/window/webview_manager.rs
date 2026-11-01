@@ -98,6 +98,10 @@ fn ensure_tab_webview(
     let app_handle_for_nav = app.clone();
 
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
+        .on_download(crate::downloads::native::handler(
+            app.clone(),
+            tab_id.to_string(),
+        ))
         .initialization_script(include_str!("page_activity.js").replace(
             "__ACTIVITY_TOKEN__",
             &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),

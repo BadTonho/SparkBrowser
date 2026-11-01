@@ -33,6 +33,12 @@ A detec??o de atividade ? uma tentativa para formul?rios DOM e ?udio/v?deo do do
 
 Adi??es de esquema e ?ndices cronol?gicos usam migra??es transacionais nomeadas. O `user_version` de paletas existente ? importado para o registro compartilhado sem reaplicar uma migra??o conclu?da. Testes cobrem atualiza??o de sess?es antigas, idempot?ncia, rollback e restaura??o de fixa??o.
 
+## Downloads
+
+Downloads manuais por URL s?o tarefas com revis?o, progresso, cancelamento e fila limitada a 64 tarefas pendentes. Dois slots de sem?foro compartilhados cobrem transfer?ncias manuais e iniciadas por p?ginas. Clientes HTTP s?o reutilizados por pol?tica do escudo, incluindo valida??o de redirecionamentos. O cancelamento cooperativo verifica cada leitura; uma opera??o de rede bloqueada pode levar at? seu timeout de 15 segundos para terminar. Arquivos manuais parciais s?o removidos no cancelamento/falha e arquivos existentes nunca s?o substitu?dos.
+
+Downloads nativos das p?ginas mant?m autentica??o do motor e suporte a blobs, com nomes de destino reservados e exclusivos. Quando ambos os slots est?o ocupados, downloads de p?ginas s?o recusados com aviso vis?vel para tentar novamente, em vez de serem repetidos sem cookies. O hook port?til do Tauri n?o exp?e progresso/cancelamento nativo; essas tarefas exibem apenas estado. Transfer?ncias conclu?das s?o registradas separadamente no SQLite. O encerramento normal cancela tarefas manuais e permite at? 20 segundos para limpeza. A finaliza??o abrupta do processo n?o garante limpeza.
+
 ## Etapas restantes
 
 - Busca no histórico, classificação de comandos e armazenamento confiável.

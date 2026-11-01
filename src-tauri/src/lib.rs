@@ -5,7 +5,9 @@ pub mod privacy;
 pub mod state;
 pub mod window;
 
-use commands::downloads::{clear_all_downloads, enqueue_download, get_downloads};
+use commands::downloads::{
+    cancel_download, clear_all_downloads, enqueue_download, get_download_tasks, get_downloads,
+};
 use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_overlay_visibility, set_workspace_switcher_overlay,
@@ -37,6 +39,7 @@ use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVI
 pub fn run() {
     tauri::Builder::default()
         .manage(BrowserState::default())
+        .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
             if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
                 if let Some(state) = window.try_state::<BrowserState>() {
@@ -167,6 +170,8 @@ pub fn run() {
             reorder_tabs,
             move_tab_to_workspace,
             get_downloads,
+            get_download_tasks,
+            cancel_download,
             enqueue_download,
             clear_all_downloads
         ])
@@ -180,6 +185,8 @@ pub fn run() {
                 api.prevent_exit();
                 let app = app.clone();
                 std::thread::spawn(move || {
+                    app.state::<downloads::manager::DownloadManager>()
+                        .shutdown();
                     if app
                         .state::<database::navigation_writer::NavigationWriter>()
                         .flush()

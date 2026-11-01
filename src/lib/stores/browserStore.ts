@@ -24,6 +24,7 @@ import {
   reorderTabs,
   moveTabToWorkspace,
   isTauriRuntime,
+  setTabPinned,
 } from "../services/tauri-bridge";
 
 export const SIDEBAR_EXPANDED_WIDTH = 276;
@@ -361,6 +362,5 @@ export async function toggleTabPin(tabId: string): Promise<void> {
   const tab = get(tabs).find(tab => tab.id === tabId);
   if (!tab) return;
   if (!isTauriRuntime()) { tabs.update(items => items.map(item => item.id === tabId ? { ...item, is_pinned: !item.is_pinned } : item)); return; }
-  const { invoke } = await import("@tauri-apps/api/core");
-  applyTabsSnapshot(await invoke<TabSnapshot>("set_tab_pinned", { tabId, pinned: !tab.is_pinned }));
+  applyTabsSnapshot(await setTabPinned(tabId, !tab.is_pinned));
 }

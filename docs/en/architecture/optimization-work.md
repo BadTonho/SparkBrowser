@@ -33,7 +33,13 @@ Activity detection is best effort for top-level DOM forms and audio/video; it ca
 
 Schema additions and chronological indexes use named transactional migrations. Existing palette `user_version` is imported into the shared migration ledger without reapplying a completed migration. Tests cover legacy session upgrades, idempotence, rollback and pin restoration.
 
+## Downloads
+
+Manual URL downloads run as revisioned tasks with progress, cancellation and a queue bounded to 64 pending tasks. Two shared semaphore slots cover manual and page-initiated transfers. HTTP clients are reused per shield policy, including validation of redirects. Cooperative cancellation checks each read; a blocked network operation can take up to its 15-second timeout to finish. Partial manual files are removed on cancellation/failure and existing files are never replaced.
+
+Native page downloads retain the engine's authentication and blob support and use unique reserved destination names. When both slots are busy, page downloads are rejected with a visible retry message rather than replayed without cookies. The portable Tauri hook does not expose native progress/cancellation; those tasks show status only. Completed transfers are recorded separately in SQLite. Normal shutdown cancels manual tasks and allows up to 20 seconds for cleanup. Abrupt process termination cannot guarantee cleanup.
+
 ## Remaining stages
 
-- Download tasks and local security boundaries.
+- Local security boundaries.
 - Modularization, diagnostics, continuous validation and measured release guidance.

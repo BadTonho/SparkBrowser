@@ -74,6 +74,19 @@ export interface DownloadItem {
   created_at: number;
 }
 
+export interface DownloadTask {
+  id: string;
+  revision: number;
+  file_name: string;
+  url: string;
+  status: "Queued" | "Downloading" | "Cancelling" | "Completed" | "Cancelled" | "Failed";
+  received: number;
+  total: number | null;
+  error: string | null;
+  cancellable: boolean;
+  save_path: string | null;
+}
+
 export interface PrivacyStats {
   shield_enabled: boolean;
   blocked_count: number;
