@@ -1,3 +1,4 @@
+import { safeStorage } from "./storage.js";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -232,20 +233,20 @@ export async function moveTabToWorkspace(
  */
 export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
   if (!isTauriRuntime()) {
-    if (typeof localStorage !== "undefined") {
-      const saved = localStorage.getItem("veloce_workspaces");
+    if (typeof safeStorage !== "undefined") {
+      const saved = safeStorage.getItem("veloce_workspaces");
       if (saved) {
         let parsed: unknown = undefined;
         try {
           parsed = JSON.parse(saved);
         } catch {
-          localStorage.removeItem("veloce_workspaces");
+          safeStorage.removeItem("veloce_workspaces");
         }
 
         if (Array.isArray(parsed) && parsed.every(isWorkspaceItem)) {
           const savedWorkspaces = parsed as WorkspaceItem[];
           const paletteVersion = Number.parseInt(
-            localStorage.getItem(WORKSPACE_PALETTE_MIGRATION_KEY) ?? "0",
+            safeStorage.getItem(WORKSPACE_PALETTE_MIGRATION_KEY) ?? "0",
             10
           );
           if (
@@ -254,8 +255,8 @@ export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
           ) {
             const migrated = migrateLegacyDefaultWorkspaceColors(savedWorkspaces);
             try {
-              localStorage.setItem("veloce_workspaces", JSON.stringify(migrated));
-              localStorage.setItem(
+              safeStorage.setItem("veloce_workspaces", JSON.stringify(migrated));
+              safeStorage.setItem(
                 WORKSPACE_PALETTE_MIGRATION_KEY,
                 String(WORKSPACE_PALETTE_MIGRATION_VERSION)
               );
@@ -275,9 +276,9 @@ export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
 
 export async function fetchActiveWorkspace(): Promise<string> {
   if (!isTauriRuntime()) {
-    return typeof localStorage === "undefined"
+    return typeof safeStorage === "undefined"
       ? "ws-personal"
-      : localStorage.getItem("veloce_active_workspace") ?? "ws-personal";
+      : safeStorage.getItem("veloce_active_workspace") ?? "ws-personal";
   }
   return await invoke<string>("get_active_workspace");
 }
@@ -292,8 +293,8 @@ export async function createWorkspaceProfile(
 ): Promise<WorkspaceItem[]> {
   if (!isTauriRuntime()) {
     const next = [...(await fetchWorkspaces()), workspace];
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("veloce_workspaces", JSON.stringify(next));
+    if (typeof safeStorage !== "undefined") {
+      safeStorage.setItem("veloce_workspaces", JSON.stringify(next));
     }
     return next;
   }
@@ -313,8 +314,8 @@ export async function updateWorkspaceProfile(
     const next = (await fetchWorkspaces()).map((item) =>
       item.id === workspace.id ? workspace : item
     );
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("veloce_workspaces", JSON.stringify(next));
+    if (typeof safeStorage !== "undefined") {
+      safeStorage.setItem("veloce_workspaces", JSON.stringify(next));
     }
     return next;
   }
@@ -348,9 +349,9 @@ export async function deleteWorkspaceProfile(
   const packet = await fetchTabs();
   const savedTabs = Array.isArray(packet) ? packet : packet.tabs;
   const activeId =
-    typeof localStorage === "undefined"
+    typeof safeStorage === "undefined"
       ? "ws-personal"
-      : localStorage.getItem("veloce_active_workspace") ?? "ws-personal";
+      : safeStorage.getItem("veloce_active_workspace") ?? "ws-personal";
   const deletingActive = activeId === workspaceId;
   const nextActiveId = deletingActive
     ? action === "move"
@@ -384,9 +385,9 @@ export async function deleteWorkspaceProfile(
     ...tab,
     is_active: tab.id === activeTab?.id,
   }));
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem("veloce_workspaces", JSON.stringify(remaining));
-    localStorage.setItem("veloce_active_workspace", nextActiveId);
+  if (typeof safeStorage !== "undefined") {
+    safeStorage.setItem("veloce_workspaces", JSON.stringify(remaining));
+    safeStorage.setItem("veloce_active_workspace", nextActiveId);
   }
   return {
     workspaces: remaining,
@@ -423,9 +424,9 @@ export async function clearAllDownloads(): Promise<void> {
 /**
  * SQLite Persistence IPC commands (History & Bookmarks)
  */
-export async function fetchHistory(limit = 50): Promise<HistoryEntry[]> {
+export async function fetchHistory(limit = 50, query = "", before?: { visited_at: number; id: number }): Promise<HistoryEntry[]> {
   if (!isTauriRuntime()) return [];
-  return await invoke<HistoryEntry[]>("get_history", { limit });
+  return await invoke<HistoryEntry[]>("get_history", { limit, query, before: before ?? null });
 }
 
 export async function clearAllHistory(): Promise<void> {

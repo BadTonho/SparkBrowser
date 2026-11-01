@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import {
-    bookmarks,
+    bookmarksByFolder,
     bookmarkFolders,
     showBookmarkContextMenu,
     openBookmarkFolderManager,
@@ -44,9 +44,9 @@
   });
   onDestroy(() => window.removeEventListener("pointerdown", outsideListener));
 
-  let rootBookmarks = $derived($bookmarks.filter((item) => item.folder_id == null));
+  let rootBookmarks = $derived(($bookmarksByFolder.get(null) ?? []));
   let openFolder = $derived($bookmarkFolders.find((folder) => folder.id === openFolderId));
-  let openFolderBookmarks = $derived($bookmarks.filter((item) => item.folder_id === openFolderId));
+  let openFolderBookmarks = $derived(($bookmarksByFolder.get(openFolderId) ?? []));
 </script>
 
 <nav class="bookmark-bar" aria-label="Bookmarks" oncontextmenu={showEmptyContextMenu}>
@@ -76,7 +76,7 @@
         >
           <span aria-hidden="true">📁</span>
           <span class="bookmark-title">{folder.name}</span>
-          <span class="folder-count">{$bookmarks.filter((item) => item.folder_id === folder.id).length}</span>
+          <span class="folder-count">{($bookmarksByFolder.get(folder.id) ?? []).length}</span>
         </button>
       </div>
     {/each}

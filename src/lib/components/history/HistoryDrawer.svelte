@@ -4,6 +4,10 @@
   import { cubicOut } from "svelte/easing";
   import {
     historyEntries,
+    historyBusy,
+    historyError,
+    historyHasMore,
+    loadHistory,
     isHistoryDrawerOpen,
     closeHistoryDrawer,
     wipeBrowsingHistory,
@@ -12,16 +16,13 @@
 
   let filterQuery = $state("");
 
-  let filteredHistory = $derived(
-    $historyEntries.filter((entry) => {
-      const q = filterQuery.trim().toLowerCase();
-      if (!q) return true;
-      return (
-        entry.title.toLowerCase().includes(q) ||
-        entry.url.toLowerCase().includes(q)
-      );
-    })
-  );
+  let filteredHistory = $derived($historyEntries);
+  $effect(() => {
+    if (!$isHistoryDrawerOpen) return;
+    const query = filterQuery;
+    const timer = setTimeout(() => void loadHistory(query), 180);
+    return () => clearTimeout(timer);
+  });
 
   function formatTime(epochSecs: number): string {
     if (!epochSecs) return "";
@@ -80,7 +81,8 @@
         />
       </div>
 
-      <div class="history-list">
+      {#if $historyError}<p role="alert">{$historyError}</p>{/if}
+      <div class="history-list" aria-busy={$historyBusy}>
         {#if filteredHistory.length === 0}
           <div class="empty-state">
             <p>No history entries found.</p>
@@ -99,6 +101,7 @@
             </button>
           {/each}
         {/if}
+        {#if $historyHasMore}<button disabled={$historyBusy} onclick={() => loadHistory(filterQuery, true)}>Load more</button>{/if}
       </div>
     </div>
   </div>

@@ -1,3 +1,4 @@
+import { safeStorage } from "../services/storage.js";
 import { get, writable } from "svelte/store";
 import { setKeyboardShortcuts as syncKeyboardShortcuts } from "../services/tauri-bridge";
 
@@ -64,9 +65,9 @@ function isCombo(value: unknown): value is ShortcutCombo {
 
 function loadInitialShortcuts(): ShortcutMap {
   const fallback = defaultsMap();
-  if (typeof localStorage === "undefined") return fallback;
+  if (typeof safeStorage === "undefined") return fallback;
   try {
-    const stored: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    const stored: unknown = JSON.parse(safeStorage.getItem(STORAGE_KEY) ?? "null");
     if (!stored || typeof stored !== "object") return fallback;
     const source = stored as Record<string, unknown>;
     for (const definition of SHORTCUT_DEFINITIONS) {
@@ -141,8 +142,8 @@ export function setShortcutBinding(id: string, binding: ShortcutCombo): string |
 
   const next = { ...current, [id]: [candidate] };
   keyboardShortcuts.set(next);
-  if (typeof localStorage !== "undefined") {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* Keep the in-memory setting. */ }
+  if (typeof safeStorage !== "undefined") {
+    try { safeStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* Keep the in-memory setting. */ }
   }
   void syncKeyboardShortcuts(next).catch(() => undefined);
   return undefined;

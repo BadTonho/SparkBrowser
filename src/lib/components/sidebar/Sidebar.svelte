@@ -8,12 +8,13 @@
   } from "../../stores/browserStore";
   import {
     bookmarks,
+    bookmarksByFolder,
     bookmarkFolders,
     showBookmarkContextMenu,
   } from "../../stores/persistenceStore";
   import { tabLayout } from "../../stores/settingsStore";
 
-  let rootBookmarks = $derived($bookmarks.filter((item) => item.folder_id == null));
+  let rootBookmarks = $derived(($bookmarksByFolder.get(null) ?? []));
 
   function showEmptyContextMenu(event: MouseEvent): void {
     if (event.target instanceof Element && event.target.closest(".quick-card, .bookmark-folder summary")) return;
@@ -53,7 +54,7 @@
     {/if}
 
     {#each $bookmarkFolders as folder (folder.id)}
-      {@const folderBookmarks = $bookmarks.filter((item) => item.folder_id === folder.id)}
+      {@const folderBookmarks = ($bookmarksByFolder.get(folder.id) ?? [])}
       <details class="bookmark-folder" open={false}>
         <summary oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "folder", folder })}>
           <span aria-hidden="true">📁</span><span>{folder.name}</span><span class="folder-count">{folderBookmarks.length}</span>

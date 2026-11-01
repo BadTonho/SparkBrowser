@@ -1,5 +1,7 @@
 use crate::database::bookmarks_repo::{self, BookmarkData};
-use crate::database::history_repo::{clear_all_history, get_recent_history, HistoryEntry};
+use crate::database::history_repo::{
+    clear_all_history, search_history, HistoryCursor, HistoryEntry,
+};
 use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, Manager, State};
 
@@ -8,12 +10,14 @@ pub async fn get_history(
     app: AppHandle,
     state: State<'_, BrowserState>,
     limit: Option<usize>,
+    query: Option<String>,
+    before: Option<HistoryCursor>,
 ) -> Result<Vec<HistoryEntry>, String> {
     flush_navigation(app).await?;
     let max_items = limit.unwrap_or(50).clamp(1, 200);
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db_guard.as_ref() {
-        return get_recent_history(conn, max_items);
+        return search_history(conn, max_items, &query.unwrap_or_default(), before.as_ref());
     }
     Ok(Vec::new())
 }

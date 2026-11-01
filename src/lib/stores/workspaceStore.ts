@@ -1,3 +1,4 @@
+import { safeStorage } from "../services/storage.js";
 import { writable, get } from "svelte/store";
 import type { WorkspaceItem } from "../types/browser";
 import {
@@ -97,7 +98,7 @@ export async function activateWorkspace(workspaceId: string): Promise<void> {
     return;
   }
   activeWorkspaceId.set(workspaceId);
-  if (typeof localStorage !== "undefined") localStorage.setItem("veloce_active_workspace", workspaceId);
+  if (typeof safeStorage !== "undefined") safeStorage.setItem("veloce_active_workspace", workspaceId);
 }
 
 export function createWorkspaceDraft(): WorkspaceItem {
@@ -153,9 +154,9 @@ export async function removeWorkspaceProfile(
   workspaces.set(result.workspaces);
   activeWorkspaceId.set(result.active_workspace_id);
   applyTabsSnapshot(result.tabs);
-  if (typeof localStorage !== "undefined") {
+  if (typeof safeStorage !== "undefined") {
     if (!isTauriRuntime()) {
-      localStorage.setItem("veloce_active_workspace", result.active_workspace_id);
+      safeStorage.setItem("veloce_active_workspace", result.active_workspace_id);
     }
   }
   const active = result.workspaces.find(

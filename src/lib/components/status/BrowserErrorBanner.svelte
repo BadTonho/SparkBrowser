@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { hasStorageFailure } from "../../services/storage.js";
   import { listen } from "@tauri-apps/api/event";
   import { isTauriRuntime } from "../../services/tauri-bridge";
 
@@ -11,6 +12,9 @@
       message = event.reason instanceof Error ? event.reason.message : String(event.reason);
       event.preventDefault();
     };
+    const storageError = () => { message = "Local preferences could not be read or saved; this session will use memory."; };
+    if (hasStorageFailure()) storageError();
+    window.addEventListener("storage-unavailable", storageError);
     window.addEventListener("unhandledrejection", showError);
     if (isTauriRuntime()) {
       void listen<string>("browser-error", (event) => { message = event.payload; })
@@ -21,6 +25,7 @@
       disposed = true;
       stop?.();
       window.removeEventListener("unhandledrejection", showError);
+      window.removeEventListener("storage-unavailable", storageError);
     };
   });
 </script>

@@ -19,8 +19,13 @@ Address drafts are preserved while editing and reset on an explicit tab change o
 
 Tab snapshots carry monotonic revisions; older replies are ignored. Per-tab navigation patches have their own revision and preserve newer metadata across full snapshots. Generation tokens reject callbacks from replaced views. Dialogs share initial focus, focus containment, Tab wrapping, Escape and restoration, including stacked dialogs and shortcut recording.
 
+## Search and preference storage
+
+History searches all stored visits with a bounded page size, literal wildcard escaping and a stable `(visited_at, id)` cursor. The interface debounces requests and discards stale responses. SQLite LIKE provides its built-in case matching; this is not a Unicode full-text index. Bookmarks are grouped by folder once per change.
+
+Command suggestions are computed only while open, ranked by title/URL relevance, normalized for accents and capped per category. Preference access uses an adapter that handles denied storage and quota errors, retains in-memory state and notifies the user without logging stored values.
+
 ## Remaining stages
 
-- History search, command ranking and reliable storage.
 - Resident WebView limits, download tasks and local security boundaries.
 - Modularization, diagnostics, continuous validation and measured release guidance.

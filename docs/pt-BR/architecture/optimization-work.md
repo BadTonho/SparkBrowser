@@ -19,6 +19,12 @@ Rascunhos do endere?o s?o preservados durante a edi??o e redefinidos na troca ex
 
 Snapshots de abas possuem revis?es monot?nicas; respostas antigas s?o ignoradas. Atualiza??es de navega??o por aba possuem revis?o pr?pria e preservam metadados mais recentes ao receber snapshots completos. Tokens de gera??o rejeitam callbacks de views substitu?das. Di?logos compartilham foco inicial, conten??o do foco, circula??o com Tab, Escape e restaura??o, incluindo di?logos sobrepostos e grava??o de atalhos.
 
+## Busca e armazenamento de prefer?ncias
+
+O hist?rico pesquisa todas as visitas armazenadas com p?ginas limitadas, escape de curingas literais e cursor est?vel `(visited_at, id)`. A interface agrupa a digita??o e descarta respostas atrasadas. O LIKE usa as regras de correspond?ncia de mai?sculas do SQLite; n?o ? um ?ndice Unicode de texto completo. Favoritos s?o agrupados por pasta uma vez por altera??o.
+
+Sugest?es de comandos s?o calculadas somente com a barra aberta, classificadas pela relev?ncia de t?tulo/URL, normalizadas para acentos e limitadas por categoria. O acesso ?s prefer?ncias usa um adaptador que trata armazenamento negado e falta de espa?o, mant?m o estado em mem?ria e avisa o usu?rio sem registrar valores armazenados.
+
 ## Etapas restantes
 
 - Busca no histórico, classificação de comandos e armazenamento confiável.

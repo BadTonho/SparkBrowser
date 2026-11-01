@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { rankCommands, normalizeSearch } from "../../services/command-ranking.js";
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -44,7 +45,7 @@
 
   function buildSuggestions(query: string): CommandItem[] {
     const shortcuts = $keyboardShortcuts;
-    const q = query.trim().toLowerCase();
+    const q = normalizeSearch(query.trim());
     const items: CommandItem[] = [];
 
     if (query.trim().length > 0) {
@@ -79,8 +80,8 @@
     for (const tab of $tabs) {
       if (
         !q ||
-        tab.title.toLowerCase().includes(q) ||
-        tab.url.toLowerCase().includes(q)
+        normalizeSearch(tab.title).includes(q) ||
+        normalizeSearch(tab.url).includes(q)
       ) {
         items.push({
           id: `switch-${tab.id}`,
@@ -102,7 +103,7 @@
 
     // Matching Workspaces
     for (const ws of $workspaces) {
-      if (!q || ws.name.toLowerCase().includes(q) || "workspace".includes(q)) {
+      if (!q || normalizeSearch(ws.name).includes(q) || "workspace".includes(q)) {
         items.push({
           id: `ws-${ws.id}`,
           title: `Switch to ${ws.name} Workspace`,
@@ -119,7 +120,7 @@
 
     // Matching SQLite Bookmarks
     for (const bm of $bookmarks) {
-      if (!q || bm.title.toLowerCase().includes(q) || bm.url.toLowerCase().includes(q)) {
+      if (!q || normalizeSearch(bm.title).includes(q) || normalizeSearch(bm.url).includes(q)) {
         items.push({
           id: `bm-${bm.id}`,
           title: `Bookmark: ${bm.title}`,
@@ -229,15 +230,15 @@
       if (cmd.id === "cmd-toggle-sidebar" && $tabLayout !== "vertical") {
         continue;
       }
-      if (!q || cmd.title.toLowerCase().includes(q) || cmd.subtitle.toLowerCase().includes(q)) {
+      if (!q || normalizeSearch(cmd.title).includes(q) || normalizeSearch(cmd.subtitle).includes(q)) {
         items.push(cmd);
       }
     }
 
-    return items.slice(0, 8);
+    return rankCommands(items, query);
   }
 
-  let suggestions = $derived(buildSuggestions($commandQuery));
+  let suggestions = $derived($isCommandBarOpen ? buildSuggestions($commandQuery) : []);
 
   async function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") {

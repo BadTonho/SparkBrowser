@@ -1,3 +1,4 @@
+import { safeStorage } from "../services/storage.js";
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility } from "../services/tauri-bridge";
 import {
@@ -15,10 +16,10 @@ const AUTO_HIBERNATE_STORAGE_KEY = "veloce_auto_hibernate_mode";
 const AUTO_HIBERNATE_MODES: AutoHibernateMode[] = [5, 10, 30, "auto", "off"];
 
 function getInitialAutoHibernateMode(): AutoHibernateMode {
-  if (typeof localStorage === "undefined") return 10;
+  if (typeof safeStorage === "undefined") return 10;
 
   try {
-    const saved = localStorage.getItem(AUTO_HIBERNATE_STORAGE_KEY);
+    const saved = safeStorage.getItem(AUTO_HIBERNATE_STORAGE_KEY);
     if (saved === "5" || saved === "10" || saved === "30") return Number(saved) as 5 | 10 | 30;
     return AUTO_HIBERNATE_MODES.includes(saved as AutoHibernateMode)
       ? (saved as AutoHibernateMode)
@@ -34,9 +35,9 @@ export function setAutoHibernateMode(mode: AutoHibernateMode): void {
   if (!AUTO_HIBERNATE_MODES.includes(mode)) return;
   autoHibernateMode.set(mode);
 
-  if (typeof localStorage === "undefined") return;
+  if (typeof safeStorage === "undefined") return;
   try {
-    localStorage.setItem(AUTO_HIBERNATE_STORAGE_KEY, String(mode));
+    safeStorage.setItem(AUTO_HIBERNATE_STORAGE_KEY, String(mode));
   } catch {
     // Keep the current setting when storage is unavailable.
   }
@@ -53,10 +54,10 @@ export {
 const BOOKMARKS_BAR_STORAGE_KEY = "veloce_show_bookmarks_bar";
 
 function getInitialShowBookmarksBar(): boolean {
-  if (typeof localStorage === "undefined") return true;
+  if (typeof safeStorage === "undefined") return true;
 
   try {
-    const saved = localStorage.getItem(BOOKMARKS_BAR_STORAGE_KEY);
+    const saved = safeStorage.getItem(BOOKMARKS_BAR_STORAGE_KEY);
     if (saved === "true") return true;
     if (saved === "false") return false;
     return true;
@@ -69,10 +70,10 @@ export const showBookmarksBar = writable<boolean>(getInitialShowBookmarksBar());
 
 export function setShowBookmarksBar(visible: boolean): void {
   showBookmarksBar.set(visible);
-  if (typeof localStorage === "undefined") return;
+  if (typeof safeStorage === "undefined") return;
 
   try {
-    localStorage.setItem(BOOKMARKS_BAR_STORAGE_KEY, String(visible));
+    safeStorage.setItem(BOOKMARKS_BAR_STORAGE_KEY, String(visible));
   } catch {
     // Keep the current visual setting even when storage is unavailable.
   }
@@ -87,10 +88,10 @@ export const MAX_OVERLAY_BLUR_PX = 24;
 const OVERLAY_BLUR_STORAGE_KEY = "veloce_overlay_blur_px";
 
 function getInitialOverlayBlurPx(): number {
-  if (typeof localStorage === "undefined") return DEFAULT_OVERLAY_BLUR_PX;
+  if (typeof safeStorage === "undefined") return DEFAULT_OVERLAY_BLUR_PX;
 
   try {
-    const saved = localStorage.getItem(OVERLAY_BLUR_STORAGE_KEY);
+    const saved = safeStorage.getItem(OVERLAY_BLUR_STORAGE_KEY);
     if (saved === null || saved.trim() === "") return DEFAULT_OVERLAY_BLUR_PX;
 
     const value = Number(saved);
@@ -117,9 +118,9 @@ export function setOverlayBlurPx(value: number): void {
   overlayBlurPx.set(next);
   applyOverlayBlurPx(next);
 
-  if (typeof localStorage !== "undefined") {
+  if (typeof safeStorage !== "undefined") {
     try {
-      localStorage.setItem(OVERLAY_BLUR_STORAGE_KEY, String(next));
+      safeStorage.setItem(OVERLAY_BLUR_STORAGE_KEY, String(next));
     } catch {
       // Keep the current visual setting even when storage is unavailable.
     }
@@ -142,8 +143,8 @@ const settingsCategories: SettingsCategory[] = [
 ];
 
 function getInitialSettingsCategory(): SettingsCategory {
-  if (typeof localStorage === "undefined") return "appearance_layout";
-  const saved = localStorage.getItem("veloce_settings_category");
+  if (typeof safeStorage === "undefined") return "appearance_layout";
+  const saved = safeStorage.getItem("veloce_settings_category");
   return settingsCategories.includes(saved as SettingsCategory)
     ? (saved as SettingsCategory)
     : "appearance_layout";
@@ -155,8 +156,8 @@ export const activeSettingsCategory = writable<SettingsCategory>(
 
 export function setActiveSettingsCategory(category: SettingsCategory): void {
   activeSettingsCategory.set(category);
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem("veloce_settings_category", category);
+  if (typeof safeStorage !== "undefined") {
+    safeStorage.setItem("veloce_settings_category", category);
   }
 }
 
@@ -166,10 +167,10 @@ export type WorkspaceSwitcherDisplay = "toolbar" | "popup";
 const WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY = "veloce_workspace_switcher_display";
 
 function getInitialWorkspaceSwitcherDisplay(): WorkspaceSwitcherDisplay {
-  if (typeof localStorage === "undefined") return "toolbar";
+  if (typeof safeStorage === "undefined") return "toolbar";
 
   try {
-    const saved = localStorage.getItem(WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY);
+    const saved = safeStorage.getItem(WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY);
     return saved === "popup" ? "popup" : "toolbar";
   } catch {
     return "toolbar";
@@ -182,21 +183,21 @@ export const workspaceSwitcherDisplay = writable<WorkspaceSwitcherDisplay>(
 
 export function setWorkspaceSwitcherDisplay(display: WorkspaceSwitcherDisplay): void {
   workspaceSwitcherDisplay.set(display);
-  if (typeof localStorage === "undefined") return;
+  if (typeof safeStorage === "undefined") return;
 
   try {
-    localStorage.setItem(WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY, display);
+    safeStorage.setItem(WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY, display);
   } catch {
     // Keep the current visual setting even when storage is unavailable.
   }
 }
 
 const initialTabLayout: TabLayout = (() => {
-  if (typeof localStorage === "undefined") return "horizontal";
-  const saved = localStorage.getItem("veloce_tab_layout");
+  if (typeof safeStorage === "undefined") return "horizontal";
+  const saved = safeStorage.getItem("veloce_tab_layout");
   if (saved === "vertical" || saved === "sidebar") {
     if (saved === "sidebar") {
-      localStorage.setItem("veloce_tab_layout", "vertical");
+      safeStorage.setItem("veloce_tab_layout", "vertical");
     }
     return "vertical";
   }
@@ -206,7 +207,7 @@ const initialTabLayout: TabLayout = (() => {
     saved === "below_omnibox"
   ) {
     if (saved !== "horizontal") {
-      localStorage.setItem("veloce_tab_layout", "horizontal");
+      safeStorage.setItem("veloce_tab_layout", "horizontal");
     }
     return "horizontal";
   }
@@ -217,8 +218,8 @@ export const tabLayout = writable<TabLayout>(initialTabLayout);
 
 export function setTabLayout(layout: TabLayout): void {
   tabLayout.set(layout);
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem("veloce_tab_layout", layout);
+  if (typeof safeStorage !== "undefined") {
+    safeStorage.setItem("veloce_tab_layout", layout);
   }
 }
 

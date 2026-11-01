@@ -1,4 +1,4 @@
-import { writable, get } from "svelte/store";
+import { writable, derived, get } from "svelte/store";
 import type { BookmarkData, BookmarkFolder, BookmarkItem, HistoryEntry } from "../types/browser";
 import {
   fetchBookmarkData,
@@ -40,6 +40,22 @@ export const bookmarkEditorState = writable<BookmarkEditorState>(null);
 export const bookmarkContextMenuState = writable<BookmarkContextMenuState>(null);
 export const historyEntries = writable<HistoryEntry[]>([]);
 export const isHistoryDrawerOpen = writable<boolean>(false);
+export const historyHasMore = writable(false);
+export const historyBusy = writable(false);
+export const historyError = writable("");
+let historyQuery = "";
+let historyRevision = 0;
+
+export const bookmarksByFolder = derived(bookmarks, items => {
+  const groups = new Map<number | null, BookmarkItem[]>();
+  for (const item of items) {
+    const id = item.folder_id ?? null;
+    const group = groups.get(id) ?? [];
+    group.push(item);
+    groups.set(id, group);
+  }
+  return groups;
+});
 
 function applyBookmarkData(data: BookmarkData): void {
   bookmarks.set(data.bookmarks);
@@ -192,23 +208,44 @@ export async function deleteBookmarkFolder(folderId: number): Promise<void> {
   applyBookmarkData(await deleteBookmarkFolderCommand(folderId));
 }
 
-export async function loadHistory(): Promise<void> {
-  const list = await fetchHistory(60);
-  historyEntries.set(list);
+export async function loadHistory(query = historyQuery, more = false): Promise<void> {
+  if (more && (get(historyBusy) || !get(historyHasMore))) return;
+  const revision = ++historyRevision;
+  const current = get(historyEntries);
+  const before = more ? current.at(-1) : undefined;
+  historyQuery = query;
+  historyBusy.set(true);
+  historyError.set("");
+  try {
+    const list = await fetchHistory(61, query, before);
+    if (revision !== historyRevision) return;
+    historyHasMore.set(list.length > 60);
+    historyEntries.set(more ? [...current, ...list.slice(0, 60)] : list.slice(0, 60));
+  } catch (error) {
+    if (revision === historyRevision) historyError.set(String(error));
+  } finally {
+    if (revision === historyRevision) historyBusy.set(false);
+  }
 }
 
 export async function wipeBrowsingHistory(): Promise<void> {
+  ++historyRevision;
   await clearAllHistory();
+  ++historyRevision;
   historyEntries.set([]);
+  historyHasMore.set(false);
+  historyBusy.set(false);
 }
 
 export async function openHistoryDrawer(): Promise<void> {
-  await loadHistory();
   isHistoryDrawerOpen.set(true);
   await setOverlayVisibility(true, "history");
+  await loadHistory("");
 }
 
 export async function closeHistoryDrawer(): Promise<void> {
+  ++historyRevision;
+  historyBusy.set(false);
   isHistoryDrawerOpen.set(false);
   await setOverlayVisibility(false, "history");
 }

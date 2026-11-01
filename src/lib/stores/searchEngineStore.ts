@@ -1,3 +1,4 @@
+import { safeStorage } from "../services/storage.js";
 import { writable } from "svelte/store";
 
 export const SEARCH_ENGINES = [
@@ -28,10 +29,10 @@ function isSearchEngine(value: string | null): value is SearchEngine {
 }
 
 function getInitialSearchEngine(): SearchEngine {
-  if (typeof localStorage === "undefined") return DEFAULT_SEARCH_ENGINE;
+  if (typeof safeStorage === "undefined") return DEFAULT_SEARCH_ENGINE;
 
   try {
-    const saved = localStorage.getItem(SEARCH_ENGINE_STORAGE_KEY);
+    const saved = safeStorage.getItem(SEARCH_ENGINE_STORAGE_KEY);
     return isSearchEngine(saved) ? saved : DEFAULT_SEARCH_ENGINE;
   } catch {
     return DEFAULT_SEARCH_ENGINE;
@@ -44,10 +45,10 @@ export function setDefaultSearchEngine(engine: SearchEngine): void {
   const next = isSearchEngine(engine) ? engine : DEFAULT_SEARCH_ENGINE;
   defaultSearchEngine.set(next);
 
-  if (typeof localStorage === "undefined") return;
+  if (typeof safeStorage === "undefined") return;
 
   try {
-    localStorage.setItem(SEARCH_ENGINE_STORAGE_KEY, next);
+    safeStorage.setItem(SEARCH_ENGINE_STORAGE_KEY, next);
   } catch {
     // Keep the current selection if browser storage is unavailable.
   }
