@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy, tick } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import {
@@ -30,20 +31,166 @@
   ];
 
   const shortcutsList = [
-    { keys: "Ctrl + 1..9", desc: "Switch to Tab 1–9 (Ctrl+9: Last Tab)" },
-    { keys: "Hold Alt (2 sec)", desc: "Open the workspace picker" },
-    { keys: "Alt + 1..9", desc: "Switch workspaces by list order and show a confirmation" },
-    { keys: "Alt + ↑ / ↓", desc: "Move Active Tab Up / Down" },
-    { keys: "Ctrl + T / Ctrl + K", desc: "Open Floating Command Bar" },
-    { keys: "Ctrl + L", desc: "Edit Current URL in Command Bar" },
-    { keys: "Ctrl + B", desc: "Toggle Sidebar (Vertical Layout)" },
-    { keys: "Alt + Z", desc: "Toggle Fullscreen Zen / Focus Mode" },
-    { keys: "Ctrl + H", desc: "Open SQLite Browsing History" },
-    { keys: "Ctrl + J", desc: "Open Download Manager" },
-    { keys: "Ctrl + ,", desc: "Open Settings & Shortcuts Panel" },
-    { keys: "Ctrl + W", desc: "Close Active Tab" },
-    { keys: "Ctrl + R", desc: "Reload Active Tab" },
+    { id: "shortcut-switch-tabs", keys: "Ctrl + 1..9", desc: "Switch to Tab 1–9 (Ctrl+9: Last Tab)" },
+    { id: "shortcut-workspace-picker", keys: "Hold Alt (0.4 sec)", desc: "Open the workspace picker" },
+    { id: "shortcut-switch-workspaces", keys: "Alt + 1..9", desc: "Switch workspaces by list order and show a confirmation" },
+    { id: "shortcut-move-tab", keys: "Alt + ↑ / ↓", desc: "Move Active Tab Up / Down" },
+    { id: "shortcut-command-bar", keys: "Ctrl + T / Ctrl + K", desc: "Open Floating Command Bar" },
+    { id: "shortcut-edit-url", keys: "Ctrl + L", desc: "Edit Current URL in Command Bar" },
+    { id: "shortcut-sidebar", keys: "Ctrl + B", desc: "Toggle Sidebar (Vertical Layout)" },
+    { id: "shortcut-zen", keys: "Alt + Z", desc: "Toggle Fullscreen Zen / Focus Mode" },
+    { id: "shortcut-history", keys: "Ctrl + H", desc: "Open SQLite Browsing History" },
+    { id: "shortcut-downloads", keys: "Ctrl + J", desc: "Open Download Manager" },
+    { id: "shortcut-settings", keys: "Ctrl + ,", desc: "Open Settings & Shortcuts Panel" },
+    { id: "shortcut-close-tab", keys: "Ctrl + W", desc: "Close Active Tab" },
+    { id: "shortcut-reload-tab", keys: "Ctrl + R", desc: "Reload Active Tab" },
   ];
+
+  type SearchEntry = {
+    id: string;
+    title: string;
+    description: string;
+    category: SettingsCategory;
+    targetId: string;
+    keywords?: string;
+  };
+
+  const searchableSettings: SearchEntry[] = [
+    {
+      id: "browser-layout",
+      title: "Browser Layout",
+      description: "Choose a horizontal browser layout or a vertical sidebar layout.",
+      category: "appearance_layout",
+      targetId: "setting-browser-layout",
+      keywords: "horizontal vertical tabs sidebar workspaces bookmarks",
+    },
+    {
+      id: "zen-mode",
+      title: "Zen / Focus Mode",
+      description: "Hide browser controls so websites use the full viewport.",
+      category: "appearance_layout",
+      targetId: "setting-zen-mode",
+      keywords: "fullscreen focus alt z",
+    },
+    {
+      id: "default-search-engine",
+      title: "Default Search Engine",
+      description: "Used when typing search queries in the Omnibox.",
+      category: "search_navigation",
+      targetId: "setting-default-search-engine",
+      keywords: "search omnibox web duckduckgo",
+    },
+    {
+      id: "workspace-profile",
+      title: "Workspace Identity & Theme",
+      description: "Choose a workspace to edit its name, emoji, colors, or manage profiles.",
+      category: "workspaces",
+      targetId: "setting-workspace-profiles",
+      keywords: "workspaces personal work study gaming name rename emoji icon theme primary secondary accent colors create delete",
+    },
+    {
+      id: "adblock-shield",
+      title: "Native Rust AdBlock Shield",
+      description: "Block ad domains and trackers at the network and DOM layers.",
+      category: "performance_privacy",
+      targetId: "setting-adblock-shield",
+      keywords: "privacy ads trackers block protection",
+    },
+    {
+      id: "auto-hibernate",
+      title: "Auto-Hibernate Inactive Tabs",
+      description: "Suspend background WebViews after an idle threshold.",
+      category: "performance_privacy",
+      targetId: "setting-auto-hibernate",
+      keywords: "performance memory ram 5m 10m 30m",
+    },
+    ...shortcutsList.map((shortcut) => ({
+      id: shortcut.id,
+      title: shortcut.desc,
+      description: shortcut.keys,
+      category: "shortcuts" as const,
+      targetId: shortcut.id,
+      keywords: "keyboard shortcut",
+    })),
+  ];
+
+  let searchQuery = $state("");
+  let highlightedTargetTimer: ReturnType<typeof setTimeout> | undefined;
+  let highlightedTarget: HTMLElement | undefined;
+  const hasSearchQuery = $derived(searchQuery.trim().length > 0);
+  const searchResults = $derived.by(() => {
+    const tokens = normalizeSearchText(searchQuery).trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return [];
+
+    return searchableSettings.filter((entry) => {
+      const category = categories.find((item) => item.id === entry.category);
+      const searchableText = normalizeSearchText(
+        `${entry.title} ${entry.description} ${entry.keywords ?? ""} ${category?.label ?? ""}`
+      );
+      return tokens.every((token) => searchableText.includes(token));
+    });
+  });
+
+  function normalizeSearchText(value: string): string {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+
+  function selectCategory(category: SettingsCategory): void {
+    searchQuery = "";
+    setActiveSettingsCategory(category);
+  }
+
+  function clearSearch(): void {
+    searchQuery = "";
+    document.getElementById("settings-search-input")?.focus();
+  }
+
+  function handleSearchKeydown(event: KeyboardEvent): void {
+    if (event.key === "ArrowDown" && searchResults.length > 0) {
+      event.preventDefault();
+      document.querySelector<HTMLButtonElement>(".settings-search-result")?.focus();
+    } else if (event.key === "Enter" && searchResults.length > 0) {
+      event.preventDefault();
+      void selectSearchResult(searchResults[0]);
+    }
+  }
+
+  async function selectSearchResult(entry: SearchEntry): Promise<void> {
+    searchQuery = "";
+    setActiveSettingsCategory(entry.category);
+    await tick();
+
+    const target = document.getElementById(entry.targetId);
+    if (!target) return;
+
+    const focusTarget =
+      target.querySelector<HTMLElement>("button, input, select, [tabindex='0']") ?? target;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+    focusTarget.focus({ preventScroll: true });
+    highlightedTarget?.classList.remove("search-target-highlight");
+    target.classList.add("search-target-highlight");
+    highlightedTarget = target;
+
+    if (highlightedTargetTimer) clearTimeout(highlightedTargetTimer);
+    highlightedTargetTimer = setTimeout(() => {
+      target.classList.remove("search-target-highlight");
+      highlightedTarget = undefined;
+      highlightedTargetTimer = undefined;
+    }, 1500);
+  }
+
+  $effect(() => {
+    if ($isSettingsModalOpen) searchQuery = "";
+  });
+
+  onDestroy(() => {
+    if (highlightedTargetTimer) clearTimeout(highlightedTargetTimer);
+    highlightedTarget?.classList.remove("search-target-highlight");
+  });
 
   function handleDialogKeydown(event: KeyboardEvent): void {
     if (event.key === "Escape") {
@@ -85,6 +232,29 @@
     >
       <div class="settings-header">
         <span class="settings-title">⚙️ Browser Settings</span>
+        <div class="settings-search">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            id="settings-search-input"
+            type="search"
+            bind:value={searchQuery}
+            onkeydown={handleSearchKeydown}
+            placeholder="Search settings..."
+            aria-label="Search all settings"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          {#if hasSearchQuery}
+            <button
+              class="clear-search-btn"
+              type="button"
+              onclick={clearSearch}
+              aria-label="Clear settings search"
+            >
+              ×
+            </button>
+          {/if}
+        </div>
         <button
           class="close-btn"
           aria-label="Close settings"
@@ -101,7 +271,7 @@
               class="category-button"
               class:active={$activeSettingsCategory === category.id}
               aria-pressed={$activeSettingsCategory === category.id}
-              onclick={() => setActiveSettingsCategory(category.id)}
+              onclick={() => selectCategory(category.id)}
             >
               <span class="category-icon" aria-hidden="true">{category.icon}</span>
               <span>{category.label}</span>
@@ -109,12 +279,43 @@
           {/each}
         </nav>
 
-        <main class="settings-content">
-          {#if $activeSettingsCategory === "appearance_layout"}
+        <main class="settings-content" aria-live={hasSearchQuery ? "polite" : undefined}>
+          {#if hasSearchQuery}
+            <section class="search-results-panel" aria-labelledby="search-results-heading">
+              <div class="search-results-heading">
+                <h2 class="group-title" id="search-results-heading">Search Results</h2>
+                <span class="search-result-count">{searchResults.length}</span>
+              </div>
+              {#if searchResults.length > 0}
+                <div class="search-results-list">
+                  {#each searchResults as result (result.id)}
+                    {@const category = categories.find((item) => item.id === result.category)}
+                    <button
+                      class="settings-search-result"
+                      onclick={() => selectSearchResult(result)}
+                    >
+                      <span class="search-result-copy">
+                        <span class="search-result-title">{result.title}</span>
+                        <span class="search-result-description">{result.description}</span>
+                      </span>
+                      <span class="search-result-category">
+                        <span aria-hidden="true">{category?.icon}</span>
+                        {category?.label}
+                      </span>
+                    </button>
+                  {/each}
+                </div>
+              {:else}
+                <p class="search-empty-state" role="status">
+                  No settings found for “{searchQuery}”. Try another search.
+                </p>
+              {/if}
+            </section>
+          {:else if $activeSettingsCategory === "appearance_layout"}
             <section class="setting-group" aria-labelledby="appearance-heading">
               <h2 class="group-title" id="appearance-heading">🖥️ Appearance & Layout</h2>
 
-              <div class="setting-row">
+              <div class="setting-row" id="setting-browser-layout" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Browser Layout</span>
                   <span class="row-desc">Choose a horizontal browser layout or a vertical sidebar layout</span>
@@ -139,7 +340,7 @@
                 </div>
               </div>
 
-              <div class="setting-row">
+              <div class="setting-row" id="setting-zen-mode" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Zen / Focus Mode (Alt + Z)</span>
                   <span class="row-desc">Hides all browser chrome so websites use 100% of the viewport</span>
@@ -156,7 +357,7 @@
           {:else if $activeSettingsCategory === "search_navigation"}
             <section class="setting-group" aria-labelledby="search-heading">
               <h2 class="group-title" id="search-heading">🔎 Search & Navigation</h2>
-              <div class="setting-row">
+              <div class="setting-row" id="setting-default-search-engine" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Default Search Engine</span>
                   <span class="row-desc">Used when typing search queries in the Omnibox</span>
@@ -170,7 +371,7 @@
             <section class="setting-group" aria-labelledby="performance-heading">
               <h2 class="group-title" id="performance-heading">🚀 Performance & Privacy</h2>
 
-              <div class="setting-row">
+              <div class="setting-row" id="setting-adblock-shield" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Native Rust AdBlock Shield</span>
                   <span class="row-desc">Blocks ad domains & trackers at the network/DOM layer</span>
@@ -184,7 +385,7 @@
                 </button>
               </div>
 
-              <div class="setting-row">
+              <div class="setting-row" id="setting-auto-hibernate" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Auto-Hibernate Inactive Tabs</span>
                   <span class="row-desc">Suspends background WebViews after idle threshold ({$autoHibernateMinutes} min)</span>
@@ -208,7 +409,7 @@
               <h2 class="group-title" id="shortcuts-heading">⌨️ Keyboard Shortcuts</h2>
               <div class="shortcuts-grid">
                 {#each shortcutsList as item}
-                  <div class="shortcut-row">
+                  <div class="shortcut-row" id={item.id} tabindex="-1">
                     <span class="sc-desc">{item.desc}</span>
                     <kbd class="sc-keys">{item.keys}</kbd>
                   </div>
@@ -255,16 +456,80 @@
     border-bottom: 1px solid var(--border-subtle);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 16px;
   }
 
   .settings-title {
+    flex: 0 0 auto;
     font-size: 14px;
     font-weight: 700;
     color: var(--text-primary);
   }
 
+  .settings-search {
+    min-width: 0;
+    width: min(38vw, 420px);
+    height: 34px;
+    margin-left: 2px;
+    padding: 0 9px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+    color: var(--text-muted);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .settings-search:focus-within {
+    border-color: color-mix(in srgb, var(--accent-primary) 65%, var(--border-subtle));
+    background: rgba(255, 255, 255, 0.055);
+  }
+
+  .search-icon {
+    flex: 0 0 auto;
+    font-size: 19px;
+    line-height: 1;
+  }
+
+  .settings-search input {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 12px;
+  }
+
+  .settings-search input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .settings-search input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .clear-search-btn {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    color: var(--text-secondary);
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  .clear-search-btn:hover {
+    background: var(--bg-glass-hover);
+    color: var(--text-primary);
+  }
+
   .close-btn {
+    margin-left: auto;
     width: 28px;
     height: 28px;
     border-radius: 6px;
@@ -342,6 +607,98 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
+  }
+
+  .search-results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-results-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .search-result-count {
+    color: var(--text-muted);
+    font-size: 10px;
+  }
+
+  .search-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .settings-search-result {
+    min-width: 0;
+    width: 100%;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.025);
+    text-align: left;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .settings-search-result:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-subtle));
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .settings-search-result:focus-visible {
+    border-color: var(--accent-primary);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+  }
+
+  .search-result-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .search-result-title {
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .search-result-description {
+    color: var(--text-secondary);
+    font-size: 10.5px;
+  }
+
+  .search-result-category {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+    font-size: 10px;
+  }
+
+  .search-empty-state {
+    margin: 0;
+    padding: 18px 12px;
+    border: 1px dashed var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  :global(.search-target-highlight) {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 3px;
+    border-radius: var(--radius-md);
   }
 
   .setting-group {
@@ -448,6 +805,11 @@
     font-size: 12px;
   }
 
+  .setting-row:focus,
+  .shortcut-row:focus {
+    outline: none;
+  }
+
   .sc-desc {
     color: var(--text-secondary);
   }
@@ -475,9 +837,38 @@
     .settings-content {
       padding: 16px;
     }
+
+    .settings-search {
+      width: auto;
+      flex: 1 1 auto;
+    }
   }
 
   @media (max-width: 560px) {
+    .settings-header {
+      gap: 8px;
+      padding-inline: 10px;
+    }
+
+    .settings-title {
+      max-width: 42%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .settings-search {
+      height: 31px;
+      margin-left: 0;
+      padding-inline: 7px;
+      gap: 5px;
+    }
+
+    .settings-search input {
+      font-size: 11px;
+    }
+
     .category-nav {
       width: 54px;
       flex-basis: 54px;
@@ -510,6 +901,12 @@
     .pill-action,
     .engine-label {
       align-self: flex-start;
+    }
+
+    .settings-search-result {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 7px;
     }
   }
 </style>

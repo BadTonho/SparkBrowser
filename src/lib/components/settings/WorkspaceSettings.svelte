@@ -110,7 +110,12 @@
     <button class="primary-action" onclick={startNewWorkspace}>＋ Create workspace</button>
   </div>
 
-  <div class="workspace-list" aria-label="Workspaces">
+  <div
+    class="workspace-list"
+    id="setting-workspace-profiles"
+    tabindex="-1"
+    aria-label="Workspaces"
+  >
     {#each $workspaces as workspace (workspace.id)}
       <button
         class="workspace-card"
