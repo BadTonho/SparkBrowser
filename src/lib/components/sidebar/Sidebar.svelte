@@ -6,8 +6,14 @@
     sidebarWidth,
     submitNavigation,
   } from "../../stores/browserStore";
-  import { bookmarks } from "../../stores/persistenceStore";
+  import {
+    bookmarks,
+    bookmarkFolders,
+    openBookmarkFolderManager,
+  } from "../../stores/persistenceStore";
   import { tabLayout } from "../../stores/settingsStore";
+
+  let rootBookmarks = $derived($bookmarks.filter((item) => item.folder_id == null));
 </script>
 
 <aside
@@ -19,22 +25,55 @@
     <WorkspaceSwitcher />
 
     <!-- SQLite Bookmarks Grid -->
-    <div class="section-header">
-      <span>BOOKMARKS ({$bookmarks.length})</span>
-    </div>
+    <div class="bookmark-content">
+      <div class="section-header">
+        <span>BOOKMARKS ({$bookmarks.length})</span>
+        <button class="manage-folders" title="Manage bookmark folders" aria-label="Manage bookmark folders" onclick={() => void openBookmarkFolderManager()}>＋</button>
+      </div>
 
-    <div class="quick-links-grid">
-      {#each $bookmarks as item (item.id)}
-        <button
-          class="quick-card"
-          class:active={$currentUrl === item.url}
-          onclick={() => submitNavigation(item.url)}
-          title={item.url}
-        >
-          <span class="quick-icon">{item.icon}</span>
-          <span class="quick-title">{item.title}</span>
-        </button>
-      {/each}
+    {#if rootBookmarks.length > 0}
+      <div class="quick-links-grid">
+        {#each rootBookmarks as item (item.id)}
+          <button
+            class="quick-card"
+            class:active={$currentUrl === item.url}
+            onclick={() => submitNavigation(item.url)}
+            title={item.url}
+          >
+            <span class="quick-icon">{item.icon}</span>
+            <span class="quick-title">{item.title}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
+
+    {#each $bookmarkFolders as folder (folder.id)}
+      {@const folderBookmarks = $bookmarks.filter((item) => item.folder_id === folder.id)}
+      <details class="bookmark-folder" open={false}>
+        <summary><span aria-hidden="true">📁</span><span>{folder.name}</span><span class="folder-count">{folderBookmarks.length}</span></summary>
+        {#if folderBookmarks.length > 0}
+          <div class="quick-links-grid folder-links">
+            {#each folderBookmarks as item (item.id)}
+              <button
+                class="quick-card"
+                class:active={$currentUrl === item.url}
+                onclick={() => submitNavigation(item.url)}
+                title={item.url}
+              >
+                <span class="quick-icon">{item.icon}</span>
+                <span class="quick-title">{item.title}</span>
+              </button>
+            {/each}
+          </div>
+        {:else}
+          <div class="folder-empty">No bookmarks in this folder</div>
+        {/if}
+      </details>
+    {/each}
+
+      {#if $bookmarks.length === 0 && $bookmarkFolders.length === 0}
+        <div class="folder-empty">No bookmarks yet</div>
+      {/if}
     </div>
 
     <!-- Multi-Tab System with Workspace Filtering & Hibernation (Sidebar mode) -->
@@ -65,12 +104,27 @@
   }
 
   .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 10.5px;
     font-weight: 700;
     letter-spacing: 0.8px;
     color: var(--text-muted);
     padding: 0 4px;
   }
+
+  .bookmark-content { min-height: 0; max-height: 40%; overflow-y: auto; scrollbar-width: thin; }
+
+  .manage-folders { padding: 0 5px; color: var(--text-muted); font-size: 15px; }
+  .manage-folders:hover { color: var(--text-primary); }
+  .bookmark-folder { min-width: 0; }
+  .bookmark-folder summary { display: flex; align-items: center; gap: 7px; padding: 5px 4px; color: var(--text-secondary); font-size: 11px; cursor: pointer; list-style: none; }
+  .bookmark-folder summary::-webkit-details-marker { display: none; }
+  .bookmark-folder summary:hover { color: var(--text-primary); }
+  .folder-count { margin-left: auto; color: var(--text-muted); font-size: 10px; }
+  .folder-links { margin-top: 4px; }
+  .folder-empty { padding: 5px 8px; color: var(--text-muted); font-size: 10px; }
 
   .quick-links-grid {
     display: grid;

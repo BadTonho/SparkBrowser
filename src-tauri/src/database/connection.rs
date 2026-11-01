@@ -22,8 +22,8 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
 /// Opens the SQLite connection and ensures all required tables exist.
 pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     let db_path = resolve_db_path(app)?;
-    let conn = Connection::open(db_path)
-        .map_err(|e| format!("Failed to open SQLite database: {}", e))?;
+    let conn =
+        Connection::open(db_path).map_err(|e| format!("Failed to open SQLite database: {}", e))?;
 
     conn.execute_batch(
         "
@@ -43,6 +43,16 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
             url TEXT NOT NULL UNIQUE,
             icon TEXT NOT NULL,
             created_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS bookmark_folders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+            created_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS app_migrations (
+            name TEXT PRIMARY KEY
         );
 
         CREATE TABLE IF NOT EXISTS session_tabs (
@@ -75,13 +85,30 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     )
     .map_err(|e| format!("Failed to initialize database schema: {}", e))?;
 
+    let mut columns = conn
+        .prepare("PRAGMA table_info(bookmarks)")
+        .map_err(|e| format!("Failed to inspect bookmarks schema: {e}"))?;
+    let has_folder_id = columns
+        .query_map([], |row| row.get::<_, String>(1))
+        .map_err(|e| format!("Failed to read bookmarks schema: {e}"))?
+        .filter_map(Result::ok)
+        .any(|name| name == "folder_id");
+    drop(columns);
+    if !has_folder_id {
+        conn.execute(
+            "ALTER TABLE bookmarks ADD COLUMN folder_id INTEGER REFERENCES bookmark_folders(id) ON DELETE SET NULL",
+            [],
+        )
+        .map_err(|e| format!("Failed to add bookmark folder support: {e}"))?;
+    }
+
     // Ensure workspace_id column exists if upgrading from Phase 3 table
     let _ = conn.execute(
         "ALTER TABLE session_tabs ADD COLUMN workspace_id TEXT NOT NULL DEFAULT 'ws-personal'",
         [],
     );
 
-    crate::database::bookmarks_repo::seed_default_bookmarks_if_empty(&conn)?;
+    crate::database::bookmarks_repo::migrate_default_bookmarks_once(&conn)?;
     crate::database::workspace_repo::initialize_workspace_table(&conn)?;
 
     Ok(conn)

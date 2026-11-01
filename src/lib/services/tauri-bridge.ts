@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type {
-  BookmarkItem,
+  BookmarkData,
   DownloadItem,
   HistoryEntry,
   PrivacyStats,
@@ -126,7 +126,8 @@ export type OverlayId =
   | "command-bar"
   | "history"
   | "downloads"
-  | "settings";
+  | "settings"
+  | "bookmark-editor";
 
 const activeOverlayIds = new Set<OverlayId>();
 let overlaySyncQueue: Promise<void> = Promise.resolve();
@@ -393,31 +394,50 @@ export async function clearAllHistory(): Promise<void> {
   await invoke("clear_browsing_history");
 }
 
-export async function fetchBookmarks(): Promise<BookmarkItem[]> {
-  if (!isTauriRuntime()) {
-    return [
-      { id: 1, title: "DuckDuckGo", url: "https://duckduckgo.com", icon: "🦆" },
-      { id: 2, title: "GitHub", url: "https://github.com", icon: "🐙" },
-      { id: 3, title: "Rust Lang", url: "https://www.rust-lang.org", icon: "🦀" },
-      { id: 4, title: "Wikipedia", url: "https://www.wikipedia.org", icon: "🌐" },
-    ];
-  }
-  return await invoke<BookmarkItem[]>("get_bookmarks");
+export async function fetchBookmarkData(): Promise<BookmarkData> {
+  if (!isTauriRuntime()) return { bookmarks: [], folders: [] };
+  return await invoke<BookmarkData>("get_bookmark_data");
 }
 
-export async function toggleBookmarkItem(
+export async function saveBookmarkItem(
+  bookmarkId: number | null,
   title: string,
   url: string,
-  icon?: string
-): Promise<BookmarkItem[]> {
-  if (!isTauriRuntime()) return [];
-  return await invoke<BookmarkItem[]>("toggle_bookmark", {
+  icon: string,
+  folderId: number | null,
+): Promise<BookmarkData> {
+  if (!isTauriRuntime()) return { bookmarks: [], folders: [] };
+  return await invoke<BookmarkData>("save_bookmark", {
+    bookmarkId,
     title,
     url,
-    icon: icon ?? null,
+    icon,
+    folderId,
   });
 }
 
+export async function removeBookmarkItem(bookmarkId: number): Promise<BookmarkData> {
+  if (!isTauriRuntime()) return { bookmarks: [], folders: [] };
+  return await invoke<BookmarkData>("remove_bookmark", { bookmarkId });
+}
+
+export async function createBookmarkFolder(name: string): Promise<BookmarkData> {
+  if (!isTauriRuntime()) return { bookmarks: [], folders: [] };
+  return await invoke<BookmarkData>("create_bookmark_folder", { name });
+}
+
+export async function renameBookmarkFolder(
+  folderId: number,
+  name: string,
+): Promise<BookmarkData> {
+  if (!isTauriRuntime()) return { bookmarks: [], folders: [] };
+  return await invoke<BookmarkData>("rename_bookmark_folder", { folderId, name });
+}
+
+export async function deleteBookmarkFolder(folderId: number): Promise<BookmarkData> {
+  if (!isTauriRuntime()) return { bookmarks: [], folders: [] };
+  return await invoke<BookmarkData>("delete_bookmark_folder", { folderId });
+}
 /**
  * Privacy & Native AdBlock Shield IPC commands
  */

@@ -12,6 +12,7 @@
   import SettingsModal from "./lib/components/settings/SettingsModal.svelte";
   import HorizontalTabBar from "./lib/components/tabs/HorizontalTabBar.svelte";
   import BookmarkBar from "./lib/components/bookmarks/BookmarkBar.svelte";
+  import BookmarkEditor from "./lib/components/bookmarks/BookmarkEditor.svelte";
   import {
     tabs,
     currentUrl,
@@ -287,6 +288,7 @@
   <HistoryDrawer />
   <DownloadsDrawer />
   <SettingsModal />
+  <BookmarkEditor />
   <WorkspaceSwitcherOverlay />
 </div>
 

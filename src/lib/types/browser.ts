@@ -49,6 +49,17 @@ export interface BookmarkItem {
   title: string;
   url: string;
   icon: string;
+  folder_id?: number | null;
+}
+
+export interface BookmarkFolder {
+  id: number;
+  name: string;
+}
+
+export interface BookmarkData {
+  bookmarks: BookmarkItem[];
+  folders: BookmarkFolder[];
 }
 
 export interface DownloadItem {

@@ -40,6 +40,9 @@
 - Choose **Horizontal** or **Vertical** in Settings (`Ctrl + ,`); the selection is remembered across app restarts.
 - **Horizontal:** Tabs stay at the top, and saved bookmarks appear in a horizontal bar below the search bar. Choose whether workspace buttons sit beside the search bar or appear in a floating picker when holding Alt. Toggle the bookmarks bar from Appearance & Layout or the top toolbar; hiding it does not remove bookmarks.
 - **Vertical:** Workspaces, saved bookmarks, and vertical tabs stay together in the collapsible sidebar; the workspace display preference only changes the horizontal layout.
+- Save a page with the address-bar star, then choose its title and folder. Selecting an existing bookmark opens the same editor so it can be renamed, moved to another folder, or removed.
+- Create, rename, and delete one-level bookmark folders. Folders appear as menus in the horizontal bookmarks bar and expandable sections in the vertical sidebar; deleting a folder moves its bookmarks to the root.
+- New installations start without sample bookmarks. Existing databases remove only the original DuckDuckGo, GitHub, Rust Lang, and Wikipedia starter entries once; other saved bookmarks are preserved.
 
 ## 8. Organized Browser Settings
 - Settings are split into **Appearance & Layout**, **Search & Navigation**, **Workspaces & Theme**, **Performance & Privacy**, and **Keyboard Shortcuts**.

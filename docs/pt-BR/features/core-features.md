@@ -40,6 +40,9 @@
 - Escolha **Horizontal** ou **Vertical** nas Configurações (`Ctrl + ,`); a seleção é lembrada ao reabrir o aplicativo.
 - **Horizontal:** As abas ficam no topo e os bookmarks salvos aparecem em uma barra horizontal abaixo da pesquisa. Escolha se os workspaces ficam como botões ao lado da pesquisa ou em um seletor flutuante aberto ao manter Alt pressionado. Oculte ou mostre a barra de bookmarks em Aparência e Layout ou pelo botão na barra superior; ocultá-la não remove os bookmarks.
 - **Vertical:** Os espaços de trabalho, bookmarks salvos e abas verticais ficam juntos na barra lateral retrátil; a preferência de exibição dos workspaces altera somente o layout horizontal.
+- Salve uma página pela estrela da barra de endereço e escolha o título e a pasta. Ao selecionar um bookmark existente, o mesmo editor permite renomeá-lo, movê-lo para outra pasta ou removê-lo.
+- Crie, renomeie e exclua pastas de bookmarks de um nível. Elas aparecem como menus na barra horizontal e seções expansíveis na barra lateral vertical; excluir uma pasta move seus bookmarks para a raiz.
+- Instalações novas começam sem bookmarks de exemplo. Bancos existentes removem uma única vez somente as entradas padrão originais do DuckDuckGo, GitHub, Rust Lang e Wikipedia; os demais bookmarks são preservados.
 
 ## 8. Configurações do Navegador Organizadas
 - As configurações são divididas em **Aparência e Layout**, **Pesquisa e Navegação**, **Espaços de Trabalho e Tema**, **Desempenho e Privacidade** e **Atalhos de Teclado**.

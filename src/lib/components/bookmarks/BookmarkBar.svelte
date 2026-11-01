@@ -1,28 +1,101 @@
 <script lang="ts">
-  import { bookmarks } from "../../stores/persistenceStore";
+  import { onDestroy } from "svelte";
+  import { bookmarks, bookmarkFolders, openBookmarkFolderManager } from "../../stores/persistenceStore";
   import { currentUrl, submitNavigation } from "../../stores/browserStore";
+
+  let openFolderId = $state<number | null>(null);
+  let menuPosition = $state({ left: 0, top: 0 });
+
+  function toggleFolder(event: MouseEvent, folderId: number): void {
+    if (openFolderId === folderId) {
+      openFolderId = null;
+      return;
+    }
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    menuPosition = { left: Math.min(rect.left, window.innerWidth - 280), top: rect.bottom + 4 };
+    openFolderId = folderId;
+  }
+
+  function closeOnOutside(event: PointerEvent): void {
+    if (!(event.target instanceof Element) || !event.target.closest(".bookmark-folder-wrap, .bookmark-folder-menu")) {
+      openFolderId = null;
+    }
+  }
+
+  function navigate(url: string): void {
+    openFolderId = null;
+    void submitNavigation(url);
+  }
+
+  const outsideListener = (event: PointerEvent) => closeOnOutside(event);
+  $effect(() => {
+    if (openFolderId !== null) window.addEventListener("pointerdown", outsideListener);
+    else window.removeEventListener("pointerdown", outsideListener);
+  });
+  onDestroy(() => window.removeEventListener("pointerdown", outsideListener));
+
+  let rootBookmarks = $derived($bookmarks.filter((item) => item.folder_id == null));
+  let openFolder = $derived($bookmarkFolders.find((folder) => folder.id === openFolderId));
+  let openFolderBookmarks = $derived($bookmarks.filter((item) => item.folder_id === openFolderId));
 </script>
 
 <nav class="bookmark-bar" aria-label="Bookmarks">
-  {#if $bookmarks.length === 0}
-    <span class="bookmark-empty">No bookmarks yet</span>
-  {:else}
-    <div class="bookmark-list">
-      {#each $bookmarks as item (item.id)}
+  <div class="bookmark-list">
+    {#each rootBookmarks as item (item.id)}
+      <button
+        class="bookmark-item"
+        class:active={$currentUrl === item.url}
+        onclick={() => navigate(item.url)}
+        title={item.url}
+        aria-label="Open bookmark: {item.title}"
+      >
+        <span class="bookmark-icon" aria-hidden="true">{item.icon}</span>
+        <span class="bookmark-title">{item.title}</span>
+      </button>
+    {/each}
+    {#each $bookmarkFolders as folder (folder.id)}
+      <div class="bookmark-folder-wrap">
         <button
-          class="bookmark-item"
-          class:active={$currentUrl === item.url}
-          onclick={() => submitNavigation(item.url)}
-          title={item.url}
-          aria-label="Open bookmark: {item.title}"
+          class="bookmark-item folder-button"
+          class:folder-open={openFolderId === folder.id}
+          onclick={(event) => toggleFolder(event, folder.id)}
+          aria-expanded={openFolderId === folder.id}
+          aria-label="Open folder: {folder.name}"
         >
-          <span class="bookmark-icon" aria-hidden="true">{item.icon}</span>
-          <span class="bookmark-title">{item.title}</span>
+          <span aria-hidden="true">📁</span>
+          <span class="bookmark-title">{folder.name}</span>
+          <span class="folder-count">{$bookmarks.filter((item) => item.folder_id === folder.id).length}</span>
+        </button>
+      </div>
+    {/each}
+    <button class="bookmark-manage" onclick={() => void openBookmarkFolderManager()} title="Manage bookmark folders" aria-label="Manage bookmark folders">＋</button>
+    {#if rootBookmarks.length === 0 && $bookmarkFolders.length === 0}
+      <span class="bookmark-empty">No bookmarks yet</span>
+    {/if}
+  </div>
+</nav>
+
+{#if openFolder}
+  <div
+    class="bookmark-folder-menu"
+    style:left="{Math.max(8, menuPosition.left)}px"
+    style:top="{menuPosition.top}px"
+    role="menu"
+    aria-label="{openFolder.name} bookmarks"
+  >
+    <div class="folder-menu-heading">📁 {openFolder.name}</div>
+    {#if openFolderBookmarks.length === 0}
+      <span class="bookmark-empty">This folder is empty</span>
+    {:else}
+      {#each openFolderBookmarks as item (item.id)}
+        <button class="folder-menu-item" role="menuitem" onclick={() => navigate(item.url)} title={item.url}>
+          <span aria-hidden="true">{item.icon}</span><span>{item.title}</span>
         </button>
       {/each}
-    </div>
-  {/if}
-</nav>
+    {/if}
+    <button class="folder-menu-manage" onclick={() => { openFolderId = null; void openBookmarkFolderManager(); }}>Manage folders…</button>
+  </div>
+{/if}
 
 <style>
   .bookmark-bar {
@@ -46,10 +119,7 @@
     overflow-y: hidden;
     scrollbar-width: none;
   }
-
-  .bookmark-list::-webkit-scrollbar {
-    display: none;
-  }
+  .bookmark-list::-webkit-scrollbar { display: none; }
 
   .bookmark-item {
     display: flex;
@@ -64,30 +134,31 @@
     font-size: 11px;
     transition: background 0.16s ease, color 0.16s ease;
   }
-
-  .bookmark-item:hover {
-    background: var(--bg-glass-hover);
+  .bookmark-item:hover, .folder-button.folder-open { background: var(--bg-glass-hover); color: var(--text-primary); }
+  .bookmark-item.active { color: var(--accent-primary); background: color-mix(in srgb, var(--accent-primary) 14%, transparent); }
+  .bookmark-icon { flex: 0 0 auto; }
+  .bookmark-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folder-count { color: var(--text-muted); font-size: 9px; }
+  .bookmark-empty { padding: 4px 8px; color: var(--text-muted); font-size: 11px; }
+  .bookmark-manage { flex: 0 0 auto; padding: 3px 8px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); }
+  .bookmark-manage:hover { color: var(--text-primary); background: var(--bg-glass-hover); }
+  .bookmark-folder-menu {
+    position: fixed;
+    z-index: 1300;
+    width: min(272px, calc(100vw - 16px));
+    max-height: min(360px, calc(100vh - 16px));
+    overflow: auto;
+    padding: 6px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-glass-primary);
     color: var(--text-primary);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, .38);
+    backdrop-filter: blur(var(--overlay-backdrop-blur, 16px));
   }
-
-  .bookmark-item.active {
-    color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-  }
-
-  .bookmark-icon {
-    flex: 0 0 auto;
-  }
-
-  .bookmark-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .bookmark-empty {
-    padding: 4px 8px;
-    color: var(--text-muted);
-    font-size: 11px;
-  }
+  .folder-menu-heading { padding: 7px 8px; color: var(--text-muted); font-size: 10px; font-weight: 700; }
+  .folder-menu-item, .folder-menu-manage { width: 100%; display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: var(--radius-sm); color: var(--text-primary); text-align: left; font-size: 11px; }
+  .folder-menu-item span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folder-menu-item:hover, .folder-menu-manage:hover { background: var(--bg-glass-hover); }
+  .folder-menu-manage { margin-top: 5px; border-top: 1px solid var(--border-subtle); color: var(--text-secondary); }
 </style>

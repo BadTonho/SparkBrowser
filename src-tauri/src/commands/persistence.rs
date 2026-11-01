@@ -1,4 +1,4 @@
-use crate::database::bookmarks_repo::{list_bookmarks, toggle_bookmark as repo_toggle_bookmark, BookmarkItem};
+use crate::database::bookmarks_repo::{self, BookmarkData};
 use crate::database::history_repo::{clear_all_history, get_recent_history, HistoryEntry};
 use crate::state::browser_state::BrowserState;
 use tauri::State;
@@ -26,26 +26,100 @@ pub fn clear_browsing_history(state: State<'_, BrowserState>) -> Result<(), Stri
 }
 
 #[tauri::command]
-pub fn get_bookmarks(state: State<'_, BrowserState>) -> Result<Vec<BookmarkItem>, String> {
+pub fn get_bookmark_data(state: State<'_, BrowserState>) -> Result<BookmarkData, String> {
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db_guard.as_ref() {
-        return list_bookmarks(conn);
+        return bookmarks_repo::get_bookmark_data(conn);
     }
-    Ok(Vec::new())
+    Ok(BookmarkData {
+        bookmarks: Vec::new(),
+        folders: Vec::new(),
+    })
 }
 
 #[tauri::command]
-pub fn toggle_bookmark(
+pub fn save_bookmark(
     state: State<'_, BrowserState>,
+    bookmark_id: Option<i64>,
     title: String,
     url: String,
     icon: Option<String>,
-) -> Result<Vec<BookmarkItem>, String> {
-    let glyph = icon.unwrap_or_else(|| "⭐".to_string());
+    folder_id: Option<i64>,
+) -> Result<BookmarkData, String> {
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db_guard.as_ref() {
-        return repo_toggle_bookmark(conn, &title, &url, &glyph);
+        return bookmarks_repo::save_bookmark(
+            conn,
+            bookmark_id,
+            &title,
+            &url,
+            icon.as_deref().unwrap_or("⭐"),
+            folder_id,
+        );
     }
-    Ok(Vec::new())
+    Ok(BookmarkData {
+        bookmarks: Vec::new(),
+        folders: Vec::new(),
+    })
 }
 
+#[tauri::command]
+pub fn remove_bookmark(
+    state: State<'_, BrowserState>,
+    bookmark_id: i64,
+) -> Result<BookmarkData, String> {
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    if let Some(conn) = db_guard.as_ref() {
+        return bookmarks_repo::remove_bookmark(conn, bookmark_id);
+    }
+    Ok(BookmarkData {
+        bookmarks: Vec::new(),
+        folders: Vec::new(),
+    })
+}
+
+#[tauri::command]
+pub fn create_bookmark_folder(
+    state: State<'_, BrowserState>,
+    name: String,
+) -> Result<BookmarkData, String> {
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    if let Some(conn) = db_guard.as_ref() {
+        return bookmarks_repo::create_folder(conn, &name);
+    }
+    Ok(BookmarkData {
+        bookmarks: Vec::new(),
+        folders: Vec::new(),
+    })
+}
+
+#[tauri::command]
+pub fn rename_bookmark_folder(
+    state: State<'_, BrowserState>,
+    folder_id: i64,
+    name: String,
+) -> Result<BookmarkData, String> {
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    if let Some(conn) = db_guard.as_ref() {
+        return bookmarks_repo::rename_folder(conn, folder_id, &name);
+    }
+    Ok(BookmarkData {
+        bookmarks: Vec::new(),
+        folders: Vec::new(),
+    })
+}
+
+#[tauri::command]
+pub fn delete_bookmark_folder(
+    state: State<'_, BrowserState>,
+    folder_id: i64,
+) -> Result<BookmarkData, String> {
+    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+    if let Some(conn) = db_guard.as_ref() {
+        return bookmarks_repo::delete_folder(conn, folder_id);
+    }
+    Ok(BookmarkData {
+        bookmarks: Vec::new(),
+        folders: Vec::new(),
+    })
+}

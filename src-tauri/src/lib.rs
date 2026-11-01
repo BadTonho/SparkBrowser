@@ -6,7 +6,10 @@ pub mod window;
 
 use commands::downloads::{clear_all_downloads, enqueue_download, get_downloads};
 use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
-use commands::persistence::{clear_browsing_history, get_bookmarks, get_history, toggle_bookmark};
+use commands::persistence::{
+    clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
+    get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
+};
 use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
 use commands::shortcuts::set_keyboard_shortcuts;
 use commands::tabs::{
@@ -122,8 +125,12 @@ pub fn run() {
             set_keyboard_shortcuts,
             get_history,
             clear_browsing_history,
-            get_bookmarks,
-            toggle_bookmark,
+            get_bookmark_data,
+            save_bookmark,
+            remove_bookmark,
+            create_bookmark_folder,
+            rename_bookmark_folder,
+            delete_bookmark_folder,
             get_privacy_stats,
             toggle_adblock_shield,
             get_workspaces,

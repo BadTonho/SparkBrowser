@@ -13,7 +13,7 @@
   } from "../../stores/browserStore";
   import {
     bookmarks,
-    toggleBookmarkForUrl,
+    openBookmarkEditor,
     openHistoryDrawer,
   } from "../../stores/persistenceStore";
   import { openDownloadsDrawer } from "../../stores/downloadsStore";
@@ -60,7 +60,7 @@
   function handleBookmarkToggle() {
     const activeTab = $tabs.find((t) => t.is_active);
     const title = activeTab?.title || $currentUrl;
-    toggleBookmarkForUrl(title, $currentUrl, "⭐");
+    void openBookmarkEditor(title, $currentUrl, "⭐");
   }
 </script>
 
@@ -151,8 +151,8 @@
           class="star-btn"
           class:bookmarked={isCurrentUrlBookmarked}
           onclick={handleBookmarkToggle}
-          title={isCurrentUrlBookmarked ? "Remove Bookmark" : "Bookmark this Page"}
-          aria-label="Toggle Bookmark"
+          title={isCurrentUrlBookmarked ? "Edit Bookmark" : "Bookmark this Page"}
+          aria-label={isCurrentUrlBookmarked ? "Edit Bookmark" : "Bookmark this Page"}
         >
           {isCurrentUrlBookmarked ? "★" : "☆"}
         </button>
