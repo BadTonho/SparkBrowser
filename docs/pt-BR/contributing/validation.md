@@ -31,7 +31,7 @@ Estas verificações exigem uma área de trabalho interativa e são separadas do
 3. Selecione pela Command Bar uma aba de outro workspace. O botão do workspace, o tema e a lista de abas devem concordar. Mover a aba ativa para outro workspace deve preservar essa consistência.
 4. Escolha DuckDuckGo e pesquise pelas duas ações da Command Bar: aba atual e nova aba. Ambas devem usar DuckDuckGo.
 5. Baixe um recurso HTTP direto. Confira os bytes no disco, nomes sem sobrescrita e erro para uma resposta inválida. O preview no navegador comum não deve fabricar downloads concluídos.
-6. Altere a política de privacidade e confira o recarregamento documentado nas páginas atuais e futuras. Leia o aviso sobre o estado das páginas antes de alterá-la.
+6. Altere a proteção no Windows e confira a preservação dos formulários e do histórico de voltar/avançar. Teste requisições nos documentos atuais e após navegar. Em outros motores, verifique o fallback de recarregamento documentado e a recusa enquanto formulários/mídia/downloads detectados estiverem protegidos.
 7. Navegue para um host bloqueado. A última URL confirmada deve permanecer. Uma navegação comum concluída deve adicionar uma entrada ao histórico.
 
 Finalize conferindo `git status`, `git diff`, `git diff --cached` e as regras de ignore para arquivos sensíveis.

@@ -10,6 +10,7 @@ export const privacyStats = writable<PrivacyStats>({
   shield_enabled: true,
   blocked_count: 0,
   hibernated_tabs_count: 0,
+  supports_live_policy_updates: false,
 });
 
 export async function initializePrivacyStats(): Promise<void> {

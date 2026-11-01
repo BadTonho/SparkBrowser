@@ -31,7 +31,7 @@ These checks require an interactive desktop and are separate from unit/build res
 3. Select an existing tab from another workspace through the Command Bar. Its workspace button, theme, and tab list should agree. Moving the active tab to another workspace should keep the same invariant.
 4. Choose DuckDuckGo, then search through both Command Bar actions: current tab and new tab. Both should use DuckDuckGo.
 5. Download a direct HTTP resource. Verify bytes on disk, collision-safe filenames, and an error for a failed response. The preview in a normal browser must not fabricate completed downloads.
-6. Change the privacy policy and verify its documented reload behavior in current and future pages. Review the page-state notice before changing it.
+6. Change privacy protection on Windows and verify that forms and back/forward history remain intact. Test requests on both current and newly navigated documents. On other engines, verify the documented reload fallback and refusal while detected forms/media/downloads are protected.
 7. Navigate to a blocked host. The last committed page URL should remain unchanged. A successful ordinary navigation should add one history entry.
 
 Finish by checking `git status`, `git diff`, `git diff --cached`, and sensitive-file ignore rules.

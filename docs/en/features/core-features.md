@@ -14,7 +14,7 @@
 ## 3. Privacy Shield
 - Rust rejects navigation to exact known tracker hosts and their subdomains.
 - A best-effort page script filters fetch (including URL/Request inputs), XHR, and sendBeacon, and adds cosmetic CSS. This is not a complete network blocker: parser-loaded scripts/images, service workers, and hostile page modifications can bypass page-level hooks.
-- Changing protection rebuilds content WebViews: the active page reloads and background tabs hibernate. Page state and native back/forward stacks reset on this explicit policy change; ordinary tab switching preserves them.
+- On Windows, changing protection updates live request wrappers and replaces an owned future-document policy script without reloading WebViews, preserving page state and native back/forward stacks. Other engines rebuild content WebViews; the active page reloads and background tabs hibernate. Page state and native back/forward stacks reset on that fallback; changes are refused while detected forms, media or downloads need protection.
 - The tracker count currently measures denied navigations only, not all filtered subresources.
 
 ## 4. 🎨 Workspaces & Dynamic Themes

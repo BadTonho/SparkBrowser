@@ -585,7 +585,7 @@
               <div class="setting-row" id="setting-adblock-shield" tabindex="-1">
                 <div class="row-text">
                   <span class="row-label">Privacy Shield</span>
-                  <span class="row-desc">Filters known tracker hosts. Changing protection reloads tabs and resets page state.</span>
+                  <span class="row-desc">Filters known tracker hosts. {$privacyStats.supports_live_policy_updates ? "Changing protection preserves page state." : "Changing protection reloads tabs and resets page state."}</span>
                 </div>
                 <button
                   class="pill-action"

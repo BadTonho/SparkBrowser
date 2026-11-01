@@ -106,7 +106,10 @@ fn ensure_tab_webview(
             "__ACTIVITY_TOKEN__",
             &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
         ))
-        .initialization_script(build_content_shield_script(shield_enabled))
+        .initialization_script(build_content_shield_script(
+            shield_enabled,
+            &keyboard_bridge_token,
+        ))
         .initialization_script(WORKSPACE_SWITCHER_ESCAPE_SCRIPT);
 
     let webview_builder = webview_builder.initialization_script(build_workspace_shortcut_script(
@@ -520,6 +523,11 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                 webview.close().map_err(|e| e.to_string())?;
                 state
                     .keyboard_bridge_tokens
+                    .lock()
+                    .map_err(|e| e.to_string())?
+                    .remove(&label);
+                state
+                    .shield_script_ids
                     .lock()
                     .map_err(|e| e.to_string())?
                     .remove(&label);

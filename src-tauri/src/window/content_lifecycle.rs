@@ -5,6 +5,11 @@ use tauri::{AppHandle, Manager};
 /// Rebuild views when their immutable initialization policy changes.
 pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
     state
+        .shield_script_ids
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clear();
+    state
         .keyboard_bridge_tokens
         .lock()
         .map_err(|e| e.to_string())?

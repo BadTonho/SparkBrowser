@@ -177,6 +177,498 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the auto_hibernate_inactive_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-auto-hibernate-inactive-tabs",
+          "markdownDescription": "Enables the auto_hibernate_inactive_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the cancel_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-cancel-download",
+          "markdownDescription": "Enables the cancel_download command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the clear_all_downloads command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clear-all-downloads",
+          "markdownDescription": "Enables the clear_all_downloads command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the clear_browsing_history command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clear-browsing-history",
+          "markdownDescription": "Enables the clear_browsing_history command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the close_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-close-tab",
+          "markdownDescription": "Enables the close_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the create_bookmark_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-bookmark-folder",
+          "markdownDescription": "Enables the create_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the create_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-tab",
+          "markdownDescription": "Enables the create_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the create_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-workspace",
+          "markdownDescription": "Enables the create_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_bookmark_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-bookmark-folder",
+          "markdownDescription": "Enables the delete_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-workspace",
+          "markdownDescription": "Enables the delete_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the enqueue_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-enqueue-download",
+          "markdownDescription": "Enables the enqueue_download command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_active_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-active-workspace",
+          "markdownDescription": "Enables the get_active_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_bookmark_data command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-bookmark-data",
+          "markdownDescription": "Enables the get_bookmark_data command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_download_tasks command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-download-tasks",
+          "markdownDescription": "Enables the get_download_tasks command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_downloads command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-downloads",
+          "markdownDescription": "Enables the get_downloads command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_history command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-history",
+          "markdownDescription": "Enables the get_history command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_privacy_stats command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-privacy-stats",
+          "markdownDescription": "Enables the get_privacy_stats command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-tabs",
+          "markdownDescription": "Enables the get_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_workspaces command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-workspaces",
+          "markdownDescription": "Enables the get_workspaces command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the go_back command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-go-back",
+          "markdownDescription": "Enables the go_back command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the go_forward command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-go-forward",
+          "markdownDescription": "Enables the go_forward command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the hibernate_inactive_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-hibernate-inactive-tabs",
+          "markdownDescription": "Enables the hibernate_inactive_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the hibernate_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-hibernate-tab",
+          "markdownDescription": "Enables the hibernate_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the move_tab_to_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-move-tab-to-workspace",
+          "markdownDescription": "Enables the move_tab_to_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the navigate_to command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-navigate-to",
+          "markdownDescription": "Enables the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the reload_page command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-reload-page",
+          "markdownDescription": "Enables the reload_page command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the remove_bookmark command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-remove-bookmark",
+          "markdownDescription": "Enables the remove_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the rename_bookmark_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-rename-bookmark-folder",
+          "markdownDescription": "Enables the rename_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the reorder_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-reorder-tabs",
+          "markdownDescription": "Enables the reorder_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_bookmark command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-bookmark",
+          "markdownDescription": "Enables the save_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-bookmark-context-menu-overlay",
+          "markdownDescription": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_keyboard_shortcuts command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-keyboard-shortcuts",
+          "markdownDescription": "Enables the set_keyboard_shortcuts command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_overlay_visibility command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-overlay-visibility",
+          "markdownDescription": "Enables the set_overlay_visibility command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_resident_limit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-resident-limit",
+          "markdownDescription": "Enables the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_tab_pinned command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-pinned",
+          "markdownDescription": "Enables the set_tab_pinned command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_workspace_switcher_overlay command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-workspace-switcher-overlay",
+          "markdownDescription": "Enables the set_workspace_switcher_overlay command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the switch_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-switch-tab",
+          "markdownDescription": "Enables the switch_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the switch_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-switch-workspace",
+          "markdownDescription": "Enables the switch_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sync_viewport_bounds command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sync-viewport-bounds",
+          "markdownDescription": "Enables the sync_viewport_bounds command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the toggle_adblock_shield command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-toggle-adblock-shield",
+          "markdownDescription": "Enables the toggle_adblock_shield command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the update_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-workspace",
+          "markdownDescription": "Enables the update_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the auto_hibernate_inactive_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-auto-hibernate-inactive-tabs",
+          "markdownDescription": "Denies the auto_hibernate_inactive_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the cancel_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-cancel-download",
+          "markdownDescription": "Denies the cancel_download command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_all_downloads command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clear-all-downloads",
+          "markdownDescription": "Denies the clear_all_downloads command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_browsing_history command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clear-browsing-history",
+          "markdownDescription": "Denies the clear_browsing_history command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the close_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-close-tab",
+          "markdownDescription": "Denies the close_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the create_bookmark_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-bookmark-folder",
+          "markdownDescription": "Denies the create_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the create_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-tab",
+          "markdownDescription": "Denies the create_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the create_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-workspace",
+          "markdownDescription": "Denies the create_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_bookmark_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-bookmark-folder",
+          "markdownDescription": "Denies the delete_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-workspace",
+          "markdownDescription": "Denies the delete_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the enqueue_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-enqueue-download",
+          "markdownDescription": "Denies the enqueue_download command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_active_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-active-workspace",
+          "markdownDescription": "Denies the get_active_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_bookmark_data command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-bookmark-data",
+          "markdownDescription": "Denies the get_bookmark_data command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_download_tasks command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-download-tasks",
+          "markdownDescription": "Denies the get_download_tasks command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_downloads command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-downloads",
+          "markdownDescription": "Denies the get_downloads command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_history command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-history",
+          "markdownDescription": "Denies the get_history command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_privacy_stats command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-privacy-stats",
+          "markdownDescription": "Denies the get_privacy_stats command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-tabs",
+          "markdownDescription": "Denies the get_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_workspaces command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-workspaces",
+          "markdownDescription": "Denies the get_workspaces command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the go_back command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-go-back",
+          "markdownDescription": "Denies the go_back command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the go_forward command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-go-forward",
+          "markdownDescription": "Denies the go_forward command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the hibernate_inactive_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-hibernate-inactive-tabs",
+          "markdownDescription": "Denies the hibernate_inactive_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the hibernate_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-hibernate-tab",
+          "markdownDescription": "Denies the hibernate_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the move_tab_to_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-move-tab-to-workspace",
+          "markdownDescription": "Denies the move_tab_to_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the navigate_to command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-navigate-to",
+          "markdownDescription": "Denies the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the reload_page command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-reload-page",
+          "markdownDescription": "Denies the reload_page command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the remove_bookmark command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-remove-bookmark",
+          "markdownDescription": "Denies the remove_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the rename_bookmark_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-rename-bookmark-folder",
+          "markdownDescription": "Denies the rename_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the reorder_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-reorder-tabs",
+          "markdownDescription": "Denies the reorder_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_bookmark command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-bookmark",
+          "markdownDescription": "Denies the save_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-bookmark-context-menu-overlay",
+          "markdownDescription": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_keyboard_shortcuts command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-keyboard-shortcuts",
+          "markdownDescription": "Denies the set_keyboard_shortcuts command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_overlay_visibility command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-overlay-visibility",
+          "markdownDescription": "Denies the set_overlay_visibility command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_resident_limit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-resident-limit",
+          "markdownDescription": "Denies the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_pinned command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-pinned",
+          "markdownDescription": "Denies the set_tab_pinned command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_workspace_switcher_overlay command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-workspace-switcher-overlay",
+          "markdownDescription": "Denies the set_workspace_switcher_overlay command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the switch_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-switch-tab",
+          "markdownDescription": "Denies the switch_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the switch_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-switch-workspace",
+          "markdownDescription": "Denies the switch_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sync_viewport_bounds command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sync-viewport-bounds",
+          "markdownDescription": "Denies the sync_viewport_bounds command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the toggle_adblock_shield command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-toggle-adblock-shield",
+          "markdownDescription": "Denies the toggle_adblock_shield command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_workspace command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-workspace",
+          "markdownDescription": "Denies the update_workspace command without any pre-configured scope."
+        },
+        {
           "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
           "type": "string",
           "const": "core:default",

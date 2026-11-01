@@ -16,7 +16,7 @@ function page(enabled) {
   const window = { fetch: async () => { fetches++; return { status: 200 }; } };
   const navigator = { sendBeacon: () => { beacons++; return true; } };
   const document = { baseURI: "https://example.test/", readyState: "loading", addEventListener() {} };
-  vm.runInNewContext(template.replace("__SHIELD_ENABLED__", String(enabled)).replace("__BLOCKED_DOMAINS__", JSON.stringify(domains)), { window, navigator, document, XMLHttpRequest, URL, DOMException });
+  vm.runInNewContext(template.replace("__SHIELD_TOKEN__", JSON.stringify("test-policy")).replace("__SHIELD_ENABLED__", String(enabled)).replace("__BLOCKED_DOMAINS__", JSON.stringify(domains)), { window, navigator, document, XMLHttpRequest, URL, DOMException });
   return { window, navigator, XMLHttpRequest, counts: () => ({ fetches, sends, beacons, aborted }) };
 }
 
@@ -51,4 +51,17 @@ test("new documents with protection disabled retain the original request APIs", 
   xhr.send();
   assert.equal(p.navigator.sendBeacon("https://doubleclick.net/collect"), true);
   assert.deepEqual(p.counts(), { fetches: 1, sends: 1, beacons: 1, aborted: 0 });
+});
+
+test("live policy changes require the generation token and affect existing XHR/fetch/beacon wrappers", async () => {
+  const p = page(true);
+  p.window.__veloceSetShieldPolicy("wrong-token", false);
+  await assert.rejects(p.window.fetch("https://doubleclick.net/ad"));
+  const xhr = new p.XMLHttpRequest(); xhr.open("GET", "https://doubleclick.net/ad");
+  p.window.__veloceSetShieldPolicy("test-policy", false);
+  xhr.send();
+  assert.equal((await p.window.fetch("https://doubleclick.net/ad")).status, 200);
+  assert.equal(p.navigator.sendBeacon("https://doubleclick.net/ad"), true);
+  p.window.__veloceSetShieldPolicy("test-policy", true);
+  await assert.rejects(p.window.fetch("https://doubleclick.net/ad"));
 });

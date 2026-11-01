@@ -56,6 +56,7 @@ pub struct BrowserState {
     pub bookmark_context_menu_token: Mutex<Option<String>>,
     pub bookmark_context_menu_open: Mutex<bool>,
     pub bookmark_context_menu_actions: Mutex<Vec<String>>,
+    pub shield_script_ids: Mutex<std::collections::HashMap<String, String>>,
     pub shield_enabled: Mutex<bool>,
     pub blocked_count: Mutex<u64>,
     pub db: Mutex<Option<Connection>>,
@@ -88,6 +89,7 @@ impl Default for BrowserState {
             bookmark_context_menu_token: Mutex::new(None),
             bookmark_context_menu_open: Mutex::new(false),
             bookmark_context_menu_actions: Mutex::new(Vec::new()),
+            shield_script_ids: Mutex::new(std::collections::HashMap::new()),
             shield_enabled: Mutex::new(true),
             blocked_count: Mutex::new(0),
             db: Mutex::new(None),
@@ -224,6 +226,7 @@ impl BrowserState {
             shield_enabled,
             blocked_count,
             hibernated_tabs_count,
+            supports_live_policy_updates: cfg!(windows),
         }
     }
 }

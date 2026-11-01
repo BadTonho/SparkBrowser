@@ -6,4 +6,5 @@ pub mod shortcuts;
 pub mod tabs;
 pub mod workspaces;
 
+pub mod access;
 pub mod overlays;

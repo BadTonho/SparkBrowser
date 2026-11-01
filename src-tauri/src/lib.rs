@@ -132,7 +132,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
+        .invoke_handler(commands::access::shell_only(tauri::generate_handler![
             navigate_to,
             go_back,
             go_forward,
@@ -174,7 +174,7 @@ pub fn run() {
             cancel_download,
             enqueue_download,
             clear_all_downloads
-        ])
+        ]))
         .build(tauri::generate_context!())
         .expect("error while building Veloce Browser")
         .run(|app, event| {

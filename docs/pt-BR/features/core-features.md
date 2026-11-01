@@ -14,7 +14,7 @@
 ## 3. Privacy Shield
 - O Rust rejeita navegações para hosts conhecidos de rastreamento e seus subdomínios exatos.
 - Um script de página filtra fetch (incluindo objetos URL/Request), XHR e sendBeacon, e adiciona CSS. A cobertura não equivale a um bloqueador completo da rede: scripts/imagens do parser, service workers e alterações feitas pela página podem contornar esses hooks.
-- Alterar a proteção recria as WebViews: a página ativa recarrega e as abas em segundo plano hibernam. O estado da página e o histórico nativo de voltar/avançar são reiniciados nessa mudança explícita; a troca normal de abas os preserva.
+- No Windows, alterar a proteção atualiza os interceptadores de requisições ativos e substitui um script de política para documentos futuros sem recarregar WebViews, preservando o estado das páginas e o histórico nativo de voltar/avançar. Outros motores recriam as WebViews: a página ativa recarrega e as abas em segundo plano hibernam. Estado e histórico nativo são reiniciados nesse fallback; a mudança é recusada enquanto formulários, mídia ou downloads detectados precisam de proteção.
 - O contador mede navegações rejeitadas, não todos os recursos filtrados.
 
 ## 4. 🎨 Workspaces (Espaços de Trabalho) e Temas Dinâmicos

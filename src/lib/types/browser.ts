@@ -91,6 +91,7 @@ export interface PrivacyStats {
   shield_enabled: boolean;
   blocked_count: number;
   hibernated_tabs_count: number;
+  supports_live_policy_updates: boolean;
 }
 
 export interface CommandItem {

@@ -226,7 +226,7 @@
         </div>
 
         <div class="tab-actions">
-          <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? "Unpin tab" : "Pin tab"} title={tab.is_pinned ? "Unpin tab" : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "?" : "?"}</button>
+          <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? "Unpin tab" : "Pin tab"} title={tab.is_pinned ? "Unpin tab" : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "\u25C6" : "\u25C7"}</button>
           {#if !tab.is_active && !tab.is_hibernated}
             <button
               class="tab-action-btn sleep-btn"

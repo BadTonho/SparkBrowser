@@ -39,7 +39,12 @@ Manual URL downloads run as revisioned tasks with progress, cancellation and a q
 
 Native page downloads retain the engine's authentication and blob support and use unique reserved destination names. When both slots are busy, page downloads are rejected with a visible retry message rather than replayed without cookies. The portable Tauri hook does not expose native progress/cancellation; those tasks show status only. Completed transfers are recorded separately in SQLite. Normal shutdown cancels manual tasks and allows up to 20 seconds for cleanup. Abrupt process termination cannot guarantee cleanup.
 
+## Local security and live shield policy
+
+Application commands are declared in the Tauri build manifest and explicitly granted only to the local `main` WebView. Window-wide grants and broad core defaults were removed. An additional command-handler label check rejects child WebViews even if they navigate to local resources. The local shell and overlays use CSP with self-hosted scripts; inline style attributes remain permitted for dynamic layout. This policy does not replace CSP supplied by remote websites.
+
+Windows replaces its owned WebView2 document-created policy script and updates the live page wrappers, preserving forms, scroll position and native navigation history. Failed changes attempt to restore the previous policy. Other engines use the documented rebuild fallback, refuse changes while detected forms/media/downloads are protected and display the reset notice. Filtering remains best effort; existing network transfers are not retroactively undone.
+
 ## Remaining stages
 
-- Local security boundaries.
 - Modularization, diagnostics, continuous validation and measured release guidance.

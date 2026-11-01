@@ -33,6 +33,7 @@ pub struct PrivacyStats {
     pub shield_enabled: bool,
     pub blocked_count: u64,
     pub hibernated_tabs_count: usize,
+    pub supports_live_policy_updates: bool,
 }
 
 /// Checks if a URL belongs to a known ad or tracking network.
@@ -57,8 +58,12 @@ pub fn should_block_url(raw_url: &str, shield_enabled: bool) -> bool {
 
 /// Best-effort page-level request filtering and cosmetic rules. The host list
 /// is shared with Rust navigation checks; this is not a full network filter.
-pub fn build_content_shield_script(shield_enabled: bool) -> String {
+pub fn build_content_shield_script(shield_enabled: bool, token: &str) -> String {
     include_str!("content_shield.js")
+        .replace(
+            "__SHIELD_TOKEN__",
+            &serde_json::to_string(token).expect("token serializable"),
+        )
         .replace(
             "__BLOCKED_DOMAINS__",
             &serde_json::to_string(BLOCKED_DOMAINS).expect("static domains are serializable"),
