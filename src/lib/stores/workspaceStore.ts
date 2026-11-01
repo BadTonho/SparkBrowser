@@ -10,39 +10,47 @@ import {
   deleteWorkspaceProfile,
 } from "../services/tauri-bridge";
 import { applyTabsSnapshot } from "./browserStore";
+import {
+  DEFAULT_WORKSPACES,
+  NEW_WORKSPACE_DEFAULT_COLORS,
+} from "../constants/workspaceDefaults";
 
-export const workspaces = writable<WorkspaceItem[]>([
-  {
-    id: "ws-personal",
-    name: "Personal",
-    icon: "🌟",
-    accent_primary: "#6e8efb",
-    accent_secondary: "#a777e3",
-  },
-  {
-    id: "ws-work",
-    name: "Work",
-    icon: "💼",
-    accent_primary: "#38bdf8",
-    accent_secondary: "#6366f1",
-  },
-  {
-    id: "ws-study",
-    name: "Study",
-    icon: "📚",
-    accent_primary: "#34d399",
-    accent_secondary: "#059669",
-  },
-  {
-    id: "ws-gaming",
-    name: "Gaming",
-    icon: "🎮",
-    accent_primary: "#f43f5e",
-    accent_secondary: "#d946ef",
-  },
-]);
+export const workspaces = writable<WorkspaceItem[]>(
+  DEFAULT_WORKSPACES.map((workspace) => ({ ...workspace }))
+);
 
 export const activeWorkspaceId = writable<string>("ws-personal");
+
+function getRelativeLuminance(color: string): number {
+  const match = /^#([\da-f]{6})$/i.exec(color);
+  if (!match) return 0.5;
+
+  const channels = [0, 2, 4].map((offset) => {
+    const value = Number.parseInt(match[1].slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function getAccentForeground(primary: string, secondary: string): string {
+  const backgroundLuminances = [
+    getRelativeLuminance(primary),
+    getRelativeLuminance(secondary),
+  ];
+  const nearBlackLuminance = getRelativeLuminance("#111111");
+  const minimumContrast = (foregroundLuminance: number) =>
+    Math.min(
+      ...backgroundLuminances.map((backgroundLuminance) => {
+        const lighter = Math.max(backgroundLuminance, foregroundLuminance);
+        const darker = Math.min(backgroundLuminance, foregroundLuminance);
+        return (lighter + 0.05) / (darker + 0.05);
+      })
+    );
+
+  return minimumContrast(nearBlackLuminance) >= minimumContrast(1)
+    ? "#111111"
+    : "#ffffff";
+}
 
 /**
  * Applies the selected workspace's dynamic theme colors to CSS root variables.
@@ -52,6 +60,10 @@ export function applyWorkspaceTheme(ws: WorkspaceItem): void {
   const root = document.documentElement;
   root.style.setProperty("--accent-primary", ws.accent_primary);
   root.style.setProperty("--accent-secondary", ws.accent_secondary);
+  root.style.setProperty(
+    "--accent-foreground",
+    getAccentForeground(ws.accent_primary, ws.accent_secondary)
+  );
   root.style.setProperty(
     "--accent-gradient",
     `linear-gradient(135deg, ${ws.accent_primary} 0%, ${ws.accent_secondary} 100%)`
@@ -101,8 +113,7 @@ export function createWorkspaceDraft(): WorkspaceItem {
     id: `ws-custom-${randomId}`,
     name: "New Workspace",
     icon: "📁",
-    accent_primary: "#3b82f6",
-    accent_secondary: "#8b5cf6",
+    ...NEW_WORKSPACE_DEFAULT_COLORS,
   };
 }
 

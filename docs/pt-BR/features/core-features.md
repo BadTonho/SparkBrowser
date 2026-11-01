@@ -21,7 +21,7 @@
 - O seletor e a confirmação também aparecem temporariamente no Modo Zen; ao fechá-los, o Modo Zen continua ativo.
 - Em Browser Settings, renomeie um espaço de trabalho, altere seu emoji e suas cores, crie novos ou exclua os existentes. Personal é protegido.
 - Ao excluir um espaço de trabalho com abas abertas, transfira-as para outro espaço ou feche-as; as abas fechadas continuam no histórico de navegação.
-- Cada espaço de trabalho tem suas próprias cores de destaque e gradientes na moldura translúcida da janela. Editá-lo nas configurações não o ativa.
+- A paleta padrão do navegador usa tons de grafite, cinza e branco. Os espaços de trabalho predefinidos começam com destaques neutros e continuam personalizáveis; cada perfil mantém suas próprias cores e gradientes sutis na moldura translúcida da janela. Editá-lo nas configurações não o ativa.
 
 ## 5. 📐 Modo Zen / Foco
 - Um único atalho recolhe todas as barras do navegador, entregando **100% da tela** para o site ativo.

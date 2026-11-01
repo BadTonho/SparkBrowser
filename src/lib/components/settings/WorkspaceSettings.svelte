@@ -238,7 +238,7 @@
   .field input:focus { border-color: var(--accent-primary); }
   .color-field input { width: 100%; height: 34px; padding: 3px; border: 1px solid var(--border-subtle); border-radius: 7px; background: rgba(0,0,0,.16); cursor: pointer; }
   .primary-action, .secondary-action, .danger-action { min-height: 32px; padding: 7px 11px; border: 1px solid transparent; border-radius: 7px; font-size: 11px; font-weight: 650; white-space: nowrap; }
-  .primary-action { background: var(--accent-primary); color: white; }
+  .primary-action { background: var(--accent-primary); color: var(--accent-foreground); }
   .primary-action:hover:not(:disabled) { filter: brightness(1.08); }
   .secondary-action { border-color: var(--border-subtle); background: rgba(255,255,255,.04); color: var(--text-secondary); }
   .danger-action { border-color: rgba(244,63,94,.25); background: rgba(244,63,94,.1); color: #fb7185; }
@@ -249,7 +249,7 @@
   .delete-panel { display: flex; flex-direction: column; gap: 10px; padding: 13px; border: 1px solid rgba(244,63,94,.35); border-radius: 8px; background: rgba(244,63,94,.055); }
   .choice-row { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 11px; }
   .choice-row input { accent-color: var(--accent-primary); }
-  .choice-row select { min-width: 120px; max-width: 220px; height: 29px; margin-left: auto; padding: 0 7px; border: 1px solid var(--border-subtle); border-radius: 6px; background: #202433; color: var(--text-primary); }
+  .choice-row select { min-width: 120px; max-width: 220px; height: 29px; margin-left: auto; padding: 0 7px; border: 1px solid var(--border-subtle); border-radius: 6px; background: #202020; color: var(--text-primary); }
   .dialog-actions { justify-content: flex-end; margin-top: 2px; }
   @media (max-width: 700px) {
     .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

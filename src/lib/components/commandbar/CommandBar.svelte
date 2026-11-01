@@ -326,7 +326,7 @@
     position: fixed;
     inset: 0;
     z-index: 999;
-    background: rgba(8, 10, 16, 0.62);
+    background: rgba(8, 8, 8, 0.62);
     backdrop-filter: blur(16px);
     display: flex;
     align-items: flex-start;
@@ -461,7 +461,7 @@
 
   .command-item.selected .item-badge {
     background: var(--accent-primary);
-    color: #fff;
+    color: var(--accent-foreground);
   }
 
   .command-footer {

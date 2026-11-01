@@ -272,8 +272,8 @@
     gap: 6px;
     padding: 4px 8px;
     border-radius: var(--radius-sm);
-    background: rgba(110, 142, 251, 0.14);
-    border: 1px solid rgba(110, 142, 251, 0.3);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
     color: var(--text-primary);
     font-size: 11px;
     font-weight: 600;
@@ -284,9 +284,9 @@
   }
 
   .new-tab-pill:hover {
-    background: rgba(110, 142, 251, 0.26);
+    background: color-mix(in srgb, var(--accent-primary) 26%, transparent);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(110, 142, 251, 0.22);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-primary) 22%, transparent);
   }
 
   .new-tab-pill kbd {
@@ -455,7 +455,7 @@
   }
 
   .sleep-btn:hover {
-    background: rgba(110, 142, 251, 0.22);
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
     transform: scale(1.08);
   }
 

@@ -101,7 +101,7 @@
     height: 100%;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
-    background: #0f111a;
+    background: #101010;
     box-shadow: var(--shadow-soft);
     overflow: hidden;
     position: relative;

@@ -107,7 +107,7 @@
     position: fixed;
     inset: 0;
     z-index: 990;
-    background: rgba(8, 10, 16, 0.55);
+    background: rgba(8, 8, 8, 0.55);
     backdrop-filter: blur(12px);
     display: flex;
     justify-content: flex-start;
@@ -118,8 +118,8 @@
     width: min(420px, 90vw);
     height: 100%;
     border-radius: var(--radius-lg);
-    background: rgba(18, 22, 34, 0.95);
-    border: 1px solid rgba(110, 142, 251, 0.35);
+    background: rgba(18, 18, 18, 0.95);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
     box-shadow: 0 20px 56px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;

@@ -227,7 +227,7 @@
     position: fixed;
     inset: 0;
     z-index: 995;
-    background: rgba(8, 10, 16, 0.62);
+    background: rgba(8, 8, 8, 0.62);
     backdrop-filter: blur(16px);
     display: flex;
     align-items: center;
@@ -241,8 +241,8 @@
     max-width: calc(100vw - 32px);
     max-height: calc(100dvh - 32px);
     border-radius: var(--radius-lg);
-    background: rgba(18, 22, 34, 0.96);
-    border: 1px solid rgba(110, 142, 251, 0.38);
+    background: rgba(18, 18, 18, 0.96);
+    border: 1px solid var(--border-glow);
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
     display: flex;
     flex-direction: column;
@@ -320,8 +320,8 @@
   }
 
   .category-button.active {
-    border-color: rgba(110, 142, 251, 0.42);
-    background: rgba(110, 142, 251, 0.16);
+    border-color: color-mix(in srgb, var(--accent-primary) 42%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
     color: var(--text-primary);
   }
 
@@ -400,7 +400,7 @@
 
   .pill-action.active {
     background: var(--accent-gradient);
-    color: #fff;
+    color: var(--accent-foreground);
   }
 
   .timer-pills {
@@ -420,7 +420,7 @@
 
   .mini-pill.selected {
     background: var(--accent-primary);
-    color: #fff;
+    color: var(--accent-foreground);
   }
 
   .engine-label {

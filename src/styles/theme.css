@@ -1,18 +1,19 @@
 :root {
-  --bg-glass-primary: rgba(14, 16, 24, 0.72);
-  --bg-glass-elevated: rgba(24, 28, 42, 0.78);
+  --bg-glass-primary: rgba(12, 12, 12, 0.72);
+  --bg-glass-elevated: rgba(28, 28, 28, 0.78);
   --bg-glass-hover: rgba(255, 255, 255, 0.08);
   --bg-glass-active: rgba(255, 255, 255, 0.14);
   --border-subtle: rgba(255, 255, 255, 0.09);
-  --border-glow: rgba(110, 142, 251, 0.45);
+  --border-glow: color-mix(in srgb, var(--accent-primary) 34%, transparent);
 
-  --text-primary: #f3f5f9;
-  --text-secondary: #9ba3b8;
-  --text-muted: #646d82;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
 
-  --accent-primary: #6e8efb;
-  --accent-secondary: #a777e3;
-  --accent-gradient: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+  --accent-primary: #e5e5e5;
+  --accent-secondary: #9a9a9a;
+  --accent-foreground: #111111;
+  --accent-gradient: linear-gradient(135deg, #e5e5e5 0%, #9a9a9a 100%);
 
   --radius-sm: 8px;
   --radius-md: 12px;

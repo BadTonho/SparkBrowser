@@ -11,6 +11,13 @@ import type {
   WorkspaceDeleteResult,
   WorkspaceItem,
 } from "../types/browser";
+import {
+  DEFAULT_WORKSPACES,
+  WORKSPACE_PALETTE_MIGRATION_VERSION,
+  migrateLegacyDefaultWorkspaceColors,
+} from "../constants/workspaceDefaults";
+
+const WORKSPACE_PALETTE_MIGRATION_KEY = "veloce_workspace_palette_version";
 
 /**
  * Checks whether the frontend is running inside the Tauri runtime.
@@ -169,44 +176,40 @@ export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
     if (typeof localStorage !== "undefined") {
       const saved = localStorage.getItem("veloce_workspaces");
       if (saved) {
+        let parsed: unknown = undefined;
         try {
-          const parsed = JSON.parse(saved) as WorkspaceItem[];
-          if (Array.isArray(parsed) && parsed.every(isWorkspaceItem)) return parsed;
+          parsed = JSON.parse(saved);
         } catch {
           localStorage.removeItem("veloce_workspaces");
         }
+
+        if (Array.isArray(parsed) && parsed.every(isWorkspaceItem)) {
+          const savedWorkspaces = parsed as WorkspaceItem[];
+          const paletteVersion = Number.parseInt(
+            localStorage.getItem(WORKSPACE_PALETTE_MIGRATION_KEY) ?? "0",
+            10
+          );
+          if (
+            !Number.isFinite(paletteVersion) ||
+            paletteVersion < WORKSPACE_PALETTE_MIGRATION_VERSION
+          ) {
+            const migrated = migrateLegacyDefaultWorkspaceColors(savedWorkspaces);
+            try {
+              localStorage.setItem("veloce_workspaces", JSON.stringify(migrated));
+              localStorage.setItem(
+                WORKSPACE_PALETTE_MIGRATION_KEY,
+                String(WORKSPACE_PALETTE_MIGRATION_VERSION)
+              );
+            } catch {
+              // Keep the migrated values in memory and retry persistence next launch.
+            }
+            return migrated;
+          }
+          return savedWorkspaces;
+        }
       }
     }
-    return [
-      {
-        id: "ws-personal",
-        name: "Personal",
-        icon: "🌟",
-        accent_primary: "#6e8efb",
-        accent_secondary: "#a777e3",
-      },
-      {
-        id: "ws-work",
-        name: "Work",
-        icon: "💼",
-        accent_primary: "#38bdf8",
-        accent_secondary: "#6366f1",
-      },
-      {
-        id: "ws-study",
-        name: "Study",
-        icon: "📚",
-        accent_primary: "#34d399",
-        accent_secondary: "#059669",
-      },
-      {
-        id: "ws-gaming",
-        name: "Gaming",
-        icon: "🎮",
-        accent_primary: "#f43f5e",
-        accent_secondary: "#d946ef",
-      },
-    ];
+    return DEFAULT_WORKSPACES.map((workspace) => ({ ...workspace }));
   }
   return await invoke<WorkspaceItem[]>("get_workspaces");
 }

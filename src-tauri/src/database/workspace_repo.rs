@@ -1,6 +1,14 @@
 use crate::state::workspace_model::WorkspaceItem;
 use rusqlite::{params, Connection, OptionalExtension};
 
+const WORKSPACE_PALETTE_MIGRATION_VERSION: i64 = 1;
+const LEGACY_DEFAULT_WORKSPACE_COLORS: [(&str, &str, &str); 4] = [
+    ("ws-personal", "#6e8efb", "#a777e3"),
+    ("ws-work", "#38bdf8", "#6366f1"),
+    ("ws-study", "#34d399", "#059669"),
+    ("ws-gaming", "#f43f5e", "#d946ef"),
+];
+
 pub fn initialize_workspace_table(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS workspaces (
@@ -37,6 +45,50 @@ pub fn initialize_workspace_table(conn: &Connection) -> Result<(), String> {
         }
     }
 
+    migrate_legacy_default_workspace_colors(conn)?;
+
+    Ok(())
+}
+
+fn migrate_legacy_default_workspace_colors(conn: &Connection) -> Result<(), String> {
+    let current_version: i64 = conn
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .map_err(|e| format!("Failed to read workspace palette version: {e}"))?;
+    if current_version >= WORKSPACE_PALETTE_MIGRATION_VERSION {
+        return Ok(());
+    }
+
+    let defaults = WorkspaceItem::default_workspaces();
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|e| format!("Failed to start workspace palette migration: {e}"))?;
+    for (workspace_id, legacy_primary, legacy_secondary) in
+        LEGACY_DEFAULT_WORKSPACE_COLORS
+    {
+        let Some(default) = defaults.iter().find(|item| item.id == workspace_id) else {
+            continue;
+        };
+        tx.execute(
+            "UPDATE workspaces SET accent_primary = ?1
+             WHERE id = ?2 AND lower(accent_primary) = ?3",
+            params![default.accent_primary, workspace_id, legacy_primary],
+        )
+        .map_err(|e| format!("Failed to migrate workspace primary color: {e}"))?;
+        tx.execute(
+            "UPDATE workspaces SET accent_secondary = ?1
+             WHERE id = ?2 AND lower(accent_secondary) = ?3",
+            params![default.accent_secondary, workspace_id, legacy_secondary],
+        )
+        .map_err(|e| format!("Failed to migrate workspace secondary color: {e}"))?;
+    }
+    tx.pragma_update(
+        None,
+        "user_version",
+        WORKSPACE_PALETTE_MIGRATION_VERSION,
+    )
+    .map_err(|e| format!("Failed to record workspace palette migration: {e}"))?;
+    tx.commit()
+        .map_err(|e| format!("Failed to finish workspace palette migration: {e}"))?;
     Ok(())
 }
 
@@ -219,6 +271,81 @@ mod tests {
         assert_eq!(list.len(), 4);
         assert_eq!(list[0].id, "ws-personal");
         assert_eq!(list[0].name, "My Personal");
+    }
+
+    #[test]
+    fn seeds_default_workspaces_with_neutral_colors() {
+        let workspaces = list_workspaces(&database()).unwrap();
+        let colors: Vec<(&str, &str, &str)> = workspaces
+            .iter()
+            .map(|item| {
+                (
+                    item.id.as_str(),
+                    item.accent_primary.as_str(),
+                    item.accent_secondary.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            colors,
+            [
+                ("ws-personal", "#f5f5f5", "#a3a3a3"),
+                ("ws-work", "#e5e5e5", "#8a8a8a"),
+                ("ws-study", "#d4d4d4", "#999999"),
+                ("ws-gaming", "#c7c7c7", "#737373"),
+            ]
+        );
+    }
+
+    #[test]
+    fn migrates_only_legacy_default_colors_once() {
+        let conn = database();
+        conn.pragma_update(None, "user_version", 0).unwrap();
+        conn.execute(
+            "UPDATE workspaces SET accent_primary = '#6e8efb', accent_secondary = '#a777e3'
+             WHERE id = 'ws-personal'",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "UPDATE workspaces SET accent_primary = '#123456', accent_secondary = '#6366f1'
+             WHERE id = 'ws-work'",
+            [],
+        )
+        .unwrap();
+        create_workspace(&conn, &custom_workspace("ws-custom-1", "Custom")).unwrap();
+
+        initialize_workspace_table(&conn).unwrap();
+        let workspaces = list_workspaces(&conn).unwrap();
+        let personal = workspaces
+            .iter()
+            .find(|item| item.id == "ws-personal")
+            .unwrap();
+        assert_eq!(personal.accent_primary, "#f5f5f5");
+        assert_eq!(personal.accent_secondary, "#a3a3a3");
+
+        let work = workspaces
+            .iter()
+            .find(|item| item.id == "ws-work")
+            .unwrap();
+        assert_eq!(work.accent_primary, "#123456");
+        assert_eq!(work.accent_secondary, "#8a8a8a");
+
+        let custom = workspaces
+            .iter()
+            .find(|item| item.id == "ws-custom-1")
+            .unwrap();
+        assert_eq!(custom.accent_primary, "#6e8efb");
+        assert_eq!(custom.accent_secondary, "#a777e3");
+
+        conn.execute(
+            "UPDATE workspaces SET accent_primary = '#6e8efb' WHERE id = 'ws-personal'",
+            [],
+        )
+        .unwrap();
+        initialize_workspace_table(&conn).unwrap();
+        let personal = list_workspaces(&conn).unwrap().remove(0);
+        assert_eq!(personal.accent_primary, "#6e8efb");
     }
 
     #[test]

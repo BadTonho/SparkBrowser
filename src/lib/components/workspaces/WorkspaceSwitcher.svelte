@@ -86,7 +86,7 @@
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
-    scrollbar-color: rgba(110, 142, 251, 0.45) transparent;
+    scrollbar-color: color-mix(in srgb, var(--accent-primary) 45%, transparent) transparent;
     background: transparent;
     border: 0;
   }
@@ -94,7 +94,7 @@
   .workspace-bar.horizontal::-webkit-scrollbar { height: 4px; }
   .workspace-bar.horizontal::-webkit-scrollbar-thumb {
     border-radius: 99px;
-    background: rgba(110, 142, 251, 0.45);
+    background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
   }
 
   .workspace-bar.horizontal .ws-pill { flex: 0 0 auto; }

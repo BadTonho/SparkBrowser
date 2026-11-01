@@ -393,7 +393,7 @@
   }
 
   .omnibox-wrapper:focus-within {
-    background: rgba(18, 22, 34, 0.95);
+    background: rgba(18, 18, 18, 0.95);
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 24%, transparent);
     transform: translateY(-1px);
@@ -461,7 +461,7 @@
 
   .go-btn:hover {
     background: var(--accent-primary);
-    color: #fff;
+    color: var(--accent-foreground);
     transform: scale(1.08);
   }
 
