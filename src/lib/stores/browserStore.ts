@@ -1,7 +1,8 @@
-import { writable, get } from "svelte/store";
+import { writable, derived, get } from "svelte/store";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { spring } from "svelte/motion";
-import type { QuickLink, TabItem } from "../types/browser";
+import { createSnapshotGate } from "../services/tab-snapshots.js";
+import type { QuickLink, TabItem, TabSnapshot, NavigationPatch } from "../types/browser";
 import type { AutoHibernateMode } from "./settingsStore";
 import {
   defaultSearchEngine,
@@ -44,7 +45,9 @@ export const tabs = writable<TabItem[]>([
 
 export const currentUrl = writable<string>(getSearchEngineHomeUrl(get(defaultSearchEngine)));
 export const addressInput = writable<string>(getSearchEngineHomeUrl(get(defaultSearchEngine)));
-export const isLoading = writable<boolean>(false);
+export const isAddressEditing = writable(false);
+export const activeNavigation = derived(tabs, items => items.find(tab => tab.is_active)?.navigation);
+export const isLoading = derived(activeNavigation, navigation => navigation?.loading ?? false);
 export const isSidebarOpen = writable<boolean>(true);
 
 /**
@@ -88,15 +91,34 @@ export const quickLinks: QuickLink[] = [
 
 let fallbackCounter = 2;
 
-export function applyTabsSnapshot(snapshot: TabItem[]): void {
-  if (!snapshot || snapshot.length === 0) return;
+const acceptSnapshot = createSnapshotGate();
+export function confirmUrl(url: string, force = false): void {
+  currentUrl.set(url);
+  if (force || !get(isAddressEditing)) addressInput.set(url);
+}
+
+export function applyNavigationPatch(patch: NavigationPatch): void {
+  const existing = get(tabs).find(tab => tab.id === patch.id);
+  if (!existing || (existing.navigation?.revision ?? 0) >= patch.navigation.revision) return;
+  tabs.update(items => items.map(tab => tab.id === patch.id ? { ...tab, ...patch } : tab));
+  if (existing.is_active) confirmUrl(patch.url);
+}
+
+export function applyTabsSnapshot(packet: TabSnapshot): void {
+  const incoming = acceptSnapshot(packet);
+  if (!incoming?.length) return;
+  const previous = get(tabs);
+  const previousActive = previous.find(tab => tab.is_active)?.id;
+  const byId = new Map(previous.map(tab => [tab.id, tab]));
+  const snapshot = incoming.map(tab => {
+    const old = byId.get(tab.id);
+    return old && (old.navigation?.revision ?? 0) > (tab.navigation?.revision ?? 0)
+      ? { ...tab, url: old.url, title: old.title, navigation: old.navigation } : tab;
+  });
   tabs.set(dragOrder ? orderedTabs(snapshot, dragOrder.preview) : snapshot);
-  const active = snapshot.find((t) => t.is_active) ?? snapshot[0];
-  if (active) {
-    activeWorkspaceId.set(active.workspace_id);
-    currentUrl.set(active.url);
-    addressInput.set(active.url);
-  }
+  const active = snapshot.find(tab => tab.is_active) ?? snapshot[0];
+  activeWorkspaceId.set(active.workspace_id);
+  confirmUrl(active.url, active.id !== previousActive);
 }
 
 export async function initializeTabs(): Promise<void> {
@@ -113,27 +135,22 @@ export async function addTab(
   workspaceId = get(activeWorkspaceId)
 ): Promise<void> {
   const urlToOpen = targetUrl?.trim() || getSearchEngineHomeUrl(get(defaultSearchEngine));
-  isLoading.set(true);
-  try {
-    if (!isTauriRuntime()) {
-      const newId = `tab-${fallbackCounter++}`;
-      const updated = get(tabs).map((t) => ({ ...t, is_active: false }));
-      updated.push({
-        id: newId,
-        title: urlToOpen.replace(/^https?:\/\//, ""),
-        url: urlToOpen,
-        workspace_id: workspaceId,
-        is_active: true,
-        is_hibernated: false,
-      });
-      applyTabsSnapshot(updated);
-      return;
-    }
-    const snapshot = await createNewTab(urlToOpen, get(defaultSearchEngine));
-    applyTabsSnapshot(snapshot);
-  } finally {
-    setTimeout(() => isLoading.set(false), 300);
+  if (!isTauriRuntime()) {
+    const newId = `tab-${fallbackCounter++}`;
+    const updated = get(tabs).map((t) => ({ ...t, is_active: false }));
+    updated.push({
+      id: newId,
+      title: urlToOpen.replace(/^https?:\/\//, ""),
+      url: urlToOpen,
+      workspace_id: workspaceId,
+      is_active: true,
+      is_hibernated: false,
+    });
+    applyTabsSnapshot(updated);
+    return;
   }
+  const snapshot = await createNewTab(urlToOpen, get(defaultSearchEngine));
+  applyTabsSnapshot(snapshot);
 }
 
 export async function selectTab(tabId: string): Promise<void> {
@@ -316,7 +333,6 @@ export async function submitNavigation(rawInput: string): Promise<void> {
   const trimmed = rawInput.trim();
   if (!trimmed) return;
 
-  isLoading.set(true);
   try {
     const resolvedUrl = await navigateToUrl(trimmed, get(defaultSearchEngine));
     if (!isTauriRuntime()) {
@@ -326,8 +342,6 @@ export async function submitNavigation(rawInput: string): Promise<void> {
   } catch (error) {
     addressInput.set(get(currentUrl));
     throw error;
-  } finally {
-    setTimeout(() => isLoading.set(false), 350);
   }
 }
 
@@ -340,10 +354,5 @@ export async function triggerForward(): Promise<void> {
 }
 
 export async function triggerReload(): Promise<void> {
-  isLoading.set(true);
-  try {
-    await reloadCurrentPage();
-  } finally {
-    setTimeout(() => isLoading.set(false), 350);
-  }
+  await reloadCurrentPage();
 }

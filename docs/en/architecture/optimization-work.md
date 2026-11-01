@@ -12,9 +12,15 @@ Session saves are transactional incremental upserts with prepared statements: un
 
 Native navigation callbacks enqueue history/session writes on one worker. History reads/clears and normal shutdown flush preceding writes. Explicit tab commands still persist before returning. No page URLs are printed by the worker on errors.
 
+
+## Navigation and dialogs
+
+Address drafts are preserved while editing and reset on an explicit tab change or Escape. Native loading and document-title events replace fixed spinner timers. Windows WebView2 observers supply source changes (including SPA URLs), history availability and navigation failures; other engines currently leave history availability unknown. The HTTPS indicator describes the scheme, not a certificate audit.
+
+Tab snapshots carry monotonic revisions; older replies are ignored. Per-tab navigation patches have their own revision and preserve newer metadata across full snapshots. Generation tokens reject callbacks from replaced views. Dialogs share initial focus, focus containment, Tab wrapping, Escape and restoration, including stacked dialogs and shortcut recording.
+
 ## Remaining stages
 
-- Address drafts, navigation metadata and modal accessibility.
 - History search, command ranking and reliable storage.
 - Resident WebView limits, download tasks and local security boundaries.
 - Modularization, diagnostics, continuous validation and measured release guidance.

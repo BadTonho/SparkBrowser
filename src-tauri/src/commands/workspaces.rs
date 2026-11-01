@@ -1,6 +1,6 @@
 use crate::commands::tabs::{create_tab_inner, switch_tab_inner};
 use crate::database::{session_repo::save_session_tabs, workspace_repo};
-use crate::state::browser_state::{BrowserState, DEFAULT_HOME_URL};
+use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::WorkspaceItem;
 use crate::window::webview_manager::{ensure_active_content_webview, sync_all_webviews};
@@ -11,7 +11,7 @@ use tauri::{AppHandle, Emitter, State};
 #[derive(Debug, Serialize)]
 pub struct WorkspaceDeleteResult {
     pub workspaces: Vec<WorkspaceItem>,
-    pub tabs: Vec<TabInfo>,
+    pub tabs: TabSnapshot,
     pub active_workspace_id: String,
 }
 
@@ -38,7 +38,7 @@ pub async fn switch_workspace(
     app: AppHandle,
     state: State<'_, BrowserState>,
     workspace_id: String,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     let exists = state
         .workspaces
@@ -267,7 +267,7 @@ pub async fn delete_workspace(
         let _ = app.emit("content-url-changed", &active_url);
     }
     sync_all_webviews(&app, &state)?;
-    let tabs = state.snapshot_tabs();
+    let tabs = state.snapshot_packet();
     let _ = app.emit("tabs-updated", &tabs);
 
     Ok(WorkspaceDeleteResult {

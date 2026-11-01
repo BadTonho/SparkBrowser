@@ -6,7 +6,8 @@ import type {
   DownloadItem,
   HistoryEntry,
   PrivacyStats,
-  TabItem,
+  TabSnapshot,
+  NavigationPatch,
   ViewportBounds,
   WorkspaceDeleteResult,
   WorkspaceItem,
@@ -67,7 +68,7 @@ export async function syncViewportBounds(bounds: ViewportBounds): Promise<void> 
 export async function fetchTabs(
   fallbackUrl = "https://www.google.com/",
   fallbackTitle = "Google"
-): Promise<TabItem[]> {
+): Promise<TabSnapshot> {
   if (!isTauriRuntime()) {
     return [
       {
@@ -80,46 +81,46 @@ export async function fetchTabs(
       },
     ];
   }
-  return await invoke<TabItem[]>("get_tabs");
+  return await invoke<TabSnapshot>("get_tabs");
 }
 
-export async function createNewTab(url?: string, searchEngine: SearchEngine = "google"): Promise<TabItem[]> {
+export async function createNewTab(url?: string, searchEngine: SearchEngine = "google"): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("create_tab", { url: url ?? null, searchEngine });
+  return await invoke<TabSnapshot>("create_tab", { url: url ?? null, searchEngine });
 }
 
-export async function switchActiveTab(tabId: string): Promise<TabItem[]> {
+export async function switchActiveTab(tabId: string): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("switch_tab", { tabId });
+  return await invoke<TabSnapshot>("switch_tab", { tabId });
 }
 
 export async function closeExistingTab(
   tabId: string,
   searchEngine: SearchEngine = "google"
-): Promise<TabItem[]> {
+): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("close_tab", { tabId, searchEngine });
+  return await invoke<TabSnapshot>("close_tab", { tabId, searchEngine });
 }
 
-export async function hibernateSingleTab(tabId: string): Promise<TabItem[]> {
+export async function hibernateSingleTab(tabId: string): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("hibernate_tab", { tabId });
+  return await invoke<TabSnapshot>("hibernate_tab", { tabId });
 }
 
 export async function hibernateBackgroundTabs(
   minIdleSecs?: number
-): Promise<TabItem[]> {
+): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("hibernate_inactive_tabs", {
+  return await invoke<TabSnapshot>("hibernate_inactive_tabs", {
     minIdleSecs: minIdleSecs ?? null,
   });
 }
 
 export async function autoHibernateBackgroundTabs(
   mode: AutoHibernateMode
-): Promise<TabItem[]> {
+): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("auto_hibernate_inactive_tabs", { mode: String(mode) });
+  return await invoke<TabSnapshot>("auto_hibernate_inactive_tabs", { mode: String(mode) });
 }
 
 export type OverlayId =
@@ -213,17 +214,17 @@ export async function onBookmarkContextMenuAction(
   });
 }
 
-export async function reorderTabs(tabIds: string[]): Promise<TabItem[]> {
+export async function reorderTabs(tabIds: string[]): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("reorder_tabs", { tabIds });
+  return await invoke<TabSnapshot>("reorder_tabs", { tabIds });
 }
 
 export async function moveTabToWorkspace(
   tabId: string,
   workspaceId: string
-): Promise<TabItem[]> {
+): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("move_tab_to_workspace", { tabId, workspaceId });
+  return await invoke<TabSnapshot>("move_tab_to_workspace", { tabId, workspaceId });
 }
 
 /**
@@ -281,9 +282,9 @@ export async function fetchActiveWorkspace(): Promise<string> {
   return await invoke<string>("get_active_workspace");
 }
 
-export async function switchWorkspace(workspaceId: string): Promise<TabItem[]> {
+export async function switchWorkspace(workspaceId: string): Promise<TabSnapshot> {
   if (!isTauriRuntime()) return [];
-  return await invoke<TabItem[]>("switch_workspace", { workspaceId });
+  return await invoke<TabSnapshot>("switch_workspace", { workspaceId });
 }
 
 export async function createWorkspaceProfile(
@@ -344,7 +345,8 @@ export async function deleteWorkspaceProfile(
     throw new Error("The Personal workspace cannot be deleted");
   }
   const remaining = allWorkspaces.filter((item) => item.id !== workspaceId);
-  const savedTabs = await fetchTabs();
+  const packet = await fetchTabs();
+  const savedTabs = Array.isArray(packet) ? packet : packet.tabs;
   const activeId =
     typeof localStorage === "undefined"
       ? "ws-personal"
@@ -513,10 +515,10 @@ export async function onContentUrlChanged(
 }
 
 export async function onTabsUpdated(
-  callback: (tabs: TabItem[]) => void
+  callback: (tabs: TabSnapshot) => void
 ): Promise<UnlistenFn> {
   if (!isTauriRuntime()) return () => {};
-  return await listen<TabItem[]>("tabs-updated", (event) => {
+  return await listen<TabSnapshot>("tabs-updated", (event) => {
     callback(event.payload);
   });
 }
@@ -598,4 +600,9 @@ export async function toggleMaximizeWindow(): Promise<void> {
 export async function closeWindow(): Promise<void> {
   if (!isTauriRuntime()) return;
   await getCurrentWindow().close();
+}
+
+export async function onNavigationUpdated(callback: (patch: NavigationPatch) => void): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => {};
+  return listen<NavigationPatch>("tab-navigation-updated", event => callback(event.payload));
 }

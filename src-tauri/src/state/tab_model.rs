@@ -12,6 +12,17 @@ pub struct TabInfo {
     pub is_active: bool,
     pub is_hibernated: bool,
     pub last_active_epoch: u64,
+    #[serde(default)]
+    pub navigation: NavigationState,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct NavigationState {
+    pub revision: u64,
+    pub loading: bool,
+    pub error: Option<String>,
+    pub can_go_back: Option<bool>,
+    pub can_go_forward: Option<bool>,
 }
 
 impl TabInfo {
@@ -32,6 +43,7 @@ impl TabInfo {
             is_active,
             is_hibernated: false,
             last_active_epoch: Self::current_epoch_secs(),
+            navigation: NavigationState::default(),
         }
     }
 

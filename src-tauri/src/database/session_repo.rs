@@ -86,6 +86,7 @@ pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
                 is_active: active_bool,
                 is_hibernated: !active_bool,
                 last_active_epoch: TabInfo::current_epoch_secs(),
+                navigation: Default::default(),
             })
         })
         .map_err(|e| e.to_string())?;

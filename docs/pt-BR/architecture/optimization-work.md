@@ -12,9 +12,15 @@ O salvamento de sessão usa upserts incrementais transacionais com instruções 
 
 Callbacks nativos de navegação enfileiram gravações de histórico/sessão em um worker. Consultas/limpeza do histórico e encerramento normal aguardam as gravações anteriores. Comandos explícitos de abas persistem antes de retornar. O worker não imprime URLs de páginas nos erros.
 
+
+## Navega??o e di?logos
+
+Rascunhos do endere?o s?o preservados durante a edi??o e redefinidos na troca expl?cita de aba ou ao pressionar Escape. Eventos nativos de carregamento e t?tulo substituem os temporizadores fixos do indicador. Observadores do WebView2 no Windows fornecem mudan?as de endere?o (incluindo URLs de SPA), disponibilidade do hist?rico e falhas de navega??o; outros motores atualmente deixam a disponibilidade do hist?rico desconhecida. O indicador HTTPS descreve o esquema, n?o uma auditoria do certificado.
+
+Snapshots de abas possuem revis?es monot?nicas; respostas antigas s?o ignoradas. Atualiza??es de navega??o por aba possuem revis?o pr?pria e preservam metadados mais recentes ao receber snapshots completos. Tokens de gera??o rejeitam callbacks de views substitu?das. Di?logos compartilham foco inicial, conten??o do foco, circula??o com Tab, Escape e restaura??o, incluindo di?logos sobrepostos e grava??o de atalhos.
+
 ## Etapas restantes
 
-- Rascunhos de endereço, metadados de navegação e acessibilidade de modais.
 - Busca no histórico, classificação de comandos e armazenamento confiável.
 - Limite de WebViews residentes, tarefas de download e fronteiras de segurança locais.
 - Modularização, diagnósticos, validação contínua e orientações de release com medições.

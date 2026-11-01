@@ -23,7 +23,7 @@ pub async fn toggle_adblock_shield(
     reset_content_webviews(&app, &state)?;
     sync_all_webviews(&app, &state)?;
     state.persist_session()?;
-    let _ = app.emit("tabs-updated", state.snapshot_tabs());
+    let _ = app.emit("tabs-updated", state.snapshot_packet());
 
     let stats = state.snapshot_privacy_stats();
     let _ = app.emit("privacy-stats-updated", &stats);

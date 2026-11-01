@@ -152,7 +152,7 @@ export async function removeWorkspaceProfile(
   );
   workspaces.set(result.workspaces);
   activeWorkspaceId.set(result.active_workspace_id);
-  if (result.tabs.length > 0) applyTabsSnapshot(result.tabs);
+  applyTabsSnapshot(result.tabs);
   if (typeof localStorage !== "undefined") {
     if (!isTauriRuntime()) {
       localStorage.setItem("veloce_active_workspace", result.active_workspace_id);

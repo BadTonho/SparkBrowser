@@ -3,6 +3,7 @@ use std::sync::mpsc::{self, Sender};
 use tauri::{AppHandle, Emitter, Manager};
 
 enum Write {
+    Session,
     Visit { title: String, url: String },
     Flush(Sender<Result<(), String>>),
 }
@@ -19,6 +20,14 @@ impl NavigationWriter {
                 let mut last_error = None;
                 for write in receive {
                     match write {
+                        Write::Session => {
+                            let state = app.state::<BrowserState>();
+                            let _operation = state.tab_operations.blocking_lock();
+                            if let Err(error) = state.persist_session() {
+                                last_error = Some(error);
+                                let _ = app.emit("browser-error", "Could not persist the session");
+                            }
+                        }
                         Write::Visit { title, url } => {
                             let state = app.state::<BrowserState>();
                             // Snapshot only after serialized tab operations have finished.
@@ -46,6 +55,10 @@ impl NavigationWriter {
         self.0
             .send(Write::Visit { title, url })
             .map_err(|e| e.to_string())
+    }
+
+    pub fn session(&self) -> Result<(), String> {
+        self.0.send(Write::Session).map_err(|e| e.to_string())
     }
 
     /// Call off the UI thread; acknowledges all earlier writes and their failures.

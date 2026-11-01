@@ -5,9 +5,10 @@ use super::internal_overlays::{
 #[cfg(windows)]
 use super::keyboard_bridge::install_workspace_shortcut_accelerator;
 use super::keyboard_bridge::{build_workspace_shortcut_script, WORKSPACE_SWITCHER_ESCAPE_SCRIPT};
+use super::navigation_state::update_navigation;
 use crate::privacy::adblock_engine::{build_content_shield_script, should_block_url};
 use crate::state::browser_state::{BrowserState, ViewportBounds};
-use crate::state::tab_model::{derive_title_from_url, webview_label_for_tab};
+use crate::state::tab_model::webview_label_for_tab;
 use tauri::{
     webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Rect,
     Webview, WebviewUrl,
@@ -110,42 +111,56 @@ fn ensure_tab_webview(
     let tab_for_load = tab_id.to_string();
     let label_for_load = label.clone();
     let webview_builder = webview_builder.on_page_load(move |webview, payload| {
-        if payload.event() != tauri::webview::PageLoadEvent::Finished {
+        if !super::navigation_state::is_current_generation(
+            &app_for_page_load,
+            &label_for_load,
+            &keyboard_token_for_load,
+        ) {
+            return;
+        }
+        let started = payload.event() == tauri::webview::PageLoadEvent::Started;
+        update_navigation(
+            &app_for_page_load,
+            &tab_for_load,
+            &label_for_load,
+            &keyboard_token_for_load,
+            |tab| {
+                tab.navigation.loading = started;
+                if started {
+                    tab.navigation.error = None;
+                }
+                if matches!(payload.url().scheme(), "http" | "https") {
+                    tab.url = payload.url().to_string();
+                }
+            },
+        );
+        if started {
             return;
         }
         let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
             return;
         };
-        if !state
-            .keyboard_bridge_tokens
+        let title = state
+            .tabs
             .lock()
-            .map(|tokens| tokens.get(&label_for_load) == Some(&keyboard_token_for_load))
-            .unwrap_or(false)
-        {
-            return;
-        }
-        let url = payload.url().to_string();
+            .ok()
+            .and_then(|tabs| {
+                tabs.iter()
+                    .find(|tab| tab.id == tab_for_load)
+                    .map(|tab| tab.title.clone())
+            })
+            .unwrap_or_default();
         if matches!(payload.url().scheme(), "http" | "https") {
-            let title = derive_title_from_url(&url);
-            if let Ok(mut tabs) = state.tabs.lock() {
-                if let Some(tab) = tabs.iter_mut().find(|tab| tab.id == tab_for_load) {
-                    tab.url = url.clone();
-                    tab.title = title.clone();
-                } else {
-                    return;
-                }
-            }
             if let Some(writer) = app_for_page_load
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
             ) {
-                if writer.visit(title, url).is_err() {
+                if writer.visit(title, payload.url().to_string()).is_err() {
                     let _ = app_for_page_load.emit(
                         "browser-error",
                         "Navigation persistence queue is unavailable",
                     );
                 }
             }
-            let _ = app_for_page_load.emit("tabs-updated", state.snapshot_tabs());
         }
         let Ok(shortcuts) = state.keyboard_shortcuts.lock() else {
             return;
@@ -158,6 +173,32 @@ fn ensure_tab_webview(
         }
     });
 
+    let (title_app, title_tab, title_label, title_token) = (
+        app.clone(),
+        tab_id.to_string(),
+        label.clone(),
+        keyboard_bridge_token.clone(),
+    );
+    let webview_builder = webview_builder.on_document_title_changed(move |_, title| {
+        if !super::navigation_state::is_current_generation(&title_app, &title_label, &title_token) {
+            return;
+        }
+        update_navigation(&title_app, &title_tab, &title_label, &title_token, |tab| {
+            if !title.trim().is_empty() {
+                tab.title = title.chars().take(512).collect();
+            }
+        });
+        if let Some(writer) =
+            title_app.try_state::<crate::database::navigation_writer::NavigationWriter>()
+        {
+            if writer.session().is_err() {
+                let _ = title_app.emit("browser-error", "Session persistence queue is unavailable");
+            }
+        }
+    });
+
+    #[cfg(windows)]
+    let navigation_registration_token = keyboard_bridge_token.clone();
     let tab_for_nav = tab_id.to_string();
     let label_for_nav = label.clone();
     let webview_builder = webview_builder.on_navigation(move |nav_url| {
@@ -327,6 +368,14 @@ fn ensure_tab_webview(
     install_workspace_shortcut_accelerator(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
+    )?;
+
+    #[cfg(windows)]
+    super::navigation_state::install_native_navigation(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
     )?;
 
     Ok(())

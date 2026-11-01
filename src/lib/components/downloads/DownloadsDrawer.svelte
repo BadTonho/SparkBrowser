@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import {
@@ -45,6 +46,7 @@
       out:fade={{ duration: 130 }}
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.stopPropagation()}
+      use:focusDialog={{ onEscape: closeDownloadsDrawer }}
       role="dialog"
       aria-modal="true"
       aria-label="Download Manager"

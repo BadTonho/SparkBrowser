@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { CommandItem } from "../../types/browser";
@@ -277,6 +278,7 @@
       out:fade={{ duration: 130 }}
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.stopPropagation()}
+      use:focusDialog={{ onEscape: closeCommandBar }}
       role="dialog"
       aria-modal="true"
       aria-label="Command Bar"

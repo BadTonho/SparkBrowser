@@ -30,7 +30,14 @@ impl Default for ViewportBounds {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct TabSnapshot {
+    pub revision: u64,
+    pub tabs: Vec<TabInfo>,
+}
+
 pub struct BrowserState {
+    pub snapshot_revision: Mutex<u64>,
     pub tab_operations: tauri::async_runtime::Mutex<()>,
     pub workspaces: Mutex<Vec<WorkspaceItem>>,
     pub active_workspace_id: Mutex<String>,
@@ -61,6 +68,7 @@ impl Default for BrowserState {
             true,
         );
         Self {
+            snapshot_revision: Mutex::new(0),
             tab_operations: tauri::async_runtime::Mutex::new(()),
             workspaces: Mutex::new(WorkspaceItem::default_workspaces()),
             active_workspace_id: Mutex::new(DEFAULT_WORKSPACE_ID.to_string()),
@@ -147,6 +155,19 @@ impl BrowserState {
     }
 
     /// Saves the current tab list into SQLite for automatic session restoration.
+    pub fn snapshot_packet(&self) -> TabSnapshot {
+        let mut revision = self
+            .snapshot_revision
+            .lock()
+            .expect("snapshot revision poisoned");
+        let tabs = self.snapshot_tabs();
+        *revision += 1;
+        TabSnapshot {
+            revision: *revision,
+            tabs,
+        }
+    }
+
     pub fn persist_session(&self) -> Result<(), String> {
         let snapshot = self.snapshot_tabs();
         let db_guard = self.db.lock().map_err(|e| e.to_string())?;

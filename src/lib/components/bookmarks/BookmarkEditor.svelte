@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusDialog } from "../../actions/focusDialog";
   import { get } from "svelte/store";
   import {
     bookmarkEditorState,
@@ -141,6 +142,7 @@
   <div class="bookmark-dialog-backdrop" onclick={handleBackdropClick} role="presentation">
     <div
       class="bookmark-dialog"
+      use:focusDialog={{ onEscape: closeBookmarkEditor }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="bookmark-dialog-title"

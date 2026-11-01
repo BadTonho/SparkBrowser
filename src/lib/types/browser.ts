@@ -23,7 +23,7 @@ export interface WorkspaceItem {
 
 export interface WorkspaceDeleteResult {
   workspaces: WorkspaceItem[];
-  tabs: TabItem[];
+  tabs: TabSnapshot;
   active_workspace_id: string;
 }
 
@@ -35,6 +35,7 @@ export interface TabItem {
   is_active: boolean;
   is_hibernated: boolean;
   last_active_epoch?: number;
+  navigation?: NavigationState;
 }
 
 export interface HistoryEntry {
@@ -85,3 +86,15 @@ export interface CommandItem {
   badge: string;
   action: () => void | Promise<void>;
 }
+
+/** Browser preview uses arrays; the native runtime sends revisioned snapshots. */
+export type TabSnapshot = TabItem[] | { revision: number; tabs: TabItem[] };
+
+export interface NavigationState {
+  revision: number;
+  loading: boolean;
+  error: string | null;
+  can_go_back: boolean | null;
+  can_go_forward: boolean | null;
+}
+export interface NavigationPatch { id: string; url: string; title: string; navigation: NavigationState; }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusDialog } from "../../actions/focusDialog";
   import { onDestroy, tick } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -358,6 +359,7 @@
       out:fade={{ duration: 130 }}
       onclick={(event) => event.stopPropagation()}
       onkeydown={handleDialogKeydown}
+      use:focusDialog={{ onEscape: closeSettingsModal, ignoreEscape: () => Boolean($recordingShortcutId) }}
       role="dialog"
       aria-modal="true"
       aria-label="Browser Settings"

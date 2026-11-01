@@ -17,8 +17,8 @@
   import BookmarkContextMenu from "./lib/components/bookmarks/BookmarkContextMenu.svelte";
   import {
     tabs,
+    applyNavigationPatch,
     currentUrl,
-    addressInput,
     initializeTabs,
     applyTabsSnapshot,
     addTab,
@@ -67,7 +67,7 @@
     recordingShortcutId,
   } from "./lib/stores/shortcutsStore";
   import {
-    onContentUrlChanged,
+    onNavigationUpdated,
     onTabsUpdated,
     onPrivacyStatsUpdated,
     onBrowserShortcutAction,
@@ -100,35 +100,33 @@
     initializePrivacyStats();
     initializeKeyboardShortcuts();
 
-    let unlistenUrl: (() => void) | undefined;
+    let unlistenNavigation: (() => void) | undefined;
     let unlistenTabs: (() => void) | undefined;
     let unlistenPrivacy: (() => void) | undefined;
     let unlistenBrowserShortcut: (() => void) | undefined;
     const stopWorkspaceShortcutBridge = initializeWorkspaceShortcutBridge();
 
-    onContentUrlChanged((newUrl) => {
-      currentUrl.set(newUrl);
-      addressInput.set(newUrl);
-    }).then((fn) => {
-      unlistenUrl = fn;
+    let disposed = false;
+    onNavigationUpdated(applyNavigationPatch).then(fn => {
+      if (disposed) fn(); else unlistenNavigation = fn;
     });
 
     onTabsUpdated((updatedTabs) => {
       applyTabsSnapshot(updatedTabs);
     }).then((fn) => {
-      unlistenTabs = fn;
+      if (disposed) fn(); else unlistenTabs = fn;
     });
 
     onPrivacyStatsUpdated((stats) => {
       privacyStats.set(stats);
     }).then((fn) => {
-      unlistenPrivacy = fn;
+      if (disposed) fn(); else unlistenPrivacy = fn;
     });
 
     onBrowserShortcutAction((action, key) => {
       dispatchShortcut(action, key);
     }).then((fn) => {
-      unlistenBrowserShortcut = fn;
+      if (disposed) fn(); else unlistenBrowserShortcut = fn;
     });
 
     // Apply the selected automatic hibernation policy once per minute.
@@ -210,7 +208,8 @@
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
       clearInterval(hibernationInterval);
-      if (unlistenUrl) unlistenUrl();
+      disposed = true;
+      if (unlistenNavigation) unlistenNavigation();
       if (unlistenTabs) unlistenTabs();
       if (unlistenPrivacy) unlistenPrivacy();
       if (unlistenBrowserShortcut) unlistenBrowserShortcut();

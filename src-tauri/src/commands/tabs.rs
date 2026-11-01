@@ -1,5 +1,5 @@
 use crate::database::tab_usage_repo;
-use crate::state::browser_state::{BrowserState, DEFAULT_HOME_URL};
+use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::window::webview_manager::{
@@ -9,8 +9,8 @@ use crate::window::webview_manager::{
 use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
-pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<Vec<TabInfo>, String> {
-    Ok(state.snapshot_tabs())
+pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<TabSnapshot, String> {
+    Ok(state.snapshot_packet())
 }
 
 #[tauri::command]
@@ -19,7 +19,7 @@ pub async fn create_tab(
     state: State<'_, BrowserState>,
     url: Option<String>,
     search_engine: Option<String>,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     create_tab_inner(&app, &state, url, search_engine)
 }
@@ -29,7 +29,7 @@ pub(super) fn create_tab_inner(
     state: &BrowserState,
     url: Option<String>,
     search_engine: Option<String>,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let raw_target = url.unwrap_or_else(|| DEFAULT_HOME_URL.to_string());
     let resolved_url = resolve_input_to_url_with_search_engine(
         &raw_target,
@@ -83,7 +83,7 @@ pub(super) fn create_tab_inner(
     sync_all_webviews(app, state)?;
     state.persist_session()?;
 
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let _ = app.emit("tabs-updated", &snapshot);
     let _ = app.emit("content-url-changed", &resolved_url);
 
@@ -95,7 +95,7 @@ pub async fn switch_tab(
     app: AppHandle,
     state: State<'_, BrowserState>,
     tab_id: String,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     switch_tab_inner(&app, &state, tab_id)
 }
@@ -104,7 +104,7 @@ pub(super) fn switch_tab_inner(
     app: &AppHandle,
     state: &BrowserState,
     tab_id: String,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let previous_active_id = state
         .active_tab_id
         .lock()
@@ -133,7 +133,7 @@ pub(super) fn switch_tab_inner(
     sync_all_webviews(app, state)?;
     state.persist_session()?;
 
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
     let _ = app.emit("tabs-updated", &snapshot);
     let _ = app.emit("privacy-stats-updated", &stats);
@@ -150,7 +150,7 @@ pub async fn close_tab(
     state: State<'_, BrowserState>,
     tab_id: String,
     search_engine: Option<String>,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     let active_ws_id = state
         .active_workspace_id
@@ -203,7 +203,7 @@ pub async fn close_tab(
     sync_all_webviews(&app, &state)?;
     state.persist_session()?;
 
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
     let _ = app.emit("tabs-updated", &snapshot);
     let _ = app.emit("privacy-stats-updated", &stats);
@@ -216,7 +216,7 @@ pub async fn hibernate_tab(
     app: AppHandle,
     state: State<'_, BrowserState>,
     tab_id: String,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     let active_id = state
         .active_tab_id
@@ -237,7 +237,7 @@ pub async fn hibernate_tab(
     sync_all_webviews(&app, &state)?;
     state.persist_session()?;
 
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
     let _ = app.emit("tabs-updated", &snapshot);
     let _ = app.emit("privacy-stats-updated", &stats);
@@ -250,7 +250,7 @@ pub async fn hibernate_inactive_tabs(
     app: AppHandle,
     state: State<'_, BrowserState>,
     min_idle_secs: Option<u64>,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     let threshold = min_idle_secs.unwrap_or(0);
     let now = TabInfo::current_epoch_secs();
@@ -274,7 +274,7 @@ pub async fn hibernate_inactive_tabs(
     sync_all_webviews(&app, &state)?;
     state.persist_session()?;
 
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
     let _ = app.emit("tabs-updated", &snapshot);
     let _ = app.emit("privacy-stats-updated", &stats);
@@ -287,7 +287,7 @@ pub async fn auto_hibernate_inactive_tabs(
     app: AppHandle,
     state: State<'_, BrowserState>,
     mode: String,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     const FIVE_HOURS_SECS: u64 = 5 * 60 * 60;
     let mode = match mode.as_str() {
@@ -300,7 +300,7 @@ pub async fn auto_hibernate_inactive_tabs(
     };
 
     let Some((regular_threshold, adaptive)) = mode else {
-        return Ok(state.snapshot_tabs());
+        return Ok(state.snapshot_packet());
     };
 
     let now = TabInfo::current_epoch_secs();
@@ -338,7 +338,7 @@ pub async fn auto_hibernate_inactive_tabs(
 
     sync_all_webviews(&app, &state)?;
     state.persist_session()?;
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
     let _ = app.emit("tabs-updated", &snapshot);
     let _ = app.emit("privacy-stats-updated", &stats);
@@ -350,7 +350,7 @@ pub async fn reorder_tabs(
     app: AppHandle,
     state: State<'_, BrowserState>,
     tab_ids: Vec<String>,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     {
         if let Ok(mut tabs) = state.tabs.lock() {
@@ -371,7 +371,7 @@ pub async fn reorder_tabs(
     }
 
     state.persist_session()?;
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let _ = app.emit("tabs-updated", &snapshot);
     Ok(snapshot)
 }
@@ -382,12 +382,12 @@ pub async fn move_tab_to_workspace(
     state: State<'_, BrowserState>,
     tab_id: String,
     workspace_id: String,
-) -> Result<Vec<TabInfo>, String> {
+) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     state.move_tab(&tab_id, &workspace_id)?;
 
     state.persist_session()?;
-    let snapshot = state.snapshot_tabs();
+    let snapshot = state.snapshot_packet();
     let _ = app.emit("tabs-updated", &snapshot);
     Ok(snapshot)
 }

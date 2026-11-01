@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
@@ -81,7 +82,8 @@
         out:fade={{ duration: 80 }}
         onclick={(event) => event.stopPropagation()}
         onkeydown={(event) => event.stopPropagation()}
-        role="dialog"
+        use:focusDialog={{ onEscape: dismissWorkspacePicker }}
+      role="dialog"
         aria-modal="true"
         aria-label="Choose a workspace"
         tabindex="-1"

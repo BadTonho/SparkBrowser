@@ -1,6 +1,8 @@
 <script lang="ts">
   import {
     addressInput,
+    isAddressEditing,
+    activeNavigation,
     currentUrl,
     tabs,
     isSidebarOpen,
@@ -48,11 +50,14 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Enter") {
-      submitNavigation($addressInput);
+      isAddressEditing.set(false);
+      (event.currentTarget as HTMLInputElement).blur();
+      void submitNavigation($addressInput);
     }
   }
 
   function handleFocus(event: FocusEvent) {
+    isAddressEditing.set(true);
     const target = event.currentTarget as HTMLInputElement;
     target?.select();
   }
@@ -102,6 +107,7 @@
       <div class="nav-controls">
         <button
           class="nav-btn"
+          disabled={$activeNavigation?.can_go_back === false}
           onclick={triggerBack}
           title={`Back (${ $keyboardShortcuts && shortcutLabel("navigate-back") })`}
           aria-label="Back"
@@ -113,6 +119,7 @@
 
         <button
           class="nav-btn"
+          disabled={$activeNavigation?.can_go_forward === false}
           onclick={triggerForward}
           title={`Forward (${ $keyboardShortcuts && shortcutLabel("navigate-forward") })`}
           aria-label="Forward"
@@ -136,14 +143,15 @@
         </button>
       </div>
 
-      <div class="omnibox-wrapper" class:loading={$isLoading}>
-        <span class="omnibox-icon">🔒</span>
+      <div class="omnibox-wrapper" class:loading={$isLoading} title={$activeNavigation?.error ?? undefined}>
+        <span class="omnibox-icon" title={$currentUrl.startsWith("https:") ? "HTTPS connection" : "Unencrypted connection"}>{$currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</span>
         <input
           class="omnibox-input"
           type="text"
           bind:value={$addressInput}
-          onkeydown={handleKeydown}
+          onkeydown={(event) => { if (event.key === "Escape") { addressInput.set($currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
           onfocus={handleFocus}
+          onblur={() => isAddressEditing.set(false)}
           placeholder="Search {$defaultSearchEngine} or enter URL..."
           spellcheck="false"
         />
