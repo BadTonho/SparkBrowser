@@ -16,7 +16,7 @@
 
 ## 4. 🎨 Workspaces & Dynamic Themes
 - Group tabs by context (e.g., *Work*, *Study*, *Personal*, *Gaming*).
-- Hold `Alt` for 0.4 seconds to open the centered workspace picker. Choose a workspace while holding Alt, or release Alt, press `Esc`, or click outside to dismiss it.
+- In **Appearance & Layout**, choose permanent workspace buttons in the horizontal toolbar or a floating picker opened by holding the configured modifier (Alt by default) for 0.4 seconds. In Popup mode, release the modifier, press `Esc`, or click outside to dismiss it.
 - `Alt + 1` through `Alt + 9` switch immediately to the first nine workspaces in their displayed order and show a brief confirmation.
 - These workspace shortcuts can be changed in Browser Settings; the picker uses a configurable held modifier key.
 - The picker and confirmation can appear temporarily in Zen Mode; closing them leaves Zen Mode enabled.
@@ -37,8 +37,8 @@
 
 ## 7. 📑 Horizontal and Vertical Browser Layouts
 - Choose **Horizontal** or **Vertical** in Settings (`Ctrl + ,`); the selection is remembered across app restarts.
-- **Horizontal:** Tabs stay at the top, workspace buttons sit beside the search bar, and saved bookmarks appear in a horizontal bar below it. Toggle the bar from Appearance & Layout or the top toolbar; hiding it does not remove bookmarks.
-- **Vertical:** Workspaces, saved bookmarks, and vertical tabs stay together in the collapsible sidebar.
+- **Horizontal:** Tabs stay at the top, and saved bookmarks appear in a horizontal bar below the search bar. Choose whether workspace buttons sit beside the search bar or appear in a floating picker when holding Alt. Toggle the bookmarks bar from Appearance & Layout or the top toolbar; hiding it does not remove bookmarks.
+- **Vertical:** Workspaces, saved bookmarks, and vertical tabs stay together in the collapsible sidebar; the workspace display preference only changes the horizontal layout.
 
 ## 8. Organized Browser Settings
 - Settings are split into **Appearance & Layout**, **Search & Navigation**, **Workspaces & Theme**, **Performance & Privacy**, and **Keyboard Shortcuts**.

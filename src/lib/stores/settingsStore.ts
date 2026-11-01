@@ -131,6 +131,35 @@ export function setActiveSettingsCategory(category: SettingsCategory): void {
 
 export type TabLayout = "horizontal" | "vertical";
 
+export type WorkspaceSwitcherDisplay = "toolbar" | "popup";
+const WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY = "veloce_workspace_switcher_display";
+
+function getInitialWorkspaceSwitcherDisplay(): WorkspaceSwitcherDisplay {
+  if (typeof localStorage === "undefined") return "toolbar";
+
+  try {
+    const saved = localStorage.getItem(WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY);
+    return saved === "popup" ? "popup" : "toolbar";
+  } catch {
+    return "toolbar";
+  }
+}
+
+export const workspaceSwitcherDisplay = writable<WorkspaceSwitcherDisplay>(
+  getInitialWorkspaceSwitcherDisplay()
+);
+
+export function setWorkspaceSwitcherDisplay(display: WorkspaceSwitcherDisplay): void {
+  workspaceSwitcherDisplay.set(display);
+  if (typeof localStorage === "undefined") return;
+
+  try {
+    localStorage.setItem(WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY, display);
+  } catch {
+    // Keep the current visual setting even when storage is unavailable.
+  }
+}
+
 const initialTabLayout: TabLayout = (() => {
   if (typeof localStorage === "undefined") return "horizontal";
   const saved = localStorage.getItem("veloce_tab_layout");

@@ -25,6 +25,7 @@
     tabLayout,
     showBookmarksBar,
     toggleBookmarksBar,
+    workspaceSwitcherDisplay,
   } from "../../stores/settingsStore";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
@@ -91,7 +92,7 @@
         </div>
       {/if}
 
-      {#if $tabLayout === "horizontal"}
+      {#if $tabLayout === "horizontal" && $workspaceSwitcherDisplay === "toolbar"}
         <WorkspaceSwitcher horizontal />
       {/if}
     </div>

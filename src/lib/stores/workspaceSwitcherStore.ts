@@ -12,7 +12,7 @@ import {
   activeWorkspaceId,
   workspaces,
 } from "./workspaceStore";
-import { overlayBlurPx } from "./settingsStore";
+import { overlayBlurPx, workspaceSwitcherDisplay } from "./settingsStore";
 
 export type WorkspaceSwitcherOverlay = { kind: "picker" };
 
@@ -56,7 +56,18 @@ function setOverlay(overlay: WorkspaceSwitcherOverlay | null): void {
   }
 }
 
+workspaceSwitcherDisplay.subscribe((display) => {
+  if (display === "toolbar" && get(workspaceSwitcherOverlay) !== null) {
+    setOverlay(null);
+  }
+});
+
 export function startWorkspaceAltHold(): void {
+  if (get(workspaceSwitcherDisplay) !== "popup") {
+    cancelWorkspaceAltHoldTimer();
+    return;
+  }
+
   if (altIsHeld) return;
   altIsHeld = true;
   clearHoldTimer();

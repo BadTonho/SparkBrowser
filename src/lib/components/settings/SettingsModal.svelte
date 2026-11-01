@@ -17,6 +17,8 @@
     setTabLayout,
     showBookmarksBar,
     setShowBookmarksBar,
+    workspaceSwitcherDisplay,
+    setWorkspaceSwitcherDisplay,
     activeSettingsCategory,
     setActiveSettingsCategory,
     type SettingsCategory,
@@ -79,6 +81,14 @@
       category: "appearance_layout",
       targetId: "setting-bookmarks-bar",
       keywords: "favorites show hide visibility toolbar horizontal",
+    },
+    {
+      id: "workspace-switcher-display",
+      title: "Workspace Switcher Display",
+      description: "Choose horizontal workspace buttons or a floating Alt picker; vertical sidebar buttons stay visible.",
+      category: "appearance_layout",
+      targetId: "setting-workspace-switcher-display",
+      keywords: "workspaces toolbar buttons popup floating window alt hold presentation",
     },
     {
       id: "zen-mode",
@@ -493,6 +503,31 @@
                 >
                   {$showBookmarksBar ? "Visible" : "Hidden"}
                 </button>
+              </div>
+
+              <div class="setting-row" id="setting-workspace-switcher-display" tabindex="-1">
+                <div class="row-text">
+                  <span class="row-label">Workspace Switcher</span>
+                  <span class="row-desc">Choose horizontal buttons or a floating picker; vertical sidebar buttons stay visible</span>
+                </div>
+                <div class="timer-pills">
+                  <button
+                    class="mini-pill"
+                    class:selected={$workspaceSwitcherDisplay === "toolbar"}
+                    aria-pressed={$workspaceSwitcherDisplay === "toolbar"}
+                    onclick={() => setWorkspaceSwitcherDisplay("toolbar")}
+                  >
+                    Toolbar buttons
+                  </button>
+                  <button
+                    class="mini-pill"
+                    class:selected={$workspaceSwitcherDisplay === "popup"}
+                    aria-pressed={$workspaceSwitcherDisplay === "popup"}
+                    onclick={() => setWorkspaceSwitcherDisplay("popup")}
+                  >
+                    Popup
+                  </button>
+                </div>
               </div>
 
               <div class="setting-row" id="setting-zen-mode" tabindex="-1">

@@ -16,7 +16,7 @@
 
 ## 4. 🎨 Workspaces (Espaços de Trabalho) e Temas Dinâmicos
 - Separação de abas por contexto (ex: *Trabalho*, *Estudo*, *Pessoal*, *Jogos*).
-- Segure `Alt` por 0,4 segundo para abrir o seletor central de espaços de trabalho. Escolha um perfil enquanto mantém Alt pressionado ou solte Alt, pressione `Esc` ou clique fora para fechar sem trocar.
+- Em **Aparência e Layout**, escolha entre botões permanentes na barra horizontal e um seletor flutuante aberto ao manter a tecla modificadora configurada (Alt por padrão) pressionada por 0,4 segundo. No modo Popup, solte a tecla, pressione `Esc` ou clique fora para fechar o seletor.
 - `Alt + 1` até `Alt + 9` alternam imediatamente para os nove primeiros espaços, conforme a ordem exibida, e mostram uma confirmação breve.
 - Esses atalhos de workspace podem ser alterados em Browser Settings; o seletor usa uma tecla modificadora configurável que deve ser mantida pressionada.
 - O seletor e a confirmação também aparecem temporariamente no Modo Zen; ao fechá-los, o Modo Zen continua ativo.
@@ -37,8 +37,8 @@
 
 ## 7. 📑 Layouts Horizontal e Vertical do Navegador
 - Escolha **Horizontal** ou **Vertical** nas Configurações (`Ctrl + ,`); a seleção é lembrada ao reabrir o aplicativo.
-- **Horizontal:** As abas ficam no topo, os botões dos espaços de trabalho ficam ao lado da barra de pesquisa e os bookmarks salvos aparecem em uma barra horizontal abaixo dela. Oculte ou mostre essa barra em Aparência e Layout ou pelo botão na barra superior; ocultá-la não remove os bookmarks.
-- **Vertical:** Os espaços de trabalho, bookmarks salvos e abas verticais ficam juntos na barra lateral retrátil.
+- **Horizontal:** As abas ficam no topo e os bookmarks salvos aparecem em uma barra horizontal abaixo da pesquisa. Escolha se os workspaces ficam como botões ao lado da pesquisa ou em um seletor flutuante aberto ao manter Alt pressionado. Oculte ou mostre a barra de bookmarks em Aparência e Layout ou pelo botão na barra superior; ocultá-la não remove os bookmarks.
+- **Vertical:** Os espaços de trabalho, bookmarks salvos e abas verticais ficam juntos na barra lateral retrátil; a preferência de exibição dos workspaces altera somente o layout horizontal.
 
 ## 8. Configurações do Navegador Organizadas
 - As configurações são divididas em **Aparência e Layout**, **Pesquisa e Navegação**, **Espaços de Trabalho e Tema**, **Desempenho e Privacidade** e **Atalhos de Teclado**.
