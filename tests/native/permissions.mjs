@@ -13,7 +13,7 @@ export async function checkPermissions(invoke, until, fixture, a, b, script) {
   async function request() { fixture.commands.set('p', 'microphone'); return until(pending, 'native microphone permission'); }
   await policy('ask'); await open();
   let current = await request();
-  await until(() => script(`return Boolean(document.querySelector('[aria-label="Site permission request"]'))`), 'integrated permission dialog');
+  await until(() => script(`return Boolean(document.querySelector('[data-testid="permission-request"]'))`), 'integrated permission dialog');
   await invoke('respond_site_permission', { id: current.id, decision: 'allow_once' });
   await until(() => fixture.reports.get('p')?.permission === 'granted', 'fake microphone granted once');
   assert.equal((await invoke('get_site_permissions')).settings.some(row => row.origin === fixture.origin && row.kind === 'microphone'), false);

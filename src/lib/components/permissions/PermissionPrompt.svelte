@@ -11,7 +11,7 @@
 {#if request}
   {#key request.id}
     <div class="permission-backdrop">
-      <div class="tools-panel" role="dialog" aria-modal="true" aria-label="Site permission request" tabindex="-1" use:focusDialog={{ onEscape: () => respond("block") }}>
+      <div data-testid="permission-request" class="tools-panel" role="dialog" aria-modal="true" aria-label="Site permission request" tabindex="-1" use:focusDialog={{ onEscape: () => respond("block") }}>
         <h2>Site permission request</h2>
         <p><strong>{request.frame_origin ?? request.origin}</strong> wants to use <strong>{request.kind}</strong>.</p>
         {#if request.frame_origin || request.origin !== request.top_origin}<p>Embedded in {request.top_origin}</p>{/if}

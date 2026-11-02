@@ -179,7 +179,7 @@
 
     <!-- Top-Right Controls: Quick Tools, Settings & Window Controls -->
     <div class="titlebar-controls">
-      <button class="icon-btn" onclick={() => openTools()} title="Tools" aria-label="Tools">☷</button>
+      <button class="icon-btn" onclick={() => openTools()} title="Tools" data-testid="open-tools" aria-label="Tools">☷</button>
       {#if $tabLayout === "horizontal"}
         <button
           class="icon-btn"
@@ -209,7 +209,7 @@
         class="icon-btn"
         onclick={openHistoryDrawer}
         title={`Browsing History (${ $keyboardShortcuts && shortcutLabel("history") })`}
-        aria-label="Browsing History"
+        data-testid="open-history" aria-label="Browsing History"
       >
         🕒
       </button>
@@ -218,7 +218,7 @@
         class="icon-btn"
         onclick={openDownloadsDrawer}
         title={`Download Manager (${ $keyboardShortcuts && shortcutLabel("downloads") })`}
-        aria-label="Downloads"
+        data-testid="open-downloads" aria-label="Downloads"
       >
         📥
       </button>
@@ -240,7 +240,7 @@
         class="icon-btn"
         onclick={openSettingsModal}
         title={`Settings & Shortcuts (${ $keyboardShortcuts && shortcutLabel("settings") })`}
-        aria-label="Settings"
+        data-testid="open-settings" aria-label="Settings"
       >
         ⚙️
       </button>

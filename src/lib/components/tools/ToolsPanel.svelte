@@ -10,10 +10,10 @@
 
 {#if $isToolsOpen}
   <div class="tools-backdrop" role="presentation" onclick={(event) => { if (event.target === event.currentTarget) void closeTools(); }}>
-    <div class="tools-panel" role="dialog" aria-modal="true" aria-label="Tools" tabindex="-1" use:focusDialog={{ onEscape: closeTools }}>
-      <header><h2>Tools</h2><button onclick={closeTools} aria-label="Close tools">Close</button></header>
+    <div data-testid="tools-dialog" class="tools-panel" role="dialog" aria-modal="true" aria-label="Tools" tabindex="-1" use:focusDialog={{ onEscape: closeTools }}>
+      <header><h2>Tools</h2><button onclick={closeTools} data-testid="close-tools" aria-label="Close tools">Close</button></header>
       <nav aria-label="Tools sections">
-        {#each sections as section}<button aria-pressed={$toolsSection === section.id} onclick={() => toolsSection.set(section.id)}>{section.label}</button>{/each}
+        {#each sections as section}<button data-testid={`tools-${section.id}`} aria-pressed={$toolsSection === section.id} onclick={() => toolsSection.set(section.id)}>{section.label}</button>{/each}
       </nav>
       <div class="tools-content">
         {#if $toolsSection === "sessions"}<SessionsPanel />

@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod database;
 pub mod downloads;
+mod native_tests;
 pub mod privacy;
 pub mod site_permissions;
 pub mod state;
@@ -57,6 +58,8 @@ use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVI
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     updates::initialize_crypto();
+    let mut context = tauri::generate_context!();
+    native_tests::configure(&mut context).expect("invalid native test directory");
     tauri::Builder::default()
         .manage(BrowserState::default())
         .manage(site_permissions::PermissionRequests::default())
@@ -232,7 +235,7 @@ pub fn run() {
             enqueue_download,
             clear_all_downloads
         ]))
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while building Veloce Browser")
         .run(|app, event| {
             if let tauri::RunEvent::ExitRequested {

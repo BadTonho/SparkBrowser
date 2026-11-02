@@ -203,7 +203,7 @@ function handleWindowMousedown(event: MouseEvent): void {
         <nav class="category-nav" aria-label="Settings categories">
           {#each categories as category (category.id)}
             <button
-              class="category-button"
+              data-testid={`settings-${category.id}`} class="category-button"
               class:active={$activeSettingsCategory === category.id}
               aria-pressed={$activeSettingsCategory === category.id}
               onclick={() => selectCategory(category.id)}

@@ -34,7 +34,7 @@
 {#if loading}<p>Loading note…</p>
 {:else if draft}
   <p>{editingUrl}</p>
-  <textarea aria-label="Note for current page" rows="8" value={draft.text} oninput={(event) => noteWriter.edit(editingUrl, title, event.currentTarget.value)}></textarea>
+  <textarea data-testid="page-note-editor" aria-label="Note for current page" rows="8" value={draft.text} oninput={(event) => noteWriter.edit(editingUrl, title, event.currentTarget.value)}></textarea>
   <p role="status">{draft.status}{draft.error ? `: ${draft.error}` : ""}</p>
   {#if draft.status === "Error"}<button onclick={() => noteWriter.flush(editingUrl)}>Retry save</button>{/if}
 {/if}

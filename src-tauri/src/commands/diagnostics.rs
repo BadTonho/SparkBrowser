@@ -5,6 +5,7 @@ use tauri::{AppHandle, Manager, State};
 #[derive(Serialize)]
 pub struct BrowserDiagnostics {
     application_identifier: String,
+    application_data_directory: String,
     metrics: Snapshot,
     tabs: usize,
     resident_webviews: usize,
@@ -19,6 +20,12 @@ pub async fn get_diagnostics(
     let tabs = state.tabs.lock().map_err(|e| e.to_string())?;
     Ok(BrowserDiagnostics {
         application_identifier: app.config().identifier.clone(),
+        application_data_directory: app
+            .path()
+            .app_data_dir()
+            .map_err(|e| e.to_string())?
+            .to_string_lossy()
+            .into_owned(),
         metrics: state.diagnostics.snapshot()?,
         tabs: tabs.len(),
         resident_webviews: app
