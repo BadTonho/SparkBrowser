@@ -36,6 +36,7 @@ export function initializeUpdates(): () => void {
   return () => { disposed = true; stop?.(); };
 }
 export const selectUpdateChannel = (channel: UpdateChannel) => action(async () => { apply(await changeUpdateChannel(channel)); });
+export async function setImportedUpdateChannel(channel: UpdateChannel): Promise<void> { apply(await changeUpdateChannel(channel)); }
 export const checkUpdates = () => action(async () => { apply(await checkForUpdates()); });
 export const startUpdateDownload = () => action(async () => {
   const version = get(updateState).update?.version;

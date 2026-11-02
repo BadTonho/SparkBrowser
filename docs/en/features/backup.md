@@ -1,0 +1,15 @@
+# Local backup and reviewed import
+
+Settings → Data & Backup exports a versioned `.veloce-backup.json` file through the system file selector. Desktop builds support this feature; browser preview shows it as unavailable. The initial format is `veloce-backup`, version 1, limited to 32 MiB. No cloud service is involved.
+
+Backups contain bookmarks/folders, workspaces/colors, named sessions, plain-text notes, keyword searches, open tab order/pins/selection, split layouts and persistent interface/navigation/hibernation/language/keyboard/update-channel preferences. Cookies, password storage, native site permissions, history, recently closed tabs, download records/files and signing keys are excluded. Page forms, scroll position and internal navigation history are not snapshots. Only HTTP/HTTPS page URLs without embedded credentials are accepted.
+
+Export flushes pending notes and navigation writes, captures a consistent database/session snapshot and writes to a temporary file in the destination directory. The complete file is synced and atomically replaces the chosen destination. Validation or write failures retain the previous backup. Use a filename ending in `.veloce-backup.json`; paths are never silently changed after overwrite confirmation.
+
+Import first shows counts, additions, skipped conflicts and preference values. **Apply preferences from backup** starts unchecked. Workspace/folder names match without case sensitivity; bookmark/note URLs and search keywords identify existing data. Current values win. Identical session contents are skipped; different sessions with the same name receive a unique suffix. Notes ignore URL fragments while keeping query parameters.
+
+Current tabs keep their IDs, order and selection. The importer compares URL occurrence counts within each workspace and appends only missing occurrences with fresh IDs, preserving intentional duplicates. New tabs remain hibernated. Split pairs are remapped only for newly created workspaces; existing layouts stay intact. Reimporting the same backup does not add duplicates.
+
+A preview is bound to the current data and preferences. If they change before confirmation, refresh the preview. Data and the optional preference task commit in one SQLite transaction. Preferences apply afterward; failures leave a persistent pending task and a retry button, including after restart. Retry applies preferences without importing data again. Complete a pending task before importing another set of preferences. Backup files and temporary exports are ignored by Git.
+
+Rust tests cover file roundtrip, invalid versions/references/size, atomic replacement, conflict rules, occurrence counts, ID/split mapping, transaction rollback and preference retry isolation. `npm run test:native -- --case backup` exercises actual commands, stale previews, hibernation, repeated import and persistence after restart. Native file selection uses the [Tauri dialog plugin](https://v2.tauri.app/plugin/dialog/) from Rust without granting its JavaScript file/dialog commands.

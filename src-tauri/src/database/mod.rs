@@ -12,3 +12,5 @@ pub mod split_repo;
 pub mod tab_usage_repo;
 pub mod updates_repo;
 pub mod workspace_repo;
+
+pub mod backup_repo;

@@ -29,6 +29,10 @@ export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> 
     success = true;
     return result;
   } catch (error) {
+    // New native domains return stable dotted codes, optionally followed by diagnostic details.
+    if (typeof error === "string" && /^(backup|closed_tabs|recovery)\.[a-z_]+(?::|$)/.test(error)) {
+      throw new UserError(error.split(":", 1)[0], error);
+    }
     throw new UserError(`${command}.failed`, error);
   } finally {
     ipcDiagnostics.record(command, performance.now() - started, success);

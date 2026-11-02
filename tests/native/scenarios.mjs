@@ -1,3 +1,4 @@
+import { checkBackup } from "./backup.mjs";
 import { checkLocalization } from "./localization.mjs";
 import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
@@ -7,6 +8,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  backup: async context => { await prepareTabs(context); await checkBackup(context); },
   localization: async context => { await prepareTabs(context); await checkLocalization(context); },
   navigation: async context => {
     const { invoke, until, fixture } = context;

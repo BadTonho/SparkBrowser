@@ -1,5 +1,11 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "export_backup",
+    "choose_backup_file",
+    "preview_backup_import",
+    "commit_backup_import",
+    "get_backup_pending_preferences",
+    "finish_backup_preferences",
     "get_update_state",
     "set_update_channel",
     "check_for_updates",

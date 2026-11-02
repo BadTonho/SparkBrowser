@@ -25,6 +25,11 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     let conn =
         Connection::open(db_path).map_err(|e| format!("Failed to open SQLite database: {}", e))?;
 
+    initialize_schema(&conn)?;
+    Ok(conn)
+}
+
+pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         "
         PRAGMA journal_mode = WAL;
@@ -86,14 +91,14 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     )
     .map_err(|e| format!("Failed to initialize database schema: {}", e))?;
 
-    crate::database::migrations::apply(&conn, "bookmark-folders-column-v1", |conn| {
+    crate::database::migrations::apply(conn, "bookmark-folders-column-v1", |conn| {
         if !crate::database::migrations::has_column(conn, "bookmarks", "folder_id")? {
             conn.execute_batch("ALTER TABLE bookmarks ADD COLUMN folder_id INTEGER REFERENCES bookmark_folders(id) ON DELETE SET NULL").map_err(|e| e.to_string())?;
         }
         Ok(())
     })?;
-    crate::database::migrations::upgrade_session(&conn)?;
-    crate::database::migrations::apply(&conn, "chronological-indexes-v1", |conn| {
+    crate::database::migrations::upgrade_session(conn)?;
+    crate::database::migrations::apply(conn, "chronological-indexes-v1", |conn| {
         conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_history_recent ON history(visited_at DESC, id DESC);
          CREATE INDEX IF NOT EXISTS idx_downloads_recent ON downloads(created_at DESC, id DESC);
@@ -102,13 +107,14 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
         .map_err(|e| e.to_string())
     })?;
 
-    crate::database::bookmarks_repo::migrate_default_bookmarks_once(&conn)?;
-    crate::database::bookmarks_repo::migrate_trailing_slash_default_bookmarks_once(&conn)?;
-    crate::database::workspace_repo::initialize_workspace_table(&conn)?;
+    crate::database::bookmarks_repo::migrate_default_bookmarks_once(conn)?;
+    crate::database::bookmarks_repo::migrate_trailing_slash_default_bookmarks_once(conn)?;
+    crate::database::workspace_repo::initialize_workspace_table(conn)?;
 
-    crate::database::saved_sessions_repo::migrate(&conn)?;
-    crate::database::site_search_repo::migrate(&conn)?;
-    crate::database::notes_repo::migrate(&conn)?;
-    crate::database::split_repo::migrate(&conn)?;
-    Ok(conn)
+    crate::database::saved_sessions_repo::migrate(conn)?;
+    crate::database::site_search_repo::migrate(conn)?;
+    crate::database::notes_repo::migrate(conn)?;
+    crate::database::split_repo::migrate(conn)?;
+    crate::database::backup_repo::migrate(conn)?;
+    Ok(())
 }

@@ -1,3 +1,8 @@
+use commands::backup::{
+    choose_backup_file, commit_backup_import, export_backup, finish_backup_preferences,
+    get_backup_pending_preferences, preview_backup_import,
+};
+pub mod backup;
 pub mod commands;
 pub mod database;
 pub mod downloads;
@@ -61,7 +66,9 @@ pub fn run() {
     let mut context = tauri::generate_context!();
     native_tests::configure(&mut context).expect("invalid native test directory");
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
+        .manage(backup::service::BackupService::default())
         .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
@@ -172,6 +179,12 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            export_backup,
+            choose_backup_file,
+            preview_backup_import,
+            commit_backup_import,
+            get_backup_pending_preferences,
+            finish_backup_preferences,
             get_update_state,
             set_update_channel,
             check_for_updates,

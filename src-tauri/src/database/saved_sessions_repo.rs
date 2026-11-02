@@ -10,7 +10,7 @@ pub struct SessionPage {
     pub is_selected: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct SavedSession {
     pub id: i64,
     pub name: String,

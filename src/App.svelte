@@ -1,4 +1,6 @@
 <script lang="ts">
+  import BackupNotice from "./lib/components/status/BackupNotice.svelte";
+  import { initializeBackupStatus } from "./lib/stores/backupStore";
   import { onMount } from "svelte";
   import { initializeUpdates } from "./lib/stores/updatesStore";
   import UpdateNotice from "./lib/components/status/UpdateNotice.svelte";
@@ -96,6 +98,7 @@
   );
 
   onMount(() => {
+    initializeBackupStatus();
     const stopUpdates = initializeUpdates();
     const stopPermissionEvents = initializePermissionEvents();
     const stopDownloadEvents = initializeDownloadEvents();
@@ -293,6 +296,7 @@
   {/if}
   <Titlebar />
   <UpdateNotice />
+  <BackupNotice />
   {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar && ($bookmarks.length > 0 || $bookmarkFolders.length > 0)}
     <div
       class="bookmark-bar-transition"

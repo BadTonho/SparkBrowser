@@ -74,7 +74,13 @@
     "allow-get-download-tasks",
     "allow-cancel-download",
     "allow-enqueue-download",
-    "allow-clear-all-downloads"
+    "allow-clear-all-downloads",
+    "allow-export-backup",
+    "allow-choose-backup-file",
+    "allow-preview-backup-import",
+    "allow-commit-backup-import",
+    "allow-get-backup-pending-preferences",
+    "allow-finish-backup-preferences"
   ],
   "webviews": [
     "main"

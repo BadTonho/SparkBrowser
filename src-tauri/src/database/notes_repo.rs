@@ -1,6 +1,6 @@
 use rusqlite::{params, Connection, OptionalExtension};
-use serde::Serialize;
-#[derive(Clone, Serialize)]
+use serde::{Deserialize, Serialize};
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PageNote {
     pub url: String,
     pub title: String,

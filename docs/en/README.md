@@ -35,3 +35,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Release channels and updates](./features/updates.md)
 - [Local signed releases](./contributing/releases.md)
 - [Interface languages](./features/localization.md)
+- [Local backup and reviewed import](./features/backup.md)

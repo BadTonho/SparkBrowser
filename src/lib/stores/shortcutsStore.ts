@@ -171,6 +171,19 @@ export function initializeKeyboardShortcuts(): void {
   void syncKeyboardShortcuts(get(keyboardShortcuts)).catch(() => undefined);
 }
 
+export async function restoreShortcutMap(map: ShortcutMap): Promise<void> {
+  const next = { ...get(keyboardShortcuts), ...map };
+  const assigned: ShortcutCombo[] = [];
+  for (const definition of SHORTCUT_DEFINITIONS) {
+    const binding = next[definition.id]?.[0];
+    if (!binding || assigned.some(item => sameCombo(item, binding))) throw new UserError("shortcut.conflict", "Invalid imported shortcut map");
+    assigned.push(binding);
+  }
+  if (!safeStorage.setItem(STORAGE_KEY, JSON.stringify(next))) throw new UserError("storage.failed", "Keyboard preference write failed");
+  await syncKeyboardShortcuts(next);
+  keyboardShortcuts.set(next);
+}
+
 export function isWorkspacePickerHoldKey(event: KeyboardEvent): boolean {
   const binding = getShortcutBinding(get(keyboardShortcuts), "workspace-picker");
   return Boolean(binding && event.key === binding.key);

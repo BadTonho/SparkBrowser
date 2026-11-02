@@ -195,6 +195,12 @@
           "markdownDescription": "Enables the check_for_updates command without any pre-configured scope."
         },
         {
+          "description": "Enables the choose_backup_file command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-choose-backup-file",
+          "markdownDescription": "Enables the choose_backup_file command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-all-downloads",
@@ -217,6 +223,12 @@
           "type": "string",
           "const": "allow-close-tabs-reviewed",
           "markdownDescription": "Enables the close_tabs_reviewed command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the commit_backup_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-commit-backup-import",
+          "markdownDescription": "Enables the commit_backup_import command without any pre-configured scope."
         },
         {
           "description": "Enables the commit_split_ratio command without any pre-configured scope.",
@@ -285,10 +297,28 @@
           "markdownDescription": "Enables the enqueue_download command without any pre-configured scope."
         },
         {
+          "description": "Enables the export_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-export-backup",
+          "markdownDescription": "Enables the export_backup command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the finish_backup_preferences command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-finish-backup-preferences",
+          "markdownDescription": "Enables the finish_backup_preferences command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_active_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-active-workspace",
           "markdownDescription": "Enables the get_active_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_backup_pending_preferences command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-backup-pending-preferences",
+          "markdownDescription": "Enables the get_backup_pending_preferences command without any pre-configured scope."
         },
         {
           "description": "Enables the get_bookmark_data command without any pre-configured scope.",
@@ -409,6 +439,12 @@
           "type": "string",
           "const": "allow-navigate-to",
           "markdownDescription": "Enables the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the preview_backup_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-preview-backup-import",
+          "markdownDescription": "Enables the preview_backup_import command without any pre-configured scope."
         },
         {
           "description": "Enables the reload_page command without any pre-configured scope.",
@@ -585,6 +621,12 @@
           "markdownDescription": "Denies the check_for_updates command without any pre-configured scope."
         },
         {
+          "description": "Denies the choose_backup_file command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-choose-backup-file",
+          "markdownDescription": "Denies the choose_backup_file command without any pre-configured scope."
+        },
+        {
           "description": "Denies the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "deny-clear-all-downloads",
@@ -607,6 +649,12 @@
           "type": "string",
           "const": "deny-close-tabs-reviewed",
           "markdownDescription": "Denies the close_tabs_reviewed command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the commit_backup_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-commit-backup-import",
+          "markdownDescription": "Denies the commit_backup_import command without any pre-configured scope."
         },
         {
           "description": "Denies the commit_split_ratio command without any pre-configured scope.",
@@ -675,10 +723,28 @@
           "markdownDescription": "Denies the enqueue_download command without any pre-configured scope."
         },
         {
+          "description": "Denies the export_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-export-backup",
+          "markdownDescription": "Denies the export_backup command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the finish_backup_preferences command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-finish-backup-preferences",
+          "markdownDescription": "Denies the finish_backup_preferences command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_active_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-active-workspace",
           "markdownDescription": "Denies the get_active_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_backup_pending_preferences command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-backup-pending-preferences",
+          "markdownDescription": "Denies the get_backup_pending_preferences command without any pre-configured scope."
         },
         {
           "description": "Denies the get_bookmark_data command without any pre-configured scope.",
@@ -799,6 +865,12 @@
           "type": "string",
           "const": "deny-navigate-to",
           "markdownDescription": "Denies the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the preview_backup_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-preview-backup-import",
+          "markdownDescription": "Denies the preview_backup_import command without any pre-configured scope."
         },
         {
           "description": "Denies the reload_page command without any pre-configured scope.",
@@ -2995,6 +3067,72 @@
           "type": "string",
           "const": "core:window:deny-unminimize",
           "markdownDescription": "Denies the unminimize command without any pre-configured scope."
+        },
+        {
+          "description": "This permission set configures the types of dialogs\navailable from the dialog plugin.\n\n#### Granted Permissions\n\nAll dialog types are enabled.\n\n\n\n#### This default permission set includes:\n\n- `allow-message`\n- `allow-save`\n- `allow-open`",
+          "type": "string",
+          "const": "dialog:default",
+          "markdownDescription": "This permission set configures the types of dialogs\navailable from the dialog plugin.\n\n#### Granted Permissions\n\nAll dialog types are enabled.\n\n\n\n#### This default permission set includes:\n\n- `allow-message`\n- `allow-save`\n- `allow-open`"
+        },
+        {
+          "description": "Enables the ask command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `allow-message` and will be removed in v3)",
+          "type": "string",
+          "const": "dialog:allow-ask",
+          "markdownDescription": "Enables the ask command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `allow-message` and will be removed in v3)"
+        },
+        {
+          "description": "Enables the confirm command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `allow-message` and will be removed in v3)",
+          "type": "string",
+          "const": "dialog:allow-confirm",
+          "markdownDescription": "Enables the confirm command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `allow-message` and will be removed in v3)"
+        },
+        {
+          "description": "Enables the message command without any pre-configured scope.",
+          "type": "string",
+          "const": "dialog:allow-message",
+          "markdownDescription": "Enables the message command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open command without any pre-configured scope.",
+          "type": "string",
+          "const": "dialog:allow-open",
+          "markdownDescription": "Enables the open command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save command without any pre-configured scope.",
+          "type": "string",
+          "const": "dialog:allow-save",
+          "markdownDescription": "Enables the save command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ask command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `deny-message` and will be removed in v3)",
+          "type": "string",
+          "const": "dialog:deny-ask",
+          "markdownDescription": "Denies the ask command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `deny-message` and will be removed in v3)"
+        },
+        {
+          "description": "Denies the confirm command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `deny-message` and will be removed in v3)",
+          "type": "string",
+          "const": "dialog:deny-confirm",
+          "markdownDescription": "Denies the confirm command without any pre-configured scope. (**DEPRECATED**: This is now an alias to `deny-message` and will be removed in v3)"
+        },
+        {
+          "description": "Denies the message command without any pre-configured scope.",
+          "type": "string",
+          "const": "dialog:deny-message",
+          "markdownDescription": "Denies the message command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open command without any pre-configured scope.",
+          "type": "string",
+          "const": "dialog:deny-open",
+          "markdownDescription": "Denies the open command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save command without any pre-configured scope.",
+          "type": "string",
+          "const": "dialog:deny-save",
+          "markdownDescription": "Denies the save command without any pre-configured scope."
         },
         {
           "description": "This permission set configures which kind of\nupdater functions are exposed to the frontend.\n\n#### Granted Permissions\n\nThe full workflow from checking for updates to installing them\nis enabled.\n\n\n#### This default permission set includes:\n\n- `allow-check`\n- `allow-download`\n- `allow-install`\n- `allow-download-and-install`",
