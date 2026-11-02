@@ -32,3 +32,5 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Visualização dividida](./features/split-view.md)
 - [Permissões por site](./features/site-permissions.md)
 - [Dependencias](./security/dependency-notes.md)
+- [Canais de versão e atualizações](./features/updates.md)
+- [Releases assinadas localmente](./contributing/releases.md)

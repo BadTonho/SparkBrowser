@@ -12,7 +12,11 @@
     "test": "node --test tests/*.test.mjs",
     "test:native:build": "node tools/testing/build-native.mjs",
     "test:native": "node tools/testing/native-smoke.mjs",
-    "security:check": "node tools/security/check-repo.mjs"
+    "security:check": "node tools/security/check-repo.mjs",
+    "release:setup-signing": "node tools/release/setup-signing.mjs",
+    "release:version": "node tools/release/version.mjs",
+    "release:build": "node tools/release/build.mjs",
+    "test:updater:build": "node tools/testing/build-update-fixtures.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0"

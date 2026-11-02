@@ -1,5 +1,10 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_update_state",
+    "set_update_channel",
+    "check_for_updates",
+    "download_update",
+    "install_update",
     "get_saved_sessions",
     "save_named_session",
     "rename_named_session",

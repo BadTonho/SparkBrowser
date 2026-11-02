@@ -129,6 +129,7 @@ export function setOverlayBlurPx(value: number): void {
 }
 
 export type SettingsCategory =
+  | "updates"
   | "appearance_layout"
   | "search_navigation"
   | "workspaces"
@@ -137,6 +138,7 @@ export type SettingsCategory =
   | "diagnostics";
 
 const settingsCategories: SettingsCategory[] = [
+  "updates",
   "appearance_layout",
   "search_navigation",
   "workspaces",

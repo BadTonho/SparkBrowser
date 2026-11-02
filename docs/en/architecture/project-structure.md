@@ -108,3 +108,5 @@ src-tauri/
 - `lib/components/status/BrowserErrorBanner.svelte`: surfaced backend and asynchronous errors.
 - `tests/`: JavaScript regression tests; Rust tests remain beside their modules.
 - `tools/vendor/deepmerge/`: licensed, locally patched build dependency.
+- `updates/`, `commands/updates.rs`, `database/updates_repo.rs`: native release selection, signed installation and channel preferences.
+- `tools/release/`: local version synchronization, signing setup and release packaging; `src-tauri/tests/updater_signatures.rs` exercises the official updater with isolated keys.

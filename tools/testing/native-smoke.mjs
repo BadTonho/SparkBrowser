@@ -5,7 +5,7 @@ import { checkFeatures } from '../../tests/native/features.mjs';
 import { checkWorkspaceSwitcher } from '../../tests/native/workspace-switcher.mjs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createFixture } from '../../tests/native/fixture.mjs';
 
 if (!['win32', 'linux'].includes(process.platform)) throw new Error('This direct tauri-driver suite supports Windows/Linux. Use an embedded WebDriver service on macOS.');
@@ -133,6 +133,18 @@ try {
     await until(() => script('return !document.querySelector("[role=dialog]")'), 'Escape closes dialog');
     await until(() => script('return document.activeElement?.getAttribute("aria-label") === arguments[0]', label), 'return focus to opener');
   }
+  await script(`document.querySelector('button[aria-label="Settings"]').click();`);
+  await script(`const button = [...document.querySelectorAll('.category-button')].find(button => button.textContent.includes('About & Updates')); button.click();`);
+  await until(() => script('return Boolean(document.querySelector("#updates-heading"))'), 'updates settings');
+  assert.equal(await script('return document.querySelector("#update-channel").disabled'), true, 'isolated native builds cannot update the production installation');
+  assert.equal((await invoke('get_update_state')).supported, false);
+  if (process.env.VELOCE_NATIVE_SCREENSHOTS === '1') {
+    mkdirSync('.cache/native-artifacts', { recursive: true });
+    const png = await request('GET', `/session/${session}/screenshot`);
+    writeFileSync('.cache/native-artifacts/updates.png', Buffer.from(png, 'base64'));
+  }
+  await script('document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))');
+  await invoke('set_update_channel', { channel: 'beta' });
   await checkNotesUi(invoke, until, script, fixture.origin);
   await checkFeatures(invoke, until, fixture, a, b);
   await checkPermissions(invoke, until, fixture, a, b, script);
@@ -152,6 +164,8 @@ try {
     await invoke('set_site_permission', { origin: fixture.origin, kind: 'microphone', state: 'ask' });
   }
   const restoredPacket = await invoke('get_tabs');
+  assert.equal((await invoke('get_update_state')).channel, 'beta', 'update channel survives restart');
+  await invoke('set_update_channel', { channel: 'stable' });
   const restored = restoredPacket.tabs;
   assert.equal(restoredPacket.split_layout.ratio, 0.65);
   assert.equal(restoredPacket.split_layout.left_tab_id, a.id);

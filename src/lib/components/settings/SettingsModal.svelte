@@ -3,6 +3,7 @@ import "./settings.css";
 import { normalizeSearch as normalizeSearchText } from "../../services/command-ranking.js";
 import { createShortcutRecorder } from "./shortcut-recorder.svelte";
 import AppearanceSettings from "./AppearanceSettings.svelte";
+import UpdateSettings from "./UpdateSettings.svelte";
 import NavigationSettings from "./NavigationSettings.svelte";
 import PerformanceSettings from "./PerformanceSettings.svelte";
 import ShortcutSettings from "./ShortcutSettings.svelte";
@@ -257,6 +258,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             <ShortcutSettings error={recorder.error} onStart={recorder.start} />
           {:else if $activeSettingsCategory === "diagnostics"}
             <DiagnosticsSettings />
+          {:else if $activeSettingsCategory === "updates"}
+            <UpdateSettings />
           {/if}
         </main>
       </div>

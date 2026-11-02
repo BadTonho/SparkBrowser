@@ -10,4 +10,5 @@ pub mod session_repo;
 pub mod site_search_repo;
 pub mod split_repo;
 pub mod tab_usage_repo;
+pub mod updates_repo;
 pub mod workspace_repo;

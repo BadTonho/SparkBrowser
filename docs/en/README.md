@@ -32,3 +32,5 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Split view](./features/split-view.md)
 - [Site permissions](./features/site-permissions.md)
 - [Dependency notes](./security/dependency-notes.md)
+- [Release channels and updates](./features/updates.md)
+- [Local signed releases](./contributing/releases.md)

@@ -6,6 +6,7 @@ import type { WorkspaceItem } from "../../types/browser";
 import { isTauriRuntime } from "./runtime";
 
 export type OverlayId =
+  | "update-install"
   | "site-permissions"
   | "permission-prompt"
   | "tools"

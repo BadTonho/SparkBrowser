@@ -6,6 +6,7 @@ export const categories: {
   icon: string;
   label: string;
 }[] = [
+    { id: "updates", icon: "↻", label: "About & Updates" },
     { id: "diagnostics", icon: "◷", label: "Local Diagnostics" },
     { id: "appearance_layout", icon: "🖥️", label: "Appearance & Layout" },
     { id: "search_navigation", icon: "🔎", label: "Search & Navigation" },
@@ -24,6 +25,7 @@ export type SearchEntry = {
 };
 
 export const searchableSettings: SearchEntry[] = [
+  { id: "updates", title: "About & Updates", description: "Check for signed releases and choose Stable or Beta.", category: "updates", targetId: "updates-heading", keywords: "version upgrade update github release channel stable beta" },
   { id: "site-permissions", title: "Site Permissions", description: "Control saved camera, microphone, location and notification decisions.", category: "performance_privacy", targetId: "site-permissions-heading", keywords: "origin camera microphone location notifications allow block ask" },
   { id: "site-search", title: "Site Search Shortcuts", description: "Configure keyword searches for websites.", category: "search_navigation", targetId: "site-search-heading", keywords: "keyword template custom search" },
   { id: "resident-limit", title: "Resident Tab Limit", description: "Choose how many eligible WebViews stay awake.", category: "performance_privacy", targetId: "setting-resident-limit", keywords: "memory ram lru pinned forms media downloads" },

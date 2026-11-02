@@ -31,6 +31,14 @@ export function createNoteWriter(options) {
   }
   return {
     drafts, seed, flush,
+    /** Flush every URL before an updater-controlled restart; failed drafts remain recoverable. */
+    async flushAll() {
+      for (const url of drafts.keys()) await flush(url);
+      await queue;
+      if ([...drafts.values()].some(draft => draft.status !== 'Saved')) {
+        throw new Error('Some page notes could not be saved. Retry saving them before updating.');
+      }
+    },
     /** @param {string} url @param {string} title @param {string} text */
     edit(url, title, text) {
       const draft = seed(url, title, text);

@@ -2,7 +2,7 @@ use crate::state::browser_state::BrowserState;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     mpsc::{self, Sender, SyncSender},
-    Arc,
+    Arc, Mutex,
 };
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -16,6 +16,7 @@ enum Write {
 pub struct NavigationWriter {
     send: SyncSender<Write>,
     session_queued: Arc<AtomicBool>,
+    paused: Mutex<bool>,
 }
 
 impl NavigationWriter {
@@ -61,16 +62,25 @@ impl NavigationWriter {
         Ok(Self {
             send,
             session_queued,
+            paused: Mutex::new(false),
         })
     }
 
     pub fn visit(&self, title: String, url: String) -> Result<(), String> {
+        let paused = self.paused.lock().map_err(|e| e.to_string())?;
+        if *paused {
+            return Ok(());
+        }
         self.send
             .try_send(Write::Visit { title, url })
             .map_err(|e| e.to_string())
     }
 
     pub fn session(&self) -> Result<(), String> {
+        let paused = self.paused.lock().map_err(|e| e.to_string())?;
+        if *paused {
+            return Ok(());
+        }
         if self.session_queued.swap(true, Ordering::AcqRel) {
             return Ok(());
         }
@@ -88,5 +98,21 @@ impl NavigationWriter {
             .send(Write::Flush(send))
             .map_err(|e| e.to_string())?;
         receive.recv().map_err(|e| e.to_string())?
+    }
+
+    /// Stop accepting navigation writes before draining the queue for an installer exit.
+    pub fn freeze(&self) -> Result<(), String> {
+        *self.paused.lock().map_err(|e| e.to_string())? = true;
+        if let Err(error) = self.flush() {
+            self.resume();
+            return Err(error);
+        }
+        Ok(())
+    }
+    pub fn resume(&self) {
+        if let Ok(mut paused) = self.paused.lock() {
+            *paused = false;
+        }
+        let _ = self.session();
     }
 }

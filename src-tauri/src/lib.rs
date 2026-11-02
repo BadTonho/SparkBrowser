@@ -4,6 +4,7 @@ pub mod downloads;
 pub mod privacy;
 pub mod site_permissions;
 pub mod state;
+pub mod updates;
 pub mod window;
 
 use commands::diagnostics::get_diagnostics;
@@ -38,6 +39,9 @@ use commands::tabs::{
     hibernate_tab, move_tab_to_workspace, reorder_tabs, set_resident_limit, set_tab_pinned,
     switch_tab,
 };
+use commands::updates::{
+    check_for_updates, download_update, get_update_state, install_update, set_update_channel,
+};
 use commands::workspaces::{
     create_workspace, delete_workspace, get_active_workspace, get_workspaces, switch_workspace,
     update_workspace,
@@ -52,6 +56,7 @@ use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVI
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    updates::initialize_crypto();
     tauri::Builder::default()
         .manage(BrowserState::default())
         .manage(site_permissions::PermissionRequests::default())
@@ -82,6 +87,9 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            #[cfg(windows)]
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
             if let Some(main_webview_window) = app.get_webview_window("main") {
                 apply_native_vibrancy(&main_webview_window);
             }
@@ -152,11 +160,17 @@ pub fn run() {
             app.manage(database::navigation_writer::NavigationWriter::start(
                 app.handle().clone(),
             )?);
+            app.manage(updates::UpdateService::new(app.handle()).map_err(std::io::Error::other)?);
             spawn_content_webview(app.handle())?;
 
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_update_state,
+            set_update_channel,
+            check_for_updates,
+            download_update,
+            install_update,
             get_saved_sessions,
             save_named_session,
             rename_named_session,

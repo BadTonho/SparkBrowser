@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { initializeUpdates } from "./lib/stores/updatesStore";
+  import UpdateNotice from "./lib/components/status/UpdateNotice.svelte";
   import SitePermissionsPanel from "./lib/components/permissions/SitePermissionsPanel.svelte";
   import PermissionPrompt from "./lib/components/permissions/PermissionPrompt.svelte";
   import { initializePermissionEvents } from "./lib/stores/sitePermissionsStore";
@@ -94,6 +96,7 @@
   );
 
   onMount(() => {
+    const stopUpdates = initializeUpdates();
     const stopPermissionEvents = initializePermissionEvents();
     const stopDownloadEvents = initializeDownloadEvents();
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -220,6 +223,7 @@
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
       stopPermissionEvents();
+      stopUpdates();
       stopDownloadEvents();
       clearInterval(hibernationInterval);
       disposed = true;
@@ -288,6 +292,7 @@
     <HorizontalTabBar />
   {/if}
   <Titlebar />
+  <UpdateNotice />
   {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar && ($bookmarks.length > 0 || $bookmarkFolders.length > 0)}
     <div
       class="bookmark-bar-transition"
