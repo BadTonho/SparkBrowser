@@ -1,6 +1,7 @@
 import { checkMediaMute, checkMediaVolume, checkMediaPip } from "./media.mjs";
 import { checkPipContinuity } from './pip-continuity.mjs';
 import { checkPipPerformance } from './pip-performance.mjs';
+import {checkPipShadow} from './pip-shadow.mjs';
 import { checkKeyboard } from "./keyboard.mjs";
 import { checkCommandSearch } from "./command-search.mjs";
 import { checkZoom } from "./zoom.mjs";
@@ -24,6 +25,7 @@ export const scenarios = {
   "media-pip": checkMediaPip,
   "media-pip-continuity": checkPipContinuity,
   "media-pip-fps": checkPipPerformance,
+  "media-pip-shadow":checkPipShadow,
   keyboard: checkKeyboard,
   "command-search": checkCommandSearch,
   zoom: checkZoom,

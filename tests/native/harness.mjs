@@ -86,9 +86,11 @@ export async function runScenario(name, scenario) {
   async function focusWindow() {
     if (process.platform === 'win32') await windowsWindowAction(['-Focus']);
   }
-  async function floatingWindow(action='Inspect') {
+  async function floatingWindow(action='Inspect',name='pip-window') {
     return new Promise((resolveAction,reject)=>{
-      const helper=spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',resolve('tests/native/floating-window.ps1'),'-Executable',binary,'-Action',action],{windowsHide:true,stdio:['ignore','pipe','pipe']});
+      const args=['-NoProfile','-ExecutionPolicy','Bypass','-File',resolve('tests/native/floating-window.ps1'),'-Executable',binary,'-Action',action];
+      if(action==='Capture'){assert.match(name,/^[a-z0-9-]+$/);args.push('-ScreenshotPath',resolve(directory,'artifacts',name+'.png'));}
+      const helper=spawn('powershell.exe',args,{windowsHide:true,stdio:['ignore','pipe','pipe']});
       let output='',error='';
       helper.stdout.on('data',chunk=>{output+=chunk;});helper.stderr.on('data',chunk=>{error+=chunk;});
       helper.on('error',reject);helper.on('exit',code=>{if(code!==0)reject(new Error(error||'Floating window inspection failed'));else {try{resolveAction(JSON.parse(output));}catch(e){reject(e);}}});

@@ -1,5 +1,6 @@
 <script lang="ts">
 import LanguageSettings from "./LanguageSettings.svelte";
+import PipAppearanceSettings from "./PipAppearanceSettings.svelte";
   import { t } from "../../i18n";
 import {
   isZenMode,
@@ -20,6 +21,7 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
   <h2 class="group-title" id="appearance-heading">{$t("settings.appearance_layout_a2b1")}</h2>
 
   <LanguageSettings />
+  <PipAppearanceSettings />
 
   <div class="setting-row" id="setting-browser-layout" tabindex="-1">
     <div class="row-text">

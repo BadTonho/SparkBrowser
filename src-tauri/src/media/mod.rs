@@ -52,6 +52,8 @@ pub struct MediaSnapshot {
 #[derive(Default)]
 pub struct MediaService {
     pub operations: tokio::sync::Mutex<()>,
+    #[cfg(windows)]
+    pub(crate) pip_window_shadow: std::sync::atomic::AtomicBool,
     inner: Mutex<MediaSnapshot>,
 }
 impl MediaService {

@@ -14,6 +14,8 @@ pub const FORMAT: &str = "veloce-backup";
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BackupPreferences {
+    #[serde(default)]
+    pub pip_window_shadow: bool,
     pub tab_layout: String,
     pub show_bookmarks_bar: bool,
     pub overlay_blur_px: u8,

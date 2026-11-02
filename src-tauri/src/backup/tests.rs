@@ -36,6 +36,7 @@ fn preferences() -> BackupPreferences {
         })
         .collect();
     BackupPreferences {
+        pip_window_shadow: false,
         tab_layout: "horizontal".into(),
         show_bookmarks_bar: true,
         overlay_blur_px: 16,
@@ -95,7 +96,7 @@ fn backup_file_roundtrip_rejects_invalid_versions_sizes_and_references_without_r
         serde_json::to_value(restored).unwrap()
     );
     let mut invalid = doc.clone();
-    invalid.version = 3;
+    invalid.version = 4;
     assert!(files::write(&path, &invalid).is_err());
     assert_eq!(std::fs::read(&path).unwrap(), original);
     assert!(files::decode(b"not json").is_err());
@@ -333,4 +334,29 @@ fn v1_defaults_zoom_and_v2_preserves_zoom_preferences() {
     validation::document(&doc).unwrap();
     let roundtrip = files::decode(&serde_json::to_vec(&doc).unwrap()).unwrap();
     assert_eq!(roundtrip.preferences.site_zoom[0].factor, 1.5);
+}
+
+#[test]
+fn old_backups_default_shadow_off_and_v3_roundtrips_the_boolean() {
+    let (_, mut doc) = setup();
+    for version in [1, 2] {
+        let mut legacy = serde_json::to_value(&doc).unwrap();
+        legacy["version"] = serde_json::json!(version);
+        legacy["preferences"]
+            .as_object_mut()
+            .unwrap()
+            .remove("pip_window_shadow");
+        let decoded = files::decode(&serde_json::to_vec(&legacy).unwrap()).unwrap();
+        assert!(!decoded.preferences.pip_window_shadow);
+    }
+    doc.version = 3;
+    doc.preferences.pip_window_shadow = true;
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("v3.veloce-backup.json");
+    files::write(&path, &doc).unwrap();
+    let decoded = files::read(&path).unwrap();
+    assert!(decoded.preferences.pip_window_shadow);
+    let mut invalid = serde_json::to_value(&doc).unwrap();
+    invalid["preferences"]["pip_window_shadow"] = serde_json::json!("true");
+    assert!(files::decode(&serde_json::to_vec(&invalid).unwrap()).is_err());
 }

@@ -6,6 +6,6 @@ Zoom belongs to an HTTP/HTTPS origin: scheme, host and port. Workspaces share th
 
 Windows observers discard old WebView generations and navigation callbacks. Navigation applies the saved value rather than persisting the engine's automatic site defaults. Configured shortcuts run through the browser bridge; engine zoom hotkeys are disabled to prevent duplicate actions. See the [WebView2 controller reference](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2controller).
 
-Backup exports use version 2 and include zoom preferences. Version 1 remains importable. Zoom is applied only through the durable preference task when **Apply backup preferences** is selected. Existing local origins win on conflicts; retrying the task does not overwrite them or import data again. Transfers, partial files and run markers remain excluded.
+Backup exports use version 3 and include zoom preferences. Versions 1 and 2 remain importable. Zoom is applied only through the durable preference task when **Apply backup preferences** is selected. Existing local origins win on conflicts; retrying the task does not overwrite them or import data again. Transfers, partial files and run markers remain excluded.
 
 Validation: `node tools/testing/native-smoke.mjs --case zoom`, plus the existing `backup` scenario, against the isolated native build.

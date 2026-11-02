@@ -1,6 +1,23 @@
 use crate::media::{MediaService, MediaSnapshot};
 use tauri::{AppHandle, State};
 #[tauri::command]
+pub async fn set_pip_window_shadow(
+    app: AppHandle,
+    service: State<'_, MediaService>,
+    enabled: bool,
+) -> Result<bool, String> {
+    let _operation = service.operations.lock().await;
+    #[cfg(windows)]
+    {
+        crate::media::pip_window::set_shadow(&app, enabled).await
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (app, enabled);
+        Err("media.unavailable".into())
+    }
+}
+#[tauri::command]
 pub fn get_tab_media(
     app: AppHandle,
     service: State<'_, MediaService>,

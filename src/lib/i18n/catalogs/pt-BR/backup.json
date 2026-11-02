@@ -1,4 +1,5 @@
 {
+  "backup.pref_pip_window_shadow": "Sombra da janela flutuante",
   "backup.heading": "Dados e backup",
   "backup.description": "Exporte páginas e preferências locais ou mescle um backup após revisar seu conteúdo.",
   "backup.scope": "Inclui favoritos, pastas, workspaces, sessões salvas, notas, buscas por site, abas abertas, divisões e preferências.",

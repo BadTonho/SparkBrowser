@@ -21,8 +21,8 @@ pub mod updates;
 pub mod window;
 pub mod zoom;
 use commands::media::{
-    enter_video_pip, exit_video_pip, get_tab_media, refresh_tab_media, set_tab_muted,
-    set_tab_volume,
+    enter_video_pip, exit_video_pip, get_tab_media, refresh_tab_media, set_pip_window_shadow,
+    set_tab_muted, set_tab_volume,
 };
 
 use commands::diagnostics::get_diagnostics;
@@ -163,6 +163,7 @@ pub fn run() {
             refresh_tab_media,
             set_tab_volume,
             enter_video_pip,
+            set_pip_window_shadow,
             exit_video_pip,
             get_tab_media,
             set_tab_muted,

@@ -1,4 +1,8 @@
 {
+  "settings.pip_window_shadow": "Sombra da janela flutuante",
+  "settings.pip_window_shadow_description": "Mostrar sombra ao redor da janela de vídeo flutuante.",
+  "settings.pip_window_shadow_unavailable": "Disponível somente para a janela própria de vídeo flutuante no Windows.",
+  "settings.on": "Ligada",
   "settings.appearance_layout_a2b1": "🖥️ Aparência e disposição",
   "settings.browser_layout_28d1": "Disposição do navegador",
   "settings.choose_a_horizontal_browser_layout_or_a_vertical_sidebar_layout_a4a5": "Escolha abas horizontais ou uma barra lateral vertical",

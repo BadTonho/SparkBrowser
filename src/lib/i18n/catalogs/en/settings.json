@@ -1,4 +1,8 @@
 {
+  "settings.pip_window_shadow": "Floating window shadow",
+  "settings.pip_window_shadow_description": "Show a shadow around the floating video window.",
+  "settings.pip_window_shadow_unavailable": "Available only for the custom floating video window on Windows.",
+  "settings.on": "On",
   "settings.appearance_layout_a2b1": "🖥️ Appearance & Layout",
   "settings.browser_layout_28d1": "Browser Layout",
   "settings.choose_a_horizontal_browser_layout_or_a_vertical_sidebar_layout_a4a5": "Choose a horizontal browser layout or a vertical sidebar layout",

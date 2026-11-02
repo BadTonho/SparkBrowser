@@ -1,5 +1,6 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "set_pip_window_shadow",
     "exit_video_pip",
     "enter_video_pip",
     "set_tab_volume",

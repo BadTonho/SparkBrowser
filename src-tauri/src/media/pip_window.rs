@@ -22,6 +22,8 @@ struct Session {
     opened: bool,
     sequence: u64,
     acknowledged: u64,
+    normal_size: Option<tauri::PhysicalSize<u32>>,
+    restore_size: Option<tauri::PhysicalSize<u32>>,
 }
 static SESSION: Mutex<Option<Session>> = Mutex::new(None);
 fn label(id: &str) -> String {
@@ -47,6 +49,8 @@ pub fn prepare(
         opened: false,
         sequence: 0,
         acknowledged: 0,
+        normal_size: None,
+        restore_size: None,
     });
     id
 }
@@ -87,7 +91,11 @@ pub fn new_window(
     .window_features(features)
     .title("Floating video")
     .decorations(false)
-    .shadow(true)
+    .shadow(
+        app.state::<MediaService>()
+            .pip_window_shadow
+            .load(std::sync::atomic::Ordering::Relaxed),
+    )
     .maximizable(false)
     .inner_size(400.0, 225.0)
     .min_inner_size(280.0, 158.0)
@@ -106,9 +114,19 @@ pub fn new_window(
     .build();
     match window {
         Ok(window) => {
+            if let Ok(mut state) = SESSION.lock() {
+                if let Some(s) = state.as_mut().filter(|s| s.id == session.id) {
+                    s.normal_size = window.inner_size().ok();
+                }
+            }
             let a = app.clone();
             let id = session.id;
             window.on_window_event(move |event| {
+                if let tauri::WindowEvent::Resized(size) = event {
+                    if let Some(window) = a.get_webview_window(&label(&id)) {
+                        remember_size(&window, &id, *size);
+                    }
+                }
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     if let Some(window) = a.get_webview_window(&label(&id)) {
@@ -119,6 +137,80 @@ pub fn new_window(
             NewWindowResponse::Create { window }
         }
         Err(_) => NewWindowResponse::Deny,
+    }
+}
+
+/// Called only by the shell while holding the shared media operation lock.
+pub async fn set_shadow(app: &AppHandle, enabled: bool) -> Result<bool, String> {
+    let (send, receive) = tokio::sync::oneshot::channel();
+    let a = app.clone();
+    app.run_on_main_thread(move || {
+        let _ = send.send(apply_shadow(&a, enabled));
+    })
+    .map_err(|_| "media.error")?;
+    receive.await.map_err(|_| "media.error")?
+}
+
+fn apply_shadow(app: &AppHandle, enabled: bool) -> Result<bool, String> {
+    let session = SESSION.lock().map_err(|_| "media.error")?.clone();
+    if let Some(session) = session {
+        if current(app, &webview_label_for_tab(&session.tab), &session.token) {
+            if let Some(window) = app.get_webview_window(&label(&session.id)) {
+                let minimized = window.is_minimized().map_err(|_| "media.error")?;
+                let size = if minimized {
+                    session.normal_size
+                } else {
+                    Some(window.inner_size().map_err(|_| "media.error")?)
+                };
+                window.set_shadow(enabled).map_err(|_| "media.error")?;
+                if let Some(size) = size {
+                    if minimized {
+                        if let Some(s) = SESSION
+                            .lock()
+                            .map_err(|_| "media.error")?
+                            .as_mut()
+                            .filter(|s| s.id == session.id)
+                        {
+                            s.restore_size = Some(size);
+                        }
+                    } else if window.set_size(size).is_err() {
+                        let previous = app
+                            .state::<MediaService>()
+                            .pip_window_shadow
+                            .load(std::sync::atomic::Ordering::Relaxed);
+                        let _ = window.set_shadow(previous);
+                        let _ = window.set_size(size);
+                        return Err("media.error".into());
+                    }
+                }
+            }
+        }
+    }
+    app.state::<MediaService>()
+        .pip_window_shadow
+        .store(enabled, std::sync::atomic::Ordering::Relaxed);
+    Ok(enabled)
+}
+
+// Windows changes the hidden frame insets with the shadow. Restore the saved
+// client area after unminimizing, without activating or recreating the player.
+fn remember_size(window: &tauri::WebviewWindow, id: &str, size: tauri::PhysicalSize<u32>) {
+    if size.width == 0 || size.height == 0 || window.is_minimized().unwrap_or(true) {
+        return;
+    }
+    let restore = {
+        let Ok(mut state) = SESSION.lock() else {
+            return;
+        };
+        let Some(s) = state.as_mut().filter(|s| s.id == id) else {
+            return;
+        };
+        let restore = s.restore_size.take();
+        s.normal_size = Some(restore.unwrap_or(size));
+        restore
+    };
+    if let Some(size) = restore {
+        let _ = window.set_size(size);
     }
 }
 
@@ -188,6 +280,10 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
     }
     if action == "ready" {
         if let Some(window) = app.get_webview_window(&label(id)) {
+            // WebView2 attaches the supplied popup after window construction.
+            // Reattach Tauri's frameless resize region above that content view.
+            let _ = window.set_resizable(false);
+            let _ = window.set_resizable(true);
             let _ = window.show();
         }
         let session = SESSION.lock().ok().and_then(|s| s.clone());

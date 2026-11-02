@@ -3,6 +3,7 @@
   "identifier": "default",
   "description": "Default capabilities for the main browser shell window",
   "permissions": [
+    "allow-set-pip-window-shadow",
     "allow-exit-video-pip",
     "allow-enter-video-pip",
     "allow-set-tab-volume",

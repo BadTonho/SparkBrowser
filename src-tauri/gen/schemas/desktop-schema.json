@@ -651,6 +651,12 @@
           "markdownDescription": "Enables the set_overlay_visibility command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_pip_window_shadow command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-pip-window-shadow",
+          "markdownDescription": "Enables the set_pip_window_shadow command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_resident_limit command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-resident-limit",
@@ -1207,6 +1213,12 @@
           "type": "string",
           "const": "deny-set-overlay-visibility",
           "markdownDescription": "Denies the set_overlay_visibility command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_pip_window_shadow command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-pip-window-shadow",
+          "markdownDescription": "Denies the set_pip_window_shadow command without any pre-configured scope."
         },
         {
           "description": "Denies the set_resident_limit command without any pre-configured scope.",

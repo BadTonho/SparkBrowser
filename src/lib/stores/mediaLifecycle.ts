@@ -6,6 +6,7 @@ import { fetchTabMedia, onTabMedia } from "../services/bridge/media";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import { describeError } from "../services/user-errors.js";
 import { initializePipControls } from "./pipLifecycle";
+import {initializePipAppearance} from "./pipAppearanceStore";
 
 /** One focused-tab report loop serves volume and PiP, including dynamically added videos. */
 export function initializeMedia() {
@@ -16,6 +17,7 @@ export function initializeMedia() {
   let stopMedia: (() => void) | undefined;
   let stopFocus: (() => void) | undefined;
   const stopPip = initializePipControls();
+  void initializePipAppearance().catch(error=>{if(!disposed)mediaError.set(describeError(error));});
 
   function refreshFocused() {
     const active = get(tabs).find(tab => tab.is_active);

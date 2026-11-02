@@ -98,7 +98,7 @@ fn name(value: &str) -> Result<(), String> {
     }
 }
 pub fn document(doc: &BackupDocument) -> Result<(), String> {
-    if doc.format != FORMAT || ![1, 2].contains(&doc.version) {
+    if doc.format != FORMAT || ![1, 2, 3].contains(&doc.version) {
         return Err("backup.unsupported_version".into());
     }
     preferences(&doc.preferences)?;
