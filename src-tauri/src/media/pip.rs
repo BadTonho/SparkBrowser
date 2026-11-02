@@ -8,7 +8,7 @@ use tauri::AppHandle;
 #[cfg(windows)]
 use tauri::{Emitter, Manager};
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct MediaVideoCandidate {
     pub id: String,
     pub label: String,
@@ -16,7 +16,7 @@ pub struct MediaVideoCandidate {
     pub height: u32,
     pub eligible: bool,
 }
-#[derive(Clone, Default, Serialize)]
+#[derive(Clone, Default, PartialEq, Serialize)]
 pub struct MediaCapabilities {
     pub mute: bool,
     pub volume: bool,

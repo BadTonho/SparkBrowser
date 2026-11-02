@@ -1,145 +1,101 @@
-use crate::database::bookmarks_repo::{self, BookmarkData};
-use crate::database::history_repo::{
-    clear_all_history, search_history, HistoryCursor, HistoryEntry,
+use crate::database::{
+    bookmarks_repo::{self, BookmarkData},
+    executor,
+    history_repo::{self, HistoryCursor, HistoryEntry},
 };
-use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[tauri::command]
 pub async fn get_history(
     app: AppHandle,
-    state: State<'_, BrowserState>,
     limit: Option<usize>,
     query: Option<String>,
     before: Option<HistoryCursor>,
 ) -> Result<Vec<HistoryEntry>, String> {
-    flush_navigation(app).await?;
-    let max_items = limit.unwrap_or(50).clamp(1, 200);
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return search_history(conn, max_items, &query.unwrap_or_default(), before.as_ref());
-    }
-    Ok(Vec::new())
-}
-
-#[tauri::command]
-pub async fn clear_browsing_history(
-    app: AppHandle,
-    state: State<'_, BrowserState>,
-) -> Result<(), String> {
     flush_navigation(app.clone()).await?;
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        let transaction = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-        clear_all_history(&transaction)?;
-        crate::database::closed_tabs_repo::clear(&transaction)?;
-        transaction.commit().map_err(|e| e.to_string())?;
-        let _ = app.emit_to(
-            "main",
-            "closed-tabs-updated",
-            Vec::<crate::database::closed_tabs_repo::ClosedTab>::new(),
-        );
-    }
+    executor::run(app, move |conn| {
+        history_repo::search_history(
+            conn,
+            limit.unwrap_or(50).clamp(1, 200),
+            &query.unwrap_or_default(),
+            before.as_ref(),
+        )
+    })
+    .await
+}
+#[tauri::command]
+pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
+    flush_navigation(app.clone()).await?;
+    executor::run(app.clone(), |conn| {
+        let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        history_repo::clear_all_history(&tx)?;
+        crate::database::closed_tabs_repo::clear(&tx)?;
+        tx.commit().map_err(|e| e.to_string())
+    })
+    .await?;
+    let _ = app.emit_to(
+        "main",
+        "closed-tabs-updated",
+        Vec::<crate::database::closed_tabs_repo::ClosedTab>::new(),
+    );
     Ok(())
 }
-
 #[tauri::command]
-pub fn get_bookmark_data(state: State<'_, BrowserState>) -> Result<BookmarkData, String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return bookmarks_repo::get_bookmark_data(conn);
-    }
-    Ok(BookmarkData {
-        bookmarks: Vec::new(),
-        folders: Vec::new(),
-    })
+pub async fn get_bookmark_data(app: AppHandle) -> Result<BookmarkData, String> {
+    executor::run(app, bookmarks_repo::get_bookmark_data).await
 }
-
 #[tauri::command]
-pub fn save_bookmark(
-    state: State<'_, BrowserState>,
+pub async fn save_bookmark(
+    app: AppHandle,
     bookmark_id: Option<i64>,
     title: String,
     url: String,
     icon: Option<String>,
     folder_id: Option<i64>,
 ) -> Result<BookmarkData, String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return bookmarks_repo::save_bookmark(
+    executor::run(app, move |conn| {
+        bookmarks_repo::save_bookmark(
             conn,
             bookmark_id,
             &title,
             &url,
-            icon.as_deref().unwrap_or("⭐"),
+            icon.as_deref().unwrap_or("\u{2b50}"),
             folder_id,
-        );
-    }
-    Ok(BookmarkData {
-        bookmarks: Vec::new(),
-        folders: Vec::new(),
+        )
     })
+    .await
 }
-
 #[tauri::command]
-pub fn remove_bookmark(
-    state: State<'_, BrowserState>,
-    bookmark_id: i64,
-) -> Result<BookmarkData, String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return bookmarks_repo::remove_bookmark(conn, bookmark_id);
-    }
-    Ok(BookmarkData {
-        bookmarks: Vec::new(),
-        folders: Vec::new(),
+pub async fn remove_bookmark(app: AppHandle, bookmark_id: i64) -> Result<BookmarkData, String> {
+    executor::run(app, move |conn| {
+        bookmarks_repo::remove_bookmark(conn, bookmark_id)
     })
+    .await
 }
-
 #[tauri::command]
-pub fn create_bookmark_folder(
-    state: State<'_, BrowserState>,
-    name: String,
-) -> Result<BookmarkData, String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return bookmarks_repo::create_folder(conn, &name);
-    }
-    Ok(BookmarkData {
-        bookmarks: Vec::new(),
-        folders: Vec::new(),
-    })
+pub async fn create_bookmark_folder(app: AppHandle, name: String) -> Result<BookmarkData, String> {
+    executor::run(app, move |conn| bookmarks_repo::create_folder(conn, &name)).await
 }
-
 #[tauri::command]
-pub fn rename_bookmark_folder(
-    state: State<'_, BrowserState>,
+pub async fn rename_bookmark_folder(
+    app: AppHandle,
     folder_id: i64,
     name: String,
 ) -> Result<BookmarkData, String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return bookmarks_repo::rename_folder(conn, folder_id, &name);
-    }
-    Ok(BookmarkData {
-        bookmarks: Vec::new(),
-        folders: Vec::new(),
+    executor::run(app, move |conn| {
+        bookmarks_repo::rename_folder(conn, folder_id, &name)
     })
+    .await
 }
-
 #[tauri::command]
-pub fn delete_bookmark_folder(
-    state: State<'_, BrowserState>,
+pub async fn delete_bookmark_folder(
+    app: AppHandle,
     folder_id: i64,
 ) -> Result<BookmarkData, String> {
-    let db_guard = state.db.lock().map_err(|e| e.to_string())?;
-    if let Some(conn) = db_guard.as_ref() {
-        return bookmarks_repo::delete_folder(conn, folder_id);
-    }
-    Ok(BookmarkData {
-        bookmarks: Vec::new(),
-        folders: Vec::new(),
+    executor::run(app, move |conn| {
+        bookmarks_repo::delete_folder(conn, folder_id)
     })
+    .await
 }
 
 async fn flush_navigation(app: AppHandle) -> Result<(), String> {

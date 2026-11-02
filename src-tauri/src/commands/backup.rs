@@ -38,7 +38,7 @@ pub async fn export_backup(app: AppHandle, preferences: BackupPreferences) -> Re
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
-pub async fn choose_backup_file(app: AppHandle) -> Result<Option<BackupDocument>, String> {
+pub async fn choose_backup_file(app: AppHandle) -> Result<Option<String>, String> {
     let service = app.state::<backup::service::BackupService>();
     let _operation = service.operation.lock().await;
     let dialog_app = app.clone();
@@ -51,7 +51,11 @@ pub async fn choose_backup_file(app: AppHandle) -> Result<Option<BackupDocument>
         else {
             return Ok(None);
         };
-        backup::files::read(&path.into_path().map_err(|e| e.to_string())?).map(Some)
+        let doc = backup::files::read(&path.into_path().map_err(|e| e.to_string())?)?;
+        dialog_app
+            .state::<backup::service::BackupService>()
+            .select(doc)
+            .map(Some)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -59,10 +63,11 @@ pub async fn choose_backup_file(app: AppHandle) -> Result<Option<BackupDocument>
 #[tauri::command]
 pub async fn preview_backup_import(
     app: AppHandle,
-    document: BackupDocument,
+    document: Option<BackupDocument>,
+    source_token: Option<String>,
     current_preferences: BackupPreferences,
 ) -> Result<BackupPreview, String> {
-    backup::service::preview(&app, document, current_preferences).await
+    backup::service::preview(&app, document, source_token, current_preferences).await
 }
 #[tauri::command]
 pub async fn commit_backup_import(
@@ -92,4 +97,11 @@ pub async fn finish_backup_preferences(
         &id,
         error.as_deref(),
     )
+}
+
+#[tauri::command]
+pub async fn discard_backup_import(app: AppHandle, source_token: String) -> Result<(), String> {
+    let service = app.state::<backup::service::BackupService>();
+    let _operation = service.operation.lock().await;
+    service.discard(&source_token)
 }

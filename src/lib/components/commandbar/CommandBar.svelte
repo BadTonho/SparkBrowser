@@ -349,7 +349,7 @@
       </div>
 
       <ErrorMessage error={searchError} />
-      {#if searchResults.notes_count || searchResults.sessions_count}<p class="search-counts" role="status">{$t("search.counts", { notes: searchResults.notes_count, sessions: searchResults.sessions_count })}</p>{/if}
+      {#if searchResults.notes_count || searchResults.sessions_count}<p class="search-counts" role="status">{$t("search.counts", { notes: `${searchResults.notes_count}${searchResults.notes_has_more ? "+" : ""}`, sessions: `${searchResults.sessions_count}${searchResults.sessions_has_more ? "+" : ""}` })}</p>{/if}
       <div class="command-results">
         {#each suggestions as item, idx (item.id)}
           <button

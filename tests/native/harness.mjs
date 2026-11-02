@@ -49,22 +49,30 @@ export async function runScenario(name, scenario) {
   const webviewHandles = new Map();
   async function withWebview(path, operation) {
     const previous = await request('GET', `/session/${session}/window`);
-    const handles = await request('GET', `/session/${session}/window/handles`);
+    const started = Date.now();
+    let polls = 0;
     try {
-      const cached = webviewHandles.get(path);
-      if (cached && handles.includes(cached)) {
-        await request('POST', `/session/${session}/window`, { handle: cached });
-        return await operation();
-      }
-      // Auxiliary WebViews are created after the shell and content views.
-      for (const handle of [...handles].reverse()) {
-        await request('POST', `/session/${session}/window`, { handle });
-        if (new URL(await request('GET', `/session/${session}/url`)).pathname === path) {
-          webviewHandles.set(path, handle);
-          return await operation();
+      await until(async () => {
+        polls++;
+        const handles = await request('GET', `/session/${session}/window/handles`);
+        const cached = webviewHandles.get(path);
+        const ordered = [...new Set([cached, ...handles.slice().reverse()].filter(handle => handle && handles.includes(handle)))];
+        for (const handle of ordered) {
+          try {
+            await request('POST', `/session/${session}/window`, { handle });
+            if (new URL(await request('GET', `/session/${session}/url`)).pathname === path) {
+              webviewHandles.set(path, handle);
+              return true;
+            }
+          } catch (error) {
+            if (!/no such window|web view not found/i.test(String(error))) throw error;
+          }
         }
-      }
-      throw new Error(`Native WebView not found: ${path}`);
+        await request('POST', `/session/${session}/window`, { handle: previous });
+        return false;
+      }, `Native WebView ready: ${path} (creation and navigation)`, 10_000);
+      if (polls > 1) console.log(`Native WebView ready: ${path}, ${Date.now() - started} ms, ${polls} polls`);
+      return await operation();
     } finally {
       await request('POST', `/session/${session}/window`, { handle: previous });
     }

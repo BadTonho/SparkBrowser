@@ -1,6 +1,6 @@
 # Optimization work
 
-Changes are delivered in separate, validated commits. Native behavior must also be checked on the target operating systems; automated checks alone do not establish user-interface latency or memory savings.
+Changes require local validation before release. Native behavior must also be checked on the target operating systems; automated checks alone do not establish user-interface latency or memory savings.
 
 ## Geometry and IPC
 
@@ -11,6 +11,10 @@ Viewport measurements are coalesced by animation frame. Only one resize request 
 Session saves are transactional incremental upserts with prepared statements: unchanged rows are not rewritten, and only removed tabs are deleted. Dragging changes a local preview, commits once on release and restores the order on cancellation or failure. Reorder requests are serialized. History and downloads have chronological indexes; adaptive hibernation obtains frequent tab IDs in one grouped query and prunes on its periodic pass. Row decoding and activation-write failures are returned.
 
 Native navigation callbacks enqueue history/session writes on one worker. History reads/clears and normal shutdown flush preceding writes. Explicit tab commands still persist before returning. No page URLs are printed by the worker on errors.
+
+Tab creation, selection, ordering, pinning, moves and resident-limit changes restore a checkpoint on persistence failure. Selection usage and session rows commit in the same transaction. Native documents are reconciled after persistence succeeds; a later display failure shows an error while preserving the committed session. Rollback preserves navigation/media observations received during the operation.
+
+Bookmark, note, history and command-search database commands use a blocking executor with two worker permits and the existing connection mutex. Lock wait and SQL execution have separate diagnostic spans. The permit bounds active blocking tasks; it does not add connections or guarantee FIFO ordering for concurrent requests. Navigation writes retain their separate bounded worker and flushing rules.
 
 
 ## Navigation and dialogs
@@ -24,6 +28,10 @@ Tab snapshots carry monotonic revisions; older replies are ignored. Per-tab navi
 History searches all stored visits with a bounded page size, literal wildcard escaping and a stable `(visited_at, id)` cursor. The interface debounces requests and discards stale responses. SQLite LIKE provides its built-in case matching; this is not a Unicode full-text index. Bookmarks are grouped by folder once per change.
 
 Command suggestions are computed only while open, ranked by title/URL relevance, normalized for accents and capped per category. Preference access uses an adapter that handles denied storage and quota errors, retains in-memory state and notifies the user without logging stored values.
+
+Persistent command search folds text on writes and maintains transactional SQLite FTS5 trigram indexes for notes, session names and session pages. Queries of at least three Unicode characters use literal trigram phrases; shorter queries scan the already folded fields. Search obtains three matches per category, returns two and reports whether more exist instead of calculating exact totals. Indexing costs additional storage and write work. Notes-panel search keeps its existing LIKE semantics and returns at most 100 summaries with 180-character previews; opening a note fetches its complete text.
+
+The note writer evicts old saved drafts above 32 entries or 2,000,000 UTF-16 code units, preserving active editors and unsaved, saving or failed drafts. File-based backup imports keep the selected document in Rust behind an opaque token, release it on replacement/cancel/import and stream stale-preview fingerprints into SHA-256. Unchanged media reports no longer increment revisions or publish full snapshots; polling remains in place for video discovery.
 
 ## Resident memory and migrations
 
@@ -57,4 +65,4 @@ Checks run locally on demand; the GitHub Actions workflow was removed to avoid c
 
 ## Local diagnostics
 
-Settings exposes bounded in-memory IPC timing samples, cumulative call/error counts, native operation spans, session rows written and resident/protected tab counts. Diagnostic payloads omit arguments, page URLs, titles and tokens. See [performance validation](../contributing/performance.md) for repeatable comparisons and measurement limits.
+Settings exposes bounded in-memory IPC timing samples, cumulative call/error counts, native operation spans, session rows written and resident/protected tab counts. Timing counters omit command arguments, page URLs, titles and tokens. The separate local `get_diagnostics.tab_details` inventory contains tab URLs/titles and workspace IDs; the response also contains the local application-data directory. Resource counters report counts of bridge tokens, shield scripts, media entries and Windows execution contexts without exposing their identifiers. Redact local inventories/paths before sharing a diagnostic response. See [performance validation](../contributing/performance.md) for repeatable comparisons and measurement limits.

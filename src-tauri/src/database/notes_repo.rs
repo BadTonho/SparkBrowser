@@ -7,6 +7,14 @@ pub struct PageNote {
     pub text: String,
     pub updated_at: i64,
 }
+/// Bounded list payload; the full text is available only through get().
+#[derive(Clone, Serialize)]
+pub struct NoteSummary {
+    pub url: String,
+    pub title: String,
+    pub preview: String,
+    pub updated_at: i64,
+}
 pub fn normalize(raw: &str) -> Result<String, String> {
     let mut url = url::Url::parse(raw).map_err(|_| "Invalid page URL")?;
     if !matches!(url.scheme(), "http" | "https") {
@@ -37,7 +45,7 @@ fn decode(row: &rusqlite::Row<'_>) -> rusqlite::Result<PageNote> {
         updated_at: row.get(3)?,
     })
 }
-pub fn search(conn: &Connection, query: &str) -> Result<Vec<PageNote>, String> {
+pub fn search(conn: &Connection, query: &str) -> Result<Vec<NoteSummary>, String> {
     let query = format!(
         "%{}%",
         query
@@ -45,9 +53,16 @@ pub fn search(conn: &Connection, query: &str) -> Result<Vec<PageNote>, String> {
             .replace('%', "!%")
             .replace('_', "!_")
     );
-    let mut stmt=conn.prepare("SELECT url,title,text,updated_at FROM page_notes WHERE title LIKE ?1 ESCAPE '!' OR url LIKE ?1 ESCAPE '!' OR text LIKE ?1 ESCAPE '!' ORDER BY updated_at DESC,url LIMIT 100").map_err(|e|e.to_string())?;
+    let mut stmt=conn.prepare("SELECT url,substr(title,1,256),substr(text,1,180),updated_at FROM page_notes WHERE title LIKE ?1 ESCAPE '!' OR url LIKE ?1 ESCAPE '!' OR text LIKE ?1 ESCAPE '!' ORDER BY updated_at DESC,url LIMIT 100").map_err(|e|e.to_string())?;
     let rows = stmt
-        .query_map([query], decode)
+        .query_map([query], |row| {
+            Ok(NoteSummary {
+                url: row.get(0)?,
+                title: row.get(1)?,
+                preview: row.get(2)?,
+                updated_at: row.get(3)?,
+            })
+        })
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
@@ -87,5 +102,28 @@ mod tests {
         assert!(search(&conn, "missing%").unwrap().is_empty());
         delete(&conn, "https://example.test/a?q=1#third").unwrap();
         assert!(search(&conn, "").unwrap().is_empty());
+    }
+
+    #[test]
+    fn large_note_lists_return_unicode_previews_and_open_the_complete_document() {
+        let conn = Connection::open_in_memory().unwrap();
+        migrate(&conn).unwrap();
+        let text = "🦀".repeat(50_000);
+        let title = "é".repeat(500);
+        for i in 0..100 {
+            save(&conn, &format!("https://example.test/{i}"), &title, &text).unwrap();
+        }
+        let summaries = search(&conn, "").unwrap();
+        assert_eq!(summaries.len(), 100);
+        assert!(summaries
+            .iter()
+            .all(|n| n.preview.chars().count() == 180 && n.title.chars().count() == 256));
+        let payload = serde_json::to_vec(&summaries).unwrap();
+        assert!(
+            payload.len() < 150_000,
+            "bounded summaries: {} bytes",
+            payload.len()
+        );
+        assert_eq!(get(&conn, &summaries[0].url).unwrap().unwrap().text, text);
     }
 }

@@ -16,7 +16,8 @@ pub fn register(conn: &Connection) -> Result<(), String> {
         FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
         |ctx| Ok(fold(&ctx.get::<String>(0)?)),
     )
-    .map_err(|e| e.to_string())
+    .map_err(|e| e.to_string())?;
+    super::search_index::migrate(conn)
 }
 #[derive(Serialize)]
 pub struct NoteSearchHit {
@@ -38,6 +39,8 @@ pub struct CommandSearchResult {
     pub sessions: Vec<SessionSearchHit>,
     pub notes_count: usize,
     pub sessions_count: usize,
+    pub notes_has_more: bool,
+    pub sessions_has_more: bool,
 }
 /// Limit IPC to two short previews per domain. Bound parameters treat '%' and '_' literally.
 pub fn search(conn: &Connection, query: &str) -> Result<CommandSearchResult, String> {
@@ -49,51 +52,55 @@ pub fn search(conn: &Connection, query: &str) -> Result<CommandSearchResult, Str
     if query.is_empty() {
         return Ok(out);
     }
-    let mut notes=conn.prepare("SELECT url,substr(title,1,256),substr(text,1,160),length(text),count(*) OVER() FROM page_notes
-        WHERE instr(veloce_search_fold(title),?1)>0 OR instr(veloce_search_fold(url),?1)>0 OR instr(veloce_search_fold(text),?1)>0
-        ORDER BY updated_at DESC,url LIMIT 2").map_err(|e|e.to_string())?;
-    for row in notes
-        .query_map([&query], |r| {
-            Ok((
-                NoteSearchHit {
-                    url: r.get(0)?,
-                    title: r.get(1)?,
-                    preview: r.get(2)?,
-                    characters: r.get(3)?,
-                },
-                r.get::<_, usize>(4)?,
-            ))
+    let pattern = super::search_index::pattern(&query);
+    let note_candidates = if pattern.is_some() {
+        "SELECT url FROM note_search WHERE note_search MATCH ?1"
+    } else {
+        "SELECT url FROM note_search WHERE instr(title,?1)>0 OR instr(address,?1)>0 OR instr(body,?1)>0"
+    };
+    let needle = pattern.as_deref().unwrap_or(&query);
+    let sql = format!("SELECT url,substr(title,1,256),substr(text,1,160),length(text) FROM page_notes WHERE url IN ({note_candidates}) ORDER BY updated_at DESC,url LIMIT 3");
+    let mut notes = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    out.notes = notes
+        .query_map([needle], |r| {
+            Ok(NoteSearchHit {
+                url: r.get(0)?,
+                title: r.get(1)?,
+                preview: r.get(2)?,
+                characters: r.get(3)?,
+            })
         })
         .map_err(|e| e.to_string())?
-    {
-        let (hit, count) = row.map_err(|e| e.to_string())?;
-        out.notes.push(hit);
-        out.notes_count = count;
-    }
-    let mut sessions=conn.prepare("SELECT s.id,s.name,
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+    out.notes_has_more = out.notes.len() > 2;
+    out.notes.truncate(2);
+    out.notes_count = out.notes.len();
+    let candidates = if pattern.is_some() {
+        "SELECT id FROM session_search WHERE session_search MATCH ?1 UNION SELECT session_id FROM session_page_search WHERE session_page_search MATCH ?1"
+    } else {
+        "SELECT id FROM session_search WHERE instr(name,?1)>0 UNION SELECT session_id FROM session_page_search WHERE instr(title,?1)>0 OR instr(address,?1)>0"
+    };
+    let sql = format!("SELECT s.id,s.name,
         (SELECT substr(title || ' · ' || url,1,160) FROM saved_session_pages WHERE session_id=s.id ORDER BY position LIMIT 1),
-        (SELECT count(*) FROM saved_session_pages WHERE session_id=s.id),count(*) OVER() FROM saved_sessions s
-        WHERE instr(veloce_search_fold(s.name),?1)>0 OR EXISTS(SELECT 1 FROM saved_session_pages p WHERE p.session_id=s.id AND
-          (instr(veloce_search_fold(p.title),?1)>0 OR instr(veloce_search_fold(p.url),?1)>0))
-        ORDER BY s.id DESC LIMIT 2").map_err(|e|e.to_string())?;
-    for row in sessions
-        .query_map([query], |r| {
-            Ok((
-                SessionSearchHit {
-                    id: r.get(0)?,
-                    name: r.get(1)?,
-                    preview: r.get::<_, Option<String>>(2)?.unwrap_or_default(),
-                    page_count: r.get(3)?,
-                },
-                r.get::<_, usize>(4)?,
-            ))
+        (SELECT count(*) FROM saved_session_pages WHERE session_id=s.id)
+        FROM saved_sessions s WHERE s.id IN ({candidates}) ORDER BY s.id DESC LIMIT 3");
+    let mut sessions = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    out.sessions = sessions
+        .query_map([needle], |r| {
+            Ok(SessionSearchHit {
+                id: r.get(0)?,
+                name: r.get(1)?,
+                preview: r.get::<_, Option<String>>(2)?.unwrap_or_default(),
+                page_count: r.get(3)?,
+            })
         })
         .map_err(|e| e.to_string())?
-    {
-        let (hit, count) = row.map_err(|e| e.to_string())?;
-        out.sessions.push(hit);
-        out.sessions_count = count;
-    }
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+    out.sessions_has_more = out.sessions.len() > 2;
+    out.sessions.truncate(2);
+    out.sessions_count = out.sessions.len();
     Ok(out)
 }
 #[cfg(test)]
@@ -120,14 +127,15 @@ mod tests {
         );
         crate::database::saved_sessions_repo::save(&c, None, "Estúdio Café", &[tab]).unwrap();
         let hits = search(&c, "CAFE").unwrap();
-        assert_eq!(hits.notes_count, 4);
+        assert_eq!(hits.notes_count, 2);
         assert_eq!(hits.notes.len(), 2);
+        assert!(hits.notes_has_more);
         assert_eq!(hits.sessions_count, 1);
         assert!(hits.notes[0].preview.chars().count() <= 160);
         assert!(hits.notes[0].characters > 400);
-        assert_eq!(search(&c, "100%_").unwrap().notes_count, 4);
+        assert_eq!(search(&c, "100%_").unwrap().notes_count, 2);
         assert_eq!(search(&c, "not found").unwrap().notes_count, 0);
-        assert_eq!(search(&c, "resume").unwrap().notes_count, 4);
+        assert_eq!(search(&c, "resume").unwrap().notes_count, 2);
         assert!(search(&c, &"x".repeat(257)).is_err());
     }
 }

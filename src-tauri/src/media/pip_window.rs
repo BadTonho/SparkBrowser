@@ -418,13 +418,23 @@ mod tests {
             ..Default::default()
         };
         assert!(matches(&id, "tab", "generation", &[source.clone(), other]));
-        assert!(!matches(&id, "other-tab", "generation", &[source.clone()]));
-        assert!(!matches(&id, "tab", "old-generation", &[source.clone()]));
+        assert!(!matches(
+            &id,
+            "other-tab",
+            "generation",
+            std::slice::from_ref(&source)
+        ));
+        assert!(!matches(
+            &id,
+            "tab",
+            "old-generation",
+            std::slice::from_ref(&source)
+        ));
         assert!(!matches(
             "old-session",
             "tab",
             "generation",
-            &[source.clone()]
+            std::slice::from_ref(&source)
         ));
         assert!(!matches(
             &id,

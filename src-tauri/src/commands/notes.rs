@@ -1,41 +1,26 @@
-use crate::{
-    database::notes_repo::{self as repo, PageNote},
-    state::browser_state::BrowserState,
+use crate::database::{
+    executor,
+    notes_repo::{self as repo, NoteSummary, PageNote},
 };
-use tauri::State;
+use tauri::AppHandle;
 #[tauri::command]
-pub async fn get_page_note(
-    state: State<'_, BrowserState>,
-    url: String,
-) -> Result<Option<PageNote>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    repo::get(db.as_ref().ok_or("Database is not ready")?, &url)
+pub async fn get_page_note(app: AppHandle, url: String) -> Result<Option<PageNote>, String> {
+    executor::run(app, move |conn| repo::get(conn, &url)).await
 }
 #[tauri::command]
-pub async fn search_page_notes(
-    state: State<'_, BrowserState>,
-    query: String,
-) -> Result<Vec<PageNote>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    repo::search(db.as_ref().ok_or("Database is not ready")?, &query)
+pub async fn search_page_notes(app: AppHandle, query: String) -> Result<Vec<NoteSummary>, String> {
+    executor::run(app, move |conn| repo::search(conn, &query)).await
 }
 #[tauri::command]
 pub async fn save_page_note(
-    state: State<'_, BrowserState>,
+    app: AppHandle,
     url: String,
     title: String,
     text: String,
 ) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    repo::save(
-        db.as_ref().ok_or("Database is not ready")?,
-        &url,
-        &title,
-        &text,
-    )
+    executor::run(app, move |conn| repo::save(conn, &url, &title, &text)).await
 }
 #[tauri::command]
-pub async fn delete_page_note(state: State<'_, BrowserState>, url: String) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    repo::delete(db.as_ref().ok_or("Database is not ready")?, &url)
+pub async fn delete_page_note(app: AppHandle, url: String) -> Result<(), String> {
+    executor::run(app, move |conn| repo::delete(conn, &url)).await
 }

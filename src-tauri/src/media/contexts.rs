@@ -20,6 +20,23 @@ struct ViewContexts {
     contexts: HashMap<(String, i64), Context>,
 }
 thread_local! {static VIEWS:RefCell<HashMap<String,ViewContexts>>=RefCell::new(HashMap::new());}
+
+/// Counts only: no context identifiers or document metadata leave the UI thread.
+pub async fn resource_counts(app: &AppHandle) -> Result<(usize, usize), String> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.run_on_main_thread(move || {
+        let counts = VIEWS.with(|views| {
+            let views = views.borrow();
+            (views.len(), views.values().map(|v| v.contexts.len()).sum())
+        });
+        let _ = tx.send(counts);
+    })
+    .map_err(|e| e.to_string())?;
+    tokio::time::timeout(std::time::Duration::from_secs(5), rx)
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
 pub fn session(label: &str, token: &str, unique: &str) -> Option<String> {
     VIEWS.with(|m| {
         let m = m.borrow();

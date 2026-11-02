@@ -125,3 +125,5 @@ export interface NavigationState {
   can_go_forward: boolean | null;
 }
 export interface NavigationPatch { activity?: TabItem["activity"]; id: string; url: string; title: string; navigation: NavigationState; }
+
+export interface NoteSummary { url: string; title: string; preview: string; updated_at: number; }

@@ -66,12 +66,17 @@ pub async fn switch_workspace(
     if let Some(tab_id) = existing_tab_id {
         return switch_tab_inner(&app, &state, tab_id);
     }
+    let before = crate::state::tab_checkpoint::TabCheckpoint::capture(&state)?;
     *state
         .active_workspace_id
         .lock()
         .map_err(|e| e.to_string())? = workspace_id;
 
-    create_tab_inner(&app, &state, Some(DEFAULT_HOME_URL.to_string()), None)
+    let result = create_tab_inner(&app, &state, Some(DEFAULT_HOME_URL.to_string()), None);
+    if result.is_err() {
+        before.restore(&state)?;
+    }
+    result
 }
 
 #[tauri::command]

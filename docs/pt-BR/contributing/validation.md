@@ -6,6 +6,8 @@
 
 Execute a partir da raiz do repositório:
 
+`npm run validate` executa testes JavaScript, verificações Svelte/TypeScript, rustfmt, Clippy, testes Rust, build do frontend e verificação de segurança do repositório, parando na primeira falha. `npm run validate -- --native` também compila o aplicativo nativo isolado e executa toda a suíte WebDriver. Configure as [ferramentas nativas](native-tests.md) antes; as dependências Rust precisam estar em cache para as etapas offline. Auditorias e verificações isoladas de assinaturas de instaladores continuam separadas.
+
 ```sh
 npm ci
 npm test
@@ -22,6 +24,8 @@ cargo audit --no-fetch --file src-tauri/Cargo.lock
 No PowerShell do Windows, use `npm.cmd` quando a política de execução bloquear `npm.ps1`. As verificações Rust offline exigem dependências previamente baixadas. A cobertura da auditoria e os avisos pendentes estão descritos nas [notas de dependências](../security/dependency-notes.md).
 
 Os testes de regressão cobrem rollback de sessão após erro de inserção e participação em transação externa; seleção de abas/workspaces; buscador escolhido; correspondência de hosts, entradas URL/Request, reutilização de XHR e beacons; correção da dependência local; e transferências HTTP reais locais, respostas de erro ou interrompidas, política de redirecionamento e colisões de nomes. Os testes de transferência usam HTTP em loopback e diretórios temporários, preservando a pasta Downloads do usuário.
+
+As regressões de otimização também injetam falhas de sessão/ativação em checkpoints de abas, limitam o payload de listas de notas, verificam migração/atualização/exclusão/rollback dos trigramas e correspondência literal Unicode, liberam documentos de backup selecionados, comparam impressões calculadas por streaming e suprimem revisões de mídia sem mudanças. Os testes do cache de notas preservam rascunhos ativos e com falha enquanto removem entradas salvas antigas.
 
 ## Verificações nativas
 

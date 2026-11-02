@@ -6,6 +6,8 @@
 
 Run from the repository root:
 
+`npm run validate` runs JavaScript tests, Svelte/TypeScript checks, rustfmt, Clippy, Rust tests, the frontend build and the repository security check, stopping on the first failure. `npm run validate -- --native` additionally builds the isolated native app and runs its complete WebDriver suite. Configure the [native tools](native-tests.md) first; Rust dependencies must be cached for the offline steps. Audit and isolated installer-signature checks remain separate.
+
 ```sh
 npm ci
 npm test
@@ -22,6 +24,8 @@ cargo audit --no-fetch --file src-tauri/Cargo.lock
 On Windows PowerShell, use `npm.cmd` when execution policy blocks `npm.ps1`. Rust's offline checks require dependencies to have been downloaded previously. Audit coverage and unresolved upstream warnings are explained in [dependency notes](../security/dependency-notes.md).
 
 Regression tests cover session rollback after an insertion error and participation in an outer transaction; workspace/tab selection; the selected search engine; tracker matching, URL/Request inputs, XHR reuse and beacon requests; the vendored dependency security fix; and real local HTTP transfers, failed or interrupted responses, redirect policy, and filename collisions. Transfer tests use loopback HTTP and temporary directories rather than the user's Downloads directory.
+
+Optimization regressions also inject session/activation failures into tab checkpoints, bound note-list payloads, verify trigram migration/update/delete/rollback and Unicode literal matching, release selected backup documents, compare streamed fingerprints and suppress unchanged media revisions. Saved-note cache tests preserve active and failed drafts while evicting old saved entries.
 
 ## Native smoke checks
 

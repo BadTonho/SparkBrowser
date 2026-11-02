@@ -315,6 +315,12 @@
           "markdownDescription": "Enables the delete_workspace command without any pre-configured scope."
         },
         {
+          "description": "Enables the discard_backup_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-discard-backup-import",
+          "markdownDescription": "Enables the discard_backup_import command without any pre-configured scope."
+        },
+        {
           "description": "Enables the download_update command without any pre-configured scope.",
           "type": "string",
           "const": "allow-download-update",
@@ -877,6 +883,12 @@
           "type": "string",
           "const": "deny-delete-workspace",
           "markdownDescription": "Denies the delete_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the discard_backup_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-discard-backup-import",
+          "markdownDescription": "Denies the discard_backup_import command without any pre-configured scope."
         },
         {
           "description": "Denies the download_update command without any pre-configured scope.",

@@ -1,6 +1,6 @@
 # Trabalho de otimização
 
-As mudanças são entregues em commits separados e validados. O comportamento nativo também deve ser verificado nos sistemas operacionais de destino; verificações automatizadas sozinhas não comprovam latência da interface ou economia de memória.
+As mudanças exigem validação local antes da release. O comportamento nativo também deve ser verificado nos sistemas operacionais de destino; verificações automatizadas sozinhas não comprovam latência da interface ou economia de memória.
 
 ## Geometria e IPC
 
@@ -11,6 +11,10 @@ As medições do viewport são agrupadas por frame de animação. Há apenas uma
 O salvamento de sessão usa upserts incrementais transacionais com instruções preparadas: linhas inalteradas não são regravadas e somente abas removidas são excluídas. O arraste altera uma prévia local, confirma uma vez ao soltar e restaura a ordem ao cancelar ou falhar. Solicitações de reordenação são serializadas. Histórico e downloads possuem índices cronológicos; a hibernação adaptativa obtém os IDs de abas frequentes em uma consulta agrupada e remove eventos expirados na passagem periódica. Falhas de leitura de linhas e de gravação de ativações são retornadas.
 
 Callbacks nativos de navegação enfileiram gravações de histórico/sessão em um worker. Consultas/limpeza do histórico e encerramento normal aguardam as gravações anteriores. Comandos explícitos de abas persistem antes de retornar. O worker não imprime URLs de páginas nos erros.
+
+Criação, seleção, ordenação, fixação, movimentação de abas e alterações do limite residente restauram um checkpoint se a persistência falhar. O registro de uso da seleção e as linhas da sessão são confirmados na mesma transação. Os documentos nativos são reconciliados após a persistência; uma falha posterior de exibição mostra um erro e preserva a sessão confirmada. O rollback preserva observações de navegação/mídia recebidas durante a operação.
+
+Comandos de banco para favoritos, notas, histórico e busca de comandos usam um executor bloqueante com duas permissões de worker e o mutex da conexão existente. A espera pelo lock e a execução SQL possuem medições separadas. As permissões limitam tarefas bloqueantes ativas; não adicionam conexões nem garantem ordem FIFO entre solicitações concorrentes. Gravações de navegação mantêm seu worker limitado e suas regras de flush.
 
 ## Navegação e diálogos
 
@@ -23,6 +27,10 @@ Snapshots de abas possuem revisões monotônicas; respostas antigas são ignorad
 O histórico pesquisa todas as visitas armazenadas com páginas limitadas, escape de curingas literais e cursor estável `(visited_at, id)`. A interface agrupa a digitação e descarta respostas atrasadas. O LIKE usa as regras de correspondência de maiúsculas do SQLite; não é um índice Unicode de texto completo. Favoritos são agrupados por pasta uma vez por alteração.
 
 Sugestões de comandos são calculadas somente com a barra aberta, classificadas pela relevância de título/URL, normalizadas para acentos e limitadas por categoria. O acesso às preferências usa um adaptador que trata armazenamento negado e falta de espaço, mantém o estado em memória e avisa o usuário sem registrar valores armazenados.
+
+A busca persistente de comandos normaliza o texto na gravação e mantém índices transacionais de trigramas SQLite FTS5 para notas, nomes de sessões e páginas de sessões. Consultas com pelo menos três caracteres Unicode usam frases literais no índice; consultas menores percorrem os campos já normalizados. A busca obtém três correspondências por categoria, retorna duas e indica se existem outras, sem calcular totais exatos. Os índices exigem armazenamento e trabalho adicional na gravação. A busca do painel de notas mantém a semântica LIKE existente e retorna até 100 resumos com prévias de 180 caracteres; abrir uma nota busca seu texto completo.
+
+O gravador de notas remove rascunhos salvos antigos acima de 32 entradas ou 2.000.000 de unidades UTF-16, preservando editores ativos e rascunhos não salvos, em gravação ou com falha. A importação por arquivo mantém o documento selecionado no Rust com um token opaco, libera-o na substituição/cancelamento/importação e calcula a impressão da prévia diretamente em SHA-256. Relatórios de mídia sem alterações deixam de incrementar revisões ou publicar snapshots completos; a consulta periódica continua para descobrir vídeos.
 
 ## Memória residente e migrações
 
@@ -56,4 +64,4 @@ As verificações são executadas localmente sob demanda; o workflow do GitHub A
 
 ## Diagnósticos locais
 
-As configurações exibem amostras limitadas de tempo de IPC em memória, contagens acumuladas de chamadas/erros, duração de operações nativas, linhas de sessão gravadas e contagens de abas residentes/protegidas. Os dados de diagnóstico omitem argumentos, URLs, títulos e tokens. Veja [validação de desempenho](../contributing/performance.md) para comparações reproduzíveis e limites de medição.
+As configurações exibem amostras limitadas de tempo de IPC em memória, contagens acumuladas de chamadas/erros, duração de operações nativas, linhas de sessão gravadas e contagens de abas residentes/protegidas. Os contadores de tempo omitem argumentos, URLs, títulos e tokens. O inventário local separado `get_diagnostics.tab_details` contém URLs/títulos das abas e IDs de workspace; a resposta também contém o diretório local de dados da aplicação. Os contadores de recursos informam quantidades de tokens de bridge, scripts do escudo, entradas de mídia e contextos de execução do Windows sem expor seus identificadores. Remova inventários/caminhos locais antes de compartilhar uma resposta de diagnóstico. Veja [validação de desempenho](../contributing/performance.md) para comparações reproduzíveis e limites de medição.

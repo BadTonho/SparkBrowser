@@ -1,6 +1,7 @@
 pub mod bookmarks_repo;
 pub mod connection;
 pub mod downloads_repo;
+pub mod executor;
 pub mod history_repo;
 pub mod migrations;
 pub mod navigation_writer;
@@ -23,3 +24,6 @@ pub mod download_jobs_repo;
 pub mod site_zoom_repo;
 
 pub mod command_search_repo;
+#[cfg(test)]
+mod search_benchmarks;
+pub mod search_index;

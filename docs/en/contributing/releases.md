@@ -14,7 +14,7 @@ Updater signatures are separate from Windows Authenticode certificates. This set
 
 1. Run `npm run release:version -- v1.1.0-beta.1` or `npm run release:version -- v1.1.0`. This synchronizes npm metadata, Tauri configuration, Cargo package version and lockfile; it does not create a tag.
 2. Run [validation](validation.md), review status/diffs/ignore rules for sensitive content and commit. Create the matching local tag on that commit, for example `git tag v1.1.0-beta.1`.
-3. Run `npm run release:build -- v1.1.0-beta.1`. Optional notes: `npm run release:build -- v1.1.0-beta.1 --notes path/to/notes.md`. It requires a clean checkout, matching versions and a tag pointing to HEAD. Missing Tauri NSIS tools are downloaded on the first build.
+3. Run `npm run release:build -- v1.1.0-beta.1`. Optional notes: `npm run release:build -- v1.1.0-beta.1 --notes path/to/notes.md`. It requires a clean checkout, matching versions and a tag pointing to HEAD. It runs `validate --native` and checks the checkout again before accessing signing material or packaging; failed checks stop the release. Set up the native drivers and cache Rust dependencies first. Missing Tauri NSIS tools are downloaded on the first build.
 4. Output is `.cache/release-artifacts/<tag>/`. Upload only `VeloceBrowser_<version>_x64-setup.exe`, its `.sig` and `updater.json` to that exact tag's release. Do not upload `build-config.json`, caches, profiles or private signing files. The manifest also embeds the signature.
 5. Push the reviewed commit/tag and publish the GitHub release yourself. Mark `*-beta.N` as **Pre-release**; stable releases must not have that flag. Upload all three assets before publishing. A tag alone is not an update.
 

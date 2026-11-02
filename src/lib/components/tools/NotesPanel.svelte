@@ -6,11 +6,12 @@
   import { currentUrl, tabs, addTab } from "../../stores/browserStore";
   import { noteUrl, noteWriter, notesRevision } from "../../stores/notesStore";
   import { fetchPageNote, searchPageNotes } from "../../services/bridge/notes";
-  import type { PageNote } from "../../types/browser";
+  import type { NoteSummary } from "../../types/browser";
   import { closeTools } from "../../stores/toolsStore";
   let editingUrl = $state(""); let title = $state(""); let loading = $state(true); let error = $state("");
-  let query = $state(""); let results = $state<PageNote[]>([]); let confirming = $state<string | null>(null);
+  let query = $state(""); let results = $state<NoteSummary[]>([]); let confirming = $state<string | null>(null);
   let loadRevision = 0;
+  $effect(() => noteWriter.retain(editingUrl));
   const draft = $derived.by(() => { void $notesRevision; const value = noteWriter.drafts.get(editingUrl); return value ? { ...value } : undefined; });
   $effect(() => {
     const raw = $selectedNote?.url ?? $currentUrl; const pageTitle = $selectedNote?.title ?? $tabs.find(tab => tab.is_active)?.title ?? raw;
@@ -49,7 +50,7 @@
 <button onclick={async () => { try { results = await searchPageNotes(query); } catch (e) { error = describeError(e); } }}>{$t("tools.refresh_saved_notes_87f7")}</button>
 <p>{$t("tools.showing_up_to_100_matching_notes_003f")}</p>
 {#each results as note (note.url)}
-  <article class="tool-card"><strong>{note.title}</strong><span>{note.url}</span><p>{note.text.slice(0, 180)}</p>
+  <article class="tool-card"><strong>{note.title}</strong><span>{note.url}</span><p>{note.preview}</p>
     <div class="tool-actions"><button onclick={() => openSavedNote(note.url).catch(e=>error=describeError(e))}>{$t("search.edit_note")}</button><button onclick={async () => { await closeTools(); await addTab(note.url); }}>{$t("tools.open_page_af03")}</button><button onclick={() => confirming = note.url}>{$t("tools.delete_note_b80e")}</button></div>
     {#if confirming === note.url}<p>{$t("tools.delete_this_note_f806")}</p><div class="tool-actions"><button onclick={() => remove(note.url)}>{$t("tools.confirm_deletion_fa57")}</button><button onclick={() => confirming = null}>{$t("tools.cancel_1976")}</button></div>{/if}
   </article>

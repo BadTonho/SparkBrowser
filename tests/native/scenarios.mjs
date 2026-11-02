@@ -6,6 +6,7 @@ import { checkKeyboard } from "./keyboard.mjs";
 import { checkCommandSearch } from "./command-search.mjs";
 import { checkZoom } from "./zoom.mjs";
 import { checkTabDiagnostics } from "./tab-diagnostics.mjs";
+import { checkTabChurn } from './tab-churn.mjs';
 import { checkShutdown } from "./shutdown.mjs";
 import { checkBackup } from "./backup.mjs";
 import { checkDownloads } from './downloads.mjs';
@@ -20,6 +21,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  'tab-churn': checkTabChurn,
   "media-mute": checkMediaMute,
   "media-volume": checkMediaVolume,
   "media-pip": checkMediaPip,

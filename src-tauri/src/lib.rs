@@ -1,6 +1,6 @@
 use commands::backup::{
-    choose_backup_file, commit_backup_import, export_backup, finish_backup_preferences,
-    get_backup_pending_preferences, preview_backup_import,
+    choose_backup_file, commit_backup_import, discard_backup_import, export_backup,
+    finish_backup_preferences, get_backup_pending_preferences, preview_backup_import,
 };
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
@@ -184,6 +184,7 @@ pub fn run() {
             clear_closed_tabs,
             export_backup,
             choose_backup_file,
+            discard_backup_import,
             preview_backup_import,
             commit_backup_import,
             get_backup_pending_preferences,

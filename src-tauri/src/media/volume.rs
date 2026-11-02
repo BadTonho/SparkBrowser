@@ -6,7 +6,7 @@ use tauri::AppHandle;
 #[cfg(windows)]
 use tauri::Manager;
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FrameMedia {
     #[serde(default)]
     pub context: String,

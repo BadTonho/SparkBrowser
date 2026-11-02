@@ -15,7 +15,7 @@ use serde::Serialize;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub struct TabMediaState {
     pub tab_id: String,
     pub muted: bool,
@@ -48,6 +48,45 @@ impl Default for TabMediaState {
 pub struct MediaSnapshot {
     pub revision: u64,
     pub tabs: Vec<TabMediaState>,
+}
+impl MediaSnapshot {
+    fn update(
+        &mut self,
+        id: &str,
+        live: &[crate::state::tab_model::TabInfo],
+        change: impl FnOnce(&mut TabMediaState),
+    ) -> bool {
+        if !live.iter().any(|t| t.id == id) {
+            return false;
+        }
+        let previous_count = self.tabs.len();
+        self.tabs
+            .retain(|t| live.iter().any(|tab| tab.id == t.tab_id));
+        let previous_tab = self.tabs.iter().find(|t| t.tab_id == id).cloned();
+        let index = self
+            .tabs
+            .iter()
+            .position(|t| t.tab_id == id)
+            .unwrap_or_else(|| {
+                self.tabs.push(TabMediaState {
+                    tab_id: id.into(),
+                    ..Default::default()
+                });
+                self.tabs.len() - 1
+            });
+        let t = &mut self.tabs[index];
+        change(t);
+        t.capabilities = pip::MediaCapabilities {
+            mute: t.mute_available,
+            volume: !t.document_key.is_empty() && t.volume_status != "unavailable",
+            picture_in_picture: t.frames.iter().any(|f| f.videos.iter().any(|v| v.eligible)),
+        };
+        if previous_count == self.tabs.len() && previous_tab.as_ref() == Some(&self.tabs[index]) {
+            return false;
+        }
+        self.revision += 1;
+        true
+    }
 }
 #[derive(Default)]
 pub struct MediaService {
@@ -83,34 +122,12 @@ impl MediaService {
     }
     pub fn update(&self, app: &AppHandle, id: &str, change: impl FnOnce(&mut TabMediaState)) {
         let live = app.state::<BrowserState>().snapshot_tabs();
-        if !live.iter().any(|t| t.id == id) {
-            return;
-        }
         if let Ok(mut inner) = self.inner.lock() {
-            inner
-                .tabs
-                .retain(|t| live.iter().any(|tab| tab.id == t.tab_id));
-            let index = inner
-                .tabs
-                .iter()
-                .position(|t| t.tab_id == id)
-                .unwrap_or_else(|| {
-                    inner.tabs.push(TabMediaState {
-                        tab_id: id.into(),
-                        ..Default::default()
-                    });
-                    inner.tabs.len() - 1
-                });
-            change(&mut inner.tabs[index]);
-            let t = &mut inner.tabs[index];
-            t.capabilities = pip::MediaCapabilities {
-                mute: t.mute_available,
-                volume: !t.document_key.is_empty() && t.volume_status != "unavailable",
-                picture_in_picture: t.frames.iter().any(|f| f.videos.iter().any(|v| v.eligible)),
-            };
-            inner.revision += 1;
+            if !inner.update(id, &live, change) {
+                return;
+            }
             #[cfg(windows)]
-            let changed = inner.tabs[index].clone();
+            let changed = inner.tabs.iter().find(|t| t.tab_id == id).unwrap().clone();
             let _ = app.emit_to("main", "tab-media-state", inner.clone());
             drop(inner);
             #[cfg(windows)]
@@ -154,4 +171,45 @@ pub fn current(app: &AppHandle, label: &str, token: &str) -> bool {
         .keyboard_bridge_tokens
         .lock()
         .is_ok_and(|m| m.get(label).is_some_and(|t| t == token))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::tab_model::TabInfo;
+
+    #[test]
+    fn unchanged_reports_do_not_publish_and_real_changes_still_increment_revision() {
+        let mut snapshot = MediaSnapshot::default();
+        let mut live = vec![TabInfo::new_default(
+            "a".into(),
+            "https://example.test".into(),
+            true,
+        )];
+        assert!(snapshot.update("a", &live, |t| t.audible = true));
+        for _ in 0..100 {
+            assert!(!snapshot.update("a", &live, |t| t.audible = true));
+        }
+        assert_eq!(snapshot.revision, 1);
+        assert!(snapshot.update("a", &live, |t| t.audible = false));
+        assert!(snapshot.update("a", &live, |t| {
+            t.document_key = "new-document".into();
+            t.volume_status = "applied".into();
+        }));
+        assert!(snapshot.tabs[0].capabilities.volume);
+        assert_eq!(snapshot.revision, 3);
+        live.push(TabInfo::new_default(
+            "b".into(),
+            "https://example.test/b".into(),
+            false,
+        ));
+        assert!(snapshot.update("b", &live, |_| {}));
+        live.remove(0);
+        assert!(
+            snapshot.update("b", &live, |_| {}),
+            "removing a closed tab changes the snapshot"
+        );
+        assert_eq!(snapshot.tabs.len(), 1);
+        assert!(!snapshot.update("a", &live, |_| panic!("closed tab must be ignored")));
+    }
 }

@@ -11,5 +11,22 @@ test('note writes retain newer drafts, serialize deletion and recover after erro
   await writer.flush('a'); await writer.flush('b'); assert.deepEqual(writes.slice(-2), [['a', 'newest'], ['b', 'other page']]);
   fail = true; writer.edit('a', 'A', 'retained'); await writer.flush('a'); assert.equal(writer.drafts.get('a').status, 'Error');
   fail = false; await writer.flush('a'); assert.equal(writer.drafts.get('a').status, 'Saved');
-  await writer.remove('a'); assert.deepEqual(writes.at(-1), ['a', 'DELETED']); assert.equal(writer.drafts.get('a').text, '');
+  await writer.remove('a'); assert.deepEqual(writes.at(-1), ['a', 'DELETED']); assert.equal(writer.drafts.has('a'), false);
+});
+
+test('saved note cache is bounded without evicting active, pending or failed drafts', async () => {
+  let fail = true;
+  const writer = createNoteWriter({ maxSaved: 2, maxSavedCharacters: 20, delay: 60_000, changed() {},
+    async save() { if (fail) throw Error('disk full'); }, async remove() {} });
+  writer.seed('active', 'A', 'kept'); const release = writer.retain('active');
+  writer.edit('pending', 'P', 'unsaved');
+  await writer.flush('pending');
+  for (let n = 0; n < 100; n++) writer.seed('saved-' + n, 'S', 'text');
+  assert.ok(writer.drafts.size <= 3);
+  assert.equal(writer.drafts.get('active').text, 'kept');
+  assert.equal(writer.drafts.get('pending').status, 'Error');
+  fail = false; await writer.flushAll();
+  assert.ok(writer.drafts.size <= 2);
+  await writer.remove('active'); assert.equal(writer.drafts.get('active').text, '');
+  release();
 });

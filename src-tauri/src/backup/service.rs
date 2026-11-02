@@ -3,11 +3,12 @@ use crate::{
     database::{backup_repo, navigation_writer::NavigationWriter},
     state::browser_state::BrowserState,
 };
-use std::sync::Mutex;
+use sha2::{Digest, Sha256};
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
 
 pub struct PendingPreview {
-    fingerprint: Vec<u8>,
+    fingerprint: [u8; 32],
     preview: BackupPreview,
     plan: merge::MergePlan,
 }
@@ -15,6 +16,7 @@ pub struct PendingPreview {
 pub struct BackupService {
     pub operation: tauri::async_runtime::Mutex<()>,
     preview: Mutex<Option<PendingPreview>>,
+    source: Mutex<Option<(String, Arc<BackupDocument>)>>,
 }
 pub async fn flush(app: &AppHandle) -> Result<(), String> {
     let app = app.clone();
@@ -31,8 +33,37 @@ pub fn current_preferences(
     p.update_channel = crate::database::updates_repo::load(conn, p.update_channel)?.0;
     Ok(p)
 }
-fn fingerprint(data: &BackupData, prefs: &BackupPreferences) -> Result<Vec<u8>, String> {
-    serde_json::to_vec(&(data, prefs)).map_err(|e| e.to_string())
+/// Stream canonical serialization into a digest without retaining a second document.
+fn fingerprint(data: &BackupData, prefs: &BackupPreferences) -> Result<[u8; 32], String> {
+    struct HashWriter(Sha256);
+    impl std::io::Write for HashWriter {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0.update(bytes);
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    let mut writer = HashWriter(Sha256::new());
+    serde_json::to_writer(&mut writer, &(data, prefs)).map_err(|e| e.to_string())?;
+    Ok(writer.0.finalize().into())
+}
+impl BackupService {
+    pub fn select(&self, document: BackupDocument) -> Result<String, String> {
+        let token = crate::window::webview_manager::create_internal_bridge_token();
+        *self.source.lock().map_err(|e| e.to_string())? = Some((token.clone(), Arc::new(document)));
+        *self.preview.lock().map_err(|e| e.to_string())? = None;
+        Ok(token)
+    }
+    pub fn discard(&self, token: &str) -> Result<(), String> {
+        let mut source = self.source.lock().map_err(|e| e.to_string())?;
+        if source.as_ref().is_some_and(|(id, _)| id == token) {
+            *source = None;
+            *self.preview.lock().map_err(|e| e.to_string())? = None;
+        }
+        Ok(())
+    }
 }
 pub async fn capture(app: &AppHandle, prefs: BackupPreferences) -> Result<BackupDocument, String> {
     flush(app).await?;
@@ -51,15 +82,31 @@ pub async fn capture(app: &AppHandle, prefs: BackupPreferences) -> Result<Backup
 }
 pub async fn preview(
     app: &AppHandle,
-    doc: BackupDocument,
+    document: Option<BackupDocument>,
+    source_token: Option<String>,
     prefs: BackupPreferences,
 ) -> Result<BackupPreview, String> {
-    if serde_json::to_vec(&doc).map_err(|e| e.to_string())?.len() as u64 > MAX_BYTES {
-        return Err("backup.file_too_large".into());
-    }
-    validation::document(&doc)?;
     let service = app.state::<BackupService>();
     let _serial = service.operation.lock().await;
+    // Structured imports remain supported; file selections never round-trip through JS.
+    let doc = match (document, source_token) {
+        (Some(doc), None) => {
+            validation::document(&doc)?;
+            if serde_json::to_vec(&doc).map_err(|e| e.to_string())?.len() as u64 > MAX_BYTES {
+                return Err("backup.file_too_large".into());
+            }
+            Arc::new(doc)
+        }
+        (None, Some(token)) => service
+            .source
+            .lock()
+            .map_err(|e| e.to_string())?
+            .as_ref()
+            .filter(|(id, _)| id == &token)
+            .map(|(_, doc)| doc.clone())
+            .ok_or("backup.preview_missing")?,
+        _ => return Err("backup.preview_missing".into()),
+    };
     let current = capture(app, prefs).await?;
     let token = crate::window::webview_manager::create_internal_bridge_token();
     let counter = *app
@@ -73,7 +120,7 @@ pub async fn preview(
         counts: merge::counts(&doc.data),
         added: plan.added.clone(),
         skipped: plan.skipped.clone(),
-        preferences: doc.preferences,
+        preferences: doc.preferences.clone(),
     };
     *service.preview.lock().map_err(|e| e.to_string())? = Some(PendingPreview {
         fingerprint: fingerprint(&current.data, &current.preferences)?,
@@ -159,6 +206,46 @@ pub async fn import(
         workspaces: pending.plan.data.workspaces.clone(),
     };
     *preview_guard = None;
+    drop(preview_guard);
+    *service.source.lock().map_err(|e| e.to_string())? = None;
     let _ = app.emit_to("main", "tabs-updated", &result.snapshot);
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn streamed_fingerprint_matches_serialization_and_detects_changes() {
+        let (_, mut doc) = crate::backup::tests::setup();
+        let expected: [u8; 32] =
+            Sha256::digest(serde_json::to_vec(&(&doc.data, &doc.preferences)).unwrap()).into();
+        assert_eq!(fingerprint(&doc.data, &doc.preferences).unwrap(), expected);
+        doc.data.tabs[0].url.push_str("?changed");
+        assert_ne!(fingerprint(&doc.data, &doc.preferences).unwrap(), expected);
+        let data_changed = fingerprint(&doc.data, &doc.preferences).unwrap();
+        doc.preferences.resident_limit += 1;
+        assert_ne!(
+            fingerprint(&doc.data, &doc.preferences).unwrap(),
+            data_changed
+        );
+    }
+
+    #[test]
+    fn replacing_or_discarding_a_selection_releases_its_document() {
+        let (_, doc) = crate::backup::tests::setup();
+        let service = BackupService::default();
+        let old = service.select(doc.clone()).unwrap();
+        let weak = Arc::downgrade(&service.source.lock().unwrap().as_ref().unwrap().1);
+        let next = service.select(doc).unwrap();
+        assert!(weak.upgrade().is_none());
+        assert_ne!(old, next);
+        service.discard(&old).unwrap();
+        assert!(service.source.lock().unwrap().is_some());
+        let weak = Arc::downgrade(&service.source.lock().unwrap().as_ref().unwrap().1);
+        service.discard(&next).unwrap();
+        assert!(weak.upgrade().is_none());
+        assert!(service.source.lock().unwrap().is_none());
+    }
 }

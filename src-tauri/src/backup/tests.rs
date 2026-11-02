@@ -60,7 +60,7 @@ fn tab(id: &str, url: &str, workspace: &str, active: bool) -> BackupTab {
         is_active: active,
     }
 }
-fn setup() -> (Connection, BackupDocument) {
+pub(super) fn setup() -> (Connection, BackupDocument) {
     let conn = Connection::open_in_memory().unwrap();
     initialize_schema(&conn).unwrap();
     let mut data = backup_repo::collect(&conn).unwrap();

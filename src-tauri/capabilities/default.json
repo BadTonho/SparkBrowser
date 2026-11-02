@@ -89,6 +89,7 @@
     "allow-clear-all-downloads",
     "allow-export-backup",
     "allow-choose-backup-file",
+    "allow-discard-backup-import",
     "allow-preview-backup-import",
     "allow-commit-backup-import",
     "allow-get-backup-pending-preferences",

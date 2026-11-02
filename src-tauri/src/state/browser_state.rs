@@ -209,14 +209,21 @@ impl BrowserState {
         closed: &[crate::database::closed_tabs_repo::ClosedTab],
         reopened: Option<i64>,
     ) -> Result<(), String> {
-        self.persist_change(closed, reopened, None)
+        self.persist_change(closed, reopened, None, None)
     }
 
     pub fn persist_run_checkpoint(
         &self,
         checkpoint: crate::database::recovery_repo::RunCheckpoint,
     ) -> Result<(), String> {
-        self.persist_change(&[], None, Some(checkpoint))
+        self.persist_change(&[], None, Some(checkpoint), None)
+    }
+
+    pub fn persist_activated_session(
+        &self,
+        activation: Option<(&str, bool)>,
+    ) -> Result<(), String> {
+        self.persist_change(&[], None, None, activation)
     }
 
     fn persist_change(
@@ -224,6 +231,7 @@ impl BrowserState {
         closed: &[crate::database::closed_tabs_repo::ClosedTab],
         reopened: Option<i64>,
         checkpoint: Option<crate::database::recovery_repo::RunCheckpoint>,
+        activation: Option<(&str, bool)>,
     ) -> Result<(), String> {
         let mut span = self.diagnostics.span("session.persist");
         self.refresh_visible_tabs()?;
@@ -245,6 +253,16 @@ impl BrowserState {
             let transaction = conn.unchecked_transaction().map_err(|e| e.to_string())?;
             save_session_tabs(&transaction, &snapshot)?;
             crate::database::split_repo::save(&transaction, &layouts)?;
+            if let Some((tab_id, reset)) = activation {
+                if reset {
+                    crate::database::tab_usage_repo::reset_tab_history(&transaction, tab_id)?;
+                }
+                crate::database::tab_usage_repo::record_activation(
+                    &transaction,
+                    tab_id,
+                    TabInfo::current_epoch_secs(),
+                )?;
+            }
             if !closed.is_empty() {
                 crate::database::closed_tabs_repo::append(
                     &transaction,

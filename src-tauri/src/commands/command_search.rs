@@ -1,30 +1,17 @@
-use crate::{
-    database::{
-        command_search_repo::{self, CommandSearchResult},
-        saved_sessions_repo::{self, SavedSession},
-    },
-    state::browser_state::BrowserState,
+use crate::database::{
+    command_search_repo::{self, CommandSearchResult},
+    executor,
+    saved_sessions_repo::{self, SavedSession},
 };
-use tauri::State;
+use tauri::AppHandle;
 #[tauri::command]
 pub async fn search_command_items(
-    state: State<'_, BrowserState>,
+    app: AppHandle,
     query: String,
 ) -> Result<CommandSearchResult, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    command_search_repo::search(
-        db.as_ref().ok_or("command_search.database_unavailable")?,
-        &query,
-    )
+    executor::run(app, move |conn| command_search_repo::search(conn, &query)).await
 }
 #[tauri::command]
-pub async fn get_saved_session(
-    state: State<'_, BrowserState>,
-    id: i64,
-) -> Result<SavedSession, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    saved_sessions_repo::get(
-        db.as_ref().ok_or("command_search.database_unavailable")?,
-        id,
-    )
+pub async fn get_saved_session(app: AppHandle, id: i64) -> Result<SavedSession, String> {
+    executor::run(app, move |conn| saved_sessions_repo::get(conn, id)).await
 }

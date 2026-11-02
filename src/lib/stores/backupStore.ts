@@ -1,14 +1,14 @@
 import { applyBackupZoom } from "../services/bridge/zoom";
 import { get, writable } from "svelte/store";
 import { isTauriRuntime } from "../services/bridge/runtime";
-import { chooseBackupFile, commitBackupImport, exportBackup, fetchPendingBackupPreferences, finishBackupPreferences, previewBackupImport } from "../services/bridge/backup";
+import { chooseBackupFile, discardBackupImport, commitBackupImport, exportBackup, fetchPendingBackupPreferences, finishBackupPreferences, previewBackupImport } from "../services/bridge/backup";
 import { applyBackupPreferences, capturePreferences } from "../services/backup/preferences";
 import { describeError } from "../services/user-errors.js";
 import { noteWriter } from "./notesStore";
 import { applyTabsSnapshot } from "./browserStore";
 import { workspaces } from "./workspaceStore";
 import { loadBookmarks } from "./persistenceStore";
-import type { BackupDocument, BackupPreferenceTask, BackupPreview, BackupImportResult } from "../types/backup";
+import type { BackupPreferenceTask, BackupPreview, BackupImportResult } from "../types/backup";
 
 export const backupBusy = writable(false);
 export const backupError = writable("");
@@ -16,7 +16,7 @@ export const backupPreview = writable<BackupPreview | null>(null);
 export const backupResult = writable<BackupImportResult | null>(null);
 export const backupExported = writable(false);
 export const pendingBackupPreferences = writable<BackupPreferenceTask | null>(null);
-let source: BackupDocument | null = null;
+let source: string | null = null;
 async function action(work: () => Promise<void>): Promise<void> {
   if (get(backupBusy) || !isTauriRuntime()) return;
   backupBusy.set(true); backupError.set("");
@@ -25,6 +25,7 @@ async function action(work: () => Promise<void>): Promise<void> {
 }
 export const saveBackup = () => action(async () => { await noteWriter.flushAll(); backupExported.set(await exportBackup(capturePreferences())); });
 export const selectBackup = () => action(async () => {
+  if (source) await discardBackupImport(source);
   backupResult.set(null); backupPreview.set(null); source = null;
   const document = await chooseBackupFile(); if (!document) return;
   source = document; await createPreview();
@@ -58,4 +59,4 @@ export const importBackup = (applyPreferences: boolean) => action(async () => {
 export function initializeBackupStatus(): void {
   if (isTauriRuntime()) void fetchPendingBackupPreferences().then(value => pendingBackupPreferences.set(value)).catch(error => backupError.set(describeError(error)));
 }
-export function dismissBackupPreview(): void { source = null; backupPreview.set(null); }
+export function dismissBackupPreview(): void { const token = source; source = null; backupPreview.set(null); if (token) void discardBackupImport(token).catch(error => backupError.set(describeError(error))); }

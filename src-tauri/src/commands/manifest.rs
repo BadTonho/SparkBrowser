@@ -24,6 +24,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "clear_closed_tabs",
     "export_backup",
     "choose_backup_file",
+    "discard_backup_import",
     "preview_backup_import",
     "commit_backup_import",
     "get_backup_pending_preferences",

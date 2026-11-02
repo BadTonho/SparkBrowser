@@ -25,6 +25,16 @@ pub struct BrowserDiagnostics {
     hibernated_tabs: usize,
     resident_limit: usize,
     tab_details: Vec<TabDiagnostic>,
+    native_resources: NativeResources,
+}
+
+#[derive(Serialize)]
+pub struct NativeResources {
+    bridge_tokens: usize,
+    shield_scripts: usize,
+    media_entries: usize,
+    media_context_views: Option<usize>,
+    execution_contexts: Option<usize>,
 }
 
 #[tauri::command]
@@ -33,6 +43,33 @@ pub async fn get_diagnostics(
     state: State<'_, BrowserState>,
 ) -> Result<BrowserDiagnostics, String> {
     let _operation = state.tab_operations.lock().await;
+    #[cfg(windows)]
+    let context_counts = crate::media::contexts::resource_counts(&app).await.ok();
+    #[cfg(not(windows))]
+    let context_counts: Option<(usize, usize)> = None;
+    // Release each guard before snapshot() takes the tab locks.
+    let bridge_tokens = state
+        .keyboard_bridge_tokens
+        .lock()
+        .map_err(|e| e.to_string())?
+        .len();
+    let shield_scripts = state
+        .shield_script_ids
+        .lock()
+        .map_err(|e| e.to_string())?
+        .len();
+    let media_entries = app
+        .state::<crate::media::MediaService>()
+        .snapshot(&app)?
+        .tabs
+        .len();
+    let native_resources = NativeResources {
+        bridge_tokens,
+        shield_scripts,
+        media_entries,
+        media_context_views: context_counts.map(|c| c.0),
+        execution_contexts: context_counts.map(|c| c.1),
+    };
     let split = state.current_split();
     let tabs = state.tabs.lock().map_err(|e| e.to_string())?;
     let views = app.webviews();
@@ -55,6 +92,7 @@ pub async fn get_diagnostics(
         })
         .collect();
     Ok(BrowserDiagnostics {
+        native_resources,
         startup_ready: state
             .startup_ready
             .load(std::sync::atomic::Ordering::Acquire),

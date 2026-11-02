@@ -3,6 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFi
 import { homedir } from 'node:os';
 import { resolve, relative, isAbsolute, sep } from 'node:path';
 import { createManifest, parseTag, synchronizeVersion } from './shared.mjs';
+import { runValidation } from '../testing/validate.mjs';
 
 if (process.platform !== 'win32' || process.arch !== 'x64') throw new Error('Release packaging currently supports Windows x64 only.');
 const tag = process.argv[2];
@@ -14,6 +15,8 @@ synchronizeVersion('.', tag, false);
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 if (git('rev-parse', `${tag}^{commit}`) !== git('rev-parse', 'HEAD')) throw new Error('The release tag must point to the current commit.');
 if (git('status', '--porcelain')) throw new Error('Review and commit pending changes before packaging a tagged release.');
+runValidation({ native: true });
+if (git('status', '--porcelain')) throw new Error('Validation changed the checkout. Review the diff before packaging a tagged release.');
 const keyPath = resolve(process.env.VELOCE_SIGNING_KEY_PATH ?? resolve(homedir(), '.veloce-signing', 'updater.key'));
 const keyRelative = relative(resolve('.'), keyPath);
 if (keyRelative !== '..' && !keyRelative.startsWith('..' + sep) && !isAbsolute(keyRelative)) throw new Error('The private signing key must stay outside the checkout.');
