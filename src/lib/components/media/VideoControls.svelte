@@ -1,7 +1,8 @@
 <script lang="ts">
   import { t } from "../../i18n";
   import { tabs, selectTab } from "../../stores/browserStore";
-  import { mediaState, pipBusy, enterVideo, exitVideo, closeMedia } from "../../stores/mediaStore";
+  import { mediaState, pipBusy, enterVideo, exitVideo } from "../../stores/mediaStore";
+  import { closeMedia } from "../../stores/mediaPopoverStore";
   import type { TabMediaState } from "../../types/media";
   let { media }: {media: TabMediaState} = $props();
   const videos = $derived(media.frames.flatMap(frame=>frame.videos.filter(v=>v.eligible).map(video=>({frame,video}))));

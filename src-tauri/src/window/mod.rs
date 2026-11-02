@@ -2,6 +2,7 @@ mod content_focus;
 mod content_lifecycle;
 mod internal_overlays;
 mod keyboard_bridge;
+pub mod media_popover;
 mod navigation_state;
 pub mod shield_policy;
 mod split_focus;

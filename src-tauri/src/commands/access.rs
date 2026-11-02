@@ -37,6 +37,7 @@ pub fn shell_only(
                         | "cancel_shutdown"
                         | "save_page_note"
                         | "set_overlay_visibility"
+                        | "set_media_popover"
                         | "sync_viewport_bounds"
                         | "get_diagnostics"
                         | "get_tabs"

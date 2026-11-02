@@ -33,7 +33,8 @@ use commands::downloads::{
 use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
-    set_bookmark_context_menu_overlay, set_overlay_visibility, set_workspace_switcher_overlay,
+    set_bookmark_context_menu_overlay, set_media_popover, set_overlay_visibility,
+    set_workspace_switcher_overlay,
 };
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
@@ -82,6 +83,7 @@ pub fn run() {
         .manage(BrowserState::default())
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
+        .manage(window::media_popover::MediaPopover::default())
         .manage(shutdown::ShutdownService::default())
         .manage(backup::service::BackupService::default())
         .manage(site_permissions::PermissionRequests::default())
@@ -224,6 +226,7 @@ pub fn run() {
             hibernate_inactive_tabs,
             auto_hibernate_inactive_tabs,
             set_overlay_visibility,
+            set_media_popover,
             set_workspace_switcher_overlay,
             set_bookmark_context_menu_overlay,
             set_keyboard_shortcuts,

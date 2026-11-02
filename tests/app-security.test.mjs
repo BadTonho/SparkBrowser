@@ -24,7 +24,7 @@ test('local assets use CSP without inline scripts or remote script sources', () 
     assert.match(policy, /object-src 'none'/);
     assert.match(policy, /base-uri 'self'/);
   }
-  for (const page of ['workspace-switcher', 'bookmark-context-menu']) {
+  for (const page of ['workspace-switcher', 'bookmark-context-menu', 'media-popover']) {
     const html = read(`public/${page}.html`);
     assert.doesNotMatch(html, /<script\s*>/);
     assert.match(html, new RegExp(`src="\\./overlays/${page}\\.js"`));

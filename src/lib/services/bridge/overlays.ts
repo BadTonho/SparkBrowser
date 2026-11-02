@@ -8,7 +8,6 @@ import type { WorkspaceItem } from "../../types/browser";
 import { isTauriRuntime } from "./runtime";
 
 export type OverlayId =
-  | "media"
   | "update-install"
   | "shutdown"
   | "site-permissions"
@@ -23,12 +22,20 @@ export type OverlayId =
 const activeOverlayIds = new Set<OverlayId>();
 let overlaySyncQueue: Promise<void> = Promise.resolve();
 
+const openingListeners = new Set<() => void>();
+export function onOverlayOpening(callback: () => void): () => void {
+  openingListeners.add(callback);
+  return () => { openingListeners.delete(callback); };
+}
+function notifyOpening() { for (const callback of openingListeners) callback(); }
+
 /** Keeps the native content WebView hidden while any browser overlay is open. */
 export async function setOverlayVisibility(
   visible: boolean,
   overlayId: OverlayId
 ): Promise<void> {
   if(visible) {
+    notifyOpening();
     activeOverlayIds.add(overlayId);
   } else {
     activeOverlayIds.delete(overlayId);
@@ -52,6 +59,7 @@ export async function setWorkspaceSwitcherOverlay(
   activeWorkspaceId: string,
   backdropBlurPx: number
 ): Promise<void> {
+  if (visible) notifyOpening();
   if(!isTauriRuntime()) return;
 
   workspaceSwitcherSyncQueue = workspaceSwitcherSyncQueue
@@ -83,6 +91,7 @@ export async function setBookmarkContextMenuOverlay(
   actions: BookmarkContextMenuAction[] = [],
   backdropBlurPx = 16
 ): Promise<void> {
+  if (visible) notifyOpening();
   if(!isTauriRuntime()) return;
   bookmarkContextMenuSyncQueue = bookmarkContextMenuSyncQueue
     .catch(() => undefined)

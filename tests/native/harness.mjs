@@ -46,6 +46,40 @@ export async function runScenario(name, scenario) {
     const element = await request('POST', `/session/${session}/element`, { using: 'css selector', value: selector });
     await request('POST', `/session/${session}/element/${element['element-6066-11e4-a52e-4f735466cecf']}/click`, {});
   }
+  const webviewHandles = new Map();
+  async function withWebview(path, operation) {
+    const previous = await request('GET', `/session/${session}/window`);
+    const handles = await request('GET', `/session/${session}/window/handles`);
+    try {
+      const cached = webviewHandles.get(path);
+      if (cached && handles.includes(cached)) {
+        await request('POST', `/session/${session}/window`, { handle: cached });
+        return await operation();
+      }
+      // Auxiliary WebViews are created after the shell and content views.
+      for (const handle of [...handles].reverse()) {
+        await request('POST', `/session/${session}/window`, { handle });
+        if (new URL(await request('GET', `/session/${session}/url`)).pathname === path) {
+          webviewHandles.set(path, handle);
+          return await operation();
+        }
+      }
+      throw new Error(`Native WebView not found: ${path}`);
+    } finally {
+      await request('POST', `/session/${session}/window`, { handle: previous });
+    }
+  }
+  async function resizeWindow(width, height) {
+    if (process.platform !== 'win32') return request('POST', `/session/${session}/window/rect`, { width, height });
+    await new Promise((resolveResize, reject) => {
+      const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve('tests/native/windows-window.ps1'),
+        '-Executable', binary, '-Width', String(width), '-Height', String(height)], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
+      let error = '';
+      helper.stderr.on('data', chunk => { error += chunk; });
+      helper.on('error', reject);
+      helper.on('exit', code => code === 0 ? resolveResize() : reject(new Error(error || 'Native window resize failed')));
+    });
+  }
   async function invoke(command, args = {}) {
     const result = await request('POST', `/session/${session}/execute/async`, {
       script: `const done = arguments[arguments.length - 1]; window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]).then(value => done({ value }), error => done({ error: String(error) }));`,
@@ -131,7 +165,7 @@ export async function runScenario(name, scenario) {
     fixture = await createFixture();
     await startDriver();
     await openSession();
-    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, sessionId: () => session, restart, directory });
+    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, sessionId: () => session, restart, directory });
     if (process.env.VELOCE_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
   } catch (error) {
     failure = error;

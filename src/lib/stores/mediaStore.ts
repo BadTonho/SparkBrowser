@@ -1,4 +1,3 @@
-import { setOverlayVisibility } from "../services/bridge/overlays";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import { createMediaVolumeWriter } from "../services/media-volume-writer.js";
 import { get, writable } from "svelte/store";
@@ -22,10 +21,8 @@ export function initializeMedia() {
   return () => { disposed = true; stop?.(); };
 }
 
-export const isMediaOpen = writable(false);
 export const volumeDrafts = writable<Record<string,number>>({});
-export async function openMedia() { mediaError.set(""); await setOverlayVisibility(true,"media"); isMediaOpen.set(true); }
-export async function closeMedia() { isMediaOpen.set(false); await volumeWriter.flush(); await setOverlayVisibility(false,"media"); }
+export const flushVolume = () => volumeWriter.flush();
 let refreshing = false;
 export async function refreshMedia(id: string) {
   if (refreshing || !isTauriRuntime() || !get(mediaState).tabs.find(t=>t.tab_id===id)?.mute_available) return; refreshing=true;

@@ -49,6 +49,7 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
             .map_err(|e| e.to_string())?;
         }
     }
+    super::media_popover::resize(app)?;
     Ok(())
 }
 

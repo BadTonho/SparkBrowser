@@ -12,6 +12,19 @@ use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect, State};
 const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
 
 #[tauri::command]
+pub async fn set_media_popover(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    session_id: u64,
+    presentation: Option<crate::window::media_popover::Presentation>,
+    restore_focus: bool,
+) -> Result<(), String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::media_popover::set(&app, visible, session_id, presentation, restore_focus)
+}
+
+#[tauri::command]
 pub async fn set_overlay_visibility(
     app: AppHandle,
     state: State<'_, BrowserState>,

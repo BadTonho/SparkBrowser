@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { checkVolumePopover } from './media-popover.mjs';
 
 export async function checkMediaMute({invoke,until,fixture,click,restart,script}) {
   if (process.platform !== 'win32') return;
@@ -34,7 +35,8 @@ export async function checkMediaMute({invoke,until,fixture,click,restart,script}
 
 }
 
-export async function checkMediaVolume({invoke,until,fixture,click,script,restart}) {
+export async function checkMediaVolume(context) {
+  const {invoke,until,fixture,click,script,restart,withWebview}=context;
   if(process.platform!=='win32')return;
   const packet=await invoke('create_tab',{url:fixture.origin+'/page/media-volume'});
   const id=packet.tabs.find(t=>t.is_active).id;
@@ -56,13 +58,7 @@ export async function checkMediaVolume({invoke,until,fixture,click,script,restar
   assert.ok(ratio>0.65&&ratio<0.85,`waveform gain ratio ${ratio}`);
   await set(0);assert.equal(state.muted,false,'zero volume is independent of mute');
   await invoke('set_tab_muted',{tabId:id,muted:true});await set(100);assert.equal(state.muted,true);await invoke('set_tab_muted',{tabId:id,muted:false});
-  await click('[data-testid="open-media"]');await until(()=>script('return document.querySelector("[data-testid=media-volume]")?.value==="100"'),'media panel');
-  await script('const el=document.querySelector("[data-testid=media-volume]");for(const value of [20,40,60,80]){el.value=value;el.dispatchEvent(new Event("input",{bubbles:true}));}');
-  await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.applied_volume===80,'latest slider value');
-  await script('document.querySelector("[role=dialog]").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
-  await until(()=>script('return document.activeElement?.matches("[data-testid=open-media]")'),'focus returns');
-  assert.equal(fixture.loads.get('media-volume'),1,'audio controls preserve the document');
-  assert.equal(fixture.reports.get('media-volume').value,'artificial-test-draft');
+  await checkVolumePopover(context, id);
   fixture.commands.set('media-volume','stop-media');
   await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.playing_media,'pause before hibernation');
   const other=(await invoke('create_tab',{url:fixture.origin+'/page/volume-other'})).tabs.find(t=>t.is_active).id;
@@ -70,9 +66,19 @@ export async function checkMediaVolume({invoke,until,fixture,click,script,restar
   await until(()=>fixture.loads.get('media-volume')===2&&fixture.reports.get('media-volume')?.nativeVolume===0.8,'volume follows hibernated tab');
   state=await read();
   await invoke('set_split_view',{leftTabId:id,rightTabId:other});await invoke('switch_tab',{tabId:other});
-  await click('[data-testid=open-media]');await until(async()=>script('return document.querySelector(".media-panel h3")?.textContent===arguments[0]',(await invoke('get_tabs')).tabs.find(t=>t.id===other).title),'media controls follow focused pane');
+  const splitReady=Date.now();
+  for (const page of ['media-volume','volume-other']) await until(()=>fixture.reports.get(page)?.visibility==='visible' && fixture.reports.get(page)?.reportedAt>splitReady,'fresh split visibility');
+  const visibility = [fixture.reports.get('media-volume').hiddenCount,fixture.reports.get('volume-other').hiddenCount];
+  await click('[data-testid=open-media]');
+  await until(()=>script('return document.querySelector("[data-testid=open-media]")?.getAttribute("aria-expanded")==="true"'),'popover follows focused pane');
+  await withWebview('/media-popover.html',async()=>{
+    await until(()=>script('return !document.querySelector("#media-popover").hidden && document.querySelector("input").disabled'),'unavailable focused pane shows only disabled slider');
+    await script('window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  });
   assert.equal((await invoke('get_tab_media')).tabs.find(t=>t.tab_id===other)?.volume,100);
-  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await until(()=>script('return document.querySelector("[data-testid=open-media]")?.getAttribute("aria-expanded")==="false"'),'popover closes');
+  for (const page of ['media-volume','volume-other']) await until(()=>fixture.reports.get(page)?.visibility==='visible','split pane stays visible');
+  assert.deepEqual([fixture.reports.get('media-volume').hiddenCount,fixture.reports.get('volume-other').hiddenCount],visibility,'popover preserves both split panes');
   await invoke('set_split_view',{leftTabId:null,rightTabId:null});await invoke('switch_tab',{tabId:id});
   const old=state.document_key;
   await invoke('navigate_to',{input:fixture.origin+'/page/media-next'});await until(()=>fixture.reports.has('media-next'),'next document');
@@ -88,7 +94,7 @@ export async function checkMediaVolume({invoke,until,fixture,click,script,restar
   await restart();const restored=(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id);assert.equal(restored.volume,100);
 }
 
-export async function checkMediaPip({invoke,until,fixture,click,script,screenshot,wait}) {
+export async function checkMediaPip({invoke,until,fixture,script,wait}) {
   if(process.platform!=='win32')return;
   await invoke('set_resident_limit',{limit:8});
   const initial=await invoke('create_tab',{url:fixture.origin+'/page/media-pip'});
@@ -97,13 +103,13 @@ export async function checkMediaPip({invoke,until,fixture,click,script,screensho
   await until(()=>fixture.reports.get('media-pip')?.videoCount===2,'two video candidates');
   const read=async()=> (await invoke('refresh_tab_media',{tabId:id})).tabs.find(t=>t.tab_id===id);
   const state=await until(async()=> {const s=await read();return s.frames.flatMap(f=>f.videos).filter(v=>v.eligible).length===2?s:null;},'ready video candidates');
-  await click('[data-testid=open-media]');await until(()=>script('return document.querySelectorAll("[data-testid=pip-enter]").length===2'),'candidate selection UI');
-  await screenshot('media-panel');
-  await click('[data-testid=pip-enter]');
+  const first = state.frames.find(f=>f.videos.some(v=>v.eligible));
+  const video = first.videos.find(v=>v.eligible);
+  await invoke('enter_video_pip',{tabId:id,context:first.context,document:first.document,video:video.id});
   await until(()=>fixture.reports.get('media-pip')?.pip,'actual native PiP');
   await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'immediate pip protection');
-  await script('document.querySelector("[role=dialog]").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
-  await until(()=>script('return !document.querySelector(".media-panel")'),'media panel closes');
+  await invoke('set_overlay_visibility',{visible:true});
+  await invoke('set_overlay_visibility',{visible:false});
   fixture.commands.set('media-pip','stop-media');
   await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.playing_media,'paused media');
   const next=await invoke('create_tab',{url:fixture.origin+'/page/pip-other'});const other=next.tabs.find(t=>t.is_active).id;
@@ -116,15 +122,13 @@ export async function checkMediaPip({invoke,until,fixture,click,script,screensho
   await invoke('create_workspace',{id:'media-pip-workspace',name:'Media test',icon:'T',accentPrimary:'#888888',accentSecondary:'#999999'});
   await invoke('move_tab_to_workspace',{tabId:other,workspaceId:'media-pip-workspace'});await invoke('switch_workspace',{workspaceId:'media-pip-workspace'});
   assert.equal(fixture.reports.get('media-pip').pip,true,'popup survives workspace change');
-  await click('[data-testid=open-media]');await until(()=>script('return Boolean(document.querySelector("[data-testid=pip-return]"))'),'background popup owner');
-  await click('[data-testid=pip-return]');await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.is_active)?.id===id,'return to origin tab');
+  await invoke('switch_tab',{tabId:id});await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.is_active)?.id===id,'return to origin tab');
   await invoke('set_resident_limit',{limit:8});
-  await click('[data-testid=open-media]');
   const live=await read();const frame=live.frames.find(f=>f.videos.length===2);
   await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[1].id});
   await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.frames.some(f=>f.pip_video===frame.videos[1].id),'second selected video');
   assert.equal((await invoke('get_tab_media')).tabs.flatMap(t=>t.frames).filter(f=>f.picture_in_picture).length,1,'one popup at a time');
-  await click('[data-testid=pip-exit]');await until(()=>!fixture.reports.get('media-pip')?.pip,'exit native PiP');
+  await invoke('exit_video_pip');await until(()=>!fixture.reports.get('media-pip')?.pip,'exit native PiP');
   await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[1].id});
   fixture.commands.set('media-pip','exit-pip');await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'external PiP close event');
   await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[0].id});

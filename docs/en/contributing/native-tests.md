@@ -37,6 +37,6 @@ After building a production release, run `node tools/testing/release-metrics.mjs
 
 Run `--case media-mute` for native audio activity, background mute and restart defaults.
 
-`--case media-volume` measures artificial audio gain and verifies volume/navigation fallback.
+`--case media-volume` measures artificial audio gain and verifies volume/navigation fallback. It also exercises the volume popover with its percentage below the slider through its own WebDriver WebView handle, checks its 200 × 64 px bounds and 6 px gap below the button, percentage alignment and updates, arrow keys, pointer dragging, dismissal, rapid reopening and both tab layouts, and verifies that neither the page nor either split pane is hidden or reloaded. Auxiliary WebView checks temporarily select the packaged document and restore the shell handle; they add no application IPC grants. The Windows resize helper changes only the verified isolated executable's client area, since WebDriver resizing can affect a single WebView instead of its parent window. JavaScript regressions cover edge clamping, drag preservation, coalescing and sending the final value when closing before the next animation frame.
 
-`--case media-pip` validates real native Picture-in-Picture and protection of its source WebView.
+`--case media-pip` validates real native Picture-in-Picture and protection of its source WebView through the existing internal media commands. The volume popover contains no Picture-in-Picture controls.

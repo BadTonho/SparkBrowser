@@ -639,6 +639,12 @@
           "markdownDescription": "Enables the set_keyboard_shortcuts command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_media_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-media-popover",
+          "markdownDescription": "Enables the set_media_popover command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_overlay_visibility command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-overlay-visibility",
@@ -1189,6 +1195,12 @@
           "type": "string",
           "const": "deny-set-keyboard-shortcuts",
           "markdownDescription": "Denies the set_keyboard_shortcuts command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_media_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-media-popover",
+          "markdownDescription": "Denies the set_media_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the set_overlay_visibility command without any pre-configured scope.",

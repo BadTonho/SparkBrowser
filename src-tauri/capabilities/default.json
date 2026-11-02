@@ -58,6 +58,7 @@
     "allow-hibernate-inactive-tabs",
     "allow-auto-hibernate-inactive-tabs",
     "allow-set-overlay-visibility",
+    "allow-set-media-popover",
     "allow-set-workspace-switcher-overlay",
     "allow-set-bookmark-context-menu-overlay",
     "allow-set-keyboard-shortcuts",

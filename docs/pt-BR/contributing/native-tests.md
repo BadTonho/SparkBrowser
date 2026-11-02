@@ -37,6 +37,6 @@ Após compilar uma release de produção, execute `node tools/testing/release-me
 
 Execute `--case media-mute` para atividade de áudio nativa, mute em segundo plano e valores iniciais após reiniciar.
 
-`--case media-volume` mede o ganho de áudio artificial e verifica volume e fallback na navegação.
+`--case media-volume` mede o ganho de áudio artificial e verifica volume e fallback na navegação. Também exercita o pop-up de volume com o percentual abaixo do slider pelo identificador da sua própria WebView no WebDriver, verifica as dimensões de 200 × 64 px e a distância de 6 px abaixo do botão, alinhamento e atualização do percentual, setas do teclado, arraste pelo ponteiro, fechamento, reabertura rápida e os dois layouts de abas, e confirma que nem a página nem qualquer painel da divisão são ocultados ou recarregados. As verificações da WebView auxiliar selecionam temporariamente o documento empacotado e restauram o identificador da interface principal; não acrescentam permissões de IPC da aplicação. O helper de redimensionamento Windows altera somente a área cliente do executável isolado verificado, pois o redimensionamento pelo WebDriver pode afetar uma única WebView em vez da janela que a contém. Regressões JavaScript cobrem os limites da janela, preservação do arraste, agrupamento e envio do último valor ao fechar antes do próximo quadro de animação.
 
-`--case media-pip` valida Picture-in-Picture nativo real e a proteção da WebView de origem.
+`--case media-pip` valida Picture-in-Picture nativo real e a proteção da WebView de origem pelos comandos internos de mídia existentes. O pop-up de volume não contém controles de Picture-in-Picture.
