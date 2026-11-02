@@ -17,5 +17,11 @@
   "media.enter_pip": "Open floating video",
   "media.no_video": "No compatible video is available on this page.",
   "media.pip_blocked": "This player or its permissions policy prevents floating video.",
-  "media.pip_failed": "Could not open or close the floating video. Try again."
+  "media.pip_failed": "Could not open or close the floating video. Try again.",
+  "media.play": "Play",
+  "media.pause": "Pause",
+  "media.back": "Back 10 seconds",
+  "media.forward": "Forward 10 seconds",
+  "media.progress": "Playback position",
+  "media.pip_native_fallback": "Custom floating controls are unavailable for this player. The native floating window is being used."
 }

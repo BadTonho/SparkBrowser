@@ -1,5 +1,6 @@
 <script lang="ts">
   import MediaButton from "../media/MediaButton.svelte";
+  import PipButton from "../media/PipButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
   import { t } from "../../i18n";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
@@ -161,6 +162,7 @@
           spellcheck="false"
         />
         <MediaButton />
+        <PipButton />
         <ZoomControls />
         <button
           class="star-btn"

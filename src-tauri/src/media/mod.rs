@@ -2,6 +2,8 @@
 pub mod contexts;
 pub mod pip;
 #[cfg(windows)]
+pub mod pip_window;
+#[cfg(windows)]
 pub mod protocol;
 pub mod signals;
 pub mod volume;
@@ -105,7 +107,12 @@ impl MediaService {
                 picture_in_picture: t.frames.iter().any(|f| f.videos.iter().any(|v| v.eligible)),
             };
             inner.revision += 1;
+            #[cfg(windows)]
+            let changed = inner.tabs[index].clone();
             let _ = app.emit_to("main", "tab-media-state", inner.clone());
+            drop(inner);
+            #[cfg(windows)]
+            pip_window::sync(app, &changed);
         }
     }
     pub async fn mute(

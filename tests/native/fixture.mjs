@@ -70,6 +70,21 @@ export async function createFixture() {
             catch { permission = 'denied'; }
           }
           if (id === 'i') mediaPermission();
+          async function makeVideo(n) {
+            const canvas=document.createElement('canvas');canvas.width=320+n*40;canvas.height=180;
+            const ctx=canvas.getContext('2d');
+            const draw=()=>{ctx.fillStyle=n?'#334466':'#664433';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='white';ctx.fillText('Controlled video '+n+' '+Date.now(),10,30);};
+            draw();const timer=setInterval(draw,50);
+            const sound=new AudioContext(),oscillator=sound.createOscillator(),gain=sound.createGain(),output=sound.createMediaStreamDestination();
+            gain.gain.value=0.001;oscillator.connect(gain).connect(output);oscillator.start();await sound.resume();
+            const stream=new MediaStream([...canvas.captureStream(20).getVideoTracks(),...output.stream.getAudioTracks()]);
+            const recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp8,opus'}),chunks=[];
+            const recorded=new Promise(resolve=>{recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};recorder.onstop=resolve;});
+            recorder.start();await new Promise(resolve=>setTimeout(resolve,500));recorder.stop();await recorded;
+            clearInterval(timer);stream.getTracks().forEach(t=>t.stop());oscillator.stop();await sound.close();
+            const video=document.createElement('video');video.title='Controlled video '+n;video.loop=true;
+            video.src=URL.createObjectURL(new Blob(chunks,{type:recorder.mimeType}));document.body.prepend(video);await video.play();
+          }
           async function tick() {
             if (busy) return; busy = true;
             try {
@@ -78,7 +93,7 @@ export async function createFixture() {
               if (command === 'restore-player-volume') document.getElementById('fixture-audio').volume=1;
               if (command === 'native-controls') {const el=document.getElementById('fixture-audio');el.controls=true;el.src='/tone.wav';await el.play();}
               if (command === 'oscillator') {document.querySelectorAll('audio,video').forEach(el=>el.pause());const c=new AudioContext();const o=c.createOscillator();const g=c.createGain();g.gain.value=0.001;o.connect(g).connect(c.destination);o.start();await c.resume();}
-              if (command === 'videos') {for(let n=0;n<2;n++){const canvas=document.createElement('canvas');canvas.width=320+n*40;canvas.height=180;const ctx=canvas.getContext('2d');const draw=()=>{ctx.fillStyle=n?'#334466':'#664433';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='white';ctx.fillText('Controlled video '+n+' '+Date.now(),10,30);};draw();setInterval(draw,100);const v=document.createElement('video');v.title='Controlled video '+n;v.muted=true;v.srcObject=canvas.captureStream(10);document.body.prepend(v);await v.play();}}
+              if (command === 'videos') {for(let n=0;n<2;n++)await makeVideo(n);}
               if (command === 'disable-pip') document.querySelectorAll('video').forEach(v=>v.disablePictureInPicture=true);
               if (command === 'exit-pip') {if(document.pictureInPictureElement)await document.exitPictureInPicture();}
               if (command === 'media-frame') {const f=document.createElement('iframe');f.src=location.origin.replace('127.0.0.1','localhost')+'/page/media-frame';document.body.prepend(f);}

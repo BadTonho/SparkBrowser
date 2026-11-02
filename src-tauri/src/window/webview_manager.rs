@@ -116,6 +116,7 @@ pub(super) fn ensure_tab_webview(
                     "__MEDIA_TOKEN__",
                     &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
                 )
+                .replace("__PIP_PLAYER__", include_str!("../media/pip_player.js"))
                 .replace(
                     "__MEDIA_VOLUME__",
                     &app.state::<crate::media::MediaService>()
@@ -141,6 +142,16 @@ pub(super) fn ensure_tab_webview(
         app.clone(),
         tab_id.to_string(),
     ));
+
+    #[cfg(windows)]
+    let webview_builder = {
+        let app = app.clone();
+        let id = tab_id.to_string();
+        let token = keyboard_bridge_token.clone();
+        webview_builder.on_new_window(move |url, features| {
+            crate::media::pip_window::new_window(&app, &id, &token, &url, features)
+        })
+    };
 
     let webview_builder = webview_builder.initialization_script(build_workspace_shortcut_script(
         &keyboard_bridge_token,

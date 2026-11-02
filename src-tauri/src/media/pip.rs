@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::AppHandle;
 #[cfg(windows)]
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct MediaVideoCandidate {
@@ -22,8 +22,27 @@ pub struct MediaCapabilities {
     pub volume: bool,
     pub picture_in_picture: bool,
 }
+#[derive(Clone, Default, Deserialize, Serialize)]
+pub struct Presentation {
+    #[serde(default)]
+    pub locale: String,
+    #[serde(default)]
+    pub labels: std::collections::HashMap<String, String>,
+}
 #[cfg(windows)]
 async fn exit_known(app: &AppHandle) -> Result<(), String> {
+    if let Some((session, tab, token, context, document)) = super::pip_window::owner() {
+        let _ = super::protocol::evaluate(
+            app,
+            &tab,
+            &token,
+            &context,
+            json!({"kind":"pip-exit","document":document}),
+            false,
+        )
+        .await;
+        super::pip_window::discard(app, &session);
+    }
     for tab in app.state::<MediaService>().snapshot(app)?.tabs {
         for frame in tab.frames.iter().filter(|f| f.picture_in_picture) {
             let (token, contexts) = super::protocol::contexts(app, &tab.tab_id).await?;
@@ -52,6 +71,7 @@ pub async fn enter(
     context: &str,
     document: &str,
     video: &str,
+    presentation: Option<Presentation>,
 ) -> Result<MediaSnapshot, String> {
     #[cfg(windows)]
     {
@@ -74,15 +94,23 @@ pub async fn enter(
         if !contexts.iter().any(|c| c == context) {
             return Err("media.stale".into());
         }
+        let session = super::pip_window::prepare(id, &token, context, document, &tab.document_key);
         let result = super::protocol::evaluate(
             app,
             id,
             &token,
             context,
-            json!({"kind":"pip-enter","document":document,"video":video}),
+            json!({"kind":"pip-enter","document":document,"video":video,"session":session,"presentation":presentation.unwrap_or_default()}),
             true,
         )
-        .await?;
+        .await;
+        if result.as_ref().is_err() || result.as_ref().is_ok_and(|v| v["custom"] != true) {
+            super::pip_window::discard(app, &session);
+        }
+        let result = result?;
+        if result["custom"] == false && result["ok"] == true {
+            let _ = app.emit_to("main", "media-pip-fallback", ());
+        }
         if let Some(code) = result["error"].as_str() {
             return Err(code.into());
         }
@@ -90,7 +118,7 @@ pub async fn enter(
     }
     #[cfg(not(windows))]
     {
-        let _ = (app, id, context, document, video);
+        let _ = (app, id, context, document, video, presentation);
         Err("media.unavailable".into())
     }
 }

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { checkVolumePopover } from './media-popover.mjs';
+import { checkPipToolbarLayouts } from './pip-toolbar.mjs';
+import { withFloatingPlayer, checkFloatingVolume, checkBackgroundFloatingVolume, checkFloatingFrameChurn } from './pip-player.mjs';
 
 export async function checkMediaMute({invoke,until,fixture,click,restart,script}) {
   if (process.platform !== 'win32') return;
@@ -94,20 +96,38 @@ export async function checkMediaVolume(context) {
   await restart();const restored=(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id);assert.equal(restored.volume,100);
 }
 
-export async function checkMediaPip({invoke,until,fixture,script,wait}) {
+export async function checkMediaPip(context) {
+  const {invoke,until,fixture,script,wait,click,screenshot,focusWindow}=context;
   if(process.platform!=='win32')return;
   await invoke('set_resident_limit',{limit:8});
   const initial=await invoke('create_tab',{url:fixture.origin+'/page/media-pip'});
   const id=initial.tabs.find(t=>t.is_active).id;
-  await until(()=>fixture.reports.has('media-pip'),'pip document');fixture.commands.set('media-pip','videos');
+  await until(()=>fixture.reports.has('media-pip'),'pip document');
+  await until(()=>script('return document.querySelector("[data-testid=toggle-pip]")?.disabled'),'PiP button is visible but disabled without videos');
+  fixture.commands.set('media-pip','videos');
   await until(()=>fixture.reports.get('media-pip')?.videoCount===2,'two video candidates');
-  const read=async()=> (await invoke('refresh_tab_media',{tabId:id})).tabs.find(t=>t.tab_id===id);
+  const read=async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id);
   const state=await until(async()=> {const s=await read();return s.frames.flatMap(f=>f.videos).filter(v=>v.eligible).length===2?s:null;},'ready video candidates');
-  const first = state.frames.find(f=>f.videos.some(v=>v.eligible));
-  const video = first.videos.find(v=>v.eligible);
-  await invoke('enter_video_pip',{tabId:id,context:first.context,document:first.document,video:video.id});
-  await until(()=>fixture.reports.get('media-pip')?.pip,'actual native PiP');
+  const candidates=state.frames.flatMap(frame=>frame.videos.filter(video=>video.eligible).map(video=>({frame,video})));
+  const largest=candidates.reduce((best,next)=>next.video.width*next.video.height>best.video.width*best.video.height?next:best);
+  await until(()=>script('return document.querySelector("[data-testid=toggle-pip]")?.disabled===false'),'automatic PiP discovery without volume');
+  assert.equal(await script('return document.querySelector("[data-testid=open-media]").getAttribute("aria-expanded");'),'false');
+  assert.equal(await script('return document.querySelector("[data-testid=open-media]").nextElementSibling?.matches("[data-testid=toggle-pip]");'),true,'PiP sits immediately after volume');
+  await screenshot('pip-toolbar');
+  await click('[data-testid=toggle-pip]');
+  await until(async()=> (await read()).frames.some(f=>f.picture_in_picture),'actual floating video');
+  assert.ok((await read()).frames.some(f=>f.pip_mode==='custom'),'compatible source uses custom controls');
+  await checkFloatingVolume(context,id);
+  await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value="37";s.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("[data-testid=pip-close]").click();'));
+  await until(async()=>{const s=await read();return s.applied_volume===37&&!s.frames.some(f=>f.picture_in_picture);},'closing commits the final volume edit');
+  assert.equal(await context.withWebview('/page/media-pip',()=>script('return [...document.querySelectorAll("video")].every(v=>!v.paused);')),true,'closing preserves original video playback');
+  await until(()=>script('return document.querySelector("[data-testid=toggle-pip]")?.disabled===false'),'close operation releases the toolbar');
+  await click('[data-testid=toggle-pip]');
+  await until(async()=> (await read()).frames.some(f=>f.pip_mode==='custom'),'rapid reopening creates a fresh session');
+  await checkFloatingFrameChurn(context,id);
   await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'immediate pip protection');
+  await until(async()=> (await read()).frames.some(frame=>frame.pip_video===largest.video.id),'toolbar selects the largest eligible video');
+  await until(()=>script('return document.querySelector("[data-testid=toggle-pip]").getAttribute("aria-pressed")==="true"'),'toolbar indicates floating video');
   await invoke('set_overlay_visibility',{visible:true});
   await invoke('set_overlay_visibility',{visible:false});
   fixture.commands.set('media-pip','stop-media');
@@ -118,28 +138,46 @@ export async function checkMediaPip({invoke,until,fixture,script,wait}) {
   assert.equal(details.resident,true);assert.ok(details.protection_reasons.includes('picture_in_picture'));
   await assert.rejects(()=>invoke('hibernate_tab',{tabId:id}));
   const closed=await invoke('close_tabs_reviewed',{tabIds:[id]});assert.ok(closed.preserved.some(t=>t.id===id));
-  assert.equal(fixture.reports.get('media-pip').pip,true,'popup survives background and overlays');
+  assert.equal((await read()).frames.some(f=>f.picture_in_picture),true,'popup survives background and overlays');
   await invoke('create_workspace',{id:'media-pip-workspace',name:'Media test',icon:'T',accentPrimary:'#888888',accentSecondary:'#999999'});
   await invoke('move_tab_to_workspace',{tabId:other,workspaceId:'media-pip-workspace'});await invoke('switch_workspace',{workspaceId:'media-pip-workspace'});
-  assert.equal(fixture.reports.get('media-pip').pip,true,'popup survives workspace change');
+  assert.equal((await read()).frames.some(f=>f.picture_in_picture),true,'popup survives workspace change');
+  await checkBackgroundFloatingVolume(context,id,other);
+  await until(()=>script('const b=document.querySelector("[data-testid=toggle-pip]");return !b.disabled && b.getAttribute("aria-pressed")==="true";'),'background floating video remains controllable');
+  await click('[data-testid=toggle-pip]');
+  await until(async()=> !(await read()).frames.some(f=>f.picture_in_picture),'toolbar exits PiP from another tab');
   await invoke('switch_tab',{tabId:id});await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.is_active)?.id===id,'return to origin tab');
   await invoke('set_resident_limit',{limit:8});
   const live=await read();const frame=live.frames.find(f=>f.videos.length===2);
   await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[1].id});
   await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.frames.some(f=>f.pip_video===frame.videos[1].id),'second selected video');
   assert.equal((await invoke('get_tab_media')).tabs.flatMap(t=>t.frames).filter(f=>f.picture_in_picture).length,1,'one popup at a time');
-  await invoke('exit_video_pip');await until(()=>!fixture.reports.get('media-pip')?.pip,'exit native PiP');
+  await click('[data-testid=toggle-pip]');await until(async()=> !(await read()).frames.some(f=>f.picture_in_picture),'exit native PiP through toolbar');
   await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[1].id});
-  fixture.commands.set('media-pip','exit-pip');await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'external PiP close event');
+  await withFloatingPlayer(context,()=>script('window.close();'));await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'external PiP close event');
+  await until(()=>script('return document.querySelector("[data-testid=toggle-pip]").getAttribute("aria-pressed")==="false"'),'toolbar reflects external closure');
+  await context.withWebview('/page/media-pip',()=>script('document.querySelectorAll("video").forEach(v=>{v.captureStream=()=>{throw new DOMException("Fixture capture blocked","SecurityError")};});'));
+  await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[0].id});
+  await until(async()=> (await read()).frames.some(f=>f.pip_mode==='native'),'blocked capture retains native PiP');
+  await until(()=>script('return document.querySelector(".media-notice")?.textContent.includes("nativa");'),'translated native fallback notice');
+  await click('.media-notice button');
+  await invoke('exit_video_pip');
+  await context.withWebview('/page/media-pip',()=>script('document.querySelectorAll("video").forEach(v=>delete v.captureStream);'));
+  await checkPipToolbarLayouts(context,id);
   await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[0].id});
   await invoke('navigate_to',{input:fixture.origin+'/page/media-after-pip'});await until(()=>fixture.reports.has('media-after-pip'),'navigate closes popup');
   await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'new document clears protection');
   await assert.rejects(()=>invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[0].id}),/media.stale/);
   fixture.commands.set('media-after-pip','media-frame');await until(()=>fixture.reports.has('media-frame'),'cross origin frame');
   fixture.commands.set('media-frame','videos');await until(()=>fixture.reports.get('media-frame')?.videoCount===2,'frame videos');
+  // WebDriver DOM focus does not activate the OS window after native PiP closes.
+  await focusWindow();
+  await click('.omnibox-input');
   const framed=await until(async()=> {const s=await read();return s.frames.find(f=>f.videos.some(v=>v.eligible));},'native frame context');
-  await invoke('enter_video_pip',{tabId:id,context:framed.context,document:framed.document,video:framed.videos[0].id});
-  await until(()=>fixture.reports.get('media-frame')?.pip,'cross origin native PiP');
+  await until(()=>script('return !document.querySelector("[data-testid=toggle-pip]").disabled;'),'iframe enables toolbar button');
+  await click('[data-testid=toggle-pip]');
+  await until(async()=> (await read()).frames.some(f=>f.context===framed.context&&f.picture_in_picture&&f.pip_mode==='custom'),'cross origin custom PiP');
+  await checkFloatingVolume(context,id);
   fixture.commands.set('media-frame','disable-pip');await wait(400);
   await assert.rejects(()=>invoke('enter_video_pip',{tabId:id,context:framed.context,document:framed.document,video:framed.videos[1].id}),/media.pip_unavailable/);
   await invoke('close_tab',{tabId:id});await until(()=>script('return !document.querySelector(`[data-tab-id="${arguments[0]}"]`)',id),'close origin tab');

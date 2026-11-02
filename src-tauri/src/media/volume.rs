@@ -22,6 +22,10 @@ pub struct FrameMedia {
     pub picture_in_picture: bool,
     #[serde(default)]
     pub pip_video: Option<String>,
+    #[serde(default)]
+    pub pip_mode: Option<String>,
+    #[serde(default)]
+    pub pip_session: Option<String>,
 }
 pub fn validate_volume(value: u16) -> Result<(), String> {
     if value > 200 {
@@ -116,14 +120,19 @@ pub async fn set(
     id: &str,
     value: u16,
     expected: &str,
+    pip_session: Option<&str>,
 ) -> Result<MediaSnapshot, String> {
     validate_volume(value)?;
     #[cfg(windows)]
     {
         let (token, frames) = reports(app, id).await?;
-        if expected.is_empty() || expected != document_key(&frames) {
+        let actual = document_key(&frames);
+        let owned = pip_session
+            .is_some_and(|session| super::pip_window::matches(session, id, &token, &frames));
+        if expected.is_empty() || (expected != actual && !owned) {
             return Err("media.stale".into());
         }
+        let expected = if owned { actual.as_str() } else { expected };
         let previous = app.state::<MediaService>().tab(id);
         let mut result = Ok(());
         let mut status = "ready";
@@ -199,7 +208,7 @@ pub async fn set(
     }
     #[cfg(not(windows))]
     {
-        let _ = (app, id, value, expected);
+        let _ = (app, id, value, expected, pip_session);
         Err("media.unavailable".into())
     }
 }

@@ -34,9 +34,20 @@ pub async fn set_tab_volume(
     tab_id: String,
     volume: u16,
     document_key: String,
+    pip_session: Option<String>,
+    pip_sequence: Option<u64>,
 ) -> Result<MediaSnapshot, String> {
     let _operation = service.operations.lock().await;
-    crate::media::volume::set(&app, &tab_id, volume, &document_key).await
+    let result =
+        crate::media::volume::set(&app, &tab_id, volume, &document_key, pip_session.as_deref())
+            .await;
+    #[cfg(windows)]
+    if let (Some(session), Some(sequence)) = (pip_session, pip_sequence) {
+        crate::media::pip_window::acknowledge(&app, &session, sequence);
+    }
+    #[cfg(not(windows))]
+    let _ = (pip_session, pip_sequence);
+    result
 }
 
 #[tauri::command]
@@ -47,9 +58,10 @@ pub async fn enter_video_pip(
     context: String,
     document: String,
     video: String,
+    presentation: Option<crate::media::pip::Presentation>,
 ) -> Result<MediaSnapshot, String> {
     let _operation = service.operations.lock().await;
-    crate::media::pip::enter(&app, &tab_id, &context, &document, &video).await
+    crate::media::pip::enter(&app, &tab_id, &context, &document, &video, presentation).await
 }
 #[tauri::command]
 pub async fn exit_video_pip(

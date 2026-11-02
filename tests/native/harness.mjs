@@ -69,16 +69,22 @@ export async function runScenario(name, scenario) {
       await request('POST', `/session/${session}/window`, { handle: previous });
     }
   }
-  async function resizeWindow(width, height) {
-    if (process.platform !== 'win32') return request('POST', `/session/${session}/window/rect`, { width, height });
-    await new Promise((resolveResize, reject) => {
+  async function windowsWindowAction(args) {
+    await new Promise((resolveAction, reject) => {
       const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve('tests/native/windows-window.ps1'),
-        '-Executable', binary, '-Width', String(width), '-Height', String(height)], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
+        '-Executable', binary, ...args], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
       let error = '';
       helper.stderr.on('data', chunk => { error += chunk; });
       helper.on('error', reject);
-      helper.on('exit', code => code === 0 ? resolveResize() : reject(new Error(error || 'Native window resize failed')));
+      helper.on('exit', code => code === 0 ? resolveAction() : reject(new Error(error || 'Native window operation failed')));
     });
+  }
+  async function resizeWindow(width, height) {
+    if (process.platform !== 'win32') return request('POST', `/session/${session}/window/rect`, { width, height });
+    await windowsWindowAction(['-Width', String(width), '-Height', String(height)]);
+  }
+  async function focusWindow() {
+    if (process.platform === 'win32') await windowsWindowAction(['-Focus']);
   }
   async function invoke(command, args = {}) {
     const result = await request('POST', `/session/${session}/execute/async`, {
@@ -165,7 +171,7 @@ export async function runScenario(name, scenario) {
     fixture = await createFixture();
     await startDriver();
     await openSession();
-    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, sessionId: () => session, restart, directory });
+    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, sessionId: () => session, restart, directory });
     if (process.env.VELOCE_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
   } catch (error) {
     failure = error;

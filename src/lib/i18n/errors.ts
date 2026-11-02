@@ -5,6 +5,7 @@ const messages: Record<string, MessageKey> = {
   "media.pip_unavailable": "media.no_video",
   "media.pip_blocked": "media.pip_blocked",
   "media.pip_failed": "media.pip_failed",
+  "media.pip_native_fallback": "media.pip_native_fallback",
   "media.invalid_volume": "media.error",
   "media.error": "media.error",
   "media.stale": "media.error",

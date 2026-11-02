@@ -1,7 +1,7 @@
 <script lang="ts">
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
-  import { initializeMedia } from "./lib/stores/mediaStore";
+  import { initializeMedia } from "./lib/stores/mediaLifecycle";
   import { initializeZoom, changeZoom } from "./lib/stores/zoomStore";
   import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
   import { initializeRecovery } from "./lib/stores/recoveryStore";

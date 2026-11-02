@@ -17,5 +17,11 @@
   "media.enter_pip": "Abrir vídeo flutuante",
   "media.no_video": "Nenhum vídeo compatível está disponível nesta página.",
   "media.pip_blocked": "Este player ou sua política de permissões impede o vídeo flutuante.",
-  "media.pip_failed": "Não foi possível abrir ou fechar o vídeo flutuante. Tente novamente."
+  "media.pip_failed": "Não foi possível abrir ou fechar o vídeo flutuante. Tente novamente.",
+  "media.play": "Reproduzir",
+  "media.pause": "Pausar",
+  "media.back": "Voltar 10 segundos",
+  "media.forward": "Avançar 10 segundos",
+  "media.progress": "Posição da reprodução",
+  "media.pip_native_fallback": "Os controles próprios estão indisponíveis neste player. A janela flutuante nativa está sendo usada."
 }

@@ -4,7 +4,7 @@
   import { tabs } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceSelectionStore";
   import { mediaPopover, closeMedia } from "../../stores/mediaPopoverStore";
-  import { mediaState, mediaError, volumeDrafts, queueVolume, refreshMedia } from "../../stores/mediaStore";
+  import { mediaState, mediaError, volumeDrafts, queueVolume } from "../../stores/mediaStore";
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import { onOverlayOpening } from "../../services/bridge/overlays";
   import { onMediaPopoverAction, setMediaPopover } from "../../services/bridge/media-popover";
@@ -77,8 +77,7 @@
       }
       if (event.action === "dismiss") void closeMedia(["escape", "tab", "trigger"].includes(event.reason));
     }).then(stop => { if (disposed) stop(); else stopActions = stop; });
-    const timer = setInterval(() => { if ($mediaPopover) void refreshMedia($mediaPopover.tabId); }, 1000);
-    return () => { disposed = true; stopActions?.(); stopOverlays(); clearInterval(timer); void closeMedia(); };
+    return () => { disposed = true; stopActions?.(); stopOverlays(); void closeMedia(); };
   });
 </script>
 

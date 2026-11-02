@@ -33,10 +33,20 @@ pub fn receive(app: &AppHandle, id: &str, context: &str, value: &Value) {
             .as_str()
             .filter(|v| v.len() <= 128)
             .map(str::to_string);
+        f.pip_mode = value["pip_mode"]
+            .as_str()
+            .filter(|s| matches!(*s, "custom" | "native"))
+            .map(str::to_string);
+        f.pip_session = value["pip_session"]
+            .as_str()
+            .filter(|s| s.len() <= 128)
+            .map(str::to_string);
     });
     sync_activity(app, id);
 }
 pub fn remove(app: &AppHandle, id: &str, context: Option<&str>) {
+    #[cfg(windows)]
+    super::pip_window::source_removed(app, id, context);
     if !app
         .state::<BrowserState>()
         .snapshot_tabs()
