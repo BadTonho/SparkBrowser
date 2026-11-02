@@ -24,3 +24,15 @@ test('denied storage getters and quota errors keep in-memory preferences usable'
   assert.equal(quota.getItem('preference'), 'saved');
   assert.equal(quota.setItem('preference', 'next'), false);
 });
+
+test('command ranking reserves navigation and caps saved categories at two each', () => {
+  const item = (id,title) => ({id,title,subtitle:'',action(){}});
+  const all=['switch-','ws-','bm-','cmd-','note-','session-'].flatMap(prefix=>Array.from({length:8},(_,i)=>item(prefix+i,'Café '+i)));
+  all.push(item('open-new-tab','go'),item('navigate-current','go'));
+  const ranked=rankCommands(all,'cafe');
+  assert.equal(ranked.length,12);
+  assert.ok(ranked.some(i=>i.id==='open-new-tab'));assert.ok(ranked.some(i=>i.id==='navigate-current'));
+  for(const prefix of ['ws-','bm-','cmd-','note-','session-'])assert.ok(ranked.filter(i=>i.id.startsWith(prefix)).length<=2);
+  assert.ok(ranked.filter(i=>i.id.startsWith('switch-')).length<=3);
+  assert.equal(rankCommands([item('note-content','unrelated title')],'content deep inside note').length,1);
+});

@@ -39,9 +39,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Abas fechadas recentemente](./features/closed-tabs.md)
 - [Recuperação automática de sessão](./features/recovery.md)
 - [Downloads retomáveis e hashes](./features/downloads.md)
-
 - [Encerramento protegido](features/shutdown.md)
-
 - [Diagnóstico das abas](features/tab-diagnostics.md)
-
 - [Zoom persistente por site](features/site-zoom.md)
+- [Notas e sessões na Command Bar](features/command-search.md)

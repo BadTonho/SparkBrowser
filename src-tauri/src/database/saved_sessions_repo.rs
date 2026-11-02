@@ -1,8 +1,8 @@
 use crate::state::tab_model::TabInfo;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct SessionPage {
     pub title: String,
     pub url: String,
@@ -10,11 +10,26 @@ pub struct SessionPage {
     pub is_selected: bool,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct SavedSession {
     pub id: i64,
     pub name: String,
     pub pages: Vec<SessionPage>,
+}
+
+pub fn get(conn: &Connection, id: i64) -> Result<SavedSession, String> {
+    let name: String = conn
+        .query_row("SELECT name FROM saved_sessions WHERE id=?1", [id], |r| {
+            r.get(0)
+        })
+        .optional()
+        .map_err(|e| e.to_string())?
+        .ok_or("command_search.not_found")?;
+    Ok(SavedSession {
+        id,
+        name,
+        pages: pages(conn, id)?,
+    })
 }
 
 pub fn migrate(conn: &Connection) -> Result<(), String> {

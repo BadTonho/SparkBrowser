@@ -3,6 +3,7 @@ use commands::backup::{
     get_backup_pending_preferences, preview_backup_import,
 };
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
+use commands::command_search::{get_saved_session, search_command_items};
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
@@ -151,6 +152,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            search_command_items,
+            get_saved_session,
             get_site_zoom,
             set_site_zoom,
             apply_backup_zoom,

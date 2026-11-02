@@ -93,7 +93,9 @@
     "allow-cancel-shutdown",
     "allow-get-site-zoom",
     "allow-set-site-zoom",
-    "allow-apply-backup-zoom"
+    "allow-apply-backup-zoom",
+    "allow-search-command-items",
+    "allow-get-saved-session"
   ],
   "webviews": [
     "main"

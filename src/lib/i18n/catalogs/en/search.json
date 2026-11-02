@@ -1,0 +1,14 @@
+{
+  "search.notes": "Notes",
+  "search.sessions": "Sessions",
+  "search.session_pages": "Session · {count} pages",
+  "search.counts": "{notes} matching notes · {sessions} matching sessions",
+  "search.details": "View details",
+  "search.edit_note": "Edit note",
+  "search.follow_active": "Follow the active page",
+  "search.back_sessions": "Back to sessions",
+  "search.pinned": "Pinned page",
+  "search.not_found": "This item was removed. Search again.",
+  "search.changed": "The session changed. Review its current pages before restoring.",
+  "search.error": "Could not search saved items. Try again."
+}

@@ -2,6 +2,10 @@ import { derived } from "svelte/store";
 import { t, type MessageKey } from "./index";
 import { errorDetails } from "../services/user-errors.js";
 const messages: Record<string, MessageKey> = {
+  "command_search.not_found": "search.not_found",
+  "command_search.changed": "search.changed",
+  "command_search.invalid_query": "search.error",
+  "search_command_items.failed": "search.error",
   "zoom.invalid_origin": "zoom.error",
   "zoom.invalid_value": "zoom.error",
   "zoom.unavailable": "zoom.error",

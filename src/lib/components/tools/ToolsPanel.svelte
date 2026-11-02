@@ -5,6 +5,8 @@
   import TabDiagnosticsPanel from "./TabDiagnosticsPanel.svelte";
   import ClosedTabsPanel from "./ClosedTabsPanel.svelte";
   import TabsPanel from "./TabsPanel.svelte";
+  import { selectedSession } from "../../stores/toolsContentStore";
+  import SessionDetails from "./SessionDetails.svelte";
   import SessionsPanel from "./SessionsPanel.svelte";
   import NotesPanel from "./NotesPanel.svelte";
   import "./tools.css";
@@ -20,7 +22,7 @@
       </nav>
       <div class="tools-content">
         {#if $toolsSection === "diagnostics"}<TabDiagnosticsPanel />
-        {:else if $toolsSection === "sessions"}<SessionsPanel />
+        {:else if $toolsSection === "sessions"}{#if $selectedSession}<SessionDetails />{:else}<SessionsPanel />{/if}
         {:else if $toolsSection === "notes"}<NotesPanel />
         {:else if $toolsSection === "closed"}<ClosedTabsPanel />
         {:else}<TabsPanel />{/if}

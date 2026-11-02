@@ -1,3 +1,4 @@
+import { checkCommandSearch } from "./command-search.mjs";
 import { checkZoom } from "./zoom.mjs";
 import { checkTabDiagnostics } from "./tab-diagnostics.mjs";
 import { checkShutdown } from "./shutdown.mjs";
@@ -14,6 +15,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  "command-search": checkCommandSearch,
   zoom: checkZoom,
   "tab-diagnostics": checkTabDiagnostics,
   shutdown: checkShutdown,

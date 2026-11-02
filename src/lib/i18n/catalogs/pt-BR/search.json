@@ -1,0 +1,14 @@
+{
+  "search.notes": "Notas",
+  "search.sessions": "Sessões",
+  "search.session_pages": "Sessão · {count} páginas",
+  "search.counts": "{notes} notas encontradas · {sessions} sessões encontradas",
+  "search.details": "Ver detalhes",
+  "search.edit_note": "Editar nota",
+  "search.follow_active": "Acompanhar a página ativa",
+  "search.back_sessions": "Voltar às sessões",
+  "search.pinned": "Página fixada",
+  "search.not_found": "Este item foi removido. Pesquise novamente.",
+  "search.changed": "A sessão foi alterada. Revise as páginas atuais antes de restaurar.",
+  "search.error": "Não foi possível pesquisar os itens salvos. Tente novamente."
+}

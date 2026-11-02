@@ -8,4 +8,4 @@ export async function saveNamedSession(name: string, id: number | null = null): 
 }
 export const renameNamedSession = (id: number, name: string) => invoke<void>("rename_named_session", { id, name });
 export const deleteNamedSession = (id: number) => invoke<void>("delete_named_session", { id });
-export const restoreNamedSession = (id: number) => invoke<{ snapshot: TabSnapshot; warnings: string[] }>("restore_named_session", { id });
+export const restoreNamedSession = (id: number, expectedSession: SavedSession | null = null) => invoke<{ snapshot: TabSnapshot; warnings: string[] }>("restore_named_session", { id, expectedSession });

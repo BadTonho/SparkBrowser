@@ -39,9 +39,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Recently closed tabs](./features/closed-tabs.md)
 - [Automatic session recovery](./features/recovery.md)
 - [Resumable downloads and checksums](./features/downloads.md)
-
 - [Protected shutdown](features/shutdown.md)
-
 - [Tab diagnostics](features/tab-diagnostics.md)
-
 - [Persistent page zoom](features/site-zoom.md)
+- [Notes and sessions in the Command Bar](features/command-search.md)

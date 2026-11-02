@@ -68,11 +68,16 @@ pub async fn restore_named_session(
     app: AppHandle,
     state: State<'_, BrowserState>,
     id: i64,
+    expected_session: Option<SavedSession>,
 ) -> Result<SessionRestore, String> {
     let _operation = state.tab_operations.lock().await;
     let pages = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
-        repo::pages(db.as_ref().ok_or("Database is not ready")?, id)?
+        let current = repo::get(db.as_ref().ok_or("Database is not ready")?, id)?;
+        if expected_session.as_ref().is_some_and(|s| *s != current) {
+            return Err("command_search.changed".into());
+        }
+        current.pages
     };
     let previous = state.snapshot_tabs();
     let previous_layouts = state

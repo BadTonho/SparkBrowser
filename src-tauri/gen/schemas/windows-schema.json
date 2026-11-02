@@ -405,6 +405,12 @@
           "markdownDescription": "Enables the get_recovery_status command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_saved_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-saved-session",
+          "markdownDescription": "Enables the get_saved_session command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_saved_sessions command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-saved-sessions",
@@ -577,6 +583,12 @@
           "type": "string",
           "const": "allow-save-site-search-shortcut",
           "markdownDescription": "Enables the save_site_search_shortcut command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the search_command_items command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-search-command-items",
+          "markdownDescription": "Enables the search_command_items command without any pre-configured scope."
         },
         {
           "description": "Enables the search_page_notes command without any pre-configured scope.",
@@ -909,6 +921,12 @@
           "markdownDescription": "Denies the get_recovery_status command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_saved_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-saved-session",
+          "markdownDescription": "Denies the get_saved_session command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_saved_sessions command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-saved-sessions",
@@ -1081,6 +1099,12 @@
           "type": "string",
           "const": "deny-save-site-search-shortcut",
           "markdownDescription": "Denies the save_site_search_shortcut command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the search_command_items command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-search-command-items",
+          "markdownDescription": "Denies the search_command_items command without any pre-configured scope."
         },
         {
           "description": "Denies the search_page_notes command without any pre-configured scope.",

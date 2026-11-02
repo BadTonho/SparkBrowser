@@ -1,4 +1,10 @@
 <script lang="ts">
+  import { createCommandQuery } from "../../services/command-query.js";
+  import { searchCommandItems, emptyCommandSearch } from "../../services/bridge/command-search";
+  import type { CommandSearchResult } from "../../types/command-search";
+  import { openSavedNote, openSavedSession } from "../../stores/toolsContentStore";
+  import { describeError } from "../../services/user-errors.js";
+  import ErrorMessage from "../status/ErrorMessage.svelte";
   import { t } from "../../i18n";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
   import { setActiveSettingsCategory } from "../../stores/settingsStore";
@@ -36,11 +42,30 @@
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
 
   let inputEl: HTMLInputElement | undefined = $state();
-  let selectedIndex = $state(0);
+  let selectedId = $state<string | null>(null);
+  let searchResults = $state<CommandSearchResult>(emptyCommandSearch);
+  let searchError = $state("");
+  let executing = $state(false);
+  const queryRunner = createCommandQuery({ search: searchCommandItems,
+    result: (result: CommandSearchResult) => searchResults = result,
+    error: (error: unknown) => searchError = describeError(error) });
+  $effect(() => {
+    const query = $commandQuery; const open = $isCommandBarOpen;
+    selectedId = null; searchResults = emptyCommandSearch; searchError = "";
+    queryRunner.set(open ? query : "");
+    return () => queryRunner.stop();
+  });
+  async function execute(item: CommandItem) {
+    if (executing) return;
+    executing = true;
+    searchError = "";
+    try { await item.action(); } catch (e) { searchError = describeError(e); }
+    finally { executing = false; }
+  }
 
   $effect(() => {
     if ($isCommandBarOpen) {
-      selectedIndex = 0;
+      selectedId = null;
       setTimeout(() => {
         inputEl?.focus();
         inputEl?.select();
@@ -80,6 +105,17 @@
         },
       });
     }
+
+    for (const note of searchResults.notes) items.push({
+      id: `note-${note.url}`, title: note.title || note.url, subtitle: note.preview || note.url,
+      icon: "✎", badge: $t("search.notes"),
+      action: async () => { await openSavedNote(note.url); await closeCommandBar(); },
+    });
+    for (const session of searchResults.sessions) items.push({
+      id: `session-${session.id}`, title: session.name, subtitle: session.preview,
+      icon: "▤", badge: $t("search.session_pages", { count: session.page_count }),
+      action: async () => { await openSavedSession(session.id); await closeCommandBar(); },
+    });
 
     // Matching open tabs
     for (const tab of $tabs) {
@@ -251,6 +287,7 @@
   }
 
   let suggestions = $derived($isCommandBarOpen ? buildSuggestions($commandQuery) : []);
+  const selectedIndex = $derived(Math.max(0, suggestions.findIndex(item => item.id === selectedId)));
 
   async function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") {
@@ -259,18 +296,18 @@
     } else if (event.key === "ArrowDown") {
       event.preventDefault();
       if (suggestions.length > 0) {
-        selectedIndex = (selectedIndex + 1) % suggestions.length;
+        selectedId = suggestions[(selectedIndex + 1) % suggestions.length].id;
       }
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       if (suggestions.length > 0) {
-        selectedIndex = (selectedIndex - 1 + suggestions.length) % suggestions.length;
+        selectedId = suggestions[(selectedIndex - 1 + suggestions.length) % suggestions.length].id;
       }
     } else if (event.key === "Enter") {
       event.preventDefault();
       const chosen = suggestions[selectedIndex] ?? suggestions[0];
       if (chosen) {
-        await chosen.action();
+        await execute(chosen);
       }
     }
   }
@@ -311,13 +348,17 @@
         <kbd class="esc-hint">ESC</kbd>
       </div>
 
+      <ErrorMessage error={searchError} />
+      {#if searchResults.notes_count || searchResults.sessions_count}<p class="search-counts" role="status">{$t("search.counts", { notes: searchResults.notes_count, sessions: searchResults.sessions_count })}</p>{/if}
       <div class="command-results">
         {#each suggestions as item, idx (item.id)}
           <button
             class="command-item"
+            data-command-id={item.id}
+            disabled={executing}
             class:selected={idx === selectedIndex}
-            onmouseenter={() => (selectedIndex = idx)}
-            onclick={() => item.action()}
+            onmouseenter={() => (selectedId = item.id)}
+            onclick={() => execute(item)}
           >
             <span class="item-icon">{item.icon}</span>
             <div class="item-text">
@@ -398,6 +439,7 @@
     color: var(--text-secondary);
   }
 
+  .search-counts { padding: 8px 18px; color: var(--text-secondary); font-size: 12px; }
   .command-results {
     display: flex;
     flex-direction: column;

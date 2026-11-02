@@ -21,3 +21,5 @@ pub mod recovery_repo;
 pub mod download_jobs_repo;
 
 pub mod site_zoom_repo;
+
+pub mod command_search_repo;

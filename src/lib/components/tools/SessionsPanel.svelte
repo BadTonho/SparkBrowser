@@ -1,6 +1,7 @@
 <script lang="ts">
 import ErrorMessage from "../status/ErrorMessage.svelte";
   import { describeError } from "../../services/user-errors.js";
+  import { openSavedSession } from "../../stores/toolsContentStore";
   import { t, plural } from "../../i18n";
   import { onMount } from "svelte";
   import type { SavedSession } from "../../types/browser";
@@ -43,6 +44,7 @@ import ErrorMessage from "../status/ErrorMessage.svelte";
   <article class="tool-card">
     <strong>{session.name}</strong><span>{$plural(session.pages.length, $t("common.pages_one"), $t("common.pages_other"))}</span>
     <div class="tool-actions">
+      <button disabled={busy} onclick={() => run(() => openSavedSession(session.id))}>{$t("search.details")}</button>
       <button disabled={busy} onclick={() => run(() => restore(session.id))}>{$t("tools.restore_a76e")}</button>
       <button disabled={busy} onclick={() => { renameId = session.id; renameName = session.name; }}>{$t("tools.rename_3064")}</button>
       <button disabled={busy} onclick={() => { confirming = confirming === session.id ? null : session.id; }}>{$t("tools.update_delete_bf40")}</button>
