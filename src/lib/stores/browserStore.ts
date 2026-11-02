@@ -171,7 +171,7 @@ export async function selectTab(tabId: string): Promise<void> {
   applyTabsSnapshot(snapshot);
 }
 
-export async function removeTab(tabId: string): Promise<void> {
+export async function removeTab(tabId: string, focusContent = false): Promise<void> {
   if (!isTauriRuntime()) {
     const filtered = get(tabs).filter((t) => t.id !== tabId);
     if (filtered.length === 0) {
@@ -186,7 +186,7 @@ export async function removeTab(tabId: string): Promise<void> {
     applyTabsSnapshot(filtered);
     return;
   }
-  const snapshot = await closeExistingTab(tabId, get(defaultSearchEngine));
+  const snapshot = await closeExistingTab(tabId, get(defaultSearchEngine), focusContent);
   applyTabsSnapshot(snapshot);
 }
 

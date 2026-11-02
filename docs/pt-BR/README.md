@@ -43,3 +43,4 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Diagnóstico das abas](features/tab-diagnostics.md)
 - [Zoom persistente por site](features/site-zoom.md)
 - [Notas e sessões na Command Bar](features/command-search.md)
+- [Atalhos de teclado entre abas](features/keyboard-shortcuts.md)

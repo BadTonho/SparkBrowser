@@ -154,9 +154,16 @@ pub async fn close_tab(
     state: State<'_, BrowserState>,
     tab_id: String,
     search_engine: Option<String>,
+    focus_content: Option<bool>,
 ) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
-    super::closed_tabs::close_one(&app, &state, &tab_id, search_engine.as_deref())
+    let restore_focus =
+        focus_content.unwrap_or(false) && state.active_tab_id.lock().is_ok_and(|id| *id == tab_id);
+    let snapshot = super::closed_tabs::close_one(&app, &state, &tab_id, search_engine.as_deref())?;
+    if restore_focus {
+        crate::window::webview_manager::focus_active_content_webview(&app)?;
+    }
+    Ok(snapshot)
 }
 
 #[tauri::command]

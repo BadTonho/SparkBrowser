@@ -1,3 +1,4 @@
+import { checkKeyboard } from "./keyboard.mjs";
 import { checkCommandSearch } from "./command-search.mjs";
 import { checkZoom } from "./zoom.mjs";
 import { checkTabDiagnostics } from "./tab-diagnostics.mjs";
@@ -15,6 +16,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  keyboard: checkKeyboard,
   "command-search": checkCommandSearch,
   zoom: checkZoom,
   "tab-diagnostics": checkTabDiagnostics,

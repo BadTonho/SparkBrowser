@@ -14,6 +14,7 @@ use tauri::{
     WebviewUrl,
 };
 
+pub use super::content_focus::focus_active_content_webview;
 pub use super::content_lifecycle::{reset_content_webviews, sync_all_webviews};
 pub use super::internal_overlays::{
     build_bookmark_context_menu_script, build_workspace_switcher_update_script,

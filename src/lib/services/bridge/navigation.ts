@@ -79,10 +79,11 @@ export async function switchActiveTab(tabId: string): Promise<TabSnapshot> {
 
 export async function closeExistingTab(
   tabId: string,
-  searchEngine: SearchEngine = "google"
+  searchEngine: SearchEngine = "google",
+  focusContent = false
 ): Promise<TabSnapshot> {
   if(!isTauriRuntime()) return [];
-  return await invoke<TabSnapshot>("close_tab", { tabId, searchEngine });
+  return await invoke<TabSnapshot>("close_tab", { tabId, searchEngine, focusContent });
 }
 
 export async function hibernateSingleTab(tabId: string): Promise<TabSnapshot> {

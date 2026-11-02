@@ -301,7 +301,7 @@
       case "settings": toggleSettingsModal(); break;
       case "close-tab": {
         const active = get(tabs).find((tab) => tab.is_active);
-        if (active) removeTab(active.id);
+        if (active) void removeTab(active.id, true);
         break;
       }
       case "reopen-tab": void restoreClosedTab(); break;

@@ -409,10 +409,12 @@ pub(super) fn install_workspace_shortcut_accelerator(
 fn is_windows_key_down(virtual_key: i32) -> bool {
     #[link(name = "user32")]
     unsafe extern "system" {
-        fn GetKeyState(nvirtkey: i32) -> i16;
+        fn GetAsyncKeyState(nvirtkey: i32) -> i16;
     }
 
-    unsafe { GetKeyState(virtual_key) < 0 }
+    // The newly focused WebView may not have received the modifier's key-down.
+    // Read its current pressed bit, independently of a WebView thread's message queue.
+    unsafe { GetAsyncKeyState(virtual_key) < 0 }
 }
 
 #[cfg(windows)]

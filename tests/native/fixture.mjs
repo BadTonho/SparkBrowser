@@ -69,7 +69,7 @@ export async function createFixture() {
               if (command === 'iframe') { const frame = document.createElement('iframe'); frame.allow = 'microphone'; frame.src = location.origin.replace('127.0.0.1', 'localhost') + '/page/i'; document.body.prepend(frame); }
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
               if (command === 'download') { const a = document.createElement('a'); a.href = '/download/file?native=1'; a.download = 'fixture.bin'; a.click(); }
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, pixelRatio: devicePixelRatio, scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();

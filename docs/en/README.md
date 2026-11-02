@@ -43,3 +43,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Tab diagnostics](features/tab-diagnostics.md)
 - [Persistent page zoom](features/site-zoom.md)
 - [Notes and sessions in the Command Bar](features/command-search.md)
+- [Keyboard shortcuts across tabs](features/keyboard-shortcuts.md)
