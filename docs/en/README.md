@@ -41,3 +41,5 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Resumable downloads and checksums](./features/downloads.md)
 
 - [Protected shutdown](features/shutdown.md)
+
+- [Tab diagnostics](features/tab-diagnostics.md)

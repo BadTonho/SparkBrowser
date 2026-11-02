@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 import { setOverlayVisibility } from "../services/bridge/overlays";
-export type ToolsSection = "sessions" | "tabs" | "notes" | "closed";
+export type ToolsSection = "sessions" | "tabs" | "notes" | "closed" | "diagnostics";
 export const isToolsOpen = writable(false);
 export const toolsSection = writable<ToolsSection>("sessions");
 export async function openTools(section: ToolsSection = "sessions") {

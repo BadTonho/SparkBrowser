@@ -1,0 +1,17 @@
+{
+  "diagnostics.heading": "Diagnóstico das abas",
+  "diagnostics.description": "Consulte as páginas residentes e todos os motivos que protegem uma aba contra hibernação.",
+  "diagnostics.totals": "{resident} residentes · {hibernated} hibernadas · {protected} protegidas · limite de residentes {limit}",
+  "diagnostics.resident": "WebView residente",
+  "diagnostics.hibernated": "Hibernada",
+  "diagnostics.last_active": "Última ativação há {seconds} segundos",
+  "diagnostics.unprotected": "Sem proteção",
+  "diagnostics.selection": "selecionada",
+  "diagnostics.split": "painel dividido",
+  "diagnostics.pinned": "fixada",
+  "diagnostics.loading": "carregando",
+  "diagnostics.form": "formulário alterado",
+  "diagnostics.media": "mídia em reprodução",
+  "diagnostics.download": "download depende desta página",
+  "diagnostics.hibernate": "Hibernar"
+}

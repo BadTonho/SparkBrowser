@@ -141,6 +141,7 @@
     }
 
     const browserCommands: CommandItem[] = [
+      { id: "cmd-tab-diagnostics", title: $t("diagnostics.heading"), subtitle: $t("diagnostics.description"), icon: "◉", badge: $t("commandbar.tools_ea93"), action: async () => { await closeCommandBar(); await openTools("diagnostics"); } },
       { id: "cmd-reopen-tab", title: $t("closed.reopen"), subtitle: $t("closed.reopen_description"), icon: "↶", badge: shortcutLabel("reopen-tab"), action: async () => { await closeCommandBar(); await restoreClosedTab(); } },
       { id: "cmd-closed-tabs", title: $t("closed.heading"), subtitle: $t("closed.description"), icon: "↶", badge: $t("commandbar.tools_ea93"), action: async () => { await closeCommandBar(); await openTools("closed"); } },
       { id: "cmd-site-permissions", title: $t("commandbar.open_site_permissions_a835"), subtitle: $t("commandbar.manage_permissions_for_the_focused_page_adbc"), icon: "\u26BF", badge: $t("commandbar.privacy_54a5"), action: async () => { await closeCommandBar(); await openSitePermissions(); } },

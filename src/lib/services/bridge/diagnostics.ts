@@ -1,3 +1,5 @@
+export type ProtectionReason = "selection" | "split" | "pinned" | "loading" | "form" | "media" | "download";
+export interface TabDiagnostic { id: string; title: string; url: string; workspace_id: string; resident: boolean; seconds_since_activation: number; protection_reasons: ProtectionReason[] }
 import { invoke, isTauriRuntime } from "./runtime";
 export interface NativeDiagnostics {
   application_identifier: string;
@@ -8,6 +10,9 @@ export interface NativeDiagnostics {
   tabs: number;
   resident_webviews: number;
   protected_tabs: number;
+  hibernated_tabs: number;
+  resident_limit: number;
+  tab_details: TabDiagnostic[];
 }
 export async function fetchDiagnostics(): Promise<NativeDiagnostics | null> {
   return isTauriRuntime() ? invoke<NativeDiagnostics>("get_diagnostics") : null;

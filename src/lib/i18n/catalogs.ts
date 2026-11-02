@@ -1,3 +1,5 @@
+import diagnosticsEn from "./catalogs/en/diagnostics.json";
+import diagnosticsPt from "./catalogs/pt-BR/diagnostics.json";
 import shutdownEn from "./catalogs/en/shutdown.json";
 import shutdownPt from "./catalogs/pt-BR/shutdown.json";
 import recoveryEn from "./catalogs/en/recovery.json";
@@ -37,6 +39,6 @@ import viewportPt from "./catalogs/pt-BR/viewport.json";
 import workspacesEn from "./catalogs/en/workspaces.json";
 import workspacesPt from "./catalogs/pt-BR/workspaces.json";
 
-export const english = { ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn };
+export const english = { ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn };
 export type MessageKey = keyof typeof english;
-export const portuguese: Record<MessageKey, string> = { ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt };
+export const portuguese: Record<MessageKey, string> = { ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt };

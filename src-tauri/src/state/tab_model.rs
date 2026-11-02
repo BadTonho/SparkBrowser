@@ -31,13 +31,7 @@ pub struct TabActivity {
 
 impl TabInfo {
     pub fn protected_from_hibernation(&self) -> bool {
-        self.is_visible
-            || self.is_active
-            || self.is_pinned
-            || self.navigation.loading
-            || self.activity.dirty_form
-            || self.activity.playing_media
-            || self.activity.downloading
+        !self.protection_reasons(false).is_empty()
     }
 }
 

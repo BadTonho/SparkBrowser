@@ -1,3 +1,4 @@
+import { checkTabDiagnostics } from "./tab-diagnostics.mjs";
 import { checkShutdown } from "./shutdown.mjs";
 import { checkBackup } from "./backup.mjs";
 import { checkDownloads } from './downloads.mjs';
@@ -12,6 +13,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  "tab-diagnostics": checkTabDiagnostics,
   shutdown: checkShutdown,
   downloads: checkDownloads,
   recovery: checkRecovery,

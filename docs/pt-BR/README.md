@@ -41,3 +41,5 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Downloads retomáveis e hashes](./features/downloads.md)
 
 - [Encerramento protegido](features/shutdown.md)
+
+- [Diagnóstico das abas](features/tab-diagnostics.md)

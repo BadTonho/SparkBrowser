@@ -1,0 +1,17 @@
+{
+  "diagnostics.heading": "Tab diagnostics",
+  "diagnostics.description": "Inspect resident pages and every reason that protects a tab from hibernation.",
+  "diagnostics.totals": "{resident} resident · {hibernated} hibernated · {protected} protected · resident limit {limit}",
+  "diagnostics.resident": "Resident WebView",
+  "diagnostics.hibernated": "Hibernated",
+  "diagnostics.last_active": "Last activated {seconds} seconds ago",
+  "diagnostics.unprotected": "No protection",
+  "diagnostics.selection": "selected",
+  "diagnostics.split": "split pane",
+  "diagnostics.pinned": "pinned",
+  "diagnostics.loading": "loading",
+  "diagnostics.form": "edited form",
+  "diagnostics.media": "playing media",
+  "diagnostics.download": "download depends on this page",
+  "diagnostics.hibernate": "Hibernate"
+}
