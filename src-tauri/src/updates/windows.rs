@@ -124,7 +124,7 @@ pub async fn download(app: &AppHandle, expected_version: &str) -> Result<UpdateS
 pub async fn install(
     app: AppHandle,
     expected_version: String,
-    confirmed_activity: bool,
+    _confirmed_activity: bool,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         let service = app.state::<UpdateService>();
@@ -154,23 +154,10 @@ pub async fn install(
             (candidate, bytes)
         };
         service.publish(&app)?;
-        let writer = app.state::<crate::database::navigation_writer::NavigationWriter>();
-        let result = (|| {
-            writer.freeze()?;
-            let browser = app.state::<crate::state::browser_state::BrowserState>();
-            let _tabs = browser.tab_operations.blocking_lock();
-            super::prepare_install(&app, confirmed_activity)?;
-            browser
-                .persist_run_checkpoint(crate::database::recovery_repo::RunCheckpoint::CleanExit)?;
-            let result = candidate
-                .install(bytes.as_slice())
-                .map_err(|e| format!("Could not start the update installer: {e}"));
-            // Successful NSIS launch exits directly. Any returned result leaves this run active.
-            crate::recovery::resume_after_installer(&browser)?;
-            result
-        })();
-        // Successful installation exits the process. Every failure restores a usable browser.
-        writer.resume();
+        // The shared shutdown coordinator already froze writers and committed the clean marker.
+        let result = candidate
+            .install(bytes.as_slice())
+            .map_err(|e| format!("Could not start the update installer: {e}"));
         if let Err(error) = &result {
             let mut inner = service.inner.lock().map_err(|e| e.to_string())?;
             inner.snapshot.status = "ready".into();

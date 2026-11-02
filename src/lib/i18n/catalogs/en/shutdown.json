@@ -1,0 +1,21 @@
+{
+  "shutdown.heading": "Close browser?",
+  "shutdown.update_heading": "Prepare update",
+  "shutdown.review": "Review activity across all workspaces before continuing.",
+  "shutdown.form": "edited form",
+  "shutdown.media": "playing media",
+  "shutdown.manual": "{count} transfers or checks will pause. Resume them manually after reopening.",
+  "shutdown.native": "{count} page downloads will lose their engine connection and cannot resume after exit. Return to the source page to start again.",
+  "shutdown.saving": "Saving the session and stopping transfers…",
+  "shutdown.preparing": "Saving pending notes…",
+  "shutdown.continue": "Continue browsing",
+  "shutdown.exit": "Exit anyway",
+  "shutdown.install": "Install and restart",
+  "shutdown.retry": "Try again",
+  "shutdown.busy": "The browser is preparing to close.",
+  "shutdown.save_failed": "Could not save before closing. Your browser remains open. Try again.",
+  "shutdown.stale_attempt": "Activity changed. Review the current state before continuing.",
+  "shutdown.update_unavailable": "Finish or cancel active transfers before installing the update.",
+  "shutdown.installer_returned": "The installer returned without closing the browser.",
+  "shutdown.details": "Technical details"
+}

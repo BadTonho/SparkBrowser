@@ -30,7 +30,7 @@ export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> 
     return result;
   } catch (error) {
     // New native domains return stable dotted codes, optionally followed by diagnostic details.
-    if (typeof error === "string" && /^(backup|closed_tabs|recovery|downloads)\.[a-z_]+(?::|$)/.test(error)) {
+    if (typeof error === "string" && /^(backup|closed_tabs|recovery|downloads|shutdown)\.[a-z_]+(?::|$)/.test(error)) {
       throw new UserError(error.split(":", 1)[0], error);
     }
     throw new UserError(`${command}.failed`, error);

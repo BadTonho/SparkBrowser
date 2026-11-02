@@ -32,12 +32,12 @@ export function createNoteWriter(options) {
   }
   return {
     drafts, seed, flush,
-    /** Flush every URL before an updater-controlled restart; failed drafts remain recoverable. */
+    /** Flush every URL before closing or updating; failed drafts remain recoverable. */
     async flushAll() {
       for (const url of drafts.keys()) await flush(url);
       await queue;
       if ([...drafts.values()].some(draft => draft.status !== 'Saved')) {
-        throw new UserError('notes.flush_failed', 'Some page notes could not be saved. Retry saving them before updating.');
+        throw new UserError('notes.flush_failed', 'Some page notes could not be saved. Retry saving them before closing.');
       }
     },
     /** @param {string} url @param {string} title @param {string} text */

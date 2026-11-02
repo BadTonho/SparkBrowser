@@ -189,6 +189,12 @@
           "markdownDescription": "Enables the cancel_download command without any pre-configured scope."
         },
         {
+          "description": "Enables the cancel_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-cancel-shutdown",
+          "markdownDescription": "Enables the cancel_shutdown command without any pre-configured scope."
+        },
+        {
           "description": "Enables the check_for_updates command without any pre-configured scope.",
           "type": "string",
           "const": "allow-check-for-updates",
@@ -241,6 +247,12 @@
           "type": "string",
           "const": "allow-commit-split-ratio",
           "markdownDescription": "Enables the commit_split_ratio command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the confirm_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-confirm-shutdown",
+          "markdownDescription": "Enables the confirm_shutdown command without any pre-configured scope."
         },
         {
           "description": "Enables the control_download command without any pre-configured scope.",
@@ -393,6 +405,12 @@
           "markdownDescription": "Enables the get_saved_sessions command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_shutdown_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-shutdown-state",
+          "markdownDescription": "Enables the get_shutdown_state command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_site_permissions command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-site-permissions",
@@ -463,6 +481,12 @@
           "type": "string",
           "const": "allow-navigate-to",
           "markdownDescription": "Enables the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the prepare_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-prepare-shutdown",
+          "markdownDescription": "Enables the prepare_shutdown command without any pre-configured scope."
         },
         {
           "description": "Enables the preview_backup_import command without any pre-configured scope.",
@@ -651,6 +675,12 @@
           "markdownDescription": "Denies the cancel_download command without any pre-configured scope."
         },
         {
+          "description": "Denies the cancel_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-cancel-shutdown",
+          "markdownDescription": "Denies the cancel_shutdown command without any pre-configured scope."
+        },
+        {
           "description": "Denies the check_for_updates command without any pre-configured scope.",
           "type": "string",
           "const": "deny-check-for-updates",
@@ -703,6 +733,12 @@
           "type": "string",
           "const": "deny-commit-split-ratio",
           "markdownDescription": "Denies the commit_split_ratio command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the confirm_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-confirm-shutdown",
+          "markdownDescription": "Denies the confirm_shutdown command without any pre-configured scope."
         },
         {
           "description": "Denies the control_download command without any pre-configured scope.",
@@ -855,6 +891,12 @@
           "markdownDescription": "Denies the get_saved_sessions command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_shutdown_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-shutdown-state",
+          "markdownDescription": "Denies the get_shutdown_state command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_site_permissions command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-site-permissions",
@@ -925,6 +967,12 @@
           "type": "string",
           "const": "deny-navigate-to",
           "markdownDescription": "Denies the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the prepare_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-prepare-shutdown",
+          "markdownDescription": "Denies the prepare_shutdown command without any pre-configured scope."
         },
         {
           "description": "Denies the preview_backup_import command without any pre-configured scope.",

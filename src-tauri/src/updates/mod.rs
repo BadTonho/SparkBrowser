@@ -14,25 +14,7 @@ pub fn initialize_crypto() {
     let _ = rustls::crypto::ring::default_provider().install_default();
 }
 
-#[cfg(windows)]
-pub(crate) fn prepare_install(
-    app: &tauri::AppHandle,
-    confirmed_activity: bool,
-) -> Result<(), String> {
-    use tauri::Manager;
-    let downloads = app.state::<crate::downloads::manager::DownloadManager>();
-    let browser = app.state::<crate::state::browser_state::BrowserState>();
-    validate_restart(
-        &browser.snapshot_tabs(),
-        downloads.list()?.iter().any(|task| task.pending()),
-        confirmed_activity,
-    )?;
-    browser.persist_session()?;
-    Ok(())
-}
-
-#[cfg(any(windows, test))]
-fn validate_restart(
+pub(crate) fn validate_restart(
     tabs: &[crate::state::tab_model::TabInfo],
     pending_downloads: bool,
     confirmed_activity: bool,

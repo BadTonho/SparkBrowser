@@ -3,6 +3,7 @@ use commands::backup::{
     get_backup_pending_preferences, preview_backup_import,
 };
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
+use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 pub mod backup;
 pub mod commands;
 pub mod database;
@@ -10,6 +11,7 @@ pub mod downloads;
 mod native_tests;
 pub mod privacy;
 pub mod recovery;
+pub mod shutdown;
 pub mod site_permissions;
 pub mod state;
 pub mod updates;
@@ -70,10 +72,20 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
+        .manage(shutdown::ShutdownService::default())
         .manage(backup::service::BackupService::default())
         .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    if let Some(service) = window.try_state::<shutdown::ShutdownService>() {
+                        let _ = service.request(window.app_handle(), None);
+                    }
+                    return;
+                }
+            }
             if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
                 if let Some(state) = window.try_state::<BrowserState>() {
                     state
@@ -133,6 +145,10 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_shutdown_state,
+            prepare_shutdown,
+            confirm_shutdown,
+            cancel_shutdown,
             control_download,
             set_download_checksum,
             get_recovery_status,
@@ -219,22 +235,7 @@ pub fn run() {
             } = event
             {
                 api.prevent_exit();
-                if app
-                    .state::<recovery::RecoveryService>()
-                    .shutting_down
-                    .swap(true, std::sync::atomic::Ordering::AcqRel)
-                {
-                    return;
-                }
-                let app = app.clone();
-                std::thread::spawn(move || {
-                    app.state::<downloads::manager::DownloadManager>()
-                        .shutdown();
-                    if let Err(error) = recovery::prepare_clean_exit(&app) {
-                        eprintln!("Session persistence failed before shutdown: {error}");
-                    }
-                    app.exit(0);
-                });
+                let _ = app.state::<shutdown::ShutdownService>().request(app, None);
             }
         });
 }

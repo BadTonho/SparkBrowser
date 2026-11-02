@@ -87,6 +87,19 @@ impl UpdateService {
             .snapshot
             .clone())
     }
+    /// Off the UI thread: cancel a background request, then wait for its operation to settle.
+    pub fn settle_for_exit(&self) -> Result<(), String> {
+        {
+            let mut inner = self.inner.lock().map_err(|e| e.to_string())?;
+            if matches!(inner.snapshot.status.as_str(), "checking" | "downloading") {
+                inner.invalidate();
+                inner.snapshot.status = "idle".into();
+                self.changed.notify_waiters();
+            }
+        }
+        let _operation = self.operation.blocking_lock();
+        Ok(())
+    }
     pub fn publish(&self, app: &AppHandle) -> Result<UpdateState, String> {
         let mut inner = self.inner.lock().map_err(|e| e.to_string())?;
         inner.snapshot.revision += 1;

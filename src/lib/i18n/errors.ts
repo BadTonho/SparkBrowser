@@ -2,6 +2,12 @@ import { derived } from "svelte/store";
 import { t, type MessageKey } from "./index";
 import { errorDetails } from "../services/user-errors.js";
 const messages: Record<string, MessageKey> = {
+  "shutdown.busy": "shutdown.busy",
+  "shutdown.save_failed": "shutdown.save_failed",
+  "shutdown.stale_attempt": "shutdown.stale_attempt",
+  "shutdown.update_unavailable": "shutdown.update_unavailable",
+  "shutdown.installer_returned": "shutdown.installer_returned",
+
   "downloads.invalid_checksum": "downloads.error",
   "downloads.busy": "downloads.error",
   "downloads.slots_busy": "downloads.error",

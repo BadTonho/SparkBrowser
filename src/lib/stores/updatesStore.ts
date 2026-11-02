@@ -3,10 +3,6 @@ import { describeError } from "../services/user-errors.js";
 import { get, writable } from "svelte/store";
 import { changeUpdateChannel, checkForUpdates, downloadUpdate, fetchUpdateState, installUpdate, onUpdateState, previewUpdateState } from "../services/bridge/updates";
 import { createUpdateGate } from "../services/update-snapshots.js";
-import { noteWriter } from "./notesStore";
-import { setOverlayVisibility } from "../services/bridge/overlays";
-import { invoke } from "../services/bridge/runtime";
-import type { TabSnapshot } from "../types/browser";
 import type { UpdateChannel, UpdateState } from "../types/updates";
 
 export const updateState = writable(previewUpdateState);
@@ -45,13 +41,6 @@ export const startUpdateDownload = () => action(async () => {
 export const startUpdateInstall = () => action(async () => {
   const version = get(updateState).update?.version;
   if (!version || get(updateState).status !== "ready") return;
-  const snapshot = await invoke<TabSnapshot>("get_tabs");
-  const activity = (Array.isArray(snapshot) ? snapshot : snapshot.tabs).some(tab => tab.activity?.dirty_form || tab.activity?.playing_media);
   if (!window.confirm(tr("common.install_confirm", { version }))) return;
-  if (activity && !window.confirm(tr("common.activity_confirm"))) return;
-  await setOverlayVisibility(true, "update-install");
-  try {
-    await noteWriter.flushAll();
-    await installUpdate(version, activity);
-  } finally { await setOverlayVisibility(false, "update-install"); }
+  await installUpdate(version, false);
 });

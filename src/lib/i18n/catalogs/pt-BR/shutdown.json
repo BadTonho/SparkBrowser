@@ -1,0 +1,21 @@
+{
+  "shutdown.heading": "Fechar o navegador?",
+  "shutdown.update_heading": "Preparar atualização",
+  "shutdown.review": "Revise as atividades de todos os workspaces antes de continuar.",
+  "shutdown.form": "formulário alterado",
+  "shutdown.media": "mídia em reprodução",
+  "shutdown.manual": "{count} transferências ou verificações serão pausadas. Retome manualmente ao reabrir.",
+  "shutdown.native": "{count} downloads de páginas perderão a conexão com o motor e não poderão ser retomados após sair. Volte à página de origem para iniciar novamente.",
+  "shutdown.saving": "Salvando a sessão e interrompendo transferências…",
+  "shutdown.preparing": "Salvando notas pendentes…",
+  "shutdown.continue": "Continuar navegando",
+  "shutdown.exit": "Sair mesmo assim",
+  "shutdown.install": "Instalar e reiniciar",
+  "shutdown.retry": "Tentar novamente",
+  "shutdown.busy": "O navegador está se preparando para fechar.",
+  "shutdown.save_failed": "Não foi possível salvar antes de sair. O navegador permanece aberto. Tente novamente.",
+  "shutdown.stale_attempt": "A atividade mudou. Revise o estado atual antes de continuar.",
+  "shutdown.update_unavailable": "Conclua ou cancele as transferências ativas antes de instalar a atualização.",
+  "shutdown.installer_returned": "O instalador retornou sem fechar o navegador.",
+  "shutdown.details": "Detalhes técnicos"
+}

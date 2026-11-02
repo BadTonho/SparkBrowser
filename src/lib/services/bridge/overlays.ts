@@ -9,6 +9,7 @@ import { isTauriRuntime } from "./runtime";
 
 export type OverlayId =
   | "update-install"
+  | "shutdown"
   | "site-permissions"
   | "permission-prompt"
   | "tools"

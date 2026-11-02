@@ -1,7 +1,7 @@
 #[cfg(not(windows))]
 pub use super::native_fallback::handler;
 #[cfg(windows)]
-pub use super::native_windows::{cancel_view, control, install};
+pub use super::native_windows::{cancel_view, control, install, stop_for_exit};
 #[cfg(not(windows))]
 pub async fn control(app: &tauri::AppHandle, id: &str, action: &str) -> Result<(), String> {
     use tauri::Manager;
@@ -15,3 +15,8 @@ pub async fn control(app: &tauri::AppHandle, id: &str, action: &str) -> Result<(
 }
 #[cfg(not(windows))]
 pub fn cancel_view(_: &tauri::AppHandle, _: &str) {}
+
+#[cfg(not(windows))]
+pub fn stop_for_exit(_: &tauri::AppHandle) -> Result<(), String> {
+    Ok(())
+}

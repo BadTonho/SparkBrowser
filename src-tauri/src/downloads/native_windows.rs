@@ -363,3 +363,31 @@ pub fn cancel_view(app: &AppHandle, label: &str) {
         }
     });
 }
+
+/// Called off the UI thread, only after explicit shutdown approval.
+pub fn stop_for_exit(app: &AppHandle) -> Result<(), String> {
+    let (send, receive) = std::sync::mpsc::channel();
+    let a = app.clone();
+    app.run_on_main_thread(move || {
+        let entries = OPERATIONS.with(|m| m.borrow_mut().drain().collect::<Vec<_>>());
+        let result = (|| {
+            for (id, operation) in entries {
+                unsafe {
+                    operation.core.Cancel().map_err(|e| e.to_string())?;
+                }
+                let manager = a.state::<DownloadManager>();
+                manager.native_capability(&a, &id, false, false);
+                manager.update_saved(&a, &id, |t| {
+                    t.status = "Interrupted".into();
+                    t.error = Some("downloads.native_unavailable".into());
+                })?;
+            }
+            Ok(())
+        })();
+        let _ = send.send(result);
+    })
+    .map_err(|e| e.to_string())?;
+    receive
+        .recv_timeout(Duration::from_secs(20))
+        .map_err(|e| e.to_string())?
+}

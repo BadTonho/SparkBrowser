@@ -105,7 +105,14 @@ export async function runScenario(name, scenario) {
     if (session && !crash) {
       await invoke('get_history', { limit: 10 });
       await script(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }); return null;`).catch(() => {});
-      await until(async () => { try { return !(await request('GET', `/session/${session}/window/handles`)).length; } catch { return true; } }, 'normal native exit');
+      await until(async () => {
+        try {
+          const state = await invoke('get_shutdown_state');
+          if (state.phase === 'review') await invoke('confirm_shutdown', { attempt: state.attempt, revision: state.review.revision });
+          if (state.phase === 'error') throw new Error('Protected shutdown failed: ' + state.error);
+          return !(await request('GET', `/session/${session}/window/handles`)).length;
+        } catch (error) { if (String(error).includes('Protected shutdown failed:')) throw error; return true; }
+      }, 'normal native exit');
       await closeSession().catch(() => {});
     }
     // Forced restarts kill only our process tree, without sending a clean-close command.

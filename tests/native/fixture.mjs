@@ -63,6 +63,7 @@ export async function createFixture() {
             if (busy) return; busy = true;
             try {
               const command = await fetch('/control/' + id).then(response => response.json());
+              if (command === 'dirty') { field.value += ' edited'; field.dispatchEvent(new Event('input', { bubbles: true })); }
               if (command === 'spa') { history.pushState({}, '', '/page/' + id + '/spa'); document.title = 'Native SPA ' + id; }
               if (command === 'microphone') { permission = null; void mediaPermission(); }
               if (command === 'iframe') { const frame = document.createElement('iframe'); frame.allow = 'microphone'; frame.src = location.origin.replace('127.0.0.1', 'localhost') + '/page/i'; document.body.prepend(frame); }

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
+  import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
   import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
   import { initializeRecovery } from "./lib/stores/recoveryStore";
   import ClosedTabsNotice from "./lib/components/status/ClosedTabsNotice.svelte";
@@ -102,6 +104,7 @@
   );
 
   onMount(() => {
+    const stopShutdown = initializeShutdown();
     void initializeRecovery();
     initializeBackupStatus();
     const stopClosedTabs = initializeClosedTabEvents();
@@ -160,6 +163,7 @@
     }, 60_000);
 
     const handleGlobalShortcuts = (event: KeyboardEvent) => {
+      if (get(shutdownState).phase !== "idle") return;
       if (get(recordingShortcutId)) return;
       const openWorkspaceOverlay = get(workspaceSwitcherOverlay);
 
@@ -201,6 +205,7 @@
     };
 
     const handleGlobalMousedown = (event: MouseEvent) => {
+      if (get(shutdownState).phase !== "idle") return;
       if (event.button !== 3 && event.button !== 4) return;
       event.preventDefault();
 
@@ -231,6 +236,7 @@
     window.addEventListener("mousedown", handleGlobalMousedown, true);
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
+      stopShutdown();
       stopPermissionEvents();
       stopUpdates();
       stopClosedTabs();
@@ -251,6 +257,7 @@
   });
 
   function dispatchShortcut(action: string, key?: string): void {
+    if (get(shutdownState).phase !== "idle") return;
     switch (action) {
       case "switch-tabs": {
         const num = Number(key);
@@ -321,6 +328,7 @@
     {/if}
     <ViewportFrame />
   </div>
+  <ShutdownDialog />
   <CommandBar />
   <HistoryDrawer />
   <DownloadsDrawer />

@@ -47,7 +47,17 @@ pub async fn install_update(
 ) -> Result<(), String> {
     #[cfg(windows)]
     {
-        crate::updates::install(app, expected_version, confirmed_activity).await
+        use tauri::Manager;
+        let _ = confirmed_activity; // Activity approval belongs to the revisioned shutdown review.
+        let current = app.state::<UpdateService>().snapshot()?;
+        if current.status != "ready"
+            || current.update.as_ref().map(|u| u.version.as_str()) != Some(&expected_version)
+        {
+            return Err("shutdown.update_unavailable".into());
+        }
+        app.state::<crate::shutdown::ShutdownService>()
+            .request(&app, Some(expected_version))?;
+        Ok(())
     }
     #[cfg(not(windows))]
     {

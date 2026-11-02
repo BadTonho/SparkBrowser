@@ -86,7 +86,11 @@
     "allow-finish-backup-preferences",
     "allow-get-closed-tabs",
     "allow-reopen-closed-tab",
-    "allow-clear-closed-tabs"
+    "allow-clear-closed-tabs",
+    "allow-get-shutdown-state",
+    "allow-prepare-shutdown",
+    "allow-confirm-shutdown",
+    "allow-cancel-shutdown"
   ],
   "webviews": [
     "main"

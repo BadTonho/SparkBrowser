@@ -21,3 +21,5 @@ pub mod backup;
 
 pub mod closed_tabs;
 pub mod recovery;
+
+pub mod shutdown;

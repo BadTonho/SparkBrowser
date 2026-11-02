@@ -23,6 +23,32 @@ pub fn shell_only(
                     .reject("Application startup is still in progress");
                 return true;
             }
+            let service = invoke
+                .message
+                .webview_ref()
+                .state::<crate::shutdown::ShutdownService>();
+            if service.blocked()
+                && !invoke.message.command().starts_with("get_")
+                && !matches!(
+                    invoke.message.command(),
+                    "get_shutdown_state"
+                        | "prepare_shutdown"
+                        | "confirm_shutdown"
+                        | "cancel_shutdown"
+                        | "save_page_note"
+                        | "set_overlay_visibility"
+                        | "sync_viewport_bounds"
+                        | "get_diagnostics"
+                        | "get_tabs"
+                        | "get_download_tasks"
+                        | "get_update_state"
+                        | "get_history"
+                        | "respond_site_permission"
+                )
+            {
+                invoke.resolver.reject("shutdown.busy");
+                return true;
+            }
             handler(invoke)
         }
     }

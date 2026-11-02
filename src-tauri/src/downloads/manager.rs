@@ -133,6 +133,12 @@ impl DownloadManager {
         native: bool,
         expected: Option<String>,
     ) -> Result<DownloadTask, String> {
+        if app
+            .try_state::<crate::shutdown::ShutdownService>()
+            .is_some_and(|s| s.blocked())
+        {
+            return Err("shutdown.busy".into());
+        }
         let expected = super::model::checksum(expected)?;
         let mut tasks = self.tasks.lock().map_err(|e| e.to_string())?;
         if tasks

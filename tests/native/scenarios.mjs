@@ -1,3 +1,4 @@
+import { checkShutdown } from "./shutdown.mjs";
 import { checkBackup } from "./backup.mjs";
 import { checkDownloads } from './downloads.mjs';
 import { checkClosedTabs } from './closed-tabs.mjs';
@@ -11,6 +12,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  shutdown: checkShutdown,
   downloads: checkDownloads,
   recovery: checkRecovery,
   'recovery-failure': checkRecoveryFailure,
