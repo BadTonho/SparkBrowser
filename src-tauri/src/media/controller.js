@@ -127,7 +127,7 @@
             if(!popup)throw Error('popup');
             let sequence=0;
             const send=(name,value)=>{const seq=++sequence;popup.location.href=`veloce-internal://pip-player/${name}?session=${encodeURIComponent(action.session)}&sequence=${seq}${value===undefined?'':`&value=${value}`}`;return seq;};
-            const cleanup=createFloatingPlayer(popup,el,new MediaStream(tracks),{...action,title:document.title,hostname:location.hostname,volume:target},send,()=>{floating=null;signal();});
+            const cleanup=createFloatingPlayer(popup,el,stream,{...action,title:document.title,hostname:location.hostname,volume:target},send,()=>{floating=null;signal();});
             floating={element:el,popup,cleanup,session:action.session};signal();return {ok:true,custom:true};
           } catch {stream?.getTracks().forEach(t=>t.stop());popup?.close();}
         }

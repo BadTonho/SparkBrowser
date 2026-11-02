@@ -123,6 +123,7 @@ export async function checkMediaPip(context) {
   await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value="37";s.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("[data-testid=pip-close]").click();'));
   await until(async()=>{const s=await read();return s.applied_volume===37&&!s.frames.some(f=>f.picture_in_picture);},'closing commits the final volume edit');
   assert.equal(await context.withWebview('/page/media-pip',()=>script('return [...document.querySelectorAll("video")].every(v=>!v.paused);')),true,'closing preserves original video playback');
+  assert.equal(await context.withWebview('/page/media-pip',()=>script('return [...document.querySelectorAll("video")].every(v=>getComputedStyle(v).visibility!=="hidden");')),true,'closing restores the original image');
   await until(()=>script('return document.querySelector("[data-testid=toggle-pip]")?.disabled===false'),'close operation releases the toolbar');
   await click('[data-testid=toggle-pip]');
   await until(async()=> (await read()).frames.some(f=>f.pip_mode==='custom'),'rapid reopening creates a fresh session');
@@ -175,7 +176,7 @@ export async function checkMediaPip(context) {
   // WebDriver DOM focus does not activate the OS window after native PiP closes.
   await focusWindow();
   await click('.omnibox-input');
-  const framed=await until(async()=> {const s=await read();return s.frames.find(f=>f.videos.some(v=>v.eligible));},'native frame context');
+  const framed=await until(async()=> {const s=await read();return s.frames.find(f=>f.videos.filter(v=>v.eligible).length===2);},'both native frame candidates ready');
   await until(()=>script('return !document.querySelector("[data-testid=toggle-pip]").disabled;'),'iframe enables toolbar button');
   await click('[data-testid=toggle-pip]');
   await until(async()=> (await read()).frames.some(f=>f.context===framed.context&&f.picture_in_picture&&f.pip_mode==='custom'),'cross origin custom PiP');

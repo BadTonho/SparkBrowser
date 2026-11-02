@@ -5,7 +5,9 @@ import assert from 'node:assert/strict';
 
 const code=readFileSync(new URL('../src-tauri/src/media/pip_player.js',import.meta.url),'utf8')
   .replace('__PIP_PLAYER_STYLE__',JSON.stringify(readFileSync(new URL('../src-tauri/src/media/player/style.css',import.meta.url),'utf8')))
-  .replace('__PIP_ICONS__',readFileSync(new URL('../src-tauri/src/media/player/icons.js',import.meta.url),'utf8'));
+  .replace('__PIP_ICONS__',readFileSync(new URL('../src-tauri/src/media/player/icons.js',import.meta.url),'utf8'))
+  // The real stream lifecycle has its own regression suite; these tests isolate UI.
+  .replace('__PIP_CAPTURE__','(popup,source,image,stream)=>{image.srcObject=stream;return ()=>{stream.getTracks().forEach(t=>t.stop());image.srcObject=null;};}');
 function fixture() {
   const elements=[],timeouts=new Map(),intervals=new Map(),sent=[];
   let next=0,stopped=0,closed=0,now=0;
@@ -39,10 +41,10 @@ test('floating volume opens on hover, focus and click; hides after leaving and p
 
 test('percentage is immediate at 0, 100 and 200 and stale acknowledgments cannot overwrite edits',()=>{
   const f=fixture(),slider=f.find('pip-volume'),percent=f.find('pip-volume-percentage');
-  for(const value of [0,100,200]){slider.value=String(value);slider.fire('input');assert.equal(percent.textContent,`${value}%`);}
+  for(const value of [0,100,200]){slider.value=String(value);slider.fire('input');assert.equal(percent.textContent,`${value}%`);assert.equal(slider.style['--volume-progress'],`${value/2}%`);}
   f.popup.__velocePipState({session:'wrong',sequence:99,volume:20});assert.equal(slider.value,'200');
   f.popup.__velocePipState({session:'test',sequence:1,volume:20});assert.equal(slider.value,'200');
-  f.popup.__velocePipState({session:'test',sequence:f.sent.length,volume:100});assert.equal(slider.value,'100');assert.equal(percent.textContent,'100%');
+  f.popup.__velocePipState({session:'test',sequence:f.sent.length,volume:100});assert.equal(slider.value,'100');assert.equal(percent.textContent,'100%');assert.equal(slider.style['--volume-progress'],'50%');
   slider.fire('pointerdown');slider.value='51';slider.fire('input');
   f.popup.__velocePipState({session:'test',sequence:99,volume:100});assert.equal(slider.value,'51');
   f.popup.fire('pointerup');assert.deepEqual(f.sent.at(-1),{action:'flush',value:51});

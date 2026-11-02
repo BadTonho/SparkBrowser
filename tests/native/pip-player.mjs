@@ -27,8 +27,9 @@ export async function checkFloatingVolume(context,id) {
     const speaker=await script('const r=document.querySelector("[data-testid=pip-speaker]").getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)};');
     await request('POST',`/session/${sessionId()}/actions`,{actions:[{type:'pointer',id:'pip-pointer',parameters:{pointerType:'mouse'},actions:[{type:'pointerMove',duration:0,...speaker}]}]});
     assert.equal(await script('return document.querySelector("#pip-volume-panel").hidden'),false);
-    const ui=await script('const p=document.querySelector("#pip-volume-panel"),s=p.querySelector("input"),v=p.querySelector("span"),r=p.getBoundingClientRect();return {width:r.width,height:r.height,inside:r.left>=0&&r.right<=innerWidth,below:v.getBoundingClientRect().top>=s.getBoundingClientRect().bottom,min:s.min,max:s.max,step:s.step};');
-    assert.equal(ui.height,64);assert.equal(ui.inside,true);assert.equal(ui.below,true);assert.deepEqual([ui.min,ui.max,ui.step],['0','200','1']);
+    const ui=await script(`const p=document.querySelector('#pip-volume-panel'),s=p.querySelector('input'),v=p.querySelector('span'),r=p.getBoundingClientRect(),b=document.querySelector('[data-testid=pip-speaker]').getBoundingClientRect(),t=document.querySelector('.time').getBoundingClientRect(),sr=s.getBoundingClientRect(),vr=v.getBoundingClientRect(),css=getComputedStyle(p);
+      return {width:r.width,height:r.height,gap:b.left-r.right,center:(r.top+r.height/2)-(b.top+b.height/2),timeClear:t.right<=r.left,inside:r.left>=0&&r.right<=innerWidth,left:vr.right<=sr.left,aligned:(vr.top+vr.height/2)===(sr.top+sr.height/2),inputHeight:sr.height,appearance:getComputedStyle(s).appearance,background:css.backgroundColor,borders:[css.borderTopWidth,css.borderRightWidth,css.borderBottomWidth,css.borderLeftWidth],radius:css.borderRadius,shadow:css.boxShadow,min:s.min,max:s.max,step:s.step};`);
+    assert.equal(ui.width,120);assert.equal(ui.height,28);assert.equal(ui.gap,6);assert.equal(ui.center,0);assert.equal(ui.timeClear,true);assert.equal(ui.inside,true);assert.equal(ui.left,true);assert.equal(ui.aligned,true);assert.equal(ui.inputHeight,28);assert.equal(ui.appearance,'none');assert.equal(ui.background,'rgba(0, 0, 0, 0)');assert.deepEqual(ui.borders,['0px','0px','0px','0px']);assert.equal(ui.radius,'0px');assert.equal(ui.shadow,'none');assert.deepEqual([ui.min,ui.max,ui.step],['0','200','1']);
     const percent=await script('const r=document.querySelector("[data-testid=pip-volume-percentage]").getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)};');
     await request('POST',`/session/${sessionId()}/actions`,{actions:[{type:'pointer',id:'pip-pointer',parameters:{pointerType:'mouse'},actions:[{type:'pointerMove',duration:100,...percent}]}]});
     await wait(400);assert.equal(await script('return document.querySelector("#pip-volume-panel").hidden'),false,'hover over percentage keeps the entire volume panel open');
@@ -42,7 +43,8 @@ export async function checkFloatingVolume(context,id) {
     await script('document.querySelector("[data-testid=pip-speaker]").focus();document.querySelector("[data-testid=pip-volume]").focus();');
   });
   for(const value of [0,100,200]) {
-    assert.equal(await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value=arguments[0];s.dispatchEvent(new Event("input",{bubbles:true}));s.dispatchEvent(new Event("change",{bubbles:true}));return document.querySelector("[data-testid=pip-volume-percentage]").textContent',value)),`${value}%`);
+    const ui=await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]"),p=document.querySelector("[data-testid=pip-volume-percentage]");s.value=arguments[0];s.dispatchEvent(new Event("input",{bubbles:true}));s.dispatchEvent(new Event("change",{bubbles:true}));return {text:p.textContent,fill:s.style.getPropertyValue("--volume-progress"),width:p.getBoundingClientRect().width};',value));
+    assert.equal(ui.text,`${value}%`);assert.equal(ui.fill,`${value/2}%`);assert.equal(ui.width,36);
     await applied(value);
   }
   for(const value of [0,200]) {

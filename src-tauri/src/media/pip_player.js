@@ -5,6 +5,7 @@
   const setInterval = popup.setInterval.bind(popup), clearInterval = popup.clearInterval.bind(popup);
   const labels = {play:'Play',pause:'Pause',back:'Back 10 seconds',forward:'Forward 10 seconds',progress:'Playback position',volume:'Volume',return:'Return to tab',close:'Close',minimize:'Minimize',...config.presentation?.labels};
   const icon = __PIP_ICONS__;
+  const createCapture = __PIP_CAPTURE__;
   const sheet = new popup.CSSStyleSheet();
   sheet.replaceSync(__PIP_PLAYER_STYLE__);
   doc.adoptedStyleSheets = [sheet];
@@ -13,7 +14,7 @@
   function el(tag, parent, properties = {}) { const node=doc.createElement(tag);Object.assign(node,properties);parent.append(node);return node; }
   function setIcon(button, name) { if(button.getAttribute('data-icon')===name)return;button.replaceChildren(icon(doc,name));button.setAttribute('data-icon',name); }
   function button(parent, name, label, id) { const node=el('button',parent,{type:'button',title:label});node.setAttribute('aria-label',label);node.setAttribute('data-testid',id);setIcon(node,name);return node; }
-  const video=el('video',doc.body,{muted:true,autoplay:true,playsInline:true,srcObject:stream});
+  const video=el('video',doc.body,{muted:true,autoplay:true,playsInline:true});
   video.setAttribute('data-testid','pip-image');
   const chrome=el('div',doc.body,{className:'chrome'});chrome.setAttribute('data-testid','pip-chrome');chrome.setAttribute('data-visible','true');
   const header=el('div',chrome,{className:'header'});
@@ -37,24 +38,25 @@
   speaker.setAttribute('aria-expanded','false');speaker.setAttribute('aria-controls','pip-volume-panel');
   const panel=el('div',area,{id:'pip-volume-panel',className:'volume-panel',hidden:true});
   panel.setAttribute('role','group');panel.setAttribute('aria-label',labels.volume);
+  const percentage=el('span',panel,{className:'percentage'});percentage.setAttribute('aria-hidden','true');percentage.setAttribute('data-testid','pip-volume-percentage');
   const volume=el('input',panel,{type:'range',min:'0',max:'200',step:'1',value:String(config.volume ?? 100)});
   volume.setAttribute('data-testid','pip-volume');volume.setAttribute('aria-label',labels.volume);
-  const percentage=el('span',panel,{className:'percentage'});percentage.setAttribute('aria-hidden','true');percentage.setAttribute('data-testid','pip-volume-percentage');
 
   let disposed=false,dragging=false,seeking=false,windowDragging=false,editing=false,hover=false,suppressFocus=false;
-  let volumeTimer,idleTimer,focusTimer,latest=Number(volume.value),sent=0,acknowledged=0,lastPaused=source.paused;
+  let volumeTimer,idleTimer,focusTimer,renderTimer,capture,latest=Number(volume.value),sent=0,acknowledged=0,lastPaused=source.paused;
   const removers=[];
   function listen(target,type,callback) {target.addEventListener(type,callback);removers.push(()=>target.removeEventListener(type,callback));}
   const pinned=()=>source.paused||dragging||seeking||windowDragging||!panel.hidden||chrome.contains(doc.activeElement);
   function wake() {
     if(disposed)return;
-    clearTimeout(idleTimer);chrome.setAttribute('data-visible','true');
+    clearTimeout(idleTimer);
+    if(chrome.getAttribute('data-visible')!=='true'){chrome.setAttribute('data-visible','true');update();}
     if(!pinned())idleTimer=setTimeout(()=>{if(!pinned())chrome.setAttribute('data-visible','false');},2000);
   }
-  function showVolume() {clearTimeout(volumeTimer);panel.hidden=false;speaker.setAttribute('aria-expanded','true');wake();}
-  function hideVolume() {clearTimeout(volumeTimer);panel.hidden=true;speaker.setAttribute('aria-expanded','false');wake();}
+  function showVolume() {clearTimeout(volumeTimer);panel.hidden=false;row.className='bottom-row volume-open';speaker.setAttribute('aria-expanded','true');wake();}
+  function hideVolume() {clearTimeout(volumeTimer);panel.hidden=true;row.className='bottom-row';speaker.setAttribute('aria-expanded','false');wake();}
   function scheduleVolumeHide() {clearTimeout(volumeTimer);volumeTimer=setTimeout(()=>{if(!dragging&&!hover&&!area.contains(doc.activeElement))hideVolume();},300);}
-  function renderVolume() {percentage.textContent=`${volume.value}%`;volume.setAttribute('aria-valuetext',percentage.textContent);}
+  function renderVolume() {percentage.textContent=`${volume.value}%`;volume.setAttribute('aria-valuetext',percentage.textContent);volume.style.setProperty('--volume-progress',`${Number(volume.value)/2}%`);}
   function change(final=false) {if(volume.disabled)return;latest=Number(volume.value);editing=true;renderVolume();sent=send(final?'flush':'volume',latest);wake();}
   function action(node, callback) {listen(node,'click',event=>{callback(event);if(event.detail>0&&node!==speaker)node.blur();wake();});}
   listen(doc,'pointermove',wake);listen(doc,'pointerdown',wake);listen(doc,'focusin',wake);
@@ -82,6 +84,9 @@
   const format=t=>Number.isFinite(t)?`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`:'0:00';
   function update() {
     if(disposed)return;
+    if(!source.isConnected){send('close',latest);return;}
+    if(lastPaused!==source.paused){lastPaused=source.paused;wake();}
+    if(chrome.getAttribute('data-visible')==='false')return;
     setIcon(play,source.paused?'play':'pause');play.title=source.paused?labels.play:labels.pause;play.setAttribute('aria-label',play.title);
     const ranges=source.seekable;
     const start=ranges.length?ranges.start(0):0,end=ranges.length?ranges.end(ranges.length-1):Number.isFinite(source.duration)?source.duration:0;
@@ -89,19 +94,19 @@
     if(!seeking)progress.value=String(source.currentTime);
     progress.style.setProperty('--progress',`${end>start?Math.max(0,Math.min(100,(source.currentTime-start)/(end-start)*100)):0}%`);
     time.textContent=`${format(source.currentTime)} / ${format(source.duration)}`;
-    if(lastPaused!==source.paused){lastPaused=source.paused;wake();}
-    if(!source.isConnected)send('close');
   }
+  function scheduleUpdate() {if(!disposed&&renderTimer===undefined)renderTimer=setTimeout(()=>{renderTimer=undefined;update();},100);}
   function seek(value) {const n=Number(value);if(Number.isFinite(n)&&!progress.disabled)source.currentTime=Math.max(Number(progress.min),Math.min(Number(progress.max),n));wake();}
   action(back,()=>seek(source.currentTime-10));action(forward,()=>seek(source.currentTime+10));
   action(play,()=>{if(source.paused)void source.play().catch(()=>{});else source.pause();});
   listen(progress,'input',()=>seek(progress.value));
   action(minimize,()=>send('minimize'));action(returnButton,()=>send('return'));action(closeButton,()=>send('close',latest));
   popup.__velocePipRequestClose=()=>send('close',latest);
-  for(const event of ['play','pause','timeupdate','durationchange','progress','loadedmetadata','ended'])listen(source,event,update);
-  function cleanup() {if(disposed)return;disposed=true;clearTimeout(volumeTimer);clearTimeout(idleTimer);clearTimeout(focusTimer);clearInterval(watch);removers.forEach(stop=>stop());stream.getTracks().forEach(t=>t.stop());video.srcObject=null;closed();}
+  for(const event of ['play','pause','ended'])listen(source,event,update);
+  for(const event of ['timeupdate','durationchange','progress','loadedmetadata'])listen(source,event,scheduleUpdate);
+  function cleanup() {if(disposed)return;disposed=true;clearTimeout(volumeTimer);clearTimeout(idleTimer);clearTimeout(focusTimer);clearTimeout(renderTimer);clearInterval(watch);removers.forEach(stop=>stop());capture?.();closed();}
   listen(popup,'pagehide',cleanup);
-  const watch=setInterval(update,500);
-  renderVolume();update();wake();void video.play().catch(()=>{});send('ready');
+  const watch=setInterval(scheduleUpdate,500);
+  renderVolume();update();wake();capture=createCapture(popup,source,video,stream,()=>send('capture-failed',latest));send('ready');
   return cleanup;
 }

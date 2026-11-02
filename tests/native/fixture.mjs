@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { readFileSync } from 'node:fs';
 
 /** Controlled loopback pages report only artificial test values; no user browsing data is read. */
 export async function createFixture() {
@@ -45,6 +46,10 @@ export async function createFixture() {
       commands.delete(id);
       response.setHeader('Content-Type', 'application/json');
       response.end(JSON.stringify(command)); return;
+    }
+    if (url.pathname === '/pip-video.js') {
+      response.setHeader('Content-Type','text/javascript; charset=utf-8');
+      response.end(readFileSync(new URL('./fixtures/pip-video.js',import.meta.url),'utf8'));return;
     }
     if (url.pathname.startsWith('/page/')) {
       loads.set(id, (loads.get(id) ?? 0) + 1);
@@ -110,7 +115,7 @@ export async function createFixture() {
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();
-        </script>`);
+        </script>${['media-pip-continuity','media-pip-fps'].includes(id)?'<script src="/pip-video.js"></script>':''}`);
       return;
     }
     response.writeHead(404).end();

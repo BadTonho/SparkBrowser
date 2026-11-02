@@ -22,14 +22,17 @@ export function initializePipControls() {
       queueVolume(owner.tab_id, owner.document_key, event.value, { session: event.session, sequence: event.sequence });
     }
     if (event.action === "flush") void flushVolume();
-    if (event.action === "close") void (async () => {
+    if (event.action === "close" || event.action === "capture-failed") void (async () => {
       await flushVolume();
       // A user can close the window before the enter command has returned.
       if (get(pipBusy)) await new Promise<void>(resolve => {
         let stop: () => void = () => {};
         stop = pipBusy.subscribe(busy => { if (!busy) { queueMicrotask(() => stop()); resolve(); } });
       });
-      if (get(mediaState).tabs.some(tab => tab.frames.some(frame => frame.pip_session === event.session))) await exitVideo();
+      if (get(mediaState).tabs.some(tab => tab.frames.some(frame => frame.pip_session === event.session))) {
+        await exitVideo();
+        if (event.action === "capture-failed") mediaError.set(describeError(new UserError("media.pip_failed", "Local video capture stopped")));
+      }
     })();
     if (event.action === "return") {
       void selectTab(owner.tab_id).then(() => getCurrentWindow().setFocus()).catch(error => mediaError.set(describeError(error)));

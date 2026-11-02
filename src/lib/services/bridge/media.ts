@@ -11,6 +11,6 @@ export const setTabVolume = (tabId: string, volume: number, documentKey: string,
 export const enterVideoPip = (tabId:string,context:string,document:string,video:string,presentation?:{locale:string;labels:Record<string,string>}) => invoke<MediaSnapshot>("enter_video_pip",{tabId,context,document,video,presentation});
 export const exitVideoPip = () => invoke<MediaSnapshot>("exit_video_pip");
 
-export interface PipAction {session:string;sequence:number;tabId:string;documentKey:string;action:"volume"|"flush"|"return"|"close";value:number|null}
+export interface PipAction {session:string;sequence:number;tabId:string;documentKey:string;action:"volume"|"flush"|"return"|"close"|"capture-failed";value:number|null}
 export const onPipAction = (callback:(action:PipAction)=>void) => listen<PipAction>("media-pip-action",event=>callback(event.payload));
 export const onPipFallback = (callback:()=>void) => listen("media-pip-fallback",callback);

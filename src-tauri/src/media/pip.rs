@@ -36,6 +36,7 @@ pub fn player_script() -> String {
             &serde_json::to_string(include_str!("player/style.css")).expect("static player CSS"),
         )
         .replace("__PIP_ICONS__", include_str!("player/icons.js"))
+        .replace("__PIP_CAPTURE__", include_str!("player/capture.js"))
 }
 #[cfg(windows)]
 async fn exit_known(app: &AppHandle) -> Result<(), String> {

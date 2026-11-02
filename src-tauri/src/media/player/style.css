@@ -26,11 +26,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid #aaa6ed; outline-
 .progress::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(to right, #eee 0 var(--progress, 0%), #ffffff55 var(--progress, 0%) 100%); }
 .progress::-webkit-slider-thumb { appearance: none; width: 8px; height: 8px; margin-top: -3px; border: 0; border-radius: 50%; background: #eee; }
 .bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.time { font-size: 11px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px #000; }
+.time { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px #000; }
+.volume-open .time { max-width: calc(100% - 162px); }
 .volume-area { position: relative; }
-.volume-panel { position: absolute; bottom: 33px; right: 0; width: 180px; max-width: calc(100vw - 24px); height: 64px; padding: 8px 12px; background: #181818f5; border: 1px solid #ffffff30; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.volume-panel { position: absolute; top: 50%; right: calc(100% + 6px); transform: translateY(-50%); width: 120px; height: 28px; padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; display: flex; align-items: center; gap: 6px; }
 .volume-panel[hidden] { display: none; }
-.volume-panel input { width: 100%; height: 24px; margin: 0; accent-color: #ddd; }
-.percentage { font: 12px/16px system-ui; color: #d0d0d4; font-variant-numeric: tabular-nums; }
+.volume-panel input { appearance: none; width: 78px; min-width: 0; height: 28px; margin: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.volume-panel input::-webkit-slider-runnable-track { height: 2px; border: 0; background: linear-gradient(to right, #fff 0 var(--volume-progress, 50%), #ffffff55 var(--volume-progress, 50%) 100%); }
+.volume-panel input::-webkit-slider-thumb { appearance: none; width: 8px; height: 8px; margin-top: -3px; border: 0; border-radius: 50%; background: #fff; }
+.percentage { flex: 0 0 36px; text-align: right; font: 12px/16px system-ui; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px #000; }
 input:disabled { opacity: .45; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .chrome { transition: none; } }

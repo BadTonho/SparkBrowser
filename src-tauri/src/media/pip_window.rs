@@ -155,7 +155,7 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
         .filter(|v| *v <= 200);
     if !matches!(
         action,
-        "ready" | "volume" | "flush" | "return" | "close" | "minimize" | "drag"
+        "ready" | "volume" | "flush" | "return" | "close" | "capture-failed" | "minimize" | "drag"
     ) || (action == "volume" && value.is_none())
     {
         return;
