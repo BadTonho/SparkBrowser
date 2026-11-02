@@ -18,3 +18,5 @@ pub mod diagnostics;
 pub mod overlays;
 
 pub mod backup;
+
+pub mod closed_tabs;

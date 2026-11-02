@@ -2,11 +2,12 @@
   import { t } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { isToolsOpen, toolsSection, closeTools, type ToolsSection } from "../../stores/toolsStore";
+  import ClosedTabsPanel from "./ClosedTabsPanel.svelte";
   import TabsPanel from "./TabsPanel.svelte";
   import SessionsPanel from "./SessionsPanel.svelte";
   import NotesPanel from "./NotesPanel.svelte";
   import "./tools.css";
-  const sections: { id: ToolsSection; label: string }[] = $derived([{ id: "sessions", label: $t("tools.sessions_6fa3") }, { id: "tabs", label: $t("tools.tabs_8e5e") }, { id: "notes", label: $t("tools.notes_8a75") }]);
+  const sections: { id: ToolsSection; label: string }[] = $derived([{ id: "sessions", label: $t("tools.sessions_6fa3") }, { id: "tabs", label: $t("tools.tabs_8e5e") }, { id: "notes", label: $t("tools.notes_8a75") }, { id: "closed", label: $t("closed.heading") }]);
 </script>
 
 {#if $isToolsOpen}
@@ -19,6 +20,7 @@
       <div class="tools-content">
         {#if $toolsSection === "sessions"}<SessionsPanel />
         {:else if $toolsSection === "notes"}<NotesPanel />
+        {:else if $toolsSection === "closed"}<ClosedTabsPanel />
         {:else}<TabsPanel />{/if}
       </div>
     </div>

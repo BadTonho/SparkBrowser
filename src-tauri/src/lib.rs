@@ -2,6 +2,7 @@ use commands::backup::{
     choose_backup_file, commit_backup_import, export_backup, finish_backup_preferences,
     get_backup_pending_preferences, preview_backup_import,
 };
+use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 pub mod backup;
 pub mod commands;
 pub mod database;
@@ -179,6 +180,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_closed_tabs,
+            reopen_closed_tab,
+            clear_closed_tabs,
             export_backup,
             choose_backup_file,
             preview_backup_import,

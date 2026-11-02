@@ -36,3 +36,4 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Releases assinadas localmente](./contributing/releases.md)
 - [Idiomas da interface](./features/localization.md)
 - [Backup local e importação com revisão](./features/backup.md)
+- [Abas fechadas recentemente](./features/closed-tabs.md)

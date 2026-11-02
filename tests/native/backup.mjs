@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-function preferences() {
+export function backupPreferences() {
   // Reuse the checked-in action metadata; no copy of its default key combinations.
   const source = readFileSync('src/lib/stores/shortcutsStore.ts', 'utf8');
   const array = source.slice(source.indexOf('= [', source.indexOf('export const SHORTCUT_DEFINITIONS')) + 2).split('\n];', 1)[0] + '\n]';
@@ -13,7 +13,7 @@ export async function checkBackup(context) {
   const { invoke, restart, fixture, script, until } = context;
   const before = await invoke('get_tabs');
   const resident = (await invoke('get_diagnostics')).resident_webviews;
-  const prefs = preferences();
+  const prefs = backupPreferences();
   const workspaces = await invoke('get_workspaces');
   const source = { format: 'veloce-backup', version: 1, created_at: 1, preferences: prefs,
     data: { bookmarks: await invoke('get_bookmark_data'), workspaces, tabs: before.tabs.map(({ id, title, url, workspace_id, is_pinned, is_active }) => ({ id, title, url, workspace_id, is_pinned, is_active })), split_layouts: [], sessions: [], notes: [], site_search: [] } };

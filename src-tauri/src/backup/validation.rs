@@ -14,6 +14,7 @@ pub fn page_url(raw: &str) -> Result<String, String> {
     Ok(url.to_string())
 }
 pub const SHORTCUT_IDS: &[&str] = &[
+    "reopen-tab",
     "switch-tabs",
     "workspace-picker",
     "switch-workspaces",

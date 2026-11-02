@@ -2,6 +2,8 @@ import { derived } from "svelte/store";
 import { t, type MessageKey } from "./index";
 import { errorDetails } from "../services/user-errors.js";
 const messages: Record<string, MessageKey> = {
+  "closed_tabs.blocked": "closed.blocked",
+  "closed_tabs.not_found": "closed.not_found",
   "backup.invalid_url": "backup.error_invalid",
   "backup.invalid_preferences": "backup.error_invalid",
   "backup.invalid_shortcuts": "backup.error_invalid",

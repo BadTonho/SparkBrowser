@@ -213,6 +213,12 @@
           "markdownDescription": "Enables the clear_browsing_history command without any pre-configured scope."
         },
         {
+          "description": "Enables the clear_closed_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clear-closed-tabs",
+          "markdownDescription": "Enables the clear_closed_tabs command without any pre-configured scope."
+        },
+        {
           "description": "Enables the close_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-close-tab",
@@ -325,6 +331,12 @@
           "type": "string",
           "const": "allow-get-bookmark-data",
           "markdownDescription": "Enables the get_bookmark_data command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_closed_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-closed-tabs",
+          "markdownDescription": "Enables the get_closed_tabs command without any pre-configured scope."
         },
         {
           "description": "Enables the get_diagnostics command without any pre-configured scope.",
@@ -469,6 +481,12 @@
           "type": "string",
           "const": "allow-rename-named-session",
           "markdownDescription": "Enables the rename_named_session command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the reopen_closed_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-reopen-closed-tab",
+          "markdownDescription": "Enables the reopen_closed_tab command without any pre-configured scope."
         },
         {
           "description": "Enables the reorder_tabs command without any pre-configured scope.",
@@ -639,6 +657,12 @@
           "markdownDescription": "Denies the clear_browsing_history command without any pre-configured scope."
         },
         {
+          "description": "Denies the clear_closed_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clear-closed-tabs",
+          "markdownDescription": "Denies the clear_closed_tabs command without any pre-configured scope."
+        },
+        {
           "description": "Denies the close_tab command without any pre-configured scope.",
           "type": "string",
           "const": "deny-close-tab",
@@ -751,6 +775,12 @@
           "type": "string",
           "const": "deny-get-bookmark-data",
           "markdownDescription": "Denies the get_bookmark_data command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_closed_tabs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-closed-tabs",
+          "markdownDescription": "Denies the get_closed_tabs command without any pre-configured scope."
         },
         {
           "description": "Denies the get_diagnostics command without any pre-configured scope.",
@@ -895,6 +925,12 @@
           "type": "string",
           "const": "deny-rename-named-session",
           "markdownDescription": "Denies the rename_named_session command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the reopen_closed_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-reopen-closed-tab",
+          "markdownDescription": "Denies the reopen_closed_tab command without any pre-configured scope."
         },
         {
           "description": "Denies the reorder_tabs command without any pre-configured scope.",

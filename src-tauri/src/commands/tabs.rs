@@ -2,9 +2,7 @@ use crate::database::tab_usage_repo;
 use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
-use crate::window::webview_manager::{
-    ensure_active_content_webview, search_engine_home_url, sync_all_webviews,
-};
+use crate::window::webview_manager::{ensure_active_content_webview, sync_all_webviews};
 use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
@@ -158,84 +156,7 @@ pub async fn close_tab(
     search_engine: Option<String>,
 ) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
-    let active_ws_id = state
-        .active_workspace_id
-        .lock()
-        .map(|ws| ws.clone())
-        .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string());
-
-    let partner = state
-        .current_split()
-        .filter(|layout| layout.contains(&tab_id))
-        .map(|layout| {
-            if layout.left_tab_id == tab_id {
-                layout.right_tab_id
-            } else {
-                layout.left_tab_id
-            }
-        });
-    if partner.is_some() {
-        state
-            .split_layouts
-            .lock()
-            .map_err(|e| e.to_string())?
-            .retain(|_, layout| !layout.contains(&tab_id));
-    }
-    let mut remaining_in_ws = 0;
-    let mut next_active_id = String::new();
-    let mut next_active_url = String::new();
-    let current_active = state
-        .active_tab_id
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clone();
-
-    {
-        if let Ok(mut tabs) = state.tabs.lock() {
-            if let Some(idx) = tabs.iter().position(|t| t.id == tab_id) {
-                tabs.remove(idx);
-            }
-            let ws_tabs: Vec<&mut TabInfo> = tabs
-                .iter_mut()
-                .filter(|t| t.workspace_id == active_ws_id)
-                .collect();
-            remaining_in_ws = ws_tabs.len();
-            let preferred = partner
-                .as_ref()
-                .and_then(|id| ws_tabs.iter().position(|tab| &tab.id == id))
-                .unwrap_or(ws_tabs.len().saturating_sub(1));
-            if let Some(last_ws_tab) = ws_tabs.into_iter().nth(preferred) {
-                if current_active == tab_id {
-                    last_ws_tab.is_hibernated = false;
-                    last_ws_tab.last_active_epoch = TabInfo::current_epoch_secs();
-                }
-                next_active_id = last_ws_tab.id.clone();
-                next_active_url = last_ws_tab.url.clone();
-            }
-        }
-    }
-
-    if remaining_in_ws == 0 {
-        let home_url = search_engine_home_url(search_engine.as_deref()).to_string();
-        return create_tab_inner(&app, &state, Some(home_url), search_engine);
-    }
-
-    if current_active == tab_id && !next_active_id.is_empty() {
-        state.select_tab(&next_active_id)?;
-        state.record_tab_activation(&next_active_id)?;
-        ensure_active_content_webview(&app)?;
-        let _ = app.emit("content-url-changed", &next_active_url);
-    }
-
-    sync_all_webviews(&app, &state)?;
-    state.persist_session()?;
-
-    let snapshot = state.snapshot_packet();
-    let stats = state.snapshot_privacy_stats();
-    let _ = app.emit("tabs-updated", &snapshot);
-    let _ = app.emit("privacy-stats-updated", &stats);
-
-    Ok(snapshot)
+    super::closed_tabs::close_one(&app, &state, &tab_id, search_engine.as_deref())
 }
 
 #[tauri::command]

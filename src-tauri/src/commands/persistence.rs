@@ -3,7 +3,7 @@ use crate::database::history_repo::{
     clear_all_history, search_history, HistoryCursor, HistoryEntry,
 };
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[tauri::command]
 pub async fn get_history(
@@ -27,10 +27,18 @@ pub async fn clear_browsing_history(
     app: AppHandle,
     state: State<'_, BrowserState>,
 ) -> Result<(), String> {
-    flush_navigation(app).await?;
+    flush_navigation(app.clone()).await?;
     let db_guard = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db_guard.as_ref() {
-        clear_all_history(conn)?;
+        let transaction = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        clear_all_history(&transaction)?;
+        crate::database::closed_tabs_repo::clear(&transaction)?;
+        transaction.commit().map_err(|e| e.to_string())?;
+        let _ = app.emit_to(
+            "main",
+            "closed-tabs-updated",
+            Vec::<crate::database::closed_tabs_repo::ClosedTab>::new(),
+        );
     }
     Ok(())
 }

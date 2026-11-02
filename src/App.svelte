@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ClosedTabsNotice from "./lib/components/status/ClosedTabsNotice.svelte";
+  import { initializeClosedTabEvents, restoreClosedTab } from "./lib/stores/closedTabsStore";
   import BackupNotice from "./lib/components/status/BackupNotice.svelte";
   import { initializeBackupStatus } from "./lib/stores/backupStore";
   import { onMount } from "svelte";
@@ -99,6 +101,7 @@
 
   onMount(() => {
     initializeBackupStatus();
+    const stopClosedTabs = initializeClosedTabEvents();
     const stopUpdates = initializeUpdates();
     const stopPermissionEvents = initializePermissionEvents();
     const stopDownloadEvents = initializeDownloadEvents();
@@ -227,6 +230,7 @@
     return () => {
       stopPermissionEvents();
       stopUpdates();
+      stopClosedTabs();
       stopDownloadEvents();
       clearInterval(hibernationInterval);
       disposed = true;
@@ -284,6 +288,7 @@
         if (active) removeTab(active.id);
         break;
       }
+      case "reopen-tab": void restoreClosedTab(); break;
       case "reload-tab": triggerReload(); break;
     }
   }
@@ -297,6 +302,7 @@
   <Titlebar />
   <UpdateNotice />
   <BackupNotice />
+  <ClosedTabsNotice />
   {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar && ($bookmarks.length > 0 || $bookmarkFolders.length > 0)}
     <div
       class="bookmark-bar-transition"

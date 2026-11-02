@@ -2,6 +2,7 @@
   import { t } from "../../i18n";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
   import { setActiveSettingsCategory } from "../../stores/settingsStore";
+  import { restoreClosedTab } from "../../stores/closedTabsStore";
   import { openTools } from "../../stores/toolsStore";
   import { rankCommands, normalizeSearch } from "../../services/command-ranking.js";
   import { focusDialog } from "../../actions/focusDialog";
@@ -140,6 +141,8 @@
     }
 
     const browserCommands: CommandItem[] = [
+      { id: "cmd-reopen-tab", title: $t("closed.reopen"), subtitle: $t("closed.reopen_description"), icon: "↶", badge: shortcutLabel("reopen-tab"), action: async () => { await closeCommandBar(); await restoreClosedTab(); } },
+      { id: "cmd-closed-tabs", title: $t("closed.heading"), subtitle: $t("closed.description"), icon: "↶", badge: $t("commandbar.tools_ea93"), action: async () => { await closeCommandBar(); await openTools("closed"); } },
       { id: "cmd-site-permissions", title: $t("commandbar.open_site_permissions_a835"), subtitle: $t("commandbar.manage_permissions_for_the_focused_page_adbc"), icon: "\u26BF", badge: $t("commandbar.privacy_54a5"), action: async () => { await closeCommandBar(); await openSitePermissions(); } },
       { id: "cmd-site-search", title: $t("commandbar.configure_site_search_shortcuts_a867"), subtitle: $t("commandbar.add_keyword_searches_5c01"), icon: "\u2315", badge: $t("commandbar.search_49c2"), action: async () => { await closeCommandBar(); setActiveSettingsCategory("search_navigation"); await openSettingsModal(); } },
       { id: "cmd-split-view", title: $t("commandbar.configure_split_view_348c"), subtitle: $t("commandbar.choose_two_workspace_tabs_962a"), icon: "\u25EB", badge: $t("commandbar.tabs_8e5e"), action: async () => { await closeCommandBar(); await openTools("tabs"); } },

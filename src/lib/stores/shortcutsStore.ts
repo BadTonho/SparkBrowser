@@ -29,6 +29,7 @@ const combo = (key: string, modifiers: Partial<Omit<ShortcutCombo, "key">> = {})
 });
 
 export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
+  { id: "reopen-tab", label: "Reopen closed tab", description: "Restore the most recently closed tab", defaults: [combo("T", { ctrl: true, shift: true })] },
   { id: "switch-tabs", label: "Switch to Tab 1–9 (9: Last Tab)", description: "Switch tabs by number", defaults: [combo("Digit", { ctrl: true })], sequence: "digit" },
   { id: "workspace-picker", label: "Open the workspace picker", description: "Hold a modifier to show workspaces", defaults: [combo("Alt")], hold: true },
   { id: "switch-workspaces", label: "Switch workspaces by list order", description: "Switch to a workspace by number", defaults: [combo("Digit", { alt: true })], sequence: "digit" },

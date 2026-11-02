@@ -1,0 +1,16 @@
+{
+  "closed.heading": "Recently closed",
+  "closed.description": "Up to 100 tabs are kept for 30 days. Reopening restores the page address, title, pin and available position; forms, scroll and page history are not restored.",
+  "closed.reopen": "Reopen closed tab",
+  "closed.reopen_description": "Restore the most recently closed tab",
+  "closed.empty": "No recently closed tabs.",
+  "closed.refresh": "Refresh",
+  "closed.clear": "Clear list",
+  "closed.confirm_clear": "Clear all recently closed tabs?",
+  "closed.cancel": "Cancel",
+  "closed.pinned": "Pinned",
+  "closed.missing_workspace": "The original workspace was removed. The tab was reopened in the current workspace.",
+  "closed.blocked": "The privacy shield blocked this page. Its record was kept.",
+  "closed.not_found": "This closed tab is no longer available. Refresh the list.",
+  "closed.dismiss": "Dismiss notice"
+}

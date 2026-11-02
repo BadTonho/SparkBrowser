@@ -1,12 +1,9 @@
-use crate::{
-    state::{
-        browser_state::{BrowserState, TabSnapshot},
-        tab_model::TabInfo,
-    },
-    window::webview_manager::sync_all_webviews,
+use crate::state::{
+    browser_state::{BrowserState, TabSnapshot},
+    tab_model::TabInfo,
 };
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 #[derive(Serialize)]
 pub struct PreservedTab {
     pub id: String,
@@ -43,7 +40,8 @@ pub async fn close_tabs_reviewed(
     tab_ids: Vec<String>,
 ) -> Result<BulkCloseResult, String> {
     let _operation = state.tab_operations.lock().await;
-    let previous = state.snapshot_tabs();
+    let before = crate::state::tab_checkpoint::TabCheckpoint::capture(&state)?;
+    let previous = &before.tabs;
     let (closed, preserved) = {
         let mut tabs = state.tabs.lock().map_err(|e| e.to_string())?;
         let result = close_candidates(&tabs, &tab_ids);
@@ -51,14 +49,23 @@ pub async fn close_tabs_reviewed(
         result
     };
     if !closed.is_empty() {
-        if let Err(error) = state.persist_session() {
-            *state.tabs.lock().map_err(|e| e.to_string())? = previous;
+        let rows = crate::database::closed_tabs_repo::records(
+            previous,
+            &closed,
+            &state.workspaces.lock().map_err(|e| e.to_string())?,
+            crate::state::tab_model::TabInfo::current_epoch_secs() as i64,
+        );
+        state
+            .split_layouts
+            .lock()
+            .map_err(|e| e.to_string())?
+            .retain(|_, layout| !closed.iter().any(|id| layout.contains(id)));
+        if let Err(error) = state.persist_tab_change(&rows, None) {
+            before.restore(&state)?;
             return Err(error);
         }
-        sync_all_webviews(&app, &state)?;
     }
-    let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let snapshot = super::closed_tabs::publish(&app, &state);
     Ok(BulkCloseResult {
         snapshot,
         closed,

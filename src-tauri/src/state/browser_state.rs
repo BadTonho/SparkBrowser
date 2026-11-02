@@ -201,6 +201,14 @@ impl BrowserState {
     }
 
     pub fn persist_session(&self) -> Result<(), String> {
+        self.persist_tab_change(&[], None)
+    }
+
+    pub fn persist_tab_change(
+        &self,
+        closed: &[crate::database::closed_tabs_repo::ClosedTab],
+        reopened: Option<i64>,
+    ) -> Result<(), String> {
         let mut span = self.diagnostics.span("session.persist");
         self.refresh_visible_tabs()?;
         let snapshot = self.snapshot_tabs();
@@ -216,6 +224,16 @@ impl BrowserState {
             let transaction = conn.unchecked_transaction().map_err(|e| e.to_string())?;
             save_session_tabs(&transaction, &snapshot)?;
             crate::database::split_repo::save(&transaction, &layouts)?;
+            if !closed.is_empty() {
+                crate::database::closed_tabs_repo::append(
+                    &transaction,
+                    closed,
+                    crate::state::tab_model::TabInfo::current_epoch_secs() as i64,
+                )?;
+            }
+            if let Some(id) = reopened {
+                crate::database::closed_tabs_repo::consume(&transaction, id)?;
+            }
             transaction.commit().map_err(|e| e.to_string())
         })();
         span.finish(result.is_ok(), conn.total_changes().saturating_sub(before));

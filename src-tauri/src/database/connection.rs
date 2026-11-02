@@ -116,5 +116,6 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
     crate::database::notes_repo::migrate(conn)?;
     crate::database::split_repo::migrate(conn)?;
     crate::database::backup_repo::migrate(conn)?;
+    crate::database::closed_tabs_repo::migrate(conn)?;
     Ok(())
 }

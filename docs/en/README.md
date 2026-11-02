@@ -36,3 +36,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Local signed releases](./contributing/releases.md)
 - [Interface languages](./features/localization.md)
 - [Local backup and reviewed import](./features/backup.md)
+- [Recently closed tabs](./features/closed-tabs.md)

@@ -1,0 +1,16 @@
+{
+  "closed.heading": "Fechadas recentemente",
+  "closed.description": "Até 100 abas são guardadas por 30 dias. Reabrir restaura endereço, título, fixação e posição disponível; formulários, rolagem e histórico interno não são restaurados.",
+  "closed.reopen": "Reabrir aba fechada",
+  "closed.reopen_description": "Restaurar a aba fechada mais recentemente",
+  "closed.empty": "Nenhuma aba fechada recentemente.",
+  "closed.refresh": "Atualizar",
+  "closed.clear": "Limpar lista",
+  "closed.confirm_clear": "Limpar todas as abas fechadas recentemente?",
+  "closed.cancel": "Cancelar",
+  "closed.pinned": "Fixada",
+  "closed.missing_workspace": "O workspace original foi removido. A aba foi reaberta no workspace atual.",
+  "closed.blocked": "A proteção de privacidade bloqueou esta página. O registro foi mantido.",
+  "closed.not_found": "Esta aba fechada não está mais disponível. Atualize a lista.",
+  "closed.dismiss": "Fechar aviso"
+}

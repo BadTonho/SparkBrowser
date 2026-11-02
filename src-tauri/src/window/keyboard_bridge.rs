@@ -557,6 +557,7 @@ pub(super) fn handle_keyboard_navigation(
                             | "history"
                             | "downloads"
                             | "settings"
+                            | "reopen-tab"
                             | "close-tab"
                             | "reload-tab"
                     )
