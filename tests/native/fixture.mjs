@@ -9,6 +9,14 @@ export async function createFixture() {
   const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+    if (url.pathname === '/tone.wav') {
+      const rate = 8000, count = rate * 2, wave = Buffer.alloc(44 + count * 2);
+      wave.write('RIFF'); wave.writeUInt32LE(wave.length - 8, 4); wave.write('WAVEfmt ', 8); wave.writeUInt32LE(16, 16);
+      wave.writeUInt16LE(1, 20); wave.writeUInt16LE(1, 22); wave.writeUInt32LE(rate, 24); wave.writeUInt32LE(rate * 2, 28);
+      wave.writeUInt16LE(2, 32); wave.writeUInt16LE(16, 34); wave.write('data', 36); wave.writeUInt32LE(count * 2, 40);
+      for (let i = 0; i < count; i++) wave.writeInt16LE(Math.round(Math.sin(i * 2 * Math.PI * 440 / rate) * 300), 44 + i * 2);
+      response.writeHead(200, { 'Content-Type': 'audio/wav', 'Access-Control-Allow-Origin': '*' }).end(wave); return;
+    }
     if (url.pathname === '/download/file') {
       const body = payload(download.version); const etag = `"fixture-${download.version}"`;
       download.requests.push({ range: request.headers.range, ifRange: request.headers['if-range'] });
@@ -45,6 +53,7 @@ export async function createFixture() {
         <label>Fixture form <input id="draft"></label><div style="height:3000px"></div>
         <script>
           const id = ${JSON.stringify(id)};
+          if (id.startsWith('media')) { const audio = document.createElement('audio'); audio.id = 'fixture-audio'; audio.src = '/tone.wav'; audio.loop = true; audio.autoplay = true; document.body.append(audio); audio.play().catch(() => {}); }
           const field = document.getElementById('draft');
           field.value = 'artificial-test-draft';
           if (id === 'a') field.dispatchEvent(new Event('input', { bubbles: true }));
@@ -63,6 +72,7 @@ export async function createFixture() {
             if (busy) return; busy = true;
             try {
               const command = await fetch('/control/' + id).then(response => response.json());
+              if (command === 'stop-media') document.querySelectorAll('audio,video').forEach(el => el.pause());
               if (command === 'dirty') { field.value += ' edited'; field.dispatchEvent(new Event('input', { bubbles: true })); }
               if (command === 'spa') { history.pushState({}, '', '/page/' + id + '/spa'); document.title = 'Native SPA ' + id; }
               if (command === 'microphone') { permission = null; void mediaPermission(); }

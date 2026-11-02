@@ -10,6 +10,7 @@ pub mod backup;
 pub mod commands;
 pub mod database;
 pub mod downloads;
+pub mod media;
 mod native_tests;
 pub mod privacy;
 pub mod recovery;
@@ -19,6 +20,7 @@ pub mod state;
 pub mod updates;
 pub mod window;
 pub mod zoom;
+use commands::media::{get_tab_media, set_tab_muted};
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
@@ -76,6 +78,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
         .manage(zoom::ZoomService::default())
+        .manage(media::MediaService::default())
         .manage(shutdown::ShutdownService::default())
         .manage(backup::service::BackupService::default())
         .manage(site_permissions::PermissionRequests::default())
@@ -152,6 +155,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_tab_media,
+            set_tab_muted,
             search_command_items,
             get_saved_session,
             get_site_zoom,

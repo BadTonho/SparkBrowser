@@ -279,6 +279,13 @@ pub(super) fn ensure_tab_webview(
     )?;
 
     #[cfg(windows)]
+    crate::media::windows::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
+    )?;
+    #[cfg(windows)]
     crate::zoom::windows::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,

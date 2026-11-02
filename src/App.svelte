@@ -1,6 +1,7 @@
 <script lang="ts">
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
+  import { initializeMedia } from "./lib/stores/mediaStore";
   import { initializeZoom, changeZoom } from "./lib/stores/zoomStore";
   import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
   import { initializeRecovery } from "./lib/stores/recoveryStore";
@@ -15,6 +16,7 @@
   import PermissionPrompt from "./lib/components/permissions/PermissionPrompt.svelte";
   import { initializePermissionEvents } from "./lib/stores/sitePermissionsStore";
   import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
+  import MediaNotice from "./lib/components/media/MediaNotice.svelte";
   import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -105,6 +107,7 @@
   );
 
   onMount(() => {
+    const stopMedia = initializeMedia();
     const stopZoom = initializeZoom();
     const stopShutdown = initializeShutdown();
     void initializeRecovery();
@@ -238,6 +241,7 @@
     window.addEventListener("mousedown", handleGlobalMousedown, true);
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
+      stopMedia();
       stopZoom();
       stopShutdown();
       stopPermissionEvents();
@@ -312,6 +316,7 @@
 
 <div class="browser-root">
   <BrowserErrorBanner />
+  <MediaNotice />
   {#if $tabLayout === "horizontal" && !$isZenMode}
     <HorizontalTabBar />
   {/if}

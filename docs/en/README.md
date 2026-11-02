@@ -44,3 +44,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Persistent page zoom](features/site-zoom.md)
 - [Notes and sessions in the Command Bar](features/command-search.md)
 - [Keyboard shortcuts across tabs](features/keyboard-shortcuts.md)
+- [Tab media controls](features/tab-media.md)

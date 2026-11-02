@@ -441,6 +441,12 @@
           "markdownDescription": "Enables the get_site_zoom command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_tab_media command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-tab-media",
+          "markdownDescription": "Enables the get_tab_media command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-tabs",
@@ -643,6 +649,12 @@
           "type": "string",
           "const": "allow-set-split-view",
           "markdownDescription": "Enables the set_split_view command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_tab_muted command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-muted",
+          "markdownDescription": "Enables the set_tab_muted command without any pre-configured scope."
         },
         {
           "description": "Enables the set_tab_pinned command without any pre-configured scope.",
@@ -957,6 +969,12 @@
           "markdownDescription": "Denies the get_site_zoom command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_tab_media command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-tab-media",
+          "markdownDescription": "Denies the get_tab_media command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-tabs",
@@ -1159,6 +1177,12 @@
           "type": "string",
           "const": "deny-set-split-view",
           "markdownDescription": "Denies the set_split_view command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_muted command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-muted",
+          "markdownDescription": "Denies the set_tab_muted command without any pre-configured scope."
         },
         {
           "description": "Denies the set_tab_pinned command without any pre-configured scope.",

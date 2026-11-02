@@ -56,7 +56,7 @@ export async function runScenario(name, scenario) {
   }
   async function openSession() {
     const options = { application: binary };
-    if (process.platform === 'win32') options.webviewOptions = { userDataFolder: resolve(directory, 'profile'), additionalBrowserArguments: ['--use-fake-device-for-media-stream'] };
+    if (process.platform === 'win32') options.webviewOptions = { userDataFolder: resolve(directory, 'profile'), additionalBrowserArguments: ['--use-fake-device-for-media-stream', ...(name.startsWith('media') ? ['--autoplay-policy=no-user-gesture-required'] : [])] };
     const result = await request('POST', '/session', { capabilities: { alwaysMatch: { 'tauri:options': options } } });
     session = result.sessionId;
     await until(() => script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))'), 'isolated test shell');

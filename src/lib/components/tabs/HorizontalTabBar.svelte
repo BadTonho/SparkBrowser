@@ -1,4 +1,5 @@
 <script lang="ts">
+  import TabMuteButton from "../media/TabMuteButton.svelte";
   import { t } from "../../i18n";
   import { onDestroy, onMount } from "svelte";
   import { cubicOut } from "svelte/easing";
@@ -179,6 +180,7 @@
         tabindex="0"
         title="{tab.title} — {getTabHost(tab.url)}"
       >
+        <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
         <span class="tab-title">{tab.title}</span>
         <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? $t("tabs.unpin_tab_2055") : $t("tabs.pin_tab_bf50")} title={tab.is_pinned ? $t("tabs.unpin_tab_2055") : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "\u25C6" : "\u25C7"}</button>

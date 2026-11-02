@@ -1,0 +1,7 @@
+{
+  "media.mute": "Mute tab",
+  "media.unmute": "Unmute tab",
+  "media.error": "The media control could not be applied. Try again.",
+  "media.unavailable": "Media controls are unavailable here.",
+  "media.close": "Close"
+}

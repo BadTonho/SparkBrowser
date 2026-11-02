@@ -1,4 +1,5 @@
 <script lang="ts">
+  import TabMuteButton from "../media/TabMuteButton.svelte";
   import { t } from "../../i18n";
   import { onDestroy } from "svelte";
   import { slide, fade } from "svelte/transition";
@@ -218,6 +219,7 @@
           </svg>
         </div>
         <div class="tab-active-bar"></div>
+        <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
         <div class="tab-meta">
           <span class="tab-title">{tab.title}</span>

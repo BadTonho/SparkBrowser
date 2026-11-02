@@ -27,3 +27,4 @@ pub mod shutdown;
 pub mod zoom;
 
 pub mod command_search;
+pub mod media;

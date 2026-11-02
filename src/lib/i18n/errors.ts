@@ -2,6 +2,10 @@ import { derived } from "svelte/store";
 import { t, type MessageKey } from "./index";
 import { errorDetails } from "../services/user-errors.js";
 const messages: Record<string, MessageKey> = {
+  "media.error": "media.error",
+  "media.stale": "media.error",
+  "media.tab_missing": "media.error",
+  "media.unavailable": "media.unavailable",
   "command_search.not_found": "search.not_found",
   "command_search.changed": "search.changed",
   "command_search.invalid_query": "search.error",
