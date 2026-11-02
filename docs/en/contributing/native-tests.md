@@ -21,6 +21,8 @@ On Windows, `webviewOptions.userDataFolder` explicitly uses the ignored `.cache/
 
 The suite uses local HTTP fixtures and checks resident tab/form/scroll preservation, SPA history, shield changes, address drafts, dialogs, resize and session restoration. It also exercises named session restoration, keyword encoding, page notes, protected bulk closing, split view replacement/closure/restoration and native permission prompts. Windows test processes receive `--use-fake-device-for-media-stream`; microphone checks use a simulated device. Permission scenarios cover one-time/remembered decisions, reset, navigation cancellation, embedded origins and persistence across restart. Tests use existing commands and real DOM handlers without test-only IPC grants.
 
+Workspace picker regression checks record native page visibility transitions: opening, closing, rapid reopening and reconciliation under a low resident limit must preserve the page behind the picker, including both split panes. Form values, scroll and document load counts must remain unchanged. Shell dialogs must still hide and restore both panes.
+
 The direct runner also accepts a Linux `tauri-driver`/WebKitWebDriver installation through `VELOCE_TAURI_DRIVER` and `VELOCE_NATIVE_DRIVER`; that path has not been validated locally. macOS needs a separate embedded WebDriver service. Multi-monitor DPI transitions, pointer drag gestures, rendering latency and aggregate process memory still require dedicated validation.
 
 ## Measurements

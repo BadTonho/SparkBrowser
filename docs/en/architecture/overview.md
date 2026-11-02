@@ -45,7 +45,7 @@
 
 ## 4. Lifecycle and persistence
 
-Ordinary selection shows the existing tab WebView without navigating again. Hibernation or closing destroys only the affected view. Restored background tabs remain lazy until selected. Native overlays temporarily hide content views to avoid platform-dependent native stacking conflicts.
+Ordinary selection shows the existing tab WebView without navigating again. Hibernation or closing destroys only the affected view. Restored background tabs remain lazy until selected. Shell dialogs temporarily hide content views to avoid native stacking conflicts. The transparent native workspace picker keeps the current page, or both split panes, visible behind it through opening and closing animations, without reloading their documents.
 
 Only the completed-page callback commits navigation URLs and history, using the originating tab ID even if a different tab has become active. Denied navigation does not replace the committed address. Session replacement is atomic and participates in workspace-deletion transactions; database failures are reported.
 

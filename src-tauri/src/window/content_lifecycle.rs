@@ -103,12 +103,9 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                     .map_err(|e| e.to_string())?
                     .remove(&label);
             }
-            Some(tab)
-                if tab.is_visible
-                    && !overlay_open
-                    && !workspace_switcher_open
-                    && !bookmark_context_menu_open =>
-            {
+            // The transparent native workspace picker is layered above the pages.
+            // Keep both split panes visible behind it, including its exit animation.
+            Some(tab) if tab.is_visible && !overlay_open && !bookmark_context_menu_open => {
                 let bounds = pane_bounds
                     .iter()
                     .find(|(id, _)| id == &tab.id)

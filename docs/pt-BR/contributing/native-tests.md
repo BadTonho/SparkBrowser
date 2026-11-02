@@ -21,6 +21,8 @@ No Windows, `webviewOptions.userDataFolder` usa explicitamente o diretório igno
 
 A suíte usa páginas HTTP locais e verifica preservação de abas/formulário/rolagem, histórico SPA, shield, rascunhos de endereço, diálogos, resize e restauração de sessão. Também exercita sessões nomeadas, codificação de buscas, notas, fechamento em lote protegido, substituição/fechamento/restauração da divisão e pedidos nativos de permissão. Processos de teste no Windows recebem `--use-fake-device-for-media-stream`; verificações de microfone usam um dispositivo simulado. Cenários de permissões cobrem decisões temporárias/lembradas, redefinição, cancelamento ao navegar, origens incorporadas e persistência após reinício. Os testes usam comandos existentes e handlers reais do DOM, sem permissões IPC exclusivas de teste.
 
+As verificações de regressão do seletor de workspaces registram transições de visibilidade das páginas nativas: abertura, fechamento, reabertura rápida e reconciliação com limite baixo de residentes devem preservar a página por trás do seletor, incluindo os dois painéis da divisão. Valores de formulário, rolagem e contagens de carregamento dos documentos devem permanecer iguais. Diálogos da interface ainda devem ocultar e restaurar ambos os painéis.
+
 O executor direto também aceita instalações Linux de `tauri-driver`/WebKitWebDriver pelas variáveis `VELOCE_TAURI_DRIVER` e `VELOCE_NATIVE_DRIVER`; esse caminho ainda não foi validado localmente. O macOS precisa de um serviço WebDriver embarcado separado. Transições de DPI entre monitores, gestos de arraste, latência de renderização e memória agregada dos processos ainda precisam de validação específica.
 
 ## Medições

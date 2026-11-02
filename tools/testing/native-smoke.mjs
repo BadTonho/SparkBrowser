@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { checkNotesUi } from '../../tests/native/notes-ui.mjs';
 import { checkPermissions } from '../../tests/native/permissions.mjs';
 import { checkFeatures } from '../../tests/native/features.mjs';
+import { checkWorkspaceSwitcher } from '../../tests/native/workspace-switcher.mjs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
@@ -76,7 +77,7 @@ try {
   await openSession();
   await invoke('set_resident_limit', { limit: 8 });
   const fixtureWorkspace = 'native-fixture-' + Date.now();
-  await invoke('create_workspace', { id: fixtureWorkspace, name: 'Native fixture', icon: 'T', accentPrimary: '#6e8efb', accentSecondary: '#8b949e' });
+  await invoke('create_workspace', { id: fixtureWorkspace, name: fixtureWorkspace, icon: 'T', accentPrimary: '#6e8efb', accentSecondary: '#8b949e' });
   const a = (await invoke('create_tab', { url: fixture.origin + '/page/a', searchEngine: 'google' })).tabs.find(tab => tab.is_active);
   await invoke('move_tab_to_workspace', { tabId: a.id, workspaceId: fixtureWorkspace });
   a.workspace_id = fixtureWorkspace;
@@ -97,6 +98,8 @@ try {
   assert.equal(protectedTabs.find(tab => tab.id === b.id).is_hibernated, false);
   assert.equal(protectedTabs.find(tab => tab.id === a.id).is_hibernated, false);
   await invoke('set_resident_limit', { limit: 8 });
+
+  await checkWorkspaceSwitcher(invoke, until, fixture, a, b);
 
   if (process.platform === 'win32') {
     await invoke('toggle_adblock_shield');
@@ -156,7 +159,7 @@ try {
   assert.equal(restored.find(tab => tab.id === b.id)?.is_pinned, true);
   assert.ok(restored.filter(tab => !tab.is_active).every(tab => tab.is_hibernated || tab.is_visible));
   await invoke('delete_workspace', { workspaceId: fixtureWorkspace, action: 'close', targetWorkspaceId: null });
-  console.log('Native smoke passed: navigation, forms, dialogs, named sessions, site search, notes, organizer, split view, permissions and restart.');
+  console.log('Native smoke passed: navigation, forms, dialogs, workspace picker, named sessions, site search, notes, organizer, split view, permissions and restart.');
 } finally {
   await closeSession().catch(() => {});
   driver.kill();

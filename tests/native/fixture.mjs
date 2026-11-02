@@ -36,6 +36,10 @@ export async function createFixture() {
           if (id === 'a') field.dispatchEvent(new Event('input', { bubbles: true }));
           scrollTo(0, 600);
           let busy = false; let permission = null;
+          let hiddenCount = 0;
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) hiddenCount++;
+          });
           async function mediaPermission() {
             try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); stream.getTracks().forEach(track => track.stop()); permission = 'granted'; }
             catch { permission = 'denied'; }
@@ -49,7 +53,7 @@ export async function createFixture() {
               if (command === 'microphone') { permission = null; void mediaPermission(); }
               if (command === 'iframe') { const frame = document.createElement('iframe'); frame.allow = 'microphone'; frame.src = location.origin.replace('127.0.0.1', 'localhost') + '/page/i'; document.body.prepend(frame); }
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission }) });
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();
