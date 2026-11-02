@@ -14,6 +14,9 @@ pub fn page_url(raw: &str) -> Result<String, String> {
     Ok(url.to_string())
 }
 pub const SHORTCUT_IDS: &[&str] = &[
+    "zoom-in",
+    "zoom-out",
+    "zoom-reset",
     "reopen-tab",
     "switch-tabs",
     "workspace-picker",
@@ -38,6 +41,16 @@ pub const SHORTCUT_IDS: &[&str] = &[
 ];
 
 pub fn preferences(p: &BackupPreferences) -> Result<(), String> {
+    if p.site_zoom.len() > 100_000 {
+        return Err("backup.too_many_items".into());
+    }
+    let mut origins = HashSet::new();
+    for row in &p.site_zoom {
+        crate::database::site_zoom_repo::validate(row).map_err(|_| "backup.invalid_preferences")?;
+        if !origins.insert(&row.origin) {
+            return Err("backup.invalid_preferences".into());
+        }
+    }
     let mut bindings = HashSet::new();
     if !["horizontal", "vertical"].contains(&p.tab_layout.as_str())
         || p.overlay_blur_px > 24
@@ -85,7 +98,7 @@ fn name(value: &str) -> Result<(), String> {
     }
 }
 pub fn document(doc: &BackupDocument) -> Result<(), String> {
-    if doc.format != FORMAT || doc.version != 1 {
+    if doc.format != FORMAT || ![1, 2].contains(&doc.version) {
         return Err("backup.unsupported_version".into());
     }
     preferences(&doc.preferences)?;

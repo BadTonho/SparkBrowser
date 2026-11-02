@@ -23,6 +23,8 @@ pub struct BackupPreferences {
     pub resident_limit: usize,
     pub language: String,
     pub keyboard_shortcuts: BTreeMap<String, Vec<ShortcutBinding>>,
+    #[serde(default)]
+    pub site_zoom: Vec<crate::database::site_zoom_repo::SiteZoom>,
     pub update_channel: crate::updates::model::UpdateChannel,
 }
 #[derive(Clone, Serialize, Deserialize)]

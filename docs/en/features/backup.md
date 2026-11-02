@@ -1,6 +1,6 @@
 # Local backup and reviewed import
 
-Settings → Data & Backup exports a versioned `.veloce-backup.json` file through the system file selector. Desktop builds support this feature; browser preview shows it as unavailable. The initial format is `veloce-backup`, version 1, limited to 32 MiB. No cloud service is involved.
+Settings → Data & Backup exports a versioned `.veloce-backup.json` file through the system file selector. Desktop builds support this feature; browser preview shows it as unavailable. The format is `veloce-backup`, version 2, limited to 32 MiB. Version 1 remains importable. Version 2 includes site zoom as an optional preference; existing local origins win on conflicts. No cloud service is involved.
 
 Backups contain bookmarks/folders, workspaces/colors, named sessions, plain-text notes, keyword searches, open tab order/pins/selection, split layouts and persistent interface/navigation/hibernation/language/keyboard/update-channel preferences. Cookies, password storage, native site permissions, history, recently closed tabs, download records/files and signing keys are excluded. Page forms, scroll position and internal navigation history are not snapshots. Only HTTP/HTTPS page URLs without embedded credentials are accepted.
 

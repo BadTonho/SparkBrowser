@@ -10,6 +10,7 @@
   let skippedLimit = $state(100);
   $effect(() => { void $backupPreview?.token; applyPreferences = false; skippedLimit = 100; });
   function valueLabel(value: unknown, name: string): string {
+    if (name === "site_zoom" && Array.isArray(value)) return value.map(row => `${row.origin}: ${$formatNumber(Math.round(row.factor*100))}%`).join(" · ") || "100%";
     if (typeof value === "number") return $formatNumber(value);
     const labels: Record<string, MessageKey> = { horizontal: "backup.value_horizontal", vertical: "backup.value_vertical", toolbar: "backup.value_toolbar", popup: "backup.value_popup", auto: "backup.value_auto", off: "backup.value_off", true: "backup.value_true", false: "backup.value_false", stable: "backup.value_stable", beta: "backup.value_beta", system: "common.system" };
     if (name === "language") return value === "pt-BR" ? "Português" : value === "en" ? "English" : $t("common.system");

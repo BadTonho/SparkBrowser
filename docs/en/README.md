@@ -43,3 +43,5 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Protected shutdown](features/shutdown.md)
 
 - [Tab diagnostics](features/tab-diagnostics.md)
+
+- [Persistent page zoom](features/site-zoom.md)

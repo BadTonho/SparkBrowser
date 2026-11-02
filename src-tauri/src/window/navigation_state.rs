@@ -200,6 +200,9 @@ pub(super) fn with_page_events(
                 }
             },
         );
+        if matches!(payload.url().scheme(), "http" | "https") {
+            let _ = crate::zoom::apply(&app_for_page_load, &label_for_load, payload.url().as_str());
+        }
         if started {
             return;
         }

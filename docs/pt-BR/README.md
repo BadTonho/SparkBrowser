@@ -43,3 +43,5 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Encerramento protegido](features/shutdown.md)
 
 - [Diagnóstico das abas](features/tab-diagnostics.md)
+
+- [Zoom persistente por site](features/site-zoom.md)

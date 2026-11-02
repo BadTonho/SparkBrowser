@@ -27,6 +27,7 @@ pub fn current_preferences(
     mut p: BackupPreferences,
 ) -> Result<BackupPreferences, String> {
     validation::preferences(&p)?;
+    p.site_zoom = crate::database::site_zoom_repo::list(conn)?;
     p.update_channel = crate::database::updates_repo::load(conn, p.update_channel)?.0;
     Ok(p)
 }
@@ -42,7 +43,7 @@ pub async fn capture(app: &AppHandle, prefs: BackupPreferences) -> Result<Backup
     let conn = db.as_ref().ok_or("backup.database_unavailable")?;
     Ok(BackupDocument {
         format: FORMAT.into(),
-        version: 1,
+        version: 2,
         created_at: crate::state::tab_model::TabInfo::current_epoch_secs() as i64,
         data: backup_repo::collect(conn)?,
         preferences: current_preferences(conn, prefs)?,

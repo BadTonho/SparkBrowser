@@ -7,11 +7,12 @@ export interface BackupPreferences {
   tab_layout: TabLayout; show_bookmarks_bar: boolean; overlay_blur_px: number;
   workspace_switcher_display: WorkspaceSwitcherDisplay; default_search_engine: "google" | "duckduckgo";
   auto_hibernate_mode: AutoHibernateMode; resident_limit: number; language: LanguagePreference;
+  site_zoom?: import("./zoom").SiteZoom[];
   keyboard_shortcuts: ShortcutMap; update_channel: UpdateChannel;
 }
 export interface BackupTab { id: string; title: string; url: string; workspace_id: string; is_pinned: boolean; is_active: boolean; }
 export interface BackupDocument {
-  format: "veloce-backup"; version: 1; created_at: number;
+  format: "veloce-backup"; version: 1 | 2; created_at: number;
   data: { bookmarks: BookmarkData; workspaces: WorkspaceItem[]; sessions: SavedSession[]; notes: PageNote[]; site_search: SiteSearchShortcut[]; tabs: BackupTab[]; split_layouts: SplitLayout[] };
   preferences: BackupPreferences;
 }

@@ -19,3 +19,5 @@ pub mod closed_tabs_repo;
 pub mod recovery_repo;
 
 pub mod download_jobs_repo;
+
+pub mod site_zoom_repo;

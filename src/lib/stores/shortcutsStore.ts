@@ -29,6 +29,9 @@ const combo = (key: string, modifiers: Partial<Omit<ShortcutCombo, "key">> = {})
 });
 
 export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
+  { id: "zoom-in", label: "Zoom in", description: "Increase page zoom", defaults: [combo("+", { ctrl: true })] },
+  { id: "zoom-out", label: "Zoom out", description: "Decrease page zoom", defaults: [combo("-", { ctrl: true })] },
+  { id: "zoom-reset", label: "Reset page zoom", description: "Restore page zoom to 100%", defaults: [combo("0", { ctrl: true })] },
   { id: "reopen-tab", label: "Reopen closed tab", description: "Restore the most recently closed tab", defaults: [combo("T", { ctrl: true, shift: true })] },
   { id: "switch-tabs", label: "Switch to Tab 1–9 (9: Last Tab)", description: "Switch tabs by number", defaults: [combo("Digit", { ctrl: true })], sequence: "digit" },
   { id: "workspace-picker", label: "Open the workspace picker", description: "Hold a modifier to show workspaces", defaults: [combo("Alt")], hold: true },
@@ -158,8 +161,9 @@ function sameCombo(a: ShortcutCombo, b: ShortcutCombo): boolean {
 export function matchesShortcut(event: KeyboardEvent, binding: ShortcutCombo, sequence?: "digit"): boolean {
   if (sequence === "digit") {
     if (!/^[1-9]$/.test(event.key)) return false;
-  } else if (event.key.toLowerCase() !== binding.key.toLowerCase()) return false;
-  return event.ctrlKey === binding.ctrl && event.altKey === binding.alt && event.shiftKey === binding.shift && event.metaKey === binding.meta;
+  } else if (event.key.toLowerCase() !== binding.key.toLowerCase() && !(binding.key === "+" && event.key === "=")) return false;
+  const plusShift = binding.key === "+" && !binding.shift;
+  return event.ctrlKey === binding.ctrl && event.altKey === binding.alt && (plusShift || event.shiftKey === binding.shift) && event.metaKey === binding.meta;
 }
 
 export function matchesMouseShortcut(event: MouseEvent, binding: ShortcutCombo): boolean {

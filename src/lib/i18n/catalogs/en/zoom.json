@@ -1,0 +1,12 @@
+{
+  "zoom.heading": "Page zoom",
+  "zoom.description": "Zoom is shared by HTTP/HTTPS origin across workspaces. Default: 100%. Range: 25%–500%.",
+  "zoom.desktop": "Page zoom requires the desktop application.",
+  "zoom.in": "Zoom in",
+  "zoom.out": "Zoom out",
+  "zoom.reset": "Reset page zoom",
+  "zoom.in_description": "Increase page zoom",
+  "zoom.out_description": "Decrease page zoom",
+  "zoom.reset_description": "Restore page zoom to 100%",
+  "zoom.error": "Could not apply page zoom. Try again."
+}

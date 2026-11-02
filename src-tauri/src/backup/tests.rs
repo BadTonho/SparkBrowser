@@ -45,6 +45,7 @@ fn preferences() -> BackupPreferences {
         resident_limit: 8,
         language: "system".into(),
         keyboard_shortcuts: shortcuts,
+        site_zoom: vec![],
         update_channel: UpdateChannel::Stable,
     }
 }
@@ -94,7 +95,7 @@ fn backup_file_roundtrip_rejects_invalid_versions_sizes_and_references_without_r
         serde_json::to_value(restored).unwrap()
     );
     let mut invalid = doc.clone();
-    invalid.version = 2;
+    invalid.version = 3;
     assert!(files::write(&path, &invalid).is_err());
     assert_eq!(std::fs::read(&path).unwrap(), original);
     assert!(files::decode(b"not json").is_err());
@@ -307,4 +308,29 @@ fn failed_import_rolls_back_data_and_outbox_while_preference_retries_never_impor
         serde_json::to_vec(&backup_repo::collect(&conn).unwrap()).unwrap(),
         before
     );
+}
+
+#[test]
+fn v1_defaults_zoom_and_v2_preserves_zoom_preferences() {
+    let (_, mut doc) = setup();
+    let mut v1 = serde_json::to_value(&doc).unwrap();
+    v1["preferences"]
+        .as_object_mut()
+        .unwrap()
+        .remove("site_zoom");
+    assert!(files::decode(&serde_json::to_vec(&v1).unwrap())
+        .unwrap()
+        .preferences
+        .site_zoom
+        .is_empty());
+    doc.version = 2;
+    doc.preferences
+        .site_zoom
+        .push(crate::database::site_zoom_repo::SiteZoom {
+            origin: "https://zoom.example".into(),
+            factor: 1.5,
+        });
+    validation::document(&doc).unwrap();
+    let roundtrip = files::decode(&serde_json::to_vec(&doc).unwrap()).unwrap();
+    assert_eq!(roundtrip.preferences.site_zoom[0].factor, 1.5);
 }

@@ -1,5 +1,8 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_site_zoom",
+    "set_site_zoom",
+    "apply_backup_zoom",
     "get_shutdown_state",
     "prepare_shutdown",
     "confirm_shutdown",

@@ -90,7 +90,10 @@
     "allow-get-shutdown-state",
     "allow-prepare-shutdown",
     "allow-confirm-shutdown",
-    "allow-cancel-shutdown"
+    "allow-cancel-shutdown",
+    "allow-get-site-zoom",
+    "allow-set-site-zoom",
+    "allow-apply-backup-zoom"
   ],
   "webviews": [
     "main"

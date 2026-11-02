@@ -177,6 +177,12 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the apply_backup_zoom command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-apply-backup-zoom",
+          "markdownDescription": "Enables the apply_backup_zoom command without any pre-configured scope."
+        },
+        {
           "description": "Enables the auto_hibernate_inactive_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "allow-auto-hibernate-inactive-tabs",
@@ -423,6 +429,12 @@
           "markdownDescription": "Enables the get_site_search_shortcuts command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_site_zoom command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-site-zoom",
+          "markdownDescription": "Enables the get_site_zoom command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-tabs",
@@ -609,6 +621,12 @@
           "markdownDescription": "Enables the set_site_permission command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_site_zoom command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-site-zoom",
+          "markdownDescription": "Enables the set_site_zoom command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_split_view command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-split-view",
@@ -661,6 +679,12 @@
           "type": "string",
           "const": "allow-update-workspace",
           "markdownDescription": "Enables the update_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the apply_backup_zoom command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-apply-backup-zoom",
+          "markdownDescription": "Denies the apply_backup_zoom command without any pre-configured scope."
         },
         {
           "description": "Denies the auto_hibernate_inactive_tabs command without any pre-configured scope.",
@@ -909,6 +933,12 @@
           "markdownDescription": "Denies the get_site_search_shortcuts command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_site_zoom command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-site-zoom",
+          "markdownDescription": "Denies the get_site_zoom command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-tabs",
@@ -1093,6 +1123,12 @@
           "type": "string",
           "const": "deny-set-site-permission",
           "markdownDescription": "Denies the set_site_permission command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_site_zoom command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-site-zoom",
+          "markdownDescription": "Denies the set_site_zoom command without any pre-configured scope."
         },
         {
           "description": "Denies the set_split_view command without any pre-configured scope.",

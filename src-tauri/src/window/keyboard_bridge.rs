@@ -51,7 +51,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
 
           function modifierMatch(event, binding) {{
             return event.ctrlKey === binding.ctrl && event.altKey === binding.alt &&
-              event.shiftKey === binding.shift && event.metaKey === binding.meta;
+              (binding.key === "+" && !binding.shift || event.shiftKey === binding.shift) && event.metaKey === binding.meta;
           }}
 
           function isHoldKey(event, binding) {{
@@ -117,7 +117,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
               ) return;
               const keyMatches = binding.key === "Digit"
                 ? /^[1-9]$/.test(event.key)
-                : normalizeKey(event.key) === normalizeKey(binding.key);
+                : normalizeKey(event.key) === normalizeKey(binding.key) || (binding.key === "+" && event.key === "=");
               if (!keyMatches) continue;
               event.preventDefault();
               event.stopImmediatePropagation();
@@ -242,13 +242,19 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                             Some(Some(digit.to_string()))
                                         } else if shortcut_key_to_virtual_key(key)
                                             == Some(virtual_key)
+                                            || (key == "+" && matches!(virtual_key, 0xBB | 0x6B))
+                                            || (key == "-" && virtual_key == 0x6D)
+                                            || (key == "0" && virtual_key == 0x60)
                                         {
                                             Some(None)
                                         } else {
                                             None
                                         }?;
 
-                                        if !shortcut_modifiers_match(binding) {
+                                        if !shortcut_modifiers_match(binding)
+                                            && !(key == "+"
+                                                && shortcut_plus_modifiers_match(binding))
+                                        {
                                             return None;
                                         }
 
@@ -540,7 +546,10 @@ pub(super) fn handle_keyboard_navigation(
                 if let Some(action) = action.filter(|action| {
                     matches!(
                         *action,
-                        "switch-tabs"
+                        "zoom-in"
+                            | "zoom-out"
+                            | "zoom-reset"
+                            | "switch-tabs"
                             | "switch-workspaces"
                             | "move-tab-up"
                             | "move-tab-up-ctrl-shift"
@@ -579,4 +588,11 @@ pub(super) fn handle_keyboard_navigation(
             let _ = webview.eval(format!("window.__veloceWorkspaceShortcutAck({sequence});"));
         }
     }
+}
+
+#[cfg(windows)]
+fn shortcut_plus_modifiers_match(binding: &serde_json::Value) -> bool {
+    let mut equivalent = binding.clone();
+    equivalent["shift"] = serde_json::Value::Bool(is_windows_key_down(0x10));
+    shortcut_modifiers_match(&equivalent)
 }

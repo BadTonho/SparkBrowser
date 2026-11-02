@@ -1,0 +1,12 @@
+{
+  "zoom.heading": "Zoom da página",
+  "zoom.description": "O zoom é compartilhado por origem HTTP/HTTPS entre workspaces. Padrão: 100%. Faixa: 25%–500%.",
+  "zoom.desktop": "O zoom das páginas exige o aplicativo desktop.",
+  "zoom.in": "Aumentar zoom",
+  "zoom.out": "Diminuir zoom",
+  "zoom.reset": "Restaurar zoom da página",
+  "zoom.in_description": "Aumentar o zoom da página",
+  "zoom.out_description": "Diminuir o zoom da página",
+  "zoom.reset_description": "Restaurar o zoom da página para 100%",
+  "zoom.error": "Não foi possível aplicar o zoom. Tente novamente."
+}

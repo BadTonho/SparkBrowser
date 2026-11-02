@@ -58,5 +58,6 @@
   "backup.error_extension": "Escolha um nome de arquivo terminado em .veloce-backup.json.",
   "backup.error_pending": "Aplique as preferências pendentes antes de importar outro conjunto de preferências.",
   "backup.search_description": "Exporte ou mescle um backup local.",
-  "backup.more": "Exibir mais itens ignorados"
+  "backup.more": "Exibir mais itens ignorados",
+  "backup.pref_site_zoom": "Zoom por site (valores locais prevalecem nos conflitos)"
 }

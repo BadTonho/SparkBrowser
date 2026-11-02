@@ -1,6 +1,7 @@
 <script lang="ts">
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
+  import { initializeZoom, changeZoom } from "./lib/stores/zoomStore";
   import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
   import { initializeRecovery } from "./lib/stores/recoveryStore";
   import ClosedTabsNotice from "./lib/components/status/ClosedTabsNotice.svelte";
@@ -104,6 +105,7 @@
   );
 
   onMount(() => {
+    const stopZoom = initializeZoom();
     const stopShutdown = initializeShutdown();
     void initializeRecovery();
     initializeBackupStatus();
@@ -236,6 +238,7 @@
     window.addEventListener("mousedown", handleGlobalMousedown, true);
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
+      stopZoom();
       stopShutdown();
       stopPermissionEvents();
       stopUpdates();
@@ -259,6 +262,9 @@
   function dispatchShortcut(action: string, key?: string): void {
     if (get(shutdownState).phase !== "idle") return;
     switch (action) {
+      case "zoom-in": void changeZoom(1); break;
+      case "zoom-out": void changeZoom(-1); break;
+      case "zoom-reset": void changeZoom(0); break;
       case "switch-tabs": {
         const num = Number(key);
         const currentWs = get(activeWorkspaceId);

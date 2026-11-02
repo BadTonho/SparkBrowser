@@ -2,6 +2,9 @@ import { derived } from "svelte/store";
 import { t, type MessageKey } from "./index";
 import { errorDetails } from "../services/user-errors.js";
 const messages: Record<string, MessageKey> = {
+  "zoom.invalid_origin": "zoom.error",
+  "zoom.invalid_value": "zoom.error",
+  "zoom.unavailable": "zoom.error",
   "shutdown.busy": "shutdown.busy",
   "shutdown.save_failed": "shutdown.save_failed",
   "shutdown.stale_attempt": "shutdown.stale_attempt",

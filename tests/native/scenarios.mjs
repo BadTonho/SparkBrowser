@@ -1,3 +1,4 @@
+import { checkZoom } from "./zoom.mjs";
 import { checkTabDiagnostics } from "./tab-diagnostics.mjs";
 import { checkShutdown } from "./shutdown.mjs";
 import { checkBackup } from "./backup.mjs";
@@ -13,6 +14,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  zoom: checkZoom,
   "tab-diagnostics": checkTabDiagnostics,
   shutdown: checkShutdown,
   downloads: checkDownloads,

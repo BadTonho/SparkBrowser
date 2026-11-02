@@ -1,6 +1,6 @@
 # Backup local e importação com revisão
 
-Configurações → Dados e backup exporta um arquivo `.veloce-backup.json` versionado pelo seletor de arquivos do sistema. O recurso está disponível no aplicativo desktop; o preview no navegador o mostra como indisponível. O formato inicial é `veloce-backup`, versão 1, limitado a 32 MiB. Nenhum serviço em nuvem é usado.
+Configurações → Dados e backup exporta um arquivo `.veloce-backup.json` versionado pelo seletor de arquivos do sistema. O recurso está disponível no aplicativo desktop; o preview no navegador o mostra como indisponível. O formato é `veloce-backup`, versão 2, limitado a 32 MiB. A versão 1 continua importável. A versão 2 inclui zoom por site como preferência opcional; origens locais existentes prevalecem nos conflitos. Nenhum serviço em nuvem é usado.
 
 O backup contém favoritos/pastas, workspaces/cores, sessões nomeadas, notas de texto simples, buscas por palavra-chave, ordem/fixação/seleção de abas abertas, divisões e preferências persistentes de interface/navegação/hibernação/idioma/atalhos/canal de atualização. Cookies, armazenamento de senhas, permissões nativas, histórico, abas fechadas, registros/arquivos de downloads e chaves de assinatura não são incluídos. Formulários, rolagem e histórico interno das páginas não fazem parte do snapshot. Somente endereços HTTP/HTTPS sem credenciais incorporadas são aceitos.
 

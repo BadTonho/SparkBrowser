@@ -4,6 +4,7 @@ use commands::backup::{
 };
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
+use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
 pub mod commands;
 pub mod database;
@@ -16,6 +17,7 @@ pub mod site_permissions;
 pub mod state;
 pub mod updates;
 pub mod window;
+pub mod zoom;
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
@@ -72,6 +74,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
+        .manage(zoom::ZoomService::default())
         .manage(shutdown::ShutdownService::default())
         .manage(backup::service::BackupService::default())
         .manage(site_permissions::PermissionRequests::default())
@@ -137,6 +140,9 @@ pub fn run() {
                 app.handle().clone(),
             )?);
             app.manage(updates::UpdateService::new(app.handle()).map_err(std::io::Error::other)?);
+            app.state::<zoom::ZoomService>()
+                .initialize(app.handle())
+                .map_err(std::io::Error::other)?;
             spawn_content_webview(app.handle())?;
             state
                 .startup_ready
@@ -145,6 +151,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_site_zoom,
+            set_site_zoom,
+            apply_backup_zoom,
             get_shutdown_state,
             prepare_shutdown,
             confirm_shutdown,

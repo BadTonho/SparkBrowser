@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ZoomSettings from "./ZoomSettings.svelte";
   import { t } from "../../i18n";
 import SiteSearchSettings from "./SiteSearchSettings.svelte";
 import {
@@ -30,3 +31,5 @@ import {
 </section>
 
 <SiteSearchSettings />
+
+<ZoomSettings />

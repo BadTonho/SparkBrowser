@@ -1,3 +1,4 @@
+import { applyBackupZoom } from "../services/bridge/zoom";
 import { get, writable } from "svelte/store";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import { chooseBackupFile, commitBackupImport, exportBackup, fetchPendingBackupPreferences, finishBackupPreferences, previewBackupImport } from "../services/bridge/backup";
@@ -36,7 +37,7 @@ export const refreshBackupPreview = () => action(createPreview);
 async function applyPending(): Promise<void> {
   const task = await fetchPendingBackupPreferences(); pendingBackupPreferences.set(task);
   if (!task) return;
-  try { await applyBackupPreferences(task.preferences); await finishBackupPreferences(task.id, null); pendingBackupPreferences.set(null); }
+  try { await applyBackupPreferences(task.preferences); await applyBackupZoom(task.id); await finishBackupPreferences(task.id, null); pendingBackupPreferences.set(null); }
   catch (error) {
     const detail = describeError(error); await finishBackupPreferences(task.id, detail);
     pendingBackupPreferences.set({ ...task, error: detail }); throw error;

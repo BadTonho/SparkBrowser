@@ -110,6 +110,7 @@ pub(super) fn ensure_tab_webview(
     let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
         .focused(focused)
+        .zoom_hotkeys_enabled(false)
         .initialization_script(include_str!("page_activity.js").replace(
             "__ACTIVITY_TOKEN__",
             &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
@@ -276,6 +277,13 @@ pub(super) fn ensure_tab_webview(
         &navigation_registration_token,
     )?;
 
+    #[cfg(windows)]
+    crate::zoom::windows::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
+    )?;
     #[cfg(windows)]
     crate::downloads::native::install(
         app,
