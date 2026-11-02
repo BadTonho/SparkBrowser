@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { describeError } from "../../services/user-errors.js";
+  import { t, type MessageKey, formatNumber } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -27,10 +30,14 @@
       await startDownloadFromUrl(target);
       downloadUrlInput = "";
     } catch (error) {
-      downloadError = error instanceof Error ? error.message : String(error);
+      downloadError = describeError(error);
     } finally {
       isDownloading = false;
     }
+  }
+  function downloadStatus(status: string): string {
+    const key = `common.download_${status.toLowerCase()}` as MessageKey;
+    return $t(key);
   }
 </script>
 
@@ -51,17 +58,17 @@
       use:focusDialog={{ onEscape: closeDownloadsDrawer }}
       role="dialog"
       aria-modal="true"
-      aria-label="Download Manager"
+      aria-label={$t("downloads.download_manager_160a")}
       tabindex="-1"
     >
       <div class="downloads-header">
         <div class="header-title">
-          <span>📥 Download Manager</span>
+          <span>{$t("downloads.download_manager_5be6")}</span>
         </div>
         <div class="header-actions">
           {#if $downloads.length > 0}
             <button class="clear-btn" onclick={wipeDownloads}>
-              Clear List
+              {$t("downloads.clear_list_a2a6")}
             </button>
           {/if}
           <button class="close-btn" onclick={() => closeDownloadsDrawer()}>
@@ -74,37 +81,37 @@
         <input
           type="text"
           bind:value={downloadUrlInput}
-          placeholder="Paste direct file URL or leave empty to save active page..."
+          placeholder={$t("downloads.paste_direct_file_url_or_leave_empty_to_save_active_page_ff6b")}
           onkeydown={(e) => e.key === "Enter" && handleQuickDownload()}
           spellcheck="false"
         />
         <button class="download-btn" onclick={handleQuickDownload} disabled={isDownloading}>
-          {isDownloading ? "Downloading…" : "Download"}
+          {isDownloading ? "Downloading…" : $t("downloads.download_d6ea")}
         </button>
       </div>
 
-      {#if downloadError}<p role="alert">{downloadError}</p>{/if}
+      {#if downloadError}<ErrorMessage error={downloadError} />{/if}
 
       <div class="downloads-list">
         {#each $downloadTasks.filter(task => task.status !== "Completed") as task (task.id)}
           <div class="download-card">
             <div class="download-meta">
               <span class="file-name">{task.file_name}</span>
-              <span>{task.status} · {Math.round(task.received / 1024)} KiB{task.total ? ` / ${Math.round(task.total / 1024)} KiB` : ""}</span>
+              <span>{downloadStatus(task.status)} · {$formatNumber(Math.round(task.received / 1024))} KiB{task.total ? ` / ${$formatNumber(Math.round(task.total / 1024))} KiB` : ""}</span>
               {#if task.status === "Downloading"}
-                {#if task.total}<progress value={task.received} max={task.total} aria-label="Download progress"></progress>{:else}<progress aria-label="Downloading"></progress>{/if}
+                {#if task.total}<progress value={task.received} max={task.total} aria-label={$t("downloads.download_progress_984b")}></progress>{:else}<progress aria-label={$t("downloads.downloading_37b3")}></progress>{/if}
               {/if}
-              {#if task.error}<span role="alert">{task.error}</span>{/if}
+              {#if task.error}<ErrorMessage error={task.error} />{/if}
             </div>
             {#if task.cancellable && ["Queued", "Downloading", "Cancelling"].includes(task.status)}
-              <button disabled={task.status === "Cancelling"} onclick={() => cancelDownload(task.id)}>Cancel</button>
+              <button disabled={task.status === "Cancelling"} onclick={() => cancelDownload(task.id)}>{$t("downloads.cancel_1976")}</button>
             {/if}
           </div>
         {/each}
         {#if $downloads.length === 0}
           <div class="empty-state">
-            <p>No downloads recorded yet.</p>
-            <span class="empty-sub">Press Download above to save a resource to your OS Downloads folder.</span>
+            <p>{$t("downloads.no_downloads_recorded_yet_5b64")}</p>
+            <span class="empty-sub">{$t("downloads.press_download_above_to_save_a_resource_to_your_os_downloads_folder_f5e0")}</span>
           </div>
         {:else}
           {#each $downloads as item (item.id)}
@@ -114,7 +121,7 @@
                 <span class="file-name">{item.file_name}</span>
                 <span class="file-path">{item.save_path}</span>
               </div>
-              <span class="status-badge">{item.status}</span>
+              <span class="status-badge">{downloadStatus(item.status)}</span>
             </div>
           {/each}
         {/if}

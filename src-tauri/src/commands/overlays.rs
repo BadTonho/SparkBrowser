@@ -3,8 +3,8 @@ use crate::state::workspace_model::WorkspaceItem;
 use crate::window::webview_manager::{
     active_content_webview, build_bookmark_context_menu_script,
     build_workspace_switcher_update_script, create_internal_bridge_token, sync_all_webviews,
-    BookmarkContextMenuAction, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
-    WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+    BookmarkContextMenuAction, OverlayLanguage, OverlayPresentation,
+    BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL, WORKSPACE_SWITCHER_WEBVIEW_LABEL,
 };
 use std::time::Duration;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect, State};
@@ -33,6 +33,7 @@ pub async fn set_workspace_switcher_overlay(
     workspaces: Vec<WorkspaceItem>,
     active_workspace_id: String,
     backdrop_blur_px: u8,
+    language: Option<OverlayLanguage>,
 ) -> Result<(), String> {
     let _operation = state.tab_operations.lock().await;
     let webview = app
@@ -48,6 +49,7 @@ pub async fn set_workspace_switcher_overlay(
         &token,
         visible,
         backdrop_blur_px.min(24),
+        language.as_ref(),
     )?;
 
     if let Ok(mut current_token) = state.workspace_switcher_token.lock() {
@@ -136,7 +138,7 @@ pub async fn set_bookmark_context_menu_overlay(
     x: Option<f64>,
     y: Option<f64>,
     actions: Option<Vec<BookmarkContextMenuAction>>,
-    backdrop_blur_px: Option<u8>,
+    presentation: Option<OverlayPresentation>,
 ) -> Result<(), String> {
     let _operation = state.tab_operations.lock().await;
     let webview = app
@@ -158,6 +160,7 @@ pub async fn set_bookmark_context_menu_overlay(
         return Ok(());
     }
 
+    let presentation = presentation.unwrap_or_default();
     let token = create_internal_bridge_token();
     let actions = actions.unwrap_or_default();
     let script = build_bookmark_context_menu_script(
@@ -166,7 +169,8 @@ pub async fn set_bookmark_context_menu_overlay(
         &actions,
         &token,
         true,
-        backdrop_blur_px.unwrap_or(16).min(24),
+        presentation.backdrop_blur_px.unwrap_or(16).min(24),
+        presentation.language.as_ref(),
     )?;
 
     if let Ok(mut current_token) = state.bookmark_context_menu_token.lock() {

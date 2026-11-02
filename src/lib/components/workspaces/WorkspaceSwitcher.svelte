@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import {
     workspaces,
     activeWorkspaceId,
@@ -58,8 +59,8 @@
       ondragleave={(e) => handleDragLeave(e, ws.id)}
       ondrop={(e) => handleDrop(e, ws.id)}
       title={index < 9
-        ? `Switch to ${ws.name} Workspace (${workspaceShortcut(index + 1)})`
-        : `Switch to ${ws.name} Workspace`}
+        ? $t("workspaces.switch_to_p0_workspace_p1_b346", { p0: ws.name, p1: workspaceShortcut(index + 1) })
+        : $t("workspaces.switch_to_p0_workspace_c856", { p0: ws.name })}
       style="--ws-primary: {ws.accent_primary}; --ws-secondary: {ws.accent_secondary};"
     >
       <span class="ws-icon">{ws.icon}</span>

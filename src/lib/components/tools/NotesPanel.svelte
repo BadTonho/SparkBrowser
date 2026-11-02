@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { describeError } from "../../services/user-errors.js";
+  import { t } from "../../i18n";
   import { currentUrl, tabs, addTab } from "../../stores/browserStore";
   import { noteUrl, noteWriter, notesRevision } from "../../stores/notesStore";
   import { fetchPageNote, searchPageNotes } from "../../services/bridge/notes";
@@ -18,33 +21,34 @@
         if (revision !== loadRevision) return;
         editingUrl = url; title = pageTitle; noteWriter.seed(url, pageTitle, note?.text ?? "");
         notesRevision.update(value => value + 1);
-      } catch (e) { if (revision === loadRevision) { editingUrl = ""; error = String(e); } }
+      } catch (e) { if (revision === loadRevision) { editingUrl = ""; error = describeError(e); } }
       finally { if (revision === loadRevision) loading = false; }
     })();
   });
   $effect(() => {
     const value = query; let disposed = false;
-    const timer = setTimeout(() => { void searchPageNotes(value).then(rows => { if (!disposed) results = rows; }).catch(e => { if (!disposed) error = String(e); }); }, 180);
+    const timer = setTimeout(() => { void searchPageNotes(value).then(rows => { if (!disposed) results = rows; }).catch(e => { if (!disposed) error = describeError(e); }); }, 180);
     return () => { disposed = true; clearTimeout(timer); };
   });
-  async function remove(url: string) { try { await noteWriter.remove(url); results = await searchPageNotes(query); confirming = null; } catch (e) { error = String(e); } }
+  async function remove(url: string) { try { await noteWriter.remove(url); results = await searchPageNotes(query); confirming = null; } catch (e) { error = describeError(e); } }
 </script>
-<h3>Page notes</h3>
-{#if error}<p role="alert">{error}</p>{/if}
-{#if loading}<p>Loading note…</p>
+<h3>{$t("tools.page_notes_adea")}</h3>
+{#if error}<ErrorMessage error={error} />{/if}
+{#if loading}<p>{$t("tools.loading_note_7d2d")}</p>
 {:else if draft}
   <p>{editingUrl}</p>
-  <textarea data-testid="page-note-editor" aria-label="Note for current page" rows="8" value={draft.text} oninput={(event) => noteWriter.edit(editingUrl, title, event.currentTarget.value)}></textarea>
-  <p role="status">{draft.status}{draft.error ? `: ${draft.error}` : ""}</p>
-  {#if draft.status === "Error"}<button onclick={() => noteWriter.flush(editingUrl)}>Retry save</button>{/if}
+  <textarea data-testid="page-note-editor" aria-label={$t("tools.note_for_current_page_0362")} rows="8" value={draft.text} oninput={(event) => noteWriter.edit(editingUrl, title, event.currentTarget.value)}></textarea>
+  <p role="status">{$t(({ Saved: "common.saved", Saving: "common.saving", Unsaved: "common.unsaved", Error: "common.error" } as const)[draft.status as "Saved" | "Saving" | "Unsaved" | "Error"])}</p>
+  <ErrorMessage error={draft.error} />
+  {#if draft.status === "Error"}<button onclick={() => noteWriter.flush(editingUrl)}>{$t("tools.retry_save_71fd")}</button>{/if}
 {/if}
-<h3>Find saved notes</h3>
-<input aria-label="Search notes" placeholder="Search text, title or URL" bind:value={query} />
-<button onclick={async () => { try { results = await searchPageNotes(query); } catch (e) { error = String(e); } }}>Refresh saved notes</button>
-<p>Showing up to 100 matching notes.</p>
+<h3>{$t("tools.find_saved_notes_978b")}</h3>
+<input aria-label={$t("tools.search_notes_6e7a")} placeholder={$t("tools.search_text_title_or_url_4482")} bind:value={query} />
+<button onclick={async () => { try { results = await searchPageNotes(query); } catch (e) { error = describeError(e); } }}>{$t("tools.refresh_saved_notes_87f7")}</button>
+<p>{$t("tools.showing_up_to_100_matching_notes_003f")}</p>
 {#each results as note (note.url)}
   <article class="tool-card"><strong>{note.title}</strong><span>{note.url}</span><p>{note.text.slice(0, 180)}</p>
-    <div class="tool-actions"><button onclick={async () => { await closeTools(); await addTab(note.url); }}>Open page</button><button onclick={() => confirming = note.url}>Delete note</button></div>
-    {#if confirming === note.url}<p>Delete this note?</p><div class="tool-actions"><button onclick={() => remove(note.url)}>Confirm deletion</button><button onclick={() => confirming = null}>Cancel</button></div>{/if}
+    <div class="tool-actions"><button onclick={async () => { await closeTools(); await addTab(note.url); }}>{$t("tools.open_page_af03")}</button><button onclick={() => confirming = note.url}>{$t("tools.delete_note_b80e")}</button></div>
+    {#if confirming === note.url}<p>{$t("tools.delete_this_note_f806")}</p><div class="tool-actions"><button onclick={() => remove(note.url)}>{$t("tools.confirm_deletion_fa57")}</button><button onclick={() => confirming = null}>{$t("tools.cancel_1976")}</button></div>{/if}
   </article>
 {/each}

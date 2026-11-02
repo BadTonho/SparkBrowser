@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { describeError } from "../../services/user-errors.js";
+  import { t, plural } from "../../i18n";
   import { tabs } from "../../stores/browserStore";
   import {
     activeWorkspaceId,
@@ -63,7 +66,7 @@
       draft = { ...saved };
       isCreating = false;
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     } finally {
       saving = false;
     }
@@ -97,7 +100,7 @@
       draft = null;
       isCreating = false;
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     } finally {
       saving = false;
     }
@@ -106,15 +109,15 @@
 
 <section class="setting-group" aria-labelledby="workspaces-heading">
   <div class="section-heading">
-    <h2 class="group-title" id="workspaces-heading">🎨 Workspaces & Theme</h2>
-    <button class="primary-action" onclick={startNewWorkspace}>＋ Create workspace</button>
+    <h2 class="group-title" id="workspaces-heading">{$t("settings.workspaces_theme_0497")}</h2>
+    <button class="primary-action" onclick={startNewWorkspace}>{$t("settings.create_workspace_a862")}</button>
   </div>
 
   <div
     class="workspace-list"
     id="setting-workspace-profiles"
     tabindex="-1"
-    aria-label="Workspaces"
+    aria-label={$t("settings.workspaces_1377")}
   >
     {#each $workspaces as workspace (workspace.id)}
       <button
@@ -128,55 +131,55 @@
         <span class="workspace-icon">{workspace.icon || "◌"}</span>
         <span class="workspace-name">{workspace.name}</span>
         {#if $activeWorkspaceId === workspace.id}
-          <span class="active-badge">Active</span>
+          <span class="active-badge">{$t("settings.active_9234")}</span>
         {/if}
       </button>
     {/each}
   </div>
 
   {#if draft}
-    <div class="editor" aria-label="Edit workspace">
+    <div class="editor" aria-label={$t("settings.edit_workspace_52e3")}>
       <div class="editor-heading">
         <div>
-          <h3>{isCreating ? "New workspace" : `Edit ${selectedWorkspace?.name ?? "workspace"}`}</h3>
+          <h3>{isCreating ? $t("settings.new_workspace_df0c") : $t("settings.edit_p0_58bd", { p0: selectedWorkspace?.name ?? "workspace" })}</h3>
           <p>{isCreating ? "This workspace will be added to the end of the list." : "Changes apply when you save."}</p>
         </div>
         {#if !isCreating && selectedWorkspace?.id === "ws-personal"}
-          <span class="protected-note">Personal is protected</span>
+          <span class="protected-note">{$t("settings.personal_is_protected_f8ff")}</span>
         {/if}
       </div>
 
       <div class="form-grid">
         <label class="field name-field">
-          <span>Name</span>
+          <span>{$t("settings.name_dcd1")}</span>
           <input bind:value={draft.name} maxlength="40" autocomplete="off" />
         </label>
         <label class="field icon-field">
-          <span>Emoji</span>
-          <input bind:value={draft.icon} maxlength="12" autocomplete="off" aria-label="Workspace emoji" />
+          <span>{$t("settings.emoji_61ad")}</span>
+          <input bind:value={draft.icon} maxlength="12" autocomplete="off" aria-label={$t("settings.workspace_emoji_c456")} />
         </label>
         <label class="field color-field">
-          <span>Primary color</span>
+          <span>{$t("settings.primary_color_2b03")}</span>
           <input bind:value={draft.accent_primary} type="color" />
         </label>
         <label class="field color-field">
-          <span>Secondary color</span>
+          <span>{$t("settings.secondary_color_413d")}</span>
           <input bind:value={draft.accent_secondary} type="color" />
         </label>
       </div>
 
       {#if errorMessage}
-        <p class="error-message" role="alert">{errorMessage}</p>
+        <ErrorMessage error={errorMessage} />
       {/if}
 
       {#if isDeleteDialogOpen && !isCreating}
         <div class="delete-panel" role="alertdialog" aria-labelledby="delete-heading">
-          <h3 id="delete-heading">Delete {selectedWorkspace?.name}?</h3>
+          <h3 id="delete-heading">{$t("settings.delete_e2d0")} {selectedWorkspace?.name}?</h3>
           {#if tabsInSelectedWorkspace.length > 0}
-            <p>This workspace has {tabsInSelectedWorkspace.length} open {tabsInSelectedWorkspace.length === 1 ? "tab" : "tabs"}. Choose what to do with them.</p>
+            <p>{$plural(tabsInSelectedWorkspace.length, $t("common.workspace_tabs_one"), $t("common.workspace_tabs_other"))}</p>
             <label class="choice-row">
               <input type="radio" name="delete-tabs" value="move" bind:group={deleteAction} />
-              <span>Move tabs to</span>
+              <span>{$t("settings.move_tabs_to_438f")}</span>
               <select bind:value={deleteTargetId} disabled={deleteAction !== "move"}>
                 {#each $workspaces.filter((workspace) => workspace.id !== selectedWorkspaceId) as destination (destination.id)}
                   <option value={destination.id}>{destination.icon} {destination.name}</option>
@@ -185,14 +188,14 @@
             </label>
             <label class="choice-row">
               <input type="radio" name="delete-tabs" value="close" bind:group={deleteAction} />
-              <span>Close all tabs. Their history will be kept.</span>
+              <span>{$t("settings.close_all_tabs_their_history_will_be_kept_c6e1")}</span>
             </label>
           {:else}
-            <p>This workspace has no open tabs.</p>
+            <p>{$plural(tabsInSelectedWorkspace.length, $t("common.workspace_tabs_one"), $t("common.workspace_tabs_other"))}</p>
           {/if}
           <div class="dialog-actions">
-            <button class="secondary-action" onclick={() => (isDeleteDialogOpen = false)}>Cancel</button>
-            <button class="danger-action" onclick={confirmDelete} disabled={saving}>Delete workspace</button>
+            <button class="secondary-action" onclick={() => (isDeleteDialogOpen = false)}>{$t("settings.cancel_1976")}</button>
+            <button class="danger-action" onclick={confirmDelete} disabled={saving}>{$t("settings.delete_workspace_55f0")}</button>
           </div>
         </div>
       {/if}
@@ -200,18 +203,18 @@
       {#if !isDeleteDialogOpen}
         <div class="editor-actions">
           {#if !isCreating && selectedWorkspace?.id !== "ws-personal"}
-            <button class="danger-action" onclick={openDeleteDialog}>Delete workspace</button>
+            <button class="danger-action" onclick={openDeleteDialog}>{$t("settings.delete_workspace_55f0")}</button>
           {/if}
           <span class="action-spacer"></span>
-          <button class="secondary-action" onclick={cancelEditing} disabled={saving}>Cancel</button>
+          <button class="secondary-action" onclick={cancelEditing} disabled={saving}>{$t("settings.cancel_1976")}</button>
           <button class="primary-action" onclick={saveDraft} disabled={saving}>
-            {saving ? "Saving…" : isCreating ? "Create workspace" : "Save changes"}
+            {saving ? "Saving…" : isCreating ? $t("settings.create_workspace_4b89") : $t("settings.save_changes_dd0a")}
           </button>
         </div>
       {/if}
     </div>
   {:else}
-    <p class="empty-state">Select a workspace to edit its name, emoji, and theme.</p>
+    <p class="empty-state">{$t("settings.select_a_workspace_to_edit_its_name_emoji_and_theme_a3ee")}</p>
   {/if}
 </section>
 
@@ -250,7 +253,6 @@
   button:disabled { opacity: .55; cursor: default; }
   .action-spacer { flex: 1 1 auto; }
   .empty-state { margin: 2px 0; color: var(--text-secondary); font-size: 11px; }
-  .error-message { margin: 0; color: #fb7185; font-size: 11px; }
   .delete-panel { display: flex; flex-direction: column; gap: 10px; padding: 13px; border: 1px solid rgba(244,63,94,.35); border-radius: 8px; background: rgba(244,63,94,.055); }
   .choice-row { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 11px; }
   .choice-row input { accent-color: var(--accent-primary); }

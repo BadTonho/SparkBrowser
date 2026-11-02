@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
   import { setActiveSettingsCategory } from "../../stores/settingsStore";
   import { openTools } from "../../stores/toolsStore";
@@ -54,10 +55,10 @@
     if (query.trim().length > 0) {
       items.push({
         id: "open-new-tab",
-        title: `Open "${query.trim()}" in a New Tab`,
-        subtitle: "Creates a new isolated Rust WebView tab",
+        title: $t("commandbar.open_p0_in_a_new_tab_1c56", { p0: query.trim() }),
+        subtitle: $t("commandbar.creates_a_new_isolated_rust_webview_tab_23ab"),
         icon: "🚀",
-        badge: "New Tab ↵",
+        badge: $t("commandbar.new_tab_822c"),
         action: async () => {
           const target = query.trim();
           await closeCommandBar();
@@ -67,10 +68,10 @@
 
       items.push({
         id: "navigate-current",
-        title: `Navigate current tab to "${query.trim()}"`,
-        subtitle: "Loads URL or search in the active tab",
+        title: $t("commandbar.navigate_current_tab_to_p0_62a5", { p0: query.trim() }),
+        subtitle: $t("commandbar.loads_url_or_search_in_the_active_tab_822c"),
         icon: "🧭",
-        badge: "Navigate",
+        badge: $t("commandbar.navigate_5ea5"),
         action: async () => {
           const target = query.trim();
           await closeCommandBar();
@@ -92,10 +93,10 @@
           subtitle: tab.url,
           icon: tab.is_hibernated ? "💤" : tab.is_active ? "🟢" : "🗂️",
           badge: tab.is_active
-            ? "Active Tab"
+            ? $t("common.active_tab")
             : tab.is_hibernated
-              ? "Wake Tab"
-              : "Switch Tab",
+              ? $t("common.wake_tab")
+              : $t("common.switch_tab"),
           action: async () => {
             await closeCommandBar();
             await selectTab(tab.id);
@@ -109,10 +110,10 @@
       if (!q || normalizeSearch(ws.name).includes(q) || "workspace".includes(q)) {
         items.push({
           id: `ws-${ws.id}`,
-          title: `Switch to ${ws.name} Workspace`,
-          subtitle: `Applies ${ws.name} dynamic theme and tab context`,
+          title: $t("commandbar.switch_to_p0_workspace_c856", { p0: ws.name }),
+          subtitle: $t("commandbar.applies_p0_dynamic_theme_and_tab_context_3fb6", { p0: ws.name }),
           icon: ws.icon,
-          badge: "Workspace",
+          badge: $t("commandbar.workspace_87bb"),
           action: async () => {
             await closeCommandBar();
             await activateWorkspace(ws.id);
@@ -126,10 +127,10 @@
       if (!q || normalizeSearch(bm.title).includes(q) || normalizeSearch(bm.url).includes(q)) {
         items.push({
           id: `bm-${bm.id}`,
-          title: `Bookmark: ${bm.title}`,
+          title: $t("commandbar.bookmark_p0_5d38", { p0: bm.title }),
           subtitle: bm.url,
           icon: bm.icon,
-          badge: "Bookmark",
+          badge: $t("commandbar.bookmark_1bac"),
           action: async () => {
             await closeCommandBar();
             await addTab(bm.url);
@@ -139,16 +140,16 @@
     }
 
     const browserCommands: CommandItem[] = [
-      { id: "cmd-site-permissions", title: "Open Site Permissions", subtitle: "Manage permissions for the focused page", icon: "\u26BF", badge: "Privacy", action: async () => { await closeCommandBar(); await openSitePermissions(); } },
-      { id: "cmd-site-search", title: "Configure Site Search Shortcuts", subtitle: "Add keyword searches", icon: "\u2315", badge: "Search", action: async () => { await closeCommandBar(); setActiveSettingsCategory("search_navigation"); await openSettingsModal(); } },
-      { id: "cmd-split-view", title: "Configure Split View", subtitle: "Choose two workspace tabs", icon: "\u25EB", badge: "Tabs", action: async () => { await closeCommandBar(); await openTools("tabs"); } },
-      ...(["sessions", "tabs", "notes"] as const).map(section => ({ id: `cmd-tools-${section}`, title: `Open ${section}`, subtitle: "Browser tools", icon: "\u2637", badge: "Tools", action: async () => { await closeCommandBar(); await openTools(section); } })),
+      { id: "cmd-site-permissions", title: $t("commandbar.open_site_permissions_a835"), subtitle: $t("commandbar.manage_permissions_for_the_focused_page_adbc"), icon: "\u26BF", badge: $t("commandbar.privacy_54a5"), action: async () => { await closeCommandBar(); await openSitePermissions(); } },
+      { id: "cmd-site-search", title: $t("commandbar.configure_site_search_shortcuts_a867"), subtitle: $t("commandbar.add_keyword_searches_5c01"), icon: "\u2315", badge: $t("commandbar.search_49c2"), action: async () => { await closeCommandBar(); setActiveSettingsCategory("search_navigation"); await openSettingsModal(); } },
+      { id: "cmd-split-view", title: $t("commandbar.configure_split_view_348c"), subtitle: $t("commandbar.choose_two_workspace_tabs_962a"), icon: "\u25EB", badge: $t("commandbar.tabs_8e5e"), action: async () => { await closeCommandBar(); await openTools("tabs"); } },
+      ...(["sessions", "tabs", "notes"] as const).map(section => ({ id: `cmd-tools-${section}`, title: $t(({ sessions: "common.open_sessions", tabs: "common.open_tabs", notes: "common.open_notes" } as const)[section]), subtitle: $t("commandbar.browser_tools_321e"), icon: "\u2637", badge: $t("commandbar.tools_ea93"), action: async () => { await closeCommandBar(); await openTools(section); } })),
       {
         id: "cmd-zen",
-        title: "Toggle Zen Focus Mode",
-        subtitle: `Hide all browser toolbars for 100% fullscreen web (${shortcuts && shortcutLabel("zen")})`,
+        title: $t("commandbar.toggle_zen_focus_mode_eaad"),
+        subtitle: $t("commandbar.hide_all_browser_toolbars_for_100_fullscreen_web_p0_ae51", { p0: shortcuts && shortcutLabel("zen") }),
         icon: "🧘",
-        badge: "Zen Mode",
+        badge: $t("commandbar.zen_mode_826b"),
         action: async () => {
           await closeCommandBar();
           toggleZenMode();
@@ -156,10 +157,10 @@
       },
       {
         id: "cmd-downloads",
-        title: "Open Download Manager",
-        subtitle: `View downloaded files or save a URL (${shortcutLabel("downloads")})`,
+        title: $t("commandbar.open_download_manager_d563"),
+        subtitle: $t("commandbar.view_downloaded_files_or_save_a_url_p0_4a0b", { p0: shortcutLabel("downloads") }),
         icon: "📥",
-        badge: "Downloads",
+        badge: $t("commandbar.downloads_d5fd"),
         action: async () => {
           await closeCommandBar();
           await openDownloadsDrawer();
@@ -167,10 +168,10 @@
       },
       {
         id: "cmd-settings",
-        title: "Open Browser Settings & Shortcuts",
-        subtitle: `Customize themes, hibernation timer & view shortcuts (${shortcutLabel("settings")})`,
+        title: $t("commandbar.open_browser_settings_shortcuts_55cd"),
+        subtitle: $t("commandbar.customize_themes_hibernation_timer_view_shortcuts_p0_4bdc", { p0: shortcutLabel("settings") }),
         icon: "⚙️",
-        badge: "Settings",
+        badge: $t("commandbar.settings_74a8"),
         action: async () => {
           await closeCommandBar();
           await openSettingsModal();
@@ -178,10 +179,10 @@
       },
       {
         id: "cmd-hibernate",
-        title: "Hibernate Inactive Tabs (Free RAM)",
-        subtitle: "Suspends background WebViews while keeping tabs in sidebar",
+        title: $t("commandbar.hibernate_inactive_tabs_free_ram_5e90"),
+        subtitle: $t("commandbar.suspends_background_webviews_while_keeping_tabs_in_sidebar_16ea"),
         icon: "💤",
-        badge: "RAM Saver",
+        badge: $t("commandbar.ram_saver_c859"),
         action: async () => {
           await closeCommandBar();
           await suspendInactiveTabs(0);
@@ -189,8 +190,8 @@
       },
       {
         id: "cmd-history",
-        title: "Open Browsing History",
-        subtitle: `Search or clear local SQLite history (${shortcutLabel("history")})`,
+        title: $t("commandbar.open_browsing_history_a45d"),
+        subtitle: $t("commandbar.search_or_clear_local_sqlite_history_p0_148b", { p0: shortcutLabel("history") }),
         icon: "🕒",
         badge: "SQLite",
         action: async () => {
@@ -200,10 +201,10 @@
       },
       {
         id: "cmd-adblock",
-        title: "Toggle Native Rust AdBlock Shield",
-        subtitle: "Enable or pause network & cosmetic tracker blocking",
+        title: $t("commandbar.toggle_native_rust_adblock_shield_a0eb"),
+        subtitle: $t("commandbar.enable_or_pause_network_cosmetic_tracker_blocking_1652"),
         icon: "🛡️",
-        badge: "Privacy",
+        badge: $t("commandbar.privacy_54a5"),
         action: async () => {
           await closeCommandBar();
           await flipAdblockShield();
@@ -211,10 +212,10 @@
       },
       {
         id: "cmd-toggle-sidebar",
-        title: "Toggle Sidebar",
-        subtitle: `Collapse or expand the vertical tab bar (${shortcutLabel("sidebar")})`,
+        title: $t("commandbar.toggle_sidebar_1d4c"),
+        subtitle: $t("commandbar.collapse_or_expand_the_vertical_tab_bar_p0_b3fc", { p0: shortcutLabel("sidebar") }),
         icon: "📐",
-        badge: "Command",
+        badge: $t("commandbar.command_7131"),
         action: async () => {
           await closeCommandBar();
           toggleSidebar();
@@ -222,10 +223,10 @@
       },
       {
         id: "cmd-reload",
-        title: "Reload Active Tab",
-        subtitle: `Refresh the current web page (${shortcutLabel("reload-tab")})`,
+        title: $t("commandbar.reload_active_tab_89d3"),
+        subtitle: $t("commandbar.refresh_the_current_web_page_p0_9ea5", { p0: shortcutLabel("reload-tab") }),
         icon: "🔄",
-        badge: "Command",
+        badge: $t("commandbar.command_7131"),
         action: async () => {
           await closeCommandBar();
           await triggerReload();
@@ -289,7 +290,7 @@
       use:focusDialog={{ onEscape: closeCommandBar }}
       role="dialog"
       aria-modal="true"
-      aria-label="Command Bar"
+      aria-label={$t("commandbar.command_bar_1356")}
       tabindex="-1"
     >
       <div class="command-input-bar">
@@ -300,7 +301,7 @@
           onkeydown={handleKeydown}
           class="command-input"
           type="text"
-          placeholder="Type URL, search web, switch workspace/tab, or run command..."
+          placeholder={$t("commandbar.type_url_search_web_switch_workspace_tab_or_run_command_0026")}
           spellcheck="false"
         />
         <kbd class="esc-hint">ESC</kbd>
@@ -325,9 +326,9 @@
       </div>
 
       <div class="command-footer">
-        <span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
-        <span><kbd>↵</kbd> to execute</span>
-        <span><kbd>{$keyboardShortcuts && shortcutLabel("command-bar")}</kbd> anytime</span>
+        <span><kbd>↑</kbd> <kbd>↓</kbd> {$t("commandbar.to_navigate_5a70")}</span>
+        <span><kbd>↵</kbd> {$t("commandbar.to_execute_5a2d")}</span>
+        <span><kbd>{$keyboardShortcuts && shortcutLabel("command-bar")}</kbd> {$t("commandbar.anytime_75eb")}</span>
       </div>
     </div>
   </div>

@@ -25,6 +25,11 @@
         }
 
         window.__veloceSetBookmarkContextMenu = (payload) => {
+          if (payload.language) {
+            document.documentElement.lang = payload.language.locale === "pt-BR" ? "pt-BR" : "en";
+            menu.setAttribute("aria-label", payload.language.label);
+            document.title = payload.language.label;
+          }
           if (!payload.visible) {
             isOpen = false;
             requestSent = false;

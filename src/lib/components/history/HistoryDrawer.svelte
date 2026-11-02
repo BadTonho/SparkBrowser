@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { t, formatDate } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -26,8 +28,7 @@
 
   function formatTime(epochSecs: number): string {
     if (!epochSecs) return "";
-    const date = new Date(epochSecs * 1000);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return $formatDate(epochSecs * 1000, { hour: "2-digit", minute: "2-digit" });
   }
 
   async function openHistoryUrl(url: string) {
@@ -53,17 +54,17 @@
       use:focusDialog={{ onEscape: closeHistoryDrawer }}
       role="dialog"
       aria-modal="true"
-      aria-label="Browsing History"
+      aria-label={$t("history.browsing_history_13cc")}
       tabindex="-1"
     >
       <div class="history-header">
         <div class="header-title">
-          <span>🕒 Browsing History (SQLite)</span>
+          <span>{$t("history.browsing_history_sqlite_59d8")}</span>
         </div>
         <div class="header-actions">
           {#if $historyEntries.length > 0}
             <button class="clear-btn" onclick={wipeBrowsingHistory}>
-              Clear All
+              {$t("history.clear_all_ddce")}
             </button>
           {/if}
           <button class="close-btn" onclick={() => closeHistoryDrawer()}>
@@ -76,16 +77,16 @@
         <input
           type="text"
           bind:value={filterQuery}
-          placeholder="Search visited pages..."
+          placeholder={$t("history.search_visited_pages_9bc1")}
           spellcheck="false"
         />
       </div>
 
-      {#if $historyError}<p role="alert">{$historyError}</p>{/if}
+      {#if $historyError}<ErrorMessage error={$historyError} />{/if}
       <div class="history-list" aria-busy={$historyBusy}>
         {#if filteredHistory.length === 0}
           <div class="empty-state">
-            <p>No history entries found.</p>
+            <p>{$t("history.no_history_entries_found_c307")}</p>
           </div>
         {:else}
           {#each filteredHistory as item (item.id)}
@@ -101,7 +102,7 @@
             </button>
           {/each}
         {/if}
-        {#if $historyHasMore}<button disabled={$historyBusy} onclick={() => loadHistory(filterQuery, true)}>Load more</button>{/if}
+        {#if $historyHasMore}<button disabled={$historyBusy} onclick={() => loadHistory(filterQuery, true)}>{$t("history.load_more_ac89")}</button>{/if}
       </div>
     </div>
   </div>

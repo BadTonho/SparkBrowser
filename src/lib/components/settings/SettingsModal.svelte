@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, labelText } from "../../i18n";
 import "./settings.css";
 import { normalizeSearch as normalizeSearchText } from "../../services/command-ranking.js";
 import { createShortcutRecorder } from "./shortcut-recorder.svelte";
@@ -55,7 +56,7 @@ const searchResults = $derived.by(() => {
   return entries.filter((entry) => {
     const category = categories.find((item) => item.id === entry.category);
     const searchableText = normalizeSearchText(
-      `${entry.title} ${entry.description} ${entry.keywords ?? ""} ${category?.label ?? ""}`
+      `${$labelText(entry.title)} ${$labelText(entry.description)} ${entry.keywords ?? ""} ${category?.label ?? ""}`
     );
     return tokens.every((token) => searchableText.includes(token));
   });
@@ -162,11 +163,11 @@ function handleWindowMousedown(event: MouseEvent): void {
       use:focusDialog={{ onEscape: closeSettingsModal, ignoreEscape: () => Boolean($recordingShortcutId) }}
       role="dialog"
       aria-modal="true"
-      aria-label="Browser Settings"
+      aria-label={$t("settings.browser_settings_6c1e")}
       tabindex="-1"
     >
       <div class="settings-header">
-        <span class="settings-title">⚙️ Browser Settings</span>
+        <span class="settings-title">{$t("settings.browser_settings_59f9")}</span>
         <div class="settings-search">
           <span class="search-icon" aria-hidden="true">⌕</span>
           <input
@@ -174,8 +175,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             type="search"
             bind:value={searchQuery}
             onkeydown={handleSearchKeydown}
-            placeholder="Search settings..."
-            aria-label="Search all settings"
+            placeholder={$t("settings.search_settings_6801")}
+            aria-label={$t("settings.search_all_settings_b98f")}
             autocomplete="off"
             spellcheck="false"
           />
@@ -184,7 +185,7 @@ function handleWindowMousedown(event: MouseEvent): void {
               class="clear-search-btn"
               type="button"
               onclick={clearSearch}
-              aria-label="Clear settings search"
+              aria-label={$t("settings.clear_settings_search_63c6")}
             >
               ×
             </button>
@@ -192,7 +193,7 @@ function handleWindowMousedown(event: MouseEvent): void {
         </div>
         <button
           class="close-btn"
-          aria-label="Close settings"
+          aria-label={$t("settings.close_settings_0ccf")}
           onclick={() => closeSettingsModal()}
         >
           ×
@@ -200,7 +201,7 @@ function handleWindowMousedown(event: MouseEvent): void {
       </div>
 
       <div class="settings-layout">
-        <nav class="category-nav" aria-label="Settings categories">
+        <nav class="category-nav" aria-label={$t("settings.settings_categories_b9ed")}>
           {#each categories as category (category.id)}
             <button
               data-testid={`settings-${category.id}`} class="category-button"
@@ -209,7 +210,7 @@ function handleWindowMousedown(event: MouseEvent): void {
               onclick={() => selectCategory(category.id)}
             >
               <span class="category-icon" aria-hidden="true">{category.icon}</span>
-              <span>{category.label}</span>
+              <span>{$labelText(category.label)}</span>
             </button>
           {/each}
         </nav>
@@ -218,7 +219,7 @@ function handleWindowMousedown(event: MouseEvent): void {
           {#if hasSearchQuery}
             <section class="search-results-panel" aria-labelledby="search-results-heading">
               <div class="search-results-heading">
-                <h2 class="group-title" id="search-results-heading">Search Results</h2>
+                <h2 class="group-title" id="search-results-heading">{$t("settings.search_results_3941")}</h2>
                 <span class="search-result-count">{searchResults.length}</span>
               </div>
               {#if searchResults.length > 0}
@@ -230,19 +231,19 @@ function handleWindowMousedown(event: MouseEvent): void {
                       onclick={() => selectSearchResult(result)}
                     >
                       <span class="search-result-copy">
-                        <span class="search-result-title">{result.title}</span>
-                        <span class="search-result-description">{result.description}</span>
+                        <span class="search-result-title">{$labelText(result.title)}</span>
+                        <span class="search-result-description">{$labelText(result.description)}</span>
                       </span>
                       <span class="search-result-category">
                         <span aria-hidden="true">{category?.icon}</span>
-                        {category?.label}
+                        {$labelText(category?.label ?? "")}
                       </span>
                     </button>
                   {/each}
                 </div>
               {:else}
                 <p class="search-empty-state" role="status">
-                  No settings found for “{searchQuery}”. Try another search.
+                  {$t("settings.no_settings_found_for_753d")}{searchQuery}{$t("settings.try_another_search_1064")}
                 </p>
               {/if}
             </section>

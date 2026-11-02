@@ -1,4 +1,6 @@
 <script lang="ts">
+import LanguageSettings from "./LanguageSettings.svelte";
+  import { t } from "../../i18n";
 import {
   isZenMode,
   toggleZenMode,
@@ -15,37 +17,39 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
 </script>
 
 <section class="setting-group" aria-labelledby="appearance-heading">
-  <h2 class="group-title" id="appearance-heading">🖥️ Appearance & Layout</h2>
+  <h2 class="group-title" id="appearance-heading">{$t("settings.appearance_layout_a2b1")}</h2>
+
+  <LanguageSettings />
 
   <div class="setting-row" id="setting-browser-layout" tabindex="-1">
     <div class="row-text">
-      <span class="row-label">Browser Layout</span>
-      <span class="row-desc">Choose a horizontal browser layout or a vertical sidebar layout</span>
+      <span class="row-label">{$t("settings.browser_layout_28d1")}</span>
+      <span class="row-desc">{$t("settings.choose_a_horizontal_browser_layout_or_a_vertical_sidebar_layout_a4a5")}</span>
     </div>
     <div class="timer-pills">
       <button
         class="mini-pill"
         class:selected={$tabLayout === "horizontal"}
         onclick={() => setTabLayout("horizontal")}
-        title="Tabs at the top, workspaces beside search, and bookmarks below"
+        title={$t("settings.tabs_at_the_top_workspaces_beside_search_and_bookmarks_below_e1af")}
       >
-        ↔ Horizontal
+        {$t("settings.horizontal_9b55")}
       </button>
       <button
         class="mini-pill"
         class:selected={$tabLayout === "vertical"}
         onclick={() => setTabLayout("vertical")}
-        title="Workspaces, bookmarks, and tabs in the sidebar"
+        title={$t("settings.workspaces_bookmarks_and_tabs_in_the_sidebar_5cff")}
       >
-        ↕ Vertical
+        {$t("settings.vertical_b6d6")}
       </button>
     </div>
   </div>
 
   <div class="setting-row" id="setting-background-blur" tabindex="-1">
     <div class="row-text">
-      <span class="row-label">Background Blur</span>
-      <span class="row-desc">Adjust blur behind browser overlays</span>
+      <span class="row-label">{$t("settings.background_blur_c21c")}</span>
+      <span class="row-desc">{$t("settings.adjust_blur_behind_browser_overlays_4f2a")}</span>
     </div>
     <div class="range-control">
       <input
@@ -55,8 +59,8 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
         step="1"
         value={$overlayBlurPx}
         oninput={(event) => setOverlayBlurPx(Number(event.currentTarget.value))}
-        aria-label="Background blur intensity"
-        aria-valuetext={`${$overlayBlurPx} pixels`}
+        aria-label={$t("settings.background_blur_intensity_9873")}
+        aria-valuetext={$t("settings.p0_pixels_b580", { p0: $overlayBlurPx })}
       />
       <output>{ $overlayBlurPx } px</output>
     </div>
@@ -64,8 +68,8 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
 
   <div class="setting-row" id="setting-bookmarks-bar" tabindex="-1">
     <div class="row-text">
-      <span class="row-label">Bookmarks Bar</span>
-      <span class="row-desc">Show or hide the horizontal bookmarks bar without removing saved bookmarks</span>
+      <span class="row-label">{$t("settings.bookmarks_bar_d670")}</span>
+      <span class="row-desc">{$t("settings.show_or_hide_the_horizontal_bookmarks_bar_without_removing_saved_bookmar_85a7")}</span>
     </div>
     <button
       class="pill-action"
@@ -73,14 +77,14 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
       aria-pressed={$showBookmarksBar}
       onclick={() => setShowBookmarksBar(!$showBookmarksBar)}
     >
-      {$showBookmarksBar ? "Visible" : "Hidden"}
+      {$showBookmarksBar ? $t("settings.visible_8411") : $t("settings.hidden_7e6f")}
     </button>
   </div>
 
   <div class="setting-row" id="setting-workspace-switcher-display" tabindex="-1">
     <div class="row-text">
-      <span class="row-label">Workspace Switcher</span>
-      <span class="row-desc">Choose horizontal buttons or a floating picker; vertical sidebar buttons stay visible</span>
+      <span class="row-label">{$t("settings.workspace_switcher_43f1")}</span>
+      <span class="row-desc">{$t("settings.choose_horizontal_buttons_or_a_floating_picker_vertical_sidebar_buttons__8411")}</span>
     </div>
     <div class="timer-pills">
       <button
@@ -89,7 +93,7 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
         aria-pressed={$workspaceSwitcherDisplay === "toolbar"}
         onclick={() => setWorkspaceSwitcherDisplay("toolbar")}
       >
-        Toolbar buttons
+        {$t("settings.toolbar_buttons_1962")}
       </button>
       <button
         class="mini-pill"
@@ -97,22 +101,22 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
         aria-pressed={$workspaceSwitcherDisplay === "popup"}
         onclick={() => setWorkspaceSwitcherDisplay("popup")}
       >
-        Popup
+        {$t("settings.popup_4c14")}
       </button>
     </div>
   </div>
 
   <div class="setting-row" id="setting-zen-mode" tabindex="-1">
     <div class="row-text">
-      <span class="row-label">Zen / Focus Mode ({$keyboardShortcuts && formatShortcut(getShortcutBinding($keyboardShortcuts, "zen")!)})</span>
-      <span class="row-desc">Hides all browser chrome so websites use 100% of the viewport</span>
+      <span class="row-label">{$t("settings.zen_focus_mode_092d")}{$keyboardShortcuts && formatShortcut(getShortcutBinding($keyboardShortcuts, "zen")!)})</span>
+      <span class="row-desc">{$t("settings.hides_all_browser_chrome_so_websites_use_100_of_the_viewport_3078")}</span>
     </div>
     <button
       class="pill-action"
       class:active={$isZenMode}
       onclick={toggleZenMode}
     >
-      {$isZenMode ? "Active" : "Off"}
+      {$isZenMode ? $t("settings.active_9234") : $t("settings.off_ca79")}
     </button>
   </div>
 </section>

@@ -34,3 +34,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Dependency notes](./security/dependency-notes.md)
 - [Release channels and updates](./features/updates.md)
 - [Local signed releases](./contributing/releases.md)
+- [Interface languages](./features/localization.md)

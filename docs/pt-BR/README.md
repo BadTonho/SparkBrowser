@@ -34,3 +34,4 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Dependencias](./security/dependency-notes.md)
 - [Canais de versão e atualizações](./features/updates.md)
 - [Releases assinadas localmente](./contributing/releases.md)
+- [Idiomas da interface](./features/localization.md)

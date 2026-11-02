@@ -1,3 +1,4 @@
+import { describeError, UserError } from "./user-errors.js";
 /** @typedef {{text:string,title:string,revision:number,status:string,error:string}} Draft */
 /**
  * Each draft belongs to its original URL. A shared queue orders saves and deletions.
@@ -23,7 +24,7 @@ export function createNoteWriter(options) {
         await options.save(url, title, text);
         if (draft.revision === revision) draft.status = 'Saved';
       } catch (error) {
-        draft.status = 'Error'; draft.error = String(error);
+        draft.status = 'Error'; draft.error = describeError(error);
       }
       options.changed();
     });
@@ -36,7 +37,7 @@ export function createNoteWriter(options) {
       for (const url of drafts.keys()) await flush(url);
       await queue;
       if ([...drafts.values()].some(draft => draft.status !== 'Saved')) {
-        throw new Error('Some page notes could not be saved. Retry saving them before updating.');
+        throw new UserError('notes.flush_failed', 'Some page notes could not be saved. Retry saving them before updating.');
       }
     },
     /** @param {string} url @param {string} title @param {string} text */

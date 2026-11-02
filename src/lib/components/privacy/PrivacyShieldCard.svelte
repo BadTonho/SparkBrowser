@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, plural, formatNumber } from "../../i18n";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
   import { tabs, suspendInactiveTabs } from "../../stores/browserStore";
 
@@ -16,10 +17,10 @@
       </span>
       <div class="shield-labels">
         <span class="shield-title">
-          {$privacyStats.shield_enabled ? "Privacy Shield Active" : "Shield Paused"}
+          {$privacyStats.shield_enabled ? $t("privacy.privacy_shield_active_3f20") : $t("privacy.shield_paused_01b0")}
         </span>
         <span class="shield-sub">
-          {$privacyStats.blocked_count} trackers blocked · {hibernatedCount} 💤 saved
+          {$formatNumber($privacyStats.blocked_count)} {$t("privacy.trackers_blocked_d400")} {$formatNumber(hibernatedCount)} {$t("privacy.saved_f3d3")}
         </span>
       </div>
     </div>
@@ -28,22 +29,22 @@
       class="shield-toggle"
       class:on={$privacyStats.shield_enabled}
       onclick={flipAdblockShield}
-      title="Toggle privacy protection. Reloads the active page and hibernates background tabs."
-      aria-label="Toggle AdBlock Shield"
+      title={$t("privacy.toggle_privacy_protection_reloads_the_active_page_and_hibernates_backgro_79e9")}
+      aria-label={$t("privacy.toggle_adblock_shield_6c4c")}
     >
       <span class="toggle-knob"></span>
     </button>
   </div>
 
-  <span class="shield-sub">Changing protection reloads tabs and resets page state.</span>
+  <span class="shield-sub">{$t("privacy.changing_protection_reloads_tabs_and_resets_page_state_5a3a")}</span>
 
   {#if backgroundAwakeCount > 0}
     <button
       class="ram-saver-btn"
       onclick={() => suspendInactiveTabs(0)}
-      title="Hibernate all background tabs to free RAM immediately"
+      title={$t("privacy.hibernate_all_background_tabs_to_free_ram_immediately_dea9")}
     >
-      <span>💤 Hibernate {backgroundAwakeCount} Inactive {backgroundAwakeCount === 1 ? "Tab" : "Tabs"} (Free RAM)</span>
+      <span>{$plural(backgroundAwakeCount, $t("common.hibernate_one"), $t("common.hibernate_other"))}</span>
     </button>
   {/if}
 </div>

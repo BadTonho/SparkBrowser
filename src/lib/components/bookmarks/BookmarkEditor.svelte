@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { describeError } from "../../services/user-errors.js";
+  import { t, tr } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { get } from "svelte/store";
   import {
@@ -61,7 +64,7 @@
     try {
       await saveBookmark(editor.bookmark?.id ?? null, title, url, icon, selectedFolderId);
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     } finally {
       isSaving = false;
     }
@@ -80,7 +83,7 @@
     try {
       await removeBookmark(editor.bookmark.id);
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     } finally {
       isSaving = false;
     }
@@ -99,7 +102,7 @@
         await closeBookmarkEditor();
       }
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     }
   }
 
@@ -108,18 +111,18 @@
     try {
       await renameBookmarkFolder(folderId, folderDrafts[folderId] ?? "");
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     }
   }
 
   async function handleDeleteFolder(folderId: number): Promise<void> {
     const folder = get(bookmarkFolders).find((item) => item.id === folderId);
-    if (!folder || !window.confirm(`Delete folder “${folder.name}”? Its bookmarks will be moved to the root.`)) return;
+    if (!folder || !window.confirm(tr("common.delete_folder", { name: folder.name }))) return;
     errorMessage = "";
     try {
       await deleteBookmarkFolder(folderId);
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     }
   }
 
@@ -131,7 +134,7 @@
       await renameBookmarkFolder(editor.folderId, folderName);
       await closeBookmarkEditor();
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      errorMessage = describeError(error);
     }
   }
 </script>
@@ -153,70 +156,70 @@
       <header class="dialog-header">
         <h2 id="bookmark-dialog-title">
           {$bookmarkEditorState.kind === "folders"
-            ? "Manage Bookmark Folders"
+            ? $t("bookmarks.manage_bookmark_folders_7249")
             : $bookmarkEditorState.kind === "create-folder"
-              ? "Create Bookmark Folder"
+              ? $t("bookmarks.create_bookmark_folder_1e5e")
             : $bookmarkEditorState.kind === "rename-folder"
-              ? "Rename Folder"
-              : $bookmarkEditorState.bookmark ? "Edit Bookmark" : "Save Bookmark"}
+              ? $t("bookmarks.rename_folder_897d")
+              : $bookmarkEditorState.bookmark ? $t("bookmarks.edit_bookmark_6e59") : $t("bookmarks.save_bookmark_5fde")}
         </h2>
-        <button class="icon-button" type="button" aria-label="Close" onclick={() => void closeBookmarkEditor()}>×</button>
+        <button class="icon-button" type="button" aria-label={$t("bookmarks.close_7d9e")} onclick={() => void closeBookmarkEditor()}>×</button>
       </header>
 
       {#if $bookmarkEditorState.kind === "save"}
         <div class="dialog-content">
           <label>
-            <span>Title</span>
+            <span>{$t("bookmarks.title_7e8c")}</span>
             <input bind:value={title} maxlength="200" autocomplete="off" />
           </label>
           <label>
-            <span>Address</span>
+            <span>{$t("bookmarks.address_56ef")}</span>
             <input bind:value={url} maxlength="4096" autocomplete="off" />
           </label>
           <label>
-            <span>Folder</span>
+            <span>{$t("bookmarks.folder_74cc")}</span>
             <select bind:value={selectedFolderId}>
-              <option value={null}>Bookmarks bar</option>
+              <option value={null}>{$t("bookmarks.bookmarks_bar_17c7")}</option>
               {#each $bookmarkFolders as folder (folder.id)}
                 <option value={folder.id}>{folder.name}</option>
               {/each}
             </select>
           </label>
           <details class="create-folder-inline">
-            <summary>Create a folder</summary>
+            <summary>{$t("bookmarks.create_a_folder_1eb7")}</summary>
             <div class="create-folder-row">
-              <input bind:value={newFolderName} maxlength="64" placeholder="Folder name" />
-              <button class="secondary-button" type="button" onclick={handleCreateFolder}>Create</button>
+              <input bind:value={newFolderName} maxlength="64" placeholder={$t("bookmarks.folder_name_14d3")} />
+              <button class="secondary-button" type="button" onclick={handleCreateFolder}>{$t("bookmarks.create_4759")}</button>
             </div>
           </details>
-          {#if errorMessage}<p class="error-message" role="alert">{errorMessage}</p>{/if}
+          {#if errorMessage}<ErrorMessage error={errorMessage} />{/if}
           <footer class="dialog-actions">
             {#if $bookmarkEditorState.bookmark}
               <button
                 class="danger-button"
                 type="button"
                 disabled={isSaving}
-                aria-label={pendingRemovalBookmarkId === $bookmarkEditorState.bookmark.id ? "Confirm bookmark removal" : "Remove bookmark"}
+                aria-label={pendingRemovalBookmarkId === $bookmarkEditorState.bookmark.id ? $t("bookmarks.confirm_bookmark_removal_5f5b") : $t("bookmarks.remove_bookmark_b483")}
                 onclick={handleRemove}
               >
-                {pendingRemovalBookmarkId === $bookmarkEditorState.bookmark.id ? "Confirm removal" : "Remove bookmark"}
+                {pendingRemovalBookmarkId === $bookmarkEditorState.bookmark.id ? $t("bookmarks.confirm_removal_bb0f") : $t("bookmarks.remove_bookmark_b483")}
               </button>
             {/if}
             <span class="action-spacer"></span>
-            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>Cancel</button>
+            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>{$t("bookmarks.cancel_1976")}</button>
             <button class="primary-button" type="button" disabled={isSaving || !title.trim() || !url.trim()} onclick={handleSave}>
-              {$bookmarkEditorState.bookmark ? "Save changes" : "Save bookmark"}
+              {$bookmarkEditorState.bookmark ? $t("bookmarks.save_changes_dd0a") : $t("bookmarks.save_bookmark_b63e")}
             </button>
           </footer>
         </div>
       {:else if $bookmarkEditorState.kind === "folders"}
         <div class="dialog-content">
           <div class="create-folder-row">
-            <input bind:value={newFolderName} maxlength="64" placeholder="New folder name" />
-            <button class="primary-button" type="button" onclick={handleCreateFolder}>Create folder</button>
+            <input bind:value={newFolderName} maxlength="64" placeholder={$t("bookmarks.new_folder_name_489b")} />
+            <button class="primary-button" type="button" onclick={handleCreateFolder}>{$t("bookmarks.create_folder_82b9")}</button>
           </div>
           {#if $bookmarkFolders.length === 0}
-            <p class="empty-message">No folders yet.</p>
+            <p class="empty-message">{$t("bookmarks.no_folders_yet_d890")}</p>
           {:else}
             <div class="folder-manager-list">
               {#each $bookmarkFolders as folder (folder.id)}
@@ -228,42 +231,42 @@
                     aria-label={`Folder name: ${folder.name}`}
                     oninput={(event) => folderDrafts[folder.id] = event.currentTarget.value}
                   />
-                  <button class="secondary-button" type="button" onclick={() => handleRenameFolder(folder.id)}>Rename</button>
-                  <button class="danger-button" type="button" onclick={() => handleDeleteFolder(folder.id)}>Delete</button>
+                  <button class="secondary-button" type="button" onclick={() => handleRenameFolder(folder.id)}>{$t("bookmarks.rename_3064")}</button>
+                  <button class="danger-button" type="button" onclick={() => handleDeleteFolder(folder.id)}>{$t("bookmarks.delete_e2d0")}</button>
                 </div>
               {/each}
             </div>
           {/if}
-          {#if errorMessage}<p class="error-message" role="alert">{errorMessage}</p>{/if}
+          {#if errorMessage}<ErrorMessage error={errorMessage} />{/if}
           <footer class="dialog-actions">
             <span class="action-spacer"></span>
-            <button class="primary-button" type="button" onclick={() => void closeBookmarkEditor()}>Done</button>
+            <button class="primary-button" type="button" onclick={() => void closeBookmarkEditor()}>{$t("bookmarks.done_11a6")}</button>
           </footer>
         </div>
       {:else if $bookmarkEditorState.kind === "create-folder"}
         <div class="dialog-content">
           <label>
-            <span>Folder name</span>
+            <span>{$t("bookmarks.folder_name_14d3")}</span>
             <input bind:value={newFolderName} maxlength="64" autocomplete="off" />
           </label>
-          {#if errorMessage}<p class="error-message" role="alert">{errorMessage}</p>{/if}
+          {#if errorMessage}<ErrorMessage error={errorMessage} />{/if}
           <footer class="dialog-actions">
             <span class="action-spacer"></span>
-            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>Cancel</button>
-            <button class="primary-button" type="button" disabled={!newFolderName.trim()} onclick={handleCreateFolder}>Create folder</button>
+            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>{$t("bookmarks.cancel_1976")}</button>
+            <button class="primary-button" type="button" disabled={!newFolderName.trim()} onclick={handleCreateFolder}>{$t("bookmarks.create_folder_82b9")}</button>
           </footer>
         </div>
       {:else}
         <div class="dialog-content">
           <label>
-            <span>Folder name</span>
+            <span>{$t("bookmarks.folder_name_14d3")}</span>
             <input bind:value={folderName} maxlength="64" autocomplete="off" />
           </label>
-          {#if errorMessage}<p class="error-message" role="alert">{errorMessage}</p>{/if}
+          {#if errorMessage}<ErrorMessage error={errorMessage} />{/if}
           <footer class="dialog-actions">
             <span class="action-spacer"></span>
-            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>Cancel</button>
-            <button class="primary-button" type="button" disabled={!folderName.trim()} onclick={handleRenameCurrentFolder}>Save changes</button>
+            <button class="secondary-button" type="button" onclick={() => void closeBookmarkEditor()}>{$t("bookmarks.cancel_1976")}</button>
+            <button class="primary-button" type="button" disabled={!folderName.trim()} onclick={handleRenameCurrentFolder}>{$t("bookmarks.save_changes_dd0a")}</button>
           </footer>
         </div>
       {/if}
@@ -348,7 +351,6 @@
   .danger-button { border: 1px solid rgba(239, 68, 68, 0.38); background: rgba(239, 68, 68, 0.12); color: #fca5a5; }
   button:disabled { opacity: 0.55; cursor: not-allowed; }
   .empty-message { margin: 8px 0; color: var(--text-muted); font-size: 12px; }
-  .error-message { margin: 0; color: #fca5a5; font-size: 11px; }
 
   @media (max-width: 520px) {
     .folder-manager-row { flex-wrap: wrap; }

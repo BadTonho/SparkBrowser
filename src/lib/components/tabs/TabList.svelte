@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import { onDestroy } from "svelte";
   import { slide, fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -179,14 +180,14 @@
 <div class="tabs-section">
   <div class="tabs-header">
     <span class="section-label">
-      {currentWorkspaceName.toUpperCase()} TABS ({workspaceTabs.length})
+      {currentWorkspaceName.toUpperCase()} {$t("tabs.tabs_d820")}{workspaceTabs.length})
     </span>
     <button
       class="new-tab-pill"
       onclick={() => addTab(undefined, $activeWorkspaceId)}
-      title={`Create New Tab (${ $keyboardShortcuts && shortcutLabel("new-tab") })`}
+      title={$t("tabs.create_new_tab_p0_8ca3", { p0: $keyboardShortcuts && shortcutLabel("new-tab") })}
     >
-      <span>+ New</span>
+      <span>{$t("tabs.new_af6a")}</span>
       <kbd>{$keyboardShortcuts && shortcutLabel("new-tab")}</kbd>
     </button>
   </div>
@@ -203,10 +204,10 @@
         onkeydown={(e) => handleKeydown(e, tab.id)}
         role="button"
         tabindex="0"
-        title="{tab.title} (Drag to reorder · {$keyboardShortcuts && shortcutLabel('move-tab-up')} / {$keyboardShortcuts && shortcutLabel('move-tab-down')})"
+        title="{tab.title} {$t("tabs.drag_to_reorder_f64b")} {$keyboardShortcuts && shortcutLabel('move-tab-up')} / {$keyboardShortcuts && shortcutLabel('move-tab-down')})"
         transition:slide={{ duration: 220, easing: cubicOut }}
       >
-        <div class="drag-grip" title="Drag to reorder">
+        <div class="drag-grip" title={$t("tabs.drag_to_reorder_ef86")}>
           <svg width="7" height="13" viewBox="0 0 8 14" fill="currentColor">
             <circle cx="2" cy="2" r="1.3" />
             <circle cx="6" cy="2" r="1.3" />
@@ -221,18 +222,18 @@
         <div class="tab-meta">
           <span class="tab-title">{tab.title}</span>
           <span class="tab-host">
-            {getTabHost(tab.url)}{tab.is_hibernated ? " · Suspended" : ""}
+            {getTabHost(tab.url)}{tab.is_hibernated ? $t("tabs.suspended_8be3") : ""}
           </span>
         </div>
 
         <div class="tab-actions">
-          <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? "Unpin tab" : "Pin tab"} title={tab.is_pinned ? "Unpin tab" : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "\u25C6" : "\u25C7"}</button>
+          <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? $t("tabs.unpin_tab_2055") : $t("tabs.pin_tab_bf50")} title={tab.is_pinned ? $t("tabs.unpin_tab_2055") : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "\u25C6" : "\u25C7"}</button>
           {#if !tab.is_active && !tab.is_hibernated}
             <button
               class="tab-action-btn sleep-btn"
               onclick={(e) => handleHibernateClick(e, tab.id)}
-              title="Hibernate Tab to Free RAM"
-              aria-label="Hibernate Tab"
+              title={$t("tabs.hibernate_tab_to_free_ram_8298")}
+              aria-label={$t("tabs.hibernate_tab_1b5f")}
             >
               💤
             </button>
@@ -240,8 +241,8 @@
           <button
             class="tab-action-btn close-btn"
             onclick={(e) => handleCloseClick(e, tab.id)}
-            title={`Close Tab (${ $keyboardShortcuts && shortcutLabel("close-tab") })`}
-            aria-label="Close Tab"
+            title={$t("tabs.close_tab_p0_14f2", { p0: $keyboardShortcuts && shortcutLabel("close-tab") })}
+            aria-label={$t("tabs.close_tab_f271")}
             transition:fade={{ duration: 120 }}
           >
             ✕

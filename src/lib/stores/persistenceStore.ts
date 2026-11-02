@@ -1,3 +1,5 @@
+import { tr, locale } from "../i18n";
+import { describeError } from "../services/user-errors.js";
 import { writable, derived, get } from "svelte/store";
 import type { BookmarkData, BookmarkFolder, BookmarkItem, HistoryEntry } from "../types/browser";
 import {
@@ -109,20 +111,25 @@ export function showBookmarkContextMenu(
   };
   bookmarkContextMenuState.set(menu);
 
+  refreshBookmarkContextMenu();
+}
+
+function refreshBookmarkContextMenu(): void {
+  const menu = get(bookmarkContextMenuState);
   if (!menu) return;
   const actions = menu.kind === "bookmark"
     ? [
-        { id: "edit-bookmark", label: "Edit bookmark" },
-        { id: "delete-bookmark", label: "Delete bookmark", danger: true },
+        { id: "edit-bookmark", label: tr("common.edit_bookmark") },
+        { id: "delete-bookmark", label: tr("common.delete_bookmark"), danger: true },
       ]
     : menu.kind === "folder"
       ? [
-          { id: "rename-folder", label: "Rename folder" },
-          { id: "delete-folder", label: "Delete folder", danger: true },
+          { id: "rename-folder", label: tr("common.rename_folder") },
+          { id: "delete-folder", label: tr("common.delete_folder_action"), danger: true },
         ]
       : [
-          { id: "create-folder", label: "Create folder" },
-          { id: "manage-folders", label: "Manage folders" },
+          { id: "create-folder", label: tr("common.create_folder") },
+          { id: "manage-folders", label: tr("common.manage_folders") },
         ];
   void setBookmarkContextMenuOverlay(
     true,
@@ -222,7 +229,7 @@ export async function loadHistory(query = historyQuery, more = false): Promise<v
     historyHasMore.set(list.length > 60);
     historyEntries.set(more ? [...current, ...list.slice(0, 60)] : list.slice(0, 60));
   } catch (error) {
-    if (revision === historyRevision) historyError.set(String(error));
+    if (revision === historyRevision) historyError.set(describeError(error));
   } finally {
     if (revision === historyRevision) historyBusy.set(false);
   }
@@ -257,3 +264,5 @@ export async function toggleHistoryDrawer(): Promise<void> {
     await openHistoryDrawer();
   }
 }
+
+locale.subscribe(refreshBookmarkContextMenu);

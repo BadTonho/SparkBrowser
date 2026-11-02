@@ -1,3 +1,5 @@
+import { get } from "svelte/store";
+import { locale, tr } from "../../i18n";
 import { invoke } from "./runtime";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
@@ -58,6 +60,7 @@ export async function setWorkspaceSwitcherOverlay(
         workspaces,
         activeWorkspaceId,
         backdropBlurPx,
+        language: { locale: get(locale), label: tr("workspaces.choose_a_workspace_995c") },
       })
     );
   await workspaceSwitcherSyncQueue;
@@ -86,7 +89,7 @@ export async function setBookmarkContextMenuOverlay(
       x,
       y,
       actions,
-      backdropBlurPx,
+      presentation: { backdropBlurPx, language: { locale: get(locale), label: tr("common.bookmark_actions") } },
     }));
   await bookmarkContextMenuSyncQueue;
 }

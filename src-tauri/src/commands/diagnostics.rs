@@ -4,6 +4,7 @@ use tauri::{AppHandle, Manager, State};
 
 #[derive(Serialize)]
 pub struct BrowserDiagnostics {
+    startup_ready: bool,
     application_identifier: String,
     application_data_directory: String,
     metrics: Snapshot,
@@ -19,6 +20,9 @@ pub async fn get_diagnostics(
 ) -> Result<BrowserDiagnostics, String> {
     let tabs = state.tabs.lock().map_err(|e| e.to_string())?;
     Ok(BrowserDiagnostics {
+        startup_ready: state
+            .startup_ready
+            .load(std::sync::atomic::Ordering::Acquire),
         application_identifier: app.config().identifier.clone(),
         application_data_directory: app
             .path()

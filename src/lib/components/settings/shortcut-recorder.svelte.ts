@@ -1,3 +1,4 @@
+import { UserError, describeError } from "../../services/user-errors.js";
 import { get } from "svelte/store";
 import {
   SHORTCUT_DEFINITIONS,
@@ -25,7 +26,7 @@ export function createShortcutRecorder() {
     let binding: ShortcutCombo;
     if(definition.hold) {
       if(!modifierKeys.includes(event.key)) {
-        recordingError = "Choose Alt, Ctrl, Shift, or Meta.";
+        recordingError = describeError(new UserError("shortcut.modifier", "Modifier required"));
         return true;
       }
       binding = { key: event.key, ctrl: false, alt: false, shift: false, meta: false };
@@ -59,8 +60,8 @@ export function createShortcutRecorder() {
     const definition = SHORTCUT_DEFINITIONS.find((item) => item.id === id);
     if(definition?.hold || definition?.sequence) {
       recordingError = definition.hold
-        ? "Choose Alt, Ctrl, Shift, or Meta."
-        : "This shortcut requires a number key.";
+        ? describeError(new UserError("shortcut.modifier", "Modifier required"))
+        : describeError(new UserError("shortcut.number", "Number required"));
       return true;
     }
     const binding: ShortcutCombo = {

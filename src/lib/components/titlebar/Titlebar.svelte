@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
   import { openTools } from "../../stores/toolsStore";
   import {
@@ -79,8 +80,8 @@
           class="icon-btn sidebar-toggle"
           class:active={$isSidebarOpen}
           onclick={toggleSidebar}
-          title={`Toggle Sidebar (${ $keyboardShortcuts && shortcutLabel("sidebar") })`}
-          aria-label="Toggle Sidebar"
+          title={$t("titlebar.toggle_sidebar_p0_d643", { p0: $keyboardShortcuts && shortcutLabel("sidebar") })}
+          aria-label={$t("titlebar.toggle_sidebar_1d4c")}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="3" />
@@ -111,8 +112,8 @@
           class="nav-btn"
           disabled={$activeNavigation?.can_go_back === false}
           onclick={triggerBack}
-          title={`Back (${ $keyboardShortcuts && shortcutLabel("navigate-back") })`}
-          aria-label="Back"
+          title={$t("titlebar.back_p0_f6f0", { p0: $keyboardShortcuts && shortcutLabel("navigate-back") })}
+          aria-label={$t("titlebar.back_7690")}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
@@ -123,8 +124,8 @@
           class="nav-btn"
           disabled={$activeNavigation?.can_go_forward === false}
           onclick={triggerForward}
-          title={`Forward (${ $keyboardShortcuts && shortcutLabel("navigate-forward") })`}
-          aria-label="Forward"
+          title={$t("titlebar.forward_p0_5837", { p0: $keyboardShortcuts && shortcutLabel("navigate-forward") })}
+          aria-label={$t("titlebar.forward_f1c6")}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round" />
@@ -135,8 +136,8 @@
           class="nav-btn"
           class:spinning={$isLoading}
           onclick={triggerReload}
-          title={`Reload (${ $keyboardShortcuts && shortcutLabel("reload-tab") })`}
-          aria-label="Reload"
+          title={$t("titlebar.reload_p0_ac34", { p0: $keyboardShortcuts && shortcutLabel("reload-tab") })}
+          aria-label={$t("titlebar.reload_bdc0")}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M21 12a9 9 0 1 1-2.64-6.36" stroke-linecap="round" />
@@ -146,7 +147,7 @@
       </div>
 
       <div class="omnibox-wrapper" class:loading={$isLoading} title={$activeNavigation?.error ?? undefined}>
-        <button class="omnibox-icon" onclick={openSitePermissions} aria-label="Site permissions" title={$currentUrl.startsWith("https:") ? "HTTPS connection · Site permissions" : "Unencrypted connection · Site permissions"}>{$currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</button>
+        <button class="omnibox-icon" onclick={openSitePermissions} aria-label={$t("titlebar.site_permissions_a688")} title={$currentUrl.startsWith("https:") ? $t("titlebar.https_connection_site_permissions_9979") : $t("titlebar.unencrypted_connection_site_permissions_7add")}>{$currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</button>
         <input
           class="omnibox-input"
           type="text"
@@ -154,23 +155,23 @@
           onkeydown={(event) => { if (event.key === "Escape") { addressInput.set($currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
           onfocus={handleFocus}
           onblur={() => isAddressEditing.set(false)}
-          placeholder="Search {$defaultSearchEngine} or enter URL..."
+          placeholder="{$t("titlebar.search_49c2")} {$defaultSearchEngine} {$t("titlebar.or_enter_url_5dc7")}"
           spellcheck="false"
         />
         <button
           class="star-btn"
           class:bookmarked={isCurrentUrlBookmarked}
           onclick={handleBookmarkToggle}
-          title={isCurrentUrlBookmarked ? "Edit Bookmark" : "Bookmark this Page"}
-          aria-label={isCurrentUrlBookmarked ? "Edit Bookmark" : "Bookmark this Page"}
+          title={isCurrentUrlBookmarked ? $t("titlebar.edit_bookmark_6e59") : $t("titlebar.bookmark_this_page_b12b")}
+          aria-label={isCurrentUrlBookmarked ? $t("titlebar.edit_bookmark_6e59") : $t("titlebar.bookmark_this_page_b12b")}
         >
           {isCurrentUrlBookmarked ? "★" : "☆"}
         </button>
         <button
           class="go-btn"
           onclick={() => submitNavigation($addressInput)}
-          title="Navigate"
-          aria-label="Navigate"
+          title={$t("titlebar.navigate_5ea5")}
+          aria-label={$t("titlebar.navigate_5ea5")}
         >
           ↵
         </button>
@@ -179,14 +180,14 @@
 
     <!-- Top-Right Controls: Quick Tools, Settings & Window Controls -->
     <div class="titlebar-controls">
-      <button class="icon-btn" onclick={() => openTools()} title="Tools" data-testid="open-tools" aria-label="Tools">☷</button>
+      <button class="icon-btn" onclick={() => openTools()} title={$t("titlebar.tools_ea93")} data-testid="open-tools" aria-label={$t("titlebar.tools_ea93")}>☷</button>
       {#if $tabLayout === "horizontal"}
         <button
           class="icon-btn"
           class:active={$showBookmarksBar}
           onclick={toggleBookmarksBar}
-          title={$showBookmarksBar ? "Hide bookmarks bar" : "Show bookmarks bar"}
-          aria-label={$showBookmarksBar ? "Hide bookmarks bar" : "Show bookmarks bar"}
+          title={$showBookmarksBar ? $t("titlebar.hide_bookmarks_bar_31b5") : $t("titlebar.show_bookmarks_bar_570b")}
+          aria-label={$showBookmarksBar ? $t("titlebar.hide_bookmarks_bar_31b5") : $t("titlebar.show_bookmarks_bar_570b")}
           aria-pressed={$showBookmarksBar}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -199,8 +200,8 @@
       <button
         class="icon-btn"
         onclick={() => openCommandBar()}
-        title={`Open Command Bar (${ $keyboardShortcuts && shortcutLabel("command-bar") })`}
-        aria-label="Command Bar"
+        title={$t("titlebar.open_command_bar_p0_cf83", { p0: $keyboardShortcuts && shortcutLabel("command-bar") })}
+        aria-label={$t("titlebar.command_bar_1356")}
       >
         ⚡
       </button>
@@ -208,8 +209,8 @@
       <button
         class="icon-btn"
         onclick={openHistoryDrawer}
-        title={`Browsing History (${ $keyboardShortcuts && shortcutLabel("history") })`}
-        data-testid="open-history" aria-label="Browsing History"
+        title={$t("titlebar.browsing_history_p0_cf44", { p0: $keyboardShortcuts && shortcutLabel("history") })}
+        data-testid="open-history" aria-label={$t("titlebar.browsing_history_13cc")}
       >
         🕒
       </button>
@@ -217,8 +218,8 @@
       <button
         class="icon-btn"
         onclick={openDownloadsDrawer}
-        title={`Download Manager (${ $keyboardShortcuts && shortcutLabel("downloads") })`}
-        data-testid="open-downloads" aria-label="Downloads"
+        title={$t("titlebar.download_manager_p0_8620", { p0: $keyboardShortcuts && shortcutLabel("downloads") })}
+        data-testid="open-downloads" aria-label={$t("titlebar.downloads_d5fd")}
       >
         📥
       </button>
@@ -228,9 +229,9 @@
         class:shield-on={$privacyStats.shield_enabled}
         onclick={flipAdblockShield}
         title={$privacyStats.shield_enabled
-          ? `Rust AdBlock Active (${$privacyStats.blocked_count} blocked) — Click to pause`
-          : "Rust AdBlock Paused — Click to enable"}
-        aria-label="Toggle AdBlock Shield"
+          ? $t("titlebar.rust_adblock_active_p0_blocked_click_to_pause_91a8", { p0: $privacyStats.blocked_count })
+          : $t("titlebar.rust_adblock_paused_click_to_enable_5fe1")}
+        aria-label={$t("titlebar.toggle_adblock_shield_6c4c")}
       >
         <span>🛡️</span>
         <span class="shield-dot"></span>
@@ -239,8 +240,8 @@
       <button
         class="icon-btn"
         onclick={openSettingsModal}
-        title={`Settings & Shortcuts (${ $keyboardShortcuts && shortcutLabel("settings") })`}
-        data-testid="open-settings" aria-label="Settings"
+        title={$t("titlebar.settings_shortcuts_p0_82b9", { p0: $keyboardShortcuts && shortcutLabel("settings") })}
+        data-testid="open-settings" aria-label={$t("titlebar.settings_74a8")}
       >
         ⚙️
       </button>
@@ -248,8 +249,8 @@
       <button
         class="icon-btn"
         onclick={toggleZenMode}
-        title={`Enter Zen Focus Mode (${ $keyboardShortcuts && shortcutLabel("zen") })`}
-        aria-label="Zen Mode"
+        title={$t("titlebar.enter_zen_focus_mode_p0_d689", { p0: $keyboardShortcuts && shortcutLabel("zen") })}
+        aria-label={$t("titlebar.zen_mode_826b")}
       >
         🧘
       </button>
@@ -257,12 +258,12 @@
       {#if $tabLayout === "vertical"}
         <div class="divider"></div>
 
-        <button class="win-btn" onclick={minimizeWindow} title="Minimize" aria-label="Minimize">
+        <button class="win-btn" onclick={minimizeWindow} title={$t("titlebar.minimize_d72e")} aria-label={$t("titlebar.minimize_d72e")}>
           <svg width="12" height="12" viewBox="0 0 12 12">
             <rect x="2" y="5.5" width="8" height="1" fill="currentColor" />
           </svg>
         </button>
-        <button class="win-btn" onclick={toggleMaximizeWindow} title="Maximize" aria-label="Maximize">
+        <button class="win-btn" onclick={toggleMaximizeWindow} title={$t("titlebar.maximize_fba6")} aria-label={$t("titlebar.maximize_fba6")}>
           <svg width="12" height="12" viewBox="0 0 12 12">
             <rect
               x="2.5"
@@ -276,7 +277,7 @@
             />
           </svg>
         </button>
-        <button class="win-btn close-btn" onclick={closeWindow} title="Close" aria-label="Close">
+        <button class="win-btn close-btn" onclick={closeWindow} title={$t("titlebar.close_7d9e")} aria-label={$t("titlebar.close_7d9e")}>
           <svg width="12" height="12" viewBox="0 0 12 12">
             <path
               d="M3 3L9 9M9 3L3 9"

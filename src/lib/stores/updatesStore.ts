@@ -1,3 +1,5 @@
+import { tr } from "../i18n";
+import { describeError } from "../services/user-errors.js";
 import { get, writable } from "svelte/store";
 import { changeUpdateChannel, checkForUpdates, downloadUpdate, fetchUpdateState, installUpdate, onUpdateState, previewUpdateState } from "../services/bridge/updates";
 import { createUpdateGate } from "../services/update-snapshots.js";
@@ -14,7 +16,7 @@ const apply = createUpdateGate((value: UpdateState) => updateState.set(value));
 async function action(work: () => Promise<void>) {
   if (get(updateBusy)) return;
   updateBusy.set(true); updateActionError.set("");
-  try { await work(); } catch (error) { updateActionError.set(String(error)); }
+  try { await work(); } catch (error) { updateActionError.set(describeError(error)); }
   finally { updateBusy.set(false); }
 }
 export function initializeUpdates(): () => void {
@@ -30,7 +32,7 @@ export function initializeUpdates(): () => void {
       const checked = await checkForUpdates(true);
       if (!disposed) apply(checked);
     }
-  })().catch(error => { if (!disposed) updateActionError.set(String(error)); });
+  })().catch(error => { if (!disposed) updateActionError.set(describeError(error)); });
   return () => { disposed = true; stop?.(); };
 }
 export const selectUpdateChannel = (channel: UpdateChannel) => action(async () => { apply(await changeUpdateChannel(channel)); });
@@ -44,8 +46,8 @@ export const startUpdateInstall = () => action(async () => {
   if (!version || get(updateState).status !== "ready") return;
   const snapshot = await invoke<TabSnapshot>("get_tabs");
   const activity = (Array.isArray(snapshot) ? snapshot : snapshot.tabs).some(tab => tab.activity?.dirty_form || tab.activity?.playing_media);
-  if (!window.confirm(`Install version ${version} and restart Veloce Browser?`)) return;
-  if (activity && !window.confirm("Some pages have edited forms or playing media. This page state will be lost on restart. Continue?")) return;
+  if (!window.confirm(tr("common.install_confirm", { version }))) return;
+  if (activity && !window.confirm(tr("common.activity_confirm"))) return;
   await setOverlayVisibility(true, "update-install");
   try {
     await noteWriter.flushAll();

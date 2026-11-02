@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { tr } from "../../i18n";
+  import { errorText } from "../../i18n/errors";
+  import { describeError } from "../../services/user-errors.js";
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import {
@@ -27,13 +30,13 @@
       } else if (action === "manage-folders" && menu.kind === "empty") {
         await openBookmarkFolderManager();
       } else if (action === "delete-folder" && menu.kind === "folder") {
-        if (window.confirm(`Delete folder “${menu.folder.name}”? Its bookmarks will be moved to the root.`)) {
+        if (window.confirm(tr("common.delete_folder", { name: menu.folder.name }))) {
           await deleteBookmarkFolder(menu.folder.id);
         }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      window.alert(message);
+      const message = describeError(error);
+      window.alert(get(errorText)(message));
     }
   }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -85,7 +86,7 @@
         use:focusDialog={{ onEscape: dismissWorkspacePicker }}
       role="dialog"
         aria-modal="true"
-        aria-label="Choose a workspace"
+        aria-label={$t("workspaces.choose_a_workspace_995c")}
         tabindex="-1"
       >
         <div class="workspace-list">

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import TabList from "../tabs/TabList.svelte";
   import {
@@ -31,9 +32,9 @@
     <WorkspaceSwitcher />
 
     <!-- SQLite Bookmarks Grid -->
-    <div class="bookmark-content" role="region" aria-label="Bookmarks" oncontextmenu={showEmptyContextMenu}>
+    <div class="bookmark-content" role="region" aria-label={$t("sidebar.bookmarks_9631")} oncontextmenu={showEmptyContextMenu}>
       <div class="section-header">
-        <span>BOOKMARKS ({$bookmarks.length})</span>
+        <span>{$t("sidebar.bookmarks_0b4a")}{$bookmarks.length})</span>
       </div>
 
     {#if rootBookmarks.length > 0}
@@ -75,13 +76,13 @@
             {/each}
           </div>
         {:else}
-          <div class="folder-empty">No bookmarks in this folder</div>
+          <div class="folder-empty">{$t("sidebar.no_bookmarks_in_this_folder_3a58")}</div>
         {/if}
       </details>
     {/each}
 
       {#if $bookmarks.length === 0 && $bookmarkFolders.length === 0}
-        <div class="folder-empty">No bookmarks yet</div>
+        <div class="folder-empty">{$t("sidebar.no_bookmarks_yet_dac0")}</div>
       {/if}
     </div>
 

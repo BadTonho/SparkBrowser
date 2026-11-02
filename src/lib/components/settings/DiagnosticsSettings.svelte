@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { t } from "../../i18n";
   import { onMount } from "svelte";
   import { ipcDiagnostics } from "../../services/diagnostics.js";
   import { fetchDiagnostics, type NativeDiagnostics } from "../../services/bridge/diagnostics";
@@ -22,28 +24,28 @@
 </script>
 
 <section class="setting-group" aria-labelledby="diagnostics-heading">
-  <h2 id="diagnostics-heading" class="group-title">Local Diagnostics</h2>
-  <p>Session counters stay in memory. They contain operation names and timings, with no page URLs, titles, arguments or tokens.</p>
-  <button class="pill-action" onclick={refresh}>Refresh</button>
-  {#if error}<p role="alert">{error}</p>{/if}
+  <h2 id="diagnostics-heading" class="group-title">{$t("settings.local_diagnostics_271b")}</h2>
+  <p>{$t("settings.session_counters_stay_in_memory_they_contain_operation_names_and_timings_fb73")}</p>
+  <button class="pill-action" onclick={refresh}>{$t("settings.refresh_0e91")}</button>
+  {#if error}<ErrorMessage error={error} />{/if}
   {#if native}
-    <p>{native.tabs} tabs · {native.resident_webviews} resident WebViews · {native.protected_tabs} protected tabs</p>
+    <p>{native.tabs} {$t("settings.tabs_9dcf")} {native.resident_webviews} {$t("settings.resident_webviews_f20f")} {native.protected_tabs} {$t("settings.protected_tabs_d119")}</p>
     <table>
-      <caption>Native work</caption>
-      <thead><tr><th>Operation</th><th>Calls</th><th>Failures</th><th>Rows written</th></tr></thead>
+      <caption>{$t("settings.native_work_05cc")}</caption>
+      <thead><tr><th>{$t("settings.operation_0f04")}</th><th>{$t("settings.calls_b73a")}</th><th>{$t("settings.failures_7bd3")}</th><th>{$t("settings.rows_written_4bd0")}</th></tr></thead>
       <tbody>{#each Object.entries(native.metrics.totals) as [operation, total]}
         <tr><td>{operation}</td><td>{total.calls}</td><td>{total.failures}</td><td>{total.affected_rows}</td></tr>
       {/each}</tbody>
     </table>
   {/if}
   <table>
-    <caption>Application IPC</caption>
-    <thead><tr><th>Command</th><th>Calls</th><th>Errors</th><th>Mean (ms)</th><th>Recent p95 (ms)</th></tr></thead>
+    <caption>{$t("settings.application_ipc_d01d")}</caption>
+    <thead><tr><th>{$t("settings.command_7131")}</th><th>{$t("settings.calls_b73a")}</th><th>{$t("settings.errors_cb70")}</th><th>{$t("settings.mean_ms_482b")}</th><th>{$t("settings.recent_p95_ms_337e")}</th></tr></thead>
     <tbody>{#each ipc as row (row.command)}
       <tr><td>{row.command}</td><td>{row.count}</td><td>{row.errors}</td><td>{row.mean_ms.toFixed(2)}</td><td>{row.p95_recent_ms.toFixed(2)}</td></tr>
     {/each}</tbody>
   </table>
-  <p>The p95 uses the most recent 256 IPC samples. WebView count does not measure RAM; compare the full application process tree for memory benchmarks.</p>
+  <p>{$t("settings.the_p95_uses_the_most_recent_256_ipc_samples_webview_count_does_not_meas_f66b")}</p>
 </section>
 
 <style>

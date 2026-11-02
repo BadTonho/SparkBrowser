@@ -165,6 +165,9 @@ pub fn run() {
             )?);
             app.manage(updates::UpdateService::new(app.handle()).map_err(std::io::Error::other)?);
             spawn_content_webview(app.handle())?;
+            state
+                .startup_ready
+                .store(true, std::sync::atomic::Ordering::Release);
 
             Ok(())
         })

@@ -65,6 +65,7 @@ export async function runScenario(name, scenario) {
     const diagnostics = await invoke('get_diagnostics');
     assert.equal(diagnostics.application_identifier, 'org.veloce.browser.native-tests');
     assert.equal(toNamespacedPath(resolve(diagnostics.application_data_directory)).toLowerCase(), toNamespacedPath(resolve(directory, 'data')).toLowerCase());
+    await until(async () => (await invoke('get_diagnostics')).startup_ready, 'native startup completes');
     await until(() => script('return document.querySelectorAll(".h-tab,.tab-row").length > 0'), 'shell initialization');
   }
   async function closeSession() {
@@ -80,18 +81,33 @@ export async function runScenario(name, scenario) {
     const png = await request('GET', `/session/${session}/screenshot`);
     writeFileSync(resolve(directory, 'artifacts', `${name}.png`), Buffer.from(png, 'base64'));
   }
+  async function startDriver() {
+    driverError = undefined;
+    driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, VELOCE_NATIVE_TEST_RUN_DIR: directory }, detached: process.platform !== 'win32' });
+    driver.on('error', error => { driverError = error; });
+    await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'driver ready');
+  }
+  async function stopDriver() {
+    if (driver?.pid) {
+      if (process.platform === 'win32') {
+        // Terminate only the child tree created for this scenario.
+        await new Promise(resolve => { const kill = spawn('taskkill', ['/PID', String(driver.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }); kill.on('error', resolve); kill.on('close', resolve); });
+      } else { try { process.kill(-driver.pid, 'SIGKILL'); } catch { /* Already exited. */ } }
+    }
+    driver = undefined;
+  }
   async function restart() {
     await invoke('get_history', { limit: 10 });
     await script(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }); return null;`).catch(() => {});
     await until(async () => { try { return !(await request('GET', `/session/${session}/window/handles`)).length; } catch { return true; } }, 'normal native exit');
     await closeSession().catch(() => {});
+    await stopDriver();
+    await startDriver();
     await openSession();
   }
   try {
     fixture = await createFixture();
-    driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, VELOCE_NATIVE_TEST_RUN_DIR: directory }, detached: process.platform !== 'win32' });
-    driver.on('error', error => { driverError = error; });
-    await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'driver ready');
+    await startDriver();
     await openSession();
     await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, sessionId: () => session, restart, directory });
     if (process.env.VELOCE_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
@@ -100,12 +116,7 @@ export async function runScenario(name, scenario) {
     if (session) await screenshot('failure').catch(() => {});
   } finally {
     await closeSession().catch(error => cleanupErrors.push(String(error)));
-    if (driver?.pid) {
-      if (process.platform === 'win32') {
-        // Terminate only the child tree created for this scenario.
-        await new Promise(resolve => { const kill = spawn('taskkill', ['/PID', String(driver.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }); kill.on('error', resolve); kill.on('close', resolve); });
-      } else { try { process.kill(-driver.pid, 'SIGKILL'); } catch { /* Already exited. */ } }
-    }
+    await stopDriver();
     await fixture?.close().catch(error => cleanupErrors.push(String(error)));
     await cleanRunData(directory).catch(error => cleanupErrors.push(String(error)));
     try {

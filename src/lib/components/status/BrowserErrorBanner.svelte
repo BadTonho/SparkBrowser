@@ -1,4 +1,8 @@
 <script lang="ts">
+  import ErrorMessage from "./ErrorMessage.svelte";
+  import { UserError } from "../../services/user-errors.js";
+  import { describeError } from "../../services/user-errors.js";
+  import { t } from "../../i18n";
   import { onMount } from "svelte";
   import { hasStorageFailure } from "../../services/storage.js";
   import { listen } from "@tauri-apps/api/event";
@@ -9,10 +13,10 @@
     let disposed = false;
     let stop: (() => void) | undefined;
     const showError = (event: PromiseRejectionEvent) => {
-      message = event.reason instanceof Error ? event.reason.message : String(event.reason);
+      message = describeError(event.reason);
       event.preventDefault();
     };
-    const storageError = () => { message = "Local preferences could not be read or saved; this session will use memory."; };
+    const storageError = () => { message = describeError(new UserError("storage.failed", "Local preferences unavailable")); };
     if (hasStorageFailure()) storageError();
     window.addEventListener("storage-unavailable", storageError);
     window.addEventListener("unhandledrejection", showError);
@@ -32,13 +36,12 @@
 
 {#if message}
   <aside role="alert">
-    <span>{message}</span>
-    <button onclick={() => { message = ""; }} aria-label="Dismiss error">×</button>
+    <ErrorMessage error={message} />
+    <button onclick={() => { message = ""; }} aria-label={$t("status.dismiss_error_2db0")}>×</button>
   </aside>
 {/if}
 
 <style>
   aside { position: fixed; top: 4px; left: 50%; transform: translateX(-50%); z-index: 3000; max-width: min(640px, 75vw); display: flex; align-items: center; gap: 12px; padding: 6px 12px; background: #431f23; color: #fff; border: 1px solid #bf7373; border-radius: 8px; font-size: 12px; }
-  span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button { color: inherit; background: transparent; border: 0; cursor: pointer; font-size: 18px; }
 </style>

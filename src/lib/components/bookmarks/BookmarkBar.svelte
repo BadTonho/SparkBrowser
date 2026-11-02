@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import { onDestroy } from "svelte";
   import {
     bookmarksByFolder,
@@ -49,7 +50,7 @@
   let openFolderBookmarks = $derived(($bookmarksByFolder.get(openFolderId) ?? []));
 </script>
 
-<nav class="bookmark-bar" aria-label="Bookmarks" oncontextmenu={showEmptyContextMenu}>
+<nav class="bookmark-bar" aria-label={$t("bookmarks.bookmarks_9631")} oncontextmenu={showEmptyContextMenu}>
   <div class="bookmark-list">
     {#each rootBookmarks as item (item.id)}
       <button
@@ -58,7 +59,7 @@
         onclick={() => navigate(item.url)}
         oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
         title={item.url}
-        aria-label="Open bookmark: {item.title}"
+        aria-label="{$t("bookmarks.open_bookmark_9217")} {item.title}"
       >
         <span class="bookmark-icon" aria-hidden="true">{item.icon}</span>
         <span class="bookmark-title">{item.title}</span>
@@ -72,7 +73,7 @@
           onclick={(event) => toggleFolder(event, folder.id)}
           oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "folder", folder })}
           aria-expanded={openFolderId === folder.id}
-          aria-label="Open folder: {folder.name}"
+          aria-label="{$t("bookmarks.open_folder_ae74")} {folder.name}"
         >
           <span aria-hidden="true">📁</span>
           <span class="bookmark-title">{folder.name}</span>
@@ -89,11 +90,11 @@
     style:left="{Math.max(8, menuPosition.left)}px"
     style:top="{menuPosition.top}px"
     role="menu"
-    aria-label="{openFolder.name} bookmarks"
+    aria-label="{openFolder.name} {$t("bookmarks.bookmarks_37d1")}"
   >
     <div class="folder-menu-heading">📁 {openFolder.name}</div>
     {#if openFolderBookmarks.length === 0}
-      <span class="bookmark-empty">This folder is empty</span>
+      <span class="bookmark-empty">{$t("bookmarks.this_folder_is_empty_3043")}</span>
     {:else}
       {#each openFolderBookmarks as item (item.id)}
         <button
@@ -107,7 +108,7 @@
         </button>
       {/each}
     {/if}
-    <button class="folder-menu-manage" onclick={() => { openFolderId = null; void openBookmarkFolderManager(); }}>Manage folders…</button>
+    <button class="folder-menu-manage" onclick={() => { openFolderId = null; void openBookmarkFolderManager(); }}>{$t("bookmarks.manage_folders_3642")}</button>
   </div>
 {/if}
 

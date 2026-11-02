@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import { isSitePermissionsOpen, permissionRequests } from "../../stores/sitePermissionsStore";
   import SplitDivider from "./SplitDivider.svelte";
   import { splitLayout, splitDragRatio, splitKey } from "../../stores/splitViewStore";
@@ -77,13 +78,13 @@
       {#if !inTauri || !$isWorkspaceSwitcherOverlayOpen}
         <div class="browser-preview-fallback">
           <div class="fallback-card">
-            <h2>🦀 Multi-WebView Viewport ({$tabs.length} {$tabs.length === 1 ? "Tab" : "Tabs"})</h2>
-            <p>Active URL: <strong>{$currentUrl}</strong></p>
+            <h2>{$t("viewport.multi_webview_viewport_5f2a")}{$tabs.length} {$tabs.length === 1 ? $t("viewport.tab_90dd") : $t("viewport.tabs_8e5e")})</h2>
+            <p>{$t("viewport.active_url_fa41")} <strong>{$currentUrl}</strong></p>
             <p class="hint">
               {#if anyOverlayOpen}
-                Overlay Active — Press <kbd>ESC</kbd> to return to the active WebView.
+                {$t("viewport.overlay_active_press_bf4f")} <kbd>ESC</kbd> {$t("viewport.to_return_to_the_active_webview_9829")}
               {:else}
-                Run via <code>npm run tauri dev</code> to mount the native Rust child WebView inside this frame.
+                {$t("viewport.run_via_3e45")} <code>npm run tauri dev</code> {$t("viewport.to_mount_the_native_rust_child_webview_inside_this_frame_5fdc")}
               {/if}
             </p>
           </div>

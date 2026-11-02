@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "../../i18n";
   import { onDestroy, onMount } from "svelte";
   import { cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
@@ -180,12 +181,12 @@
       >
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
         <span class="tab-title">{tab.title}</span>
-        <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? "Unpin tab" : "Pin tab"} title={tab.is_pinned ? "Unpin tab" : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "\u25C6" : "\u25C7"}</button>
+        <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? $t("tabs.unpin_tab_2055") : $t("tabs.pin_tab_bf50")} title={tab.is_pinned ? $t("tabs.unpin_tab_2055") : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "\u25C6" : "\u25C7"}</button>
         <button
           class="tab-close-btn"
           onclick={(e) => handleCloseClick(e, tab.id)}
-          title={`Close tab (${ $keyboardShortcuts && shortcutLabel("close-tab") })`}
-          aria-label="Close tab"
+          title={$t("tabs.close_tab_p0_d2d6", { p0: $keyboardShortcuts && shortcutLabel("close-tab") })}
+          aria-label={$t("tabs.close_tab_50a3")}
         >
           ✕
         </button>
@@ -195,8 +196,8 @@
     <button
       class="new-tab-btn"
       onclick={() => addTab(undefined, $activeWorkspaceId)}
-      title={`Create New Tab (${ $keyboardShortcuts && shortcutLabel("new-tab") })`}
-      aria-label="Create New Tab"
+      title={$t("tabs.create_new_tab_p0_8ca3", { p0: $keyboardShortcuts && shortcutLabel("new-tab") })}
+      aria-label={$t("tabs.create_new_tab_400e")}
     >
       +
     </button>
@@ -205,13 +206,13 @@
   <div class="drag-spacer" data-tauri-drag-region></div>
 
   <div class="window-controls">
-    <button class="win-btn" onclick={minimizeWindow} title="Minimize" aria-label="Minimize">
+    <button class="win-btn" onclick={minimizeWindow} title={$t("tabs.minimize_d72e")} aria-label={$t("tabs.minimize_d72e")}>
       <svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="1" fill="currentColor" /></svg>
     </button>
-    <button class="win-btn" onclick={toggleMaximizeWindow} title="Maximize" aria-label="Maximize">
+    <button class="win-btn" onclick={toggleMaximizeWindow} title={$t("tabs.maximize_fba6")} aria-label={$t("tabs.maximize_fba6")}>
       <svg width="12" height="12" viewBox="0 0 12 12"><rect x="2.5" y="2.5" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
     </button>
-    <button class="win-btn close-btn" onclick={closeWindow} title="Close" aria-label="Close">
+    <button class="win-btn close-btn" onclick={closeWindow} title={$t("tabs.close_7d9e")} aria-label={$t("tabs.close_7d9e")}>
       <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3L9 9M9 3L3 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
     </button>
   </div>

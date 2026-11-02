@@ -15,6 +15,19 @@ use tauri::{
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverlayLanguage {
+    pub locale: String,
+    pub label: String,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayPresentation {
+    pub backdrop_blur_px: Option<u8>,
+    pub language: Option<OverlayLanguage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BookmarkContextMenuAction {
     pub id: String,
@@ -40,6 +53,7 @@ pub fn build_workspace_switcher_update_script(
     token: &str,
     visible: bool,
     backdrop_blur_px: u8,
+    language: Option<&OverlayLanguage>,
 ) -> Result<String, String> {
     let payload = serde_json::to_string(&serde_json::json!({
         "workspaces": workspaces,
@@ -47,6 +61,7 @@ pub fn build_workspace_switcher_update_script(
         "token": token,
         "visible": visible,
         "backdropBlurPx": backdrop_blur_px.min(24),
+        "language": language,
     }))
     .map_err(|error| format!("Failed to serialize workspace switcher: {error}"))?;
     Ok(format!(
@@ -61,6 +76,7 @@ pub fn build_bookmark_context_menu_script(
     token: &str,
     visible: bool,
     backdrop_blur_px: u8,
+    language: Option<&OverlayLanguage>,
 ) -> Result<String, String> {
     let payload = serde_json::to_string(&serde_json::json!({
         "x": x,
@@ -69,6 +85,7 @@ pub fn build_bookmark_context_menu_script(
         "token": token,
         "visible": visible,
         "backdropBlurPx": backdrop_blur_px.min(24),
+        "language": language,
     }))
     .map_err(|error| format!("Failed to serialize bookmark context menu: {error}"))?;
     Ok(format!(

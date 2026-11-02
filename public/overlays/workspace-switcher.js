@@ -49,6 +49,11 @@
         }
 
         window.__veloceSetWorkspaceSwitcher = (payload) => {
+          if (payload.language) {
+            document.documentElement.lang = payload.language.locale === "pt-BR" ? "pt-BR" : "en";
+            list.setAttribute("aria-label", payload.language.label);
+            document.title = payload.language.label;
+          }
           const shouldOpen = Boolean(payload.visible);
           const wasVisible = isOpen && root.style.display !== "none";
           const transition = ++transitionSequence;

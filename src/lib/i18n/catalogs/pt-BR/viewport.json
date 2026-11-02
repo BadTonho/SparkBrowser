@@ -1,0 +1,11 @@
+{
+  "viewport.resize_split_view_2303": "Redimensionar visualização dividida",
+  "viewport.multi_webview_viewport_5f2a": "🦀 Área de múltiplas WebViews (",
+  "viewport.tab_90dd": "Aba",
+  "viewport.tabs_8e5e": "Abas",
+  "viewport.active_url_fa41": "Endereço ativo:",
+  "viewport.overlay_active_press_bf4f": "Painel ativo — Pressione",
+  "viewport.to_return_to_the_active_webview_9829": "para retornar à WebView ativa.",
+  "viewport.run_via_3e45": "Execute com",
+  "viewport.to_mount_the_native_rust_child_webview_inside_this_frame_5fdc": "para carregar a WebView nativa dentro desta área."
+}

@@ -1,3 +1,4 @@
+import { locale } from "../i18n";
 import { derived, get, writable } from "svelte/store";
 import {
   onWorkspaceShortcutCancel,
@@ -216,3 +217,5 @@ export async function chooseWorkspaceFromPicker(workspaceId: string): Promise<vo
   if (!get(workspaces).some((workspace) => workspace.id === workspaceId)) return;
   await selectWorkspaceFromPicker(workspaceId);
 }
+
+locale.subscribe(refreshOpenOverlay);

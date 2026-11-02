@@ -17,7 +17,7 @@ use tauri::{
 pub use super::content_lifecycle::{reset_content_webviews, sync_all_webviews};
 pub use super::internal_overlays::{
     build_bookmark_context_menu_script, build_workspace_switcher_update_script,
-    create_internal_bridge_token, BookmarkContextMenuAction,
+    create_internal_bridge_token, BookmarkContextMenuAction, OverlayLanguage, OverlayPresentation,
 };
 pub use super::url_input::{resolve_input_to_url_with_search_engine, search_engine_home_url};
 pub const CONTENT_WEBVIEW_PREFIX: &str = "content-webview-";

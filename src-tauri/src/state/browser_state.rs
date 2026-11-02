@@ -38,6 +38,7 @@ pub struct TabSnapshot {
 }
 
 pub struct BrowserState {
+    pub startup_ready: AtomicBool,
     pub split_layouts: Mutex<std::collections::HashMap<String, super::split_layout::SplitLayout>>,
     pub diagnostics: super::diagnostics::Diagnostics,
     pub resident_limit: std::sync::atomic::AtomicUsize,
@@ -73,6 +74,7 @@ impl Default for BrowserState {
             true,
         );
         Self {
+            startup_ready: AtomicBool::new(false),
             split_layouts: Mutex::new(Default::default()),
             diagnostics: super::diagnostics::Diagnostics::default(),
             resident_limit: std::sync::atomic::AtomicUsize::new(8),

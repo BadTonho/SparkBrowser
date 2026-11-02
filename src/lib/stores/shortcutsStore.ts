@@ -1,3 +1,4 @@
+import { UserError, describeError } from "../services/user-errors.js";
 import { safeStorage } from "../services/storage.js";
 import { get, writable } from "svelte/store";
 import { setKeyboardShortcuts as syncKeyboardShortcuts } from "../services/tauri-bridge";
@@ -132,13 +133,13 @@ export function getShortcutBinding(map: ShortcutMap, id: string): ShortcutCombo 
 export function setShortcutBinding(id: string, binding: ShortcutCombo): string | undefined {
   const current = get(keyboardShortcuts);
   const definition = SHORTCUT_DEFINITIONS.find((item) => item.id === id);
-  if (!definition) return "Unknown shortcut";
+  if (!definition) return describeError(new UserError("shortcut.invalid", "Unknown shortcut"));
   const candidate = { ...binding, key: definition.sequence === "digit" ? "Digit" : binding.key };
   const conflict = SHORTCUT_DEFINITIONS.find((item) => {
     if (item.id === id) return false;
     return (current[item.id] ?? []).some((existing) => sameCombo(existing, candidate));
   });
-  if (conflict) return `Already used by “${conflict.label}”`;
+  if (conflict) return describeError(new UserError("shortcut.conflict", conflict.id));
 
   const next = { ...current, [id]: [candidate] };
   keyboardShortcuts.set(next);

@@ -1,3 +1,4 @@
+import { checkLocalization } from "./localization.mjs";
 import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
 import { checkNotesUi } from './notes-ui.mjs';
@@ -6,6 +7,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  localization: async context => { await prepareTabs(context); await checkLocalization(context); },
   navigation: async context => {
     const { invoke, until, fixture } = context;
     const { a } = await prepareTabs(context);
