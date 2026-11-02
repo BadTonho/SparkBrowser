@@ -3,5 +3,11 @@
   "media.unmute": "Desmutar aba",
   "media.error": "Não foi possível aplicar o controle de mídia. Tente novamente.",
   "media.unavailable": "Os controles de mídia estão indisponíveis aqui.",
-  "media.close": "Fechar"
+  "media.close": "Fechar",
+  "media.heading": "Mídia da página",
+  "media.volume": "Volume",
+  "media.reset": "Restaurar 100%",
+  "media.limited": "Este player não aceita amplificação. O volume está limitado a 100%.",
+  "media.pending": "O processamento de áudio não foi ativado. Interaja com a página e ajuste o volume novamente.",
+  "media.volume_unavailable": "O ajuste de volume está indisponível neste player. O mute da aba continua disponível."
 }

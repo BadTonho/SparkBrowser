@@ -21,3 +21,24 @@ pub async fn set_tab_muted(
     let _operation = state.tab_operations.lock().await;
     service.mute(&app, &tab_id, muted).await
 }
+
+#[tauri::command]
+pub async fn refresh_tab_media(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    tab_id: String,
+) -> Result<MediaSnapshot, String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::media::volume::refresh(&app, &tab_id).await
+}
+#[tauri::command]
+pub async fn set_tab_volume(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    tab_id: String,
+    volume: u16,
+    document_key: String,
+) -> Result<MediaSnapshot, String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::media::volume::set(&app, &tab_id, volume, &document_key).await
+}

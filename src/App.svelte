@@ -16,6 +16,7 @@
   import PermissionPrompt from "./lib/components/permissions/PermissionPrompt.svelte";
   import { initializePermissionEvents } from "./lib/stores/sitePermissionsStore";
   import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
+  import MediaPanel from "./lib/components/media/MediaPanel.svelte";
   import MediaNotice from "./lib/components/media/MediaNotice.svelte";
   import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
   import { slide } from "svelte/transition";
@@ -317,6 +318,7 @@
 <div class="browser-root">
   <BrowserErrorBanner />
   <MediaNotice />
+  <MediaPanel />
   {#if $tabLayout === "horizontal" && !$isZenMode}
     <HorizontalTabBar />
   {/if}

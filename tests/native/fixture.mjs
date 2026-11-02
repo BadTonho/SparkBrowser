@@ -53,6 +53,8 @@ export async function createFixture() {
         <label>Fixture form <input id="draft"></label><div style="height:3000px"></div>
         <script>
           const id = ${JSON.stringify(id)};
+          let measuredGain=null,measuredAnalyser=null;
+          if(id.startsWith('media')) {const create=AudioContext.prototype.createGain;AudioContext.prototype.createGain=function(){const gain=create.call(this);measuredGain=gain;measuredAnalyser=this.createAnalyser();measuredAnalyser.fftSize=1024;gain.connect(measuredAnalyser);return gain;};}
           if (id.startsWith('media')) { const audio = document.createElement('audio'); audio.id = 'fixture-audio'; audio.src = '/tone.wav'; audio.loop = true; audio.autoplay = true; document.body.append(audio); audio.play().catch(() => {}); }
           const field = document.getElementById('draft');
           field.value = 'artificial-test-draft';
@@ -72,6 +74,7 @@ export async function createFixture() {
             if (busy) return; busy = true;
             try {
               const command = await fetch('/control/' + id).then(response => response.json());
+              if (command === 'cross-audio') {const el=document.getElementById('fixture-audio');el.src=location.origin.replace('127.0.0.1','localhost')+'/tone.wav';el.play();}
               if (command === 'stop-media') document.querySelectorAll('audio,video').forEach(el => el.pause());
               if (command === 'dirty') { field.value += ' edited'; field.dispatchEvent(new Event('input', { bubbles: true })); }
               if (command === 'spa') { history.pushState({}, '', '/page/' + id + '/spa'); document.title = 'Native SPA ' + id; }
@@ -79,7 +82,8 @@ export async function createFixture() {
               if (command === 'iframe') { const frame = document.createElement('iframe'); frame.allow = 'microphone'; frame.src = location.origin.replace('127.0.0.1', 'localhost') + '/page/i'; document.body.prepend(frame); }
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
               if (command === 'download') { const a = document.createElement('a'); a.href = '/download/file?native=1'; a.download = 'fixture.bin'; a.click(); }
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
+              const samples=new Float32Array(1024);measuredAnalyser?.getFloatTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((sum,n)=>sum+n*n,0)/samples.length);const audio=document.getElementById('fixture-audio');
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();

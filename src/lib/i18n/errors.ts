@@ -2,6 +2,7 @@ import { derived } from "svelte/store";
 import { t, type MessageKey } from "./index";
 import { errorDetails } from "../services/user-errors.js";
 const messages: Record<string, MessageKey> = {
+  "media.invalid_volume": "media.error",
   "media.error": "media.error",
   "media.stale": "media.error",
   "media.tab_missing": "media.error",

@@ -110,6 +110,20 @@ pub(super) fn ensure_tab_webview(
     #[cfg(windows)]
     let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
+        .initialization_script(
+            include_str!("../media/controller.js")
+                .replace(
+                    "__MEDIA_TOKEN__",
+                    &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
+                )
+                .replace(
+                    "__MEDIA_VOLUME__",
+                    &app.state::<crate::media::MediaService>()
+                        .tab(tab_id)
+                        .volume
+                        .to_string(),
+                ),
+        )
         .focused(focused)
         .zoom_hotkeys_enabled(false)
         .initialization_script(include_str!("page_activity.js").replace(
@@ -278,6 +292,12 @@ pub(super) fn ensure_tab_webview(
         &navigation_registration_token,
     )?;
 
+    #[cfg(windows)]
+    crate::media::protocol::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        &navigation_registration_token,
+    )?;
     #[cfg(windows)]
     crate::media::windows::install(
         app,

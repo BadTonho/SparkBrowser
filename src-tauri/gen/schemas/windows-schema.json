@@ -519,6 +519,12 @@
           "markdownDescription": "Enables the preview_backup_import command without any pre-configured scope."
         },
         {
+          "description": "Enables the refresh_tab_media command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-refresh-tab-media",
+          "markdownDescription": "Enables the refresh_tab_media command without any pre-configured scope."
+        },
+        {
           "description": "Enables the reload_page command without any pre-configured scope.",
           "type": "string",
           "const": "allow-reload-page",
@@ -661,6 +667,12 @@
           "type": "string",
           "const": "allow-set-tab-pinned",
           "markdownDescription": "Enables the set_tab_pinned command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_tab_volume command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-volume",
+          "markdownDescription": "Enables the set_tab_volume command without any pre-configured scope."
         },
         {
           "description": "Enables the set_update_channel command without any pre-configured scope.",
@@ -1047,6 +1059,12 @@
           "markdownDescription": "Denies the preview_backup_import command without any pre-configured scope."
         },
         {
+          "description": "Denies the refresh_tab_media command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-refresh-tab-media",
+          "markdownDescription": "Denies the refresh_tab_media command without any pre-configured scope."
+        },
+        {
           "description": "Denies the reload_page command without any pre-configured scope.",
           "type": "string",
           "const": "deny-reload-page",
@@ -1189,6 +1207,12 @@
           "type": "string",
           "const": "deny-set-tab-pinned",
           "markdownDescription": "Denies the set_tab_pinned command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_volume command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-volume",
+          "markdownDescription": "Denies the set_tab_volume command without any pre-configured scope."
         },
         {
           "description": "Denies the set_update_channel command without any pre-configured scope.",

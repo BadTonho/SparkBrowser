@@ -8,6 +8,7 @@ import type { WorkspaceItem } from "../../types/browser";
 import { isTauriRuntime } from "./runtime";
 
 export type OverlayId =
+  | "media"
   | "update-install"
   | "shutdown"
   | "site-permissions"

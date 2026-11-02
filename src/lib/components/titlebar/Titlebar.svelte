@@ -1,4 +1,5 @@
 <script lang="ts">
+  import MediaButton from "../media/MediaButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
   import { t } from "../../i18n";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
@@ -159,6 +160,7 @@
           placeholder="{$t("titlebar.search_49c2")} {$defaultSearchEngine} {$t("titlebar.or_enter_url_5dc7")}"
           spellcheck="false"
         />
+        <MediaButton />
         <ZoomControls />
         <button
           class="star-btn"

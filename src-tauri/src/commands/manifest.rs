@@ -1,5 +1,7 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "set_tab_volume",
+    "refresh_tab_media",
     "get_tab_media",
     "set_tab_muted",
     "search_command_items",

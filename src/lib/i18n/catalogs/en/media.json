@@ -3,5 +3,11 @@
   "media.unmute": "Unmute tab",
   "media.error": "The media control could not be applied. Try again.",
   "media.unavailable": "Media controls are unavailable here.",
-  "media.close": "Close"
+  "media.close": "Close",
+  "media.heading": "Page media",
+  "media.volume": "Volume",
+  "media.reset": "Restore 100%",
+  "media.limited": "This player does not support amplification. Volume is limited to 100%.",
+  "media.pending": "Audio processing was not activated. Interact with the page and adjust the volume again.",
+  "media.volume_unavailable": "Volume adjustment is unavailable for this player. Tab mute remains available."
 }

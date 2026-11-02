@@ -59,7 +59,8 @@ pub fn install(
         else {
             return;
         };
-        let muted = app.state::<MediaService>().tab(&id).muted;
+        let initial = app.state::<MediaService>().tab(&id);
+        let muted = initial.muted || initial.volume == 0;
         if core.SetIsMuted(muted).is_err() {
             return;
         }
@@ -90,8 +91,11 @@ pub fn install(
                         let c = c.cast::<ICoreWebView2_8>()?;
                         let mut muted = Default::default();
                         c.IsMuted(&mut muted)?;
-                        app.state::<MediaService>()
-                            .update(&app, &id, |t| t.muted = muted.as_bool());
+                        app.state::<MediaService>().update(&app, &id, |t| {
+                            if t.volume != 0 {
+                                t.muted = muted.as_bool();
+                            }
+                        });
                     }
                 }
                 Ok(())

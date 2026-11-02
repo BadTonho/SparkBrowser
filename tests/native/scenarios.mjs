@@ -1,4 +1,4 @@
-import { checkMediaMute } from "./media.mjs";
+import { checkMediaMute, checkMediaVolume } from "./media.mjs";
 import { checkKeyboard } from "./keyboard.mjs";
 import { checkCommandSearch } from "./command-search.mjs";
 import { checkZoom } from "./zoom.mjs";
@@ -18,6 +18,7 @@ import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
   "media-mute": checkMediaMute,
+  "media-volume": checkMediaVolume,
   keyboard: checkKeyboard,
   "command-search": checkCommandSearch,
   zoom: checkZoom,

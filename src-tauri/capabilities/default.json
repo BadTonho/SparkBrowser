@@ -3,6 +3,8 @@
   "identifier": "default",
   "description": "Default capabilities for the main browser shell window",
   "permissions": [
+    "allow-set-tab-volume",
+    "allow-refresh-tab-media",
     "allow-get-tab-media",
     "allow-set-tab-muted",
     "allow-control-download",

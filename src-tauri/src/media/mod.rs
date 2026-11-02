@@ -1,4 +1,7 @@
 #[cfg(windows)]
+pub mod protocol;
+pub mod volume;
+#[cfg(windows)]
 pub mod windows;
 
 use crate::state::{browser_state::BrowserState, tab_model::webview_label_for_tab};
@@ -6,12 +9,32 @@ use serde::Serialize;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 
-#[derive(Clone, Default, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct TabMediaState {
     pub tab_id: String,
     pub muted: bool,
     pub audible: bool,
     pub mute_available: bool,
+    pub volume: u16,
+    pub applied_volume: u16,
+    pub volume_status: String,
+    pub document_key: String,
+    pub frames: Vec<volume::FrameMedia>,
+}
+impl Default for TabMediaState {
+    fn default() -> Self {
+        Self {
+            tab_id: String::new(),
+            muted: false,
+            audible: false,
+            mute_available: false,
+            volume: 100,
+            applied_volume: 100,
+            volume_status: "unavailable".into(),
+            document_key: String::new(),
+            frames: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Default, Serialize)]
 pub struct MediaSnapshot {
@@ -90,7 +113,7 @@ impl MediaService {
         #[cfg(windows)]
         {
             if let Some(view) = app.get_webview(&webview_label_for_tab(id)) {
-                windows::set_muted(app, &view, muted).await?;
+                windows::set_muted(app, &view, muted || self.tab(id).volume == 0).await?;
             }
             self.update(app, id, |t| {
                 t.muted = muted;

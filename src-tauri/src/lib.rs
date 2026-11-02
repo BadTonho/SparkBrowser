@@ -20,7 +20,7 @@ pub mod state;
 pub mod updates;
 pub mod window;
 pub mod zoom;
-use commands::media::{get_tab_media, set_tab_muted};
+use commands::media::{get_tab_media, refresh_tab_media, set_tab_muted, set_tab_volume};
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
@@ -155,6 +155,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            refresh_tab_media,
+            set_tab_volume,
             get_tab_media,
             set_tab_muted,
             search_command_items,
