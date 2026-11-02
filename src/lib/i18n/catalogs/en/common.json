@@ -63,5 +63,12 @@
   "common.hibernate_one": "💤 Hibernate {count} inactive tab (free memory)",
   "common.hibernate_other": "💤 Hibernate {count} inactive tabs (free memory)",
   "common.closed_label": "Closed",
-  "common.preserved_label": "Preserved"
+  "common.preserved_label": "Preserved",
+  "common.download_paused": "Paused",
+  "common.download_pausing": "Pausing",
+  "common.download_interrupted": "Interrupted",
+  "common.download_restartrequired": "Restart required",
+  "common.download_verifying": "Verifying",
+  "common.download_verificationfailed": "Checksum mismatch",
+  "common.download_finalizing": "Finalizing"
 }

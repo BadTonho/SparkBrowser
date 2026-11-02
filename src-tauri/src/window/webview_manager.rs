@@ -110,10 +110,6 @@ pub(super) fn ensure_tab_webview(
     let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
         .focused(focused)
-        .on_download(crate::downloads::native::handler(
-            app.clone(),
-            tab_id.to_string(),
-        ))
         .initialization_script(include_str!("page_activity.js").replace(
             "__ACTIVITY_TOKEN__",
             &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
@@ -123,6 +119,12 @@ pub(super) fn ensure_tab_webview(
             &keyboard_bridge_token,
         ))
         .initialization_script(WORKSPACE_SWITCHER_ESCAPE_SCRIPT);
+
+    #[cfg(not(windows))]
+    let webview_builder = webview_builder.on_download(crate::downloads::native::handler(
+        app.clone(),
+        tab_id.to_string(),
+    ));
 
     let webview_builder = webview_builder.initialization_script(build_workspace_shortcut_script(
         &keyboard_bridge_token,
@@ -268,6 +270,14 @@ pub(super) fn ensure_tab_webview(
     )?;
     #[cfg(windows)]
     super::navigation_state::install_native_navigation(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
+    )?;
+
+    #[cfg(windows)]
+    crate::downloads::native::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         tab_id,

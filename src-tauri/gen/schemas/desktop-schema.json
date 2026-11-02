@@ -243,6 +243,12 @@
           "markdownDescription": "Enables the commit_split_ratio command without any pre-configured scope."
         },
         {
+          "description": "Enables the control_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-control-download",
+          "markdownDescription": "Enables the control_download command without any pre-configured scope."
+        },
+        {
           "description": "Enables the create_bookmark_folder command without any pre-configured scope.",
           "type": "string",
           "const": "allow-create-bookmark-folder",
@@ -549,6 +555,12 @@
           "markdownDescription": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_download_checksum command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-download-checksum",
+          "markdownDescription": "Enables the set_download_checksum command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_keyboard_shortcuts command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-keyboard-shortcuts",
@@ -691,6 +703,12 @@
           "type": "string",
           "const": "deny-commit-split-ratio",
           "markdownDescription": "Denies the commit_split_ratio command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the control_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-control-download",
+          "markdownDescription": "Denies the control_download command without any pre-configured scope."
         },
         {
           "description": "Denies the create_bookmark_folder command without any pre-configured scope.",
@@ -997,6 +1015,12 @@
           "type": "string",
           "const": "deny-set-bookmark-context-menu-overlay",
           "markdownDescription": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_download_checksum command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-download-checksum",
+          "markdownDescription": "Denies the set_download_checksum command without any pre-configured scope."
         },
         {
           "description": "Denies the set_keyboard_shortcuts command without any pre-configured scope.",

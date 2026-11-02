@@ -10,8 +10,8 @@ export async function fetchDownloads(): Promise<DownloadItem[]> {
   return await invoke<DownloadItem[]>("get_downloads");
 }
 
-export async function enqueueDownloadUrl(url: string): Promise<DownloadTask> {
-  return await invoke<DownloadTask>("enqueue_download", { url });
+export async function enqueueDownloadUrl(url: string, expectedSha256: string | null = null): Promise<DownloadTask> {
+  return await invoke<DownloadTask>("enqueue_download", { url, expectedSha256 });
 }
 
 export async function fetchDownloadTasks(): Promise<DownloadTask[]> {
@@ -27,7 +27,10 @@ export async function onDownloadsUpdated(callback: () => void): Promise<Unlisten
   return isTauriRuntime() ? listen("downloads-updated", callback) : () => { };
 }
 
-export async function clearAllDownloads(): Promise<void> {
-  if(!isTauriRuntime()) return;
-  await invoke("clear_all_downloads");
+export async function clearAllDownloads(): Promise<string[]> {
+  if(!isTauriRuntime()) return [];
+  return invoke<string[]>("clear_all_downloads");
 }
+
+export const controlDownload = (taskId: string, action: "pause" | "resume" | "restart" | "cancel" | "verify") => invoke<void>("control_download", { taskId, action });
+export const setDownloadChecksum = (taskId: string, checksum: string | null) => invoke<void>("set_download_checksum", { taskId, checksum });

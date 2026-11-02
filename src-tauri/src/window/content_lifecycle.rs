@@ -21,6 +21,7 @@ pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(
     for (label, view) in app.webviews() {
         if label.starts_with(CONTENT_WEBVIEW_PREFIX) {
             crate::site_permissions::cancel_view(app, &label);
+            crate::downloads::native::cancel_view(app, &label);
             view.close().map_err(|e| e.to_string())?;
         }
     }
@@ -91,6 +92,7 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                 ..
             }) => {
                 crate::site_permissions::cancel_view(app, &label);
+                crate::downloads::native::cancel_view(app, &label);
                 webview.close().map_err(|e| e.to_string())?;
                 state
                     .keyboard_bridge_tokens

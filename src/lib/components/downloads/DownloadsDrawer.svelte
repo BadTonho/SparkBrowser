@@ -1,7 +1,8 @@
 <script lang="ts">
+  import DownloadTaskCard from "./DownloadTaskCard.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { describeError } from "../../services/user-errors.js";
-  import { t, type MessageKey, formatNumber } from "../../i18n";
+  import { t, type MessageKey } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -14,9 +15,10 @@
     wipeDownloads,
   } from "../../stores/downloadsStore";
   import { currentUrl } from "../../stores/browserStore";
-  import { cancelDownload } from "../../services/tauri-bridge";
+
 
   let downloadUrlInput = $state("");
+  let expectedHash = $state("");
   let isDownloading = $state(false);
   let downloadError = $state("");
 
@@ -27,7 +29,8 @@
     isDownloading = true;
     downloadError = "";
     try {
-      await startDownloadFromUrl(target);
+      await startDownloadFromUrl(target, expectedHash || null);
+      expectedHash = "";
       downloadUrlInput = "";
     } catch (error) {
       downloadError = describeError(error);
@@ -79,42 +82,30 @@
 
       <div class="quick-download-bar">
         <input
+          data-testid="download-url"
           type="text"
           bind:value={downloadUrlInput}
           placeholder={$t("downloads.paste_direct_file_url_or_leave_empty_to_save_active_page_ff6b")}
           onkeydown={(e) => e.key === "Enter" && handleQuickDownload()}
           spellcheck="false"
         />
-        <button class="download-btn" onclick={handleQuickDownload} disabled={isDownloading}>
+        <button data-testid="download-start" class="download-btn" onclick={handleQuickDownload} disabled={isDownloading}>
           {isDownloading ? "Downloading…" : $t("downloads.download_d6ea")}
         </button>
       </div>
 
+      <input data-testid="download-expected-hash" aria-label={$t("downloads.hash_expected")} placeholder={$t("downloads.hash_expected")} bind:value={expectedHash} maxlength="64" />
       {#if downloadError}<ErrorMessage error={downloadError} />{/if}
 
       <div class="downloads-list">
-        {#each $downloadTasks.filter(task => task.status !== "Completed") as task (task.id)}
-          <div class="download-card">
-            <div class="download-meta">
-              <span class="file-name">{task.file_name}</span>
-              <span>{downloadStatus(task.status)} · {$formatNumber(Math.round(task.received / 1024))} KiB{task.total ? ` / ${$formatNumber(Math.round(task.total / 1024))} KiB` : ""}</span>
-              {#if task.status === "Downloading"}
-                {#if task.total}<progress value={task.received} max={task.total} aria-label={$t("downloads.download_progress_984b")}></progress>{:else}<progress aria-label={$t("downloads.downloading_37b3")}></progress>{/if}
-              {/if}
-              {#if task.error}<ErrorMessage error={task.error} />{/if}
-            </div>
-            {#if task.cancellable && ["Queued", "Downloading", "Cancelling"].includes(task.status)}
-              <button disabled={task.status === "Cancelling"} onclick={() => cancelDownload(task.id)}>{$t("downloads.cancel_1976")}</button>
-            {/if}
-          </div>
-        {/each}
+        {#each $downloadTasks as task (task.id)}<DownloadTaskCard {task} />{/each}
         {#if $downloads.length === 0}
           <div class="empty-state">
             <p>{$t("downloads.no_downloads_recorded_yet_5b64")}</p>
             <span class="empty-sub">{$t("downloads.press_download_above_to_save_a_resource_to_your_os_downloads_folder_f5e0")}</span>
           </div>
         {:else}
-          {#each $downloads as item (item.id)}
+          {#each $downloads.filter(item => !$downloadTasks.some(task => task.save_path === item.save_path)) as item (item.id)}
             <div class="download-card">
               <span class="file-icon">📄</span>
               <div class="download-meta">

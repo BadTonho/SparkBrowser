@@ -23,7 +23,8 @@ window-vibrancy = "0.8"
 rusqlite = { version = "0.32", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 tempfile = "3"
-tokio = { version = "1", features = ["sync", "macros", "time"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["sync", "macros", "time", "fs", "io-util"] }
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39"

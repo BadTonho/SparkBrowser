@@ -83,3 +83,6 @@ ideias.md
 # Local exported backups and atomic export temporaries
 *.veloce-backup.json*
 .veloce-backup-*.tmp
+
+# Owned download partials (normally stored outside the checkout)
+.veloce-partials/

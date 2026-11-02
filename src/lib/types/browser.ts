@@ -90,16 +90,12 @@ export interface DownloadItem {
 }
 
 export interface DownloadTask {
-  id: string;
-  revision: number;
-  file_name: string;
-  url: string;
-  status: "Queued" | "Downloading" | "Cancelling" | "Completed" | "Cancelled" | "Failed";
-  received: number;
-  total: number | null;
-  error: string | null;
-  cancellable: boolean;
-  save_path: string | null;
+  id: string; revision: number; file_name: string; url: string; source: "url" | "native";
+  source_page_url: string | null;
+  status: "Queued" | "Downloading" | "Pausing" | "Paused" | "Interrupted" | "RestartRequired" | "Verifying" | "VerificationFailed" | "Finalizing" | "Cancelling" | "Completed" | "Cancelled" | "Failed";
+  received: number; total: number | null; error: string | null; cancellable: boolean;
+  can_pause: boolean; can_resume: boolean; can_restart: boolean; can_verify: boolean;
+  save_path: string | null; expected_sha256: string | null; actual_sha256: string | null; verification_received: number;
 }
 
 export interface PrivacyStats {

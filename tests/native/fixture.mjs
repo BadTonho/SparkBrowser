@@ -5,8 +5,22 @@ export async function createFixture() {
   const loads = new Map();
   const reports = new Map();
   const commands = new Map();
+  const download = { version: 1, mode: 'normal', requests: [] };
+  const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+    if (url.pathname === '/download/file') {
+      const body = payload(download.version); const etag = `"fixture-${download.version}"`;
+      download.requests.push({ range: request.headers.range, ifRange: request.headers['if-range'] });
+      let start = 0;
+      if (request.headers.range && download.mode !== 'ignore-range' && (!request.headers['if-range'] || request.headers['if-range'] === etag)) start = Number(request.headers.range.match(/^bytes=(\d+)-$/)?.[1] ?? 0);
+      if (download.mode === '416' || start >= body.length) { response.writeHead(416, { 'Content-Range': `bytes */${body.length}` }).end(); return; }
+      const status = start ? 206 : 200;
+      response.writeHead(status, { 'Content-Type': 'application/octet-stream', 'Content-Disposition': 'attachment; filename="fixture.bin"', 'Accept-Ranges': 'bytes', 'ETag': download.mode === 'weak' ? `W/${etag}` : etag, 'Content-Length': body.length - start, ...(start ? { 'Content-Range': `bytes ${download.mode === 'bad-range' ? start + 1 : start}-${body.length - 1}/${body.length}` } : {}) });
+      let offset = start;
+      const timer = setInterval(() => { const end = Math.min(offset + 32768, body.length); response.write(body.subarray(offset, end)); offset = end; if (offset === body.length) { clearInterval(timer); response.end(); } }, 30);
+      response.on('close', () => clearInterval(timer)); return;
+    }
     const id = url.pathname.split('/')[2] ?? 'a';
     if (!/^[a-z][a-z0-9-]{0,63}$/.test(id)) { response.writeHead(404).end(); return; }
     if (url.pathname.startsWith('/report/')) {
@@ -53,6 +67,7 @@ export async function createFixture() {
               if (command === 'microphone') { permission = null; void mediaPermission(); }
               if (command === 'iframe') { const frame = document.createElement('iframe'); frame.allow = 'microphone'; frame.src = location.origin.replace('127.0.0.1', 'localhost') + '/page/i'; document.body.prepend(frame); }
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
+              if (command === 'download') { const a = document.createElement('a'); a.href = '/download/file?native=1'; a.download = 'fixture.bin'; a.click(); }
               await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ value: field.value, scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
@@ -63,6 +78,6 @@ export async function createFixture() {
     response.writeHead(404).end();
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands,
+  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands, download, payload,
     close: () => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }) };
 }

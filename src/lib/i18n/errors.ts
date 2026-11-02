@@ -2,6 +2,21 @@ import { derived } from "svelte/store";
 import { t, type MessageKey } from "./index";
 import { errorDetails } from "../services/user-errors.js";
 const messages: Record<string, MessageKey> = {
+  "downloads.invalid_checksum": "downloads.error",
+  "downloads.busy": "downloads.error",
+  "downloads.slots_busy": "downloads.error",
+  "downloads.queue_full": "downloads.error",
+  "downloads.network_error": "downloads.error",
+  "downloads.http_error": "downloads.error",
+  "downloads.file_missing": "downloads.error",
+  "downloads.file_changed": "downloads.error",
+  "downloads.restart_required": "downloads.restart_message",
+  "downloads.checksum_mismatch": "downloads.checksum_message",
+  "downloads.native_unavailable": "downloads.native_message",
+  "downloads.native_interrupted": "downloads.error",
+  "downloads.blocked": "downloads.error",
+  "downloads.not_available": "downloads.error",
+
   "closed_tabs.blocked": "closed.blocked",
   "closed_tabs.not_found": "closed.not_found",
   "backup.invalid_url": "backup.error_invalid",

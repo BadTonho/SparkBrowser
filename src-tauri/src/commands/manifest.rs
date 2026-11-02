@@ -1,5 +1,7 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "control_download",
+    "set_download_checksum",
     "get_recovery_status",
     "get_closed_tabs",
     "reopen_closed_tab",

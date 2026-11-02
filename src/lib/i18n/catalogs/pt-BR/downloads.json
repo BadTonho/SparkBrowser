@@ -8,5 +8,18 @@
   "downloads.downloading_37b3": "Baixando",
   "downloads.cancel_1976": "Cancelar",
   "downloads.no_downloads_recorded_yet_5b64": "Nenhum download registrado ainda.",
-  "downloads.press_download_above_to_save_a_resource_to_your_os_downloads_folder_f5e0": "Clique em Baixar para salvar um arquivo na pasta Downloads do sistema."
+  "downloads.press_download_above_to_save_a_resource_to_your_os_downloads_folder_f5e0": "Clique em Baixar para salvar um arquivo na pasta Downloads do sistema.",
+  "downloads.pause": "Pausar",
+  "downloads.resume": "Retomar",
+  "downloads.restart": "Reiniciar",
+  "downloads.verify": "Verificar SHA-256",
+  "downloads.hash_expected": "SHA-256 esperado (opcional)",
+  "downloads.hash_save": "Salvar hash esperado",
+  "downloads.restart_confirm": "Reiniciar do zero e descartar este arquivo parcial?",
+  "downloads.source_page": "Voltar à página de origem",
+  "downloads.verification_progress": "Verificando: {count} KiB",
+  "downloads.error": "Não foi possível concluir a operação do download. Confira seu estado e tente novamente.",
+  "downloads.native_message": "Este download do motor não pode ser retomado agora. Volte à página de origem para tentar novamente.",
+  "downloads.restart_message": "Este arquivo parcial não pode ser retomado com segurança. Reinicie o download explicitamente.",
+  "downloads.checksum_message": "O SHA-256 não corresponde. O arquivo foi mantido; confira o hash esperado antes de usá-lo."
 }

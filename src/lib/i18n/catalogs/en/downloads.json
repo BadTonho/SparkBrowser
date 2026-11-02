@@ -8,5 +8,18 @@
   "downloads.downloading_37b3": "Downloading",
   "downloads.cancel_1976": "Cancel",
   "downloads.no_downloads_recorded_yet_5b64": "No downloads recorded yet.",
-  "downloads.press_download_above_to_save_a_resource_to_your_os_downloads_folder_f5e0": "Press Download above to save a resource to your OS Downloads folder."
+  "downloads.press_download_above_to_save_a_resource_to_your_os_downloads_folder_f5e0": "Press Download above to save a resource to your OS Downloads folder.",
+  "downloads.pause": "Pause",
+  "downloads.resume": "Resume",
+  "downloads.restart": "Restart",
+  "downloads.verify": "Verify SHA-256",
+  "downloads.hash_expected": "Expected SHA-256 (optional)",
+  "downloads.hash_save": "Save expected hash",
+  "downloads.restart_confirm": "Restart from zero and discard this partial file?",
+  "downloads.source_page": "Return to source page",
+  "downloads.verification_progress": "Verifying: {count} KiB",
+  "downloads.error": "The download operation could not be completed. Review its state and try again.",
+  "downloads.native_message": "This engine download cannot currently be resumed. Return to its source page to try again.",
+  "downloads.restart_message": "This partial file cannot be safely resumed. Restart the download explicitly.",
+  "downloads.checksum_message": "The SHA-256 does not match. The file was kept; check the expected hash before using it."
 }

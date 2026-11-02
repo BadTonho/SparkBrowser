@@ -63,5 +63,12 @@
   "common.hibernate_one": "💤 Hibernar {count} aba inativa (liberar memória)",
   "common.hibernate_other": "💤 Hibernar {count} abas inativas (liberar memória)",
   "common.closed_label": "Fechadas",
-  "common.preserved_label": "Preservadas"
+  "common.preserved_label": "Preservadas",
+  "common.download_paused": "Pausado",
+  "common.download_pausing": "Pausando",
+  "common.download_interrupted": "Interrompido",
+  "common.download_restartrequired": "É necessário reiniciar",
+  "common.download_verifying": "Verificando",
+  "common.download_verificationfailed": "Hash divergente",
+  "common.download_finalizing": "Finalizando"
 }

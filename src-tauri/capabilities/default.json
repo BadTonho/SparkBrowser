@@ -3,6 +3,8 @@
   "identifier": "default",
   "description": "Default capabilities for the main browser shell window",
   "permissions": [
+    "allow-control-download",
+    "allow-set-download-checksum",
     "allow-get-recovery-status",
     "allow-get-update-state",
     "allow-set-update-channel",

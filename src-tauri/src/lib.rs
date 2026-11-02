@@ -17,7 +17,8 @@ pub mod window;
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
-    cancel_download, clear_all_downloads, enqueue_download, get_download_tasks, get_downloads,
+    cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
+    get_downloads, set_download_checksum,
 };
 use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
@@ -116,6 +117,9 @@ pub fn run() {
             let recovery_status =
                 recovery::startup::restore(&state, conn).map_err(std::io::Error::other)?;
             app.manage(recovery::RecoveryService::new(recovery_status));
+            app.state::<downloads::manager::DownloadManager>()
+                .initialize(app.handle())
+                .map_err(std::io::Error::other)?;
 
             app.manage(database::navigation_writer::NavigationWriter::start(
                 app.handle().clone(),
@@ -129,6 +133,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            control_download,
+            set_download_checksum,
             get_recovery_status,
             get_closed_tabs,
             reopen_closed_tab,
