@@ -21,7 +21,7 @@
         {#if origin}<PermissionSettings {origin} />{:else}<p>{$t("permissions.this_page_has_no_supported_site_origin_5c79")}</p>{/if}
         {#if error}<ErrorMessage error={error} />{/if}
         {#if confirmingReload}<p>{$t("permissions.reloading_may_discard_forms_or_interrupt_media_downloads_reload_this_pag_5db0")}</p><button onclick={reload}>{$t("permissions.confirm_reload_a5f7")}</button><button onclick={() => confirmingReload = false}>{$t("permissions.cancel_1976")}</button>
-        {:else}<button onclick={() => { if (protectedPage?.dirty_form || protectedPage?.playing_media || protectedPage?.downloading) confirmingReload = true; else void reload(); }}>{$t("permissions.reload_when_ready_3a1a")}</button>{/if}
+        {:else}<button onclick={() => { if (protectedPage?.dirty_form || protectedPage?.playing_media || protectedPage?.picture_in_picture || protectedPage?.downloading) confirmingReload = true; else void reload(); }}>{$t("permissions.reload_when_ready_3a1a")}</button>{/if}
       </div>
     </div>
   </div>

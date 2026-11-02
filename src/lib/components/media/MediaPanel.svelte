@@ -1,4 +1,5 @@
 <script lang="ts">
+  import VideoControls from "./VideoControls.svelte";
   import { t, formatNumber } from "../../i18n";
   import { onMount } from "svelte";
   import { focusDialog } from "../../actions/focusDialog";
@@ -28,6 +29,7 @@
           {#if media.volume_status==='limited'}<p role="status">{$t("media.limited")}</p>
           {:else if media.volume_status==='pending'}<p role="status">{$t("media.pending")}</p>
           {:else if media.volume_status==='unavailable'}<p role="status">{$t("media.volume_unavailable")}</p>{/if}
+          <VideoControls {media} />
         {/if}
       </div>
     </div>

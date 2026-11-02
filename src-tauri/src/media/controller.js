@@ -7,6 +7,14 @@
   let context;
   let busy = Promise.resolve();
   const routes = new Map();
+  const videoIds = new WeakMap();
+  let videoCounter=0;
+  const videoId=el=> {if(!videoIds.has(el))videoIds.set(el,`${documentId}-${++videoCounter}`);return videoIds.get(el);};
+  function candidates() {return [...document.querySelectorAll('video')].slice(0,64).map(el=>({id:videoId(el),label:(el.title||el.getAttribute('aria-label')||document.title||'').slice(0,160),width:el.videoWidth,height:el.videoHeight,eligible:Boolean(document.pictureInPictureEnabled && !el.disablePictureInPicture && !el.mediaKeys && el.readyState>=2 && el.videoWidth>0)}));}
+  function signal() {
+    if(typeof window.__veloceMediaSignal!=='function')return;
+    window.__veloceMediaSignal(JSON.stringify({token,document:documentId,playing:media().some(el=>!el.paused&&!el.ended),picture_in_picture:Boolean(document.pictureInPictureElement),pip_video:document.pictureInPictureElement?videoId(document.pictureInPictureElement):null}));
+  }
   const volume = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'volume');
   const muted = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');
   const media = () => [...document.querySelectorAll('audio,video')];
@@ -30,15 +38,18 @@
     route.wrapped = true;
   }
   function update(el, route) {
+    route.physicalVolume = route.gain ? route.volume : Math.min(1, route.volume * target / 100);
+    route.physicalMuted = route.gain ? true : route.muted;
+    volume.set.call(el, route.physicalVolume);
     if (route.gain) {
       route.gain.gain.setValueAtTime(route.muted ? 0 : route.volume * target / 100, context.currentTime);
-      muted.set.call(el, true);
-    } else {
-      volume.set.call(el, Math.min(1, route.volume * target / 100));
-      muted.set.call(el, route.muted);
     }
+    muted.set.call(el, route.physicalMuted);
   }
   async function amplify(el, route, user) {
+    // Native controls read the engine's physical mute, which capture routing must own.
+    // Retain their behavior by leaving amplification unavailable for these players.
+    if (el.controls) throw Error('native-controls');
     if (route.gain) return;
     if (typeof el.captureStream !== 'function' || el.mediaKeys || el.readyState < 2) throw Error('unsupported');
     const stream = el.captureStream();
@@ -79,20 +90,38 @@
   }
   let scheduled=false;
   function schedule() { if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;busy=busy.catch(()=>{}).then(()=>apply(Boolean(navigator.userActivation?.isActive)));},60); }
-  new MutationObserver(schedule).observe(document, {childList:true,subtree:true});
+  new MutationObserver(schedule).observe(document, {childList:true,subtree:true,attributes:true,attributeFilter:['controls']});
+  document.addEventListener('volumechange',event=> {
+    const el=event.target,route=routes.get(el);
+    if(!route?.wrapped)return;
+    const actualVolume=volume.get.call(el),actualMuted=muted.get.call(el);
+    let changed=false;
+    if(Math.abs(actualVolume-route.physicalVolume)>0.000001){route.volume=actualVolume;changed=true;}
+    if(actualMuted!==route.physicalMuted){route.muted=actualMuted;changed=true;}
+    if(changed)update(el,route);
+  },true);
   for (const event of ['loadedmetadata','playing','emptied','durationchange']) document.addEventListener(event,schedule,true);
+  for (const event of ['play','pause','ended','enterpictureinpicture','leavepictureinpicture']) document.addEventListener(event,signal,true);
   document.addEventListener('pointerdown',()=>schedule(),true);
   document.addEventListener('keydown',()=>schedule(),true);
   window.addEventListener('pagehide',()=> {for(const [el,route] of routes)restore(el,route);void context?.close();});
   Object.defineProperty(window,'__veloceMedia',{value:async (key,action)=> {
     if (key!==token || (action.document && action.document!==documentId)) return {error:'media.stale'};
+    if(action.kind==='pip-exit') {try{if(document.pictureInPictureElement)await document.exitPictureInPicture();signal();return {ok:true};}catch{return {error:'media.pip_failed'};}}
+    if(action.kind==='pip-enter') {
+      const candidate=candidates().find(v=>v.id===action.video&&v.eligible);
+      const el=[...document.querySelectorAll('video')].find(v=>videoId(v)===candidate?.id);
+      if(!el)return {error:'media.pip_unavailable'};
+      try {await el.requestPictureInPicture();signal();return {ok:true};}
+      catch(e){return {error:e.name==='SecurityError'||e.name==='NotAllowedError'?'media.pip_blocked':'media.pip_failed'};}
+    }
     if (action.kind==='volume') {
       if (!Number.isInteger(action.value)||action.value<0||action.value>200) return {error:'media.invalid_volume'};
       target=level(action.value);
     }
     if (!['report','volume'].includes(action.kind)) return {error:'media.error'};
     busy=busy.catch(()=>{}).then(()=>apply(action.kind==='volume')); await busy;
-    return {document:documentId,count:media().length,applied_volume:applied,status};
+    return {document:documentId,count:media().length,applied_volume:applied,status,videos:candidates(),playing:media().some(el=>!el.paused&&!el.ended),picture_in_picture:Boolean(document.pictureInPictureElement),pip_video:document.pictureInPictureElement?videoId(document.pictureInPictureElement):null};
   },configurable:false,writable:false});
   if (target!==100) schedule();
 })();

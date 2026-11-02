@@ -9,5 +9,13 @@
   "media.reset": "Restaurar 100%",
   "media.limited": "Este player não aceita amplificação. O volume está limitado a 100%.",
   "media.pending": "O processamento de áudio não foi ativado. Interaja com a página e ajuste o volume novamente.",
-  "media.volume_unavailable": "O ajuste de volume está indisponível neste player. O mute da aba continua disponível."
+  "media.volume_unavailable": "O ajuste de volume está indisponível neste player. O mute da aba continua disponível.",
+  "media.video": "Vídeo",
+  "media.floating": "Vídeo flutuante",
+  "media.return": "Voltar à aba",
+  "media.exit_pip": "Sair do modo flutuante",
+  "media.enter_pip": "Abrir vídeo flutuante",
+  "media.no_video": "Nenhum vídeo compatível está disponível nesta página.",
+  "media.pip_blocked": "Este player ou sua política de permissões impede o vídeo flutuante.",
+  "media.pip_failed": "Não foi possível abrir ou fechar o vídeo flutuante. Tente novamente."
 }

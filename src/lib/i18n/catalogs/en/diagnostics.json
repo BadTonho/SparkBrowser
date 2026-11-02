@@ -13,5 +13,6 @@
   "diagnostics.form": "edited form",
   "diagnostics.media": "playing media",
   "diagnostics.download": "download depends on this page",
-  "diagnostics.hibernate": "Hibernate"
+  "diagnostics.hibernate": "Hibernate",
+  "diagnostics.picture_in_picture": "Floating video"
 }

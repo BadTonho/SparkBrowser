@@ -10,6 +10,7 @@ pub enum ProtectionReason {
     Loading,
     Form,
     Media,
+    PictureInPicture,
     Download,
 }
 impl TabInfo {
@@ -26,6 +27,7 @@ impl TabInfo {
             (self.navigation.loading, Loading),
             (self.activity.dirty_form, Form),
             (self.activity.playing_media, Media),
+            (self.activity.picture_in_picture, PictureInPicture),
             (self.activity.downloading, Download),
         ]
         .into_iter()
@@ -57,5 +59,21 @@ mod tests {
         t.is_visible = true;
         assert_eq!(t.protection_reasons(false), vec![ProtectionReason::Split]);
         assert!(t.protected_from_hibernation());
+        t.is_visible = false;
+        t.activity.picture_in_picture = true;
+        assert_eq!(
+            t.protection_reasons(false),
+            vec![ProtectionReason::PictureInPicture]
+        );
+        assert!(t.protected_from_hibernation());
+        t.activity.native_audio = true;
+        t.activity.refresh_media();
+        assert!(t
+            .protection_reasons(false)
+            .contains(&ProtectionReason::Media));
+        t.activity.native_audio = false;
+        t.activity.frame_media = true;
+        t.activity.refresh_media();
+        assert!(t.activity.playing_media);
     }
 }

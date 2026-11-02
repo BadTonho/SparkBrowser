@@ -52,7 +52,7 @@ export interface TabItem {
   last_active_epoch?: number;
   navigation?: NavigationState;
   is_pinned?: boolean;
-  activity?: { dirty_form: boolean; playing_media: boolean; downloading: boolean };
+  activity?: { dirty_form: boolean; playing_media: boolean; downloading: boolean; picture_in_picture?: boolean };
 }
 
 export interface HistoryEntry {

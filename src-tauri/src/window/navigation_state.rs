@@ -193,7 +193,11 @@ pub(super) fn with_page_events(
                 if started {
                     tab.navigation.error = None;
                     tab.activity.dirty_form = false;
-                    tab.activity.playing_media = false;
+                    tab.activity.document_media = false;
+                    tab.activity.frame_media = false;
+                    tab.activity.native_audio = false;
+                    tab.activity.picture_in_picture = false;
+                    tab.activity.refresh_media();
                 }
                 if matches!(payload.url().scheme(), "http" | "https") {
                     tab.url = payload.url().to_string();

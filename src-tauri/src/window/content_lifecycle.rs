@@ -25,7 +25,10 @@ pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(
             #[cfg(windows)]
             app.run_on_main_thread({
                 let label = label.clone();
-                move || crate::media::protocol::clear(&label)
+                {
+                    let app = app.clone();
+                    move || crate::media::protocol::clear(&app, &label)
+                }
             })
             .map_err(|e| e.to_string())?;
             view.close().map_err(|e| e.to_string())?;
@@ -102,7 +105,10 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                 #[cfg(windows)]
                 app.run_on_main_thread({
                     let label = label.clone();
-                    move || crate::media::protocol::clear(&label)
+                    {
+                        let app = app.clone();
+                        move || crate::media::protocol::clear(&app, &label)
+                    }
                 })
                 .map_err(|e| e.to_string())?;
                 webview.close().map_err(|e| e.to_string())?;

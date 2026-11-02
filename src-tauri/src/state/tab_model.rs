@@ -27,6 +27,20 @@ pub struct TabActivity {
     pub dirty_form: bool,
     pub playing_media: bool,
     pub downloading: bool,
+    #[serde(default)]
+    pub document_media: bool,
+    #[serde(default)]
+    pub native_audio: bool,
+    #[serde(default)]
+    pub frame_media: bool,
+    #[serde(default)]
+    pub picture_in_picture: bool,
+}
+
+impl TabActivity {
+    pub fn refresh_media(&mut self) {
+        self.playing_media = self.document_media || self.native_audio || self.frame_media;
+    }
 }
 
 impl TabInfo {

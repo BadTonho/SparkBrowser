@@ -39,7 +39,9 @@ pub async fn toggle_adblock_shield(
             .map_err(|e| e.to_string())?
             .iter()
             .any(|tab| {
-                tab.activity.dirty_form || tab.activity.playing_media || tab.activity.downloading
+                tab.activity.dirty_form
+                    || (tab.activity.playing_media || tab.activity.picture_in_picture)
+                    || tab.activity.downloading
             })
         {
             return Err("Save edited forms and finish media/downloads before changing the shield on this engine".into());

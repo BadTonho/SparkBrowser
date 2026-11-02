@@ -1,4 +1,4 @@
-export type ProtectionReason = "selection" | "split" | "pinned" | "loading" | "form" | "media" | "download";
+export type ProtectionReason = "selection" | "split" | "pinned" | "loading" | "form" | "media" | "picture_in_picture" | "download";
 export interface TabDiagnostic { id: string; title: string; url: string; workspace_id: string; resident: boolean; seconds_since_activation: number; protection_reasons: ProtectionReason[] }
 import { invoke, isTauriRuntime } from "./runtime";
 export interface NativeDiagnostics {

@@ -2,8 +2,8 @@ import { setOverlayVisibility } from "../services/bridge/overlays";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import { createMediaVolumeWriter } from "../services/media-volume-writer.js";
 import { get, writable } from "svelte/store";
-import { fetchTabMedia, onTabMedia, setTabMuted, refreshTabMedia, setTabVolume } from "../services/bridge/media";
-import { describeError } from "../services/user-errors.js";
+import { fetchTabMedia, onTabMedia, setTabMuted, refreshTabMedia, setTabVolume, enterVideoPip, exitVideoPip } from "../services/bridge/media";
+import { describeError, errorDetails } from "../services/user-errors.js";
 import type { MediaSnapshot } from "../types/media";
 export const mediaState = writable<MediaSnapshot>({revision: 0, tabs: []});
 export const mediaError = writable("");
@@ -29,12 +29,22 @@ export async function closeMedia() { isMediaOpen.set(false); await volumeWriter.
 let refreshing = false;
 export async function refreshMedia(id: string) {
   if (refreshing || !isTauriRuntime() || !get(mediaState).tabs.find(t=>t.tab_id===id)?.mute_available) return; refreshing=true;
-  try { applyMedia(await refreshTabMedia(id)); } catch(e) {mediaError.set(describeError(e));} finally {refreshing=false;}
+  try { applyMedia(await refreshTabMedia(id)); } catch(e) {if(errorDetails(e).code!=="media.stale")mediaError.set(describeError(e));} finally {refreshing=false;}
 }
 const volumeWriter = createMediaVolumeWriter(
   (item: {id:string;document:string;value:number})=>setTabVolume(item.id,item.value,item.document),
   applyMedia,
-  (e:unknown)=>mediaError.set(describeError(e)),
+  (e:unknown,item:{id:string;document:string})=>{if(errorDetails(e).code!=="media.stale" || get(mediaState).tabs.find(t=>t.tab_id===item.id)?.document_key===item.document)mediaError.set(describeError(e));},
   (item:{id:string;value:number},pending:boolean)=>{if(!pending)volumeDrafts.update(d=>{if(d[item.id]!==item.value)return d;const next={...d};delete next[item.id];return next;});}
 );
 export function queueVolume(id:string,document:string,value:number) {mediaError.set("");volumeDrafts.update(d=>({...d,[id]:value}));volumeWriter.schedule({id,document,value});}
+
+export const pipBusy=writable(false);
+export async function enterVideo(id:string,context:string,document:string,video:string) {
+  if(get(pipBusy))return;pipBusy.set(true);mediaError.set("");
+  try{applyMedia(await enterVideoPip(id,context,document,video));}catch(e){mediaError.set(describeError(e));}finally{pipBusy.set(false);}
+}
+export async function exitVideo() {
+  if(get(pipBusy))return;pipBusy.set(true);mediaError.set("");
+  try{applyMedia(await exitVideoPip());}catch(e){mediaError.set(describeError(e));}finally{pipBusy.set(false);}
+}

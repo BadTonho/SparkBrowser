@@ -1,5 +1,9 @@
 #[cfg(windows)]
+pub mod contexts;
+pub mod pip;
+#[cfg(windows)]
 pub mod protocol;
+pub mod signals;
 pub mod volume;
 #[cfg(windows)]
 pub mod windows;
@@ -20,6 +24,7 @@ pub struct TabMediaState {
     pub volume_status: String,
     pub document_key: String,
     pub frames: Vec<volume::FrameMedia>,
+    pub capabilities: pip::MediaCapabilities,
 }
 impl Default for TabMediaState {
     fn default() -> Self {
@@ -33,6 +38,7 @@ impl Default for TabMediaState {
             volume_status: "unavailable".into(),
             document_key: String::new(),
             frames: Vec::new(),
+            capabilities: Default::default(),
         }
     }
 }
@@ -43,6 +49,7 @@ pub struct MediaSnapshot {
 }
 #[derive(Default)]
 pub struct MediaService {
+    pub operations: tokio::sync::Mutex<()>,
     inner: Mutex<MediaSnapshot>,
 }
 impl MediaService {
@@ -71,15 +78,14 @@ impl MediaService {
             })
     }
     pub fn update(&self, app: &AppHandle, id: &str, change: impl FnOnce(&mut TabMediaState)) {
-        if !app
-            .state::<BrowserState>()
-            .snapshot_tabs()
-            .iter()
-            .any(|t| t.id == id)
-        {
+        let live = app.state::<BrowserState>().snapshot_tabs();
+        if !live.iter().any(|t| t.id == id) {
             return;
         }
         if let Ok(mut inner) = self.inner.lock() {
+            inner
+                .tabs
+                .retain(|t| live.iter().any(|tab| tab.id == t.tab_id));
             let index = inner
                 .tabs
                 .iter()
@@ -92,6 +98,12 @@ impl MediaService {
                     inner.tabs.len() - 1
                 });
             change(&mut inner.tabs[index]);
+            let t = &mut inner.tabs[index];
+            t.capabilities = pip::MediaCapabilities {
+                mute: t.mute_available,
+                volume: !t.document_key.is_empty() && t.volume_status != "unavailable",
+                picture_in_picture: t.frames.iter().any(|f| f.videos.iter().any(|v| v.eligible)),
+            };
             inner.revision += 1;
             let _ = app.emit_to("main", "tab-media-state", inner.clone());
         }

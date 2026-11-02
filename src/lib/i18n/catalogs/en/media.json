@@ -9,5 +9,13 @@
   "media.reset": "Restore 100%",
   "media.limited": "This player does not support amplification. Volume is limited to 100%.",
   "media.pending": "Audio processing was not activated. Interact with the page and adjust the volume again.",
-  "media.volume_unavailable": "Volume adjustment is unavailable for this player. Tab mute remains available."
+  "media.volume_unavailable": "Volume adjustment is unavailable for this player. Tab mute remains available.",
+  "media.video": "Video",
+  "media.floating": "Floating video",
+  "media.return": "Return to tab",
+  "media.exit_pip": "Exit floating mode",
+  "media.enter_pip": "Open floating video",
+  "media.no_video": "No compatible video is available on this page.",
+  "media.pip_blocked": "This player or its permissions policy prevents floating video.",
+  "media.pip_failed": "Could not open or close the floating video. Try again."
 }

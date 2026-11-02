@@ -21,6 +21,17 @@ export async function checkMediaMute({invoke,until,fixture,click,restart,script}
   await restart();
   await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.mute_available,'restored view');
   assert.equal((await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a).muted,false,'mute is not persisted');
+  await click('[data-testid=open-settings]');await click('[data-testid=settings-appearance_layout]');
+  await until(()=>script('return Boolean(document.querySelector("#setting-browser-layout"))'),'layout settings');
+  await script('document.querySelectorAll("#setting-browser-layout button")[1].click();');
+  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await until(()=>script('return Boolean(document.querySelector(`.tab-row [data-media-tab="${arguments[0]}"]`))',a),'vertical mute control');
+  await click(`[data-media-tab="${a}"]`);await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.muted,'vertical mute');
+  fixture.commands.set('media-c','stop-media');await until(async()=> !(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.audible,'audio stopped');
+  fixture.commands.set('media-c','oscillator');await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.audible,'pure Web Audio observed while muted');
+  assert.ok((await invoke('get_tabs')).tabs.find(t=>t.id===a).activity.playing_media,'Web Audio remains protected');
+  await invoke('set_tab_muted',{tabId:a,muted:false});
+
 }
 
 export async function checkMediaVolume({invoke,until,fixture,click,script,restart}) {
@@ -34,9 +45,13 @@ export async function checkMediaVolume({invoke,until,fixture,click,script,restar
   const set=async volume=>{state=(await invoke('set_tab_volume',{tabId:id,volume,documentKey:state.document_key})).tabs.find(t=>t.tab_id===id);assert.equal(state.applied_volume,volume);};
   await set(50);await until(()=>fixture.reports.get('media-volume')?.nativeVolume===0.5,'native attenuation');
   assert.equal(fixture.reports.get('media-volume').playerVolume,1,'player volume stays independent');
-  await set(200);await until(()=>fixture.reports.get('media-volume')?.audioRms>0.005,'amplified waveform');
+  fixture.commands.set('media-volume','native-player-volume');
+  await until(()=>fixture.reports.get('media-volume')?.nativeVolume===0.4&&fixture.reports.get('media-volume')?.playerVolume===0.8,'player control keeps the tab multiplier');
+  fixture.commands.set('media-volume','restore-player-volume');await until(()=>fixture.reports.get('media-volume')?.nativeVolume===0.5,'player level restored');
+  const originalRms=300/32768/Math.sqrt(2);
+  await set(200);await until(()=>{const r=fixture.reports.get('media-volume');return r?.audioGain===2&&r.audioRms>originalRms*1.8&&r.audioRms<originalRms*2.2;},'stable doubled waveform');
   const doubled=fixture.reports.get('media-volume').audioRms;
-  await set(150);await until(()=>fixture.reports.get('media-volume')?.audioGain===1.5,'gain 150');
+  await set(150);await until(()=>{const r=fixture.reports.get('media-volume');return r?.audioGain===1.5&&r.audioRms/doubled>0.65&&r.audioRms/doubled<0.85;},'stable waveform at 150 percent');
   const ratio=fixture.reports.get('media-volume').audioRms/doubled;
   assert.ok(ratio>0.65&&ratio<0.85,`waveform gain ratio ${ratio}`);
   await set(0);assert.equal(state.muted,false,'zero volume is independent of mute');
@@ -46,6 +61,19 @@ export async function checkMediaVolume({invoke,until,fixture,click,script,restar
   await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.applied_volume===80,'latest slider value');
   await script('document.querySelector("[role=dialog]").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
   await until(()=>script('return document.activeElement?.matches("[data-testid=open-media]")'),'focus returns');
+  assert.equal(fixture.loads.get('media-volume'),1,'audio controls preserve the document');
+  assert.equal(fixture.reports.get('media-volume').value,'artificial-test-draft');
+  fixture.commands.set('media-volume','stop-media');
+  await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.playing_media,'pause before hibernation');
+  const other=(await invoke('create_tab',{url:fixture.origin+'/page/volume-other'})).tabs.find(t=>t.is_active).id;
+  await invoke('hibernate_tab',{tabId:id});await invoke('switch_tab',{tabId:id});
+  await until(()=>fixture.loads.get('media-volume')===2&&fixture.reports.get('media-volume')?.nativeVolume===0.8,'volume follows hibernated tab');
+  state=await read();
+  await invoke('set_split_view',{leftTabId:id,rightTabId:other});await invoke('switch_tab',{tabId:other});
+  await click('[data-testid=open-media]');await until(async()=>script('return document.querySelector(".media-panel h3")?.textContent===arguments[0]',(await invoke('get_tabs')).tabs.find(t=>t.id===other).title),'media controls follow focused pane');
+  assert.equal((await invoke('get_tab_media')).tabs.find(t=>t.tab_id===other)?.volume,100);
+  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await invoke('set_split_view',{leftTabId:null,rightTabId:null});await invoke('switch_tab',{tabId:id});
   const old=state.document_key;
   await invoke('navigate_to',{input:fixture.origin+'/page/media-next'});await until(()=>fixture.reports.has('media-next'),'next document');
   await assert.rejects(()=>invoke('set_tab_volume',{tabId:id,volume:150,documentKey:old}),/media.stale/);
@@ -55,5 +83,62 @@ export async function checkMediaVolume({invoke,until,fixture,click,script,restar
   const limited=(await invoke('set_tab_volume',{tabId:id,volume:200,documentKey:state.document_key})).tabs.find(t=>t.tab_id===id);
   assert.equal(limited.applied_volume,100);assert.equal(limited.volume_status,'limited');
   await until(()=>fixture.reports.get('media-next')?.nativeMuted===false,'unsupported audio preserved');
+  fixture.commands.set('media-next','native-controls');await new Promise(r=>setTimeout(r,300));
+  state=await read();const nativeControls=(await invoke('set_tab_volume',{tabId:id,volume:150,documentKey:state.document_key})).tabs.find(t=>t.tab_id===id);assert.equal(nativeControls.applied_volume,100);assert.equal(nativeControls.volume_status,'limited');
   await restart();const restored=(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id);assert.equal(restored.volume,100);
+}
+
+export async function checkMediaPip({invoke,until,fixture,click,script,screenshot,wait}) {
+  if(process.platform!=='win32')return;
+  await invoke('set_resident_limit',{limit:8});
+  const initial=await invoke('create_tab',{url:fixture.origin+'/page/media-pip'});
+  const id=initial.tabs.find(t=>t.is_active).id;
+  await until(()=>fixture.reports.has('media-pip'),'pip document');fixture.commands.set('media-pip','videos');
+  await until(()=>fixture.reports.get('media-pip')?.videoCount===2,'two video candidates');
+  const read=async()=> (await invoke('refresh_tab_media',{tabId:id})).tabs.find(t=>t.tab_id===id);
+  const state=await until(async()=> {const s=await read();return s.frames.flatMap(f=>f.videos).filter(v=>v.eligible).length===2?s:null;},'ready video candidates');
+  await click('[data-testid=open-media]');await until(()=>script('return document.querySelectorAll("[data-testid=pip-enter]").length===2'),'candidate selection UI');
+  await screenshot('media-panel');
+  await click('[data-testid=pip-enter]');
+  await until(()=>fixture.reports.get('media-pip')?.pip,'actual native PiP');
+  await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'immediate pip protection');
+  await script('document.querySelector("[role=dialog]").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await until(()=>script('return !document.querySelector(".media-panel")'),'media panel closes');
+  fixture.commands.set('media-pip','stop-media');
+  await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.playing_media,'paused media');
+  const next=await invoke('create_tab',{url:fixture.origin+'/page/pip-other'});const other=next.tabs.find(t=>t.is_active).id;
+  await invoke('set_resident_limit',{limit:1});
+  const details=(await invoke('get_diagnostics')).tab_details.find(t=>t.id===id);
+  assert.equal(details.resident,true);assert.ok(details.protection_reasons.includes('picture_in_picture'));
+  await assert.rejects(()=>invoke('hibernate_tab',{tabId:id}));
+  const closed=await invoke('close_tabs_reviewed',{tabIds:[id]});assert.ok(closed.preserved.some(t=>t.id===id));
+  assert.equal(fixture.reports.get('media-pip').pip,true,'popup survives background and overlays');
+  await invoke('create_workspace',{id:'media-pip-workspace',name:'Media test',icon:'T',accentPrimary:'#888888',accentSecondary:'#999999'});
+  await invoke('move_tab_to_workspace',{tabId:other,workspaceId:'media-pip-workspace'});await invoke('switch_workspace',{workspaceId:'media-pip-workspace'});
+  assert.equal(fixture.reports.get('media-pip').pip,true,'popup survives workspace change');
+  await click('[data-testid=open-media]');await until(()=>script('return Boolean(document.querySelector("[data-testid=pip-return]"))'),'background popup owner');
+  await click('[data-testid=pip-return]');await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.is_active)?.id===id,'return to origin tab');
+  await invoke('set_resident_limit',{limit:8});
+  await click('[data-testid=open-media]');
+  const live=await read();const frame=live.frames.find(f=>f.videos.length===2);
+  await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[1].id});
+  await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.frames.some(f=>f.pip_video===frame.videos[1].id),'second selected video');
+  assert.equal((await invoke('get_tab_media')).tabs.flatMap(t=>t.frames).filter(f=>f.picture_in_picture).length,1,'one popup at a time');
+  await click('[data-testid=pip-exit]');await until(()=>!fixture.reports.get('media-pip')?.pip,'exit native PiP');
+  await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[1].id});
+  fixture.commands.set('media-pip','exit-pip');await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'external PiP close event');
+  await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[0].id});
+  await invoke('navigate_to',{input:fixture.origin+'/page/media-after-pip'});await until(()=>fixture.reports.has('media-after-pip'),'navigate closes popup');
+  await until(async()=> !(await invoke('get_tabs')).tabs.find(t=>t.id===id)?.activity.picture_in_picture,'new document clears protection');
+  await assert.rejects(()=>invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:frame.videos[0].id}),/media.stale/);
+  fixture.commands.set('media-after-pip','media-frame');await until(()=>fixture.reports.has('media-frame'),'cross origin frame');
+  fixture.commands.set('media-frame','videos');await until(()=>fixture.reports.get('media-frame')?.videoCount===2,'frame videos');
+  const framed=await until(async()=> {const s=await read();return s.frames.find(f=>f.videos.some(v=>v.eligible));},'native frame context');
+  await invoke('enter_video_pip',{tabId:id,context:framed.context,document:framed.document,video:framed.videos[0].id});
+  await until(()=>fixture.reports.get('media-frame')?.pip,'cross origin native PiP');
+  fixture.commands.set('media-frame','disable-pip');await wait(400);
+  await assert.rejects(()=>invoke('enter_video_pip',{tabId:id,context:framed.context,document:framed.document,video:framed.videos[1].id}),/media.pip_unavailable/);
+  await invoke('close_tab',{tabId:id});await until(()=>script('return !document.querySelector(`[data-tab-id="${arguments[0]}"]`)',id),'close origin tab');
+  assert.ok(!(await invoke('get_tab_media')).tabs.some(t=>t.tab_id===id),'closed tab media state discarded');
+  assert.ok((await invoke('get_tabs')).tabs.some(t=>t.id===other));
 }

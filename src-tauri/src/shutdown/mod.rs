@@ -172,13 +172,17 @@ pub fn review(app: &AppHandle) -> Result<ShutdownReview, String> {
         .state::<BrowserState>()
         .snapshot_tabs()
         .into_iter()
-        .filter(|t| t.activity.dirty_form || t.activity.playing_media || t.activity.downloading)
+        .filter(|t| {
+            t.activity.dirty_form
+                || (t.activity.playing_media || t.activity.picture_in_picture)
+                || t.activity.downloading
+        })
         .map(|t| ShutdownRisk {
             id: t.id,
             title: t.title,
             url: t.url,
             form: t.activity.dirty_form,
-            media: t.activity.playing_media,
+            media: t.activity.playing_media || t.activity.picture_in_picture,
             native_download: t.activity.downloading,
         })
         .collect();

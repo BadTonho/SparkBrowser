@@ -74,6 +74,14 @@ export async function createFixture() {
             if (busy) return; busy = true;
             try {
               const command = await fetch('/control/' + id).then(response => response.json());
+              if (command === 'native-player-volume') {const el=document.getElementById('fixture-audio');Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').set.call(el,0.8);}
+              if (command === 'restore-player-volume') document.getElementById('fixture-audio').volume=1;
+              if (command === 'native-controls') {const el=document.getElementById('fixture-audio');el.controls=true;el.src='/tone.wav';await el.play();}
+              if (command === 'oscillator') {document.querySelectorAll('audio,video').forEach(el=>el.pause());const c=new AudioContext();const o=c.createOscillator();const g=c.createGain();g.gain.value=0.001;o.connect(g).connect(c.destination);o.start();await c.resume();}
+              if (command === 'videos') {for(let n=0;n<2;n++){const canvas=document.createElement('canvas');canvas.width=320+n*40;canvas.height=180;const ctx=canvas.getContext('2d');const draw=()=>{ctx.fillStyle=n?'#334466':'#664433';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='white';ctx.fillText('Controlled video '+n+' '+Date.now(),10,30);};draw();setInterval(draw,100);const v=document.createElement('video');v.title='Controlled video '+n;v.muted=true;v.srcObject=canvas.captureStream(10);document.body.prepend(v);await v.play();}}
+              if (command === 'disable-pip') document.querySelectorAll('video').forEach(v=>v.disablePictureInPicture=true);
+              if (command === 'exit-pip') {if(document.pictureInPictureElement)await document.exitPictureInPicture();}
+              if (command === 'media-frame') {const f=document.createElement('iframe');f.src=location.origin.replace('127.0.0.1','localhost')+'/page/media-frame';document.body.prepend(f);}
               if (command === 'cross-audio') {const el=document.getElementById('fixture-audio');el.src=location.origin.replace('127.0.0.1','localhost')+'/tone.wav';el.play();}
               if (command === 'stop-media') document.querySelectorAll('audio,video').forEach(el => el.pause());
               if (command === 'dirty') { field.value += ' edited'; field.dispatchEvent(new Event('input', { bubbles: true })); }
@@ -83,7 +91,7 @@ export async function createFixture() {
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
               if (command === 'download') { const a = document.createElement('a'); a.href = '/download/file?native=1'; a.download = 'fixture.bin'; a.click(); }
               const samples=new Float32Array(1024);measuredAnalyser?.getFloatTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((sum,n)=>sum+n*n,0)/samples.length);const audio=document.getElementById('fixture-audio');
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ videoCount:document.querySelectorAll('video').length,pip:Boolean(document.pictureInPictureElement),videoTime:document.pictureInPictureElement?.currentTime,audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();

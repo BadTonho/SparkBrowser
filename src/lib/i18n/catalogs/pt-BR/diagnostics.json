@@ -13,5 +13,6 @@
   "diagnostics.form": "formulário alterado",
   "diagnostics.media": "mídia em reprodução",
   "diagnostics.download": "download depende desta página",
-  "diagnostics.hibernate": "Hibernar"
+  "diagnostics.hibernate": "Hibernar",
+  "diagnostics.picture_in_picture": "Vídeo flutuante"
 }

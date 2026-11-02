@@ -26,9 +26,9 @@ pub(crate) fn validate_restart(
         return Err("A page download is still active. Finish it before updating.".into());
     }
     if !confirmed_activity
-        && tabs
-            .iter()
-            .any(|tab| tab.activity.dirty_form || tab.activity.playing_media)
+        && tabs.iter().any(|tab| {
+            tab.activity.dirty_form || tab.activity.playing_media || tab.activity.picture_in_picture
+        })
     {
         return Err(
             "Confirm closing pages with edited forms or playing media before updating.".into(),

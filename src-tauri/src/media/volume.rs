@@ -14,6 +14,14 @@ pub struct FrameMedia {
     pub count: u32,
     pub applied_volume: u16,
     pub status: String,
+    #[serde(default)]
+    pub videos: Vec<super::pip::MediaVideoCandidate>,
+    #[serde(default)]
+    pub playing: bool,
+    #[serde(default)]
+    pub picture_in_picture: bool,
+    #[serde(default)]
+    pub pip_video: Option<String>,
 }
 pub fn validate_volume(value: u16) -> Result<(), String> {
     if value > 200 {
@@ -94,6 +102,7 @@ pub async fn refresh(app: &AppHandle, id: &str) -> Result<MediaSnapshot, String>
                 t.volume = 100;
             }
         });
+        super::signals::sync_activity(app, id);
         app.state::<MediaService>().snapshot(app)
     }
     #[cfg(not(windows))]

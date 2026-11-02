@@ -7,3 +7,6 @@ export const onTabMedia = (callback: (state: MediaSnapshot) => void) => isTauriR
 
 export const refreshTabMedia = (tabId: string) => invoke<MediaSnapshot>("refresh_tab_media", {tabId});
 export const setTabVolume = (tabId: string, volume: number, documentKey: string) => invoke<MediaSnapshot>("set_tab_volume", {tabId, volume, documentKey});
+
+export const enterVideoPip = (tabId:string,context:string,document:string,video:string) => invoke<MediaSnapshot>("enter_video_pip",{tabId,context,document,video});
+export const exitVideoPip = () => invoke<MediaSnapshot>("exit_video_pip");

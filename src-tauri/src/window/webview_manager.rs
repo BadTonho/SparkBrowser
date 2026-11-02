@@ -170,8 +170,9 @@ pub(super) fn ensure_tab_webview(
                     &keyboard_bridge_token,
                     |tab| {
                         tab.activity.dirty_form = values.get("dirty").is_some_and(|v| v == "true");
-                        tab.activity.playing_media =
+                        tab.activity.document_media =
                             values.get("media").is_some_and(|v| v == "true");
+                        tab.activity.refresh_media();
                     },
                 );
             }

@@ -78,6 +78,7 @@ pub fn install(
                         c.IsDocumentPlayingAudio(&mut audible)?;
                         a.state::<MediaService>()
                             .update(&a, &i, |t| t.audible = audible.as_bool());
+                        super::signals::sync_activity(&a, &i);
                     }
                 }
                 Ok(())
