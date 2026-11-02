@@ -9,6 +9,7 @@ pub mod database;
 pub mod downloads;
 mod native_tests;
 pub mod privacy;
+pub mod recovery;
 pub mod site_permissions;
 pub mod state;
 pub mod updates;
@@ -28,6 +29,7 @@ use commands::persistence::{
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
 use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
+use commands::recovery::get_recovery_status;
 use commands::saved_sessions::{
     delete_named_session, get_saved_sessions, rename_named_session, restore_named_session,
     save_named_session,
@@ -54,9 +56,7 @@ use commands::workspaces::{
     update_workspace,
 };
 use database::connection::init_database;
-use database::session_repo::load_session_tabs;
-use database::workspace_repo::list_workspaces;
-use state::browser_state::{BrowserState, INITIAL_TAB_ID};
+use state::browser_state::BrowserState;
 use tauri::{Emitter, Manager, WindowEvent};
 use window::vibrancy::apply_native_vibrancy;
 use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL};
@@ -107,66 +107,15 @@ pub fn run() {
 
             let state = app.state::<BrowserState>();
 
-            let mut active_tab_id = INITIAL_TAB_ID.to_string();
-
-            {
-                let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
-                if let Ok(workspaces) = list_workspaces(&conn) {
-                    if !workspaces.is_empty() {
-                        if let Ok(mut workspace_guard) = state.workspaces.lock() {
-                            *workspace_guard = workspaces.clone();
-                        }
-                    }
-                }
-                {
-                    let mut restored_tabs =
-                        load_session_tabs(&conn).map_err(std::io::Error::other)?;
-                    let valid_ids: Vec<String> = state
-                        .workspaces
-                        .lock()
-                        .map(|workspaces| workspaces.iter().map(|ws| ws.id.clone()).collect())
-                        .unwrap_or_default();
-                    for tab in &mut restored_tabs {
-                        if !valid_ids.iter().any(|id| id == &tab.workspace_id) {
-                            tab.workspace_id = "ws-personal".to_string();
-                        }
-                    }
-                    if !restored_tabs.is_empty() {
-                        if let Some(active) = restored_tabs.iter().find(|t| t.is_active) {
-                            active_tab_id = active.id.clone();
-                            if let Ok(mut ws_guard) = state.active_workspace_id.lock() {
-                                *ws_guard = active.workspace_id.clone();
-                            }
-                        }
-                        let max_num = restored_tabs
-                            .iter()
-                            .filter_map(|t| t.id.strip_prefix("tab-")?.parse::<u64>().ok())
-                            .max()
-                            .unwrap_or(1);
-
-                        if let Ok(mut counter) = state.next_tab_counter.lock() {
-                            *counter = max_num + 1;
-                        }
-                        if let Ok(mut active_guard) = state.active_tab_id.lock() {
-                            *active_guard = active_tab_id.clone();
-                        }
-                        if let Ok(mut tabs_guard) = state.tabs.lock() {
-                            *tabs_guard = restored_tabs;
-                        }
-                    }
-                }
-                *state
-                    .split_layouts
-                    .lock()
-                    .map_err(|e| std::io::Error::other(e.to_string()))? =
-                    database::split_repo::load(&conn).map_err(std::io::Error::other)?;
-                state
-                    .refresh_visible_tabs()
-                    .map_err(std::io::Error::other)?;
-                if let Ok(mut db_guard) = state.db.lock() {
-                    *db_guard = Some(conn);
-                }
-            }
+            let data_directory = app.path().app_data_dir()?;
+            app.manage(
+                recovery::profile_lock::ProfileLock::acquire(&data_directory)
+                    .map_err(std::io::Error::other)?,
+            );
+            let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
+            let recovery_status =
+                recovery::startup::restore(&state, conn).map_err(std::io::Error::other)?;
+            app.manage(recovery::RecoveryService::new(recovery_status));
 
             app.manage(database::navigation_writer::NavigationWriter::start(
                 app.handle().clone(),
@@ -180,6 +129,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_recovery_status,
             get_closed_tabs,
             reopen_closed_tab,
             clear_closed_tabs,
@@ -263,16 +213,19 @@ pub fn run() {
             } = event
             {
                 api.prevent_exit();
+                if app
+                    .state::<recovery::RecoveryService>()
+                    .shutting_down
+                    .swap(true, std::sync::atomic::Ordering::AcqRel)
+                {
+                    return;
+                }
                 let app = app.clone();
                 std::thread::spawn(move || {
                     app.state::<downloads::manager::DownloadManager>()
                         .shutdown();
-                    if app
-                        .state::<database::navigation_writer::NavigationWriter>()
-                        .flush()
-                        .is_err()
-                    {
-                        eprintln!("Navigation persistence failed before shutdown");
+                    if let Err(error) = recovery::prepare_clean_exit(&app) {
+                        eprintln!("Session persistence failed before shutdown: {error}");
                     }
                     app.exit(0);
                 });

@@ -1,5 +1,6 @@
 import { checkBackup } from "./backup.mjs";
 import { checkClosedTabs } from './closed-tabs.mjs';
+import { checkRecovery, checkRecoveryFailure } from './recovery.mjs';
 import { checkLocalization } from "./localization.mjs";
 import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
@@ -9,6 +10,8 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  recovery: checkRecovery,
+  'recovery-failure': checkRecoveryFailure,
   'closed-tabs': checkClosedTabs,
   backup: async context => { await prepareTabs(context); await checkBackup(context); },
   localization: async context => { await prepareTabs(context); await checkLocalization(context); },

@@ -1,0 +1,6 @@
+{
+  "recovery.one": "O Veloce restaurou {count} aba após um encerramento inesperado.",
+  "recovery.other": "O Veloce restaurou {count} abas após um encerramento inesperado.",
+  "recovery.organize": "Organizar abas",
+  "recovery.dismiss": "Dispensar aviso"
+}

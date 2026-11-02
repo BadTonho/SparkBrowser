@@ -1,0 +1,6 @@
+{
+  "recovery.one": "Veloce restored {count} tab after an unexpected shutdown.",
+  "recovery.other": "Veloce restored {count} tabs after an unexpected shutdown.",
+  "recovery.organize": "Organize tabs",
+  "recovery.dismiss": "Dismiss notice"
+}

@@ -8,7 +8,7 @@ export async function createFixture() {
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
     const id = url.pathname.split('/')[2] ?? 'a';
-    if (!/^[abpi]$/.test(id)) { response.writeHead(404).end(); return; }
+    if (!/^[a-z][a-z0-9-]{0,63}$/.test(id)) { response.writeHead(404).end(); return; }
     if (url.pathname.startsWith('/report/')) {
       let body = '';
       for await (const chunk of request) {

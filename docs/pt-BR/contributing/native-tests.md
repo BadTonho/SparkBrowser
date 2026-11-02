@@ -27,6 +27,8 @@ As verificações de regressão do seletor de workspaces registram transições 
 
 O executor direto também aceita instalações Linux de `tauri-driver`/WebKitWebDriver pelas variáveis `VELOCE_TAURI_DRIVER` e `VELOCE_NATIVE_DRIVER`; esse caminho ainda não foi validado localmente. O macOS precisa de um serviço WebDriver embarcado separado. Transições de DPI entre monitores, gestos de arraste, latência de renderização e memória agregada dos processos ainda precisam de validação específica.
 
+O cenário `recovery` interrompe seu próprio processo de teste, verifica todas as abas e o foco da divisão e depois confere um reinício normal. `recovery-failure` injeta um trigger SQLite somente no banco do cenário encerrado e com identidade verificada, comprova que a falha de inicialização mantém o snapshot anterior, remove o trigger e tenta novamente. Os cenários `closed-tabs` e `backup` cobrem reabertura e importação revisada com novas tentativas persistentes de preferências.
+
 ## Medições
 
 Após compilar uma release de produção, execute `node tools/testing/release-metrics.mjs` para registrar revisão Git, versões das ferramentas, bytes brutos/gzip do frontend e bytes do executável nativo. São medições de artefatos, não benchmarks de RAM ou inicialização. Consulte [validação de desempenho](performance.md) para comparações. `npm run security:check` verifica caminhos rastreados/preparados, assinaturas comuns de segredos, regras de exclusão e espaços inválidos sem imprimir o conteúdo dos segredos.

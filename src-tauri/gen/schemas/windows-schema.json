@@ -375,6 +375,12 @@
           "markdownDescription": "Enables the get_privacy_stats command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_recovery_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-recovery-status",
+          "markdownDescription": "Enables the get_recovery_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_saved_sessions command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-saved-sessions",
@@ -817,6 +823,12 @@
           "type": "string",
           "const": "deny-get-privacy-stats",
           "markdownDescription": "Denies the get_privacy_stats command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_recovery_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-recovery-status",
+          "markdownDescription": "Denies the get_recovery_status command without any pre-configured scope."
         },
         {
           "description": "Denies the get_saved_sessions command without any pre-configured scope.",

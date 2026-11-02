@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, realpathSync, rmSync } from 'node:fs';
+import { mkdirSync, realpathSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 
 export const runsRoot = resolve('.cache/native-runs');
@@ -20,9 +21,11 @@ export function validateRunDirectory(directory) {
 export async function cleanRunData(directory) {
   const target = validateRunDirectory(directory);
   // Reports and screenshots survive both successful and failed cases.
-  for (const child of ['data', 'profile', 'config', 'cache', 'logs']) {
+  const results = await Promise.allSettled(['data', 'profile', 'config', 'cache', 'logs'].map(async child => {
     const path = resolve(target, child);
     assert.equal(relative(target, path), child);
-    rmSync(path, { recursive: true, force: true, maxRetries: 20, retryDelay: 200 });
-  }
+    await rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  }));
+  const failures = results.filter(result => result.status === 'rejected').map(result => result.reason);
+  if (failures.length) throw new AggregateError(failures, failures.map(String).join('; '));
 }

@@ -20,3 +20,4 @@ pub mod overlays;
 pub mod backup;
 
 pub mod closed_tabs;
+pub mod recovery;

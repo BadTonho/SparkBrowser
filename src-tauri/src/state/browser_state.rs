@@ -209,9 +209,30 @@ impl BrowserState {
         closed: &[crate::database::closed_tabs_repo::ClosedTab],
         reopened: Option<i64>,
     ) -> Result<(), String> {
+        self.persist_change(closed, reopened, None)
+    }
+
+    pub fn persist_run_checkpoint(
+        &self,
+        checkpoint: crate::database::recovery_repo::RunCheckpoint,
+    ) -> Result<(), String> {
+        self.persist_change(&[], None, Some(checkpoint))
+    }
+
+    fn persist_change(
+        &self,
+        closed: &[crate::database::closed_tabs_repo::ClosedTab],
+        reopened: Option<i64>,
+        checkpoint: Option<crate::database::recovery_repo::RunCheckpoint>,
+    ) -> Result<(), String> {
         let mut span = self.diagnostics.span("session.persist");
         self.refresh_visible_tabs()?;
         let snapshot = self.snapshot_tabs();
+        if checkpoint.is_some()
+            && (snapshot.is_empty() || snapshot.iter().filter(|tab| tab.is_active).count() != 1)
+        {
+            return Err("recovery.invalid_session: Missing active tab".into());
+        }
         let layouts = self
             .split_layouts
             .lock()
@@ -233,6 +254,9 @@ impl BrowserState {
             }
             if let Some(id) = reopened {
                 crate::database::closed_tabs_repo::consume(&transaction, id)?;
+            }
+            if let Some(checkpoint) = checkpoint {
+                crate::database::recovery_repo::checkpoint(&transaction, checkpoint)?;
             }
             transaction.commit().map_err(|e| e.to_string())
         })();

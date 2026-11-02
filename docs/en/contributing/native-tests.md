@@ -27,6 +27,8 @@ Workspace picker regression checks record native page visibility transitions: op
 
 The direct runner also accepts a Linux `tauri-driver`/WebKitWebDriver installation through `VELOCE_TAURI_DRIVER` and `VELOCE_NATIVE_DRIVER`; that path has not been validated locally. macOS needs a separate embedded WebDriver service. Multi-monitor DPI transitions, pointer drag gestures, rendering latency and aggregate process memory still require dedicated validation.
 
+The `recovery` scenario force-stops its own test process, verifies all tabs and split focus, then checks a clean restart. `recovery-failure` injects a SQLite trigger only in the stopped, identity-verified scenario database, proves initialization failure keeps the previous snapshot, removes the trigger and retries. The `closed-tabs` and `backup` scenarios cover restoration and reviewed import with persistent preference retries.
+
 ## Measurements
 
 After building a production release, run `node tools/testing/release-metrics.mjs` to report the Git revision, toolchain versions, frontend raw/gzip bytes and native executable bytes. These are artifact measurements, not RAM or startup benchmarks. Follow [performance validation](performance.md) for comparisons. `npm run security:check` verifies tracked/staged paths, common secret signatures, ignore rules and whitespace without printing secret contents.

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
+  import { initializeRecovery } from "./lib/stores/recoveryStore";
   import ClosedTabsNotice from "./lib/components/status/ClosedTabsNotice.svelte";
   import { initializeClosedTabEvents, restoreClosedTab } from "./lib/stores/closedTabsStore";
   import BackupNotice from "./lib/components/status/BackupNotice.svelte";
@@ -100,6 +102,7 @@
   );
 
   onMount(() => {
+    void initializeRecovery();
     initializeBackupStatus();
     const stopClosedTabs = initializeClosedTabEvents();
     const stopUpdates = initializeUpdates();
@@ -302,6 +305,7 @@
   <Titlebar />
   <UpdateNotice />
   <BackupNotice />
+  <RecoveryNotice />
   <ClosedTabsNotice />
   {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar && ($bookmarks.length > 0 || $bookmarkFolders.length > 0)}
     <div

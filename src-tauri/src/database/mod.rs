@@ -16,3 +16,4 @@ pub mod workspace_repo;
 pub mod backup_repo;
 
 pub mod closed_tabs_repo;
+pub mod recovery_repo;

@@ -160,9 +160,14 @@ pub async fn install(
             let browser = app.state::<crate::state::browser_state::BrowserState>();
             let _tabs = browser.tab_operations.blocking_lock();
             super::prepare_install(&app, confirmed_activity)?;
-            candidate
+            browser
+                .persist_run_checkpoint(crate::database::recovery_repo::RunCheckpoint::CleanExit)?;
+            let result = candidate
                 .install(bytes.as_slice())
-                .map_err(|e| format!("Could not start the update installer: {e}"))
+                .map_err(|e| format!("Could not start the update installer: {e}"));
+            // Successful NSIS launch exits directly. Any returned result leaves this run active.
+            crate::recovery::resume_after_installer(&browser)?;
+            result
         })();
         // Successful installation exits the process. Every failure restores a usable browser.
         writer.resume();

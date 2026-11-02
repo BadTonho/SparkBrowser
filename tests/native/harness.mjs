@@ -85,25 +85,40 @@ export async function runScenario(name, scenario) {
     driverError = undefined;
     driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, VELOCE_NATIVE_TEST_RUN_DIR: directory }, detached: process.platform !== 'win32' });
     driver.on('error', error => { driverError = error; });
+    driver.on('exit', (code, signal) => { driverError = new Error(`Scenario driver exited (${code ?? signal})`); });
     await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'driver ready');
   }
   async function stopDriver() {
     if (driver?.pid) {
+      const stopped = driver.exitCode !== null || driver.signalCode !== null ? Promise.resolve() : new Promise(resolve => driver.once('exit', resolve));
       if (process.platform === 'win32') {
         // Terminate only the child tree created for this scenario.
         await new Promise(resolve => { const kill = spawn('taskkill', ['/PID', String(driver.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }); kill.on('error', resolve); kill.on('close', resolve); });
       } else { try { process.kill(-driver.pid, 'SIGKILL'); } catch { /* Already exited. */ } }
+      await stopped;
+      // Windows can retain WebView profile/WAL handles briefly after process termination.
+      await wait(250);
     }
     driver = undefined;
   }
-  async function restart() {
-    await invoke('get_history', { limit: 10 });
-    await script(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }); return null;`).catch(() => {});
-    await until(async () => { try { return !(await request('GET', `/session/${session}/window/handles`)).length; } catch { return true; } }, 'normal native exit');
-    await closeSession().catch(() => {});
+  async function restart({ crash = false, beforeStart, expectFailure = false } = {}) {
+    if (session && !crash) {
+      await invoke('get_history', { limit: 10 });
+      await script(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }); return null;`).catch(() => {});
+      await until(async () => { try { return !(await request('GET', `/session/${session}/window/handles`)).length; } catch { return true; } }, 'normal native exit');
+      await closeSession().catch(() => {});
+    }
+    // Forced restarts kill only our process tree, without sending a clean-close command.
     await stopDriver();
+    session = undefined;
+    await beforeStart?.(directory);
     await startDriver();
-    await openSession();
+    if (!expectFailure) return openSession();
+    let failure;
+    try { await openSession(); } catch (error) { failure = error; }
+    await stopDriver(); session = undefined;
+    assert.ok(failure, 'The injected startup failure must prevent application readiness');
+    return failure;
   }
   try {
     fixture = await createFixture();
