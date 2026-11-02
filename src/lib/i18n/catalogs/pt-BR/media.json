@@ -4,6 +4,7 @@
   "media.error": "Não foi possível aplicar o controle de mídia. Tente novamente.",
   "media.unavailable": "Os controles de mídia estão indisponíveis aqui.",
   "media.close": "Fechar",
+  "media.minimize": "Minimizar",
   "media.heading": "Mídia da página",
   "media.volume": "Volume",
   "media.reset": "Restaurar 100%",

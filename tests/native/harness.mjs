@@ -86,6 +86,14 @@ export async function runScenario(name, scenario) {
   async function focusWindow() {
     if (process.platform === 'win32') await windowsWindowAction(['-Focus']);
   }
+  async function floatingWindow(action='Inspect') {
+    return new Promise((resolveAction,reject)=>{
+      const helper=spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',resolve('tests/native/floating-window.ps1'),'-Executable',binary,'-Action',action],{windowsHide:true,stdio:['ignore','pipe','pipe']});
+      let output='',error='';
+      helper.stdout.on('data',chunk=>{output+=chunk;});helper.stderr.on('data',chunk=>{error+=chunk;});
+      helper.on('error',reject);helper.on('exit',code=>{if(code!==0)reject(new Error(error||'Floating window inspection failed'));else {try{resolveAction(JSON.parse(output));}catch(e){reject(e);}}});
+    });
+  }
   async function invoke(command, args = {}) {
     const result = await request('POST', `/session/${session}/execute/async`, {
       script: `const done = arguments[arguments.length - 1]; window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]).then(value => done({ value }), error => done({ error: String(error) }));`,
@@ -171,7 +179,7 @@ export async function runScenario(name, scenario) {
     fixture = await createFixture();
     await startDriver();
     await openSession();
-    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, sessionId: () => session, restart, directory });
+    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, floatingWindow, sessionId: () => session, restart, directory });
     if (process.env.VELOCE_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
   } catch (error) {
     failure = error;

@@ -14,7 +14,10 @@ export async function withFloatingPlayer({request,sessionId,script},operation) {
 
 export async function checkFloatingVolume(context,id) {
   const {script,invoke,until,wait,request,sessionId,screenshot}=context;
-  const applied=value=>until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.applied_volume===value,`PiP applies ${value}%`);
+  const applied=async value=>{
+    try {await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.applied_volume===value,`PiP applies ${value}%`);}
+    catch(error){const state=(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id);console.error('Fixture volume state',JSON.stringify({requested:value,applied:state?.applied_volume,status:state?.volume_status}));throw error;}
+  };
   await withFloatingPlayer(context,async()=>{
     await until(()=>script('const v=document.querySelector("video");return v?.readyState>=2&&v.videoWidth>0;'),'silent moving image');
     assert.equal(await script('return document.querySelector("video").muted && document.querySelector("video").srcObject.getAudioTracks().length===0;'),true,'copy has no audio');
@@ -26,11 +29,17 @@ export async function checkFloatingVolume(context,id) {
     assert.equal(await script('return document.querySelector("#pip-volume-panel").hidden'),false);
     const ui=await script('const p=document.querySelector("#pip-volume-panel"),s=p.querySelector("input"),v=p.querySelector("span"),r=p.getBoundingClientRect();return {width:r.width,height:r.height,inside:r.left>=0&&r.right<=innerWidth,below:v.getBoundingClientRect().top>=s.getBoundingClientRect().bottom,min:s.min,max:s.max,step:s.step};');
     assert.equal(ui.height,64);assert.equal(ui.inside,true);assert.equal(ui.below,true);assert.deepEqual([ui.min,ui.max,ui.step],['0','200','1']);
+    const percent=await script('const r=document.querySelector("[data-testid=pip-volume-percentage]").getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)};');
+    await request('POST',`/session/${sessionId()}/actions`,{actions:[{type:'pointer',id:'pip-pointer',parameters:{pointerType:'mouse'},actions:[{type:'pointerMove',duration:100,...percent}]}]});
+    await wait(400);assert.equal(await script('return document.querySelector("#pip-volume-panel").hidden'),false,'hover over percentage keeps the entire volume panel open');
     await screenshot('pip-volume-hover');
     const original=await request('GET',`/session/${sessionId()}/window/rect`);
-    await request('POST',`/session/${sessionId()}/window/rect`,{width:300,height:240});
+    await request('POST',`/session/${sessionId()}/window/rect`,{width:280,height:158});
     assert.equal(await script('const r=document.querySelector("#pip-volume-panel").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;'),true,'volume stays inside a resized floating window');
     await request('POST',`/session/${sessionId()}/window/rect`,original);
+    // Resizing moves the panel away from the pointer. Reopen it through keyboard
+    // focus before exercising values and real pointer drags.
+    await script('document.querySelector("[data-testid=pip-speaker]").focus();document.querySelector("[data-testid=pip-volume]").focus();');
   });
   for(const value of [0,100,200]) {
     assert.equal(await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value=arguments[0];s.dispatchEvent(new Event("input",{bubbles:true}));s.dispatchEvent(new Event("change",{bubbles:true}));return document.querySelector("[data-testid=pip-volume-percentage]").textContent',value)),`${value}%`);
@@ -89,6 +98,14 @@ export async function checkFloatingFrameChurn(context,id) {
   await until(()=>fixture.reports.has('media-frame'),'unrelated dynamic iframe');
   await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value="65";s.dispatchEvent(new Event("input",{bubbles:true}));s.dispatchEvent(new Event("change",{bubbles:true}));'));
   await until(async()=>{const s=(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id);return s.applied_volume===65&&s.document_key!==before;},'volume survives unrelated iframe changes');
+  // Keep discovery on another tab so it cannot repair the invalidated source
+  // key before the floating player edits volume, as on ad-heavy pages.
+  const peer=(await invoke('create_tab',{url:fixture.origin+'/page/pip-frame-churn-peer'})).tabs.find(t=>t.is_active).id;
   fixture.commands.set('media-pip','remove-iframe');
   await withWebview('/page/media-pip',()=>until(()=>script('return !document.querySelector("iframe")'),'remove unrelated iframe'));
+  await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.document_key==='','iframe removal invalidates the aggregate key');
+  await assert.rejects(()=>invoke('set_tab_volume',{tabId:id,volume:75,documentKey:''}),/media.stale/,'ordinary edits still require a current key');
+  await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value="75";s.dispatchEvent(new Event("input",{bubbles:true}));s.dispatchEvent(new Event("change",{bubbles:true}));'));
+  await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.applied_volume===75,'revalidated PiP session survives the cleared aggregate key');
+  await invoke('switch_tab',{tabId:id});await invoke('close_tab',{tabId:peer});
 }

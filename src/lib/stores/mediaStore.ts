@@ -37,7 +37,7 @@ export function queueVolume(id:string,document:string,value:number,pip?:{session
 export const pipBusy=writable(false);
 export async function enterVideo(id:string,context:string,document:string,video:string) {
   if(get(pipBusy))return;pipBusy.set(true);mediaError.set("");
-  try{applyMedia(await enterVideoPip(id,context,document,video,{locale:get(locale),labels:{play:tr("media.play"),pause:tr("media.pause"),back:tr("media.back"),forward:tr("media.forward"),progress:tr("media.progress"),volume:tr("media.volume"),return:tr("media.return"),close:tr("media.close"),fallback:tr("media.pip_native_fallback")}}));}catch(e){mediaError.set(describeError(e));}finally{pipBusy.set(false);}
+  try{applyMedia(await enterVideoPip(id,context,document,video,{locale:get(locale),labels:{play:tr("media.play"),pause:tr("media.pause"),back:tr("media.back"),forward:tr("media.forward"),progress:tr("media.progress"),volume:tr("media.volume"),return:tr("media.return"),close:tr("media.close"),minimize:tr("media.minimize"),fallback:tr("media.pip_native_fallback")}}));}catch(e){mediaError.set(describeError(e));}finally{pipBusy.set(false);}
 }
 export async function exitVideo() {
   if(get(pipBusy))return;pipBusy.set(true);mediaError.set("");

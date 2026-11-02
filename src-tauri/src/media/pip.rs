@@ -29,6 +29,14 @@ pub struct Presentation {
     #[serde(default)]
     pub labels: std::collections::HashMap<String, String>,
 }
+pub fn player_script() -> String {
+    include_str!("pip_player.js")
+        .replace(
+            "__PIP_PLAYER_STYLE__",
+            &serde_json::to_string(include_str!("player/style.css")).expect("static player CSS"),
+        )
+        .replace("__PIP_ICONS__", include_str!("player/icons.js"))
+}
 #[cfg(windows)]
 async fn exit_known(app: &AppHandle) -> Result<(), String> {
     if let Some((session, tab, token, context, document)) = super::pip_window::owner() {

@@ -86,8 +86,11 @@ pub fn new_window(
     )
     .window_features(features)
     .title("Floating video")
-    .inner_size(400.0, 250.0)
-    .min_inner_size(280.0, 190.0)
+    .decorations(false)
+    .shadow(true)
+    .maximizable(false)
+    .inner_size(400.0, 225.0)
+    .min_inner_size(280.0, 158.0)
     .always_on_top(true)
     .skip_taskbar(true)
     .visible(false)
@@ -150,8 +153,10 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
     let value = query("value")
         .and_then(|s| s.parse::<u16>().ok())
         .filter(|v| *v <= 200);
-    if !matches!(action, "ready" | "volume" | "flush" | "return" | "close")
-        || (action == "volume" && value.is_none())
+    if !matches!(
+        action,
+        "ready" | "volume" | "flush" | "return" | "close" | "minimize" | "drag"
+    ) || (action == "volume" && value.is_none())
     {
         return;
     }
@@ -188,6 +193,15 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
         let session = SESSION.lock().ok().and_then(|s| s.clone());
         if let Some(s) = session {
             sync(app, &app.state::<MediaService>().tab(&s.tab));
+        }
+    } else if matches!(action, "minimize" | "drag") {
+        if let Some(window) = app.get_webview_window(&label(id)) {
+            if action == "minimize" {
+                let _ = window.minimize();
+            } else {
+                let _ = window.start_dragging();
+                let _ = window.eval("window.__velocePipDragFinished?.();");
+            }
         }
     } else {
         emit(app, id, action, value);

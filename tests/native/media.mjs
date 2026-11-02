@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { checkVolumePopover } from './media-popover.mjs';
 import { checkPipToolbarLayouts } from './pip-toolbar.mjs';
 import { withFloatingPlayer, checkFloatingVolume, checkBackgroundFloatingVolume, checkFloatingFrameChurn } from './pip-player.mjs';
+import { checkMinimalPlayer } from './pip-appearance.mjs';
 
 export async function checkMediaMute({invoke,until,fixture,click,restart,script}) {
   if (process.platform !== 'win32') return;
@@ -117,6 +118,7 @@ export async function checkMediaPip(context) {
   await click('[data-testid=toggle-pip]');
   await until(async()=> (await read()).frames.some(f=>f.picture_in_picture),'actual floating video');
   assert.ok((await read()).frames.some(f=>f.pip_mode==='custom'),'compatible source uses custom controls');
+  await checkMinimalPlayer(context);
   await checkFloatingVolume(context,id);
   await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value="37";s.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("[data-testid=pip-close]").click();'));
   await until(async()=>{const s=await read();return s.applied_volume===37&&!s.frames.some(f=>f.picture_in_picture);},'closing commits the final volume edit');

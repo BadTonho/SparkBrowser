@@ -43,6 +43,15 @@ fn document_key(frames: &[FrameMedia]) -> String {
     keys.sort();
     keys.join("|")
 }
+#[cfg(any(windows, test))]
+fn validate_document(expected: &str, actual: &str, owned_pip: bool) -> Result<(), String> {
+    // Removing an unrelated iframe clears the aggregate key. A PiP edit may
+    // still proceed only after its source session matches the fresh reports.
+    if !owned_pip && (expected.is_empty() || expected != actual) {
+        return Err("media.stale".into());
+    }
+    Ok(())
+}
 #[cfg(windows)]
 async fn reports(app: &AppHandle, id: &str) -> Result<(String, Vec<FrameMedia>), String> {
     let (token, contexts) = super::protocol::contexts(app, id).await?;
@@ -129,9 +138,7 @@ pub async fn set(
         let actual = document_key(&frames);
         let owned = pip_session
             .is_some_and(|session| super::pip_window::matches(session, id, &token, &frames));
-        if expected.is_empty() || (expected != actual && !owned) {
-            return Err("media.stale".into());
-        }
+        validate_document(expected, &actual, owned)?;
         let expected = if owned { actual.as_str() } else { expected };
         let previous = app.state::<MediaService>().tab(id);
         let mut result = Ok(());
@@ -239,5 +246,14 @@ mod tests {
             document_key(&[b.clone(), a.clone()])
         );
         assert_ne!(document_key(&[a, b]), document_key(&[]));
+    }
+    #[test]
+    fn only_a_revalidated_pip_session_can_replace_an_invalidated_aggregate_key() {
+        assert!(validate_document("current", "current", false).is_ok());
+        assert!(validate_document("", "current", false).is_err());
+        assert!(validate_document("old", "current", false).is_err());
+        assert!(validate_document("", "", false).is_err());
+        assert!(validate_document("", "current", true).is_ok());
+        assert!(validate_document("old", "current", true).is_ok());
     }
 }

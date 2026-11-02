@@ -4,6 +4,7 @@
   "media.error": "The media control could not be applied. Try again.",
   "media.unavailable": "Media controls are unavailable here.",
   "media.close": "Close",
+  "media.minimize": "Minimize",
   "media.heading": "Page media",
   "media.volume": "Volume",
   "media.reset": "Restore 100%",

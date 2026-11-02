@@ -116,7 +116,7 @@ pub(super) fn ensure_tab_webview(
                     "__MEDIA_TOKEN__",
                     &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
                 )
-                .replace("__PIP_PLAYER__", include_str!("../media/pip_player.js"))
+                .replace("__PIP_PLAYER__", &crate::media::pip::player_script())
                 .replace(
                     "__MEDIA_VOLUME__",
                     &app.state::<crate::media::MediaService>()
