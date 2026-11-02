@@ -74,7 +74,7 @@
 </script>
 
 {#if !$isZenMode}
-  <header class="titlebar" data-tauri-drag-region>
+  <header class="titlebar" data-tauri-drag-region={$tabLayout === "vertical" ? "" : undefined}>
     <div class="titlebar-left">
       {#if $tabLayout === "vertical"}
         <button

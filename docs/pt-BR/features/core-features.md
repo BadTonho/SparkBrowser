@@ -40,6 +40,7 @@
 
 ## 7. 📑 Layouts Horizontal e Vertical do Navegador
 - Escolha **Horizontal** ou **Vertical** nas Configurações (`Ctrl + ,`); a seleção é lembrada ao reabrir o aplicativo.
+- No layout Horizontal, arraste a janela pela área vazia da barra superior de abas. A barra de endereço/pesquisa não move a janela. No layout Vertical, a barra superior continua sendo a área de arraste da janela.
 - **Horizontal:** As abas ficam no topo e os bookmarks salvos aparecem em uma barra horizontal abaixo da pesquisa. A barra fica oculta quando não há bookmarks nem pastas. Escolha se os workspaces ficam como botões ao lado da pesquisa ou em um seletor flutuante aberto ao manter Alt pressionado. Oculte ou mostre a barra de bookmarks em Aparência e Layout ou pelo botão na barra superior; ocultá-la não remove os bookmarks.
 - **Vertical:** Os espaços de trabalho, bookmarks salvos e abas verticais ficam juntos na barra lateral retrátil; a preferência de exibição dos workspaces altera somente o layout horizontal.
 - Salve uma página pela estrela da barra de endereço e escolha o título e a pasta. Ao selecionar um bookmark existente, o mesmo editor permite renomeá-lo, movê-lo para outra pasta ou removê-lo.

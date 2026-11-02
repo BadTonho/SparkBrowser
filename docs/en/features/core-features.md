@@ -40,6 +40,7 @@
 
 ## 7. 📑 Horizontal and Vertical Browser Layouts
 - Choose **Horizontal** or **Vertical** in Settings (`Ctrl + ,`); the selection is remembered across app restarts.
+- In Horizontal layout, drag the window using the empty area of the top tab bar. The address/search toolbar does not move the window. In Vertical layout, the top toolbar remains the window's drag area.
 - **Horizontal:** Tabs stay at the top, and saved bookmarks appear in a horizontal bar below the search bar. The bar is hidden when there are no bookmarks or folders. Choose whether workspace buttons sit beside the search bar or appear in a floating picker when holding Alt. Toggle the bookmarks bar from Appearance & Layout or the top toolbar; hiding it does not remove bookmarks.
 - **Vertical:** Workspaces, saved bookmarks, and vertical tabs stay together in the collapsible sidebar; the workspace display preference only changes the horizontal layout.
 - Save a page with the address-bar star, then choose its title and folder. Selecting an existing bookmark opens the same editor so it can be renamed, moved to another folder, or removed.
