@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protection</title><link rel="stylesheet" href="./overlays/privacy-popover.css" /></head>
+<body>
+  <section id="privacy-popover" role="dialog" aria-modal="false" tabindex="-1" hidden>
+    <h2 id="privacy-title"></h2>
+    <label class="option"><span><strong id="adblock-label"></strong><small id="blocked-count"></small></span>
+      <input type="checkbox" role="switch" id="adblock" data-testid="privacy-adblock" /></label>
+    <label class="option"><span><strong id="auto-skip-label"></strong><small id="auto-skip-description"></small></span>
+      <input type="checkbox" role="switch" id="auto-skip" data-testid="privacy-auto-skip" /></label>
+    <p id="privacy-error" role="alert" hidden></p>
+  </section>
+  <script src="./overlays/privacy-popover.js" defer></script>
+</body></html>

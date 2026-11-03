@@ -15,6 +15,8 @@ pub const FORMAT: &str = "veloce-backup";
 #[serde(deny_unknown_fields)]
 pub struct BackupPreferences {
     #[serde(default)]
+    pub auto_skip_ads_enabled: bool,
+    #[serde(default)]
     pub pip_window_shadow: bool,
     pub tab_layout: String,
     pub show_bookmarks_bar: bool,

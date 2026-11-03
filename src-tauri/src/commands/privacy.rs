@@ -10,6 +10,36 @@ pub fn get_privacy_stats(state: State<'_, BrowserState>) -> PrivacyStats {
 }
 
 #[tauri::command]
+pub async fn set_auto_skip_ads(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    enabled: bool,
+) -> Result<PrivacyStats, String> {
+    use std::sync::atomic::Ordering;
+    let _operation = state.tab_operations.lock().await;
+    let previous = state.auto_skip_ads_enabled.load(Ordering::Acquire);
+    state
+        .auto_skip_ads_enabled
+        .store(enabled, Ordering::Release);
+    if let Err(error) = crate::privacy::auto_skip::apply(&app, enabled) {
+        state
+            .auto_skip_ads_enabled
+            .store(previous, Ordering::Release);
+        if crate::privacy::auto_skip::apply(&app, previous).is_err() {
+            let _ = app.emit_to(
+                "main",
+                "browser-error",
+                "Could not fully restore auto skip policy",
+            );
+        }
+        return Err(error);
+    }
+    let stats = state.snapshot_privacy_stats();
+    let _ = app.emit_to("main", "privacy-stats-updated", &stats);
+    Ok(stats)
+}
+
+#[tauri::command]
 pub async fn toggle_adblock_shield(
     app: AppHandle,
     state: State<'_, BrowserState>,

@@ -20,6 +20,7 @@ pub fn focus_active_content_webview(app: &AppHandle) -> Result<(), String> {
                 || state.workspace_switcher_open.lock().map_or(true, |v| *v)
                 || state.bookmark_context_menu_open.lock().map_or(true, |v| *v)
                 || super::media_popover::is_open(&app)
+                || super::privacy_popover::is_open(&app)
                 || app.state::<crate::shutdown::ShutdownService>().blocked()
             {
                 return;

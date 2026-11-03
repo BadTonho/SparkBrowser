@@ -74,6 +74,8 @@
     "allow-delete-bookmark-folder",
     "allow-get-privacy-stats",
     "allow-toggle-adblock-shield",
+    "allow-set-auto-skip-ads",
+    "allow-set-privacy-popover",
     "allow-get-workspaces",
     "allow-get-active-workspace",
     "allow-switch-workspace",

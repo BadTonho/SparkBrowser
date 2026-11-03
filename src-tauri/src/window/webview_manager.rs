@@ -128,6 +128,9 @@ pub(super) fn ensure_tab_webview(
                 ),
         )
         .focused(focused)
+        .initialization_script(crate::privacy::auto_skip::initializer(
+            &keyboard_bridge_token,
+        ))
         .zoom_hotkeys_enabled(false)
         .initialization_script(include_str!("page_activity.js").replace(
             "__ACTIVITY_TOKEN__",

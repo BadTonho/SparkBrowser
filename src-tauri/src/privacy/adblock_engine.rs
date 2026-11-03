@@ -31,6 +31,7 @@ const BLOCKED_DOMAINS: &[&str] = &[
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PrivacyStats {
     pub shield_enabled: bool,
+    pub auto_skip_ads_enabled: bool,
     pub blocked_count: u64,
     pub hibernated_tabs_count: usize,
     pub supports_live_policy_updates: bool,

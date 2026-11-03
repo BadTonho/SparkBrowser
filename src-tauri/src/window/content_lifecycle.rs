@@ -176,5 +176,6 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
     }
 
     super::media_popover::sync(app, state)?;
+    super::privacy_popover::sync(app, state)?;
     Ok(())
 }

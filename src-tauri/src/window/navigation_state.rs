@@ -213,6 +213,7 @@ pub(super) fn with_page_events(
         let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
             return;
         };
+        crate::privacy::auto_skip::loaded(&webview, &state, &keyboard_token_for_load);
         let title = state
             .tabs
             .lock()

@@ -82,6 +82,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "delete_bookmark_folder",
     "get_privacy_stats",
     "toggle_adblock_shield",
+    "set_auto_skip_ads",
+    "set_privacy_popover",
     "get_workspaces",
     "get_active_workspace",
     "switch_workspace",

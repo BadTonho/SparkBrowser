@@ -11,5 +11,10 @@
   "privacy.inactive_ac7c": "Inativa",
   "privacy.tab_90dd": "Aba",
   "privacy.tabs_8e5e": "Abas",
-  "privacy.free_ram_c12c": "(Liberar memória)"
+  "privacy.free_ram_c12c": "(Liberar memória)",
+  "privacy.controls": "Proteção",
+  "privacy.adblock": "Adblock",
+  "privacy.auto_skip": "Auto skip ads",
+  "privacy.auto_skip_description": "YouTube: pula quando o botão estiver disponível",
+  "privacy.blocked": "{count} navegações bloqueadas"
 }

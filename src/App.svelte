@@ -16,6 +16,7 @@
   import PermissionPrompt from "./lib/components/permissions/PermissionPrompt.svelte";
   import { initializePermissionEvents } from "./lib/stores/sitePermissionsStore";
   import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
+  import PrivacyPanel from "./lib/components/privacy/PrivacyPanel.svelte";
   import MediaPanel from "./lib/components/media/MediaPanel.svelte";
   import MediaNotice from "./lib/components/media/MediaNotice.svelte";
   import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
@@ -319,6 +320,7 @@
   <BrowserErrorBanner />
   <MediaNotice />
   <MediaPanel />
+  <PrivacyPanel />
   {#if $tabLayout === "horizontal" && !$isZenMode}
     <HorizontalTabBar />
   {/if}

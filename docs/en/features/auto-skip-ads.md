@@ -1,0 +1,17 @@
+# Protection pop-up and Auto skip ads
+
+Click the shield button to open **Protection** directly below it. Opening it does not change protection. The 300 px panel contains independent **Adblock** and **Auto skip ads** switches and the existing blocked-navigation count. It stays above native pages and both split panes without reloading or hiding them. Click outside or the trigger, press Escape, switch tabs/workspaces, or open another panel to close it. Escape returns focus to the shield button. Tab moves between controls and exits at the boundary. The volume pop-up and Protection cannot remain open together.
+
+Auto skip is off by default and remembers its setting locally. It applies to all loaded desktop YouTube watch pages (`https://youtube.com/watch` and `https://www.youtube.com/watch`), including background tabs and the source of Picture-in-Picture. It does not wake hibernated tabs. Embedded players, mobile YouTube, Shorts and other services are outside this first version.
+
+The controller clicks a known, visible, enabled skip button inside the YouTube player only while the player indicates an advertisement. It never seeks, changes playback speed, clicks promotional links or skips an advertisement without a skip button. Mutations are grouped with at least 500 ms between checks; a control is clicked once per observed advertisement, with replacement controls supported. Disabling stops observation immediately. YouTube layout changes may require updating the adapter.
+
+The page controller starts inactive in every document. The browser applies the current setting after loading and on user changes, without granting native IPC to external pages. Other websites receive no active observer. The auxiliary pop-up accepts only authenticated, ordered actions from its current session. Failed native/storage updates preserve the previously confirmed preference and show an error.
+
+Backups include `auto_skip_ads_enabled`; older backups without that field default to false. Applying reviewed backup preferences also updates the running policy. The existing adblock setting retains its current behavior independently.
+
+## Validation
+
+Run `npm run validate`, then the [isolated native setup](../contributing/native-tests.md) and `npm run test:native -- --case privacy`. Local regression fixtures use the unchanged controller with a lexical test URL/window facade; production hosts and IPC permissions are not broadened. Run `npm run test:native:auto-skip:youtube` explicitly for the network check. Its report distinguishes an observed skip from a run without a skippable advertisement; absence of an ad does not prove a real skip.
+
+Verified on Windows on November 2, 2026: consolidated validation passed (75 JavaScript tests, 82 Rust unit tests and one updater integration test; the explicit benchmark and separate signed-installer fixture test remain ignored). Native `privacy`, `persistence-shield`, `navigation`, `media-volume`, `backup` and `features` passed. The backup rerun confirmed data-only preservation and reviewed application of auto skip. The YouTube check observed the player and installed controller throughout ten two-second observations, but no skippable advertisement appeared. Local fixtures verified actual clicks, background operation and a real PiP source. Native pop-up screenshots were inspected for positioning, switches and Portuguese text. Native execution on other platforms remains unverified.

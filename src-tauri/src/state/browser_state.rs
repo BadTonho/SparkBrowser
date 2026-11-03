@@ -63,6 +63,7 @@ pub struct BrowserState {
     pub bookmark_context_menu_actions: Mutex<Vec<String>>,
     pub shield_script_ids: Mutex<std::collections::HashMap<String, String>>,
     pub shield_enabled: Mutex<bool>,
+    pub auto_skip_ads_enabled: AtomicBool,
     pub blocked_count: Mutex<u64>,
     pub db: Mutex<Option<Connection>>,
 }
@@ -100,6 +101,7 @@ impl Default for BrowserState {
             bookmark_context_menu_actions: Mutex::new(Vec::new()),
             shield_script_ids: Mutex::new(std::collections::HashMap::new()),
             shield_enabled: Mutex::new(true),
+            auto_skip_ads_enabled: AtomicBool::new(false),
             blocked_count: Mutex::new(0),
             db: Mutex::new(None),
         }
@@ -298,6 +300,9 @@ impl BrowserState {
             .unwrap_or(0);
 
         PrivacyStats {
+            auto_skip_ads_enabled: self
+                .auto_skip_ads_enabled
+                .load(std::sync::atomic::Ordering::Acquire),
             shield_enabled,
             blocked_count,
             hibernated_tabs_count,

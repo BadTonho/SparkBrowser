@@ -50,6 +50,7 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
         }
     }
     super::media_popover::resize(app)?;
+    super::privacy_popover::resize(app)?;
     Ok(())
 }
 

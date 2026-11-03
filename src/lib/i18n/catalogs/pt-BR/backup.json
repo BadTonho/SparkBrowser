@@ -60,5 +60,6 @@
   "backup.error_pending": "Aplique as preferências pendentes antes de importar outro conjunto de preferências.",
   "backup.search_description": "Exporte ou mescle um backup local.",
   "backup.more": "Exibir mais itens ignorados",
-  "backup.pref_site_zoom": "Zoom por site (valores locais prevalecem nos conflitos)"
+  "backup.pref_site_zoom": "Zoom por site (valores locais prevalecem nos conflitos)",
+  "backup.pref_auto_skip_ads_enabled": "Auto skip ads"
 }

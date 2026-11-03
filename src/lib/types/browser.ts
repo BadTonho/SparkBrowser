@@ -100,6 +100,7 @@ export interface DownloadTask {
 
 export interface PrivacyStats {
   shield_enabled: boolean;
+  auto_skip_ads_enabled: boolean;
   blocked_count: number;
   hibernated_tabs_count: number;
   supports_live_policy_updates: boolean;

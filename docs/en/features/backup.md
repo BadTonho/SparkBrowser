@@ -1,5 +1,7 @@
 # Local backup and reviewed import
 
+The optional boolean `auto_skip_ads_enabled` preference is also included. Older backups default it to false; reviewed preference application updates both its local storage and running policy. Data-only import keeps the local auto skip choice. See [Auto skip ads](auto-skip-ads.md).
+
 Settings → Data & Backup exports a versioned `.veloce-backup.json` file through the system file selector. Desktop builds support this feature; browser preview shows it as unavailable. The format is `veloce-backup`, version 3, limited to 32 MiB. Versions 1 and 2 remain importable. Version 2 introduced optional site zoom preferences; existing local origins win on conflicts. Version 3 adds the boolean `pip_window_shadow` preference, defaulting to `false` when absent. It applies only when **Apply preferences from backup** is checked; importing data alone leaves the local shadow choice unchanged. No cloud service is involved.
 
 Backups contain bookmarks/folders, workspaces/colors, named sessions, plain-text notes, keyword searches, open tab order/pins/selection, split layouts and persistent interface/navigation/hibernation/language/keyboard/update-channel preferences. Cookies, password storage, native site permissions, history, recently closed tabs, download records/files and signing keys are excluded. Page forms, scroll position and internal navigation history are not snapshots. Only HTTP/HTTPS page URLs without embedded credentials are accepted.

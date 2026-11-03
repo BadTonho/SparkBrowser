@@ -34,13 +34,13 @@ use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_v
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_media_popover, set_overlay_visibility,
-    set_workspace_switcher_overlay,
+    set_privacy_popover, set_workspace_switcher_overlay,
 };
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
-use commands::privacy::{get_privacy_stats, toggle_adblock_shield};
+use commands::privacy::{get_privacy_stats, set_auto_skip_ads, toggle_adblock_shield};
 use commands::recovery::get_recovery_status;
 use commands::saved_sessions::{
     delete_named_session, get_saved_sessions, rename_named_session, restore_named_session,
@@ -84,6 +84,7 @@ pub fn run() {
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
         .manage(window::media_popover::MediaPopover::default())
+        .manage(window::privacy_popover::PrivacyPopover::default())
         .manage(shutdown::ShutdownService::default())
         .manage(backup::service::BackupService::default())
         .manage(site_permissions::PermissionRequests::default())
@@ -242,6 +243,8 @@ pub fn run() {
             delete_bookmark_folder,
             get_privacy_stats,
             toggle_adblock_shield,
+            set_auto_skip_ads,
+            set_privacy_popover,
             get_workspaces,
             get_active_workspace,
             switch_workspace,

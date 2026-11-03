@@ -12,6 +12,9 @@
 - **Off** disables automatic hibernation while keeping manual hibernation available. Local activation timestamps are kept in SQLite for the 7-day adaptive window without storing page URLs.
 
 ## 3. Privacy Shield
+
+The toolbar shield opens an anchored [Protection pop-up](auto-skip-ads.md) with independent Adblock and Auto skip ads controls. Auto skip is an optional desktop YouTube skip-button helper; it does not change playback position or speed.
+
 - Rust rejects navigation to exact known tracker hosts and their subdomains.
 - A best-effort page script filters fetch (including URL/Request inputs), XHR, and sendBeacon, and adds cosmetic CSS. This is not a complete network blocker: parser-loaded scripts/images, service workers, and hostile page modifications can bypass page-level hooks.
 - On Windows, changing protection updates live request wrappers and replaces an owned future-document policy script without reloading WebViews, preserving page state and native back/forward stacks. Other engines rebuild content WebViews; the active page reloads and background tabs hibernate. Page state and native back/forward stacks reset on that fallback; changes are refused while detected forms, media or downloads need protection.

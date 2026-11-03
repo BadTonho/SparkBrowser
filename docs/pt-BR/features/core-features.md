@@ -12,6 +12,9 @@
 - **Off** desativa a hibernação automática, mantendo a hibernação manual disponível. Os horários locais de ativação são mantidos no SQLite para a janela adaptativa de 7 dias, sem armazenar URLs.
 
 ## 3. Privacy Shield
+
+O escudo da barra abre um [pop-up de Proteção](auto-skip-ads.md) ancorado ao botão, com controles independentes de Adblock e Auto skip ads. O auto skip é um auxiliar opcional para o botão de pular do YouTube desktop; não altera posição nem velocidade da reprodução.
+
 - O Rust rejeita navegações para hosts conhecidos de rastreamento e seus subdomínios exatos.
 - Um script de página filtra fetch (incluindo objetos URL/Request), XHR e sendBeacon, e adiciona CSS. A cobertura não equivale a um bloqueador completo da rede: scripts/imagens do parser, service workers e alterações feitas pela página podem contornar esses hooks.
 - No Windows, alterar a proteção atualiza os interceptadores de requisições ativos e substitui um script de política para documentos futuros sem recarregar WebViews, preservando o estado das páginas e o histórico nativo de voltar/avançar. Outros motores recriam as WebViews: a página ativa recarrega e as abas em segundo plano hibernam. Estado e histórico nativo são reiniciados nesse fallback; a mudança é recusada enquanto formulários, mídia ou downloads detectados precisam de proteção.

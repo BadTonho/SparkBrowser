@@ -45,4 +45,5 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Notas e sessões na Command Bar](features/command-search.md)
 - [Atalhos de teclado entre abas](features/keyboard-shortcuts.md)
 - [Controles de mídia das abas](features/tab-media.md)
+- [Pop-up de proteção e Auto skip ads](features/auto-skip-ads.md)
 - [Correções de falhas e verificação — 2 de novembro de 2026](reviews/2026-11-02/correctness-fixes.md)

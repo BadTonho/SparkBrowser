@@ -35,7 +35,7 @@
     toggleBookmarksBar,
     workspaceSwitcherDisplay,
   } from "../../stores/settingsStore";
-  import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
+  import { privacyStats } from "../../stores/privacyStore";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { defaultSearchEngine } from "../../stores/searchEngineStore";
@@ -45,6 +45,8 @@
     toggleMaximizeWindow,
     closeWindow,
   } from "../../services/tauri-bridge";
+
+  import { openPrivacy, privacyPopover } from "../../stores/privacyPopoverStore";
 
   let activeWs = $derived(
     $workspaces.find((w) => w.id === $activeWorkspaceId)
@@ -233,11 +235,10 @@
       <button
         class="icon-btn shield-btn"
         class:shield-on={$privacyStats.shield_enabled}
-        onclick={flipAdblockShield}
-        title={$privacyStats.shield_enabled
-          ? $t("titlebar.rust_adblock_active_p0_blocked_click_to_pause_91a8", { p0: $privacyStats.blocked_count })
-          : $t("titlebar.rust_adblock_paused_click_to_enable_5fe1")}
-        aria-label={$t("titlebar.toggle_adblock_shield_6c4c")}
+        onclick={event => openPrivacy(event.currentTarget)}
+        title={$t("privacy.controls")}
+        aria-label={$t("privacy.controls")}
+        aria-haspopup="dialog" aria-expanded={Boolean($privacyPopover)} data-testid="open-privacy"
       >
         <span>🛡️</span>
         <span class="shield-dot"></span>

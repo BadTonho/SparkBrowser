@@ -18,7 +18,7 @@ export async function checkBackup(context) {
   const source = { format: 'veloce-backup', version: 1, created_at: 1, preferences: prefs,
     data: { bookmarks: await invoke('get_bookmark_data'), workspaces, tabs: before.tabs.map(({ id, title, url, workspace_id, is_pinned, is_active }) => ({ id, title, url, workspace_id, is_pinned, is_active })), split_layouts: [], sessions: [], notes: [], site_search: [] } };
   source.version=3;
-  source.preferences = { ...prefs, pip_window_shadow:true,language: 'en', overlay_blur_px: 5, resident_limit: 4, update_channel: 'beta' };
+  source.preferences = { ...prefs, auto_skip_ads_enabled:true,pip_window_shadow:true,language: 'en', overlay_blur_px: 5, resident_limit: 4, update_channel: 'beta' };
   const active = source.data.tabs.find(tab => tab.is_active);
   source.data.tabs.push({ ...active, id: 'foreign-duplicate-1', is_active: false }, { ...active, id: 'foreign-duplicate-2', is_active: false, is_pinned: true });
   source.data.workspaces.push({ id: 'foreign-workspace', name: 'Imported artificial workspace', icon: 'T', accent_primary: '#123456', accent_secondary: '#654321' });
@@ -38,6 +38,7 @@ export async function checkBackup(context) {
   review = await preview(); const result = await commit(review.token);
   assert.equal(result.pending_preferences, null);
   assert.notEqual(await script('return localStorage.getItem("veloce_pip_window_shadow");'),'true','data-only import leaves the local preference unchanged');
+  assert.equal((await invoke('get_privacy_stats')).auto_skip_ads_enabled, false, 'data-only import keeps auto skip unchanged');
   assert.deepEqual(result.snapshot.tabs.slice(0, before.tabs.length).map(tab => [tab.id, tab.is_active]), before.tabs.map(tab => [tab.id, tab.is_active]));
   const imported = result.snapshot.tabs.slice(before.tabs.length);
   assert.ok(imported.every(tab => tab.is_hibernated && !tab.is_visible && !tab.is_active));
@@ -65,6 +66,8 @@ export async function checkBackup(context) {
   assert.equal(await script(`return localStorage.getItem('veloce_language')`), 'en');
   assert.equal(await script(`return localStorage.getItem('veloce_overlay_blur_px')`), '5');
   assert.equal(await script('return localStorage.getItem("veloce_pip_window_shadow");'),'true','preference retry applies imported shadow');
+  assert.equal(await script('return localStorage.getItem("veloce_auto_skip_ads");'),'true','preference retry applies imported auto skip');
+  assert.equal((await invoke('get_privacy_stats')).auto_skip_ads_enabled, true);
   assert.equal((await invoke('get_update_state')).channel, 'beta');
   await script(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`);
   assert.equal((await invoke('get_tabs')).tabs.length, result.snapshot.tabs.length);

@@ -1,3 +1,4 @@
+import { checkPrivacy } from './privacy.mjs';
 import { checkMediaMute, checkMediaVolume, checkMediaPip } from "./media.mjs";
 import { checkPipContinuity } from './pip-continuity.mjs';
 import { checkPipPerformance } from './pip-performance.mjs';
@@ -24,6 +25,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  'privacy': checkPrivacy,
   'persistence-split': checkSplitPersistence,
   'persistence-workspaces': checkWorkspaceDeletePersistence,
   'persistence-shield': checkShieldPersistence,

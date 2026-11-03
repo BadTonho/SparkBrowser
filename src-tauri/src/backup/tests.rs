@@ -36,6 +36,7 @@ fn preferences() -> BackupPreferences {
         })
         .collect();
     BackupPreferences {
+        auto_skip_ads_enabled: false,
         pip_window_shadow: false,
         tab_layout: "horizontal".into(),
         show_bookmarks_bar: true,
@@ -359,4 +360,21 @@ fn old_backups_default_shadow_off_and_v3_roundtrips_the_boolean() {
     let mut invalid = serde_json::to_value(&doc).unwrap();
     invalid["preferences"]["pip_window_shadow"] = serde_json::json!("true");
     assert!(files::decode(&serde_json::to_vec(&invalid).unwrap()).is_err());
+}
+
+#[test]
+fn auto_skip_backup_defaults_off_and_accepts_only_booleans() {
+    let (_, mut doc) = setup();
+    doc.preferences.auto_skip_ads_enabled = true;
+    let mut value = serde_json::to_value(&doc).unwrap();
+    let decoded: BackupDocument = serde_json::from_value(value.clone()).unwrap();
+    assert!(decoded.preferences.auto_skip_ads_enabled);
+    value["preferences"]
+        .as_object_mut()
+        .unwrap()
+        .remove("auto_skip_ads_enabled");
+    let decoded: BackupDocument = serde_json::from_value(value.clone()).unwrap();
+    assert!(!decoded.preferences.auto_skip_ads_enabled);
+    value["preferences"]["auto_skip_ads_enabled"] = serde_json::json!("true");
+    assert!(serde_json::from_value::<BackupDocument>(value).is_err());
 }
