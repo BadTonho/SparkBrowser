@@ -37,6 +37,8 @@ The suite also includes `downloads` (durable checkpoints, HTTP ranges, integrity
 
 Keep each drag crossing in one continuous W3C pointer action sequence. While the button is held, inspect native window bounds without changing WebDriver's selected WebView; switching to the preview document releases pointer capture and correctly cancels the gesture. Inspect its document only after release.
 
+The drag-card regression also checks its native title/site, pointer offset, absence of a docking highlight with one tab, and denial of application IPC from the auxiliary surface before starting pointer input. Real drags must keep the card visible over the page center in both layouts. The surface covers the main client area so the card and docking highlight can appear together without hiding native documents.
+
 `privacy` checks the 300 px shield pop-up below its trigger, independent controls, storage-failure rollback, authenticated actions, dismissal, resize, both tab layouts, split document preservation, background auto skip, PiP source and restart persistence. The [auto skip guide](../features/auto-skip-ads.md) describes the unchanged-controller local fixtures and the explicit network-dependent YouTube check.
 
 The three `persistence-*` scenarios inject SQLite failures into the verified isolated scenario database while the application is running. They check shield policy/history, transactional workspace deletion/activation, split replacement under a resident cap, preview isolation and ratio rollback with native pane-width measurements. Each removes its trigger and retries the operation. Together with the existing cases, the suite contains thirty independent local scenarios. See [correctness fixes](../reviews/2026-11-02/correctness-fixes.md).

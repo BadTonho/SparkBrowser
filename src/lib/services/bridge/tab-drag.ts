@@ -2,7 +2,10 @@ import { invoke, isTauriRuntime } from "./runtime";
 import type { TabSnapshot } from "../../types/browser";
 export type DockSide = "left" | "right";
 export interface DockContext { workspaceId: string; activeTabId: string; splitKey: string | null }
-export interface DragPresentation { tabId: string; side: DockSide; context: DockContext; label: string; locale: string }
+export interface DragPresentation {
+  tabId: string; side: DockSide | null; context: DockContext; label: string; locale: string;
+  pointer: { x: number; y: number };
+}
 let revision = Date.now(), queue: Promise<void> = Promise.resolve();
 export function setDragPreview(presentation: DragPresentation | null): Promise<void> {
   const current = ++revision;

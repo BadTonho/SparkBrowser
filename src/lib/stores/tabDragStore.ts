@@ -25,11 +25,12 @@ function preview(side: DockSide | null) {
   if (!drag) return;
   const gesture = drag;
   const bounds = document.querySelector('.viewport-frame')?.getBoundingClientRect();
-  const signature = JSON.stringify([side, bounds?.x, bounds?.y, bounds?.width, bounds?.height, get(splitLayout)?.ratio, get(locale)]);
+  const pointer = { x: Math.round(drag.x), y: Math.round(drag.y) };
+  const signature = JSON.stringify([side, pointer, bounds?.x, bounds?.y, bounds?.width, bounds?.height, get(splitLayout)?.ratio, get(locale)]);
   if (signature === lastPreview) return;
   lastPreview = signature;
-  void setDragPreview(side ? { tabId: drag.id, side, context: drag.context,
-    label: tr(side === "left" ? "tabs.split_drop_left" : "tabs.split_drop_right"), locale: get(locale) } : null)
+  void setDragPreview({ tabId: drag.id, side, context: drag.context, pointer,
+    label: side ? tr(side === "left" ? "tabs.split_drop_left" : "tabs.split_drop_right") : '', locale: get(locale) })
     .catch(error => { if (drag !== gesture) return; cancelTabDrag(); void Promise.reject(error); });
 }
 function contextValid() {

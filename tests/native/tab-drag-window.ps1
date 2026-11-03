@@ -14,6 +14,7 @@ public static class DragTestWindows {
  [DllImport("user32.dll")] public static extern bool EnumWindows(Callback callback,IntPtr data);
  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint process);
  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd,out Rect rect);
+ [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr hwnd,out Rect rect);
  [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr hwnd,ref Point point);
  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd);
  [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr hwnd,uint command);
@@ -29,8 +30,9 @@ $callback=[DragTestWindows+Callback]{param($handle,$unused)
  if($ownerProcess -eq $target.Id){
   $rect=New-Object DragTestWindows+Rect;[void][DragTestWindows]::GetWindowRect($handle,[ref]$rect)
   $origin=New-Object DragTestWindows+Point;[void][DragTestWindows]::ClientToScreen($handle,[ref]$origin)
+  $client=New-Object DragTestWindows+Rect;[void][DragTestWindows]::GetClientRect($handle,[ref]$client)
   $text=[Text.StringBuilder]::new(256);[void][DragTestWindows]::GetWindowText($handle,$text,256)
-  $windows.Add(@{main=$handle -eq $mainHandle;owner=[DragTestWindows]::GetWindow($handle,4) -eq $mainHandle;visible=[DragTestWindows]::IsWindowVisible($handle);foreground=[DragTestWindows]::GetForegroundWindow() -eq $handle;left=$rect.left;top=$rect.top;clientLeft=$origin.x;clientTop=$origin.y;width=$rect.right-$rect.left;height=$rect.bottom-$rect.top;scale=[DragTestWindows]::GetDpiForWindow($handle)/96.0;title=$text.ToString()})
+  $windows.Add(@{main=$handle -eq $mainHandle;owner=[DragTestWindows]::GetWindow($handle,4) -eq $mainHandle;visible=[DragTestWindows]::IsWindowVisible($handle);foreground=[DragTestWindows]::GetForegroundWindow() -eq $handle;left=$rect.left;top=$rect.top;clientLeft=$origin.x;clientTop=$origin.y;clientWidth=$client.right;clientHeight=$client.bottom;width=$rect.right-$rect.left;height=$rect.bottom-$rect.top;scale=[DragTestWindows]::GetDpiForWindow($handle)/96.0;title=$text.ToString()})
  }
  return $true
 }

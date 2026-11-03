@@ -78,12 +78,11 @@ pub fn layout(
     })
 }
 
-pub fn plan(
+pub fn validate_context(
     state: &BrowserState,
     context: &DockContext,
     tab_id: &str,
-    side: DockSide,
-) -> Result<SplitLayout, String> {
+) -> Result<(), String> {
     let workspace = state
         .active_workspace_id
         .lock()
@@ -101,7 +100,30 @@ pub fn plan(
     {
         return Err("Tab drag context changed".into());
     }
-    layout(&state.snapshot_tabs(), current, context, tab_id, side)
+    if !state
+        .snapshot_tabs()
+        .iter()
+        .any(|tab| tab.id == tab_id && tab.workspace_id == context.workspace_id)
+    {
+        return Err("Dragged tab is no longer in this workspace".into());
+    }
+    Ok(())
+}
+
+pub fn plan(
+    state: &BrowserState,
+    context: &DockContext,
+    tab_id: &str,
+    side: DockSide,
+) -> Result<SplitLayout, String> {
+    validate_context(state, context, tab_id)?;
+    layout(
+        &state.snapshot_tabs(),
+        state.current_split(),
+        context,
+        tab_id,
+        side,
+    )
 }
 
 /// Caller holds tab_operations. No native document changes until this commits.

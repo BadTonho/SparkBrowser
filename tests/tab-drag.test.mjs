@@ -20,15 +20,39 @@ test('only the internal 32px of the page edges offer docking', () => {
   assert.equal(splitDropSide({ ...rect, width: 150 }, 300, 300), null);
 });
 
-test('a delayed preview paint cannot overwrite a newer destination or locale', () => {
-  const label = { textContent: '' }, document = { documentElement: { lang: '' }, getElementById: () => label };
+function previewFixture() {
+  const elements = new Map(['split-drop-label', 'split-drop-preview', 'dragged-tab', 'dragged-tab-title', 'dragged-tab-host']
+    .map(id => [id, { textContent: '', style: {}, hidden: false, getBoundingClientRect: () => ({ width: 244, height: 56 }) }]));
+  const document = { documentElement: { lang: '' }, getElementById: id => elements.get(id) };
   const window = {};
-  runInNewContext(readFileSync('public/overlays/tab-drag-preview.js', 'utf8'), { window, document });
-  window.setDragPreview({ revision: 12, label: 'Drop on right', locale: 'en' });
-  window.setDragPreview({ revision: 11, label: 'Solte à esquerda', locale: 'pt-BR' });
+  runInNewContext(readFileSync('public/overlays/tab-drag-preview.js', 'utf8'), { window, document, innerWidth: 800, innerHeight: 600 });
+  const paint = data => window.setDragPreview({ revision: 1, label: '', locale: 'en', title: 'Tab title', host: 'example.test', pointer: { x: 300, y: 200 }, pane: null, ...data });
+  return { elements, document, paint };
+}
+
+test('a delayed preview paint cannot overwrite a newer destination or locale', () => {
+  const { elements, document, paint } = previewFixture(), label = elements.get('split-drop-label');
+  paint({ revision: 12, label: 'Drop on right' });
+  paint({ revision: 11, label: 'Solte à esquerda', locale: 'pt-BR' });
   assert.equal(label.textContent, 'Drop on right');
   assert.equal(document.documentElement.lang, 'en');
-  window.setDragPreview({ revision: 13, label: 'Solte à esquerda', locale: 'pt-BR' });
+  paint({ revision: 13, label: 'Solte à esquerda', locale: 'pt-BR' });
   assert.equal(label.textContent, 'Solte à esquerda');
   assert.equal(document.documentElement.lang, 'pt-BR');
+});
+
+test('dragged tab follows the pointer outside docking regions and keeps its title as text', () => {
+  const { elements, paint } = previewFixture();
+  paint({ title: '<img src=x onerror=alert(1)>' });
+  assert.equal(elements.get('split-drop-preview').hidden, true);
+  assert.equal(elements.get('dragged-tab-title').textContent, '<img src=x onerror=alert(1)>');
+  assert.equal(elements.get('dragged-tab-host').textContent, 'example.test');
+  assert.deepEqual(elements.get('dragged-tab').style, { left: '316px', top: '218px' });
+  paint({ revision: 2, pointer: { x: 795, y: 595 }, pane: { x: 280, y: 80, width: 250, height: 500 } });
+  assert.deepEqual(elements.get('dragged-tab').style, { left: '535px', top: '521px' });
+  assert.equal(elements.get('split-drop-preview').hidden, false);
+  assert.deepEqual(elements.get('split-drop-preview').style, { left: '284px', top: '84px', width: '242px', height: '492px' });
+  paint({ revision: 3, pointer: { x: -5, y: -5 } });
+  assert.deepEqual(elements.get('dragged-tab').style, { left: '11px', top: '13px' });
+  assert.equal(elements.get('split-drop-preview').hidden, true);
 });
