@@ -33,6 +33,10 @@ The suite also includes `downloads` (durable checkpoints, HTTP ranges, integrity
 
 ## Measurements
 
+`zoom` also exercises the icon-only toolbar and its native panel: 240 px width, a 6 px anchor gap, visible resident pages, pointer-slider updates before release, nonstandard saved factors, injected SQLite failure and retry, authenticated actions, dismissal/focus, mutual exclusion with volume/privacy, split focus changes, both tab layouts and the minimum window width. JavaScript tests cover coalescing, final-value delivery, origin capture during navigation, confirmed-state recovery and delayed UI updates. The auxiliary page receives no application IPC grants.
+
+Local zoom UI validation on November 3, 2026 passed the consolidated checks and the Windows `zoom`, `media-volume`, `privacy`, `split-tab-groups`, `keyboard` and `backup` scenarios. `tab-docking` could not complete because WebView2 revoked pointer capture while crossing into a native page. The same failure reproduced with an isolated build of the pre-change commit `3977e0d`; that scenario remains a validation limitation in this environment. Its assertions were retained.
+
 `split-tab-groups` checks independent lists and selection, both new-tab buttons, Ctrl+Tab scope, real transfer between bars, stale group contexts, injected write failure, 20/50/80% divider alignment at 1160 px and the minimum 680 px width, horizontal/vertical transitions, resident form preservation, selected-tab fallback and restart restoration. The suite contains 31 independent scenarios.
 
 Its header checks verify the address/bookmarks/pane-tabs order, the same tab-bar instance across split creation, full pane widths, a single set of window controls, and a usable address field at 680 px. They exercise More by mouse and keyboard, shell-dialog handoff without briefly revealing pages, native Privacy access, the 1000/1001 px breakpoint, workspace changes, Zen and return to the ordinary top tab bar. Header changes must preserve documents, form values, scrolling and navigation history.

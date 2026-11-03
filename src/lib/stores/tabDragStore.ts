@@ -10,6 +10,7 @@ import { dockTabToSplit, moveTabInSplit, setDragPreview, flushDragPreview, type 
 import { crossedDragThreshold, splitDropSide } from "../services/tab-drag-geometry.js";
 import { mediaPopover, closeMedia } from "./mediaPopoverStore";
 import { privacyPopover, closePrivacy } from "./privacyPopoverStore";
+import { zoomPopover, closeZoom } from "./zoomPopoverStore";
 import { isTauriRuntime } from "../services/bridge/runtime";
 
 interface Drag {
@@ -77,7 +78,7 @@ function move(event: PointerEvent) {
   if (!contextValid() || event.clientX < 0 || event.clientY < 0 || event.clientX > innerWidth || event.clientY > innerHeight) { cancelTabDrag(); return; }
   if (!drag.moved && crossedDragThreshold(drag.startX, drag.startY, event.clientX, event.clientY)) {
     drag.moved = true; document.body.style.cursor = 'grabbing'; document.body.style.userSelect = 'none';
-    void closeMedia(); void closePrivacy();
+    void closeMedia(); void closePrivacy(); void closeZoom();
   }
   if (!drag.moved) return;
   drag.x = event.clientX; drag.y = event.clientY;
@@ -159,5 +160,6 @@ export function initializeTabDrag() {
   const stopOverlay = onOverlayOpening(cancelTabDrag);
   const stopMedia = mediaPopover.subscribe(value => { if (value) cancelTabDrag(); });
   const stopPrivacy = privacyPopover.subscribe(value => { if (value) cancelTabDrag(); });
-  return () => { cancelTabDrag(); stopOverlay(); stopMedia(); stopPrivacy(); };
+  const stopZoom = zoomPopover.subscribe(value => { if (value) cancelTabDrag(); });
+  return () => { cancelTabDrag(); stopOverlay(); stopMedia(); stopPrivacy(); stopZoom(); };
 }

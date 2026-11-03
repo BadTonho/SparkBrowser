@@ -62,6 +62,7 @@ function fixture({ failDrop = false } = {}) {
     '../services/tab-drag-geometry.js': { crossedDragThreshold: () => true, splitDropSide: () => 'right' },
     './mediaPopoverStore': { mediaPopover: writable(null), closeMedia: async () => {} },
     './privacyPopoverStore': { privacyPopover: writable(null), closePrivacy: async () => {} },
+    './zoomPopoverStore': { zoomPopover: writable(null), closeZoom: async () => {} },
     '../services/bridge/runtime': runtime,
   }, {
     window: {

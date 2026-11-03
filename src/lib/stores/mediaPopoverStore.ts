@@ -4,6 +4,7 @@ import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { mediaState, mediaError, refreshMedia, flushVolume } from "./mediaStore";
 import { setMediaPopover } from "../services/bridge/media-popover";
 import { describeError } from "../services/user-errors.js";
+import { closeZoom } from "./zoomPopoverStore";
 
 interface MediaPopoverSession {
   id: number;
@@ -21,6 +22,7 @@ let revision = 0;
 export async function openMedia(anchor: HTMLButtonElement) {
   if (get(mediaPopover)) return closeMedia(true);
   const request = ++revision;
+  await closeZoom();
   const active = get(tabs).find(tab => tab.is_active);
   const workspaceId = get(activeWorkspaceId);
   if (!active) return;

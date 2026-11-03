@@ -9,6 +9,19 @@ use crate::window::webview_manager::{
 use std::time::Duration;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect, State};
 
+#[tauri::command]
+pub async fn set_zoom_popover(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    session_id: u64,
+    presentation: Option<crate::window::zoom_popover::Presentation>,
+    restore_focus: bool,
+) -> Result<(), String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::zoom_popover::set(&app, visible, session_id, presentation, restore_focus)
+}
+
 const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
 
 #[tauri::command]

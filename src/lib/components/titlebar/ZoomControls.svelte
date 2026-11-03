@@ -1,16 +1,18 @@
 <script lang="ts">
-  import { t, formatNumber } from "../../i18n";
-  import { currentZoom, zoomOrigin, zoomBusy, changeZoom } from "../../stores/zoomStore";
+  import { t } from "../../i18n";
+  import { currentZoom, zoomOrigin } from "../../stores/zoomStore";
+  import { zoomPopover, openZoom } from "../../stores/zoomPopoverStore";
   import { isTauriRuntime } from "../../services/bridge/runtime";
 </script>
-<div class="zoom-controls" role="group" aria-label={$t("zoom.heading")} title={!isTauriRuntime() ? $t("zoom.desktop") : $zoomOrigin ?? ""}>
-  <button data-testid="zoom-out" disabled={!isTauriRuntime() || !$zoomOrigin || $zoomBusy || $currentZoom <= 0.25} aria-label={$t("zoom.out")} onclick={() => changeZoom(-1)}>−</button>
-  <button data-testid="zoom-reset" disabled={!isTauriRuntime() || !$zoomOrigin || $zoomBusy} aria-label={$t("zoom.reset")} onclick={() => changeZoom(0)}>{$formatNumber(Math.round($currentZoom * 100))}%</button>
-  <button data-testid="zoom-in" disabled={!isTauriRuntime() || !$zoomOrigin || $zoomBusy || $currentZoom >= 5} aria-label={$t("zoom.in")} onclick={() => changeZoom(1)}>+</button>
-</div>
+<button class="zoom-button" class:active={$currentZoom !== 1} data-testid="open-zoom" disabled={!isTauriRuntime() || !$zoomOrigin}
+  aria-label={$t("zoom.heading")} title={$t(!isTauriRuntime() ? "zoom.desktop" : !$zoomOrigin ? "zoom.unsupported" : "zoom.heading")}
+  aria-haspopup="dialog" aria-expanded={Boolean($zoomPopover)} onclick={event => openZoom(event.currentTarget)}>
+  <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8" aria-hidden="true"><circle cx="10" cy="10" r="6" /><path d="m15 15 5 5M7 10h6M10 7v6" stroke-linecap="round" /></svg>
+</button>
 <style>
-  .zoom-controls { display: flex; align-items: center; flex-shrink: 0; gap: 2px; }
-  button { background: transparent; border: 0; color: var(--text-secondary); padding: 4px; font-size: 11px; cursor: pointer; border-radius: 4px; }
-  button:hover { background: var(--bg-hover); } button:disabled { opacity: .5; cursor: default; }
+  button { width:25px; height:25px; display:grid; place-items:center; flex-shrink:0; color:var(--text-secondary); border-radius:4px; }
+  button:hover { background:var(--bg-glass-hover); }
+  button.active { color:var(--accent-primary); background:var(--bg-glass-hover); }
+  button:disabled { opacity:.45; cursor:default; }
   button:focus-visible { outline: 2px solid var(--accent-primary); }
 </style>

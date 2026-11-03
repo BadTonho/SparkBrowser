@@ -747,6 +747,12 @@
           "markdownDescription": "Enables the set_workspace_switcher_overlay command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_zoom_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-zoom-popover",
+          "markdownDescription": "Enables the set_zoom_popover command without any pre-configured scope."
+        },
+        {
           "description": "Enables the switch_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-switch-tab",
@@ -1345,6 +1351,12 @@
           "type": "string",
           "const": "deny-set-workspace-switcher-overlay",
           "markdownDescription": "Denies the set_workspace_switcher_overlay command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_zoom_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-zoom-popover",
+          "markdownDescription": "Denies the set_zoom_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the switch_tab command without any pre-configured scope.",

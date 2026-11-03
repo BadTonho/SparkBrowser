@@ -22,7 +22,7 @@ export async function checkTabDocking(context) {
   await wait(250);
   const order = (await invoke('get_tabs')).tabs.map(t => t.id);
   const anchors = new Map(['dock-a','dock-b','dock-c'].map(name=>[name,fixture.reports.get(name).scrollAnchor]));
-  await script(`window.dockingEvents=[];for(const type of ['pointerdown','pointerup','lostpointercapture','blur'])window.addEventListener(type,event=>{window.dockingEvents.push([type,event.clientX,event.clientY,event.pointerId]);if(window.dockingEvents.length>24)window.dockingEvents.shift();},true);`);
+  await script(`window.dockingEvents=[];for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture','blur'])window.addEventListener(type,event=>{window.dockingEvents.push([type,event.clientX,event.clientY,event.pointerId]);if(window.dockingEvents.length>24)window.dockingEvents.shift();},true);`);
   const pointer = async actions => request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'pointer', id: 'dock-mouse', parameters: { pointerType: 'mouse' }, actions }] });
   const box = () => script('const r=document.querySelector(".viewport-frame").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}');
   const measurements = previewMeasurements(context, box);
@@ -45,7 +45,7 @@ export async function checkTabDocking(context) {
     if (process.platform === 'win32') {
       let windows;
       try { windows=await until(async()=>{const all=await inspectDragWindows();return all.some(w=>w.title==='Veloce split preview' && w.visible)?all:null;},'preview window visible'); }
-      catch(error){console.log('Drag diagnostics',await script('return {focus:document.hasFocus(),drag:document.querySelector(".is-dragging")?.dataset.tabId,error:document.querySelector("[role=alert]")?.textContent}'));console.log('Native windows',await inspectDragWindows());throw error;}
+      catch(error){console.log('Drag diagnostics',await script('return {events:window.dockingEvents,focus:document.hasFocus(),drag:document.querySelector(".is-dragging")?.dataset.tabId,error:document.querySelector("[role=alert]")?.textContent}'));console.log('Native windows',await inspectDragWindows());throw error;}
       const preview=windows.find(w=>w.title==='Veloce split preview');
       assert.equal(preview.owner,true);assert.equal(preview.foreground,false);
       const main=windows.find(window=>window.main);

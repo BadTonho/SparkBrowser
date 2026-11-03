@@ -1,37 +1,43 @@
 import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
 import { backupPreferences } from './backup.mjs';
+import { zoomUi, checkZoomPopover } from './zoom-popover.mjs';
 export async function checkZoom(context) {
   const { invoke, fixture, until, click, script, restart, request, sessionId } = context;
   const { a,b } = await prepareTabs(context);
   const baseRatio=fixture.reports.get("a").pixelRatio;
-  await click('[data-testid="zoom-in"]');
+  const ui=zoomUi(context);
+  await checkZoomPopover(context,a,b);
+  await ui.open();await ui.inside(()=>click('[data-testid="zoom-in"]'));
   await until(async()=> (await invoke('get_site_zoom')).sites.find(s=>s.origin===fixture.origin)?.factor===1.1,'zoom button persists');
-  await until(()=>script('return document.querySelector("[data-testid=zoom-reset]").textContent.includes("110")'),'zoom indicator');
+  await ui.close();await ui.percentage(110);
   await invoke('set_site_zoom',{origin:fixture.origin,factor:1.5});
   await until(()=>Math.abs(fixture.reports.get('a').pixelRatio/baseRatio-1.5)<0.01 && Math.abs(fixture.reports.get('b').pixelRatio/baseRatio-1.5)<0.01,'both resident pages actually zoom');
   await invoke('set_split_view',{leftTabId:a.id,rightTabId:b.id});
   assert.equal(fixture.loads.get('a'),1,'zoom preserves the resident document');
   assert.equal(fixture.reports.get('a').value,'artificial-test-draft');
   await invoke('switch_tab',{tabId:b.id});
-  await until(()=>script('return document.querySelector("[data-testid=zoom-reset]").textContent.includes("150")'),'focused split zoom');
+  await ui.percentage(150);
   await invoke('set_split_view',{leftTabId:null,rightTabId:null});
   const other=fixture.origin.replace('127.0.0.1','localhost');
   await invoke('create_tab',{url:other+'/page/zoom-other'});
   await until(()=>fixture.reports.has('zoom-other'),'other origin loaded');
-  await until(()=>script('return document.querySelector("[data-testid=zoom-reset]").textContent.includes("100")'),'distinct host defaults');
+  await ui.percentage(100);
   await invoke('set_site_zoom',{origin:other,factor:2});
+  await ui.open();
   await invoke('navigate_to',{input:fixture.origin+'/page/zoom-navigation'});
+  await ui.expanded(false);
   await until(()=>fixture.reports.has('zoom-navigation'),'cross-origin navigation');
   await until(()=>Math.abs(fixture.reports.get('zoom-navigation').pixelRatio/baseRatio-1.5)<0.01,'navigation applies origin zoom');
   await invoke('go_back');
-  await until(()=>script('return document.querySelector("[data-testid=zoom-reset]").textContent.includes("200")'),'back restores other origin');
+  await ui.percentage(200);
   assert.equal((await invoke('get_site_zoom')).sites.find(s=>s.origin===fixture.origin).factor,1.5,'navigation callbacks preserve saved values');
   await invoke('switch_tab',{tabId:a.id});
   // Real shell keyboard events, including numpad equivalent.
   await click('.omnibox-input');
   await request('POST',`/session/${sessionId()}/actions`,{actions:[{type:'key',id:'zoom-keyboard',actions:[{type:'keyDown',value:'\uE009'},{type:'keyDown',value:'-'},{type:'keyUp',value:'-'},{type:'keyUp',value:'\uE009'}]}]});
   await until(async()=> (await invoke('get_site_zoom')).sites.find(s=>s.origin===fixture.origin)?.factor===1.25,'keyboard zoom once');
+  assert.equal(await script('return document.querySelector("[data-testid=open-zoom]").getAttribute("aria-expanded")'),'false','keyboard zoom does not open the panel');
   await request('POST',`/session/${sessionId()}/actions`,{actions:[{type:'key',id:'zoom-keyboard',actions:[{type:'keyDown',value:'\uE009'},{type:'keyDown',value:'\uE025'},{type:'keyUp',value:'\uE025'},{type:'keyUp',value:'\uE009'}]}]});
   await until(async()=> (await invoke('get_site_zoom')).sites.find(s=>s.origin===fixture.origin)?.factor===1.5,'numpad plus once');
   await invoke('set_site_zoom',{origin:fixture.origin,factor:1.25});
@@ -40,7 +46,7 @@ export async function checkZoom(context) {
   await invoke('hibernate_tab',{tabId:b.id});
   await invoke('switch_tab',{tabId:b.id});
   await until(()=>fixture.loads.get('b')===2,'hibernated page wakes');
-  await until(()=>script('return document.querySelector("[data-testid=zoom-reset]").textContent.includes("125")'),'wake uses saved zoom');
+  await ui.percentage(125);
   await assert.rejects(()=>invoke('set_site_zoom',{origin:fixture.origin,factor:5.1}),/zoom.invalid_value/);
   const prefs=backupPreferences();
   const document={format:'veloce-backup',version:2,created_at:1,preferences:{...prefs,site_zoom:[{origin:fixture.origin,factor:3},{origin:'https://zoom-import.example',factor:1.75}]},data:{bookmarks:await invoke('get_bookmark_data'),workspaces:await invoke('get_workspaces'),tabs:[],split_layouts:[],sessions:[],notes:[],site_search:[]}};
@@ -61,4 +67,8 @@ export async function checkZoom(context) {
   await invoke('set_site_zoom',{origin:fixture.origin,factor:1});
   assert.ok(!(await invoke('get_site_zoom')).sites.some(s=>s.origin===fixture.origin));
   assert.ok(visible.tabs.some(t=>t.id===a.id));
+  // Minimize last: WebDriver's child-view dimensions are not a restoration API.
+  await ui.open();
+  await invoke('plugin:window|minimize',{label:'main'});
+  await ui.expanded(false);
 }

@@ -1,4 +1,6 @@
 {
+  "zoom.unsupported": "Page zoom is available on HTTP and HTTPS pages.",
+  "zoom.reset_100": "Reset to 100%",
   "zoom.heading": "Page zoom",
   "zoom.description": "Zoom is shared by HTTP/HTTPS origin across workspaces. Default: 100%. Range: 25%–500%.",
   "zoom.desktop": "Page zoom requires the desktop application.",

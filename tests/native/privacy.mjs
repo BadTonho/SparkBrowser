@@ -74,9 +74,19 @@ export async function checkPrivacy(context) {
     await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
     await open();
     await resizeWindow(900, 700);
+    if (layout === 0) {
+      // The compact split header replaces the direct trigger with More.
+      await until(()=>script('return !document.querySelector(".titlebar [data-testid=open-privacy]")&&Boolean(document.querySelector("[data-testid=open-titlebar-menu]"))'),'compact privacy entry');
+      await withWebview('/privacy-popover.html',()=>until(()=>script('return document.querySelector("#privacy-popover").hidden'),'removed trigger dismisses privacy'));
+      await click('[data-testid=open-titlebar-menu]');
+      await until(()=>script('return Boolean(document.querySelector("[data-testid=titlebar-menu] [data-testid=open-privacy]"))'),'More privacy action');
+      await click('[data-testid=titlebar-menu] [data-testid=open-privacy]');
+    }
     await inside(() => until(() => script('const r=document.querySelector("#privacy-popover").getBoundingClientRect();return r.width===300 && r.left>=8 && r.right<=innerWidth-8'), 'privacy bounds'));
     await inside(() => script('window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))'));
-    await expanded(false); await resizeWindow(1280, 820);
+    await withWebview('/privacy-popover.html',()=>until(()=>script('return document.querySelector("#privacy-popover").hidden'),'privacy dismissed after resize'));
+    await resizeWindow(1280, 820);
+    await expanded(false);
   }
   assert.equal(fixture.loads.get('privacy'), 1); assert.equal(fixture.loads.get('privacy-b'), 1);
   await open(); await invoke('switch_workspace', { workspaceId: 'ws-work' }); await expanded(false);

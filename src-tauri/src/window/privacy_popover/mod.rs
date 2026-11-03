@@ -209,9 +209,6 @@ pub fn set(
     presentation: Option<Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    if visible {
-        super::media_popover::dismiss(app);
-    }
     let service = app.state::<PrivacyPopover>();
     let mut inner = service.0.lock().map_err(|e| e.to_string())?;
     if !visible {
@@ -292,6 +289,8 @@ pub fn set(
     payload["token"] = session.token.clone().into();
     inner.session = Some(session);
     drop(inner);
+    super::zoom_popover::dismiss(app);
+    super::media_popover::dismiss(app);
     let result = (|| {
         ensure_webview(app)?;
         resize(app)?;

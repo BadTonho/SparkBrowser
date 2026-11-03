@@ -1,4 +1,6 @@
 {
+  "zoom.unsupported": "O zoom está disponível em páginas HTTP e HTTPS.",
+  "zoom.reset_100": "Restaurar 100%",
   "zoom.heading": "Zoom da página",
   "zoom.description": "O zoom é compartilhado por origem HTTP/HTTPS entre workspaces. Padrão: 100%. Faixa: 25%–500%.",
   "zoom.desktop": "O zoom das páginas exige o aplicativo desktop.",

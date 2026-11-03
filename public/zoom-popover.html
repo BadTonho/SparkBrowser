@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page zoom</title>
+    <link rel="stylesheet" href="./overlays/zoom-popover.css" />
+  </head>
+  <body>
+    <div id="zoom-popover" role="dialog" tabindex="-1" hidden>
+      <div class="zoom-row">
+        <button id="zoom-out" data-testid="zoom-out" type="button">−</button>
+        <output id="zoom-percentage" data-testid="zoom-percentage">100%</output>
+        <button id="zoom-in" data-testid="zoom-in" type="button">+</button>
+      </div>
+      <input id="page-zoom" data-testid="zoom-slider" type="range" min="0" step="1" />
+      <button id="zoom-reset" data-testid="zoom-reset" type="button">Reset to 100%</button>
+      <p id="zoom-error" role="alert" hidden></p>
+    </div>
+    <script src="./overlays/zoom-popover.js" defer></script>
+  </body>
+</html>

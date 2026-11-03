@@ -5,6 +5,7 @@ import { setPrivacyPopover } from "../services/bridge/privacy-popover";
 import { closeMedia } from "./mediaPopoverStore";
 import { privacyError } from "./privacyStore";
 import { describeError } from "../services/user-errors.js";
+import { closeZoom } from "./zoomPopoverStore";
 
 interface Session { id: number; tabId: string; url: string; workspaceId: string; anchor: HTMLButtonElement }
 export const privacyPopover = writable<Session | null>(null);
@@ -12,6 +13,7 @@ let revision = 0;
 export async function openPrivacy(anchor: HTMLButtonElement) {
   if (get(privacyPopover)) return closePrivacy(true);
   const id = ++revision;
+  await closeZoom();
   await closeMedia();
   const tab = get(tabs).find(tab => tab.is_active);
   if (!tab || id !== revision || !anchor.isConnected) return;

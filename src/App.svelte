@@ -21,6 +21,7 @@
   import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
   import PrivacyPanel from "./lib/components/privacy/PrivacyPanel.svelte";
   import MediaPanel from "./lib/components/media/MediaPanel.svelte";
+  import ZoomPanel from "./lib/components/titlebar/ZoomPanel.svelte";
   import MediaNotice from "./lib/components/media/MediaNotice.svelte";
   import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
   import { slide } from "svelte/transition";
@@ -334,6 +335,7 @@
   <BrowserErrorBanner />
   <MediaNotice />
   <MediaPanel />
+  <ZoomPanel />
   <PrivacyPanel />
   <div class="browser-chrome">
     {#if $tabLayout === "horizontal" && !$isZenMode}
