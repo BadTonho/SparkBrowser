@@ -28,7 +28,7 @@
     session.anchor.focus({ preventScroll: true });
     try {
       switch (action) {
-        case "tools": await openTools(); break;
+        case "tools": await closeTitlebarMenu(); await openTools("sessions", session.anchor); break;
         case "bookmarks": toggleBookmarksBar(); break;
         case "commands": await openCommandBar(); break;
         case "history": await openHistoryDrawer(); break;

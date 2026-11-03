@@ -43,6 +43,12 @@ export async function runScenario(name, scenario) {
   }
   async function script(code, ...args) { return request('POST', `/session/${session}/execute/sync`, { script: code, args }); }
   async function click(selector) {
+    const projected = await script('return Boolean(document.querySelector(arguments[0])?.closest(".tools-controller"))', selector);
+    if (projected) return withWebview('/index.html?surface=tools', async () => {
+      await until(() => script('return Boolean(document.querySelector(arguments[0]))', selector), 'projected tools control');
+      const element = await request('POST', `/session/${session}/element`, { using: 'css selector', value: selector });
+      await request('POST', `/session/${session}/element/${element['element-6066-11e4-a52e-4f735466cecf']}/click`, {});
+    });
     const element = await request('POST', `/session/${session}/element`, { using: 'css selector', value: selector });
     await request('POST', `/session/${session}/element/${element['element-6066-11e4-a52e-4f735466cecf']}/click`, {});
   }
@@ -60,7 +66,8 @@ export async function runScenario(name, scenario) {
         for (const handle of ordered) {
           try {
             await request('POST', `/session/${session}/window`, { handle });
-            if (new URL(await request('GET', `/session/${session}/url`)).pathname === path) {
+            const candidateUrl = new URL(await request('GET', `/session/${session}/url`));
+            if ((path.includes('?') ? candidateUrl.pathname + candidateUrl.search : candidateUrl.pathname) === path) {
               webviewHandles.set(path, handle);
               return true;
             }

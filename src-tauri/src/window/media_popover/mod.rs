@@ -285,6 +285,7 @@ pub fn set(
     inner.session = Some(session);
     drop(inner);
     super::zoom_popover::dismiss(app);
+    super::tools_popover::dismiss(app);
     super::privacy_popover::dismiss(app);
     let result = (|| {
         ensure_webview(app)?;

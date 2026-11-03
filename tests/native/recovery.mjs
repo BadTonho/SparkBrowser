@@ -46,7 +46,7 @@ export async function checkRecovery(context) {
   await restart({ crash: true });
   await assertRecovered(context, before, workspaces);
   await script(`document.querySelector('[data-testid="recovery-organizer"]').click();`);
-  await until(() => script(`return Boolean(document.querySelector('[data-testid="tools-tabs"][aria-pressed="true"]'))`), 'recovery opens tab organizer');
+  await until(() => script(`return Boolean(document.querySelector('[data-testid="tools-tabs"][aria-selected="true"]'))`), 'recovery opens tab organizer');
   await script(`document.querySelector('[data-testid="close-tools"]').click();`);
   await script(`document.querySelector('[data-testid="recovery-dismiss"]').click();`);
   await until(() => script(`return !document.querySelector('[data-testid="recovery-notice"]')`), 'recovery notice dismissed');

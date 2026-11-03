@@ -1,10 +1,7 @@
 import { mount } from "svelte";
 import "./styles/theme.css";
-import App from "./App.svelte";
 
-const app = mount(App, {
-  target: document.getElementById("app")!,
-});
-
-export default app;
-
+const component = new URLSearchParams(location.search).get("surface") === "tools"
+  ? import("./lib/components/tools/ToolsSurface.svelte")
+  : import("./App.svelte");
+void component.then(({ default: view }) => mount(view, { target: document.getElementById("app")! }));

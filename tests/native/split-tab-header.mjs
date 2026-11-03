@@ -50,7 +50,7 @@ export async function checkSplitTabHeader(context, originalLayout) {
     await closed();
     await until(() => script('return Boolean(document.querySelector("[role=dialog]"))'), item + ' opens from More');
     await wait(300);
-    assert.equal(fixture.reports.get('groups-a').visibility, 'hidden');
+    assert.equal(fixture.reports.get('groups-a').visibility, item === 'open-tools' ? 'visible' : 'hidden');
     assert.equal(fixture.reports.get('groups-a').hiddenCount, hiddenCount, 'handoff does not expose then hide the page again');
     await key('Escape');
     await until(() => script('return !document.querySelector("[role=dialog]")'), item + ' closes');

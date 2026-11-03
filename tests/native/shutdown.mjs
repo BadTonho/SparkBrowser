@@ -5,6 +5,7 @@ import { realpathSync } from 'node:fs';
 import { validateRunDirectory } from './run-directory.mjs';
 import { prepareTabs } from './setup.mjs';
 export async function checkShutdown(context) {
+  await context.focusWindow();
   const { invoke, script, click, until, fixture, restart } = context;
   const { a, b } = await prepareTabs(context);
   const root = validateRunDirectory(context.directory);
@@ -32,7 +33,7 @@ export async function checkShutdown(context) {
   await click('[data-testid="shutdown-continue"]');
   await until(async () => (await invoke('get_shutdown_state')).phase==='idle', 'cancel close');
   assert.ok((await invoke('get_tabs')).tabs.find(t=>t.id===a.id));
-  await click('[data-testid="close-tools"]');
+  assert.equal(await script('return Boolean(document.querySelector("[data-testid=tools-dialog]"))'), false, 'shutdown dismisses the floating tools panel');
 
   // Fail only a shell note save, using the existing IPC boundary; keep its draft for retry.
   await click('[data-testid="open-tools"]');

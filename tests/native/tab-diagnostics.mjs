@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
 export async function checkTabDiagnostics(context) {
+  await context.focusWindow();
   const { invoke, until, fixture, click, script } = context;
   const { a, b } = await prepareTabs(context);
   await invoke('set_split_view',{leftTabId:a.id,rightTabId:b.id});

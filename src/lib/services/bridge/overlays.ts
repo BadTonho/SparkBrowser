@@ -28,7 +28,7 @@ export function onOverlayOpening(callback: (id?: OverlayId) => void): () => void
   openingListeners.add(callback);
   return () => { openingListeners.delete(callback); };
 }
-function notifyOpening(id?: OverlayId) { for (const callback of openingListeners) callback(id); }
+export function notifyOpening(id?: OverlayId) { for (const callback of openingListeners) callback(id); }
 
 /** Keeps the native content WebView hidden while any browser overlay is open. */
 export async function setOverlayVisibility(

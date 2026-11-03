@@ -747,6 +747,12 @@
           "markdownDescription": "Enables the set_tab_volume command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_tools_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tools-popover",
+          "markdownDescription": "Enables the set_tools_popover command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_update_channel command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-update-channel",
@@ -1363,6 +1369,12 @@
           "type": "string",
           "const": "deny-set-tab-volume",
           "markdownDescription": "Denies the set_tab_volume command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tools_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tools-popover",
+          "markdownDescription": "Denies the set_tools_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the set_update_channel command without any pre-configured scope.",

@@ -3,7 +3,6 @@
   import { isSitePermissionsOpen, permissionRequests } from "../../stores/sitePermissionsStore";
   import SplitDivider from "./SplitDivider.svelte";
   import { splitLayout, splitDragRatio, splitKey, viewportBounds } from "../../stores/splitViewStore";
-  import { isToolsOpen } from "../../stores/toolsStore";
   import { onMount } from "svelte";
   import {
     tabs,
@@ -23,7 +22,7 @@
   const inTauri = isTauriRuntime();
 
   let anyOverlayOpen = $derived(
-    $isSitePermissionsOpen || $permissionRequests.length > 0 || $isToolsOpen || $isCommandBarOpen ||
+    $isSitePermissionsOpen || $permissionRequests.length > 0 || $isCommandBarOpen ||
       $isHistoryDrawerOpen ||
       $isDownloadsDrawerOpen ||
       $isSettingsModalOpen ||

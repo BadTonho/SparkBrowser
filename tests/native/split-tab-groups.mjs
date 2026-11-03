@@ -3,6 +3,7 @@ import { withScenarioDatabase } from './persistence/database.mjs';
 import { checkSplitTabHeader } from './split-tab-header.mjs';
 
 export async function checkSplitTabGroups(context) {
+  await context.focusWindow();
   const { invoke, until, fixture, click, script, request, sessionId, resizeWindow, restart, wait } = context;
   const packet = () => invoke('get_tabs');
   const key = split => `${split.workspace_id}:${split.left_tab_id}:${split.right_tab_id}`;

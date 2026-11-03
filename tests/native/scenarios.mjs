@@ -1,5 +1,6 @@
 import { checkTabDocking } from './tab-docking.mjs';
 import { checkTitlebarActions } from './titlebar-actions.mjs';
+import { checkToolsPopover } from './tools-popover.mjs';
 import { checkNewTab } from './new-tab.mjs';
 import {checkNewTabWidgets} from './new-tab-widgets.mjs';
 import {newTabDriver} from './new-tab-driver.mjs';
@@ -31,6 +32,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  'tools-popover': checkToolsPopover,
   'titlebar-actions': checkTitlebarActions,
   'new-tab': checkNewTab,
   'new-tab-widgets': context=>checkNewTabWidgets(context,newTabDriver(context)),

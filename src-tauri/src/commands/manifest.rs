@@ -73,6 +73,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "hibernate_inactive_tabs",
     "auto_hibernate_inactive_tabs",
     "set_overlay_visibility",
+    "set_tools_popover",
     "set_media_popover",
     "set_zoom_popover",
     "set_workspace_switcher_overlay",

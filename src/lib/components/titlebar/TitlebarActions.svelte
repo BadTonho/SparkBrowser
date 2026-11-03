@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import TitlebarActionIcon from "./TitlebarActionIcon.svelte";
   import { t } from "../../i18n";
-  import { openTools } from "../../stores/toolsStore";
+  import { openTools, isToolsOpen } from "../../stores/toolsStore";
   import { openHistoryDrawer } from "../../stores/persistenceStore";
   import { openDownloadsDrawer } from "../../stores/downloadsStore";
   import { openCommandBar } from "../../stores/commandBarStore";
@@ -89,7 +89,8 @@
         class:dragging={preview?.id === "tools"}
         style:translate={preview?.id === "tools" ? `${preview.offset}px 0` : undefined}
         class="icon-btn"
-        onclick={() => openTools()}
+        onclick={event => openTools("sessions", event.currentTarget)}
+        aria-haspopup="dialog" aria-expanded={$isToolsOpen}
         title={$t("titlebar.tools_ea93") + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-tools" aria-label={$t("titlebar.tools_ea93")}
       >

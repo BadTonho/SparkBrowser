@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 export async function checkTitlebarActions(context) {
+  await context.focusWindow();
   const { script, request, sessionId, until, click, restart, screenshot, invoke, fixture, resizeWindow, withWebview } = context;
   const order = () => script('return [...document.querySelectorAll(".titlebar-actions [data-action]")].map(b => b.dataset.action)');
   const saved = () => script('return localStorage.getItem("veloce_titlebar_action_order")');

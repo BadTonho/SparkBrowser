@@ -15,3 +15,5 @@ pub mod vibrancy;
 pub mod viewport;
 pub mod webview_manager;
 pub mod zoom_popover;
+
+pub mod tools_popover;

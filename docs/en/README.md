@@ -49,3 +49,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Protection pop-up and Auto skip ads](features/auto-skip-ads.md)
 - [Correctness fixes and verification — November 2, 2026](reviews/2026-11-02/correctness-fixes.md)
 - [Reorder quick actions](./features/titlebar-actions.md)
+- [Floating Tools panel](features/tools-popover.md)
