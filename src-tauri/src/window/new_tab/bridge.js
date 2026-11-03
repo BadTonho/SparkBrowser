@@ -13,9 +13,10 @@
     window.dispatchEvent(new CustomEvent('veloce-new-tab', { detail: payload }));
   };
   window.addEventListener('veloce-new-tab-action', event => {
-    const { action, input = '', engine = '' } = event.detail;
+    const { action, input = '', site_key = '' } = event.detail;
     if (action === 'read') window.__veloceRefreshNewTab();
-    else if (action === 'navigate') send('navigate', { input, engine });
+    else if (action === 'navigate') send('navigate', { input });
+    else if (action === 'visit') send('visit', { input, site_key });
   });
   document.addEventListener('DOMContentLoaded', () => window.__veloceRefreshNewTab(), { once: true });
   window.addEventListener('pageshow', event => { if (event.persisted) window.__veloceRefreshNewTab(); });

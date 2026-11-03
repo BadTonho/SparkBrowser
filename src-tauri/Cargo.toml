@@ -25,6 +25,8 @@ reqwest = { version = "0.12", default-features = false, features = ["blocking", 
 tempfile = "3"
 sha2 = "0.10"
 unicode-normalization = "0.1"
+base64 = "0.22"
+png = "0.17"
 tokio = { version = "1", features = ["sync", "macros", "time", "fs", "io-util"] }
 
 [target.'cfg(windows)'.dependencies]

@@ -357,6 +357,12 @@ pub(super) fn ensure_tab_webview(
     )?;
 
     #[cfg(windows)]
+    super::favicon::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        &navigation_registration_token,
+    )?;
+    #[cfg(windows)]
     crate::site_permissions::requests::install_and_navigate(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,

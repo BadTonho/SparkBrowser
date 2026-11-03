@@ -1,15 +1,18 @@
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
+import {iconFixture} from './new-tab-fixture.mjs';
 
 /** Controlled loopback pages report only artificial test values; no user browsing data is read. */
 export async function createFixture() {
   const loads = new Map();
+  const icons=iconFixture();
   const reports = new Map();
   const commands = new Map();
   const download = { version: 1, mode: 'normal', requests: [] };
   const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+    if(icons.handle(url,response))return;
     if (url.pathname === '/tone.wav') {
       const rate = 8000, count = rate * 2, wave = Buffer.alloc(44 + count * 2);
       wave.write('RIFF'); wave.writeUInt32LE(wave.length - 8, 4); wave.write('WAVEfmt ', 8); wave.writeUInt32LE(16, 16);
@@ -54,7 +57,7 @@ export async function createFixture() {
     if (url.pathname.startsWith('/page/')) {
       loads.set(id, (loads.get(id) ?? 0) + 1);
       response.setHeader('Content-Type', 'text/html; charset=utf-8');
-      response.end(`<!doctype html><title>Native fixture ${id}</title>
+      response.end(`<!doctype html><title>Native fixture ${id}</title>${id.startsWith('new-tab')?`<link rel="icon" href="/new-tab-icon.png?${id==='new-tab-late'?'delay':id==='new-tab-bad'?'bad':'normal'}">`:''}
         <label>Fixture form <input id="draft"></label><div style="height:3000px"></div>
         <script>
           const id = ${JSON.stringify(id)};
@@ -125,6 +128,6 @@ export async function createFixture() {
     response.writeHead(404).end();
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands, download, payload,
+  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands, download, payload,icons,
     close: () => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }) };
 }

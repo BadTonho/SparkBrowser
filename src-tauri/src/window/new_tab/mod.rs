@@ -33,6 +33,7 @@ impl Default for Preferences {
 }
 #[derive(Default)]
 pub struct NewTabService {
+    pub(crate) history_epoch: AtomicU64,
     preferences: Mutex<Preferences>,
     revision: AtomicU64,
     sessions: Mutex<std::collections::HashMap<String, Session>>,

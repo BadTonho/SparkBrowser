@@ -2,9 +2,9 @@
   "newtab.title": "Nova guia",
   "newtab.search": "Pesquisar",
   "newtab.placeholder": "Pesquisar ou digitar endereço",
-  "newtab.recent": "Pesquisas recentes",
-  "newtab.empty": "Suas pesquisas recentes aparecerão aqui.",
-  "newtab.error": "Não foi possível carregar as pesquisas recentes.",
+  "newtab.recent": "Sites recentes",
+  "newtab.empty": "Seus sites visitados recentemente aparecerão aqui.",
+  "newtab.error": "Não foi possível carregar os sites recentes.",
   "newtab.retry": "Tentar novamente",
   "newtab.internal": "Página interna do navegador"
 }

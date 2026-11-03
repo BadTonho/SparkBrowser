@@ -30,7 +30,8 @@ export async function checkNewTab(context) {
   await inside(async()=>{
     assert.equal(await script('return document.activeElement.id'),'search','central search has initial focus');
     assert.equal(await script('return [...document.querySelectorAll("link[href],script[src],img[src]")].every(n=>new URL(n.href||n.src).origin===location.origin)'),true);
-    assert.equal(await script('return document.querySelectorAll(".recent-search").length'),0);
+    assert.equal(await script('return document.querySelectorAll(".recent-site").length'),0);
+    assert.equal(await script('const c=document.querySelector(".content").getBoundingClientRect();return Math.abs(c.top+c.height/2-(innerHeight/2-80))<=2'),true,'content is 80px above center');
   });
   assert.equal(await script('return document.querySelector(".omnibox-input").value'),'');
   assert.equal(await script('return document.querySelector(".star-btn").disabled && document.querySelector(".omnibox-icon").disabled && document.querySelector("[data-testid=open-zoom]").disabled'),true);
@@ -38,13 +39,18 @@ export async function checkNewTab(context) {
 
   await withScenarioDatabase(context.directory,db=>{
     const insert=db.prepare('INSERT INTO history(title,url,visited_at) VALUES(?,?,?)');
-    for(let i=0;i<220;i++)insert.run('Fixture','https://example.test/'+i,1000+i);
-    for(const [i,url] of ['https://www.google.com/search?q=Rust+%26+Svelte','https://duckduckgo.com/?q=rust+%26+svelte','https://www.google.com.br/search?q=second','https://html.duckduckgo.com/html/?q=third','https://lite.duckduckgo.com/lite/?q=fourth','https://google.com/search?q=fifth'].entries())insert.run('Artificial search',url,10+i);
+    for(let i=0;i<220;i++)insert.run('Search','https://google.com/search?q=ignored',1000+i);
+    for(const [i,url] of ['http://www.one.test/old','https://one.test/last?q=a%26b#part','https://two.test/page','https://two.test:8443/port','https://three.test/page','https://four.test/page'].entries())insert.run('Artificial page '+i,url,10+i);
+    db.prepare('INSERT INTO site_icons VALUES(?,?,?)').run('four.test',fixture.icons.png,1);
   });
   await invoke('set_new_tab_preferences',{engine:'duckduckgo',language:'pt-BR'});
   await inside(async()=>{
-    await until(()=>script('return document.querySelectorAll(".recent-search").length===5'),'five older unique searches');
-    assert.deepEqual(await script('return [...document.querySelectorAll(".query")].map(n=>n.textContent)'),['fifth','fourth','third','second','rust & svelte']);
+    await until(()=>script('return document.querySelectorAll(".recent-site").length===5'),'five older distinct sites');
+    assert.deepEqual(await script('return [...document.querySelectorAll(".site-domain")].map(n=>n.textContent)'),['four.test','three.test','two.test:8443','two.test','one.test']);
+    await until(()=>script('const e=document.querySelector(".site-icon");return e.src.startsWith("data:image/png;base64,")&&e.complete&&e.naturalWidth===1'),'local cached icon renders');
+    assert.equal(await script('const e=document.querySelector(".site-icon").getBoundingClientRect();return e.width===24&&e.height===24'),true);
+    assert.equal(await script('return document.querySelectorAll(".site-icon")[1].getAttribute("src")'),'/new-tab/site-fallback.svg');
+    await script('window.staleRecentCard=document.querySelector(".recent-site")');
     await context.screenshot('new-tab-recent');
     await script('document.querySelector("#search").value="draft preserved";document.querySelector("#search").focus()');
   });
@@ -54,7 +60,10 @@ export async function checkNewTab(context) {
     assert.equal(await script('return document.querySelector("#search").value'),'draft preserved');
   });
   await invoke('clear_browsing_history');
-  await inside(()=>until(()=>script('return document.querySelectorAll(".recent-search").length===0 && !document.querySelector("#empty").hidden'),'history clear refreshes existing page'));
+  await inside(()=>until(()=>script('return document.querySelectorAll(".recent-site").length===0 && !document.querySelector("#empty").hidden'),'history clear refreshes existing page'));
+  await withScenarioDatabase(context.directory,db=>assert.equal(db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n,0));
+  await inside(()=>script('window.staleRecentCard.click()'));
+  await context.wait(150);assert.equal((await active()).url,'veloce://newtab','cleared card cannot navigate using an old snapshot');
   // Fault injection stays inside the disposable test database.
   await withScenarioDatabase(context.directory,async db=>{
     db.exec('ALTER TABLE history RENAME TO unavailable_history');
@@ -71,19 +80,44 @@ export async function checkNewTab(context) {
   await inside(()=>script('const e=document.querySelector("#search");e.value=arguments[0];document.querySelector("#search-form").requestSubmit()',fixture.origin+'/page/new-tab-first'));
   await until(()=>fixture.reports.has('new-tab-first'),'search form navigates originating page');
   const first=await active();
+  await until(()=>withScenarioDatabase(context.directory,db=>db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n===1),'native favicon captured into cache');
+  const iconRequests=fixture.icons.requests.length;
   await invoke('go_back');await ready();assert.equal((await active()).url,'veloce://newtab');
+  await inside(async()=>{
+    await until(()=>script('const e=document.querySelector(".site-icon");return e?.src.startsWith("data:image/png;base64,")&&e.complete&&e.naturalWidth>0'),'captured favicon renders');
+    assert.equal(fixture.icons.requests.length,iconRequests,'opening new tab does not request a favicon');
+    await script('document.querySelector(".recent-site").click()');
+  });
+  await until(()=>fixture.loads.get('new-tab-first')>=2,'card opens exact last visited page');
+  await invoke('go_back');await ready();
   await invoke('go_forward');await until(async()=>{const tab=await active();return tab.url===fixture.origin+'/page/new-tab-first'&&!tab.navigation.loading;},'forward returns to page');
   await invoke('go_back');await ready();
   await inside(()=>script('document.querySelector("#search").value=arguments[0];document.querySelector("#search-form").requestSubmit()',fixture.origin+'/page/new-tab-returned'));
   await until(()=>fixture.reports.has('new-tab-returned'),'search remains authenticated after returning through history');
   await invoke('go_back');await ready();
   await invoke('reload_page');await ready();
+  const late=(await invoke('create_tab',{url:fixture.origin+'/page/new-tab-late'})).tabs.find(t=>t.is_active);
+  await until(()=>fixture.icons.pending.length>0,'delayed native favicon is in flight');
+  await invoke('clear_browsing_history');fixture.icons.release();
+  await context.wait(300);
+  await withScenarioDatabase(context.directory,db=>assert.equal(db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n,0,'late pre-clear favicon cannot repopulate cache'));
+  await invoke('navigate_to',{input:fixture.origin+'/page/new-tab-bad'});
+  await until(()=>fixture.reports.has('new-tab-bad'),'invalid favicon fixture loaded');
+  await invoke('navigate_to',{input:'veloce://newtab'});await ready();
+  await inside(()=>until(()=>script('return document.querySelector(".site-icon")?.getAttribute("src")==="/new-tab/site-fallback.svg"'),'invalid native image falls back'));
+  await invoke('close_tab',{tabId:late.id});await ready();
   const secondPacket=await invoke('create_tab');const second=secondPacket.tabs.find(t=>t.is_active);
   await ready();
   await invoke('set_split_view',{leftTabId:first.id,rightTabId:second.id});
   // Only the active new-tab view is selected by path helper; use its field and submit a loopback URL.
   await inside(()=>script('document.querySelector("#search").value=arguments[0];document.querySelector("#search-form").requestSubmit()',fixture.origin+'/page/new-tab-right'));
   await until(()=>fixture.reports.has('new-tab-right'),'right split page navigation');
+  await withScenarioDatabase(context.directory,db=>db.prepare('INSERT INTO history(title,url,visited_at) VALUES(?,?,?)').run('Left card destination',fixture.origin+'/page/new-tab-left-card?exact=1',Math.floor(Date.now()/1000)+1));
+  await invoke('set_new_tab_preferences',{engine:'google',language:'en'});
+  await inside(()=>until(()=>script('return document.querySelector(".site-title")?.textContent==="Left card destination"'),'left card updated'),first.id);
+  await inside(()=>click('.recent-site'),first.id);
+  await until(async()=>{const p=await invoke('get_tabs');return p.tabs.find(t=>t.id===first.id).url===fixture.origin+'/page/new-tab-left-card?exact=1'&&p.tabs.find(t=>t.id===second.id).url===fixture.origin+'/page/new-tab-right';},'card navigates its own pane only');
+  await invoke('go_back');await ready();
   const rightLoads=fixture.loads.get('new-tab-right');
   const rightDocument=fixture.reports.get('new-tab-right');
   assert.equal((await invoke('get_tabs')).tabs.find(t=>t.id===first.id).url,'veloce://newtab');
@@ -98,8 +132,11 @@ export async function checkNewTab(context) {
   await invoke('reload_page');await ready();
   await resizeWindow(680,600);
   await inside(()=>{
-    return script('const r=document.querySelector("#search-form").getBoundingClientRect();if(r.left<23||r.right>innerWidth-23)throw Error("search overflows pane")');
+    return script('const r=document.querySelector("#search-form").getBoundingClientRect(),c=document.querySelector(".content").getBoundingClientRect(),m=document.querySelector("main").getBoundingClientRect();if(r.left<23||r.right>innerWidth-23||c.top<31)throw Error("search overflows pane");const offset=Math.min(80,Math.max(0,(innerHeight/2-160)/2));if(m.height<=innerHeight+1&&Math.abs(c.top+c.height/2-(innerHeight/2-offset))>2)throw Error("search vertical offset is wrong")');
   });
+  await resizeWindow(680,480);
+  await inside(()=>script('const c=document.querySelector(".content").getBoundingClientRect();if(c.top<31||document.documentElement.scrollWidth>innerWidth)throw Error("small-window content clipped")'));
+  await resizeWindow(680,600);
   await inside(()=>click('#search'),first.id);
   await inside(()=>request('POST',`/session/${sessionId()}/actions`,{actions:[{type:'key',id:'new-tab-keys',actions:[{type:'keyDown',value:'\uE004'},{type:'keyUp',value:'\uE004'}]}]}));
   await inside(()=>until(()=>script('return document.activeElement.id==="submit"'),'Tab reaches search button'));
@@ -134,7 +171,11 @@ export async function checkNewTab(context) {
   assert.ok(saved.pages.some(p=>p.url==='veloce://newtab'));
   await invoke('restore_named_session',{id:saved.id});await ready();
   const restored=(await active()).id;
+  await until(()=>withScenarioDatabase(context.directory,db=>db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n>0),'icon cache populated before restart');
+  const cached=await withScenarioDatabase(context.directory,db=>db.prepare('SELECT site_key,hex(png) AS image FROM site_icons ORDER BY site_key').all());
   await restart();
   assert.equal((await active()).id,restored);assert.equal((await active()).url,'veloce://newtab');await ready();
+  const after=await withScenarioDatabase(context.directory,db=>db.prepare('SELECT site_key,hex(png) AS image FROM site_icons ORDER BY site_key').all());
+  for(const entry of cached)assert.ok(after.some(row=>row.site_key===entry.site_key&&row.image===entry.image),'favicon persists across restart');
   await context.screenshot('new-tab');
 }

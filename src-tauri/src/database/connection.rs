@@ -120,6 +120,7 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
     crate::database::recovery_repo::migrate(conn)?;
     crate::database::command_search_repo::register(conn)?;
     crate::database::site_zoom_repo::migrate(conn)?;
+    crate::database::site_icons_repo::migrate(conn)?;
     crate::database::download_jobs_repo::migrate(conn)?;
     Ok(())
 }

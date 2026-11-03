@@ -26,11 +26,20 @@ pub async fn get_history(
 #[tauri::command]
 pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
     flush_navigation(app.clone()).await?;
-    executor::run(app.clone(), |conn| {
+    let state = app.state::<crate::state::browser_state::BrowserState>();
+    let _operation = state.tab_operations.lock().await;
+    let clear_app = app.clone();
+    executor::run(app.clone(), move |conn| {
         let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
         history_repo::clear_all_history(&tx)?;
+        crate::database::site_icons_repo::clear(&tx)?;
         crate::database::closed_tabs_repo::clear(&tx)?;
-        tx.commit().map_err(|e| e.to_string())
+        tx.commit().map_err(|e| e.to_string())?;
+        clear_app
+            .state::<crate::window::new_tab::NewTabService>()
+            .history_epoch
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
     })
     .await?;
     crate::window::new_tab::invalidate(&app);

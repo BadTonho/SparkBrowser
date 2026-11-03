@@ -27,6 +27,11 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     if values.get("token").map(String::as_str) != Some(token) || !valid(app, id, label, token) {
         return;
     }
+    if !matches!(url.path(), "/read" | "/navigate" | "/visit")
+        || (url.path() == "/visit" && !values.get("site_key").is_some_and(|key| !key.is_empty()))
+    {
+        return;
+    }
     let Some(document) = values
         .get("document")
         .filter(|v| !v.is_empty() && v.len() <= 64)
@@ -47,7 +52,11 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
             return;
         };
         if let Some(session) = sessions.get_mut(label) {
-            if !session.accept(&document, sequence, url.path() == "/navigate") {
+            if !session.accept(
+                &document,
+                sequence,
+                matches!(url.path(), "/navigate" | "/visit"),
+            ) {
                 return;
             }
         } else if url.path() == "/read" {
@@ -65,8 +74,8 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
         }
     }
     let Some(request) = values.get("request").and_then(|v| v.parse::<u64>().ok()) else {
-        if url.path() == "/navigate" {
-            navigate(app, id, label, token, &values);
+        if matches!(url.path(), "/navigate" | "/visit") {
+            navigate(app, id, label, token, &values, url.path() == "/visit");
         }
         return;
     };
@@ -81,6 +90,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     );
     tauri::async_runtime::spawn(async move {
         let revision = app.state::<NewTabService>().revision.load(Ordering::SeqCst);
+        let epoch = super::super::favicon::epoch(&app);
         let worker_app = app.clone();
         let result = tauri::async_runtime::spawn_blocking(move || {
             worker_app.state::<NavigationWriter>().flush()
@@ -91,6 +101,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
             _ => Err("History unavailable".into()),
         };
         if !valid(&app, &id, &label, &token)
+            || super::super::favicon::epoch(&app) != epoch
             || app.state::<NewTabService>().revision.load(Ordering::SeqCst) != revision
         {
             return;
@@ -133,7 +144,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
                 .is_overlay_open
                 .lock()
                 .map_or(true, |v| *v);
-        let payload = serde_json::json!({"preferences":prefs,"labels":text,"searches":rows.as_ref().ok(),"error":rows.is_err(),"autofocus":autofocus});
+        let payload = serde_json::json!({"preferences":prefs,"labels":text,"sites":rows.as_ref().ok(),"error":rows.is_err(),"autofocus":autofocus});
         if let Some(view) = app.get_webview(&label) {
             if autofocus {
                 let _ = view.set_focus();
@@ -148,7 +159,14 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     });
 }
 
-fn navigate(app: &AppHandle, id: &str, label: &str, token: &str, values: &HashMap<String, String>) {
+fn navigate(
+    app: &AppHandle,
+    id: &str,
+    label: &str,
+    token: &str,
+    values: &HashMap<String, String>,
+    visit: bool,
+) {
     let Some(input) = values
         .get("input")
         .filter(|s| !s.trim().is_empty() && s.len() <= 8192)
@@ -156,10 +174,12 @@ fn navigate(app: &AppHandle, id: &str, label: &str, token: &str, values: &HashMa
     else {
         return;
     };
-    let requested = values
-        .get("engine")
-        .filter(|s| ["google", "duckduckgo"].contains(&s.as_str()))
-        .cloned();
+    let visit = if visit {
+        values.get("site_key").cloned()
+    } else {
+        None
+    };
+    let epoch = super::super::favicon::epoch(app);
     let document = values["document"].clone();
     let sequence = values["sequence"].parse::<u64>().unwrap_or(0);
     let (app, id, label, token) = (
@@ -185,27 +205,52 @@ fn navigate(app: &AppHandle, id: &str, label: &str, token: &str, values: &HashMa
         {
             return;
         }
-        let repeat = requested.is_some();
-        let engine = requested.unwrap_or_else(|| {
+        let engine = {
             app.state::<NewTabService>()
                 .preferences
                 .lock()
                 .map(|p| p.engine.clone())
                 .unwrap_or_else(|_| "google".into())
-        });
-        let result = (|| {
-            let target = if repeat {
-                let mut url = Url::parse(if engine == "duckduckgo" {
-                    "https://duckduckgo.com/"
-                } else {
-                    "https://www.google.com/search"
+        };
+        let target = if let Some(key) = visit {
+            let read = crate::database::executor::run(app.clone(), move |conn| {
+                recent::list(conn).map(|sites| {
+                    sites
+                        .into_iter()
+                        .find(|s| s.site_key == key && s.url == input)
                 })
-                .unwrap();
-                url.query_pairs_mut().append_pair("q", &input);
-                url
-            } else {
-                super::super::url_input::resolve_browser_input(&app, &input, &engine)?
-            };
+            })
+            .await;
+            match read {
+                Ok(Some(site)) if super::super::favicon::epoch(&app) == epoch => {
+                    Url::parse(&site.url).ok()
+                }
+                _ => None,
+            }
+        } else {
+            super::super::url_input::resolve_browser_input(&app, &input, &engine).ok()
+        };
+        let Some(target) = target else {
+            return;
+        };
+        let result = (|| {
+            if !valid(&app, &id, &label, &token) || super::super::favicon::epoch(&app) != epoch {
+                return Ok(());
+            }
+            if !app
+                .state::<NewTabService>()
+                .sessions
+                .lock()
+                .is_ok_and(|sessions| {
+                    sessions.get(&label).is_some_and(|session| {
+                        session.document == document && session.navigation == sequence
+                    })
+                })
+                || state.is_overlay_open.lock().map_or(true, |v| *v)
+                || app.state::<crate::shutdown::ShutdownService>().blocked()
+            {
+                return Ok(());
+            }
             if crate::privacy::adblock_engine::should_block_url(
                 target.as_str(),
                 *state.shield_enabled.lock().map_err(|e| e.to_string())?,
