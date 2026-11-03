@@ -66,7 +66,8 @@ export async function createFixture() {
           if (id === 'a') field.dispatchEvent(new Event('input', { bubbles: true }));
           scrollTo(0, 600);
           let busy = false; let permission = null;
-          let hiddenCount = 0;
+          let hiddenCount = 0, pageClicks = 0;
+          document.addEventListener('click', () => pageClicks++);
           document.addEventListener('visibilitychange', () => {
             if (document.hidden) hiddenCount++;
           });
@@ -111,7 +112,7 @@ export async function createFixture() {
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
               if (command === 'download') { const a = document.createElement('a'); a.href = '/download/file?native=1'; a.download = 'fixture.bin'; a.click(); }
               const samples=new Float32Array(1024);measuredAnalyser?.getFloatTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((sum,n)=>sum+n*n,0)/samples.length);const audio=document.getElementById('fixture-audio');
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ videoCount:document.querySelectorAll('video').length,pip:Boolean(document.pictureInPictureElement),videoTime:document.pictureInPictureElement?.currentTime,audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, width: innerWidth, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ videoCount:document.querySelectorAll('video').length,pip:Boolean(document.pictureInPictureElement),videoTime:document.pictureInPictureElement?.currentTime,audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, width: innerWidth, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, scrollAnchor: document.querySelector('div[style*="3000px"]').getBoundingClientRect().top, pageClicks, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { startTabDrag, cancelTabDrag, tabDrag } from "../../stores/tabDragStore";
   import TabMuteButton from "../media/TabMuteButton.svelte";
   import { t } from "../../i18n";
   import { onDestroy } from "svelte";
@@ -11,10 +12,6 @@
     removeTab,
     toggleTabPin,
     suspendTab,
-    beginTabReorder,
-    previewTabReorder,
-    finishTabReorder,
-    changeTabWorkspace,
   } from "../../stores/browserStore";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
@@ -58,124 +55,13 @@
     suspendTab(tabId);
   }
 
-  let dragTabId = $state<string | null>(null);
-  let isDragging = $state<boolean>(false);
-  let dragStartY = 0;
-  let hasMoved = false;
-
-  function handleTabPointerDown(event: PointerEvent, tabId: string) {
-    // Only primary left button or single touch
-    if (event.button !== 0) return;
-
-    // Do not initiate drag if user clicked an action button (close, sleep)
-    const target = event.target as HTMLElement | null;
-    if (target?.closest(".tab-action-btn")) {
-      return;
-    }
-
-    beginTabReorder();
-    dragTabId = tabId;
-    dragStartY = event.clientY;
-    hasMoved = false;
-    isDragging = false;
-
-    window.addEventListener("pointermove", handleWindowPointerMove);
-    window.addEventListener("pointerup", handleWindowPointerUp);
-    window.addEventListener("pointercancel", handleWindowPointerUp);
-  }
-
-  function handleWindowPointerMove(event: PointerEvent) {
-    if (!dragTabId) return;
-
-    const deltaY = event.clientY - dragStartY;
-    if (!hasMoved && Math.abs(deltaY) > 4) {
-      hasMoved = true;
-      isDragging = true;
-      document.body.style.cursor = "grabbing";
-      document.body.style.userSelect = "none";
-    }
-
-    if (!isDragging) return;
-
-    // Use elementFromPoint to find the element directly under cursor
-    const element = document.elementFromPoint(event.clientX, event.clientY);
-    if (!element) return;
-
-    // Check workspace pill hover
-    const wsPill = element.closest<HTMLElement>(".ws-pill");
-    const allPills = document.querySelectorAll<HTMLElement>(".ws-pill");
-    allPills.forEach((p) => p.classList.toggle("drop-hover", p === wsPill));
-
-    // Check if hovering over another tab row to swap
-    const targetRow = element.closest<HTMLElement>(".tab-row");
-    if (targetRow) {
-      const targetId = targetRow.getAttribute("data-tab-id");
-      if (targetId && targetId !== dragTabId) {
-        const currentIds = workspaceTabs.map((t) => t.id);
-        const fromIdx = currentIds.indexOf(dragTabId);
-        const toIdx = currentIds.indexOf(targetId);
-
-        if (fromIdx !== -1 && toIdx !== -1) {
-          const reordered = [...currentIds];
-          const [moved] = reordered.splice(fromIdx, 1);
-          reordered.splice(toIdx, 0, moved);
-          previewTabReorder(reordered);
-          dragStartY = event.clientY;
-        }
-      }
-    }
-  }
-
-  function handleWindowPointerUp(event: PointerEvent) {
-    window.removeEventListener("pointermove", handleWindowPointerMove);
-    window.removeEventListener("pointerup", handleWindowPointerUp);
-    window.removeEventListener("pointercancel", handleWindowPointerUp);
-
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-
-    const allPills = document.querySelectorAll<HTMLElement>(".ws-pill");
-    allPills.forEach((p) => p.classList.remove("drop-hover"));
-
-    const wasDragging = isDragging;
-    const clickedTabId = dragTabId;
-    const cancelled = event.type === "pointercancel";
-    void finishTabReorder(cancelled);
-
-    if (!cancelled && wasDragging && clickedTabId) {
-      // Check if dropped onto a workspace pill
-      const element = document.elementFromPoint(event.clientX, event.clientY);
-      const wsPill = element?.closest<HTMLElement>(".ws-pill");
-      const targetWsId = wsPill?.getAttribute("data-ws-id");
-      if (targetWsId) {
-        changeTabWorkspace(clickedTabId, targetWsId);
-      }
-    }
-
-    dragTabId = null;
-    isDragging = false;
-    hasMoved = false;
-
-    // Normal click selection if not dragged
-    if (!cancelled && !wasDragging && clickedTabId) {
-      selectTab(clickedTabId);
-    }
-  }
-
+  onDestroy(cancelTabDrag);
   function handleKeydown(event: KeyboardEvent, tabId: string) {
     if (event.key === "Enter") {
       selectTab(tabId);
     }
   }
 
-  onDestroy(() => {
-    if (dragTabId) void finishTabReorder(true);
-    window.removeEventListener("pointermove", handleWindowPointerMove);
-    window.removeEventListener("pointerup", handleWindowPointerUp);
-    window.removeEventListener("pointercancel", handleWindowPointerUp);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-  });
 </script>
 
 <div class="tabs-section">
@@ -200,8 +86,8 @@
         data-tab-id={tab.id}
         class:active={tab.is_active}
         class:hibernated={tab.is_hibernated}
-        class:is-dragging={dragTabId === tab.id && isDragging}
-        onpointerdown={(e) => handleTabPointerDown(e, tab.id)}
+        class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
+        onpointerdown={(e) => startTabDrag(e, tab.id)}
         onkeydown={(e) => handleKeydown(e, tab.id)}
         role="button"
         tabindex="0"
@@ -341,6 +227,7 @@
   }
 
   .tab-row {
+    touch-action: none;
     position: relative;
     display: flex;
     align-items: center;

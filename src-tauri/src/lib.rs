@@ -53,7 +53,7 @@ use commands::site_permissions::{
 use commands::site_search::{
     delete_site_search_shortcut, get_site_search_shortcuts, save_site_search_shortcut,
 };
-use commands::split_view::{commit_split_ratio, set_split_view};
+use commands::split_view::{commit_split_ratio, dock_tab_to_split, set_split_view};
 use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
@@ -70,6 +70,7 @@ use commands::workspaces::{
 use database::connection::init_database;
 use state::browser_state::BrowserState;
 use tauri::{Emitter, Manager, WindowEvent};
+use window::tab_drag_preview::set_tab_drag_preview;
 use window::vibrancy::apply_native_vibrancy;
 use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL};
 
@@ -81,6 +82,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
+        .manage(window::tab_drag_preview::DragPreview::default())
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
         .manage(window::media_popover::MediaPopover::default())
@@ -209,6 +211,8 @@ pub fn run() {
             delete_page_note,
             close_tabs_reviewed,
             set_split_view,
+            dock_tab_to_split,
+            set_tab_drag_preview,
             commit_split_ratio,
             get_site_permissions,
             set_site_permission,

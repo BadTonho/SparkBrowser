@@ -321,6 +321,12 @@
           "markdownDescription": "Enables the discard_backup_import command without any pre-configured scope."
         },
         {
+          "description": "Enables the dock_tab_to_split command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-dock-tab-to-split",
+          "markdownDescription": "Enables the dock_tab_to_split command without any pre-configured scope."
+        },
+        {
           "description": "Enables the download_update command without any pre-configured scope.",
           "type": "string",
           "const": "allow-download-update",
@@ -699,6 +705,12 @@
           "markdownDescription": "Enables the set_split_view command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_tab_drag_preview command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-drag-preview",
+          "markdownDescription": "Enables the set_tab_drag_preview command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_tab_muted command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-tab-muted",
@@ -901,6 +913,12 @@
           "type": "string",
           "const": "deny-discard-backup-import",
           "markdownDescription": "Denies the discard_backup_import command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the dock_tab_to_split command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-dock-tab-to-split",
+          "markdownDescription": "Denies the dock_tab_to_split command without any pre-configured scope."
         },
         {
           "description": "Denies the download_update command without any pre-configured scope.",
@@ -1279,6 +1297,12 @@
           "type": "string",
           "const": "deny-set-split-view",
           "markdownDescription": "Denies the set_split_view command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_drag_preview command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-drag-preview",
+          "markdownDescription": "Denies the set_tab_drag_preview command without any pre-configured scope."
         },
         {
           "description": "Denies the set_tab_muted command without any pre-configured scope.",

@@ -1,6 +1,7 @@
 <script lang="ts">
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
+  import { initializeTabDrag } from "./lib/stores/tabDragStore";
   import { initializeMedia } from "./lib/stores/mediaLifecycle";
   import { initializeZoom, changeZoom } from "./lib/stores/zoomStore";
   import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
@@ -109,6 +110,7 @@
   );
 
   onMount(() => {
+    const stopTabDrag = initializeTabDrag();
     const stopMedia = initializeMedia();
     const stopZoom = initializeZoom();
     const stopShutdown = initializeShutdown();
@@ -243,6 +245,7 @@
     window.addEventListener("mousedown", handleGlobalMousedown, true);
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
     return () => {
+      stopTabDrag();
       stopMedia();
       stopZoom();
       stopShutdown();

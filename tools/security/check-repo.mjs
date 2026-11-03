@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 
-const git = (...args) => execFileSync('git', args, { encoding: 'utf8' });
+const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 const sensitive = /(?:^|\/)(?:\.env(?:\..*)?|secrets|credentials|private)(?:\/|$)|\.(?:pem|key|p12|pfx|db|sqlite3?)(?:-(?:wal|shm|journal))?$|\.veloce-backup\.json(?:\..*)?$/i;
 const secret = /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}/;
 const files = git('ls-files', '-z').split('\0').filter(Boolean);

@@ -48,6 +48,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "delete_page_note",
     "close_tabs_reviewed",
     "set_split_view",
+    "dock_tab_to_split",
+    "set_tab_drag_preview",
     "commit_split_ratio",
     "get_site_permissions",
     "set_site_permission",

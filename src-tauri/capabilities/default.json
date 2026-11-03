@@ -32,6 +32,8 @@
     "allow-delete-page-note",
     "allow-close-tabs-reviewed",
     "allow-set-split-view",
+    "allow-dock-tab-to-split",
+    "allow-set-tab-drag-preview",
     "allow-commit-split-ratio",
     "allow-get-site-permissions",
     "allow-set-site-permission",

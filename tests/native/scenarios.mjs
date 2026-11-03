@@ -1,3 +1,4 @@
+import { checkTabDocking } from './tab-docking.mjs';
 import { checkPrivacy } from './privacy.mjs';
 import { checkMediaMute, checkMediaVolume, checkMediaPip } from "./media.mjs";
 import { checkPipContinuity } from './pip-continuity.mjs';
@@ -25,6 +26,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  'tab-docking': checkTabDocking,
   'privacy': checkPrivacy,
   'persistence-split': checkSplitPersistence,
   'persistence-workspaces': checkWorkspaceDeletePersistence,

@@ -1,5 +1,13 @@
 # Split view
 
+Drag a tab from the top bar or vertical sidebar into the first 32 logical pixels of either side of the page area. A translucent preview marks its destination; release the mouse to confirm. The gesture starts after 6 px of movement in any direction. Moving away removes the preview. With a single tab, no docking target is offered. Tools remains available as described below.
+
+A new split opens at 50/50. The dragged tab takes the chosen side and becomes active. Its companion is the page active when dragging started; when dragging that active tab, the most recently used other tab from the same workspace is selected, with original tab order breaking ties. An existing split retains its ratio: a third tab replaces the chosen side while the old tab remains open. Dragging a paired tab to the opposite edge swaps the pair.
+
+The preview does not navigate, hide, hibernate or persist any page. Dropping into the split restores any provisional tab reordering before saving the split. Dropping on the tab list reorders normally; dropping on a workspace button transfers the tab. Escape, pointer cancellation/lost capture, leaving the window, focus loss, opening a panel, or changing tabs/workspaces/layout cancels and restores the original order. Exiting split view remains available in Tools.
+
+The native preview is a transparent, mouse-ignoring owned window. Its position converts page logical bounds to desktop physical coordinates using the main window's scale. Docking validates the original workspace, active tab and split identity, then saves layout, selection and activation together before reconciling native documents. Failed persistence preserves the previous split and resident history and displays an error. No session/backup schema change is required.
+
 In **Tools → Tabs**, select two different tabs from the current workspace and choose **Split selected tabs**. Pages appear side by side with an 8 px divider. Drag the divider or focus it and use Left/Right; Home restores 50%. Ratios range from 20% to 80%, with each native view at least 100 logical pixels wide.
 
 Clicking a page focuses its tab and navigation controls. Selecting another tab replaces the focused pane. Exiting split view keeps the focused tab. Closing or moving a paired tab dissolves the pair. Each workspace remembers its pair, ratio and focused tab across restarts; inactive workspaces may hibernate their pages. The current pair is protected against manual/automatic hibernation and bulk closing, even when the resident limit is 1.
@@ -7,3 +15,5 @@ Clicking a page focuses its tab and navigation controls. Selecting another tab r
 Overlays hide both views and restore them afterward. Geometry updates reuse resident WebViews without navigating or changing focus; pointer movement is coalesced and the ratio persists when adjustment finishes. Windows uses native focus events; other engines use the generation-checked page focus bridge and require platform validation.
 
 Drag previews affect geometry only; unrelated session saves keep the last committed ratio. If saving fails, the divider and native pages return to that ratio. Replacing a pair persists the planned layout before closing resident pages, so a failed write preserves their documents and navigation history.
+
+Local validation on November 2, 2026 used the consolidated checks and the native `tab-docking`, `persistence-split`, `workspace-switcher`, `features` and `keyboard` scenarios on Windows. Docking covered both layouts, resized bounds and physical/logical positioning at 100% scale, rollback/retry and restart. High-DPI/multi-monitor transitions and native behavior on other platforms remain unverified. See [native integration](../contributing/native-tests.md) to reproduce the isolated tests.

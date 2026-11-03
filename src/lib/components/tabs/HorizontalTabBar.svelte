@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { startTabDrag, cancelTabDrag, tabDrag } from "../../stores/tabDragStore";
   import TabMuteButton from "../media/TabMuteButton.svelte";
   import { t } from "../../i18n";
   import { onDestroy, onMount } from "svelte";
@@ -7,12 +8,8 @@
   import {
     tabs,
     addTab,
-    selectTab,
     removeTab,
     toggleTabPin,
-    beginTabReorder,
-    previewTabReorder,
-    finishTabReorder,
   } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
@@ -73,92 +70,7 @@
     }
   }
 
-  let dragTabId = $state<string | null>(null);
-  let isDragging = $state<boolean>(false);
-  let dragStartX = 0;
-  let hasMoved = false;
-
-  function handleTabPointerDown(event: PointerEvent, tabId: string) {
-    if (event.button !== 0) return;
-    const target = event.target as HTMLElement | null;
-    if (target?.closest(".tab-close-btn")) return;
-
-    beginTabReorder();
-    dragTabId = tabId;
-    dragStartX = event.clientX;
-    hasMoved = false;
-    isDragging = false;
-
-    window.addEventListener("pointermove", handleWindowPointerMove);
-    window.addEventListener("pointerup", handleWindowPointerUp);
-    window.addEventListener("pointercancel", handleWindowPointerUp);
-  }
-
-  function handleWindowPointerMove(event: PointerEvent) {
-    if (!dragTabId) return;
-
-    const deltaX = event.clientX - dragStartX;
-    if (!hasMoved && Math.abs(deltaX) > 4) {
-      hasMoved = true;
-      isDragging = true;
-      document.body.style.cursor = "grabbing";
-      document.body.style.userSelect = "none";
-    }
-
-    if (!isDragging) return;
-
-    const element = document.elementFromPoint(event.clientX, event.clientY);
-    if (!element) return;
-
-    const targetTab = element.closest<HTMLElement>(".h-tab");
-    if (targetTab) {
-      const targetId = targetTab.getAttribute("data-tab-id");
-      if (targetId && targetId !== dragTabId) {
-        const currentIds = workspaceTabs.map((t) => t.id);
-        const fromIdx = currentIds.indexOf(dragTabId);
-        const toIdx = currentIds.indexOf(targetId);
-
-        if (fromIdx !== -1 && toIdx !== -1) {
-          const reordered = [...currentIds];
-          const [moved] = reordered.splice(fromIdx, 1);
-          reordered.splice(toIdx, 0, moved);
-          previewTabReorder(reordered);
-          dragStartX = event.clientX;
-        }
-      }
-    }
-  }
-
-  function handleWindowPointerUp(event: PointerEvent) {
-    window.removeEventListener("pointermove", handleWindowPointerMove);
-    window.removeEventListener("pointerup", handleWindowPointerUp);
-    window.removeEventListener("pointercancel", handleWindowPointerUp);
-
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-
-    const wasDragging = isDragging;
-    const clickedTabId = dragTabId;
-    const cancelled = event.type === "pointercancel";
-    void finishTabReorder(cancelled);
-
-    dragTabId = null;
-    isDragging = false;
-    hasMoved = false;
-
-    if (!cancelled && !wasDragging && clickedTabId) {
-      selectTab(clickedTabId);
-    }
-  }
-
-  onDestroy(() => {
-    if (dragTabId) void finishTabReorder(true);
-    window.removeEventListener("pointermove", handleWindowPointerMove);
-    window.removeEventListener("pointerup", handleWindowPointerUp);
-    window.removeEventListener("pointercancel", handleWindowPointerUp);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-  });
+  onDestroy(cancelTabDrag);
 </script>
 
 <div
@@ -172,9 +84,9 @@
         data-tab-id={tab.id}
         class:active={tab.is_active}
         class:hibernated={tab.is_hibernated}
-        class:is-dragging={dragTabId === tab.id && isDragging}
+        class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
         transition:fly={{ y: 6, duration: prefersReducedMotion ? 0 : 180, easing: cubicOut }}
-        onpointerdown={(e) => handleTabPointerDown(e, tab.id)}
+        onpointerdown={(e) => startTabDrag(e, tab.id)}
         onmouseup={(e) => e.button === 1 && removeTab(tab.id)}
         role="button"
         tabindex="0"
@@ -257,6 +169,7 @@
   }
 
   .h-tab {
+    touch-action: none;
     position: relative;
     min-width: 120px;
     max-width: 210px;

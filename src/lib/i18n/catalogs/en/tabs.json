@@ -16,5 +16,7 @@
   "tabs.hibernate_tab_to_free_ram_8298": "Hibernate Tab to Free RAM",
   "tabs.hibernate_tab_1b5f": "Hibernate Tab",
   "tabs.close_tab_p0_14f2": "Close Tab ({p0})",
-  "tabs.close_tab_f271": "Close Tab"
+  "tabs.close_tab_f271": "Close Tab",
+  "tabs.split_drop_left": "Release to split on the left",
+  "tabs.split_drop_right": "Release to split on the right"
 }

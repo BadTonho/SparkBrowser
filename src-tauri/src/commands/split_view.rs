@@ -4,6 +4,36 @@ use crate::state::{
     tab_checkpoint::TabCheckpoint,
 };
 use tauri::{AppHandle, Emitter, State};
+
+#[tauri::command]
+pub async fn dock_tab_to_split(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    tab_id: String,
+    side: crate::state::split_docking::DockSide,
+    context: crate::state::split_docking::DockContext,
+) -> Result<TabSnapshot, String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::tab_drag_preview::hide(&app);
+    if crate::window::tab_drag_preview::blocked(&state) {
+        return Err("A browser panel is open".into());
+    }
+    let url = crate::state::split_docking::commit(&state, &context, &tab_id, side)?;
+    *state.split_preview.lock().map_err(|e| e.to_string())? = None;
+    super::tabs::reconcile_committed(&app, &state);
+    let snapshot = state.snapshot_packet();
+    let _ = app.emit_to("main", "tabs-updated", &snapshot);
+    let _ = app.emit_to(
+        "main",
+        "privacy-stats-updated",
+        state.snapshot_privacy_stats(),
+    );
+    let _ = app.emit_to("main", "content-url-changed", url);
+    if let Err(error) = crate::window::webview_manager::focus_active_content_webview(&app) {
+        let _ = app.emit_to("main", "browser-error", error);
+    }
+    Ok(snapshot)
+}
 #[tauri::command]
 pub async fn set_split_view(
     app: AppHandle,

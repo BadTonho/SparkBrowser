@@ -55,6 +55,9 @@ pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(
 
 /// Synchronizes visibility and bounds of the child WebView.
 pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
+    if super::tab_drag_preview::blocked(state) {
+        super::tab_drag_preview::hide(app);
+    }
     state.refresh_visible_tabs()?;
     let pane_bounds = super::viewport::visible_bounds(state)?;
     for (id, bounds) in &pane_bounds {
