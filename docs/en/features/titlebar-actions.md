@@ -7,3 +7,9 @@ A quick click still opens the action. Press **Esc**, switch away from the window
 The order is shared between horizontal and vertical tab layouts. The bookmarks action keeps its saved position while hidden in vertical layout. The compact **More** menu keeps its existing order. Window controls stay fixed.
 
 The preference is saved locally on this device and is not included in backup exports. If storage is unavailable, the new order remains usable for the current session.
+
+## Icon appearance
+
+All eight quick actions use decorative outline SVGs, sized at 16 × 16 pixels with a consistent 1.8-unit stroke. Tools uses a list, bookmarks a bar, commands a lightning bolt, history a clock, downloads a downward arrow, privacy a shield, settings a gear, and focus four framing corners.
+
+The icons inherit the button's CSS `color` through `stroke="currentColor"`. Change the button's `color` or the existing theme variables (`--text-secondary`, `--text-primary` for hover, and `--accent-primary` for active bookmarks) to recolor them. The green privacy status indicator remains separate. Icon colors do not have a settings picker.

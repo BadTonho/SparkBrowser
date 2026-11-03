@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import TitlebarActionIcon from "./TitlebarActionIcon.svelte";
   import { t } from "../../i18n";
   import { openTools } from "../../stores/toolsStore";
   import { openHistoryDrawer } from "../../stores/persistenceStore";
@@ -91,7 +92,9 @@
         onclick={() => openTools()}
         title={$t("titlebar.tools_ea93") + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-tools" aria-label={$t("titlebar.tools_ea93")}
-      >☷</button>
+      >
+        <TitlebarActionIcon action={id} />
+      </button>
     {/if}
     {#if id === "bookmarks"}
       <button
@@ -106,10 +109,7 @@
         aria-label={$showBookmarksBar ? $t("titlebar.hide_bookmarks_bar_31b5") : $t("titlebar.show_bookmarks_bar_570b")}
         aria-pressed={$showBookmarksBar}
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-          <path d="M4 5.5h16M4 12h16M4 18.5h16" stroke-linecap="round" />
-          <path d="M7 3.5v4M17 3.5v4" stroke-linecap="round" />
-        </svg>
+        <TitlebarActionIcon action={id} />
       </button>
     {/if}
     {#if id === "commands"}
@@ -123,7 +123,7 @@
         title={($t("titlebar.open_command_bar_p0_cf83", { p0: $keyboardShortcuts && shortcutLabel("command-bar") })) + " · " + $t("titlebar.reorder_hint")}
         aria-label={$t("titlebar.command_bar_1356")}
       >
-        ⚡
+        <TitlebarActionIcon action={id} />
       </button>
     {/if}
     {#if id === "history"}
@@ -137,7 +137,7 @@
         title={($t("titlebar.browsing_history_p0_cf44", { p0: $keyboardShortcuts && shortcutLabel("history") })) + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-history" aria-label={$t("titlebar.browsing_history_13cc")}
       >
-        🕒
+        <TitlebarActionIcon action={id} />
       </button>
     {/if}
     {#if id === "downloads"}
@@ -151,7 +151,7 @@
         title={($t("titlebar.download_manager_p0_8620", { p0: $keyboardShortcuts && shortcutLabel("downloads") })) + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-downloads" aria-label={$t("titlebar.downloads_d5fd")}
       >
-        📥
+        <TitlebarActionIcon action={id} />
       </button>
     {/if}
     {#if id === "privacy"}
@@ -167,7 +167,7 @@
         aria-label={$t("privacy.controls")}
         aria-haspopup="dialog" aria-expanded={Boolean($privacyPopover)} data-testid="open-privacy"
       >
-        <span>🛡️</span>
+        <TitlebarActionIcon action={id} />
         <span class="shield-dot"></span>
       </button>
     {/if}
@@ -182,7 +182,7 @@
         title={($t("titlebar.settings_shortcuts_p0_82b9", { p0: $keyboardShortcuts && shortcutLabel("settings") })) + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-settings" aria-label={$t("titlebar.settings_74a8")}
       >
-        ⚙️
+        <TitlebarActionIcon action={id} />
       </button>
     {/if}
     {#if id === "zen"}
@@ -196,7 +196,7 @@
         title={($t("titlebar.enter_zen_focus_mode_p0_d689", { p0: $keyboardShortcuts && shortcutLabel("zen") })) + " · " + $t("titlebar.reorder_hint")}
         aria-label={$t("titlebar.zen_mode_826b")}
       >
-        🧘
+        <TitlebarActionIcon action={id} />
       </button>
     {/if}
   {/each}
