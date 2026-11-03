@@ -4,10 +4,10 @@
   import MediaButton from "../media/MediaButton.svelte";
   import PipButton from "../media/PipButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
+  import TitlebarActions from "./TitlebarActions.svelte";
   import { t } from "../../i18n";
   import { isNewTab } from "../../services/new-tab";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
-  import { openTools } from "../../stores/toolsStore";
   import {
     addressInput,
     isAddressEditing,
@@ -25,20 +25,12 @@
   import {
     bookmarks,
     openBookmarkEditor,
-    openHistoryDrawer,
   } from "../../stores/persistenceStore";
-  import { openDownloadsDrawer } from "../../stores/downloadsStore";
-  import { openCommandBar } from "../../stores/commandBarStore";
   import {
     isZenMode,
-    toggleZenMode,
-    openSettingsModal,
     tabLayout,
-    showBookmarksBar,
-    toggleBookmarksBar,
     workspaceSwitcherDisplay,
   } from "../../stores/settingsStore";
-  import { privacyStats } from "../../stores/privacyStore";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { defaultSearchEngine } from "../../stores/searchEngineStore";
@@ -46,8 +38,6 @@
   import WindowControls from "./WindowControls.svelte";
   import { splitLayout } from "../../stores/splitViewStore";
   import { titlebarMenu, openTitlebarMenu, closeTitlebarMenu } from "../../stores/titlebarMenuStore";
-
-  import { openPrivacy, privacyPopover } from "../../stores/privacyPopoverStore";
 
   let narrow = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 1000px)").matches);
   const splitHorizontal = $derived($tabLayout === "horizontal" && Boolean($splitLayout));
@@ -213,80 +203,7 @@
       {#if compact}
         <button class="icon-btn" data-testid="open-titlebar-menu" aria-label={$t("titlebar.more")} title={$t("titlebar.more")} aria-haspopup="menu" aria-expanded={Boolean($titlebarMenu)} onclick={event => openTitlebarMenu(event.currentTarget)} onkeydown={event => { if (event.key === "ArrowDown") { event.preventDefault(); void openTitlebarMenu(event.currentTarget); } }}>⋯</button>
       {:else}
-      <button class="icon-btn" onclick={() => openTools()} title={$t("titlebar.tools_ea93")} data-testid="open-tools" aria-label={$t("titlebar.tools_ea93")}>☷</button>
-      {#if $tabLayout === "horizontal"}
-        <button
-          class="icon-btn"
-          class:active={$showBookmarksBar}
-          onclick={toggleBookmarksBar}
-          title={$showBookmarksBar ? $t("titlebar.hide_bookmarks_bar_31b5") : $t("titlebar.show_bookmarks_bar_570b")}
-          aria-label={$showBookmarksBar ? $t("titlebar.hide_bookmarks_bar_31b5") : $t("titlebar.show_bookmarks_bar_570b")}
-          aria-pressed={$showBookmarksBar}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path d="M4 5.5h16M4 12h16M4 18.5h16" stroke-linecap="round" />
-            <path d="M7 3.5v4M17 3.5v4" stroke-linecap="round" />
-          </svg>
-        </button>
-      {/if}
-
-      <button
-        class="icon-btn"
-        onclick={() => openCommandBar()}
-        title={$t("titlebar.open_command_bar_p0_cf83", { p0: $keyboardShortcuts && shortcutLabel("command-bar") })}
-        aria-label={$t("titlebar.command_bar_1356")}
-      >
-        ⚡
-      </button>
-
-      <button
-        class="icon-btn"
-        onclick={openHistoryDrawer}
-        title={$t("titlebar.browsing_history_p0_cf44", { p0: $keyboardShortcuts && shortcutLabel("history") })}
-        data-testid="open-history" aria-label={$t("titlebar.browsing_history_13cc")}
-      >
-        🕒
-      </button>
-
-      <button
-        class="icon-btn"
-        onclick={openDownloadsDrawer}
-        title={$t("titlebar.download_manager_p0_8620", { p0: $keyboardShortcuts && shortcutLabel("downloads") })}
-        data-testid="open-downloads" aria-label={$t("titlebar.downloads_d5fd")}
-      >
-        📥
-      </button>
-
-      <button
-        class="icon-btn shield-btn"
-        class:shield-on={$privacyStats.shield_enabled}
-        onclick={event => openPrivacy(event.currentTarget)}
-        title={$t("privacy.controls")}
-        aria-label={$t("privacy.controls")}
-        aria-haspopup="dialog" aria-expanded={Boolean($privacyPopover)} data-testid="open-privacy"
-      >
-        <span>🛡️</span>
-        <span class="shield-dot"></span>
-      </button>
-
-      <button
-        class="icon-btn"
-        onclick={openSettingsModal}
-        title={$t("titlebar.settings_shortcuts_p0_82b9", { p0: $keyboardShortcuts && shortcutLabel("settings") })}
-        data-testid="open-settings" aria-label={$t("titlebar.settings_74a8")}
-      >
-        ⚙️
-      </button>
-
-      <button
-        class="icon-btn"
-        onclick={toggleZenMode}
-        title={$t("titlebar.enter_zen_focus_mode_p0_d689", { p0: $keyboardShortcuts && shortcutLabel("zen") })}
-        aria-label={$t("titlebar.zen_mode_826b")}
-      >
-        🧘
-      </button>
-
+        <TitlebarActions />
       {/if}
       {#if $tabLayout === "vertical" || splitHorizontal}
         <div class="divider"></div>
@@ -544,32 +461,6 @@
   .icon-btn.active {
     color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
-  }
-
-  .shield-btn {
-    opacity: 0.65;
-  }
-
-  .shield-btn.shield-on {
-    opacity: 1;
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.35);
-  }
-
-  .shield-dot {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .shield-btn.shield-on .shield-dot {
-    background: #22c55e;
-    box-shadow: 0 0 6px #22c55e;
   }
 
   .divider {

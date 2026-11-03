@@ -48,3 +48,4 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Controles de mídia das abas](features/tab-media.md)
 - [Pop-up de proteção e Auto skip ads](features/auto-skip-ads.md)
 - [Correções de falhas e verificação — 2 de novembro de 2026](reviews/2026-11-02/correctness-fixes.md)
+- [Reorganizar atalhos rápidos](./features/titlebar-actions.md)

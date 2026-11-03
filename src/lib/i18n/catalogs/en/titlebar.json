@@ -34,5 +34,8 @@
   "titlebar.zen_mode_826b": "Zen Mode",
   "titlebar.minimize_d72e": "Minimize",
   "titlebar.maximize_fba6": "Maximize",
-  "titlebar.close_7d9e": "Close"
+  "titlebar.close_7d9e": "Close",
+  "titlebar.reorder_hint": "Hold for half a second, then drag to reorder. Esc cancels.",
+  "titlebar.quick_actions": "Quick actions",
+  "titlebar.reordering": "Drag to choose a position. Release to save, or press Esc to cancel."
 }
