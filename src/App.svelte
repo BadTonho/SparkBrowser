@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { initializeNewTab } from "./lib/services/new-tab";
+  import { focusAddressBar } from "./lib/services/bridge/navigation";
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
   import { initializeTabDrag } from "./lib/stores/tabDragStore";
@@ -42,7 +44,6 @@
   import {
     tabs,
     applyNavigationPatch,
-    currentUrl,
     initializeTabs,
     applyTabsSnapshot,
     addTab,
@@ -56,7 +57,7 @@
     moveActiveTabUp,
     moveActiveTabDown,
   } from "./lib/stores/browserStore";
-  import { toggleCommandBar, openCommandBar } from "./lib/stores/commandBarStore";
+  import { toggleCommandBar } from "./lib/stores/commandBarStore";
   import {
     bookmarks,
     bookmarkFolders,
@@ -117,6 +118,7 @@
     const stopTabDrag = initializeTabDrag();
     const stopMedia = initializeMedia();
     const stopZoom = initializeZoom();
+    const stopNewTab = initializeNewTab();
     const stopShutdown = initializeShutdown();
     void initializeRecovery();
     initializeBackupStatus();
@@ -252,6 +254,7 @@
       stopTabDrag();
       stopMedia();
       stopZoom();
+      stopNewTab();
       stopShutdown();
       stopPermissionEvents();
       stopUpdates();
@@ -311,9 +314,9 @@
       case "navigate-back": void triggerBack(); break;
       case "navigate-forward": void triggerForward(); break;
       case "command-bar": toggleCommandBar(); break;
-      case "edit-url": openCommandBar(get(currentUrl)); break;
+      case "edit-url":
       case "focus-address":
-        document.querySelector<HTMLInputElement>(".omnibox-input")?.focus();
+        void focusAddressBar().then(() => document.querySelector<HTMLInputElement>(".omnibox-input")?.focus());
         break;
       case "sidebar": if (get(tabLayout) === "vertical") toggleSidebar(); break;
       case "zen": toggleZenMode(); break;

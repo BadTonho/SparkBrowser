@@ -46,5 +46,5 @@ if (-not $Up) {
         throw "Native keyboard test requires its isolated browser in the foreground (actual process: $((Get-Process -Id $foregroundProcess).ProcessName))"
     }
 }
-if ($Key -notin @(0x11,0x10,0x57,0x54)) { throw 'Unsupported test key' }
+if ($Key -notin @(0x11,0x10,0x57,0x54,0x4C)) { throw 'Unsupported test key' }
 [NativeTestInput]::Key([uint16]$Key, [bool]$Up)

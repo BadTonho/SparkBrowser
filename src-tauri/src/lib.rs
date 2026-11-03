@@ -4,6 +4,7 @@ use commands::backup::{
 };
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
+use commands::new_tab::set_new_tab_preferences;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
@@ -30,7 +31,9 @@ use commands::downloads::{
     cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
     get_downloads, set_download_checksum,
 };
-use commands::navigation::{go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds};
+use commands::navigation::{
+    focus_address_bar, go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds,
+};
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_media_popover, set_overlay_visibility,
@@ -84,6 +87,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
+        .manage(window::new_tab::NewTabService::default())
         .manage(window::tab_drag_preview::DragPreview::default())
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
@@ -167,6 +171,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            focus_address_bar,
+            set_new_tab_preferences,
             refresh_tab_media,
             set_tab_volume,
             enter_video_pip,

@@ -4,6 +4,7 @@ mod internal_overlays;
 mod keyboard_bridge;
 pub mod media_popover;
 mod navigation_state;
+pub mod new_tab;
 pub mod privacy_popover;
 pub mod shield_policy;
 mod split_focus;

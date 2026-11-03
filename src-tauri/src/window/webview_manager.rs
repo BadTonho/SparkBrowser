@@ -80,7 +80,8 @@ pub(super) fn ensure_tab_webview(
         .get_window("main")
         .ok_or_else(|| "Main window not found".to_string())?;
 
-    let initial_url = resolve_input_to_url_with_search_engine(initial_url_str, "google")?;
+    let logical_target = resolve_input_to_url_with_search_engine(initial_url_str, "google")?;
+    let initial_url = super::new_tab::physical_url(app, logical_target.as_str())?;
     let shield_enabled = app
         .try_state::<BrowserState>()
         .and_then(|s| s.shield_enabled.lock().ok().map(|v| *v))
@@ -112,6 +113,11 @@ pub(super) fn ensure_tab_webview(
     #[cfg(windows)]
     let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
+        .initialization_script(super::new_tab::initializer(
+            app,
+            &keyboard_bridge_token,
+            tab_id,
+        )?)
         .initialization_script(
             include_str!("../media/controller.js")
                 .replace(
@@ -176,6 +182,16 @@ pub(super) fn ensure_tab_webview(
     let tab_for_nav = tab_id.to_string();
     let label_for_nav = label.clone();
     let webview_builder = webview_builder.on_navigation(move |nav_url| {
+        if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("new-tab") {
+            super::new_tab::handle(
+                &app_handle_for_nav,
+                &tab_for_nav,
+                &label_for_nav,
+                &keyboard_bridge_token,
+                nav_url,
+            );
+            return false;
+        }
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("page-activity") {
             let values: std::collections::HashMap<_, _> = nav_url.query_pairs().collect();
             if values.get("token").map(|v| v.as_ref()) == Some(keyboard_bridge_token.as_str()) {
@@ -258,6 +274,9 @@ pub(super) fn ensure_tab_webview(
             let _ = app_handle_for_nav.emit("workspace-switcher-dismissed", ());
         }
 
+        if super::new_tab::is_document(&app_handle_for_nav, nav_url) {
+            return true;
+        }
         if !matches!(nav_url.scheme(), "http" | "https")
             || nav_url.host_str() == Some("tauri.localhost")
         {
@@ -369,7 +388,7 @@ pub fn navigate_content_webview_with_search_engine(
 
     active_content_webview(app)
         .ok_or("Active WebView was not found")?
-        .navigate(parsed_url)
+        .navigate(super::new_tab::physical_url(app, parsed_url.as_str())?)
         .map_err(|e| format!("Navigation error: {e}"))?;
 
     Ok(resolved_str)

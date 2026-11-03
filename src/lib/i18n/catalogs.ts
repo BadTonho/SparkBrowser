@@ -1,4 +1,6 @@
 import mediaEn from "./catalogs/en/media.json";
+import newtabEn from "./catalogs/en/newtab.json";
+import newtabPt from "./catalogs/pt-BR/newtab.json";
 import mediaPt from "./catalogs/pt-BR/media.json";
 import searchEn from "./catalogs/en/search.json";
 import searchPt from "./catalogs/pt-BR/search.json";
@@ -45,6 +47,6 @@ import viewportPt from "./catalogs/pt-BR/viewport.json";
 import workspacesEn from "./catalogs/en/workspaces.json";
 import workspacesPt from "./catalogs/pt-BR/workspaces.json";
 
-export const english = { ...mediaEn, ...searchEn, ...zoomEn, ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn };
+export const english = { ...newtabEn, ...mediaEn, ...searchEn, ...zoomEn, ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn };
 export type MessageKey = keyof typeof english;
-export const portuguese: Record<MessageKey, string> = { ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt };
+export const portuguese: Record<MessageKey, string> = { ...newtabPt, ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt };

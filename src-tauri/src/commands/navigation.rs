@@ -4,7 +4,15 @@ use crate::window::webview_manager::{
     active_content_webview, go_back_content_webview, go_forward_content_webview,
     navigate_content_webview_with_search_engine,
 };
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
+
+#[tauri::command]
+pub async fn focus_address_bar(app: AppHandle) -> Result<(), String> {
+    app.get_webview("main")
+        .ok_or("Browser shell unavailable")?
+        .set_focus()
+        .map_err(|e| e.to_string())
+}
 
 #[tauri::command]
 pub async fn navigate_to(

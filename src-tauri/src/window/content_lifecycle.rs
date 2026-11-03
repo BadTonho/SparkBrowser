@@ -112,6 +112,7 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                 })
                 .map_err(|e| e.to_string())?;
                 webview.close().map_err(|e| e.to_string())?;
+                super::new_tab::revoke(app, &label);
                 state
                     .keyboard_bridge_tokens
                     .lock()

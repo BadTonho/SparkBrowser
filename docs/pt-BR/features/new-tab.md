@@ -1,0 +1,15 @@
+# Página personalizada de nova guia
+
+Abrir uma nova guia mostra uma página local escura, com campo de pesquisa centralizado e até cinco cartões de pesquisas recentes. Não há logo nem imagem de fundo. O campo recebe o foco inicial; **Ctrl+L** continua focando a barra de endereço compartilhada. Enter ou o botão de pesquisa abre o resultado na mesma guia, usando Google/DuckDuckGo configurado, reconhecimento de endereços e atalhos de pesquisa em sites. Entrada vazia não faz nada.
+
+Os cartões vêm do histórico de navegação existente, compartilhado entre workspaces, incluindo pesquisas feitas nos próprios sites compatíveis. Resultados do Google `.com` e `.com.br` e das versões principal, HTML e Lite do DuckDuckGo são reconhecidos por domínio/caminho exatos e parâmetro `q`. São exibidos os cinco termos distintos mais recentes, ignorando espaços externos e diferenças entre maiúsculas e minúsculas. Um cartão repete o termo exibido com seu buscador original. Limpar o histórico também remove os cartões das páginas de nova guia abertas. Uma falha de leitura mantém a busca disponível e oferece **Tentar novamente**.
+
+A página abre sem internet e não carrega recursos remotos nem sugestões. Os termos só são enviados a um buscador ao enviar uma pesquisa ou acionar um cartão. Menos de cinco pesquisas produzem menos cartões; histórico vazio mostra uma mensagem curta. Os cartões se reorganizam em painéis estreitos, incluindo split e a largura mínima de 680 px. Textos e nomes acessíveis seguem o idioma inglês/português selecionado.
+
+O endereço lógico interno é `veloce://newtab`; o campo de endereço fica vazio e identifica uma página interna do navegador. Permissões de sites, favoritos e zoom da página ficam indisponíveis nela. **+**, **Ctrl+T**, início/workspace vazio e substituição da última guia fechada usam essa página. Páginas já salvas e destinos explícitos são preservados. Pesquisar dentro de um painel do split navega somente naquele painel.
+
+O documento interno usa o WebView normal da guia e seu histórico nativo. Voltar, avançar, recarregar, reabrir guias fechadas, hibernação, sessões salvas, recuperação e reinício aceitam o endereço interno. Ele próprio não vira uma visita no histórico de navegação. Sua ponte autenticada de documento não concede permissões IPC de aplicação ao conteúdo web; respostas antigas de documentos/solicitações são descartadas. Atualizar cartões preserva o rascunho da busca e não devolve o foco ao campo.
+
+Não há migração de banco nem armazenamento separado de pesquisas. As exportações de backup continuam na versão 4 e a importação segue aceitando versões 1–4. Somente guias e páginas de sessões aceitam esse endereço interno exato; restrições de URLs dos demais dados externos permanecem. Versões antigas do aplicativo que aceitam apenas guias HTTP/HTTPS podem rejeitar backups contendo a nova página interna.
+
+Validação: `npm run validate` e cenário nativo isolado `new-tab`, com regressões de teclado, grupos do split, troca de workspace, guias fechadas, persistência de workspaces, backup e recuperação. Consulte [testes nativos](../contributing/native-tests.md).

@@ -19,11 +19,9 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
     if !tabs.is_empty() {
         let ids: HashSet<_> = tabs.iter().map(|tab| tab.id.as_str()).collect();
         if ids.len() != tabs.len()
-            || tabs.iter().any(|tab| {
-                tab.id.is_empty()
-                    || tauri::Url::parse(&tab.url)
-                        .map_or(true, |url| !matches!(url.scheme(), "http" | "https"))
-            })
+            || tabs
+                .iter()
+                .any(|tab| tab.id.is_empty() || !crate::window::new_tab::valid_tab_url(&tab.url))
         {
             return Err("recovery.invalid_session: Invalid saved tab".into());
         }

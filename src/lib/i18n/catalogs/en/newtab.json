@@ -1,0 +1,10 @@
+{
+  "newtab.title": "New tab",
+  "newtab.search": "Search",
+  "newtab.placeholder": "Search or enter address",
+  "newtab.recent": "Recent searches",
+  "newtab.empty": "Your recent searches will appear here.",
+  "newtab.error": "Could not load recent searches.",
+  "newtab.retry": "Try again",
+  "newtab.internal": "Internal browser page"
+}

@@ -1,4 +1,5 @@
 import { checkTabDocking } from './tab-docking.mjs';
+import { checkNewTab } from './new-tab.mjs';
 import { checkSplitTabGroups } from './split-tab-groups.mjs';
 import { checkPrivacy } from './privacy.mjs';
 import { checkMediaMute, checkMediaVolume, checkMediaPip } from "./media.mjs";
@@ -27,6 +28,7 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  'new-tab': checkNewTab,
   'split-tab-groups': checkSplitTabGroups,
   'tab-docking': checkTabDocking,
   'privacy': checkPrivacy,

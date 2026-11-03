@@ -65,6 +65,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_resident_limit",
     "set_tab_pinned",
     "create_tab",
+    "focus_address_bar",
+    "set_new_tab_preferences",
     "switch_tab",
     "close_tab",
     "hibernate_tab",

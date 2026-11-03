@@ -46,7 +46,7 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
   { id: "navigate-back", label: "Go Back", description: "Go to the previous page", defaults: [combo("Mouse4")] },
   { id: "navigate-forward", label: "Go Forward", description: "Go to the next page", defaults: [combo("Mouse5")] },
   { id: "command-bar", label: "Open Floating Command Bar", description: "Open the command bar", defaults: [combo("K", { ctrl: true })] },
-  { id: "edit-url", label: "Edit Current URL in Command Bar", description: "Focus the current URL in the command bar", defaults: [combo("L", { ctrl: true })] },
+    { id: "edit-url", label: "Edit Current URL in Address Bar", description: "Focus the current URL in the address bar", defaults: [combo("L", { ctrl: true })] },
   { id: "focus-address", label: "Focus Address and Search Bar", description: "Focus and select the current address or search text", defaults: [combo("E", { ctrl: true })] },
   { id: "sidebar", label: "Toggle Sidebar (Vertical Layout)", description: "Show or hide the sidebar", defaults: [combo("B", { ctrl: true })] },
   { id: "zen", label: "Toggle Fullscreen Zen / Focus Mode", description: "Toggle Zen mode", defaults: [combo("Z", { alt: true })] },

@@ -13,6 +13,13 @@ pub fn page_url(raw: &str) -> Result<String, String> {
     }
     Ok(url.to_string())
 }
+pub fn tab_url(raw: &str) -> Result<String, String> {
+    if crate::window::new_tab::is_new_tab(raw) {
+        Ok(raw.into())
+    } else {
+        page_url(raw)
+    }
+}
 pub const SHORTCUT_IDS: &[&str] = &[
     "zoom-in",
     "zoom-out",
@@ -169,7 +176,7 @@ pub fn document(doc: &BackupDocument) -> Result<(), String> {
             return Err("backup.invalid_session".into());
         }
         for page in &session.pages {
-            page_url(&page.url)?;
+            tab_url(&page.url)?;
             if page.title.len() > 8192 {
                 return Err("backup.invalid_session".into());
             }
@@ -177,7 +184,7 @@ pub fn document(doc: &BackupDocument) -> Result<(), String> {
     }
     let mut ids = HashSet::new();
     for tab in &d.tabs {
-        page_url(&tab.url)?;
+        tab_url(&tab.url)?;
         if tab.id.len() > 200
             || tab.title.len() > 8192
             || !ws.contains(tab.workspace_id.as_str())

@@ -1,3 +1,5 @@
+import { NEW_TAB_URL, isNewTab } from "../services/new-tab";
+import { tr } from "../i18n";
 import { splitLayout } from "./splitViewStore";
 import { focusedTabs, replaceGroupOrder } from "../services/split-tab-groups.js";
 import { writable, derived, get } from "svelte/store";
@@ -8,8 +10,6 @@ import type { QuickLink, TabItem, TabSnapshot, NavigationPatch } from "../types/
 import type { AutoHibernateMode } from "./settingsStore";
 import {
   defaultSearchEngine,
-  getSearchEngineHomeUrl,
-  getSearchEngineLabel,
 } from "./searchEngineStore";
 import {
   navigateToUrl,
@@ -38,16 +38,16 @@ export const SIDEBAR_COLLAPSED_WIDTH = 0;
 export const tabs = writable<TabItem[]>([
   {
     id: "tab-1",
-    title: getSearchEngineLabel(get(defaultSearchEngine)),
-    url: getSearchEngineHomeUrl(get(defaultSearchEngine)),
+    title: tr("newtab.title"),
+    url: NEW_TAB_URL,
     workspace_id: "ws-personal",
     is_active: true,
     is_hibernated: false,
   },
 ]);
 
-export const currentUrl = writable<string>(getSearchEngineHomeUrl(get(defaultSearchEngine)));
-export const addressInput = writable<string>(getSearchEngineHomeUrl(get(defaultSearchEngine)));
+export const currentUrl = writable<string>(NEW_TAB_URL);
+export const addressInput = writable<string>("");
 export const isAddressEditing = writable(false);
 export const activeNavigation = derived(tabs, items => items.find(tab => tab.is_active)?.navigation);
 export const isLoading = derived(activeNavigation, navigation => navigation?.loading ?? false);
@@ -97,7 +97,7 @@ let fallbackCounter = 2;
 const acceptSnapshot = createSnapshotGate();
 export function confirmUrl(url: string, force = false): void {
   currentUrl.set(url);
-  if (force || !get(isAddressEditing)) addressInput.set(url);
+  if (force || !get(isAddressEditing)) addressInput.set(isNewTab(url) ? "" : url);
 }
 
 export function applyNavigationPatch(patch: NavigationPatch): void {
@@ -126,11 +126,7 @@ export function applyTabsSnapshot(packet: TabSnapshot): void {
 }
 
 export async function initializeTabs(): Promise<void> {
-  const engine = get(defaultSearchEngine);
-  const initial = await fetchTabs(
-    getSearchEngineHomeUrl(engine),
-    getSearchEngineLabel(engine)
-  );
+  const initial = await fetchTabs(NEW_TAB_URL, tr("newtab.title"));
   applyTabsSnapshot(initial);
 }
 
@@ -139,14 +135,14 @@ export async function addTab(
   workspaceId = get(activeWorkspaceId),
   side?: "left" | "right"
 ): Promise<void> {
-  const urlToOpen = targetUrl?.trim() || getSearchEngineHomeUrl(get(defaultSearchEngine));
+  const urlToOpen = targetUrl?.trim() || NEW_TAB_URL;
   if (!isTauriRuntime()) {
     const resolved = await navigateToUrl(urlToOpen, get(defaultSearchEngine));
     const newId = `tab-${fallbackCounter++}`;
     const updated = get(tabs).map((t) => ({ ...t, is_active: false }));
     updated.push({
       id: newId,
-      title: resolved.replace(/^https?:\/\//, ""),
+      title: isNewTab(resolved) ? tr("newtab.title") : resolved.replace(/^https?:\/\//, ""),
       url: resolved,
       workspace_id: workspaceId,
       is_active: true,

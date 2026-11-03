@@ -33,6 +33,7 @@ pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
         tx.commit().map_err(|e| e.to_string())
     })
     .await?;
+    crate::window::new_tab::invalidate(&app);
     let _ = app.emit_to(
         "main",
         "closed-tabs-updated",

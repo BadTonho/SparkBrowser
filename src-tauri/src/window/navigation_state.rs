@@ -114,8 +114,9 @@ pub(super) fn install_native_navigation(
                         core.Source(&mut value)?;
                     }
                     let url = CoTaskMemPWSTR::from(value).to_string();
-                    if url::Url::parse(&url)
-                        .is_ok_and(|url| matches!(url.scheme(), "http" | "https"))
+                    if let Some(url) = url::Url::parse(&url)
+                        .ok()
+                        .and_then(|url| super::new_tab::logical_url(&a, &url))
                     {
                         update_navigation(&a, &t, &l, &secret, |tab| tab.url = url);
                     }
@@ -183,6 +184,12 @@ pub(super) fn with_page_events(
             return;
         }
         let started = payload.event() == tauri::webview::PageLoadEvent::Started;
+        if started {
+            super::new_tab::revoke(&app_for_page_load, &label_for_load);
+        }
+        if super::new_tab::is_document(&app_for_page_load, payload.url()) {
+            let _ = webview.set_zoom(1.0);
+        }
         update_navigation(
             &app_for_page_load,
             &tab_for_load,
@@ -199,12 +206,17 @@ pub(super) fn with_page_events(
                     tab.activity.picture_in_picture = false;
                     tab.activity.refresh_media();
                 }
-                if matches!(payload.url().scheme(), "http" | "https") {
-                    tab.url = payload.url().to_string();
+                if let Some(url) = super::new_tab::logical_url(&app_for_page_load, payload.url()) {
+                    tab.url = url;
+                    if super::new_tab::is_new_tab(&tab.url) {
+                        tab.title = super::new_tab::title(&app_for_page_load);
+                    }
                 }
             },
         );
-        if matches!(payload.url().scheme(), "http" | "https") {
+        if matches!(payload.url().scheme(), "http" | "https")
+            && !super::new_tab::is_document(&app_for_page_load, payload.url())
+        {
             let _ = crate::zoom::apply(&app_for_page_load, &label_for_load, payload.url().as_str());
         }
         if started {
@@ -224,7 +236,18 @@ pub(super) fn with_page_events(
                     .map(|tab| tab.title.clone())
             })
             .unwrap_or_default();
-        if matches!(payload.url().scheme(), "http" | "https") {
+        if super::new_tab::is_document(&app_for_page_load, payload.url()) {
+            if let Some(writer) = app_for_page_load
+                .try_state::<crate::database::navigation_writer::NavigationWriter>(
+            ) {
+                if writer.session().is_err() {
+                    let _ = app_for_page_load
+                        .emit("browser-error", "Session persistence queue is unavailable");
+                }
+            }
+        } else if matches!(payload.url().scheme(), "http" | "https")
+            && !super::new_tab::is_document(&app_for_page_load, payload.url())
+        {
             if let Some(writer) = app_for_page_load
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
             ) {

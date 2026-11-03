@@ -5,6 +5,7 @@
   import PipButton from "../media/PipButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
   import { t } from "../../i18n";
+  import { isNewTab } from "../../services/new-tab";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
   import { openTools } from "../../stores/toolsStore";
   import {
@@ -51,6 +52,7 @@
   let narrow = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 1000px)").matches);
   const splitHorizontal = $derived($tabLayout === "horizontal" && Boolean($splitLayout));
   const compact = $derived(splitHorizontal && narrow);
+  const internalPage = $derived(isNewTab($currentUrl));
   onMount(() => {
     const media = window.matchMedia("(max-width: 1000px)");
     const update = () => { narrow = media.matches; };
@@ -171,12 +173,12 @@
       </div>
 
       <div class="omnibox-wrapper" class:loading={$isLoading} title={$activeNavigation?.error ?? undefined}>
-        <button class="omnibox-icon" onclick={openSitePermissions} aria-label={$t("titlebar.site_permissions_a688")} title={$currentUrl.startsWith("https:") ? $t("titlebar.https_connection_site_permissions_9979") : $t("titlebar.unencrypted_connection_site_permissions_7add")}>{$currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</button>
+        <button class="omnibox-icon" disabled={internalPage} onclick={openSitePermissions} aria-label={internalPage ? $t("newtab.internal") : $t("titlebar.site_permissions_a688")} title={internalPage ? $t("newtab.internal") : $currentUrl.startsWith("https:") ? $t("titlebar.https_connection_site_permissions_9979") : $t("titlebar.unencrypted_connection_site_permissions_7add")}>{internalPage ? "\u25C7" : $currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</button>
         <input
           class="omnibox-input"
           type="text"
           bind:value={$addressInput}
-          onkeydown={(event) => { if (event.key === "Escape") { addressInput.set($currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
+          onkeydown={(event) => { if (event.key === "Escape") { addressInput.set(internalPage ? "" : $currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
           onfocus={handleFocus}
           onblur={() => isAddressEditing.set(false)}
           placeholder="{$t("titlebar.search_49c2")} {$defaultSearchEngine} {$t("titlebar.or_enter_url_5dc7")}"
@@ -187,6 +189,7 @@
         <ZoomControls />
         <button
           class="star-btn"
+          disabled={internalPage}
           class:bookmarked={isCurrentUrlBookmarked}
           onclick={handleBookmarkToggle}
           title={isCurrentUrlBookmarked ? $t("titlebar.edit_bookmark_6e59") : $t("titlebar.bookmark_this_page_b12b")}

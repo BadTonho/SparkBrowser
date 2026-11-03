@@ -85,6 +85,45 @@ pub(super) fn setup() -> (Connection, BackupDocument) {
     (conn, doc)
 }
 #[test]
+fn new_tab_roundtrips_in_v4_tabs_and_sessions_without_relaxing_other_urls() {
+    let (_db, mut doc) = setup();
+    doc.version = 4;
+    doc.data.tabs[0].url = crate::window::new_tab::URL.into();
+    doc.data.sessions.push(SavedSession {
+        id: 99,
+        name: "Local page".into(),
+        pages: vec![SessionPage {
+            title: "New tab".into(),
+            url: crate::window::new_tab::URL.into(),
+            is_pinned: false,
+            is_selected: true,
+        }],
+    });
+    validation::document(&doc).unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("local.veloce-backup.json");
+    files::write(&path, &doc).unwrap();
+    let restored = files::read(&path).unwrap();
+    assert_eq!(restored.data.tabs[0].url, crate::window::new_tab::URL);
+    let mut current = doc.data.clone();
+    current.tabs.clear();
+    current.sessions.clear();
+    let merged = merge::plan(&current, &restored.data, "local-test", 10).unwrap();
+    assert_eq!(merged.data.tabs[0].url, crate::window::new_tab::URL);
+    assert_eq!(
+        merged.data.sessions[0].pages[0].url,
+        crate::window::new_tab::URL
+    );
+    doc.data.bookmarks.bookmarks.push(BookmarkItem {
+        id: 99,
+        title: "Invalid".into(),
+        url: crate::window::new_tab::URL.into(),
+        icon: "".into(),
+        folder_id: None,
+    });
+    assert!(validation::document(&doc).is_err());
+}
+#[test]
 fn backup_file_roundtrip_rejects_invalid_versions_sizes_and_references_without_replacing_a_file() {
     let (_conn, doc) = setup();
     let directory = tempfile::tempdir().unwrap();

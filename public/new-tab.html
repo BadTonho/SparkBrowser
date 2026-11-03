@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>New tab</title>
+  <link rel="stylesheet" href="/new-tab/page.css">
+  <script src="/new-tab/page.js" defer></script>
+</head>
+<body>
+  <main>
+    <section class="content" aria-label="Search">
+      <form id="search-form" role="search">
+        <input id="search" type="text" autocomplete="off" spellcheck="false" aria-label="Search or enter address" placeholder="Search or enter address">
+        <button id="submit" type="submit" aria-label="Search" title="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+        </button>
+      </form>
+      <div id="recent" aria-label="Recent searches"></div>
+      <p id="empty" role="status" hidden></p>
+      <div id="error" role="status" hidden><span id="error-text"></span> <button id="retry" type="button">Try again</button></div>
+    </section>
+  </main>
+</body>
+</html>

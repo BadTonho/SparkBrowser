@@ -3,6 +3,8 @@
   "identifier": "default",
   "description": "Default capabilities for the main browser shell window",
   "permissions": [
+    "allow-focus-address-bar",
+    "allow-set-new-tab-preferences",
     "allow-set-pip-window-shadow",
     "allow-exit-video-pip",
     "allow-enter-video-pip",

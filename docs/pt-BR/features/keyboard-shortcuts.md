@@ -1,5 +1,7 @@
 # Atalhos de teclado entre abas
 
+**Ctrl + L** edita a URL atual na barra de endereço compartilhada, inclusive na página local de nova guia; **Ctrl + E** também foca esse campo. **Ctrl + K** abre a Command Bar flutuante. Atalhos já salvos mantêm seus IDs de ação e essas combinações continuam configuráveis.
+
 **Ctrl+Tab** e **Ctrl+Shift+Tab** selecionam a próxima aba ou a anterior, circulando no grupo focado da divisão ou no workspace inteiro fora da divisão. A seleção por número (Ctrl+1–9, com 9 selecionando a última aba), novas abas (Ctrl+T) e a reordenação também usam o grupo focado. Selecionar uma aba na lista vertical unificada dá foco ao seu painel proprietário. Veja [visualização dividida](split-view.md).
 
 Mantenha **Ctrl** pressionado e pressione/solte **W** repetidamente para fechar abas ativas consecutivas. Cada novo pressionamento de W fecha uma aba; segurar W não fecha páginas repetidamente. **Ctrl + Shift + T** reabre abas fechadas recentemente. As combinações continuam configuráveis nas Configurações.

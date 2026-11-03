@@ -8,11 +8,16 @@ import type { AutoHibernateMode } from "../../stores/settingsStore";
 
 import { isTauriRuntime } from "./runtime";
 
+export async function focusAddressBar(): Promise<void> {
+  if(isTauriRuntime()) await invoke('focus_address_bar');
+}
+
 export async function navigateToUrl(
   input: string,
   searchEngine: SearchEngine = "google"
 ): Promise<string> {
   if(!isTauriRuntime()) {
+    if (input === "veloce://newtab") return input;
     return resolvePreviewInput(input, await fetchSiteSearchShortcuts(), searchEngine);
   }
   return await invoke<string>("navigate_to", { input, searchEngine });
@@ -49,8 +54,8 @@ export async function setTabPinned(tabId: string, pinned: boolean): Promise<TabS
  * Multi-Tab & Hibernation IPC commands
  */
 export async function fetchTabs(
-  fallbackUrl = "https://www.google.com/",
-  fallbackTitle = "Google"
+  fallbackUrl = "veloce://newtab",
+  fallbackTitle = "New tab"
 ): Promise<TabSnapshot> {
   if(!isTauriRuntime()) {
     return [

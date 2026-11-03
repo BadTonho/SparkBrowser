@@ -363,6 +363,12 @@
           "markdownDescription": "Enables the finish_backup_preferences command without any pre-configured scope."
         },
         {
+          "description": "Enables the focus_address_bar command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-focus-address-bar",
+          "markdownDescription": "Enables the focus_address_bar command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_active_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-active-workspace",
@@ -669,6 +675,12 @@
           "markdownDescription": "Enables the set_media_popover command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_new_tab_preferences command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-new-tab-preferences",
+          "markdownDescription": "Enables the set_new_tab_preferences command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_overlay_visibility command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-overlay-visibility",
@@ -967,6 +979,12 @@
           "type": "string",
           "const": "deny-finish-backup-preferences",
           "markdownDescription": "Denies the finish_backup_preferences command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the focus_address_bar command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-focus-address-bar",
+          "markdownDescription": "Denies the focus_address_bar command without any pre-configured scope."
         },
         {
           "description": "Denies the get_active_workspace command without any pre-configured scope.",
@@ -1273,6 +1291,12 @@
           "type": "string",
           "const": "deny-set-media-popover",
           "markdownDescription": "Denies the set_media_popover command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_new_tab_preferences command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-new-tab-preferences",
+          "markdownDescription": "Denies the set_new_tab_preferences command without any pre-configured scope."
         },
         {
           "description": "Denies the set_overlay_visibility command without any pre-configured scope.",

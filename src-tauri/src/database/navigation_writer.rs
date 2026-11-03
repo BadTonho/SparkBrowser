@@ -50,6 +50,8 @@ impl NavigationWriter {
                                 last_error = Some(error);
                                 let _ =
                                     app.emit("browser-error", "Could not persist navigation data");
+                            } else {
+                                crate::window::new_tab::invalidate(&app);
                             }
                         }
                         Write::Flush(reply) => {

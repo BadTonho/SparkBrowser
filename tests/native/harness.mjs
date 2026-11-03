@@ -92,7 +92,10 @@ export async function runScenario(name, scenario) {
     await windowsWindowAction(['-Width', String(width), '-Height', String(height)]);
   }
   async function focusWindow() {
-    if (process.platform === 'win32') await windowsWindowAction(['-Focus']);
+    if (process.platform === 'win32') {
+      await invoke('plugin:window|set_focus', { label:'main' });
+      await windowsWindowAction(['-Focus']);
+    }
   }
   async function floatingWindow(action='Inspect',name='pip-window') {
     return new Promise((resolveAction,reject)=>{
@@ -117,7 +120,19 @@ export async function runScenario(name, scenario) {
     if (process.platform === 'win32') options.webviewOptions = { userDataFolder: resolve(directory, 'profile'), additionalBrowserArguments: ['--use-fake-device-for-media-stream', ...(name.startsWith('media') ? ['--autoplay-policy=no-user-gesture-required'] : [])] };
     const result = await request('POST', '/session', { capabilities: { alwaysMatch: { 'tauri:options': options } } });
     session = result.sessionId;
-    await until(() => script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))'), 'isolated test shell');
+    // A local new-tab child can become WebDriver's initial target. Select the shell explicitly.
+    await until(async () => {
+      const handles = await request('GET', `/session/${session}/window/handles`);
+      for (const handle of handles) {
+        try {
+          await request('POST', `/session/${session}/window`, { handle });
+          if (await script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))')) return true;
+        } catch (error) {
+          if (!/no such window|web view not found/i.test(String(error))) throw error;
+        }
+      }
+      return false;
+    }, 'isolated test shell');
     await request('POST', `/session/${session}/timeouts`, { script: 30_000, implicit: 0, pageLoad: 30_000 });
     // Never operate on the user's production profile if a wrong binary was supplied.
     const diagnostics = await invoke('get_diagnostics');

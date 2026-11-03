@@ -5,7 +5,7 @@ use crate::{
         tab_checkpoint::TabCheckpoint,
         tab_model::TabInfo,
     },
-    window::webview_manager::{search_engine_home_url, sync_all_webviews},
+    window::webview_manager::sync_all_webviews,
 };
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
@@ -51,7 +51,7 @@ pub(super) fn close_one(
     app: &AppHandle,
     state: &BrowserState,
     id: &str,
-    engine: Option<&str>,
+    _engine: Option<&str>,
 ) -> Result<TabSnapshot, String> {
     state.refresh_visible_tabs()?;
     let before = TabCheckpoint::capture(state)?;
@@ -106,7 +106,7 @@ pub(super) fn close_one(
                     .map_err(|e| e.to_string())?
                     .push(TabInfo::new(
                         target.clone(),
-                        search_engine_home_url(engine).into(),
+                        crate::window::new_tab::URL.into(),
                         before.active_workspace.clone(),
                         false,
                     ));
@@ -195,8 +195,7 @@ pub async fn reopen_closed_tab(
     ) {
         return Err("closed_tabs.blocked".into());
     }
-    let parsed = tauri::Url::parse(&row.url).map_err(|_| "closed_tabs.invalid_url")?;
-    if !matches!(parsed.scheme(), "http" | "https") {
+    if !crate::window::new_tab::valid_tab_url(&row.url) {
         return Err("closed_tabs.invalid_url".into());
     }
     let before = TabCheckpoint::capture(&state)?;

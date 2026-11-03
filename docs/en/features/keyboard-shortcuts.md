@@ -1,5 +1,7 @@
 # Keyboard shortcuts across tabs
 
+**Ctrl + L** edits the current URL in the shared address bar, including from the local new-tab page; **Ctrl + E** also focuses that field. **Ctrl + K** opens the floating Command Bar. Existing saved bindings keep their action IDs, and these bindings remain configurable.
+
 Keep **Ctrl** pressed and press/release **W** repeatedly to close consecutive active tabs. Each distinct W press closes one tab; holding W does not repeatedly close pages. **Ctrl + Shift + T** reopens recently closed tabs. These bindings remain configurable in Settings.
 
 **Ctrl+Tab** and **Ctrl+Shift+Tab** select the next/previous tab, wrapping within the focused split group or the whole workspace outside split. Numbered selection (Ctrl+1–9, with 9 selecting the last tab), new tabs (Ctrl+T) and tab reordering also target the focused group. Selecting a tab from the unified vertical list focuses its owning pane. See [split view](split-view.md).

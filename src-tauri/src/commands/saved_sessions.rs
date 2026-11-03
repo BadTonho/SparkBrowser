@@ -103,9 +103,7 @@ pub async fn restore_named_session(
     {
         let mut counter = state.next_tab_counter.lock().map_err(|e| e.to_string())?;
         for page in pages {
-            let parsed =
-                url::Url::parse(&page.url).map_err(|_| "Saved session contains an invalid URL")?;
-            if !matches!(parsed.scheme(), "http" | "https") {
+            if !crate::window::new_tab::valid_tab_url(&page.url) {
                 return Err("Saved session contains an unsupported URL".into());
             }
             let mut tab = TabInfo::new(

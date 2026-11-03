@@ -1,4 +1,7 @@
-use super::{model::*, validation::page_url};
+use super::{
+    model::*,
+    validation::{page_url, tab_url},
+};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub struct MergePlan {
@@ -199,7 +202,7 @@ pub fn plan(
         occurrences
             .entry((
                 tab.workspace_id.clone(),
-                page_url(&tab.url).unwrap_or_else(|_| tab.url.clone()),
+                tab_url(&tab.url).unwrap_or_else(|_| tab.url.clone()),
             ))
             .or_default()
             .push(tab.id.clone());
@@ -217,7 +220,7 @@ pub fn plan(
             .get(&tab.workspace_id)
             .ok_or("backup.invalid_workspace")?
             .clone();
-        let url = page_url(&tab.url)?;
+        let url = tab_url(&tab.url)?;
         let key = (workspace.clone(), url.clone());
         let occurrence = seen.entry(key.clone()).or_default();
         if let Some(id) = occurrences.get(&key).and_then(|v| v.get(*occurrence)) {
