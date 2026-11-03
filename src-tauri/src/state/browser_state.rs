@@ -40,6 +40,7 @@ pub struct TabSnapshot {
 pub struct BrowserState {
     pub startup_ready: AtomicBool,
     pub split_layouts: Mutex<std::collections::HashMap<String, super::split_layout::SplitLayout>>,
+    pub split_preview: Mutex<Option<(String, f64)>>,
     pub diagnostics: super::diagnostics::Diagnostics,
     pub resident_limit: std::sync::atomic::AtomicUsize,
     pub snapshot_revision: Mutex<u64>,
@@ -76,6 +77,7 @@ impl Default for BrowserState {
         Self {
             startup_ready: AtomicBool::new(false),
             split_layouts: Mutex::new(Default::default()),
+            split_preview: Mutex::new(None),
             diagnostics: super::diagnostics::Diagnostics::default(),
             resident_limit: std::sync::atomic::AtomicUsize::new(8),
             snapshot_revision: Mutex::new(0),
@@ -118,14 +120,7 @@ impl BrowserState {
             let mut layouts = self.split_layouts.lock().map_err(|e| e.to_string())?;
             layouts.retain(|_, layout| layout.valid(&tabs));
             if let Some(layout) = layouts.get_mut(&tabs[index].workspace_id) {
-                if !layout.contains(tab_id) {
-                    if layout.focused_tab_id == layout.left_tab_id {
-                        layout.left_tab_id = tab_id.to_string();
-                    } else {
-                        layout.right_tab_id = tab_id.to_string();
-                    }
-                }
-                layout.focused_tab_id = tab_id.to_string();
+                layout.focus_tab(tab_id);
             }
         }
         let now = TabInfo::current_epoch_secs();
@@ -290,29 +285,6 @@ impl BrowserState {
             title,
             url,
         )
-    }
-
-    /// Records activation without retaining page addresses.
-    pub fn record_tab_activation(&self, tab_id: &str) -> Result<(), String> {
-        let db = self.db.lock().map_err(|e| e.to_string())?;
-        crate::database::tab_usage_repo::record_activation(
-            db.as_ref().ok_or("Usage database is not ready")?,
-            tab_id,
-            TabInfo::current_epoch_secs(),
-        )
-    }
-
-    pub fn record_new_tab_activation(&self, tab_id: &str) -> Result<(), String> {
-        let db = self.db.lock().map_err(|e| e.to_string())?;
-        let conn = db.as_ref().ok_or("Usage database is not ready")?;
-        let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-        crate::database::tab_usage_repo::reset_tab_history(&tx, tab_id)?;
-        crate::database::tab_usage_repo::record_activation(
-            &tx,
-            tab_id,
-            TabInfo::current_epoch_secs(),
-        )?;
-        tx.commit().map_err(|e| e.to_string())
     }
 
     /// Computes a snapshot of current privacy & RAM hibernation metrics.

@@ -15,7 +15,9 @@ use tauri::{
 };
 
 pub use super::content_focus::focus_active_content_webview;
-pub use super::content_lifecycle::{reset_content_webviews, sync_all_webviews};
+pub use super::content_lifecycle::{
+    prepare_content_reset, reset_content_webviews, sync_all_webviews,
+};
 pub use super::internal_overlays::{
     build_bookmark_context_menu_script, build_workspace_switcher_update_script,
     create_internal_bridge_token, BookmarkContextMenuAction, OverlayLanguage, OverlayPresentation,

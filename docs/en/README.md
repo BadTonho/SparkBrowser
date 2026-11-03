@@ -45,6 +45,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Notes and sessions in the Command Bar](features/command-search.md)
 - [Keyboard shortcuts across tabs](features/keyboard-shortcuts.md)
 - [Tab media controls](features/tab-media.md)
-- [Project review findings — November 2, 2026](reviews/2026-11-02/findings.md)
-- [Review validation and measurements — November 2, 2026](reviews/2026-11-02/validation.md)
-- [Optimization fixes and verification — November 2, 2026](reviews/2026-11-02/remediation.md)
+- [Correctness fixes and verification — November 2, 2026](reviews/2026-11-02/correctness-fixes.md)

@@ -45,6 +45,4 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Notas e sessões na Command Bar](features/command-search.md)
 - [Atalhos de teclado entre abas](features/keyboard-shortcuts.md)
 - [Controles de mídia das abas](features/tab-media.md)
-- [Achados da análise do projeto — 2 de novembro de 2026](reviews/2026-11-02/findings.md)
-- [Validação e medições da análise — 2 de novembro de 2026](reviews/2026-11-02/validation.md)
-- [Correções de otimização e verificação — 2 de novembro de 2026](reviews/2026-11-02/remediation.md)
+- [Correções de falhas e verificação — 2 de novembro de 2026](reviews/2026-11-02/correctness-fixes.md)

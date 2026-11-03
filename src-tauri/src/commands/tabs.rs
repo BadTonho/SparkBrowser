@@ -407,7 +407,7 @@ pub async fn set_tab_pinned(
 }
 
 /// A committed session remains authoritative if native reconciliation fails.
-fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
+pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
     if let Err(error) = sync_all_webviews(app, state) {
         let _ = app.emit_to(
             "main",

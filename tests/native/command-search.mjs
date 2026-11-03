@@ -3,6 +3,11 @@ import { prepareTabs } from './setup.mjs';
 export async function checkCommandSearch(context) {
   const { invoke, fixture, script, until, click, wait, request, sessionId } = context;
   const { a,b } = await prepareTabs(context);
+  const nulUrl = fixture.origin + '/page/nul-note';
+  await invoke('save_page_note', { url: nulUrl, title: 'Literal note', text: 'before abc\u0000xyz after' });
+  assert.equal((await invoke('search_command_items', { query: 'abc\u0000xyz' })).notes[0].url, nulUrl);
+  assert.equal((await invoke('search_command_items', { query: 'missing\u0000text' })).notes.length, 0);
+  await invoke('delete_page_note', { url: nulUrl });
   const original=(await invoke('get_tabs')).tabs.find(t=>t.id===a.id).url;
   const noteUrl=fixture.origin+'/page/saved-note?q=1';
   await invoke('save_page_note',{url:noteUrl,title:'Café research',text:'100%_ café <b>plain text</b> '+ 'x'.repeat(400)});

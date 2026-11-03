@@ -7,6 +7,27 @@ use crate::state::tab_model::TabInfo;
 use rusqlite::Connection;
 
 #[test]
+fn nul_queries_use_literal_matching_without_fts_parse_errors() {
+    let conn = Connection::open_in_memory().unwrap();
+    initialize_schema(&conn).unwrap();
+    notes_repo::save(
+        &conn,
+        "https://example.test/nul",
+        "Note",
+        "before abc\0xyz after",
+    )
+    .unwrap();
+    let mut tab = TabInfo::new_default("t".into(), "https://example.test/page".into(), true);
+    tab.title = "abc\0xyz".into();
+    saved_sessions_repo::save(&conn, None, "Session", &[tab]).unwrap();
+    let result = search(&conn, "abc\0xyz").unwrap();
+    assert_eq!(result.notes_count, 1);
+    assert_eq!(result.sessions_count, 1);
+    assert_eq!(search(&conn, "missing\0text").unwrap().notes_count, 0);
+    assert_eq!(search(&conn, "\0").unwrap().notes_count, 1);
+}
+
+#[test]
 fn index_matches_literal_substrings_and_tracks_updates_deletes_and_rollbacks() {
     let conn = Connection::open_in_memory().unwrap();
     initialize_schema(&conn).unwrap();

@@ -19,6 +19,9 @@ pub async fn toggle_adblock_shield(
     let enabled = !previous;
     #[cfg(windows)]
     {
+        // The live policy does not change session metadata. Fail persistence before
+        // touching either current documents or their future-document scripts.
+        state.persist_session()?;
         if let Err(error) = crate::window::shield_policy::apply_content_policy(&app, enabled).await
         {
             if crate::window::shield_policy::apply_content_policy(&app, previous)
@@ -46,19 +49,24 @@ pub async fn toggle_adblock_shield(
         {
             return Err("Save edited forms and finish media/downloads before changing the shield on this engine".into());
         }
+        crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
+            crate::window::webview_manager::prepare_content_reset(&state, enabled)
+        })?;
         *state.shield_enabled.lock().map_err(|e| e.to_string())? = enabled;
         if let Err(error) =
             reset_content_webviews(&app, &state).and_then(|()| sync_all_webviews(&app, &state))
         {
-            *state.shield_enabled.lock().map_err(|e| e.to_string())? = previous;
-            return Err(error);
+            let _ = app.emit_to(
+                "main",
+                "browser-error",
+                format!("The shield was changed, but some pages could not be rebuilt: {error}"),
+            );
         }
         let _ = app.emit(
             "browser-error",
             "This engine rebuilt WebViews to update the shield; page state and history were reset",
         );
     }
-    state.persist_session()?;
     let _ = app.emit("tabs-updated", state.snapshot_packet());
 
     let stats = state.snapshot_privacy_stats();

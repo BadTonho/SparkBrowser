@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 
 export async function checkKeyboard(context) {
   if (process.platform !== 'win32') return;
-  const {invoke,until,fixture,wait,script,click}=context;
+  const {invoke,until,fixture,wait,script,click,focusWindow}=context;
   const build=JSON.parse(readFileSync('.cache/native-target/test-build.json','utf8'));
   assert.equal(build.identifier,'org.veloce.browser.native-tests');
   const executable=resolve(build.executable);
@@ -14,6 +14,7 @@ export async function checkKeyboard(context) {
     const child=spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',resolve('tests/native/windows-input.ps1'),'-Executable',executable,'-Key',String(code),...(up?['-Up']:[])],{windowsHide:true,stdio:['ignore','ignore','pipe']});
     let error='';child.stderr.on('data',data=>error+=data);child.on('error',reject);child.on('exit',code=>code===0?resolveKey():reject(new Error(error||'Native key helper failed')));
   });
+  await focusWindow();
   await invoke('set_resident_limit',{limit:20});
   const ids=[];
   for(let i=0;i<5;i++){

@@ -57,7 +57,7 @@ pub fn visible_bounds(
     state: &BrowserState,
 ) -> Result<Vec<(String, crate::state::browser_state::ViewportBounds)>, String> {
     let bounds = *state.bounds.lock().map_err(|e| e.to_string())?;
-    if let Some(layout) = state.current_split() {
+    if let Some(layout) = state.display_split() {
         return Ok(crate::state::split_layout::pane_bounds(bounds, &layout).into());
     }
     Ok(vec![(

@@ -9,7 +9,10 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
 }
 
 pub fn pattern(query: &str) -> Option<String> {
-    (query.chars().count() >= 3).then(|| format!("\"{}\"", query.replace('"', "\"\"")))
+    // FTS expressions cannot contain NUL. instr() on the stored folded fields
+    // still supports literal matching, including text pasted with this character.
+    (query.chars().count() >= 3 && !query.contains('\0'))
+        .then(|| format!("\"{}\"", query.replace('"', "\"\"")))
 }
 
 #[cfg(test)]

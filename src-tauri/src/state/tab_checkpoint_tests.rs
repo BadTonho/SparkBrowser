@@ -133,3 +133,19 @@ fn activation_and_session_changes_commit_together() {
         .unwrap();
     assert_eq!(count, 0);
 }
+
+#[test]
+fn fallback_shield_metadata_is_restored_before_any_document_is_rebuilt() {
+    let state = state();
+    state.tabs.lock().unwrap()[0].url = "https://google-analytics.com/collect".into();
+    state.persist_session().unwrap();
+    let before = memory(&state);
+    state.db.lock().unwrap().as_ref().unwrap().execute_batch(
+        "CREATE TRIGGER fail_session BEFORE INSERT ON session_tabs BEGIN SELECT RAISE(ABORT,'injected reset failure'); END;"
+    ).unwrap();
+    assert!(TabCheckpoint::commit(&state, || {
+        crate::window::webview_manager::prepare_content_reset(&state, true)
+    })
+    .is_err());
+    assert_eq!(memory(&state), before);
+}

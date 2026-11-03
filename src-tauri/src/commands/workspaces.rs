@@ -1,9 +1,10 @@
-use crate::commands::tabs::{create_tab_inner, switch_tab_inner};
-use crate::database::{session_repo::save_session_tabs, workspace_repo};
+use crate::commands::tabs::{create_tab_inner, reconcile_committed, switch_tab_inner};
+use crate::database::{
+    session_repo::save_session_tabs, split_repo, tab_usage_repo, workspace_repo,
+};
 use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::WorkspaceItem;
-use crate::window::webview_manager::{ensure_active_content_webview, sync_all_webviews};
 use rusqlite::Connection;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
@@ -197,12 +198,23 @@ pub async fn delete_workspace(
     } else {
         active_workspace
     };
+    let mut next_layouts = state
+        .split_layouts
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
+    next_layouts.retain(|workspace, layout| workspace != &workspace_id && layout.valid(&next_tabs));
     let mut next_active_tab = if was_active && action == "close" {
-        next_tabs
-            .iter()
-            .rev()
-            .find(|tab| tab.workspace_id == next_active_workspace)
-            .map(|tab| tab.id.clone())
+        next_layouts
+            .get(&next_active_workspace)
+            .map(|layout| layout.focused_tab_id.clone())
+            .or_else(|| {
+                next_tabs
+                    .iter()
+                    .rev()
+                    .find(|tab| tab.workspace_id == next_active_workspace)
+                    .map(|tab| tab.id.clone())
+            })
             .unwrap_or_default()
     } else if next_tabs.iter().any(|tab| {
         tab.id == previous_active_tab && (!was_active || tab.workspace_id == next_active_workspace)
@@ -244,41 +256,71 @@ pub async fn delete_workspace(
         .map(|tab| tab.url.clone())
         .ok_or_else(|| "Could not select an active tab".to_string())?;
 
-    let (updated_workspaces, committed_tabs) = {
+    if let Some(layout) = next_layouts.get_mut(&next_active_workspace) {
+        layout.focus_tab(&next_active_tab);
+    }
+    for tab in &mut next_tabs {
+        tab.is_visible = tab.is_active
+            || next_layouts
+                .get(&next_active_workspace)
+                .is_some_and(|l| l.contains(&tab.id));
+        if tab.is_visible {
+            tab.is_hibernated = false;
+        }
+    }
+    let should_record_activation = was_active && previous_active_tab != next_active_tab;
+
+    let (updated_workspaces, mut committed_tabs) = {
         let mut db_guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn: &mut Connection = db_guard
             .as_mut()
             .ok_or_else(|| "Workspace database is not ready".to_string())?;
         let transaction = conn.transaction().map_err(|e| e.to_string())?;
         save_session_tabs(&transaction, &next_tabs)?;
+        split_repo::save(&transaction, &next_layouts)?;
         workspace_repo::delete_workspace(&transaction, &workspace_id)?;
+        if should_record_activation {
+            if created_active_tab {
+                tab_usage_repo::reset_tab_history(&transaction, &next_active_tab)?;
+            }
+            tab_usage_repo::record_activation(
+                &transaction,
+                &next_active_tab,
+                TabInfo::current_epoch_secs(),
+            )?;
+        }
         let list = workspace_repo::list_workspaces(&transaction)?;
         transaction.commit().map_err(|e| e.to_string())?;
         (list, next_tabs)
     };
 
     *state.workspaces.lock().map_err(|e| e.to_string())? = updated_workspaces.clone();
-    *state.tabs.lock().map_err(|e| e.to_string())? = committed_tabs.clone();
+    {
+        let mut live = state.tabs.lock().map_err(|e| e.to_string())?;
+        // Keep document events received while the transaction was waiting for SQLite.
+        for tab in &mut committed_tabs {
+            if let Some(current) = live.iter().find(|current| current.id == tab.id) {
+                tab.url.clone_from(&current.url);
+                tab.title.clone_from(&current.title);
+                tab.navigation.clone_from(&current.navigation);
+                tab.activity.clone_from(&current.activity);
+            }
+        }
+        *live = committed_tabs;
+    }
+    *state.split_layouts.lock().map_err(|e| e.to_string())? = next_layouts;
+    *state.split_preview.lock().map_err(|e| e.to_string())? = None;
     *state
         .active_workspace_id
         .lock()
         .map_err(|e| e.to_string())? = next_active_workspace.clone();
-    let should_record_activation = was_active && previous_active_tab != next_active_tab;
-    if should_record_activation {
-        if created_active_tab {
-            state.record_new_tab_activation(&next_active_tab)?;
-        } else {
-            state.record_tab_activation(&next_active_tab)?;
-        }
-    }
     *state.active_tab_id.lock().map_err(|e| e.to_string())? = next_active_tab;
     *state.next_tab_counter.lock().map_err(|e| e.to_string())? = next_counter;
 
     if was_active {
-        ensure_active_content_webview(&app)?;
         let _ = app.emit("content-url-changed", &active_url);
     }
-    sync_all_webviews(&app, &state)?;
+    reconcile_committed(&app, &state);
     let tabs = state.snapshot_packet();
     let _ = app.emit("tabs-updated", &tabs);
 

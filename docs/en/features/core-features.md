@@ -16,6 +16,7 @@
 - A best-effort page script filters fetch (including URL/Request inputs), XHR, and sendBeacon, and adds cosmetic CSS. This is not a complete network blocker: parser-loaded scripts/images, service workers, and hostile page modifications can bypass page-level hooks.
 - On Windows, changing protection updates live request wrappers and replaces an owned future-document policy script without reloading WebViews, preserving page state and native back/forward stacks. Other engines rebuild content WebViews; the active page reloads and background tabs hibernate. Page state and native back/forward stacks reset on that fallback; changes are refused while detected forms, media or downloads need protection.
 - The tracker count currently measures denied navigations only, not all filtered subresources.
+- If saving the session fails, changing the shield leaves the current protection and documents intact.
 
 ## 4. 🎨 Workspaces & Dynamic Themes
 - Group tabs by context (e.g., *Work*, *Study*, *Personal*, *Gaming*).
@@ -25,6 +26,7 @@
 - The picker and confirmation can appear temporarily in Zen Mode; closing them leaves Zen Mode enabled.
 - In Browser Settings, rename a workspace, change its emoji and theme colors, create workspaces, or delete them. Personal is protected.
 - When deleting a workspace with open tabs, move them to another workspace or close them; closed tabs remain in browsing history.
+- A failed save preserves the workspace and active tab. Returning to a split destination restores its focused pane; moving tabs into it replaces only that pane.
 - The default browser palette uses graphite, gray, and white. Built-in workspaces start with neutral accents and remain customizable; each workspace keeps its own accent colors and subtle gradient tints on the translucent window frame. Editing a workspace in Settings does not activate it.
 
 ## 5. 📐 Zen / Focus Mode

@@ -16,6 +16,7 @@
 - Um script de página filtra fetch (incluindo objetos URL/Request), XHR e sendBeacon, e adiciona CSS. A cobertura não equivale a um bloqueador completo da rede: scripts/imagens do parser, service workers e alterações feitas pela página podem contornar esses hooks.
 - No Windows, alterar a proteção atualiza os interceptadores de requisições ativos e substitui um script de política para documentos futuros sem recarregar WebViews, preservando o estado das páginas e o histórico nativo de voltar/avançar. Outros motores recriam as WebViews: a página ativa recarrega e as abas em segundo plano hibernam. Estado e histórico nativo são reiniciados nesse fallback; a mudança é recusada enquanto formulários, mídia ou downloads detectados precisam de proteção.
 - O contador mede navegações rejeitadas, não todos os recursos filtrados.
+- Se a gravação da sessão falhar, a alteração do shield preserva a proteção atual e os documentos.
 
 ## 4. 🎨 Workspaces (Espaços de Trabalho) e Temas Dinâmicos
 - Separação de abas por contexto (ex: *Trabalho*, *Estudo*, *Pessoal*, *Jogos*).
@@ -25,6 +26,7 @@
 - O seletor e a confirmação também aparecem temporariamente no Modo Zen; ao fechá-los, o Modo Zen continua ativo.
 - Em Browser Settings, renomeie um espaço de trabalho, altere seu emoji e suas cores, crie novos ou exclua os existentes. Personal é protegido.
 - Ao excluir um espaço de trabalho com abas abertas, transfira-as para outro espaço ou feche-as; as abas fechadas continuam no histórico de navegação.
+- Uma falha de gravação preserva o workspace e a aba ativa. Voltar para um destino dividido restaura seu painel focado; transferir abas para ele substitui somente esse painel.
 - A paleta padrão do navegador usa tons de grafite, cinza e branco. Os espaços de trabalho predefinidos começam com destaques neutros e continuam personalizáveis; cada perfil mantém suas próprias cores e gradientes sutis na moldura translúcida da janela. Editá-lo nas configurações não o ativa.
 
 ## 5. 📐 Modo Zen / Foco

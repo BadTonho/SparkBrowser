@@ -15,6 +15,17 @@ impl SplitLayout {
     pub fn contains(&self, id: &str) -> bool {
         self.left_tab_id == id || self.right_tab_id == id
     }
+    /// Selecting a new tab replaces only the focused pane.
+    pub fn focus_tab(&mut self, id: &str) {
+        if !self.contains(id) {
+            if self.focused_tab_id == self.left_tab_id {
+                self.left_tab_id = id.to_string();
+            } else {
+                self.right_tab_id = id.to_string();
+            }
+        }
+        self.focused_tab_id = id.to_string();
+    }
     pub fn key(&self) -> String {
         format!(
             "{}:{}:{}",
@@ -53,6 +64,38 @@ pub fn pane_bounds(bounds: ViewportBounds, layout: &SplitLayout) -> [(String, Vi
     ]
 }
 impl BrowserState {
+    /// Live geometry only. Session snapshots and persistence always use current_split().
+    pub fn display_split(&self) -> Option<SplitLayout> {
+        let mut layout = self.current_split()?;
+        if let Some((key, ratio)) = self.split_preview.lock().ok()?.as_ref() {
+            if *key == layout.key() {
+                layout.ratio = *ratio;
+            }
+        }
+        Some(layout)
+    }
+
+    pub fn preview_split_ratio(&self, key: &str, ratio: f64) -> Result<(), String> {
+        if !ratio.is_finite() || !(0.2..=0.8).contains(&ratio) {
+            return Err("Invalid split ratio".into());
+        }
+        let layout = self
+            .current_split()
+            .filter(|l| l.key() == key)
+            .ok_or("Split view changed")?;
+        *self.split_preview.lock().map_err(|e| e.to_string())? =
+            (ratio != layout.ratio).then(|| (key.to_string(), ratio));
+        Ok(())
+    }
+
+    pub fn clear_split_preview(&self, key: &str) -> Result<(), String> {
+        let mut preview = self.split_preview.lock().map_err(|e| e.to_string())?;
+        if preview.as_ref().is_some_and(|(current, _)| current == key) {
+            *preview = None;
+        }
+        Ok(())
+    }
+
     pub fn current_split(&self) -> Option<SplitLayout> {
         let ws = self.active_workspace_id.lock().ok()?.clone();
         self.split_layouts.lock().ok()?.get(&ws).cloned()
@@ -78,6 +121,10 @@ impl BrowserState {
         Ok(())
     }
 }
+#[cfg(test)]
+#[path = "split_preview_tests.rs"]
+mod preview_tests;
+
 #[cfg(test)]
 mod tests {
     use super::*;

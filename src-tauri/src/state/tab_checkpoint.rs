@@ -47,9 +47,11 @@ impl TabCheckpoint {
         // Roll back organization, while retaining those document observations.
         for tab in &mut self.tabs {
             if let Some(current) = tabs.iter().find(|current| current.id == tab.id) {
-                tab.title.clone_from(&current.title);
-                tab.url.clone_from(&current.url);
-                tab.navigation.clone_from(&current.navigation);
+                if current.navigation.revision > tab.navigation.revision {
+                    tab.title.clone_from(&current.title);
+                    tab.url.clone_from(&current.url);
+                    tab.navigation.clone_from(&current.navigation);
+                }
                 tab.activity.clone_from(&current.activity);
             }
         }

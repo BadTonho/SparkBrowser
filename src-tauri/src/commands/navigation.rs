@@ -54,9 +54,7 @@ pub async fn sync_viewport_bounds(
         return Err("Invalid viewport bounds".into());
     }
     let ratio_changed = match (split_ratio, split_key) {
-        (Some(ratio), Some(key)) => {
-            crate::commands::split_view::update_ratio(&state, &key, ratio).is_ok()
-        }
+        (Some(ratio), Some(key)) => state.preview_split_ratio(&key, ratio).is_ok(),
         _ => false,
     };
     {

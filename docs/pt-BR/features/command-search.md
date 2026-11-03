@@ -2,7 +2,7 @@
 
 A digitação pesquisa notas salvas por título, URL e texto e sessões por nome e títulos/URLs das páginas após 180 ms sem digitar. A correspondência ignora maiúsculas e acentos e trata caracteres especiais literalmente. Os resultados mostram prévias curtas como texto e contagens, com identificações explícitas para notas e sessões. A busca não transporta documentos completos de notas ou sessões.
 
-Cada categoria retorna até duas correspondências. A contagem descreve as correspondências exibidas; `2+` indica que existem outros resultados, sem calcular o total exato. Índices transacionais de trigramas atendem consultas com três ou mais caracteres. Consultas menores percorrem campos normalizados e mantêm o mesmo comportamento de busca literal por trechos.
+Cada categoria retorna até duas correspondências. A contagem descreve as correspondências exibidas; `2+` indica que existem outros resultados, sem calcular o total exato. Índices transacionais de trigramas atendem consultas com três ou mais caracteres. Consultas menores e consultas contendo NUL percorrem campos normalizados e mantêm o mesmo comportamento de busca literal por trechos.
 
 A lista contém até doze itens: no máximo três abas e dois de cada outra categoria. Uma consulta preenchida reserva duas ações de navegação. Respostas antigas não substituem os resultados de consultas recentes. A seleção por teclado ou ponteiro continua associada ao item enquanto chegam resultados assíncronos.
 

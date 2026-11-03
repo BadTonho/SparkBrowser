@@ -6,7 +6,23 @@ use crate::state::browser_state::BrowserState;
 use crate::state::tab_model::webview_label_for_tab;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect};
 
-/// Rebuild views when their immutable initialization policy changes.
+/// Prepare fallback metadata before persistence; no document is closed here.
+pub fn prepare_content_reset(state: &BrowserState, enabled: bool) -> Result<(), String> {
+    let active = state
+        .active_tab_id
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
+    for tab in state.tabs.lock().map_err(|e| e.to_string())?.iter_mut() {
+        tab.is_hibernated = tab.id != active;
+        if tab.id == active && crate::privacy::adblock_engine::should_block_url(&tab.url, enabled) {
+            tab.url = crate::state::browser_state::DEFAULT_HOME_URL.to_string();
+        }
+    }
+    Ok(())
+}
+
+/// Rebuild views only after their fallback metadata has been committed.
 pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
     state
         .shield_script_ids
@@ -32,22 +48,6 @@ pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(
             })
             .map_err(|e| e.to_string())?;
             view.close().map_err(|e| e.to_string())?;
-        }
-    }
-    let active = state
-        .active_tab_id
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clone();
-    for tab in state.tabs.lock().map_err(|e| e.to_string())?.iter_mut() {
-        tab.is_hibernated = tab.id != active;
-        if tab.id == active
-            && crate::privacy::adblock_engine::should_block_url(
-                &tab.url,
-                *state.shield_enabled.lock().map_err(|e| e.to_string())?,
-            )
-        {
-            tab.url = crate::state::browser_state::DEFAULT_HOME_URL.to_string();
         }
     }
     ensure_active_content_webview(app)

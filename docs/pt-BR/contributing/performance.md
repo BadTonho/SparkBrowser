@@ -20,7 +20,7 @@ Use o mesmo build de release, computador, escala da tela e páginas locais de te
 
 `tabs.switch` mede o trabalho do backend incluindo a espera pelo bloqueio de operações; IPC inclui também transporte e agendamento do frontend. Nenhuma das métricas mede a primeira pintura. Para medir o primeiro conteúdo, use uma página local com um marcador visível e meça da ação do usuário até esse marcador por ferramentas de integração nativa.
 
-Execute a comparação sintética explícita com `cargo test --manifest-path src-tauri/Cargo.toml --offline --lib compare_indexed_search_with_review_baseline -- --ignored --nocapture`. Ela cria em memória 5.000 notas e 1.000 sessões de três páginas, aquece cada consulta uma vez e imprime cinco medições pareadas contra o SQL da revisão analisada. Ela verifica os mesmos IDs retornados, sem um limite de tempo dependente do ambiente. Um benchmark debug não representa a latência da interface nativa release; registre o perfil de compilação com os resultados. Veja as medições nos [registros da revisão](../reviews/2026-11-02/remediation.md).
+Execute a comparação sintética explícita com `cargo test --manifest-path src-tauri/Cargo.toml --offline --lib compare_indexed_search_with_review_baseline -- --ignored --nocapture`. Ela cria em memória 5.000 notas e 1.000 sessões de três páginas, aquece cada consulta uma vez e imprime cinco medições pareadas contra o SQL da revisão analisada. Ela verifica os mesmos IDs retornados, sem um limite de tempo dependente do ambiente. Um benchmark debug não representa a latência da interface nativa release; registre o perfil de compilação com os resultados. Veja as [otimizações implementadas](../architecture/optimization-work.md) para o desenho atual.
 
 ## Memória e binários
 
