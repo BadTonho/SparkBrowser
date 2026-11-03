@@ -27,6 +27,7 @@
   import { cubicOut } from "svelte/easing";
   import { get } from "svelte/store";
   import Titlebar from "./lib/components/titlebar/Titlebar.svelte";
+  import TitlebarMenu from "./lib/components/titlebar/TitlebarMenu.svelte";
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
   import ViewportFrame from "./lib/components/viewport/ViewportFrame.svelte";
   import CommandBar from "./lib/components/commandbar/CommandBar.svelte";
@@ -334,22 +335,26 @@
   <MediaNotice />
   <MediaPanel />
   <PrivacyPanel />
-  {#if $tabLayout === "horizontal" && !$isZenMode}
-    <HorizontalTabBar />
-  {/if}
-  <Titlebar />
-  <UpdateNotice />
-  <BackupNotice />
-  <RecoveryNotice />
-  <ClosedTabsNotice />
-  {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar && ($bookmarks.length > 0 || $bookmarkFolders.length > 0)}
-    <div
-      class="bookmark-bar-transition"
-      transition:slide={{ duration: prefersReducedMotion ? 0 : 180, easing: cubicOut }}
-    >
-      <BookmarkBar />
-    </div>
-  {/if}
+  <div class="browser-chrome">
+    {#if $tabLayout === "horizontal" && !$isZenMode}
+      <div class="horizontal-tabs-host" class:below-address={Boolean($splitLayout)}>
+        <HorizontalTabBar />
+      </div>
+    {/if}
+    <Titlebar />
+    <UpdateNotice />
+    <BackupNotice />
+    <RecoveryNotice />
+    <ClosedTabsNotice />
+    {#if $tabLayout === "horizontal" && !$isZenMode && $showBookmarksBar && ($bookmarks.length > 0 || $bookmarkFolders.length > 0)}
+      <div
+        class="bookmark-bar-transition"
+        transition:slide={{ duration: prefersReducedMotion ? 0 : 180, easing: cubicOut }}
+      >
+        <BookmarkBar />
+      </div>
+    {/if}
+  </div>
   <div class="browser-body">
     {#if $tabLayout === "vertical"}
       <Sidebar />
@@ -357,6 +362,7 @@
     <ViewportFrame />
   </div>
   <ShutdownDialog />
+  <TitlebarMenu />
   <CommandBar />
   <HistoryDrawer />
   <DownloadsDrawer />
@@ -385,6 +391,10 @@
     width: 100%;
     overflow: hidden;
   }
+
+  .browser-chrome { display:flex; flex-direction:column; flex:0 0 auto; min-width:0; }
+  .horizontal-tabs-host { order:-1; flex:0 0 38px; }
+  .horizontal-tabs-host.below-address { order:1; }
 
   .bookmark-bar-transition {
     flex: 0 0 auto;

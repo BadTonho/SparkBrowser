@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { withScenarioDatabase } from './persistence/database.mjs';
+import { checkSplitTabHeader } from './split-tab-header.mjs';
 
 export async function checkSplitTabGroups(context) {
   const { invoke, until, fixture, click, script, request, sessionId, resizeWindow, restart, wait } = context;
@@ -12,6 +13,8 @@ export async function checkSplitTabGroups(context) {
   for (const name of ['b','c','d']) created.push((await invoke('create_tab',{url:fixture.origin+'/page/groups-'+name})).tabs.find(t=>t.is_active));
   const [b,c,d] = created;
   await until(()=>['a','b','c','d'].every(name=>fixture.reports.has('groups-'+name)), 'group fixture documents');
+  await script('window.fixtureTabBar=document.querySelector(".h-tabbar")');
+  assert.equal(await script('return document.querySelector(".h-tabbar").getBoundingClientRect().top<document.querySelector(".titlebar").getBoundingClientRect().top'), true);
   await invoke('set_split_view',{leftTabId:a.id,rightTabId:b.id});
   let p=await packet();
   assert.deepEqual(p.split_layout.left_tab_ids,[a.id,c.id,d.id]);
@@ -23,6 +26,8 @@ export async function checkSplitTabGroups(context) {
   },'each horizontal list matches its persisted group');
   await checkLists();
   await context.screenshot('split-tab-groups');
+  await checkSplitTabHeader(context, p.split_layout);
+  p=await packet();
   await click(`[data-tab-id="${c.id}"] .tab-title`);
   await until(async()=>(await packet()).split_layout.left_tab_id===c.id,'left tab selection');
   assert.equal((await packet()).split_layout.right_tab_id,b.id);
@@ -42,7 +47,7 @@ export async function checkSplitTabGroups(context) {
     await resizeWindow(width,780);
     for (const ratio of [.2,.5,.8]) {
       p=await packet(); await invoke('commit_split_ratio',{key:key(p.split_layout),ratio});
-      await until(()=>script('const f=document.querySelector(".viewport-frame").getBoundingClientRect(),l=document.querySelector("[data-testid=split-tabs-left]").getBoundingClientRect(),r=document.querySelector("[data-testid=split-tabs-right]").getBoundingClientRect(),w=document.querySelector(".window-controls").getBoundingClientRect();const available=Math.max(200,Math.round(f.width)-8),left=Math.max(100,Math.min(available-100,available*arguments[0]));return Math.abs(l.left-Math.round(f.left))<=2&&Math.abs(l.width-left)<=2&&Math.abs(r.left-(Math.round(f.left)+left+8))<=2&&r.right<=w.left;',ratio),'tab bars align with native panes without overlapping window controls');
+      await until(()=>script('const f=document.querySelector(".viewport-frame").getBoundingClientRect(),l=document.querySelector("[data-testid=split-tabs-left]").getBoundingClientRect(),r=document.querySelector("[data-testid=split-tabs-right]").getBoundingClientRect(),w=document.querySelector(".window-controls").getBoundingClientRect();const available=Math.max(200,Math.round(f.width)-8),left=Math.max(100,Math.min(available-100,available*arguments[0]));return Math.abs(l.left-Math.round(f.left))<=2&&Math.abs(l.width-left)<=2&&Math.abs(r.left-(Math.round(f.left)+left+8))<=2&&Math.abs(r.right-Math.round(f.right))<=2&&w.bottom<=r.top;',ratio),'tab bars use full pane widths below the window controls');
       if(width===680&&ratio===.8)await context.screenshot('split-tab-groups-small');
     }
   }
@@ -87,4 +92,5 @@ export async function checkSplitTabGroups(context) {
   assert.equal(p.split_layout.right_tab_id,b.id,'selected removal chooses the next group neighbor');
   for(const id of [...p.split_layout.right_tab_ids])await invoke('close_tab',{tabId:id});
   assert.equal((await packet()).split_layout,null,'closing the last group member ends split');
+  await until(()=>script('return document.querySelector(".h-tabbar").getBoundingClientRect().top<document.querySelector(".titlebar").getBoundingClientRect().top && document.querySelectorAll(".window-controls").length===1 && Boolean(document.querySelector(".h-tabbar .window-controls"))'),'leaving split returns tabs and window controls to the top');
 }

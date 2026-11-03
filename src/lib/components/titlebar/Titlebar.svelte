@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount, onDestroy, untrack } from "svelte";
+  import { get } from "svelte/store";
   import MediaButton from "../media/MediaButton.svelte";
   import PipButton from "../media/PipButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
@@ -40,13 +42,30 @@
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { defaultSearchEngine } from "../../stores/searchEngineStore";
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
-  import {
-    minimizeWindow,
-    toggleMaximizeWindow,
-    closeWindow,
-  } from "../../services/tauri-bridge";
+  import WindowControls from "./WindowControls.svelte";
+  import { splitLayout } from "../../stores/splitViewStore";
+  import { titlebarMenu, openTitlebarMenu, closeTitlebarMenu } from "../../stores/titlebarMenuStore";
 
   import { openPrivacy, privacyPopover } from "../../stores/privacyPopoverStore";
+
+  let narrow = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 1000px)").matches);
+  const splitHorizontal = $derived($tabLayout === "horizontal" && Boolean($splitLayout));
+  const compact = $derived(splitHorizontal && narrow);
+  onMount(() => {
+    const media = window.matchMedia("(max-width: 1000px)");
+    const update = () => { narrow = media.matches; };
+    media.addEventListener("change", update);
+    update();
+    return () => media.removeEventListener("change", update);
+  });
+  onDestroy(() => { void closeTitlebarMenu(); });
+  $effect(() => {
+    const enabled = compact && !$isZenMode;
+    const workspaceId = $activeWorkspaceId;
+    untrack(() => {
+      if (!enabled || get(titlebarMenu)?.workspaceId !== workspaceId) void closeTitlebarMenu();
+    });
+  });
 
   let activeWs = $derived(
     $workspaces.find((w) => w.id === $activeWorkspaceId)
@@ -78,7 +97,7 @@
 </script>
 
 {#if !$isZenMode}
-  <header class="titlebar" data-tauri-drag-region={$tabLayout === "vertical" ? "" : undefined}>
+  <header class="titlebar" class:split-horizontal={splitHorizontal} class:compact data-tauri-drag-region={$tabLayout === "vertical" || splitHorizontal ? "" : undefined}>
     <div class="titlebar-left">
       {#if $tabLayout === "vertical"}
         <button
@@ -188,6 +207,9 @@
 
     <!-- Top-Right Controls: Quick Tools, Settings & Window Controls -->
     <div class="titlebar-controls">
+      {#if compact}
+        <button class="icon-btn" data-testid="open-titlebar-menu" aria-label={$t("titlebar.more")} title={$t("titlebar.more")} aria-haspopup="menu" aria-expanded={Boolean($titlebarMenu)} onclick={event => openTitlebarMenu(event.currentTarget)} onkeydown={event => { if (event.key === "ArrowDown") { event.preventDefault(); void openTitlebarMenu(event.currentTarget); } }}>⋯</button>
+      {:else}
       <button class="icon-btn" onclick={() => openTools()} title={$t("titlebar.tools_ea93")} data-testid="open-tools" aria-label={$t("titlebar.tools_ea93")}>☷</button>
       {#if $tabLayout === "horizontal"}
         <button
@@ -262,38 +284,10 @@
         🧘
       </button>
 
-      {#if $tabLayout === "vertical"}
+      {/if}
+      {#if $tabLayout === "vertical" || splitHorizontal}
         <div class="divider"></div>
-
-        <button class="win-btn" onclick={minimizeWindow} title={$t("titlebar.minimize_d72e")} aria-label={$t("titlebar.minimize_d72e")}>
-          <svg width="12" height="12" viewBox="0 0 12 12">
-            <rect x="2" y="5.5" width="8" height="1" fill="currentColor" />
-          </svg>
-        </button>
-        <button class="win-btn" onclick={toggleMaximizeWindow} title={$t("titlebar.maximize_fba6")} aria-label={$t("titlebar.maximize_fba6")}>
-          <svg width="12" height="12" viewBox="0 0 12 12">
-            <rect
-              x="2.5"
-              y="2.5"
-              width="7"
-              height="7"
-              rx="1"
-              stroke="currentColor"
-              stroke-width="1.2"
-              fill="none"
-            />
-          </svg>
-        </button>
-        <button class="win-btn close-btn" onclick={closeWindow} title={$t("titlebar.close_7d9e")} aria-label={$t("titlebar.close_7d9e")}>
-          <svg width="12" height="12" viewBox="0 0 12 12">
-            <path
-              d="M3 3L9 9M9 3L3 9"
-              stroke="currentColor"
-              stroke-width="1.3"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
+        <WindowControls />
       {/if}
     </div>
   </header>
@@ -302,6 +296,7 @@
 <style>
   .titlebar {
     height: 40px;
+    flex: 0 0 40px;
     width: 100%;
     display: flex;
     align-items: center;
@@ -320,6 +315,12 @@
     gap: 10px;
     flex-shrink: 0;
   }
+
+  .split-horizontal .titlebar-left { flex:0 1 auto; min-width:0; max-width:min(24vw,300px); }
+  .split-horizontal .titlebar-center { min-width:380px; }
+  .split-horizontal .omnibox-input { min-width:64px; }
+  .compact .titlebar-left { max-width:96px; }
+  .compact { gap:6px; }
 
   .brand {
     display: flex;
@@ -575,24 +576,4 @@
     margin: 0 3px;
   }
 
-  .win-btn {
-    width: 34px;
-    height: 26px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-
-  .win-btn:hover {
-    background: var(--bg-glass-hover);
-    color: var(--text-primary);
-  }
-
-  .win-btn.close-btn:hover {
-    background: #e81123;
-    color: #ffffff;
-  }
 </style>

@@ -17,17 +17,18 @@ export type OverlayId =
   | "history"
   | "downloads"
   | "settings"
+  | "titlebar-menu"
   | "bookmark-editor";
 
 const activeOverlayIds = new Set<OverlayId>();
 let overlaySyncQueue: Promise<void> = Promise.resolve();
 
-const openingListeners = new Set<() => void>();
-export function onOverlayOpening(callback: () => void): () => void {
+const openingListeners = new Set<(id?: OverlayId) => void>();
+export function onOverlayOpening(callback: (id?: OverlayId) => void): () => void {
   openingListeners.add(callback);
   return () => { openingListeners.delete(callback); };
 }
-function notifyOpening() { for (const callback of openingListeners) callback(); }
+function notifyOpening(id?: OverlayId) { for (const callback of openingListeners) callback(id); }
 
 /** Keeps the native content WebView hidden while any browser overlay is open. */
 export async function setOverlayVisibility(
@@ -35,8 +36,9 @@ export async function setOverlayVisibility(
   overlayId: OverlayId
 ): Promise<void> {
   if(visible) {
-    notifyOpening();
     activeOverlayIds.add(overlayId);
+    // Register the destination before listeners dismiss the previous overlay.
+    notifyOpening(overlayId);
   } else {
     activeOverlayIds.delete(overlayId);
   }

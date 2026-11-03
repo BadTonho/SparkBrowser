@@ -15,6 +15,7 @@
   import { isDownloadsDrawerOpen } from "../../stores/downloadsStore";
   import { isSettingsModalOpen, isZenMode } from "../../stores/settingsStore";
   import { isWorkspaceSwitcherOverlayOpen } from "../../stores/workspaceSwitcherStore";
+  import { titlebarMenu } from "../../stores/titlebarMenuStore";
   import { syncViewportBounds, isTauriRuntime } from "../../services/tauri-bridge";
   import { createViewportSync } from "../../services/viewport-sync.js";
 
@@ -26,7 +27,7 @@
       $isHistoryDrawerOpen ||
       $isDownloadsDrawerOpen ||
       $isSettingsModalOpen ||
-      $isWorkspaceSwitcherOverlayOpen
+      $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
   );
 
   const viewportSync = createViewportSync(() => {
@@ -76,7 +77,7 @@
   <div class="viewport-frame" bind:this={viewportEl}>
     {#if inTauri && !anyOverlayOpen && viewportEl && $splitLayout}<SplitDivider frame={viewportEl} flush={viewportSync.flush} />{/if}
     {#if !inTauri || anyOverlayOpen}
-      {#if !inTauri || !$isWorkspaceSwitcherOverlayOpen}
+      {#if (!inTauri || !$isWorkspaceSwitcherOverlayOpen) && !$titlebarMenu}
         <div class="browser-preview-fallback">
           <div class="fallback-card">
             <h2>{$t("viewport.multi_webview_viewport_5f2a")}{$tabs.length} {$tabs.length === 1 ? $t("viewport.tab_90dd") : $t("viewport.tabs_8e5e")})</h2>
