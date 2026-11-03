@@ -53,22 +53,31 @@ pub(super) fn close_one(
     id: &str,
     engine: Option<&str>,
 ) -> Result<TabSnapshot, String> {
+    state.refresh_visible_tabs()?;
     let before = TabCheckpoint::capture(state)?;
     if !before.tabs.iter().any(|tab| tab.id == id) {
         return Err("closed_tabs.not_found".into());
     }
     let workspaces = state.workspaces.lock().map_err(|e| e.to_string())?.clone();
     let rows = closed_tabs_repo::records(&before.tabs, &[id.to_string()], &workspaces, now());
-    let partner = before
-        .layouts
+    let mut remaining_layouts = before.layouts.clone();
+    remaining_layouts.retain(|_, layout| layout.remove_member(id));
+    let partner = remaining_layouts
         .get(&before.active_workspace)
-        .filter(|layout| layout.contains(id))
-        .map(|layout| {
-            if layout.left_tab_id == id {
-                layout.right_tab_id.clone()
-            } else {
-                layout.left_tab_id.clone()
-            }
+        .filter(|_| before.active_tab == id)
+        .map(|layout| layout.focused_tab_id.clone())
+        .or_else(|| {
+            before
+                .layouts
+                .get(&before.active_workspace)
+                .filter(|layout| layout.contains(id))
+                .map(|layout| {
+                    if layout.left_tab_id == id {
+                        layout.right_tab_id.clone()
+                    } else {
+                        layout.left_tab_id.clone()
+                    }
+                })
         });
     let result = (|| {
         state
@@ -76,11 +85,7 @@ pub(super) fn close_one(
             .lock()
             .map_err(|e| e.to_string())?
             .retain(|tab| tab.id != id);
-        state
-            .split_layouts
-            .lock()
-            .map_err(|e| e.to_string())?
-            .retain(|_, layout| !layout.contains(id));
+        *state.split_layouts.lock().map_err(|e| e.to_string())? = remaining_layouts;
         if before.active_tab == id {
             let target = {
                 let tabs = state.tabs.lock().map_err(|e| e.to_string())?;

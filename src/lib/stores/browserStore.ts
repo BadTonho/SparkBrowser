@@ -1,4 +1,5 @@
 import { splitLayout } from "./splitViewStore";
+import { focusedTabs, replaceGroupOrder } from "../services/split-tab-groups.js";
 import { writable, derived, get } from "svelte/store";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { spring } from "svelte/motion";
@@ -135,7 +136,8 @@ export async function initializeTabs(): Promise<void> {
 
 export async function addTab(
   targetUrl?: string,
-  workspaceId = get(activeWorkspaceId)
+  workspaceId = get(activeWorkspaceId),
+  side?: "left" | "right"
 ): Promise<void> {
   const urlToOpen = targetUrl?.trim() || getSearchEngineHomeUrl(get(defaultSearchEngine));
   if (!isTauriRuntime()) {
@@ -153,7 +155,7 @@ export async function addTab(
     applyTabsSnapshot(updated);
     return;
   }
-  const snapshot = await createNewTab(urlToOpen, get(defaultSearchEngine));
+  const snapshot = await createNewTab(urlToOpen, get(defaultSearchEngine), side);
   applyTabsSnapshot(snapshot);
 }
 
@@ -291,9 +293,7 @@ export async function moveActiveTabUp(workspaceId?: string): Promise<void> {
   if (!active) return;
 
   const targetWs = workspaceId || active.workspace_id || "ws-personal";
-  const wsTabs = currentTabs.filter(
-    (t) => !t.workspace_id || t.workspace_id === targetWs
-  );
+  const wsTabs = focusedTabs(currentTabs, get(splitLayout), targetWs);
   const currentIds = wsTabs.map((t) => t.id);
   const idx = currentIds.indexOf(active.id);
 
@@ -301,7 +301,7 @@ export async function moveActiveTabUp(workspaceId?: string): Promise<void> {
     const reordered = [...currentIds];
     const [moved] = reordered.splice(idx, 1);
     reordered.splice(idx - 1, 0, moved);
-    await reorderTabsList(reordered);
+    await reorderTabsList(replaceGroupOrder(currentTabs, reordered));
   }
 }
 
@@ -311,9 +311,7 @@ export async function moveActiveTabDown(workspaceId?: string): Promise<void> {
   if (!active) return;
 
   const targetWs = workspaceId || active.workspace_id || "ws-personal";
-  const wsTabs = currentTabs.filter(
-    (t) => !t.workspace_id || t.workspace_id === targetWs
-  );
+  const wsTabs = focusedTabs(currentTabs, get(splitLayout), targetWs);
   const currentIds = wsTabs.map((t) => t.id);
   const idx = currentIds.indexOf(active.id);
 
@@ -321,7 +319,7 @@ export async function moveActiveTabDown(workspaceId?: string): Promise<void> {
     const reordered = [...currentIds];
     const [moved] = reordered.splice(idx, 1);
     reordered.splice(idx + 1, 0, moved);
-    await reorderTabsList(reordered);
+    await reorderTabsList(replaceGroupOrder(currentTabs, reordered));
   }
 }
 

@@ -53,7 +53,9 @@ use commands::site_permissions::{
 use commands::site_search::{
     delete_site_search_shortcut, get_site_search_shortcuts, save_site_search_shortcut,
 };
-use commands::split_view::{commit_split_ratio, dock_tab_to_split, set_split_view};
+use commands::split_view::{
+    commit_split_ratio, dock_tab_to_split, move_tab_in_split, set_split_view,
+};
 use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, hibernate_inactive_tabs,
@@ -212,6 +214,7 @@ pub fn run() {
             close_tabs_reviewed,
             set_split_view,
             dock_tab_to_split,
+            move_tab_in_split,
             set_tab_drag_preview,
             commit_split_ratio,
             get_site_permissions,

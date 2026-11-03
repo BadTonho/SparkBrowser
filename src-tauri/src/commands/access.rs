@@ -39,6 +39,7 @@ pub fn shell_only(
                         | "set_overlay_visibility"
                         | "set_media_popover"
                         | "set_tab_drag_preview"
+                        | "move_tab_in_split"
                         | "sync_viewport_bounds"
                         | "get_diagnostics"
                         | "get_tabs"

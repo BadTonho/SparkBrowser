@@ -1,4 +1,8 @@
 {
+  "settings.next_tab": "Próxima aba",
+  "settings.previous_tab": "Aba anterior",
+  "settings.next_tab_focused_pane": "Próxima aba no painel focado",
+  "settings.previous_tab_focused_pane": "Aba anterior no painel focado",
   "settings.pip_window_shadow": "Sombra da janela flutuante",
   "settings.pip_window_shadow_description": "Mostrar sombra ao redor da janela de vídeo flutuante.",
   "settings.pip_window_shadow_unavailable": "Disponível somente para a janela própria de vídeo flutuante no Windows.",

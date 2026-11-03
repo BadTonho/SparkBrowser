@@ -6,6 +6,35 @@ use crate::state::{
 use tauri::{AppHandle, Emitter, Manager, State};
 
 #[tauri::command]
+pub async fn move_tab_in_split(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    tab_id: String,
+    side: crate::state::split_docking::DockSide,
+    before_id: Option<String>,
+    context: crate::state::split_docking::DockContext,
+) -> Result<TabSnapshot, String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::tab_drag_preview::cancel(&app, &state)?;
+    if crate::window::tab_drag_preview::blocked(&state)
+        || app.state::<crate::shutdown::ShutdownService>().blocked()
+    {
+        return Err("A browser panel is open".into());
+    }
+    crate::state::split_transfer::commit(&state, &context, &tab_id, side, before_id.as_deref())?;
+    super::tabs::reconcile_committed(&app, &state);
+    let snapshot = state.snapshot_packet();
+    let _ = app.emit_to("main", "tabs-updated", &snapshot);
+    let active = state
+        .snapshot_tabs()
+        .into_iter()
+        .find(|tab| tab.is_active)
+        .ok_or("Active tab not found")?;
+    let _ = app.emit_to("main", "content-url-changed", active.url);
+    Ok(snapshot)
+}
+
+#[tauri::command]
 pub async fn dock_tab_to_split(
     app: AppHandle,
     state: State<'_, BrowserState>,
@@ -69,6 +98,8 @@ pub async fn set_split_view(
                     .map_err(|e| e.to_string())?
                     .clone();
                 let layout = SplitLayout {
+                    left_tab_ids: Vec::new(),
+                    right_tab_ids: Vec::new(),
                     workspace_id: workspace.clone(),
                     left_tab_id: left.clone(),
                     right_tab_id: right.clone(),

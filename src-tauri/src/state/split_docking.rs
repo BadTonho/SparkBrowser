@@ -17,6 +17,8 @@ pub struct DockContext {
     pub workspace_id: String,
     pub active_tab_id: String,
     pub split_key: Option<String>,
+    #[serde(default)]
+    pub groups_key: Option<String>,
 }
 
 pub fn layout(
@@ -32,21 +34,16 @@ pub fn layout(
     {
         return Err("Dragged tab is no longer in this workspace".into());
     }
-    let (left, right, ratio) = if let Some(split) = current {
+    if let Some(mut split) = current {
+        split.normalize(tabs);
         if !split.valid(tabs) {
             return Err("Split view changed".into());
         }
-        match side {
-            DockSide::Left if split.right_tab_id == tab_id => {
-                (tab_id.into(), split.left_tab_id, split.ratio)
-            }
-            DockSide::Right if split.left_tab_id == tab_id => {
-                (split.right_tab_id, tab_id.into(), split.ratio)
-            }
-            DockSide::Left => (tab_id.into(), split.right_tab_id, split.ratio),
-            DockSide::Right => (split.left_tab_id, tab_id.into(), split.ratio),
-        }
-    } else {
+        split.dock_member(tab_id, side);
+        split.normalize(tabs);
+        return Ok(split);
+    }
+    let (left, right, ratio) = {
         let companion = if context.active_tab_id != tab_id {
             tabs.iter().find(|tab| {
                 tab.id == context.active_tab_id && tab.workspace_id == context.workspace_id
@@ -69,7 +66,18 @@ pub fn layout(
             DockSide::Right => (companion.id.clone(), tab_id.into(), 0.5),
         }
     };
+    let others = tabs
+        .iter()
+        .filter(|tab| tab.workspace_id == context.workspace_id && tab.id != tab_id)
+        .map(|tab| tab.id.clone())
+        .collect();
+    let (left_tab_ids, right_tab_ids) = match side {
+        DockSide::Left => (vec![tab_id.into()], others),
+        DockSide::Right => (others, vec![tab_id.into()]),
+    };
     Ok(SplitLayout {
+        left_tab_ids,
+        right_tab_ids,
         workspace_id: context.workspace_id.clone(),
         left_tab_id: left,
         right_tab_id: right,
@@ -97,6 +105,10 @@ pub fn validate_context(
     if workspace != context.workspace_id
         || active != context.active_tab_id
         || current.as_ref().map(SplitLayout::key) != context.split_key
+        || context
+            .groups_key
+            .as_ref()
+            .is_some_and(|key| current.as_ref().map(SplitLayout::groups_key).as_ref() != Some(key))
     {
         return Err("Tab drag context changed".into());
     }

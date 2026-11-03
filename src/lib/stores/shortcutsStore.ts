@@ -29,6 +29,8 @@ const combo = (key: string, modifiers: Partial<Omit<ShortcutCombo, "key">> = {})
 });
 
 export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
+  { id: "next-tab", label: "Next tab", description: "Next tab in the focused pane", defaults: [combo("Tab", { ctrl: true })] },
+  { id: "previous-tab", label: "Previous tab", description: "Previous tab in the focused pane", defaults: [combo("Tab", { ctrl: true, shift: true })] },
   { id: "zoom-in", label: "Zoom in", description: "Increase page zoom", defaults: [combo("+", { ctrl: true })] },
   { id: "zoom-out", label: "Zoom out", description: "Decrease page zoom", defaults: [combo("-", { ctrl: true })] },
   { id: "zoom-reset", label: "Reset page zoom", description: "Restore page zoom to 100%", defaults: [combo("0", { ctrl: true })] },

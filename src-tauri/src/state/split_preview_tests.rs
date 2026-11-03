@@ -18,6 +18,8 @@ fn state() -> BrowserState {
     state.split_layouts.lock().unwrap().insert(
         "ws-personal".into(),
         SplitLayout {
+            left_tab_ids: Vec::new(),
+            right_tab_ids: Vec::new(),
             workspace_id: "ws-personal".into(),
             left_tab_id: "tab-1".into(),
             right_tab_id: "b".into(),

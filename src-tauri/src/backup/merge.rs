@@ -255,6 +255,16 @@ pub fn plan(
             continue;
         }
         let mut item = layout.clone();
+        item.normalize(
+            &incoming
+                .tabs
+                .iter()
+                .map(super::model::BackupTab::tab)
+                .collect::<Vec<_>>(),
+        );
+        for id in item.left_tab_ids.iter_mut().chain(&mut item.right_tab_ids) {
+            *id = tab_map.get(id).ok_or("backup.invalid_split")?.clone();
+        }
         item.workspace_id = workspace.clone();
         item.left_tab_id = tab_map
             .get(&layout.left_tab_id)

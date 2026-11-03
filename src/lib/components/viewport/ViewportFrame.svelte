@@ -2,7 +2,7 @@
   import { t } from "../../i18n";
   import { isSitePermissionsOpen, permissionRequests } from "../../stores/sitePermissionsStore";
   import SplitDivider from "./SplitDivider.svelte";
-  import { splitLayout, splitDragRatio, splitKey } from "../../stores/splitViewStore";
+  import { splitLayout, splitDragRatio, splitKey, viewportBounds } from "../../stores/splitViewStore";
   import { isToolsOpen } from "../../stores/toolsStore";
   import { onMount } from "svelte";
   import {
@@ -32,6 +32,7 @@
   const viewportSync = createViewportSync(() => {
     if (!viewportEl) return;
     const rect = viewportEl.getBoundingClientRect();
+    viewportBounds.set({ x: Math.round(rect.left), y: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) });
     return {
       split_ratio: $splitLayout ? $splitDragRatio ?? $splitLayout.ratio : undefined,
       split_key: $splitLayout ? splitKey($splitLayout) : undefined,

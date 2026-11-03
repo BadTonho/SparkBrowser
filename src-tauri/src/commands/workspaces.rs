@@ -73,7 +73,7 @@ pub async fn switch_workspace(
         .lock()
         .map_err(|e| e.to_string())? = workspace_id;
 
-    let result = create_tab_inner(&app, &state, Some(DEFAULT_HOME_URL.to_string()), None);
+    let result = create_tab_inner(&app, &state, Some(DEFAULT_HOME_URL.to_string()), None, None);
     if result.is_err() {
         before.restore(&state)?;
     }
@@ -203,7 +203,10 @@ pub async fn delete_workspace(
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
-    next_layouts.retain(|workspace, layout| workspace != &workspace_id && layout.valid(&next_tabs));
+    next_layouts.retain(|workspace, layout| {
+        layout.normalize(&next_tabs);
+        workspace != &workspace_id && layout.valid(&next_tabs)
+    });
     let mut next_active_tab = if was_active && action == "close" {
         next_layouts
             .get(&next_active_workspace)

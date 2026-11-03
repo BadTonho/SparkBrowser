@@ -1,4 +1,8 @@
 {
+  "settings.next_tab": "Next tab",
+  "settings.previous_tab": "Previous tab",
+  "settings.next_tab_focused_pane": "Next tab in the focused pane",
+  "settings.previous_tab_focused_pane": "Previous tab in the focused pane",
   "settings.pip_window_shadow": "Floating window shadow",
   "settings.pip_window_shadow_description": "Show a shadow around the floating video window.",
   "settings.pip_window_shadow_unavailable": "Available only for the custom floating video window on Windows.",

@@ -19,6 +19,8 @@ pub const SHORTCUT_IDS: &[&str] = &[
     "zoom-reset",
     "reopen-tab",
     "switch-tabs",
+    "next-tab",
+    "previous-tab",
     "workspace-picker",
     "switch-workspaces",
     "move-tab-up",
@@ -98,7 +100,7 @@ fn name(value: &str) -> Result<(), String> {
     }
 }
 pub fn document(doc: &BackupDocument) -> Result<(), String> {
-    if doc.format != FORMAT || ![1, 2, 3].contains(&doc.version) {
+    if doc.format != FORMAT || ![1, 2, 3, 4].contains(&doc.version) {
         return Err("backup.unsupported_version".into());
     }
     preferences(&doc.preferences)?;
@@ -192,6 +194,7 @@ pub fn document(doc: &BackupDocument) -> Result<(), String> {
     for layout in &d.split_layouts {
         if !(0.2..=0.8).contains(&layout.ratio)
             || !layout.valid(&tabs)
+            || (doc.version >= 4 && !layout.valid_groups(&tabs))
             || !splits.insert(&layout.workspace_id)
         {
             return Err("backup.invalid_split".into());

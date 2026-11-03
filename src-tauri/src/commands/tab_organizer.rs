@@ -59,7 +59,7 @@ pub async fn close_tabs_reviewed(
             .split_layouts
             .lock()
             .map_err(|e| e.to_string())?
-            .retain(|_, layout| !closed.iter().any(|id| layout.contains(id)));
+            .retain(|_, layout| closed.iter().all(|id| layout.remove_member(id)));
         if let Err(error) = state.persist_tab_change(&rows, None) {
             before.restore(&state)?;
             return Err(error);

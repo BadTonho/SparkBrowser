@@ -552,6 +552,8 @@ pub(super) fn handle_keyboard_navigation(
                             | "zoom-out"
                             | "zoom-reset"
                             | "switch-tabs"
+                            | "next-tab"
+                            | "previous-tab"
                             | "switch-workspaces"
                             | "move-tab-up"
                             | "move-tab-up-ctrl-shift"

@@ -74,7 +74,7 @@ pub async fn capture(app: &AppHandle, prefs: BackupPreferences) -> Result<Backup
     let conn = db.as_ref().ok_or("backup.database_unavailable")?;
     Ok(BackupDocument {
         format: FORMAT.into(),
-        version: 3,
+        version: 4,
         created_at: crate::state::tab_model::TabInfo::current_epoch_secs() as i64,
         data: backup_repo::collect(conn)?,
         preferences: current_preferences(conn, prefs)?,

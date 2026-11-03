@@ -21,6 +21,7 @@ fn fixture() -> (BrowserState, DockContext) {
     (
         state,
         DockContext {
+            groups_key: None,
             workspace_id: "ws-personal".into(),
             active_tab_id: "tab-1".into(),
             split_key: None,

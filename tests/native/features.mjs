@@ -39,8 +39,12 @@ export async function checkFeatures(invoke, until, fixture, a, b) {
   assert.equal(split.tabs.filter(tab => tab.is_visible && !tab.is_hibernated).length, 2);
   const d = (await invoke('create_tab', { url: fixture.origin + '/page/b', searchEngine: 'google' })).tabs.find(tab => tab.is_active);
   split = await invoke('get_tabs'); assert.equal(split.split_layout.left_tab_id, d.id);
+  const group = split.split_layout.left_tab_ids, index = group.indexOf(d.id);
+  const neighbor = group[index + 1] ?? group[index - 1];
   split = await invoke('close_tab', { tabId: d.id, searchEngine: 'google' });
-  assert.equal(split.split_layout, null); assert.equal(split.tabs.find(tab => tab.is_active).id, b.id);
+  assert.equal(split.split_layout.left_tab_id, neighbor, 'closing a selected tab chooses a member of the same group');
+  assert.equal(split.split_layout.right_tab_id, b.id);
+  assert.equal(split.tabs.find(tab => tab.is_active).id, neighbor);
   await invoke('switch_tab', { tabId: a.id });
   await invoke('set_split_view', { leftTabId: a.id, rightTabId: b.id });
   await invoke('commit_split_ratio', { key: `${a.workspace_id}:${a.id}:${b.id}`, ratio: 0.65 });

@@ -2,6 +2,8 @@
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
   import { initializeTabDrag } from "./lib/stores/tabDragStore";
+  import { splitLayout } from "./lib/stores/splitViewStore";
+  import { focusedTabs } from "./lib/services/split-tab-groups.js";
   import { initializeMedia } from "./lib/stores/mediaLifecycle";
   import { initializeZoom, changeZoom } from "./lib/stores/zoomStore";
   import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
@@ -277,10 +279,18 @@
       case "switch-tabs": {
         const num = Number(key);
         const currentWs = get(activeWorkspaceId);
-        const wsTabs = get(tabs).filter((tab) => !tab.workspace_id || tab.workspace_id === currentWs);
+        const wsTabs = focusedTabs(get(tabs), get(splitLayout), currentWs);
         if (wsTabs.length === 0) return;
         const target = num === 9 ? wsTabs.at(-1) : wsTabs[num - 1];
         if (target) selectTab(target.id);
+        break;
+      }
+      case "next-tab":
+      case "previous-tab": {
+        const list = focusedTabs(get(tabs), get(splitLayout), get(activeWorkspaceId));
+        const index = list.findIndex(tab => tab.is_active);
+        const target = list[(index + (action === "next-tab" ? 1 : -1) + list.length) % list.length];
+        if (target) void selectTab(target.id);
         break;
       }
       case "workspace-picker":

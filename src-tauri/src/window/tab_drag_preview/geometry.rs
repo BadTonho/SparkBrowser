@@ -47,6 +47,8 @@ mod tests {
             })
             .collect();
         let split = SplitLayout {
+            left_tab_ids: Vec::new(),
+            right_tab_ids: Vec::new(),
             workspace_id: "ws".into(),
             left_tab_id: "a".into(),
             right_tab_id: "b".into(),
@@ -55,6 +57,7 @@ mod tests {
         };
         for current in [None, Some(split)] {
             let context = DockContext {
+                groups_key: None,
                 workspace_id: "ws".into(),
                 active_tab_id: "a".into(),
                 split_key: current.as_ref().map(SplitLayout::key),

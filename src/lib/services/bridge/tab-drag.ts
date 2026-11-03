@@ -1,7 +1,7 @@
 import { invoke, isTauriRuntime } from "./runtime";
 import type { TabSnapshot } from "../../types/browser";
 export type DockSide = "left" | "right";
-export interface DockContext { workspaceId: string; activeTabId: string; splitKey: string | null }
+export interface DockContext { workspaceId: string; activeTabId: string; splitKey: string | null; groupsKey?: string | null }
 export interface DragPresentation {
   tabId: string; side: DockSide | null; context: DockContext; label: string; locale: string;
   pointer: { x: number; y: number };
@@ -16,3 +16,4 @@ export function setDragPreview(presentation: DragPresentation | null): Promise<v
 }
 export const flushDragPreview = (): Promise<void> => queue;
 export const dockTabToSplit = (tabId: string, side: DockSide, context: DockContext) => invoke<TabSnapshot>("dock_tab_to_split", { tabId, side, context });
+export const moveTabInSplit = (tabId: string, side: DockSide, beforeId: string | null, context: DockContext) => invoke<TabSnapshot>("move_tab_in_split", { tabId, side, beforeId, context });

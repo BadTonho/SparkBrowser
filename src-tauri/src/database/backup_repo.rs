@@ -24,6 +24,10 @@ pub fn collect(conn: &Connection) -> Result<BackupData, String> {
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
     let mut split_layouts: Vec<_> = super::split_repo::load(conn)?.into_values().collect();
+    let tabs = super::session_repo::load_session_tabs(conn)?;
+    for layout in &mut split_layouts {
+        layout.normalize(&tabs);
+    }
     split_layouts.sort_by(|a, b| a.workspace_id.cmp(&b.workspace_id));
     Ok(BackupData {
         bookmarks: super::bookmarks_repo::get_bookmark_data(conn)?,
@@ -31,10 +35,7 @@ pub fn collect(conn: &Connection) -> Result<BackupData, String> {
         sessions: super::saved_sessions_repo::list(conn)?,
         notes,
         site_search: super::site_search_repo::list(conn)?,
-        tabs: super::session_repo::load_session_tabs(conn)?
-            .iter()
-            .map(BackupTab::from)
-            .collect(),
+        tabs: tabs.iter().map(BackupTab::from).collect(),
         split_layouts,
     })
 }

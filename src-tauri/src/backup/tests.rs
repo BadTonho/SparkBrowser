@@ -97,7 +97,7 @@ fn backup_file_roundtrip_rejects_invalid_versions_sizes_and_references_without_r
         serde_json::to_value(restored).unwrap()
     );
     let mut invalid = doc.clone();
-    invalid.version = 4;
+    invalid.version = 5;
     assert!(files::write(&path, &invalid).is_err());
     assert_eq!(std::fs::read(&path).unwrap(), original);
     assert!(files::decode(b"not json").is_err());
@@ -232,6 +232,8 @@ fn merge_remaps_folder_ids_keeps_conflicting_values_and_uniquely_names_sessions(
 fn splits_import_only_into_new_workspaces_and_preserve_all_existing_layouts() {
     let (_conn, mut doc) = setup();
     let layout = SplitLayout {
+        left_tab_ids: Vec::new(),
+        right_tab_ids: Vec::new(),
         workspace_id: "ws-personal".into(),
         left_tab_id: "tab-1".into(),
         right_tab_id: "tab-2".into(),
@@ -250,6 +252,8 @@ fn splits_import_only_into_new_workspaces_and_preserve_all_existing_layouts() {
         tab("right", "https://example.test/right", "new", false),
     ]);
     source.data.split_layouts.push(SplitLayout {
+        left_tab_ids: Vec::new(),
+        right_tab_ids: Vec::new(),
         workspace_id: "new".into(),
         left_tab_id: "left".into(),
         right_tab_id: "right".into(),
@@ -360,6 +364,36 @@ fn old_backups_default_shadow_off_and_v3_roundtrips_the_boolean() {
     let mut invalid = serde_json::to_value(&doc).unwrap();
     invalid["preferences"]["pip_window_shadow"] = serde_json::json!("true");
     assert!(files::decode(&serde_json::to_vec(&invalid).unwrap()).is_err());
+}
+
+#[test]
+fn v4_groups_roundtrip_and_reject_duplicate_or_missing_membership() {
+    let (_, mut doc) = setup();
+    let mut tab = doc.data.tabs[0].clone();
+    tab.id = "group-b".into();
+    tab.is_active = false;
+    doc.data.tabs.push(tab);
+    let mut layout = SplitLayout {
+        workspace_id: doc.data.tabs[0].workspace_id.clone(),
+        left_tab_id: doc.data.tabs[0].id.clone(),
+        right_tab_id: "group-b".into(),
+        focused_tab_id: "group-b".into(),
+        ratio: 0.6,
+        left_tab_ids: Vec::new(),
+        right_tab_ids: Vec::new(),
+    };
+    layout.normalize(&doc.data.tabs.iter().map(BackupTab::tab).collect::<Vec<_>>());
+    doc.version = 4;
+    doc.data.split_layouts.push(layout);
+    validation::document(&doc).unwrap();
+    let restored = files::decode(&serde_json::to_vec(&doc).unwrap()).unwrap();
+    assert_eq!(restored.data.split_layouts, doc.data.split_layouts);
+    doc.data.split_layouts[0]
+        .left_tab_ids
+        .push("group-b".into());
+    assert!(validation::document(&doc).is_err());
+    doc.data.split_layouts[0].left_tab_ids.clear();
+    assert!(validation::document(&doc).is_err());
 }
 
 #[test]

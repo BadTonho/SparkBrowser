@@ -10,20 +10,22 @@ pub struct SplitLayout {
     pub right_tab_id: String,
     pub ratio: f64,
     pub focused_tab_id: String,
+    #[serde(default)]
+    pub left_tab_ids: Vec<String>,
+    #[serde(default)]
+    pub right_tab_ids: Vec<String>,
 }
 impl SplitLayout {
     pub fn contains(&self, id: &str) -> bool {
         self.left_tab_id == id || self.right_tab_id == id
     }
-    /// Selecting a new tab replaces only the focused pane.
+    /// Existing tabs select their owning pane; new tabs join the focused group.
     pub fn focus_tab(&mut self, id: &str) {
-        if !self.contains(id) {
-            if self.focused_tab_id == self.left_tab_id {
-                self.left_tab_id = id.to_string();
-            } else {
-                self.right_tab_id = id.to_string();
-            }
+        let side = self.side_of(id).unwrap_or_else(|| self.focused_side());
+        if !self.group(side).iter().any(|tab| tab == id) {
+            self.group_mut(side).push(id.to_string());
         }
+        *self.selected_mut(side) = id.to_string();
         self.focused_tab_id = id.to_string();
     }
     pub fn key(&self) -> String {
@@ -40,6 +42,8 @@ impl SplitLayout {
                 tabs.iter()
                     .any(|t| &t.id == *id && t.workspace_id == self.workspace_id)
             })
+            && ((self.left_tab_ids.is_empty() && self.right_tab_ids.is_empty())
+                || self.valid_groups(tabs))
     }
 }
 pub fn pane_bounds(bounds: ViewportBounds, layout: &SplitLayout) -> [(String, ViewportBounds); 2] {
@@ -108,7 +112,10 @@ impl BrowserState {
             .clone();
         let mut tabs = self.tabs.lock().map_err(|e| e.to_string())?;
         let mut layouts = self.split_layouts.lock().map_err(|e| e.to_string())?;
-        layouts.retain(|_, layout| layout.valid(&tabs));
+        layouts.retain(|_, layout| {
+            layout.normalize(&tabs);
+            layout.valid(&tabs)
+        });
         for tab in tabs.iter_mut() {
             tab.is_visible = tab.is_active
                 || layouts
@@ -121,6 +128,11 @@ impl BrowserState {
         Ok(())
     }
 }
+#[cfg(test)]
+#[path = "split_groups_tests.rs"]
+mod group_tests;
+#[path = "split_groups.rs"]
+mod groups;
 #[cfg(test)]
 #[path = "split_preview_tests.rs"]
 mod preview_tests;
@@ -143,6 +155,8 @@ mod tests {
         state.split_layouts.lock().unwrap().insert(
             workspace.into(),
             SplitLayout {
+                left_tab_ids: Vec::new(),
+                right_tab_ids: Vec::new(),
                 workspace_id: workspace.into(),
                 left_tab_id: "tab-1".into(),
                 right_tab_id: "b".into(),
@@ -175,6 +189,8 @@ mod tests {
     #[test]
     fn geometry_has_gap_and_preserves_minimum_sizes() {
         let layout = SplitLayout {
+            left_tab_ids: Vec::new(),
+            right_tab_ids: Vec::new(),
             workspace_id: "ws".into(),
             left_tab_id: "a".into(),
             right_tab_id: "b".into(),

@@ -96,6 +96,8 @@ mod tests {
         tabs[0].is_pinned = true;
         session_repo::save_session_tabs(&conn, &tabs).unwrap();
         let layout = crate::state::split_layout::SplitLayout {
+            left_tab_ids: Vec::new(),
+            right_tab_ids: Vec::new(),
             workspace_id: "ws-personal".into(),
             left_tab_id: "a".into(),
             right_tab_id: "b".into(),

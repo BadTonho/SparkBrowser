@@ -49,6 +49,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "close_tabs_reviewed",
     "set_split_view",
     "dock_tab_to_split",
+    "move_tab_in_split",
     "set_tab_drag_preview",
     "commit_split_ratio",
     "get_site_permissions",

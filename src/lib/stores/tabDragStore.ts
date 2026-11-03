@@ -1,11 +1,12 @@
 import { get, writable } from "svelte/store";
 import { tabs, beginTabReorder, previewTabReorder, finishTabReorder, applyTabsSnapshot, selectTab, changeTabWorkspace } from "./browserStore";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
-import { splitLayout, splitKey } from "./splitViewStore";
+import { splitLayout, splitKey, splitGroupsKey } from "./splitViewStore";
+import { replaceGroupOrder } from "../services/split-tab-groups.js";
 import { tabLayout } from "./settingsStore";
 import { locale, tr } from "../i18n";
 import { onOverlayOpening } from "../services/bridge/overlays";
-import { dockTabToSplit, setDragPreview, flushDragPreview, type DockSide, type DockContext } from "../services/bridge/tab-drag";
+import { dockTabToSplit, moveTabInSplit, setDragPreview, flushDragPreview, type DockSide, type DockContext } from "../services/bridge/tab-drag";
 import { crossedDragThreshold, splitDropSide } from "../services/tab-drag-geometry.js";
 import { mediaPopover, closeMedia } from "./mediaPopoverStore";
 import { privacyPopover, closePrivacy } from "./privacyPopoverStore";
@@ -38,7 +39,8 @@ function contextValid() {
   const current = get(splitLayout);
   return get(activeWorkspaceId) === drag.context.workspaceId && get(tabs).find(tab => tab.is_active)?.id === drag.context.activeTabId
     && get(tabs).some(tab => tab.id === drag!.id && tab.workspace_id === drag!.context.workspaceId)
-    && (current ? splitKey(current) : null) === drag.context.splitKey && get(tabLayout) === drag.layout;
+    && (current ? splitKey(current) : null) === drag.context.splitKey
+    && (current ? splitGroupsKey(current) : null) === drag.context.groupsKey && get(tabLayout) === drag.layout;
 }
 function cleanup(keepDockPreview = false) {
   const previous = drag;
@@ -85,9 +87,12 @@ function move(event: PointerEvent) {
   document.querySelectorAll('.ws-pill').forEach(element => element.classList.toggle('drop-hover', element === pill));
   const over = target?.closest<HTMLElement>('.h-tab,.tab-row')?.dataset.tabId;
   if (!drag.side && over && over !== drag.id) {
-    const ids = get(tabs).filter(tab => tab.workspace_id === drag!.context.workspaceId).map(tab => tab.id);
+    const split = get(splitLayout);
+    const membership = split && drag.layout === 'horizontal' ? (split.left_tab_ids.includes(drag.id) ? split.left_tab_ids : split.right_tab_ids) : null;
+    if (membership && !membership.includes(over)) return;
+    const ids = get(tabs).filter(tab => tab.workspace_id === drag!.context.workspaceId && (!membership || membership.includes(tab.id))).map(tab => tab.id);
     const from = ids.indexOf(drag.id), to = ids.indexOf(over);
-    if (from >= 0 && to >= 0) { ids.splice(to, 0, ids.splice(from, 1)[0]); previewTabReorder(ids); }
+    if (from >= 0 && to >= 0) { ids.splice(to, 0, ids.splice(from, 1)[0]); previewTabReorder(membership ? replaceGroupOrder(get(tabs), ids) : ids); }
   }
   publish();
 }
@@ -101,6 +106,10 @@ async function release(event: PointerEvent) {
   const target = document.elementFromPoint(event.clientX, event.clientY);
   const targetWorkspace = target?.closest<HTMLElement>('.ws-pill')?.dataset.wsId;
   const targetTabList = target?.closest('.tabs-scroll,.tabs-list');
+  const targetSide = (targetTabList as HTMLElement | undefined)?.dataset.paneSide as DockSide | undefined;
+  const targetTab = target?.closest<HTMLElement>('.h-tab')?.dataset.tabId;
+  const displayed = targetSide && get(splitLayout) ? get(tabs).filter(tab => get(splitLayout)![targetSide === 'left' ? 'left_tab_ids' : 'right_tab_ids'].includes(tab.id)).map(tab => tab.id) : [];
+  const beforeId = targetTab && targetTab !== drag.id ? targetTab : displayed.includes(drag.id) ? displayed[displayed.indexOf(drag.id) + 1] ?? null : null;
   const docking = drag.moved && drag.side !== null;
   const ended = cleanup(docking);
   if (!ended) return;
@@ -110,6 +119,9 @@ async function release(event: PointerEvent) {
     if (ended.moved && ended.side) {
       await finishTabReorder(true);
       if (isTauriRuntime()) applyTabsSnapshot(await dockTabToSplit(ended.id, ended.side, ended.context));
+    } else if (ended.moved && targetSide && ended.context.splitKey) {
+      await finishTabReorder(true);
+      if (isTauriRuntime()) applyTabsSnapshot(await moveTabInSplit(ended.id, targetSide, beforeId, ended.context));
     } else if (ended.moved && targetWorkspace) {
       await finishTabReorder(true); await changeTabWorkspace(ended.id, targetWorkspace);
     } else {
@@ -131,7 +143,7 @@ export function startTabDrag(event: PointerEvent, id: string) {
   const split = get(splitLayout);
   event.preventDefault();
   drag = { id, pointerId: event.pointerId, root, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, moved: false, side: null,
-    context: { workspaceId: get(activeWorkspaceId), activeTabId: active.id, splitKey: split ? splitKey(split) : null }, layout: get(tabLayout),
+    context: { workspaceId: get(activeWorkspaceId), activeTabId: active.id, splitKey: split ? splitKey(split) : null, groupsKey: split ? splitGroupsKey(split) : null }, layout: get(tabLayout),
     cursor: document.body.style.cursor, userSelect: document.body.style.userSelect, original: get(tabs) };
   beginTabReorder();
   try { root.setPointerCapture(event.pointerId); }

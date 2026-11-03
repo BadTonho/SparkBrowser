@@ -120,7 +120,10 @@ impl BrowserState {
         let mut workspace = self.active_workspace_id.lock().map_err(|e| e.to_string())?;
         {
             let mut layouts = self.split_layouts.lock().map_err(|e| e.to_string())?;
-            layouts.retain(|_, layout| layout.valid(&tabs));
+            layouts.retain(|_, layout| {
+                layout.normalize(&tabs);
+                layout.valid(&tabs)
+            });
             if let Some(layout) = layouts.get_mut(&tabs[index].workspace_id) {
                 layout.focus_tab(tab_id);
             }
@@ -150,16 +153,30 @@ impl BrowserState {
         }
         let active = self.active_tab_id.lock().map_err(|e| e.to_string())?;
         let mut tabs = self.tabs.lock().map_err(|e| e.to_string())?;
-        let tab = tabs
-            .iter_mut()
-            .find(|tab| tab.id == tab_id)
+        let index = tabs
+            .iter()
+            .position(|tab| tab.id == tab_id)
             .ok_or("Tab was not found")?;
-        self.split_layouts
-            .lock()
-            .map_err(|e| e.to_string())?
-            .retain(|_, layout| !layout.contains(tab_id));
-        tab.workspace_id = workspace_id.to_string();
+        if tabs[index].workspace_id == workspace_id {
+            return Ok(());
+        }
+        let mut layouts = self.split_layouts.lock().map_err(|e| e.to_string())?;
+        layouts.retain(|_, layout| {
+            layout.normalize(&tabs);
+            if layout.workspace_id == tabs[index].workspace_id {
+                layout.remove_member(tab_id)
+            } else {
+                true
+            }
+        });
+        tabs[index].workspace_id = workspace_id.to_string();
+        for layout in layouts.values_mut() {
+            layout.normalize(&tabs);
+        }
         if *active == tab_id {
+            if let Some(layout) = layouts.get_mut(workspace_id) {
+                layout.focus_tab(tab_id);
+            }
             *self.active_workspace_id.lock().map_err(|e| e.to_string())? = workspace_id.to_string();
         }
         Ok(())

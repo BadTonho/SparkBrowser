@@ -4,7 +4,7 @@ export interface SiteSearchShortcut { keyword: string; name: string; template: s
 
 export interface PageNote { url: string; title: string; text: string; updated_at: number; }
 
-export interface SplitLayout { workspace_id: string; left_tab_id: string; right_tab_id: string; ratio: number; focused_tab_id: string; }
+export interface SplitLayout { workspace_id: string; left_tab_id: string; right_tab_id: string; ratio: number; focused_tab_id: string; left_tab_ids: string[]; right_tab_ids: string[]; }
 
 export interface SitePermission { origin: string; kind: "camera" | "microphone" | "location" | "notifications"; state: "ask" | "allow" | "block"; }
 export interface PermissionRequest { id: string; tab_id: string; origin: string; top_origin: string; frame_origin: string | null; kind: SitePermission["kind"]; }

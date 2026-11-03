@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import { replaceGroupOrder } from '../src/lib/services/split-tab-groups.js';
 
 function load(path, imports, globals = {}) {
   const source = ts.transpileModule(readFileSync(path, 'utf8'), {
@@ -57,6 +58,7 @@ function fixture({ failDrop = false } = {}) {
     '../i18n': { locale: writable('en'), tr: key => key },
     '../services/bridge/overlays': { onOverlayOpening: () => () => {} },
     '../services/bridge/tab-drag': bridge,
+    '../services/split-tab-groups.js': { replaceGroupOrder },
     '../services/tab-drag-geometry.js': { crossedDragThreshold: () => true, splitDropSide: () => 'right' },
     './mediaPopoverStore': { mediaPopover: writable(null), closeMedia: async () => {} },
     './privacyPopoverStore': { privacyPopover: writable(null), closePrivacy: async () => {} },

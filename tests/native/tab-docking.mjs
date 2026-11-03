@@ -26,7 +26,7 @@ export async function checkTabDocking(context) {
   const pointer = async actions => request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'pointer', id: 'dock-mouse', parameters: { pointerType: 'mouse' }, actions }] });
   const box = () => script('const r=document.querySelector(".viewport-frame").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}');
   const measurements = previewMeasurements(context, box);
-  const point = id => script('const r=document.querySelector(`[data-tab-id="${arguments[0]}"] .tab-title`).getBoundingClientRect();return {x:Math.round(r.left+Math.min(25,r.width/2)),y:Math.round(r.top+r.height/2)}', id);
+  const point = id => script('const tab=document.querySelector(`[data-tab-id="${arguments[0]}"]`);tab.scrollIntoView({block:"nearest",inline:"nearest"});const r=tab.querySelector(".tab-title").getBoundingClientRect();return {x:Math.round(r.left+Math.min(25,r.width/2)),y:Math.round(r.top+r.height/2)}', id);
   const up = () => pointer([{ type: 'pointerUp', button: 0 }]);
   const holdAtEdge = async (id, side, viaTabId, returnToCenter = false) => {
     await focusTestWindow();

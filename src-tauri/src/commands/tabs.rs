@@ -17,10 +17,11 @@ pub async fn create_tab(
     state: State<'_, BrowserState>,
     url: Option<String>,
     search_engine: Option<String>,
+    side: Option<crate::state::split_docking::DockSide>,
 ) -> Result<TabSnapshot, String> {
     let mut span = state.diagnostics.span("tabs.create");
     let _operation = state.tab_operations.lock().await;
-    let result = create_tab_inner(&app, &state, url, search_engine);
+    let result = create_tab_inner(&app, &state, url, search_engine, side);
     span.finish(result.is_ok(), 0);
     result
 }
@@ -30,6 +31,7 @@ pub(super) fn create_tab_inner(
     state: &BrowserState,
     url: Option<String>,
     search_engine: Option<String>,
+    side: Option<crate::state::split_docking::DockSide>,
 ) -> Result<TabSnapshot, String> {
     let raw_target = url.unwrap_or_else(|| DEFAULT_HOME_URL.to_string());
     let resolved_url = crate::window::url_input::resolve_browser_input(
@@ -67,6 +69,21 @@ pub(super) fn create_tab_inner(
                 active_ws_id,
                 true,
             ));
+        if let Some(side) = side {
+            if let Some(layout) = state
+                .split_layouts
+                .lock()
+                .map_err(|e| e.to_string())?
+                .get_mut(
+                    &*state
+                        .active_workspace_id
+                        .lock()
+                        .map_err(|e| e.to_string())?,
+                )
+            {
+                layout.group_mut(side).push(new_tab_id.clone());
+            }
+        }
         state.select_tab(&new_tab_id)?;
         Ok(())
     })?;
