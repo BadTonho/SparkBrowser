@@ -1,5 +1,6 @@
 mod bridge;
 mod recent;
+pub mod widgets;
 
 use crate::state::browser_state::BrowserState;
 use std::sync::{
@@ -41,6 +42,7 @@ pub struct NewTabService {
 struct Session {
     document: String,
     sequence: u64,
+    last_read: u64,
     navigation: u64,
     presented: bool,
 }
@@ -58,6 +60,7 @@ impl Session {
 }
 
 pub fn revoke(app: &AppHandle, label: &str) {
+    widgets::revoke(app, label);
     if let Ok(mut sessions) = app.state::<NewTabService>().sessions.lock() {
         sessions.remove(label);
     }
@@ -158,12 +161,17 @@ mod tests {
         let mut session = super::Session {
             document: "current".into(),
             sequence: 1,
+            last_read: 1,
             navigation: 0,
             presented: true,
         };
         assert!(session.accept("current", 2, true));
         assert!(session.accept("current", 3, false));
         assert_eq!(session.navigation, 2);
+        assert_eq!(
+            session.last_read, 1,
+            "widget reads cannot cancel pending history reads"
+        );
         assert!(!session.accept("old", 4, true));
         assert!(!session.accept("current", 2, true));
         assert!(session.accept("current", 4, true));

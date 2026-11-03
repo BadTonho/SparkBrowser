@@ -6,7 +6,7 @@ use crate::{
 use std::collections::HashMap;
 use tauri::Emitter;
 
-fn valid(app: &AppHandle, id: &str, label: &str, token: &str) -> bool {
+pub(super) fn valid(app: &AppHandle, id: &str, label: &str, token: &str) -> bool {
     super::super::navigation_state::is_current_generation(app, label, token)
         && app
             .state::<BrowserState>()
@@ -27,7 +27,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     if values.get("token").map(String::as_str) != Some(token) || !valid(app, id, label, token) {
         return;
     }
-    if !matches!(url.path(), "/read" | "/navigate" | "/visit")
+    if !matches!(url.path(), "/read" | "/navigate" | "/visit" | "/widgets")
         || (url.path() == "/visit" && !values.get("site_key").is_some_and(|key| !key.is_empty()))
     {
         return;
@@ -55,9 +55,13 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
             if !session.accept(
                 &document,
                 sequence,
-                matches!(url.path(), "/navigate" | "/visit"),
+                matches!(url.path(), "/navigate" | "/visit")
+                    || values.get("operation").is_some_and(|op| op == "open_gmail"),
             ) {
                 return;
+            }
+            if url.path() == "/read" {
+                session.last_read = sequence;
             }
         } else if url.path() == "/read" {
             sessions.insert(
@@ -65,6 +69,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
                 Session {
                     document: document.clone(),
                     sequence,
+                    last_read: sequence,
                     navigation: 0,
                     presented: false,
                 },
@@ -72,6 +77,10 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
         } else {
             return;
         }
+    }
+    if url.path() == "/widgets" {
+        widgets::handle(app, id, label, token, &values);
+        return;
     }
     let Some(request) = values.get("request").and_then(|v| v.parse::<u64>().ok()) else {
         if matches!(url.path(), "/navigate" | "/visit") {
@@ -125,7 +134,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
             };
             let Some(session) = sessions
                 .get_mut(&label)
-                .filter(|s| s.document == document && s.sequence == sequence)
+                .filter(|s| s.document == document && s.last_read == sequence)
             else {
                 return;
             };
@@ -159,7 +168,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     });
 }
 
-fn navigate(
+pub(super) fn navigate(
     app: &AppHandle,
     id: &str,
     label: &str,

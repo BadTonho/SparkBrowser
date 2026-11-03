@@ -1,0 +1,48 @@
+#widgets { position:absolute; top:24px; left:24px; right:24px; display:grid; grid-template-columns:minmax(0,280px) minmax(0,320px); justify-content:space-between; align-items:start; gap:24px; pointer-events:none; }
+.widget { min-width:0; padding:18px; border:1px solid #ffffff16; border-radius:16px; background:#171717; pointer-events:auto; }
+#gmail-widget { grid-column:2; }
+.widget-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.widget h2,dialog h2 { margin:0; font-size:15px; font-weight:600; }
+.widget p,dialog p { text-align:left; line-height:1.5; margin:8px 0; overflow-wrap:anywhere; }
+.widget button,dialog button { border:1px solid #ffffff22; border-radius:8px; background:#ffffff09; padding:8px 10px; font-size:12px; }
+.icon-button { width:36px; height:36px; display:grid; place-items:center; flex:none; border:1px solid #ffffff24; border-radius:10px; background:#1e1e1e; padding:0 !important; }
+button:disabled { opacity:.45; cursor:default; }
+#customization { position:fixed; right:24px; bottom:20px; z-index:2; }
+#settings-panel { position:fixed; inset:0 0 0 auto; margin:0; max-width:100%; width:380px; height:100%; max-height:100%; border:0; border-left:1px solid #ffffff24; background:#191919; color:inherit; padding:24px; overflow:auto; box-shadow:-16px 0 50px #0005; }
+#settings-panel::backdrop { background:#0007; }
+dialog section { border-top:1px solid #ffffff16; padding-top:16px; margin-top:24px; }
+dialog h3 { font-size:14px; margin:0 0 16px; }
+dialog label:not(.toggle) { display:block; margin:16px 0 8px; font-size:12px; }
+.toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:13px; }
+.toggle input { flex:none; width:18px; height:18px; accent-color:#bcb6df; }
+dialog select,dialog input[type=search] { width:100%; padding:10px; border:1px solid #ffffff26; border-radius:8px; color:inherit; background:#252525; font:inherit; font-size:13px; }
+dialog input:focus-visible,dialog select:focus-visible { outline:2px solid #bcb6df; outline-offset:2px; }
+.city-search { display:flex; gap:8px; margin-top:12px; }
+.city-search input { min-width:0; }
+.city-search button { flex:none; }
+#city-results { display:grid; gap:6px; }
+#city-results button { text-align:left; }
+#settings-status,#city-status,#weather-status,#gmail-status,#gmail-config-status { color:#bcb6cd; font-size:12px; }
+.weather-temperature { display:flex; align-items:center; gap:10px; margin:12px 0; font-size:32px; }
+.weather-symbol { width:32px; height:32px; }
+.weather-days { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:16px; font-size:11px; }
+.weather-day { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.weather-day .weather-symbol { width:22px; height:22px; }
+#weather-attribution { border:0; background:transparent; padding:4px 0; margin-top:6px; color:#aaa; font-size:10px; text-decoration:underline; }
+#gmail-account { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#gmail-messages { list-style:none; padding:0; margin:12px 0; }
+.gmail-message { padding:8px 0; border-top:1px solid #ffffff10; display:grid; gap:3px; }
+.gmail-message span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.gmail-message time { font-size:10px; color:#999; }
+.gmail-message.unread .mail-sender { font-weight:700; }
+@media (max-width:1399px) {
+  #widgets { position:relative; top:auto; left:auto; right:auto; margin:24px; }
+  body:has(#widgets:not([hidden])) main { min-height:320px; padding-top:24px; padding-bottom:80px; }
+}
+@media (max-width:720px) {
+  #widgets { grid-template-columns:minmax(0,1fr); gap:16px; }
+  #gmail-widget { grid-column:1; }
+}
+@media (max-height:760px) and (min-width:721px) {
+  body:has(#widgets:not([hidden])) main { padding-bottom:80px; }
+}

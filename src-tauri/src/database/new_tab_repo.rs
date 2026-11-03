@@ -1,0 +1,132 @@
+//! Device-local customization. Deliberately absent from backup serialization.
+use rusqlite::{Connection, OptionalExtension};
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct City {
+    pub name: String,
+    pub region: String,
+    pub country: String,
+    pub latitude: f64,
+    pub longitude: f64,
+}
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+#[serde(default, deny_unknown_fields)]
+pub struct Settings {
+    pub weather_enabled: bool,
+    pub gmail_enabled: bool,
+    pub automatic_location: bool,
+    pub fahrenheit: bool,
+    pub city: Option<City>,
+}
+impl Settings {
+    pub fn validate(&self) -> Result<(), String> {
+        if let Some(city) = &self.city {
+            if city.name.trim().is_empty()
+                || [&city.name, &city.region, &city.country]
+                    .iter()
+                    .any(|s| s.len() > 200)
+                || !city.latitude.is_finite()
+                || !city.longitude.is_finite()
+                || !(-90.0..=90.0).contains(&city.latitude)
+                || !(-180.0..=180.0).contains(&city.longitude)
+            {
+                return Err("invalid_settings".into());
+            }
+        }
+        Ok(())
+    }
+}
+pub fn migrate(conn: &Connection) -> Result<(), String> {
+    super::migrations::apply(conn, "new-tab-widgets-v1", |conn| {
+        conn.execute_batch("CREATE TABLE IF NOT EXISTS new_tab_settings (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL)").map_err(|_| "settings_unavailable".into())
+    })?;
+    super::migrations::apply(conn, "new-tab-account-revocation-v1", |conn| {
+        conn.execute_batch("CREATE TABLE IF NOT EXISTS new_tab_account_state (id INTEGER PRIMARY KEY CHECK(id=1), disconnected INTEGER NOT NULL)").map_err(|_|"settings_unavailable".into())
+    })
+}
+pub fn account_disconnected(conn: &Connection) -> Result<bool, String> {
+    conn.query_row(
+        "SELECT disconnected FROM new_tab_account_state WHERE id=1",
+        [],
+        |r| r.get(0),
+    )
+    .optional()
+    .map(|v| v.unwrap_or(false))
+    .map_err(|_| "settings_unavailable".into())
+}
+pub fn set_account_disconnected(conn: &Connection, disconnected: bool) -> Result<(), String> {
+    conn.execute("INSERT INTO new_tab_account_state(id,disconnected) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET disconnected=excluded.disconnected",[disconnected]).map(|_|()).map_err(|_|"settings_unavailable".into())
+}
+pub fn load(conn: &Connection) -> Result<Settings, String> {
+    let raw: Option<String> = conn
+        .query_row("SELECT value FROM new_tab_settings WHERE id=1", [], |r| {
+            r.get(0)
+        })
+        .optional()
+        .map_err(|_| "settings_unavailable")?;
+    let settings: Settings = raw
+        .map(|v| serde_json::from_str(&v))
+        .transpose()
+        .map_err(|_| "settings_unavailable")?
+        .unwrap_or_default();
+    settings.validate()?;
+    Ok(settings)
+}
+pub fn save(conn: &Connection, settings: &Settings) -> Result<(), String> {
+    settings.validate()?;
+    conn.execute("INSERT INTO new_tab_settings(id,value) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET value=excluded.value", [serde_json::to_string(settings).map_err(|_| "invalid_settings")?]).map_err(|_| "settings_unavailable")?;
+    Ok(())
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn migration_defaults_roundtrip_and_validation() {
+        let db = Connection::open_in_memory().unwrap();
+        migrate(&db).unwrap();
+        migrate(&db).unwrap();
+        assert_eq!(load(&db).unwrap(), Settings::default());
+        let mut s = Settings {
+            weather_enabled: true,
+            city: Some(City {
+                name: "São Paulo".into(),
+                region: "SP".into(),
+                country: "BR".into(),
+                latitude: -23.5,
+                longitude: -46.6,
+            }),
+            ..Default::default()
+        };
+        save(&db, &s).unwrap();
+        assert_eq!(load(&db).unwrap(), s);
+        s.city.as_mut().unwrap().latitude = 91.0;
+        assert!(save(&db, &s).is_err());
+        assert_ne!(load(&db).unwrap(), s);
+    }
+    #[test]
+    fn local_customization_never_enters_backup_data() {
+        let db = Connection::open_in_memory().unwrap();
+        crate::database::connection::initialize_schema(&db).unwrap();
+        save(
+            &db,
+            &Settings {
+                weather_enabled: true,
+                city: Some(City {
+                    name: "private city marker".into(),
+                    region: "region".into(),
+                    country: "country".into(),
+                    latitude: 12.345,
+                    longitude: 67.89,
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let exported =
+            serde_json::to_string(&crate::database::backup_repo::collect(&db).unwrap()).unwrap();
+        assert!(!exported.contains("private city marker"));
+        assert!(!exported.contains("weather_enabled"));
+    }
+}

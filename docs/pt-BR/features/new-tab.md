@@ -12,4 +12,6 @@ O documento interno usa o WebView normal da guia e seu histórico nativo. Voltar
 
 Uma migração idempotente cria o cache reconstruível `site_icons`; os sites recentes continuam usando o histórico existente. As exportações de backup continuam na versão 4, excluem o cache de ícones e seguem importando versões 1–4. Somente guias e páginas de sessões aceitam o endereço interno exato; restrições de URLs dos demais dados externos permanecem. Versões antigas do aplicativo que aceitam apenas guias HTTP/HTTPS podem rejeitar backups contendo a nova página interna.
 
+Os widgets opcionais de clima e Gmail fazem consultas pelo backend somente quando ativados; a busca e os cartões continuam disponíveis sem internet. Consulte [widgets da nova guia](new-tab-widgets.md) para configuração, localização e conexão pessoal do Gmail.
+
 Validação: `npm run validate` e cenário nativo isolado `new-tab`, com regressões de teclado, grupos do split, troca de workspace, guias fechadas, persistência de workspaces, backup e recuperação. Consulte [testes nativos](../contributing/native-tests.md).

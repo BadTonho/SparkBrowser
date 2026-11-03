@@ -5,6 +5,7 @@ pub mod executor;
 pub mod history_repo;
 pub mod migrations;
 pub mod navigation_writer;
+pub mod new_tab_repo;
 pub mod notes_repo;
 pub mod saved_sessions_repo;
 pub mod session_repo;

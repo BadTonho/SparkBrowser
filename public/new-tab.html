@@ -7,8 +7,30 @@
   <title>New tab</title>
   <link rel="stylesheet" href="/new-tab/page.css">
   <script src="/new-tab/page.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/widgets.css">
+  <script src="/new-tab/widgets.js" defer></script>
 </head>
 <body>
+  <div id="widgets" hidden>
+    <section id="weather-widget" class="widget" aria-labelledby="weather-heading" hidden>
+      <div class="widget-heading"><h2 id="weather-heading"></h2><button id="weather-refresh" type="button" class="icon-button" data-label="refresh">↻</button></div>
+      <p id="weather-place"></p>
+      <div id="weather-content"></div>
+      <p id="weather-status" role="status"></p>
+      <button id="weather-locate" type="button" data-label="locate" hidden></button>
+      <button id="weather-configure" type="button" data-label="configure" hidden></button>
+      <button id="weather-attribution" class="text-button" type="button">Open-Meteo</button>
+    </section>
+    <section id="gmail-widget" class="widget" aria-labelledby="gmail-heading" hidden>
+      <div class="widget-heading"><h2 id="gmail-heading">Gmail</h2><button id="gmail-refresh" type="button" class="icon-button" data-label="refresh">↻</button></div>
+      <p id="gmail-account"></p>
+      <p id="gmail-unread"></p>
+      <ol id="gmail-messages"></ol>
+      <p id="gmail-status" role="status"></p>
+      <button id="gmail-widget-connect" type="button" data-label="connect"></button>
+      <button id="gmail-open" type="button" data-label="openGmail" hidden></button>
+    </section>
+  </div>
   <main>
     <section class="content" aria-label="Search">
       <form id="search-form" role="search">
@@ -22,5 +44,35 @@
       <div id="error" role="status" hidden><span id="error-text"></span> <button id="retry" type="button">Try again</button></div>
     </section>
   </main>
+  <footer id="customization"><button id="widget-settings" class="icon-button" type="button" aria-controls="settings-panel" aria-expanded="false" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 3-.7 2.3-2 .9L4 5.7 2.5 8.3 4 10v2l-1.5 1.7L4 16.3l2.3-.5 2 .9L9 19h3l.7-2.3 2-.9 2.3.5 1.5-2.6L17 12v-2l1.5-1.7L17 5.7l-2.3.5-2-.9L12 3Z" transform="translate(1.5 1)"/><circle cx="12" cy="12" r="3"/></svg></button></footer>
+  <dialog id="settings-panel" aria-labelledby="settings-heading">
+    <div class="widget-heading"><h2 id="settings-heading" data-label="settings"></h2><button id="settings-close" type="button" class="icon-button" data-label="close">×</button></div>
+    <p id="settings-status" role="status"></p>
+    <section aria-labelledby="weather-settings-heading">
+      <h3 id="weather-settings-heading" data-label="weather"></h3>
+      <label class="toggle"><span data-label="showWeather"></span><input id="weather-enabled" type="checkbox"></label>
+      <div id="weather-options" hidden>
+        <label for="location-mode" data-label="location"></label>
+        <select id="location-mode"><option value="manual" data-label="manual"></option><option value="automatic" data-label="automatic"></option></select>
+        <div id="manual-location">
+          <div class="city-search"><input id="city-query" type="search" autocomplete="off" maxlength="200"><button id="city-search" type="button" data-label="findCity"></button></div>
+          <p id="city-status" role="status"></p><div id="city-results"></div><p id="selected-city"></p>
+        </div>
+        <button id="location-request" type="button" data-label="locate" hidden></button>
+        <label for="temperature-unit" data-label="unit"></label>
+        <select id="temperature-unit"><option value="celsius">°C</option><option value="fahrenheit">°F</option></select>
+      </div>
+    </section>
+    <section aria-labelledby="gmail-settings-heading">
+      <h3 id="gmail-settings-heading">Gmail</h3>
+      <label class="toggle"><span data-label="showGmail"></span><input id="gmail-enabled" type="checkbox"></label>
+      <div id="gmail-options" hidden>
+        <p data-label="gmailDescription"></p><p id="gmail-config-status" role="status"></p>
+        <button id="gmail-connect" type="button" data-label="connect"></button>
+        <button id="gmail-cancel" type="button" data-label="cancel" hidden></button>
+        <button id="gmail-disconnect" type="button" data-label="disconnect" hidden></button>
+      </div>
+    </section>
+  </dialog>
 </body>
 </html>

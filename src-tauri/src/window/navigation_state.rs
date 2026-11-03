@@ -82,6 +82,15 @@ pub(super) fn install_native_navigation(
             let starting_id = current.clone();
             let starting = NavigationStartingEventHandler::create(Box::new(move |_, args| {
                 if let Some(args) = args {
+                    let mut uri = Default::default();
+                    unsafe {
+                        args.Uri(&mut uri)?;
+                    }
+                    if url::Url::parse(&CoTaskMemPWSTR::from(uri).to_string())
+                        .is_ok_and(|u| u.scheme() == "veloce-internal")
+                    {
+                        return Ok(());
+                    }
                     let mut id = 0;
                     unsafe {
                         args.NavigationId(&mut id)?;
@@ -135,7 +144,7 @@ pub(super) fn install_native_navigation(
                         args.WebErrorStatus(&mut status)?;
                     }
                     let latest = current.load(Ordering::SeqCst);
-                    if latest == 0 || latest == id {
+                    if latest != 0 && latest == id {
                         update_navigation(&a, &t, &l, &secret, |tab| {
                             tab.navigation.loading = false;
                             tab.navigation.error = (!success.as_bool()).then(|| {
@@ -176,6 +185,11 @@ pub(super) fn with_page_events(
     let tab_for_load = tab_id.to_string();
     let label_for_load = label.to_owned();
     let webview_builder = webview_builder.on_page_load(move |webview, payload| {
+        // Navigation-shaped messages are cancelled by on_navigation; they do
+        // not replace the document or invalidate its authenticated session.
+        if payload.url().scheme() == "veloce-internal" {
+            return;
+        }
         if !super::navigation_state::is_current_generation(
             &app_for_page_load,
             &label_for_load,

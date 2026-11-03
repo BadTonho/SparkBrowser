@@ -88,6 +88,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
         .manage(window::new_tab::NewTabService::default())
+        .manage(window::new_tab::widgets::Widgets::default())
         .manage(window::tab_drag_preview::DragPreview::default())
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
@@ -163,6 +164,7 @@ pub fn run() {
             app.state::<zoom::ZoomService>()
                 .initialize(app.handle())
                 .map_err(std::io::Error::other)?;
+            window::new_tab::widgets::initialize(app.handle());
             spawn_content_webview(app.handle())?;
             state
                 .startup_ready

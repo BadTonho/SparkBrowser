@@ -3,28 +3,12 @@ import {spawn} from 'node:child_process';
 import {resolve} from 'node:path';
 import {readFileSync} from 'node:fs';
 import { withScenarioDatabase } from './persistence/database.mjs';
+import {checkNewTabWidgets} from './new-tab-widgets.mjs';
+import {newTabDriver} from './new-tab-driver.mjs';
 
 export async function checkNewTab(context) {
   const {invoke,script,click,until,fixture,resizeWindow,request,sessionId,restart}=context;
-  const inside=async(action,id)=>{
-    const target=id??(await active()).id;
-    const previous=await request('GET',`/session/${sessionId()}/window`);
-    try {
-      await until(async()=>{
-        const handles=await request('GET',`/session/${sessionId()}/window/handles`);
-        for(const handle of handles){
-          try {await request('POST',`/session/${sessionId()}/window`,{handle});if(await script('return window.__veloceNewTabId===arguments[0]',target))return true;}catch(error){if(!/no such window|web view not found/i.test(String(error)))throw error;}
-        }
-        return false;
-      },'new tab WebView '+target);
-      return await action();
-    } finally {await request('POST',`/session/${sessionId()}/window`,{handle:previous});}
-  };
-  const ready=async()=>{
-    await until(async()=>{const tab=await active();return tab.url==='veloce://newtab'&&!tab.navigation.loading;},'internal navigation settled');
-    return inside(()=>until(()=>script('return Boolean(document.querySelector("#search")?.placeholder && document.querySelector("#recent")?.dataset.key)'),'local new tab ready'));
-  };
-  const active=()=>invoke('get_tabs').then(p=>p.tabs.find(t=>t.is_active));
+  const {inside,ready,active}=newTabDriver(context);
   assert.equal((await active()).url,'veloce://newtab','empty profile starts locally');
   await ready();
   await inside(async()=>{
@@ -178,4 +162,5 @@ export async function checkNewTab(context) {
   const after=await withScenarioDatabase(context.directory,db=>db.prepare('SELECT site_key,hex(png) AS image FROM site_icons ORDER BY site_key').all());
   for(const entry of cached)assert.ok(after.some(row=>row.site_key===entry.site_key&&row.image===entry.image),'favicon persists across restart');
   await context.screenshot('new-tab');
+  await checkNewTabWidgets(context,{inside,ready,active});
 }
