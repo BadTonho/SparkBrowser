@@ -1,6 +1,10 @@
 use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, Emitter, Manager};
 pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
+    // Capture this guard before queuing: presentation events may finish after drop.
+    if super::tab_drag_preview::active(app) {
+        return;
+    }
     let (app, id, label, token) = (
         app.clone(),
         tab_id.to_owned(),
@@ -10,7 +14,8 @@ pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
     tauri::async_runtime::spawn(async move {
         let state = app.state::<BrowserState>();
         let _operation = state.tab_operations.lock().await;
-        if !super::navigation_state::is_current_generation(&app, &label, &token)
+        if super::tab_drag_preview::active(&app)
+            || !super::navigation_state::is_current_generation(&app, &label, &token)
             || state.is_overlay_open.lock().map(|v| *v).unwrap_or(true)
             || state
                 .workspace_switcher_open

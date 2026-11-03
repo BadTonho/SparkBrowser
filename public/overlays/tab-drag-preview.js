@@ -1,10 +1,16 @@
 let latestRevision = 0;
-window.setDragPreview = ({ revision, label, locale, pointer, title, host, pane }) => {
+window.setDragPreview = ({ revision, label, locale, pointer, title, host, pane, placeholder }) => {
   // Initial document loading may delay an earlier paint beyond a newer one.
   if (revision < latestRevision) return;
   latestRevision = revision;
   document.documentElement.lang = locale;
   document.getElementById('split-drop-label').textContent = label;
+  const reserved = document.getElementById('split-companion-placeholder');
+  reserved.hidden = !placeholder;
+  if (placeholder) Object.assign(reserved.style, {
+    left: `${placeholder.x}px`, top: `${placeholder.y}px`,
+    width: `${placeholder.width}px`, height: `${placeholder.height}px`,
+  });
   const target = document.getElementById('split-drop-preview');
   target.hidden = !pane;
   if (pane) Object.assign(target.style, {

@@ -21,7 +21,7 @@ test('only the internal 32px of the page edges offer docking', () => {
 });
 
 function previewFixture() {
-  const elements = new Map(['split-drop-label', 'split-drop-preview', 'dragged-tab', 'dragged-tab-title', 'dragged-tab-host']
+  const elements = new Map(['split-drop-label', 'split-drop-preview', 'split-companion-placeholder', 'dragged-tab', 'dragged-tab-title', 'dragged-tab-host']
     .map(id => [id, { textContent: '', style: {}, hidden: false, getBoundingClientRect: () => ({ width: 244, height: 56 }) }]));
   const document = { documentElement: { lang: '' }, getElementById: id => elements.get(id) };
   const window = {};
@@ -55,4 +55,17 @@ test('dragged tab follows the pointer outside docking regions and keeps its titl
   paint({ revision: 3, pointer: { x: -5, y: -5 } });
   assert.deepEqual(elements.get('dragged-tab').style, { left: '11px', top: '13px' });
   assert.equal(elements.get('split-drop-preview').hidden, true);
+});
+
+test('an unloaded companion reserves its final pane and old paints cannot restore it', () => {
+  const { elements, paint } = previewFixture();
+  const reserved = elements.get('split-companion-placeholder');
+  const placeholder = { x: 10, y: 80, width: 392, height: 500 };
+  paint({ revision: 10, placeholder });
+  assert.equal(reserved.hidden, false);
+  assert.deepEqual(reserved.style, { left: '10px', top: '80px', width: '392px', height: '500px' });
+  paint({ revision: 11 });
+  assert.equal(reserved.hidden, true);
+  paint({ revision: 10, placeholder });
+  assert.equal(reserved.hidden, true);
 });

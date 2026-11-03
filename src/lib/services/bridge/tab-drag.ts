@@ -14,4 +14,5 @@ export function setDragPreview(presentation: DragPresentation | null): Promise<v
     ? invoke<void>("set_tab_drag_preview", { revision: current, presentation }) : undefined);
   return queue;
 }
+export const flushDragPreview = (): Promise<void> => queue;
 export const dockTabToSplit = (tabId: string, side: DockSide, context: DockContext) => invoke<TabSnapshot>("dock_tab_to_split", { tabId, side, context });

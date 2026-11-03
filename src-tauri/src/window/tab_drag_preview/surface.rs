@@ -7,38 +7,60 @@ const LABEL: &str = "tab-drag-preview";
 
 pub fn hide(app: &AppHandle) {
     if let Some(window) = app.get_window(LABEL) {
-        let _ = visibility(&window, false);
+        let _ = visibility(&window, None);
     }
 }
 
 // Showing an owned preview must preserve the shell's real pointer capture.
 #[cfg(windows)]
-fn visibility(window: &tauri::Window, visible: bool) -> Result<(), String> {
+fn visibility(window: &tauri::Window, revision: Option<u64>) -> Result<(), String> {
     let handle = window.hwnd().map_err(|e| e.to_string())?.0 as isize;
+    let app = window.app_handle().clone();
     window
         .run_on_main_thread(move || {
+            if revision.is_some_and(|revision| !super::paint_is_current(&app, revision)) {
+                return;
+            }
             #[link(name = "user32")]
             unsafe extern "system" {
                 fn ShowWindow(window: *mut std::ffi::c_void, command: i32) -> i32;
             }
             unsafe {
-                ShowWindow(handle as *mut std::ffi::c_void, if visible { 4 } else { 0 });
+                ShowWindow(
+                    handle as *mut std::ffi::c_void,
+                    if revision.is_some() { 4 } else { 0 },
+                );
             }
         })
         .map_err(|e| e.to_string())
 }
 
 #[cfg(not(windows))]
-fn visibility(window: &tauri::Window, visible: bool) -> Result<(), String> {
-    if visible {
-        window.show()
-    } else {
-        window.hide()
-    }
-    .map_err(|e| e.to_string())
+fn visibility(window: &tauri::Window, revision: Option<u64>) -> Result<(), String> {
+    let target = window.clone();
+    window
+        .run_on_main_thread(move || {
+            if revision
+                .is_some_and(|revision| !super::paint_is_current(target.app_handle(), revision))
+            {
+                return;
+            }
+            if revision.is_some() {
+                let _ = target.show();
+            } else {
+                let _ = target.hide();
+            }
+        })
+        .map_err(|e| e.to_string())
 }
 
 pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String> {
+    let revision = payload["revision"]
+        .as_u64()
+        .ok_or("Missing preview paint revision")?;
+    if !super::paint_is_current(app, revision) {
+        return Ok(());
+    }
     let main = app.get_window("main").ok_or("Main window not found")?;
     if main.is_minimized().map_err(|e| e.to_string())? {
         hide(app);
@@ -107,5 +129,5 @@ pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String>
         view.set_bounds(bounds).map_err(|e| e.to_string())?;
     }
     view.eval(format!("(() => {{ const data={payload}; let attempts=0; const paint=()=>{{if(window.setDragPreview)window.setDragPreview(data);else if(++attempts<120)setTimeout(paint,16);}};paint(); }})();")).map_err(|e| e.to_string())?;
-    visibility(&window, true)
+    visibility(&window, Some(revision))
 }

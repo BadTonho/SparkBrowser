@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { withScenarioDatabase } from './persistence/database.mjs';
 import { inspectDragWindows } from './tab-drag-window.mjs';
 import { checkDragCard } from './tab-drag-card.mjs';
+import { previewMeasurements, checkUnloadedCompanion } from './tab-docking-preview.mjs';
 
 export async function checkTabDocking(context) {
   const { invoke, until, fixture, script, click, request, sessionId, restart, resizeWindow, wait } = context;
@@ -24,9 +25,11 @@ export async function checkTabDocking(context) {
   await script(`window.dockingEvents=[];for(const type of ['pointerdown','pointerup','lostpointercapture','blur'])window.addEventListener(type,event=>{window.dockingEvents.push([type,event.clientX,event.clientY,event.pointerId]);if(window.dockingEvents.length>24)window.dockingEvents.shift();},true);`);
   const pointer = async actions => request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'pointer', id: 'dock-mouse', parameters: { pointerType: 'mouse' }, actions }] });
   const box = () => script('const r=document.querySelector(".viewport-frame").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}');
+  const measurements = previewMeasurements(context, box);
   const point = id => script('const r=document.querySelector(`[data-tab-id="${arguments[0]}"] .tab-title`).getBoundingClientRect();return {x:Math.round(r.left+Math.min(25,r.width/2)),y:Math.round(r.top+r.height/2)}', id);
   const up = () => pointer([{ type: 'pointerUp', button: 0 }]);
-  const holdAtEdge = async (id, side, viaTabId) => {
+  const holdAtEdge = async (id, side, viaTabId, returnToCenter = false) => {
+    await focusTestWindow();
     const p=await point(id),r=await box();
     // Keep the crossing in one W3C action sequence: EdgeDriver can release
     // native capture between separate actions requests targeting child WebViews.
@@ -35,7 +38,8 @@ export async function checkTabDocking(context) {
       {type:'pointerMove',duration:60,x:p.x+8,y:p.y},
       ...(via?[{type:'pointerMove',duration:180,...via}]:[]),
       {type:'pointerMove',duration:180,x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)},
-      ...(side?[{type:'pointerMove',duration:180,x:Math.round(side==='left'?r.left+12:r.left+r.width-12),y:Math.round(r.top+r.height/2)}]:[])]);
+      ...(side?[{type:'pointerMove',duration:180,x:Math.round(side==='left'?r.left+12:r.left+r.width-12),y:Math.round(r.top+r.height/2)}]:[]),
+      ...(returnToCenter ? [{type:'pause',duration:600},{type:'pointerMove',duration:180,x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}] : [])]);
   };
   const checkPreview = async () => {
     if (process.platform === 'win32') {
@@ -49,10 +53,14 @@ export async function checkTabDocking(context) {
       assert.ok(Math.abs(preview.left-main.clientLeft)<=2 && Math.abs(preview.top-main.clientTop)<=2,'preview aligns with main client');
     }
   };
-  const dock = async (id, side) => {
-    await holdAtEdge(id, side); await checkPreview(); await up();
+  const dock = async (id, side, companion, ratio = 0.65) => {
+    await holdAtEdge(id, side); await checkPreview();
+    const width = await measurements.companion(companion, side, ratio);
+    const tracking = await measurements.track(companion);
+    await up();
     try { await until(async () => (await invoke('get_tabs')).split_layout?.[side + '_tab_id'] === id, 'docked ' + side); }
     catch(error){console.log('Drop diagnostics',await script('return {events:window.dockingEvents,focus:document.hasFocus(),error:document.querySelector("[role=alert]")?.textContent}'));throw error;}
+    await measurements.continuous(companion, width, tracking);
   };
   console.log('Docking: horizontal crossing native page');
   await focusTestWindow();
@@ -63,22 +71,39 @@ export async function checkTabDocking(context) {
   await holdAtEdge(b.id,null);await checkPreview();
   assert.equal((await invoke('get_tabs')).split_layout,null,'card is visible over page center without docking');
   await cancelHold();
+  const center = await box();
+  await holdAtEdge(b.id, 'right', undefined, true);
+  await until(() => Math.abs(fixture.reports.get('dock-a')?.width - center.width) <= 2, 'leaving the edge restores full native width');
+  assert.ok(fixture.reports.get('dock-a').widths.some(width => Math.abs(width - (center.width - 8) / 2) <= 2), 'continuous edge crossing resized the native companion');
+  await checkPreview();
+  await cancelHold();
   await holdAtEdge(b.id,'left',a.id); await checkPreview();
+  let firstWidth = await measurements.companion('dock-a', 'left');
   assert.equal((await invoke('get_tabs')).split_layout, null, 'preview does not split');
   assert.equal((await invoke('get_tabs')).tabs.find(t => t.is_active).id, a.id);
+  await invoke('set_tab_pinned', { tabId: a.id, pinned: true });
+  assert.equal((await invoke('get_tabs')).split_layout, null, 'unrelated session save keeps the committed layout');
+  await measurements.companion('dock-a', 'left');
+  await invoke('set_tab_pinned', { tabId: a.id, pinned: false });
+  await resizeWindow(1160, 780);
+  await wait(250);
+  await checkPreview();
+  firstWidth = await measurements.companion('dock-a', 'left');
+  const firstTracking = await measurements.track('dock-a');
   await context.screenshot('dock-preview');
   await up();
   await until(async () => (await invoke('get_tabs')).split_layout?.left_tab_id === b.id, 'left drop');
+  await measurements.continuous('dock-a', firstWidth, firstTracking);
   assert.equal((await invoke('get_tabs')).split_layout.right_tab_id, a.id);
   assert.equal((await invoke('get_tabs')).tabs.find(t => t.is_active).id, b.id);
   assert.deepEqual((await invoke('get_tabs')).tabs.map(t => t.id), order, 'docking does not reorder');
   const split = (await invoke('get_tabs')).split_layout;
   await invoke('commit_split_ratio', { key: `${split.workspace_id}:${split.left_tab_id}:${split.right_tab_id}`, ratio: 0.65 });
-  await dock(c.id, 'right');
+  await dock(c.id, 'right', 'dock-b');
   assert.equal((await invoke('get_tabs')).split_layout.ratio, 0.65);
   assert.equal((await invoke('get_tabs')).split_layout.left_tab_id, b.id);
   assert.ok((await invoke('get_tabs')).tabs.some(t => t.id === a.id), 'replaced page stays open');
-  await dock(b.id, 'right');
+  await dock(b.id, 'right', 'dock-c');
   assert.equal((await invoke('get_tabs')).split_layout.left_tab_id, c.id, 'paired tab swaps sides');
   assert.equal((await invoke('get_tabs')).split_layout.right_tab_id, b.id);
   assert.equal((await invoke('get_tabs')).tabs.find(t => t.id === b.id).navigation.can_go_back, true);
@@ -87,6 +112,7 @@ export async function checkTabDocking(context) {
   await holdAtEdge(a.id,'left');
   await request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'key', id: 'dock-key', actions: [{ type: 'keyDown', value: '\uE00C' }, { type: 'keyUp', value: '\uE00C' }] }] });
   await up(); assert.deepEqual((await invoke('get_tabs')).split_layout, beforeCancel);
+  await measurements.companion('dock-c', 'right', 0.65);
   await until(() => script('return !document.querySelector(".is-dragging") && document.body.style.cursor!=="grabbing"'), 'drag cancelled');
   console.log('Docking: injected persistence failure');
   await invoke('get_history', { limit: 1 });
@@ -99,16 +125,17 @@ export async function checkTabDocking(context) {
       assert.deepEqual((await invoke('get_tabs')).split_layout, beforeCancel);
       assert.equal((await invoke('get_tabs')).tabs.find(t=>t.id===b.id).navigation.can_go_back,true);
       assert.deepEqual(db.prepare('SELECT * FROM workspace_splits').all(), saved);
+      await measurements.companion('dock-c', 'right', 0.65);
     } finally { db.exec('DROP TRIGGER fail_dock'); }
   });
-  await dock(a.id, 'left');
+  await dock(a.id, 'left', 'dock-b');
   console.log('Docking: vertical tabs and resize');
   await click('[data-testid=open-settings]'); await click('[data-testid=settings-appearance_layout]');
   await script('document.querySelectorAll("#setting-browser-layout button")[1].click();document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
   await until(() => script('return Boolean(document.querySelector(".tab-row"))'), 'vertical tabs');
   await wait(300); await resizeWindow(1000, 740); await wait(300);
   await holdAtEdge(b.id,null);await checkPreview();await cancelHold();
-  await dock(c.id, 'right');
+  await dock(c.id, 'right', 'dock-a');
   assert.equal((await invoke('get_tabs')).split_layout.left_tab_id, a.id);
   assert.equal((await invoke('get_tabs')).split_layout.ratio, 0.65);
   for (const name of ['dock-a', 'dock-b', 'dock-c']) {
@@ -141,6 +168,7 @@ export async function checkTabDocking(context) {
   await wait(250);
   const other=(await invoke('get_tabs')).tabs.filter(tab=>tab.workspace_id==='ws-personal'&&tab.id!==a.id)
     .reduce((best,tab)=>!best||tab.last_active_epoch>best.last_active_epoch?tab:best,null);
-  await dock(a.id,'right');
+  await dock(a.id,'right','dock-c',0.5);
   assert.equal((await invoke('get_tabs')).split_layout.left_tab_id,other.id,'active drag uses recent other tab');
+  await checkUnloadedCompanion(context, { active: a, other, name: 'dock-c', holdAtEdge, checkPreview, cancelHold, up, measurements });
 }

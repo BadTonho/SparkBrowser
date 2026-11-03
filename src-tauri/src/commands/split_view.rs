@@ -3,7 +3,7 @@ use crate::state::{
     split_layout::SplitLayout,
     tab_checkpoint::TabCheckpoint,
 };
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[tauri::command]
 pub async fn dock_tab_to_split(
@@ -14,13 +14,26 @@ pub async fn dock_tab_to_split(
     context: crate::state::split_docking::DockContext,
 ) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
-    crate::window::tab_drag_preview::hide(&app);
-    if crate::window::tab_drag_preview::blocked(&state) {
-        return Err("A browser panel is open".into());
-    }
-    let url = crate::state::split_docking::commit(&state, &context, &tab_id, side)?;
+    let result = if crate::window::tab_drag_preview::blocked(&state)
+        || app.state::<crate::shutdown::ShutdownService>().blocked()
+    {
+        Err("A browser panel is open".into())
+    } else {
+        crate::state::split_docking::commit(&state, &context, &tab_id, side)
+    };
+    let url = result.inspect_err(|_| {
+        if let Err(error) = crate::window::tab_drag_preview::cancel(&app, &state) {
+            let _ = app.emit_to(
+                "main",
+                "browser-error",
+                format!("Could not restore split geometry: {error}"),
+            );
+        }
+    })?;
+    crate::window::tab_drag_preview::clear(&app)?;
     *state.split_preview.lock().map_err(|e| e.to_string())? = None;
     super::tabs::reconcile_committed(&app, &state);
+    crate::window::tab_drag_preview::hide_surface(&app);
     let snapshot = state.snapshot_packet();
     let _ = app.emit_to("main", "tabs-updated", &snapshot);
     let _ = app.emit_to(

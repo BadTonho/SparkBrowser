@@ -67,6 +67,8 @@ export async function createFixture() {
           scrollTo(0, 600);
           let busy = false; let permission = null;
           let hiddenCount = 0, pageClicks = 0;
+          let widthTracking = 0, widths = [innerWidth];
+          window.addEventListener('resize', () => { widths.push(innerWidth); if(widths.length>32)widths.shift(); });
           document.addEventListener('click', () => pageClicks++);
           document.addEventListener('visibilitychange', () => {
             if (document.hidden) hiddenCount++;
@@ -95,6 +97,7 @@ export async function createFixture() {
             if (busy) return; busy = true;
             try {
               const command = await fetch('/control/' + id).then(response => response.json());
+              if (command === 'reset-widths') { widthTracking++; widths = [innerWidth]; }
               if (command === 'native-player-volume') {const el=document.getElementById('fixture-audio');Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').set.call(el,0.8);}
               if (command === 'restore-player-volume') document.getElementById('fixture-audio').volume=1;
               if (command === 'native-controls') {const el=document.getElementById('fixture-audio');el.controls=true;el.src='/tone.wav';await el.play();}
@@ -112,7 +115,7 @@ export async function createFixture() {
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
               if (command === 'download') { const a = document.createElement('a'); a.href = '/download/file?native=1'; a.download = 'fixture.bin'; a.click(); }
               const samples=new Float32Array(1024);measuredAnalyser?.getFloatTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((sum,n)=>sum+n*n,0)/samples.length);const audio=document.getElementById('fixture-audio');
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ videoCount:document.querySelectorAll('video').length,pip:Boolean(document.pictureInPictureElement),videoTime:document.pictureInPictureElement?.currentTime,audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, width: innerWidth, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, scrollAnchor: document.querySelector('div[style*="3000px"]').getBoundingClientRect().top, pageClicks, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ videoCount:document.querySelectorAll('video').length,pip:Boolean(document.pictureInPictureElement),videoTime:document.pictureInPictureElement?.currentTime,audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, width: innerWidth, widths, widthTracking, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, scrollAnchor: document.querySelector('div[style*="3000px"]').getBoundingClientRect().top, pageClicks, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();

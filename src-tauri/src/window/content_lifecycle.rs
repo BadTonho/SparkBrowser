@@ -55,10 +55,8 @@ pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(
 
 /// Synchronizes visibility and bounds of the child WebView.
 pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
-    if super::tab_drag_preview::blocked(state) {
-        super::tab_drag_preview::hide(app);
-    }
     state.refresh_visible_tabs()?;
+    // Only committed pages may be created; drag companions must already be resident.
     let pane_bounds = super::viewport::visible_bounds(state)?;
     for (id, bounds) in &pane_bounds {
         let tab = state
@@ -75,7 +73,6 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
             .load(std::sync::atomic::Ordering::Relaxed),
     );
     let bounds = state.bounds.lock().map(|b| *b).unwrap_or_default();
-    let overlay_open = state.is_overlay_open.lock().map(|o| *o).unwrap_or(false);
     let workspace_switcher_open = state
         .workspace_switcher_open
         .lock()
@@ -126,26 +123,10 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                     .map_err(|e| e.to_string())?
                     .remove(&label);
             }
-            // The transparent native workspace picker is layered above the pages.
-            // Keep both split panes visible behind it, including its exit animation.
-            Some(tab) if tab.is_visible && !overlay_open && !bookmark_context_menu_open => {
-                let bounds = pane_bounds
-                    .iter()
-                    .find(|(id, _)| id == &tab.id)
-                    .map(|(_, rect)| *rect)
-                    .unwrap_or(bounds);
-                webview
-                    .set_bounds(Rect {
-                        position: LogicalPosition::new(bounds.x, bounds.y).into(),
-                        size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0))
-                            .into(),
-                    })
-                    .map_err(|e| e.to_string())?;
-                webview.show().map_err(|e| e.to_string())?;
-            }
-            Some(_) => webview.hide().map_err(|e| e.to_string())?,
+            Some(_) => {}
         }
     }
+    super::viewport::sync_content_geometry(app, state)?;
 
     if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
         if workspace_switcher_open {
@@ -180,5 +161,5 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
 
     super::media_popover::sync(app, state)?;
     super::privacy_popover::sync(app, state)?;
-    Ok(())
+    super::tab_drag_preview::paint(app, state)
 }

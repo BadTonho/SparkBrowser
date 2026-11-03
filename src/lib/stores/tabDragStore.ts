@@ -5,7 +5,7 @@ import { splitLayout, splitKey } from "./splitViewStore";
 import { tabLayout } from "./settingsStore";
 import { locale, tr } from "../i18n";
 import { onOverlayOpening } from "../services/bridge/overlays";
-import { dockTabToSplit, setDragPreview, type DockSide, type DockContext } from "../services/bridge/tab-drag";
+import { dockTabToSplit, setDragPreview, flushDragPreview, type DockSide, type DockContext } from "../services/bridge/tab-drag";
 import { crossedDragThreshold, splitDropSide } from "../services/tab-drag-geometry.js";
 import { mediaPopover, closeMedia } from "./mediaPopoverStore";
 import { privacyPopover, closePrivacy } from "./privacyPopoverStore";
@@ -40,7 +40,7 @@ function contextValid() {
     && get(tabs).some(tab => tab.id === drag!.id && tab.workspace_id === drag!.context.workspaceId)
     && (current ? splitKey(current) : null) === drag.context.splitKey && get(tabLayout) === drag.layout;
 }
-function cleanup() {
+function cleanup(keepDockPreview = false) {
   const previous = drag;
   drag = null; lastPreview = ""; cancelAnimationFrame(frame); frame = 0;
   window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', release);
@@ -51,7 +51,7 @@ function cleanup() {
   document.body.style.cursor = previous?.cursor ?? ''; document.body.style.userSelect = previous?.userSelect ?? '';
   document.querySelectorAll('.drop-hover').forEach(element => element.classList.remove('drop-hover'));
   tabDrag.set(null);
-  const hidden = setDragPreview(null);
+  const hidden = keepDockPreview ? flushDragPreview() : setDragPreview(null);
   void hidden.catch(() => {});
   return previous ? { ...previous, hidden } : null;
 }
@@ -101,7 +101,8 @@ async function release(event: PointerEvent) {
   const target = document.elementFromPoint(event.clientX, event.clientY);
   const targetWorkspace = target?.closest<HTMLElement>('.ws-pill')?.dataset.wsId;
   const targetTabList = target?.closest('.tabs-scroll,.tabs-list');
-  const ended = cleanup();
+  const docking = drag.moved && drag.side !== null;
+  const ended = cleanup(docking);
   if (!ended) return;
   busy = true;
   try {
@@ -118,7 +119,10 @@ async function release(event: PointerEvent) {
   } catch (error) {
     await finishTabReorder(true);
     throw error;
-  } finally { busy = false; }
+  } finally {
+    try { if (docking) await setDragPreview(null); }
+    finally { busy = false; }
+  }
 }
 export function startTabDrag(event: PointerEvent, id: string) {
   if (busy || drag || event.button !== 0 || !event.isPrimary || (event.target as HTMLElement).closest('button,input,a')) return;
