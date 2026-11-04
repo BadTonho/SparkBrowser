@@ -8,7 +8,7 @@ import { onOverlayOpening } from "../../services/bridge/overlays";
 import { locale } from "../../i18n";
 
 export interface PanelSession { id: number; anchor: HTMLButtonElement }
-interface HostOptions { id: "tools" | "downloads"; sessionStore: Readable<PanelSession | null>; close: (restore?: unknown) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
+interface HostOptions { id: "tools" | "downloads"; sessionStore: Readable<PanelSession | null>; onTrigger?: () => void; close: (restore?: unknown) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
 export function mountPanelHost(root: HTMLElement, native: boolean, options: HostOptions) {
   const { id, sessionStore, close, set, listen } = options;
   const projection = createPanelProjection(root);
@@ -23,7 +23,7 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); void close(true); }
   };
   window.addEventListener("keydown", keys, true);
-  const themeKeys = ["--text-primary", "--text-secondary", "--text-muted", "--accent-primary", "--accent-foreground", "--border-subtle", "--bg-glass-elevated", "--bg-glass-hover"];
+  const themeKeys = ["--text-primary", "--text-secondary", "--text-muted", "--accent-primary", "--accent-foreground", "--border-subtle", "--bg-glass-elevated", "--bg-glass-hover", "--bg-downloads-panel"];
   const publish = () => {
     if (disposed || !listening || get(sessionStore) !== session) return;
     if (!session.anchor.isConnected || !session.anchor.getClientRects().length) { void close(); return; }
@@ -43,7 +43,10 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
   if (native) void listen(async event => {
     if (disposed || get(sessionStore) !== session || event.sessionId !== session.id || event.sequence <= ack) return;
     ack = event.sequence;
-    if (event.action.kind === "dismiss") { await close(["escape", "trigger"].includes(event.action.reason)); return; }
+    if (event.action.kind === "dismiss") {
+      if (event.action.reason === "trigger") options.onTrigger?.();
+      await close(["escape", "trigger"].includes(event.action.reason)); return;
+    }
     projection.dispatch(event.action);
     dirty = true;
     await tick(); publish();

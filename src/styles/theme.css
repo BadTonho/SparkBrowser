@@ -2,6 +2,10 @@
   --overlay-backdrop-blur: 16px;
   --bg-glass-primary: rgba(12, 12, 12, 0.72);
   --bg-glass-elevated: rgba(28, 28, 28, 0.78);
+  --bg-downloads-panel: #1c1c1c;
+  --download-status-completed: #22c55e;
+  --download-status-paused: #eab308;
+  --download-status-error: #ef4444;
   --bg-glass-hover: rgba(255, 255, 255, 0.08);
   --bg-glass-active: rgba(255, 255, 255, 0.14);
   --border-subtle: rgba(255, 255, 255, 0.09);

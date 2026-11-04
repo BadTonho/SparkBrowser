@@ -5,9 +5,9 @@
   import { t, type MessageKey } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { isTauriRuntime } from "../../services/bridge/runtime";
-  import { panelPosition } from "../../services/panel-presentation";
+  import { panelPosition, isPanelTrigger } from "../../services/panel-presentation";
   import { mountDownloadsHost } from "./downloads-host";
-  import { downloads, downloadTasks, downloadsLoadError, downloadsSession, isDownloadsDrawerOpen, closeDownloadsDrawer, startDownloadFromUrl, wipeDownloads } from "../../stores/downloadsStore";
+  import { downloads, downloadTasks, downloadsLoadError, downloadsSession, isDownloadsDrawerOpen, closeDownloadsDrawer, startDownloadFromUrl, wipeDownloads, acknowledgeDownloadNotices } from "../../stores/downloadsStore";
   import { currentUrl } from "../../stores/browserStore";
   import "./downloads.css";
 
@@ -50,7 +50,12 @@
 <svelte:window onresize={() => { viewport = { width: innerWidth, height: innerHeight }; }} />
 {#if $isDownloadsDrawerOpen}
   <div class="downloads-dismiss" class:downloads-controller={native} aria-hidden={native ? "true" : undefined} role="presentation"
-    onclick={event => { if (event.target === event.currentTarget) void closeDownloadsDrawer(); }}>
+    onclick={event => {
+      if (event.target !== event.currentTarget) return;
+      const trigger = isPanelTrigger(anchor, event.clientX, event.clientY);
+      if (trigger) acknowledgeDownloadNotices();
+      void closeDownloadsDrawer(trigger);
+    }}>
     <div class="downloads-surface" style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
       <div class="downloads-panel" data-testid="downloads-dialog" role="dialog" aria-modal="false" aria-label={$t("downloads.download_manager_160a")} tabindex="-1" use:host>
         <header class="downloads-header">

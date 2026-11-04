@@ -21,6 +21,9 @@ export interface PanelPresentation {
   ack: number;
   revision: number;
 }
+export function isPanelTrigger(anchor: PanelPresentation["anchor"], x: number, y: number): boolean {
+  return x >= anchor.left && x <= anchor.left + anchor.width && y >= anchor.top && y <= anchor.top + anchor.height;
+}
 const tags = new Set(["div", "header", "h2", "h3", "nav", "button", "span", "p", "form", "input", "textarea", "select", "option", "article", "strong", "small", "label", "ul", "li", "details", "summary", "pre", "progress", "svg", "path", "circle"]);
 const attributes = new Set(["class", "id", "role", "title", "type", "name", "placeholder", "maxlength", "min", "max", "rows", "required", "disabled", "open", "tabindex", "value", "width", "height", "viewBox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "d", "cx", "cy", "r", "focusable"]);
 

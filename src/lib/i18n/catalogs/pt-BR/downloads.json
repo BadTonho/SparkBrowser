@@ -27,5 +27,7 @@
   "downloads.integrity_options": "Verificação de integridade (opcional)",
   "downloads.progress_known": "{count} baixando · {percent}%",
   "downloads.progress_pending": "{count} downloads em andamento",
-  "downloads.progress_paused": "{count} downloads pausados"
+  "downloads.progress_paused": "{count} downloads pausados",
+  "downloads.progress_completed": "{count} downloads concluídos · Abra Downloads para dispensar",
+  "downloads.progress_error": "{count} downloads com erro · Abra Downloads para conferir"
 }

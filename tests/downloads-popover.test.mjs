@@ -10,6 +10,7 @@ function load(path, imports = {}, globals = {}) {
   return exports;
 }
 const { summarizeDownloads } = load('src/lib/services/download-progress.ts');
+const { createDownloadNotices } = load('src/lib/services/download-notices.ts');
 const task = (status, received = 0, total = null) => ({ status, received, total });
 test('toolbar combines transfer bytes, excludes other states and clamps reported values', () => {
   const progress = summarizeDownloads([task('Downloading', 10, 100), task('Downloading', 900, 1000), task('Paused', 0, 100000), task('Completed', 999999, 999999)]);
@@ -43,10 +44,15 @@ function fixture(tick = async () => {}, settle = async () => {}) {
   const derived = (stores, fn) => ({ subscribe(callback) { callback(Array.isArray(stores) ? fn(stores.map(get)) : fn(get(stores))); return () => {}; } });
   const anchor = () => ({ isConnected: true, visible: true, focused: 0, getClientRects() { return this.visible ? [1] : []; }, focus() { this.focused++; } });
   const button = anchor(), more = anchor(), zen = writable(true), calls = [], notices = [];
+  const noticesModule = load('src/lib/stores/downloadNoticesStore.ts', {
+    'svelte/store': { writable }, '../services/storage.js': { safeStorage: { getItem: () => null, setItem: () => true } },
+    '../services/download-notices': { createDownloadNotices },
+  });
   let onTask, resolveTasks, loads = 0;
   const api = load('src/lib/stores/downloadsStore.ts', {
     'svelte/store': { get, writable, derived }, svelte: { tick }, '../i18n': { t: writable(key => key) },
     '../services/download-progress': { summarizeDownloads }, '../services/user-errors.js': { describeError: String },
+    './downloadNoticesStore': noticesModule,
     '../services/bridge/overlays': { notifyOpening: id => notices.push(id), settleOverlayVisibility: settle }, '../services/bridge/downloads-popover': { setDownloadsPopover: async (...args) => calls.push(args) },
     './settingsStore': { isZenMode: zen }, '../services/tauri-bridge': {
       fetchDownloads: async () => [], fetchDownloadTasks: () => { loads++; return new Promise(resolve => resolveTasks = resolve); },
@@ -83,4 +89,39 @@ test('native presentation waits for a modal dismissal and cancelling that wait n
   const cancelled = f.openDownloadsDrawer(); await new Promise(setImmediate);
   await f.closeDownloadsDrawer(); release(); await cancelled;
   assert.equal(f.get(f.isDownloadsDrawerOpen), false);
+});
+
+test('new results remain visible after keyboard/header dismissal and opening acknowledges them', async () => {
+  const f = fixture(); f.initializeDownloadEvents(); await new Promise(setImmediate);
+  f.resolve([]); await new Promise(setImmediate);
+  await f.openDownloadsDrawer();
+  f.emit({ id: 'one', revision: 1, ...task('Completed', 100, 100) });
+  assert.equal(f.get(f.downloadProgress).kind, 'completed');
+  await f.closeDownloadsDrawer(true);
+  assert.equal(f.get(f.downloadProgress).kind, 'completed');
+  await f.openDownloadsDrawer();
+  assert.equal(f.get(f.downloadProgress).kind, 'idle');
+  f.emit({ id: 'two', revision: 1, ...task('Failed') });
+  assert.equal(f.get(f.downloadProgress).kind, 'error');
+  await f.openDownloadsDrawer(f.button);
+  assert.equal(f.get(f.downloadProgress).kind, 'idle');
+  assert.equal(f.get(f.isDownloadsDrawerOpen), false);
+});
+
+test('error notices take priority, then transfers, processing, pauses and completion notices', () => {
+  const notices = { error: 1, completed: 1 };
+  assert.equal(summarizeDownloads([task('Downloading', 20, 100)], notices).kind, 'error');
+  notices.error = 0;
+  assert.equal(summarizeDownloads([task('Downloading', 20, 100)], notices).kind, 'determinate');
+  assert.equal(summarizeDownloads([task('Verifying'), task('Paused')], notices).kind, 'indeterminate');
+  assert.equal(summarizeDownloads([task('Paused', 20, 100)], notices).kind, 'paused');
+  assert.equal(summarizeDownloads([], notices).kind, 'completed');
+  assert.equal(summarizeDownloads([], notices).percent, 100);
+});
+
+test('trigger hit testing distinguishes the button from an ordinary outside dismissal', () => {
+  const { isPanelTrigger } = load('src/lib/services/panel-presentation.ts');
+  const anchor = { left: 100, top: 30, width: 28, height: 28 };
+  assert.equal(isPanelTrigger(anchor, 114, 44), true);
+  for (const [x, y] of [[99, 44], [129, 44], [114, 29], [114, 59], [NaN, 44]]) assert.equal(isPanelTrigger(anchor, x, y), false);
 });

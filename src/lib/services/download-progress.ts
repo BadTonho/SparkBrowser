@@ -1,7 +1,8 @@
 import type { DownloadTask } from "../types/browser";
+import type { DownloadNotices } from "./download-notices";
 
 export interface DownloadProgress {
-  kind: "idle" | "determinate" | "indeterminate" | "paused";
+  kind: "idle" | "determinate" | "indeterminate" | "paused" | "completed" | "error";
   percent: number | null;
   count: number;
 }
@@ -11,7 +12,8 @@ function percent(tasks: DownloadTask[]): number | null {
   const received = tasks.reduce((sum, task) => sum + Math.min(task.total!, Math.max(0, Number.isFinite(task.received) ? task.received : 0)), 0);
   return Math.max(0, Math.min(100, received / total * 100));
 }
-export function summarizeDownloads(tasks: DownloadTask[]): DownloadProgress {
+export function summarizeDownloads(tasks: DownloadTask[], notices: DownloadNotices = { completed: 0, error: 0 }): DownloadProgress {
+  if (notices.error) return { kind: "error", percent: 100, count: notices.error };
   const running = tasks.filter(task => task.status === "Downloading");
   if (running.length) {
     const value = percent(running);
@@ -21,5 +23,6 @@ export function summarizeDownloads(tasks: DownloadTask[]): DownloadProgress {
   if (processing.length) return { kind: "indeterminate", percent: null, count: processing.length };
   const paused = tasks.filter(task => ["Paused", "Pausing"].includes(task.status));
   if (paused.length) return { kind: "paused", percent: percent(paused), count: paused.length };
+  if (notices.completed) return { kind: "completed", percent: 100, count: notices.completed };
   return { kind: "idle", percent: null, count: 0 };
 }

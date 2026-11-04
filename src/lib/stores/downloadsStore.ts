@@ -2,6 +2,8 @@ import { writable, get, derived } from "svelte/store";
 import { tick } from "svelte";
 import { t } from "../i18n";
 import { summarizeDownloads } from "../services/download-progress";
+import { downloadNotices, observeDownloadNotices, acknowledgeDownloadNotices } from "./downloadNoticesStore";
+export { acknowledgeDownloadNotices } from "./downloadNoticesStore";
 import { describeError } from "../services/user-errors.js";
 import { notifyOpening, settleOverlayVisibility } from "../services/bridge/overlays";
 import { setDownloadsPopover } from "../services/bridge/downloads-popover";
@@ -22,10 +24,10 @@ export const downloadTasks = writable<DownloadTask[]>([]);
 export const isDownloadsDrawerOpen = writable<boolean>(false);
 export const downloadsSession = writable<{ id: number; anchor: HTMLButtonElement } | null>(null);
 export const downloadsLoadError = writable("");
-export const downloadProgress = derived(downloadTasks, summarizeDownloads);
+export const downloadProgress = derived([downloadTasks, downloadNotices], ([tasks, notices]) => summarizeDownloads(tasks, notices));
 export const downloadProgressText = derived([downloadProgress, t], ([progress, tr]) => {
   if (progress.kind === "idle") return "";
-  const key = progress.kind === "paused" ? "downloads.progress_paused" : progress.percent === null ? "downloads.progress_pending" : "downloads.progress_known";
+  const key = progress.kind === "error" ? "downloads.progress_error" : progress.kind === "completed" ? "downloads.progress_completed" : progress.kind === "paused" ? "downloads.progress_paused" : progress.percent === null ? "downloads.progress_pending" : "downloads.progress_known";
   return tr(key, { count: String(progress.count), percent: String(Math.round(progress.percent ?? 0)) });
 });
 let openRevision = 0;
@@ -40,6 +42,7 @@ function applyTask(task: DownloadTask): void {
   downloadTasks.update(tasks => {
     const previous = tasks.find(item => item.id === task.id);
     if (previous && previous.revision >= task.revision) return tasks;
+    observeDownloadNotices([task], "event");
     return [task, ...tasks.filter(item => item.id !== task.id)].sort((a, b) => b.id.localeCompare(a.id)).slice(0, 164);
   });
 }
@@ -70,7 +73,9 @@ export async function loadDownloads(): Promise<void> {
     });
     const newer = current.filter(task =>
       !ids.has(task.id) && (changedAt.get(task.id) ?? 0) > startedAt);
-    return [...fetched, ...newer].filter(task => !clearedTasks.has(task.id));
+    const merged = [...fetched, ...newer].filter(task => !clearedTasks.has(task.id));
+    observeDownloadNotices(merged, "snapshot");
+    return merged;
   });
 }
 
@@ -88,12 +93,13 @@ export async function wipeDownloads(): Promise<void> {
   const removed = await clearAllDownloads();
   removed.forEach(id => clearedTasks.add(id));
   downloadTasks.update(tasks => tasks.filter(task => !clearedTasks.has(task.id)));
+  observeDownloadNotices(get(downloadTasks), "snapshot");
   ++loadRevision;
   downloads.set([]);
 }
 
 export async function openDownloadsDrawer(anchor?: HTMLButtonElement): Promise<void> {
-  if (get(isDownloadsDrawerOpen)) { if (anchor) await closeDownloadsDrawer(true); return; }
+  if (get(isDownloadsDrawerOpen)) { acknowledgeDownloadNotices(); if (anchor) await closeDownloadsDrawer(true); return; }
   const request = ++openRevision;
   isZenMode.set(false);
   await tick();
@@ -104,6 +110,7 @@ export async function openDownloadsDrawer(anchor?: HTMLButtonElement): Promise<v
   notifyOpening("downloads");
   await settleOverlayVisibility();
   if (request !== openRevision || !visible(reference)) return;
+  acknowledgeDownloadNotices();
   downloadsSession.set({ id: request, anchor: reference });
   isDownloadsDrawerOpen.set(true);
   void loadDownloads().catch(() => {});
@@ -121,6 +128,7 @@ export async function closeDownloadsDrawer(restoreFocus: unknown = false): Promi
 
 export async function toggleDownloadsDrawer(): Promise<void> {
   if (get(isDownloadsDrawerOpen)) {
+    acknowledgeDownloadNotices();
     await closeDownloadsDrawer(true);
   } else {
     await openDownloadsDrawer();

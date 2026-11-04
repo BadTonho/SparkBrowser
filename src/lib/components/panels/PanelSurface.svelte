@@ -5,7 +5,7 @@
   let { surface }: { surface: "tools" | "downloads" } = $props();
   const downloads = $derived(surface === "downloads");
   const setter = $derived(downloads ? "__veloceSetDownloadsPopover" : "__veloceSetToolsPopover");
-  import { panelPosition, type PanelPresentation, type PanelViewAction } from "../../services/panel-presentation";
+  import { panelPosition, isPanelTrigger, type PanelPresentation, type PanelViewAction } from "../../services/panel-presentation";
   import "../tools/tools.css";
   import "../downloads/downloads.css";
 
@@ -103,7 +103,7 @@
 <svelte:window onresize={() => { viewport = { width: innerWidth, height: innerHeight }; }} />
 {#if presentation && position}
   <div class={downloads ? "downloads-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
-    if (event.target === event.currentTarget) send({ kind: "dismiss", reason: "outside" });
+    if (event.target === event.currentTarget) send({ kind: "dismiss", reason: downloads && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
   }}>
     <div class={downloads ? "downloads-surface" : "tools-surface"} bind:this={root} use:downloadFocus style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
       <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
