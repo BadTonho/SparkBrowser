@@ -13,7 +13,7 @@
   async function run(action: () => Promise<void>) { if (busy) return; busy = true; error = ""; try { await action(); await loadDownloads(); } catch (e) { error = describeError(e); } finally { busy = false; } }
   const act = (action: "pause" | "resume" | "restart" | "cancel" | "verify") => run(() => controlDownload(task.id, action));
 </script>
-<article data-testid="download-task" data-task-id={task.id} data-status={task.status}>
+<article class="download-task-card" data-testid="download-task" data-task-id={task.id} data-status={task.status}>
   <strong>{task.file_name}</strong><span>{task.url}</span>
   <span>{$t(`common.download_${task.status.toLowerCase()}` as MessageKey)} · {$formatNumber(Math.round(task.received / 1024))} KiB{task.total ? ` / ${$formatNumber(Math.round(task.total / 1024))} KiB` : ""}</span>
   {#if task.status === "Downloading"}{#if task.total}<progress value={task.received} max={task.total} aria-label={$t("downloads.download_progress_984b")}></progress>{:else}<progress aria-label={$t("downloads.downloading_37b3")}></progress>{/if}{/if}
@@ -34,4 +34,3 @@
   {#if task.can_verify}<button data-testid="download-verify" disabled={busy} onclick={() => act("verify")}>{$t("downloads.verify")}</button>{/if}
   {#if task.actual_sha256}<span class="hash">SHA-256: {task.actual_sha256}</span>{/if}
 </article>
-<style>article { padding: 12px; margin: 8px 0; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 12px; } span, .hash { overflow-wrap: anywhere; } article > div { display: flex; flex-wrap: wrap; gap: 8px; } button { color: var(--accent-primary); } input { width: 100%; } progress { width: 100%; }</style>

@@ -1,5 +1,7 @@
 # Downloads locais retomáveis
 
+O gerenciador abre abaixo do botão da barra e mostra o progresso combinado em sua borda; veja [o painel flutuante](downloads-popover.md).
+
 O gerenciador oferece Pausar, Retomar, Reiniciar, Cancelar e verificação SHA-256 opcional. Transferências por URL e seus arquivos parciais persistem localmente. Reiniciar o aplicativo restaura seu estado sem abrir conexões; a retomada é sempre explícita. Até duas operações executam simultaneamente, com no máximo 64 tarefas não concluídas, incluindo pausadas.
 
 Transferências por URL usam HTTP assíncrono, timeout de conexão de 20 segundos e de inatividade de leitura de 30 segundos, sem limite global enquanto houver progresso. Retomar exige ETag forte, a mesma URL final e `206 Content-Range` correspondente. Validadores fracos/ausentes, conteúdo alterado, intervalos ignorados e respostas inconsistentes exigem reinício explícito. As restrições atuais do shield e de redirecionamentos valem para cada nova requisição.

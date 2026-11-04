@@ -30,6 +30,12 @@ export function onOverlayOpening(callback: (id?: OverlayId) => void): () => void
 }
 export function notifyOpening(id?: OverlayId) { for (const callback of openingListeners) callback(id); }
 
+/** Wait for a modal dismissal already queued by its controller before showing a native popover. */
+export async function settleOverlayVisibility(): Promise<void> {
+  let pending: Promise<void>;
+  do { pending = overlaySyncQueue; await pending; } while (pending !== overlaySyncQueue);
+}
+
 /** Keeps the native content WebView hidden while any browser overlay is open. */
 export async function setOverlayVisibility(
   visible: boolean,

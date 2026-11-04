@@ -45,6 +45,7 @@ pub fn shell_only(
                         | "save_page_note"
                         | "set_overlay_visibility"
                         | "set_tools_popover"
+                        | "set_downloads_popover"
                         | "set_media_popover"
                         | "set_zoom_popover"
                         | "set_tab_drag_preview"

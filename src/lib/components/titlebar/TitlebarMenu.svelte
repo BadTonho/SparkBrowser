@@ -6,7 +6,7 @@
   import { onOverlayOpening } from "../../services/bridge/overlays";
   import { openTools } from "../../stores/toolsStore";
   import { openHistoryDrawer } from "../../stores/persistenceStore";
-  import { openDownloadsDrawer } from "../../stores/downloadsStore";
+  import { openDownloadsDrawer, downloadProgressText } from "../../stores/downloadsStore";
   import { openCommandBar } from "../../stores/commandBarStore";
   import { showBookmarksBar, toggleBookmarksBar, openSettingsModal, toggleZenMode } from "../../stores/settingsStore";
   import { openPrivacy } from "../../stores/privacyPopoverStore";
@@ -32,7 +32,7 @@
         case "bookmarks": toggleBookmarksBar(); break;
         case "commands": await openCommandBar(); break;
         case "history": await openHistoryDrawer(); break;
-        case "downloads": await openDownloadsDrawer(); break;
+        case "downloads": await closeTitlebarMenu(); await openDownloadsDrawer(session.anchor); break;
         case "settings": await openSettingsModal(); break;
         case "zen": toggleZenMode(); break;
         case "privacy":
@@ -99,7 +99,7 @@
       <button role="menuitemcheckbox" data-testid="toggle-bookmarks" aria-checked={$showBookmarksBar} disabled={busy} onclick={() => run("bookmarks")}>{$showBookmarksBar ? $t("titlebar.hide_bookmarks_bar_31b5") : $t("titlebar.show_bookmarks_bar_570b")}</button>
       <button role="menuitem" data-testid="open-command-bar" disabled={busy} onclick={() => run("commands")}>{$t("titlebar.command_bar_1356")}</button>
       <button role="menuitem" data-testid="open-history" disabled={busy} onclick={() => run("history")}>{$t("titlebar.browsing_history_13cc")}</button>
-      <button role="menuitem" data-testid="open-downloads" disabled={busy} onclick={() => run("downloads")}>{$t("titlebar.downloads_d5fd")}</button>
+      <button role="menuitem" data-testid="open-downloads" disabled={busy} onclick={() => run("downloads")}>{$t("titlebar.downloads_d5fd")}{#if $downloadProgressText}<small> · {$downloadProgressText}</small>{/if}</button>
       <button role="menuitem" data-testid="open-privacy" disabled={busy} onclick={() => run("privacy")}>{$t("privacy.controls")}</button>
       <button role="menuitem" data-testid="open-settings" disabled={busy} onclick={() => run("settings")}>{$t("titlebar.settings_74a8")}</button>
       <button role="menuitem" data-testid="toggle-zen" disabled={busy} onclick={() => run("zen")}>{$t("titlebar.zen_mode_826b")}</button>

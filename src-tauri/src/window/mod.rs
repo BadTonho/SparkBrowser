@@ -17,3 +17,6 @@ pub mod webview_manager;
 pub mod zoom_popover;
 
 pub mod tools_popover;
+
+pub mod downloads_popover;
+mod panel_popover;

@@ -44,9 +44,9 @@ export async function runScenario(name, scenario) {
   }
   async function script(code, ...args) { return request('POST', `/session/${session}/execute/sync`, { script: code, args }); }
   async function click(selector) {
-    const projected = await script('return Boolean(document.querySelector(arguments[0])?.closest(".tools-controller"))', selector);
-    if (projected) return withWebview('/index.html?surface=tools', async () => {
-      await until(() => script('return Boolean(document.querySelector(arguments[0]))', selector), 'projected tools control');
+    const projected = await script('const node=document.querySelector(arguments[0]);return node?.closest(".tools-controller")?"tools":node?.closest(".downloads-controller")?"downloads":null', selector);
+    if (projected) return withWebview(`/index.html?surface=${projected}`, async () => {
+      await until(() => script('return Boolean(document.querySelector(arguments[0]))', selector), 'projected panel control');
       const element = await request('POST', `/session/${session}/element`, { using: 'css selector', value: selector });
       await request('POST', `/session/${session}/element/${element['element-6066-11e4-a52e-4f735466cecf']}/click`, {});
     });
@@ -101,8 +101,14 @@ export async function runScenario(name, scenario) {
   }
   async function focusWindow() {
     if (process.platform === 'win32') {
-      await invoke('plugin:window|set_focus', { label:'main' });
-      await windowsWindowAction(['-Focus']);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await invoke('plugin:window|set_focus', { label:'main' });
+        try { await windowsWindowAction(['-Focus']); return; }
+        catch (error) {
+          if (attempt === 2 || !String(error).includes('did not receive foreground focus')) throw error;
+          await wait(150);
+        }
+      }
     }
   }
   async function floatingWindow(action='Inspect',name='pip-window') {

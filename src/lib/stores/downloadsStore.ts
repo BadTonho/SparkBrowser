@@ -1,10 +1,16 @@
-import { writable, get } from "svelte/store";
+import { writable, get, derived } from "svelte/store";
+import { tick } from "svelte";
+import { t } from "../i18n";
+import { summarizeDownloads } from "../services/download-progress";
+import { describeError } from "../services/user-errors.js";
+import { notifyOpening, settleOverlayVisibility } from "../services/bridge/overlays";
+import { setDownloadsPopover } from "../services/bridge/downloads-popover";
+import { isZenMode } from "./settingsStore";
 import type { DownloadItem, DownloadTask } from "../types/browser";
 import {
   fetchDownloads,
   enqueueDownloadUrl,
   clearAllDownloads,
-  setOverlayVisibility,
   isTauriRuntime,
   fetchDownloadTasks,
   onDownloadTaskUpdated,
@@ -14,6 +20,15 @@ import {
 export const downloads = writable<DownloadItem[]>([]);
 export const downloadTasks = writable<DownloadTask[]>([]);
 export const isDownloadsDrawerOpen = writable<boolean>(false);
+export const downloadsSession = writable<{ id: number; anchor: HTMLButtonElement } | null>(null);
+export const downloadsLoadError = writable("");
+export const downloadProgress = derived(downloadTasks, summarizeDownloads);
+export const downloadProgressText = derived([downloadProgress, t], ([progress, tr]) => {
+  if (progress.kind === "idle") return "";
+  const key = progress.kind === "paused" ? "downloads.progress_paused" : progress.percent === null ? "downloads.progress_pending" : "downloads.progress_known";
+  return tr(key, { count: String(progress.count), percent: String(Math.round(progress.percent ?? 0)) });
+});
+let openRevision = 0;
 let loadRevision = 0;
 const clearedTasks = new Set<string>();
 let taskSequence = 0;
@@ -32,17 +47,20 @@ function applyTask(task: DownloadTask): void {
 export function initializeDownloadEvents(): () => void {
   let disposed = false;
   const stops: (() => void)[] = [];
-  for (const promise of [onDownloadTaskUpdated(applyTask), onDownloadsUpdated(() => void loadDownloads())]) {
-    void promise.then(stop => { if (disposed) stop(); else stops.push(stop); });
-  }
+  const subscriptions = [onDownloadTaskUpdated(task => { if (!disposed) applyTask(task); }), onDownloadsUpdated(() => { if (!disposed) void loadDownloads().catch(() => {}); })];
+  void Promise.all(subscriptions.map(promise => promise.then(stop => { if (disposed) stop(); else stops.push(stop); })))
+    .then(() => { if (!disposed) return loadDownloads(); }).catch(() => {});
   return () => { disposed = true; stops.forEach(stop => stop()); };
 }
 
 export async function loadDownloads(): Promise<void> {
   const revision = ++loadRevision;
   const startedAt = taskSequence;
-  const [list, tasks] = await Promise.all([fetchDownloads(), fetchDownloadTasks()]);
+  let list: DownloadItem[], tasks: DownloadTask[];
+  try { [list, tasks] = await Promise.all([fetchDownloads(), fetchDownloadTasks()]); }
+  catch (error) { if (revision === loadRevision) downloadsLoadError.set(describeError(error)); throw error; }
   if (revision !== loadRevision) return;
+  downloadsLoadError.set("");
   downloads.set(list);
   const ids = new Set(tasks.map(task => task.id));
   downloadTasks.update(current => {
@@ -74,20 +92,36 @@ export async function wipeDownloads(): Promise<void> {
   downloads.set([]);
 }
 
-export async function openDownloadsDrawer(): Promise<void> {
-  await loadDownloads();
+export async function openDownloadsDrawer(anchor?: HTMLButtonElement): Promise<void> {
+  if (get(isDownloadsDrawerOpen)) { if (anchor) await closeDownloadsDrawer(true); return; }
+  const request = ++openRevision;
+  isZenMode.set(false);
+  await tick();
+  if (request !== openRevision) return;
+  const visible = (button: HTMLButtonElement | null | undefined) => button?.isConnected && button.getClientRects().length ? button : undefined;
+  const reference = visible(anchor) ?? visible(document.querySelector<HTMLButtonElement>('.titlebar-actions [data-action="downloads"]')) ?? visible(document.querySelector<HTMLButtonElement>('[data-testid="open-titlebar-menu"]'));
+  if (!reference) return;
+  notifyOpening("downloads");
+  await settleOverlayVisibility();
+  if (request !== openRevision || !visible(reference)) return;
+  downloadsSession.set({ id: request, anchor: reference });
   isDownloadsDrawerOpen.set(true);
-  await setOverlayVisibility(true, "downloads");
+  void loadDownloads().catch(() => {});
 }
 
-export async function closeDownloadsDrawer(): Promise<void> {
+export async function closeDownloadsDrawer(restoreFocus: unknown = false): Promise<void> {
+  ++openRevision;
+  const session = get(downloadsSession);
+  downloadsSession.set(null);
   isDownloadsDrawerOpen.set(false);
-  await setOverlayVisibility(false, "downloads");
+  if (!session) return;
+  await setDownloadsPopover(false, session.id, undefined, restoreFocus === true);
+  if (restoreFocus === true && !get(isDownloadsDrawerOpen) && session.anchor.isConnected && session.anchor.getClientRects().length) session.anchor.focus({ preventScroll: true });
 }
 
 export async function toggleDownloadsDrawer(): Promise<void> {
   if (get(isDownloadsDrawerOpen)) {
-    await closeDownloadsDrawer();
+    await closeDownloadsDrawer(true);
   } else {
     await openDownloadsDrawer();
   }

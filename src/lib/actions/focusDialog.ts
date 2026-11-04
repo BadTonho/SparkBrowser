@@ -1,6 +1,16 @@
 type Options = { onEscape: () => unknown; ignoreEscape?: () => boolean };
 const dialogs: HTMLElement[] = [];
-const selector = 'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href], [tabindex="0"]';
+const selector = 'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), summary, a[href], [tabindex="0"]';
+
+function visibleControl(element: HTMLElement) {
+  if (!element.getClientRects().length || element.closest('[inert], [hidden]')) return false;
+  // Closed details can retain layout rectangles for their undisplayed content.
+  // Its summary remains keyboard accessible, including with nested disclosures.
+  for (let details = element.closest('details:not([open])'); details; details = details.parentElement?.closest('details:not([open])') ?? null) {
+    if (!details.querySelector(':scope > summary')?.contains(element)) return false;
+  }
+  return true;
+}
 
 /** Shared focus lifecycle, including stacked dialogs and dynamically disabled controls. */
 export function focusDialog(node: HTMLElement, options: Options) {
@@ -8,7 +18,7 @@ export function focusDialog(node: HTMLElement, options: Options) {
   dialogs.push(node);
   const isTop = () => dialogs.at(-1) === node;
   const controls = () => [...node.querySelectorAll<HTMLElement>(selector)]
-    .filter(el => el.getClientRects().length > 0 && !el.closest('[inert], [hidden]'));
+    .filter(visibleControl);
   const focusFirst = () => (controls()[0] ?? node).focus({ preventScroll: true });
   queueMicrotask(() => { if (isTop() && node.isConnected) focusFirst(); });
   function keydown(event: KeyboardEvent) {

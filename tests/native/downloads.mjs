@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'node:fs';
 import { resolve, relative, isAbsolute, toNamespacedPath } from 'node:path';
-export async function checkDownloads({ invoke, until, fixture, restart, directory, script }) {
+export async function checkDownloads({ invoke, until, fixture, restart, directory, script, focusWindow }) {
+  await focusWindow();
   const list = () => invoke('get_download_tasks');
   const task = id => list().then(rows => rows.find(row => row.id === id));
   const act = (id, action) => invoke('control_download', { taskId: id, action });
@@ -13,14 +14,17 @@ export async function checkDownloads({ invoke, until, fixture, restart, director
   const safeRead = path => { const child = relative(toNamespacedPath(resolve(directory, 'data', 'downloads')), toNamespacedPath(resolve(path))); assert.ok(child && !child.startsWith('..') && !isAbsolute(child)); return readFileSync(path); };
   await script(`document.querySelector('[data-testid="open-downloads"]').click();`);
   await until(() => script(`return Boolean(document.querySelector('[data-testid="download-url"]'))`), 'download controls');
-  await script(`for (const [id,value] of [['download-url',arguments[0]],['download-expected-hash',arguments[1]]]) { const input=document.querySelector('[data-testid="'+id+'"]'); input.value=value; input.dispatchEvent(new Event('input',{bubbles:true})); } document.querySelector('[data-testid="download-start"]').click();`, fixture.origin + '/download/file', hash(1));
+  await script(`for (const [id,value] of [['download-url',arguments[0]],['download-expected-hash',arguments[1]]]) { const input=document.querySelector('[data-testid="'+id+'"]'); input.value=value; input.dispatchEvent(new Event('input',{bubbles:true})); } document.querySelector('[data-testid="download-start"]').click();`, fixture.origin + '/download/file?slow=1', hash(1));
   const first = await until(async () => (await list()).find(t => t.source === 'url'), 'UI enqueues download');
   await until(async () => (await task(first.id)).received > 32768, 'UI download progresses');
+  await until(() => script('return !!document.querySelector(`[data-task-id="${arguments[0]}"] [data-testid=download-pause]`)', first.id), 'pause control rendered');
   await script(`document.querySelector('[data-task-id="'+arguments[0]+'"] [data-testid="download-pause"]').click();`,first.id);
   await waitState(first.id,'Paused');
   const paused = await task(first.id); assert.ok(paused.can_resume); const requests = fixture.download.requests.length;
   await restart(); assert.equal(fixture.download.requests.length, requests, 'restart must not start transfers');
+  await focusWindow();
   assert.equal((await task(first.id)).received, paused.received);
+  await until(() => script('return document.querySelector("[data-action=downloads] [data-testid=download-progress-ring]")?.dataset.kind === "paused"'), 'paused border restored before opening downloads');
   await script(`document.querySelector('[data-testid="open-downloads"]').click();`);
   await until(() => script(`return Boolean(document.querySelector('[data-task-id="'+arguments[0]+'"] [data-testid="download-resume"]'))`,first.id), 'persistent resume button');
   await script(`document.querySelector('[data-task-id="'+arguments[0]+'"] [data-testid="download-resume"]').click();`,first.id);

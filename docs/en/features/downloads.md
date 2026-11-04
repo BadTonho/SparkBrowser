@@ -1,5 +1,7 @@
 # Resumable local downloads
 
+The manager opens below its toolbar button and shows combined progress on the button border; see [the floating panel](downloads-popover.md).
+
 The download manager supports Pause, Resume, Restart, Cancel and optional SHA-256 verification. URL transfers and their partial files persist locally. Restarting the application restores their state without opening connections; resume is always explicit. Up to two operations run simultaneously, with at most 64 unfinished tasks including paused transfers.
 
 URL transfers use asynchronous HTTP, a 20-second connection timeout and a 30-second read inactivity timeout, without an overall duration limit while data progresses. Resumption requires a strong ETag, the same final URL and a matching `206 Content-Range`. Weak/missing validators, changed representations, ignored ranges and inconsistent responses require an explicit restart. Current shield and redirect restrictions apply to each new request.

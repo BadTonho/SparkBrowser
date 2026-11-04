@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import TitlebarActionIcon from "./TitlebarActionIcon.svelte";
+  import DownloadProgressIndicator from "../downloads/DownloadProgressIndicator.svelte";
   import { t } from "../../i18n";
   import { openTools, isToolsOpen } from "../../stores/toolsStore";
   import { openHistoryDrawer } from "../../stores/persistenceStore";
-  import { openDownloadsDrawer } from "../../stores/downloadsStore";
+  import { openDownloadsDrawer, downloadProgressText, isDownloadsDrawerOpen } from "../../stores/downloadsStore";
   import { openCommandBar } from "../../stores/commandBarStore";
   import { tabLayout, showBookmarksBar, toggleBookmarksBar, openSettingsModal, toggleZenMode } from "../../stores/settingsStore";
   import { privacyStats } from "../../stores/privacyStore";
@@ -81,6 +82,7 @@
 
 <div class="titlebar-actions" class:reordering={Boolean(preview)} bind:this={root} role="group" aria-label={$t("titlebar.quick_actions")}>
   <span id="titlebar-reorder-hint" class="sr-only">{$t("titlebar.reorder_hint")}</span>
+  <span id="titlebar-download-progress" class="sr-only">{$downloadProgressText}</span>
   {#each visible as id (id)}
     {#if id === "tools"}
       <button
@@ -144,15 +146,17 @@
     {#if id === "downloads"}
       <button
         data-action="downloads"
-        aria-describedby="titlebar-reorder-hint"
+        aria-describedby="titlebar-reorder-hint titlebar-download-progress"
         class:dragging={preview?.id === "downloads"}
         style:translate={preview?.id === "downloads" ? `${preview.offset}px 0` : undefined}
         class="icon-btn"
-        onclick={openDownloadsDrawer}
-        title={($t("titlebar.download_manager_p0_8620", { p0: $keyboardShortcuts && shortcutLabel("downloads") })) + " · " + $t("titlebar.reorder_hint")}
+        onclick={event => openDownloadsDrawer(event.currentTarget)}
+        aria-haspopup="dialog" aria-expanded={$isDownloadsDrawerOpen}
+        title={($t("titlebar.download_manager_p0_8620", { p0: $keyboardShortcuts && shortcutLabel("downloads") })) + ($downloadProgressText ? " · " + $downloadProgressText : "") + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-downloads" aria-label={$t("titlebar.downloads_d5fd")}
       >
         <TitlebarActionIcon action={id} />
+        <DownloadProgressIndicator />
       </button>
     {/if}
     {#if id === "privacy"}

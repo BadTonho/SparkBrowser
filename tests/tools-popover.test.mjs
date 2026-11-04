@@ -44,9 +44,9 @@ test('compact mode anchors to More and a dismissed pending opening cannot reopen
 });
 
 test('panel remains below its anchor and within horizontal window margins', () => {
-  const { toolsPosition } = load('src/lib/services/tools-presentation.ts');
+  const { panelPosition } = load('src/lib/services/panel-presentation.ts');
   for (const width of [400, 680, 1280, 1920]) for (const left of [10, width / 2, width - 40]) {
-    const pos = toolsPosition({ left, top: 40, width: 27, height: 26 }, width, 480);
+    const pos = panelPosition({ left, top: 40, width: 27, height: 26 }, width, 480);
     assert.equal(pos.top, 74); assert.ok(pos.left >= 8); assert.ok(pos.left + pos.width <= width - 8);
     assert.equal(pos.width, Math.min(640, width - 16)); assert.equal(pos.maxHeight, 398);
   }
@@ -63,12 +63,14 @@ test('presentation excludes executable markup and opaque controls reject removed
   class Input extends Element {} class Textarea extends Element {} class Select extends Element {} class Form extends Element {}
   const button = new Element('button', { 'data-testid': 'safe-button', onclick: 'unsafe()', style: 'unsafe' });
   const script = new Element('script');
-  const root = new Element('div', {}, [button, script, { nodeType: 3, textContent: '<img src=x onerror=unsafe()>' }]);
-  const { createToolsProjection } = load('src/lib/services/tools-presentation.ts', {}, {
+  const progress = new Element('progress', { value: '25', max: '100', style: 'unsafe' });
+  const root = new Element('div', {}, [button, script, { nodeType: 3, textContent: '<img src=x onerror=unsafe()>' }, progress]);
+  const { createPanelProjection } = load('src/lib/services/panel-presentation.ts', {}, {
     Node: { TEXT_NODE: 3 }, Element, HTMLElement: Element, HTMLInputElement: Input, HTMLTextAreaElement: Textarea, HTMLSelectElement: Select, HTMLFormElement: Form,
   });
-  const f = createToolsProjection(root), tree = f.snapshot(), control = tree.children[0];
-  assert.equal(tree.children.length, 2); assert.equal(tree.children[1].text, '<img src=x onerror=unsafe()>');
+  const f = createPanelProjection(root), tree = f.snapshot(), control = tree.children[0];
+  assert.equal(tree.children.length, 3); assert.equal(tree.children[1].text, '<img src=x onerror=unsafe()>');
+  assert.equal(tree.children[2].tag, 'progress'); assert.equal(tree.children[2].attributes.value, '25'); assert.equal(tree.children[2].attributes.max, '100'); assert.equal(tree.children[2].attributes.style, undefined);
   assert.equal(control.attributes.onclick, undefined); assert.equal(control.attributes.style, undefined);
   f.dispatch({ kind: 'click', target: control.id }); assert.equal(button.clicks, 1);
   button.attributes.push({ name: 'disabled', value: '' });

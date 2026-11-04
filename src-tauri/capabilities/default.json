@@ -68,6 +68,7 @@
     "allow-auto-hibernate-inactive-tabs",
     "allow-set-overlay-visibility",
     "allow-set-tools-popover",
+    "allow-set-downloads-popover",
     "allow-set-media-popover",
     "allow-set-zoom-popover",
     "allow-set-workspace-switcher-overlay",

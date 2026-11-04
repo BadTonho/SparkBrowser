@@ -1,6 +1,7 @@
 import { checkTabDocking } from './tab-docking.mjs';
 import { checkTitlebarActions } from './titlebar-actions.mjs';
 import { checkToolsPopover } from './tools-popover.mjs';
+import { checkDownloadsPopover } from './downloads-popover.mjs';
 import { checkSecurityBoundaries } from './security-boundaries.mjs';
 import { checkWebviewRuntime } from './webview-runtime.mjs';
 import { checkNewTab } from './new-tab.mjs';
@@ -37,6 +38,7 @@ export const scenarios = {
   'security-boundaries': checkSecurityBoundaries,
   'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,
+  'downloads-popover': checkDownloadsPopover,
   'titlebar-actions': checkTitlebarActions,
   'new-tab': checkNewTab,
   'new-tab-widgets': context=>checkNewTabWidgets(context,newTabDriver(context)),
@@ -79,6 +81,7 @@ export const scenarios = {
 
   },
   dialogs: async context => {
+    await context.focusWindow();
     const { invoke, until, fixture, script, click, wait, screenshot, request, sessionId } = context;
     const { a, b } = await prepareTabs(context);
     // Draft and focus lifecycle are checked in the shell's DOM through its real event handlers.
@@ -93,14 +96,17 @@ export const scenarios = {
     // Exercise real UI handlers without introducing test-only IPC or expanded permissions.
     for (const label of ['open-settings', 'open-downloads', 'open-history']) {
       await script(`const button = document.querySelector('button[data-testid="' + arguments[0] + '"]'); button.focus(); button.click();`, label);
+      const inspect = operation => label === 'open-downloads' ? context.withWebview('/index.html?surface=downloads', operation) : operation();
+      await inspect(async () => {
       await until(() => script('return Boolean(document.querySelector("[role=dialog]"))'), `${label} dialog`);
       await until(() => script('return document.querySelector("[role=dialog]").contains(document.activeElement)'), 'initial dialog focus');
       assert.equal(await script(`const dialog = document.querySelector('[role=dialog]');
-        const controls = [...dialog.querySelectorAll('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),a[href],[tabindex="0"]')].filter(node => node.getClientRects().length);
+        const controls = [...dialog.querySelectorAll('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),summary,a[href],[tabindex="0"]')].filter(node => node.getClientRects().length && node.checkVisibility());
         controls.at(-1).focus(); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
         return document.activeElement === controls[0];`), true, 'Tab wraps within the current dialog');
       await script('document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))');
       await until(() => script('return !document.querySelector("[role=dialog]")'), 'Escape closes dialog');
+      });
       await until(() => script('return document.activeElement?.getAttribute("data-testid") === arguments[0]', label), 'return focus to opener');
     }
     await script(`document.querySelector('button[data-testid="open-settings"]').click();`);

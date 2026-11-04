@@ -21,5 +21,11 @@
   "downloads.error": "Não foi possível concluir a operação do download. Confira seu estado e tente novamente.",
   "downloads.native_message": "Este download do motor não pode ser retomado agora. Volte à página de origem para tentar novamente.",
   "downloads.restart_message": "Este arquivo parcial não pode ser retomado com segurança. Reinicie o download explicitamente.",
-  "downloads.checksum_message": "O SHA-256 não corresponde. O arquivo foi mantido; confira o hash esperado antes de usá-lo."
+  "downloads.checksum_message": "O SHA-256 não corresponde. O arquivo foi mantido; confira o hash esperado antes de usá-lo.",
+  "downloads.close": "Fechar downloads",
+  "downloads.file_url": "Endereço do arquivo",
+  "downloads.integrity_options": "Verificação de integridade (opcional)",
+  "downloads.progress_known": "{count} baixando · {percent}%",
+  "downloads.progress_pending": "{count} downloads em andamento",
+  "downloads.progress_paused": "{count} downloads pausados"
 }

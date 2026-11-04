@@ -1,4 +1,4 @@
-use super::{current, Action, ToolsPopover};
+use super::{current, Action, Panel, Popover};
 use crate::state::browser_state::BrowserState;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, Url};
@@ -61,9 +61,9 @@ impl UiAction {
 
 /// Only this packaged surface's callback can forward authenticated UI actions.
 /// An opaque control handle never selects a native command or an arbitrary DOM selector.
-pub(super) fn navigation(app: &AppHandle, url: &Url) {
+pub(super) fn navigation<P: Panel>(app: &AppHandle, url: &Url) {
     if url.scheme() != "veloce-internal"
-        || url.host_str() != Some("tools-popover")
+        || url.host_str() != Some(P::HOST)
         || url.path() != "/action"
     {
         return;
@@ -84,7 +84,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     if !value.valid() {
         return;
     }
-    let service = app.state::<ToolsPopover>();
+    let service = app.state::<Popover<P>>();
     let Ok(mut inner) = service.0.lock() else {
         return;
     };
@@ -106,7 +106,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
         action: value,
     };
     drop(inner);
-    let _ = crate::security::emit_shell(app, "tools-popover-action", event);
+    let _ = crate::security::emit_shell(app, P::EVENT, event);
 }
 
 #[cfg(test)]

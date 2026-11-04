@@ -21,5 +21,11 @@
   "downloads.error": "The download operation could not be completed. Review its state and try again.",
   "downloads.native_message": "This engine download cannot currently be resumed. Return to its source page to try again.",
   "downloads.restart_message": "This partial file cannot be safely resumed. Restart the download explicitly.",
-  "downloads.checksum_message": "The SHA-256 does not match. The file was kept; check the expected hash before using it."
+  "downloads.checksum_message": "The SHA-256 does not match. The file was kept; check the expected hash before using it.",
+  "downloads.close": "Close downloads",
+  "downloads.file_url": "File address",
+  "downloads.integrity_options": "Integrity check (optional)",
+  "downloads.progress_known": "{count} downloading · {percent}%",
+  "downloads.progress_pending": "{count} downloads in progress",
+  "downloads.progress_paused": "{count} downloads paused"
 }

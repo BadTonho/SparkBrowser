@@ -3,5 +3,7 @@ import "./styles/theme.css";
 
 const component = new URLSearchParams(location.search).get("surface") === "tools"
   ? import("./lib/components/tools/ToolsSurface.svelte")
-  : import("./App.svelte");
+  : new URLSearchParams(location.search).get("surface") === "downloads"
+    ? import("./lib/components/downloads/DownloadsSurface.svelte")
+    : import("./App.svelte");
 void component.then(({ default: view }) => mount(view, { target: document.getElementById("app")! }));

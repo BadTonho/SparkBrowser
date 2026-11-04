@@ -39,8 +39,9 @@ use commands::navigation::{
 };
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
-    set_bookmark_context_menu_overlay, set_media_popover, set_overlay_visibility,
-    set_privacy_popover, set_tools_popover, set_workspace_switcher_overlay, set_zoom_popover,
+    set_bookmark_context_menu_overlay, set_downloads_popover, set_media_popover,
+    set_overlay_visibility, set_privacy_popover, set_tools_popover, set_workspace_switcher_overlay,
+    set_zoom_popover,
 };
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
@@ -100,6 +101,7 @@ pub fn run() {
         .manage(media::MediaService::default())
         .manage(window::media_popover::MediaPopover::default())
         .manage(window::tools_popover::ToolsPopover::default())
+        .manage(window::downloads_popover::DownloadsPopover::default())
         .manage(window::privacy_popover::PrivacyPopover::default())
         .manage(window::zoom_popover::ZoomPopover::default())
         .manage(shutdown::ShutdownService::default())
@@ -119,6 +121,7 @@ pub fn run() {
             if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
                 window::zoom_popover::focus_lost(window.app_handle());
                 window::tools_popover::focus_lost(window.app_handle());
+                window::downloads_popover::focus_lost(window.app_handle());
                 if let Some(state) = window.try_state::<BrowserState>() {
                     state
                         .workspace_alt_pressed
@@ -281,6 +284,7 @@ pub fn run() {
             toggle_adblock_shield,
             set_auto_skip_ads,
             set_tools_popover,
+            set_downloads_popover,
             set_privacy_popover,
             get_workspaces,
             get_active_workspace,

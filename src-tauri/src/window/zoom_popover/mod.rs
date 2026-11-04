@@ -318,6 +318,7 @@ pub fn set(
     inner.session = Some(session);
     drop(inner);
     super::tools_popover::dismiss(app);
+    super::downloads_popover::dismiss(app);
     super::privacy_popover::dismiss(app);
     super::media_popover::dismiss(app);
     let result = (|| {

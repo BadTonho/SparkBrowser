@@ -5,6 +5,8 @@
   import PipButton from "../media/PipButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
   import TitlebarActions from "./TitlebarActions.svelte";
+  import DownloadProgressIndicator from "../downloads/DownloadProgressIndicator.svelte";
+  import { downloadProgressText } from "../../stores/downloadsStore";
   import { t } from "../../i18n";
   import { isNewTab } from "../../services/new-tab";
   import { openSitePermissions } from "../../stores/sitePermissionsStore";
@@ -201,7 +203,8 @@
     <!-- Top-Right Controls: Quick Tools, Settings & Window Controls -->
     <div class="titlebar-controls">
       {#if compact}
-        <button class="icon-btn" data-testid="open-titlebar-menu" aria-label={$t("titlebar.more")} title={$t("titlebar.more")} aria-haspopup="menu" aria-expanded={Boolean($titlebarMenu)} onclick={event => openTitlebarMenu(event.currentTarget)} onkeydown={event => { if (event.key === "ArrowDown") { event.preventDefault(); void openTitlebarMenu(event.currentTarget); } }}>⋯</button>
+        <button class="icon-btn" data-testid="open-titlebar-menu" aria-label={$t("titlebar.more")} aria-describedby="more-download-progress" title={$t("titlebar.more") + ($downloadProgressText ? " · " + $downloadProgressText : "")} aria-haspopup="menu" aria-expanded={Boolean($titlebarMenu)} onclick={event => openTitlebarMenu(event.currentTarget)} onkeydown={event => { if (event.key === "ArrowDown") { event.preventDefault(); void openTitlebarMenu(event.currentTarget); } }}>⋯<DownloadProgressIndicator /></button>
+        <span id="more-download-progress" class="sr-only">{$downloadProgressText}</span>
       {:else}
         <TitlebarActions />
       {/if}
