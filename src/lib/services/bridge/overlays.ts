@@ -21,7 +21,7 @@ export type OverlayId =
   | "bookmark-editor";
 
 const activeOverlayIds = new Set<OverlayId>();
-const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt"]);
+const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history"]);
 let overlaySyncQueue: Promise<void> = Promise.resolve();
 
 const openingListeners = new Set<(id?: OverlayId) => void>();

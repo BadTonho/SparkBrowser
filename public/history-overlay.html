@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Histórico</title><link rel="stylesheet" href="./overlays/history-overlay.css" /></head>
+<body>
+  <section id="history-panel" role="dialog" aria-modal="true" tabindex="-1" hidden>
+    <header><h2 id="title"></h2><div class="header-actions"><button id="clear" class="clear-btn" type="button"></button><button id="close" class="close-btn" type="button" aria-label="Fechar">×</button></div></header>
+    <div class="search"><input id="query" type="search" spellcheck="false" /></div>
+    <p id="error" role="alert" hidden></p>
+    <div id="entries" aria-busy="false"></div>
+  </section>
+  <script src="./overlays/history-overlay.js" defer></script>
+</body></html>

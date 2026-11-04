@@ -39,9 +39,9 @@ use commands::navigation::{
 };
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
-    set_bookmark_context_menu_overlay, set_downloads_popover, set_media_popover,
-    set_overlay_visibility, set_permission_popover, set_privacy_popover, set_tools_popover,
-    set_workspace_switcher_overlay, set_zoom_popover,
+    set_bookmark_context_menu_overlay, set_downloads_popover, set_history_overlay,
+    set_media_popover, set_overlay_visibility, set_permission_popover, set_privacy_popover,
+    set_tools_popover, set_workspace_switcher_overlay, set_zoom_popover,
 };
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
@@ -104,6 +104,7 @@ pub fn run() {
         .manage(window::downloads_popover::DownloadsPopover::default())
         .manage(window::privacy_popover::PrivacyPopover::default())
         .manage(window::permission_popover::PermissionPopover::default())
+        .manage(window::history_overlay::HistoryOverlay::default())
         .manage(window::zoom_popover::ZoomPopover::default())
         .manage(shutdown::ShutdownService::default())
         .manage(backup::service::BackupService::default())
@@ -299,6 +300,7 @@ pub fn run() {
             set_downloads_popover,
             set_privacy_popover,
             set_permission_popover,
+            set_history_overlay,
             get_workspaces,
             get_active_workspace,
             switch_workspace,

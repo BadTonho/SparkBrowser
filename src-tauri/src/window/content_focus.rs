@@ -23,6 +23,7 @@ pub fn focus_active_content_webview(app: &AppHandle) -> Result<(), String> {
                 || super::tools_popover::is_open(&app)
                 || super::privacy_popover::is_open(&app)
                 || super::permission_popover::is_open(&app)
+                || super::history_overlay::is_open(&app)
                 || super::zoom_popover::is_open(&app)
                 || app.state::<crate::shutdown::ShutdownService>().blocked()
             {

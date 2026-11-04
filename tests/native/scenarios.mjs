@@ -98,16 +98,24 @@ export const scenarios = {
     // Exercise real UI handlers without introducing test-only IPC or expanded permissions.
     for (const label of ['open-settings', 'open-downloads', 'open-history']) {
       await script(`const button = document.querySelector('button[data-testid="' + arguments[0] + '"]'); button.focus(); button.click();`, label);
-      const inspect = operation => label === 'open-downloads' ? context.withWebview('/index.html?surface=downloads', operation) : operation();
+      if (label === 'open-history') {
+        assert.equal(await script('return document.querySelector(".browser-preview-fallback") === null'), true, 'history stays on top of the real page without replacing the viewport');
+      }
+      const inspect = operation => label === 'open-downloads'
+        ? context.withWebview('/index.html?surface=downloads', operation)
+        : label === 'open-history'
+          ? context.withWebview('/history-overlay.html', operation)
+          : operation();
       await inspect(async () => {
-      await until(() => script('return Boolean(document.querySelector("[role=dialog]"))'), `${label} dialog`);
-      await until(() => script('return document.querySelector("[role=dialog]").contains(document.activeElement)'), 'initial dialog focus');
+      const dialog = label === 'open-history' ? '[role=dialog]:not([hidden])' : '[role=dialog]';
+      await until(() => script(`return Boolean(document.querySelector('${dialog}'))`), `${label} dialog`);
+      await until(() => script(`return document.querySelector('${dialog}').contains(document.activeElement)`), 'initial dialog focus');
       assert.equal(await script(`const dialog = document.querySelector('[role=dialog]');
         const controls = [...dialog.querySelectorAll('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),summary,a[href],[tabindex="0"]')].filter(node => node.getClientRects().length && node.checkVisibility());
         controls.at(-1).focus(); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
         return document.activeElement === controls[0];`), true, 'Tab wraps within the current dialog');
       await script('document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))');
-      await until(() => script('return !document.querySelector("[role=dialog]")'), 'Escape closes dialog');
+      await until(() => script(`return !document.querySelector('${dialog}')`), 'Escape closes dialog');
       });
       await until(() => script('return document.activeElement?.getAttribute("data-testid") === arguments[0]', label), 'return focus to opener');
     }

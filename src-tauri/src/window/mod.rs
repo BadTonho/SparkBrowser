@@ -1,6 +1,7 @@
 mod content_focus;
 mod content_lifecycle;
 pub mod favicon;
+pub mod history_overlay;
 mod internal_overlays;
 mod keyboard_bridge;
 pub mod media_popover;

@@ -4,6 +4,13 @@
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
+  import { onMount, untrack } from "svelte";
+  import { locale, type Locale } from "../../i18n";
+  import { currentUrl, tabs } from "../../stores/browserStore";
+  import { activeWorkspaceId } from "../../stores/workspaceSelectionStore";
+  import { isTauriRuntime } from "../../services/bridge/runtime";
+  import { onHistoryOverlayAction, setHistoryOverlay, type HistoryOverlayPresentation } from "../../services/bridge/history-overlay";
+  import { describeError } from "../../services/user-errors.js";
   import {
     historyEntries,
     historyBusy,
@@ -17,6 +24,12 @@
   import { addTab } from "../../stores/browserStore";
 
   let filterQuery = $state("");
+  const native = isTauriRuntime();
+  let nativeSessionId = Date.now() * 1000;
+  let nativeSessionKey = "";
+  let lastNativePresentation = "";
+
+  const activeTab = $derived($tabs.find((tab) => tab.is_active));
 
   let filteredHistory = $derived($historyEntries);
   $effect(() => {
@@ -31,13 +44,108 @@
     return $formatDate(epochSecs * 1000, { hour: "2-digit", minute: "2-digit" });
   }
 
+  function nativeTheme(): HistoryOverlayPresentation["theme"] {
+    const root = document.documentElement;
+    const style = getComputedStyle(root);
+    const light = root.dataset.theme === "light";
+    return {
+      surface: style.getPropertyValue("--bg-permission-popover").trim() || (light ? "#fff" : "#1c1c1c"),
+      border: style.getPropertyValue("--border-subtle").trim() || (light ? "#0000001a" : "#ffffff17"),
+      text: style.getPropertyValue("--text-primary").trim() || (light ? "#171717" : "#f5f5f5"),
+      muted: style.getPropertyValue("--text-secondary").trim() || (light ? "#525252" : "#a3a3a3"),
+      accent: style.getPropertyValue("--accent-primary").trim() || (light ? "#171717" : "#e5e5e5"),
+      hover: style.getPropertyValue("--bg-glass-hover").trim() || (light ? "#0000000d" : "#ffffff14"),
+      field: light ? "#f4f4f5" : "#242424",
+    };
+  }
+
+  async function pushNativeOverlay() {
+    if (!native) return;
+    const tab = activeTab;
+    if (!$isHistoryDrawerOpen || !tab) {
+      if (nativeSessionKey) {
+        const closingSession = nativeSessionId;
+        nativeSessionKey = "";
+        lastNativePresentation = "";
+        await setHistoryOverlay(false, closingSession).catch(() => {});
+      }
+      return;
+    }
+    const key = `${$activeWorkspaceId}:${tab.id}:${tab.url}`;
+    if (key !== nativeSessionKey) {
+      if (nativeSessionKey) void setHistoryOverlay(false, nativeSessionId).catch(() => {});
+      nativeSessionKey = key;
+      nativeSessionId += 1;
+      lastNativePresentation = "";
+    }
+    const payload: HistoryOverlayPresentation = {
+      tabId: tab.id,
+      url: tab.url || $currentUrl,
+      locale: $locale as Locale,
+      labels: {
+        title: $t("history.browsing_history_sqlite_59d8"),
+        clear: $t("history.clear_all_ddce"),
+        close: $t("permissions.close_7d9e"),
+        search: $t("history.search_visited_pages_9bc1"),
+        empty: $t("history.no_history_entries_found_c307"),
+        loadMore: $t("history.load_more_ac89"),
+      },
+      theme: nativeTheme(),
+      query: filterQuery,
+      entries: $historyEntries.map((item) => ({ id: item.id, title: item.title, url: item.url, time: formatTime(item.visited_at) })),
+      busy: $historyBusy,
+      error: $historyError,
+      hasMore: $historyHasMore,
+    };
+    const serialized = JSON.stringify(payload);
+    if (serialized === lastNativePresentation) return;
+    lastNativePresentation = serialized;
+    await setHistoryOverlay(true, nativeSessionId, payload).catch((error) => {
+      lastNativePresentation = "";
+      historyError.set(describeError(error));
+    });
+  }
+
+  async function handleNativeAction(action: import("../../services/bridge/history-overlay").HistoryOverlayAction) {
+    const tab = activeTab;
+    if (!nativeSessionKey || action.sessionId !== nativeSessionId || !tab || action.tabId !== tab.id || action.url !== (tab.url || $currentUrl) || !$isHistoryDrawerOpen) return;
+    switch (action.action) {
+      case "close": await closeHistoryDrawer(); break;
+      case "search": filterQuery = action.query; break;
+      case "clear": await wipeBrowsingHistory(); break;
+      case "load-more": await loadHistory(filterQuery, true); break;
+      case "open":
+        if (action.entryUrl) await openHistoryUrl(action.entryUrl);
+        break;
+    }
+  }
+
+  $effect(() => {
+    void $isHistoryDrawerOpen; void $historyEntries; void $historyBusy; void $historyError; void $historyHasMore;
+    void filterQuery; void $currentUrl; void $tabs; void $activeWorkspaceId; void $locale; void $t;
+    untrack(() => { void pushNativeOverlay(); });
+  });
+
+  onMount(() => {
+    let disposed = false;
+    let stop: (() => void) | undefined;
+    void onHistoryOverlayAction(handleNativeAction).then((unlisten) => {
+      if (disposed) unlisten(); else stop = unlisten;
+    });
+    return () => {
+      disposed = true;
+      stop?.();
+      if (nativeSessionKey) void setHistoryOverlay(false, nativeSessionId);
+    };
+  });
+
   async function openHistoryUrl(url: string) {
     await closeHistoryDrawer();
     await addTab(url);
   }
 </script>
 
-{#if $isHistoryDrawerOpen}
+{#if $isHistoryDrawerOpen && !native}
   <div
     class="history-backdrop"
     transition:fade={{ duration: 150 }}
@@ -113,8 +221,7 @@
     position: fixed;
     inset: 0;
     z-index: 990;
-    background: rgba(8, 8, 8, 0.55);
-    backdrop-filter: blur(var(--overlay-backdrop-blur, 16px));
+    background: transparent;
     display: flex;
     justify-content: flex-start;
     padding: 46px 0 12px 12px;
@@ -124,7 +231,7 @@
     width: min(420px, 90vw);
     height: 100%;
     border-radius: var(--radius-lg);
-    background: rgba(18, 18, 18, 0.95);
+    background: var(--bg-permission-popover, #1c1c1c);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
     box-shadow: 0 20px 56px rgba(0, 0, 0, 0.6);
     display: flex;

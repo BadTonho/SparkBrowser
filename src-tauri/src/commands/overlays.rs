@@ -76,6 +76,18 @@ pub async fn set_permission_popover(
 }
 
 #[tauri::command]
+pub async fn set_history_overlay(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    session_id: u64,
+    presentation: Option<crate::window::history_overlay::Presentation>,
+) -> Result<(), String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::history_overlay::set(&app, visible, session_id, presentation)
+}
+
+#[tauri::command]
 pub async fn set_media_popover(
     app: AppHandle,
     state: State<'_, BrowserState>,

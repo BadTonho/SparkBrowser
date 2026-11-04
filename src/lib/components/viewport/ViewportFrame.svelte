@@ -29,7 +29,7 @@
       $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
   );
   let blockingOverlayOpen = $derived(
-    $isCommandBarOpen || $isHistoryDrawerOpen || $isDownloadsDrawerOpen ||
+    $isCommandBarOpen || $isDownloadsDrawerOpen ||
       $isSettingsModalOpen || $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
   );
 
