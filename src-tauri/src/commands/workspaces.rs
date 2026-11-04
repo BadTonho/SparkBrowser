@@ -1,12 +1,13 @@
 use crate::commands::tabs::{create_tab_inner, reconcile_committed, switch_tab_inner};
 use crate::database::{
-    session_repo::save_session_tabs, split_repo, tab_usage_repo, workspace_repo,
+    preferences_repo, session_repo::save_session_tabs, split_repo, tab_usage_repo, workspace_repo,
 };
 use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::WorkspaceItem;
 use rusqlite::Connection;
 use serde::Serialize;
+use std::sync::atomic::Ordering;
 use tauri::{AppHandle, State};
 
 #[derive(Debug, Serialize)]
@@ -32,6 +33,59 @@ pub async fn get_active_workspace(state: State<'_, BrowserState>) -> Result<Stri
         .lock()
         .map(|id| id.clone())
         .unwrap_or_else(|_| "ws-personal".to_string()))
+}
+
+/// Reports the durable per-workspace content isolation preference.
+#[tauri::command]
+pub fn get_workspace_isolation(state: State<'_, BrowserState>) -> bool {
+    state
+        .workspace_isolation
+        .load(Ordering::Acquire)
+}
+
+/// Applies and persists per-workspace content isolation. Enabling or disabling
+/// the setting rebuilds content WebViews so every document adopts the correct
+/// data folder; pages lose their live state, matching the shield contract.
+#[tauri::command]
+pub async fn set_workspace_isolation(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    enabled: bool,
+) -> Result<(), String> {
+    let _operation = state.tab_operations.lock().await;
+    let previous = state.workspace_isolation.load(Ordering::Acquire);
+    if previous == enabled {
+        return Ok(());
+    }
+    {
+        let db_guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard
+            .as_ref()
+            .ok_or_else(|| "Preference database is not ready".to_string())?;
+        preferences_repo::store(
+            conn,
+            preferences_repo::WORKSPACE_ISOLATION_KEY,
+            if enabled { "true" } else { "false" },
+        )
+        .map_err(|e| format!("Failed to persist workspace isolation: {e}"))?;
+    }
+    state.workspace_isolation.store(enabled, Ordering::Release);
+    let result = crate::window::webview_manager::reset_content_webviews(&app, &state)
+        .and_then(|()| crate::window::webview_manager::sync_all_webviews(&app, &state));
+    if let Err(error) = result {
+        let _ = crate::security::emit_shell(
+            &app,
+            "browser-error",
+            format!("The isolation setting was saved, but pages could not be rebuilt: {error}"),
+        );
+    }
+    let _ = crate::security::emit_shell(
+        &app,
+        "browser-error",
+        "Pages were reloaded to apply per-workspace isolation",
+    );
+    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    Ok(())
 }
 
 #[tauri::command]
@@ -324,6 +378,9 @@ pub async fn delete_workspace(
         let _ = crate::security::emit_shell(&app, "content-url-changed", &active_url);
     }
     reconcile_committed(&app, &state);
+    // The workspace no longer exists; reclaim its isolated data folder when
+    // isolation is on. Live document teardown finished during reconciliation.
+    crate::window::workspace_data::remove(&app, &workspace_id);
     let tabs = state.snapshot_packet();
     let _ = crate::security::emit_shell(&app, "tabs-updated", &tabs);
 

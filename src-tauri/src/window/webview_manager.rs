@@ -14,7 +14,7 @@ use tauri::{
 
 pub use super::content_focus::focus_active_content_webview;
 pub use super::content_lifecycle::{
-    prepare_content_reset, reset_content_webviews, sync_all_webviews,
+    close_tab_webview, prepare_content_reset, reset_content_webviews, sync_all_webviews,
 };
 pub use super::internal_overlays::{
     build_bookmark_context_menu_script, build_workspace_switcher_update_script,
@@ -147,6 +147,12 @@ pub(super) fn ensure_tab_webview(
             shield_enabled,
             &keyboard_bridge_token,
         ));
+
+    // Opt-in workspace isolation gives every tab's WebView its own data folder.
+    let webview_builder = match crate::window::workspace_data::content_directory(app, tab_id)? {
+        Some(directory) => webview_builder.data_directory(directory),
+        None => webview_builder,
+    };
 
     #[cfg(not(windows))]
     let webview_builder = webview_builder.on_download(crate::downloads::native::handler(

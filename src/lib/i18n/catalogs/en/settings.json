@@ -217,5 +217,7 @@
   "settings.theme_mode": "Theme",
   "settings.theme_mode_description": "Choose between dark and light appearance",
   "settings.theme_dark": "🌙 Dark",
-  "settings.theme_light": "☀️ Light"
+  "settings.theme_light": "☀️ Light",
+  "settings.content_isolation_9f15": "Isolate workspace content",
+  "settings.content_isolation_desc_fea8": "Give every workspace its own cookies, storage, cache and browser process. Toggling reloads all tabs."
 }

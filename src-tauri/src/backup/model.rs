@@ -18,6 +18,8 @@ pub struct BackupPreferences {
     pub auto_skip_ads_enabled: bool,
     #[serde(default)]
     pub pip_window_shadow: bool,
+    #[serde(default)]
+    pub workspace_isolation: bool,
     pub tab_layout: String,
     pub show_bookmarks_bar: bool,
     pub overlay_blur_px: u8,

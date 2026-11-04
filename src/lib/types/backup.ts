@@ -6,6 +6,7 @@ import type { UpdateChannel } from "./updates";
 export interface BackupPreferences {
   auto_skip_ads_enabled: boolean;
   pip_window_shadow?: boolean;
+  workspace_isolation?: boolean;
   tab_layout: TabLayout; show_bookmarks_bar: boolean; overlay_blur_px: number;
   workspace_switcher_display: WorkspaceSwitcherDisplay; default_search_engine: "google" | "duckduckgo";
   auto_hibernate_mode: AutoHibernateMode; resident_limit: number; language: LanguagePreference;

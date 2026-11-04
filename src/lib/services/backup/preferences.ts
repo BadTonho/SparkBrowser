@@ -9,10 +9,11 @@ import type { BackupPreferences } from "../../types/backup";
 import {pipWindowShadow,setPipWindowShadow} from "../../stores/pipAppearanceStore";
 import {setAutoSkipAds,privacyStats} from "../../stores/privacyStore";
 import {AUTO_SKIP_STORAGE_KEY} from "../auto-skip-preference.js";
+import { workspaceIsolation, setWorkspaceIsolationEnabled } from "../../stores/settingsStore";
 import {PIP_SHADOW_STORAGE_KEY} from "../pip-shadow-preference.js";
 
 export function capturePreferences(): BackupPreferences {
-  return { auto_skip_ads_enabled:get(privacyStats).auto_skip_ads_enabled,pip_window_shadow:get(pipWindowShadow),tab_layout: get(tabLayout), show_bookmarks_bar: get(showBookmarksBar), overlay_blur_px: get(overlayBlurPx), workspace_switcher_display: get(workspaceSwitcherDisplay), default_search_engine: get(defaultSearchEngine), auto_hibernate_mode: get(autoHibernateMode), resident_limit: get(residentTabLimit), language: get(languagePreference), keyboard_shortcuts: get(keyboardShortcuts), update_channel: get(updateState).channel };
+  return { auto_skip_ads_enabled:get(privacyStats).auto_skip_ads_enabled,pip_window_shadow:get(pipWindowShadow),workspace_isolation:get(workspaceIsolation),tab_layout: get(tabLayout), show_bookmarks_bar: get(showBookmarksBar), overlay_blur_px: get(overlayBlurPx), workspace_switcher_display: get(workspaceSwitcherDisplay), default_search_engine: get(defaultSearchEngine), auto_hibernate_mode: get(autoHibernateMode), resident_limit: get(residentTabLimit), language: get(languagePreference), keyboard_shortcuts: get(keyboardShortcuts), update_channel: get(updateState).channel };
 }
 export async function applyBackupPreferences(p: BackupPreferences): Promise<void> {
   // Verify durable writes explicitly; existing setters intentionally tolerate storage failures.
@@ -29,6 +30,7 @@ export async function applyBackupPreferences(p: BackupPreferences): Promise<void
   if (safeStorage.getItem(AUTO_SKIP_STORAGE_KEY)!==String(p.auto_skip_ads_enabled??false)) throw new UserError("storage.failed", "Auto skip preference remains pending");
   await setPipWindowShadow(p.pip_window_shadow??false);
   if (safeStorage.getItem(PIP_SHADOW_STORAGE_KEY)!==String(p.pip_window_shadow??false)) throw new UserError("storage.failed", "Floating window preference remains pending");
+  await setWorkspaceIsolationEnabled(p.workspace_isolation??false);
   if (!setLanguage(p.language)) throw new UserError("storage.failed", "Language preference remains pending");
   await restoreShortcutMap(p.keyboard_shortcuts);
   await setResidentTabLimit(p.resident_limit);

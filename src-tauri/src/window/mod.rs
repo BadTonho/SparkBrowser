@@ -14,6 +14,7 @@ pub(crate) mod url_input;
 pub mod vibrancy;
 pub mod viewport;
 pub mod webview_manager;
+pub mod workspace_data;
 pub mod zoom_popover;
 
 pub mod tools_popover;

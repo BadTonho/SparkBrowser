@@ -97,6 +97,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_workspaces",
     "get_active_workspace",
     "switch_workspace",
+    "get_workspace_isolation",
+    "set_workspace_isolation",
     "create_workspace",
     "update_workspace",
     "delete_workspace",

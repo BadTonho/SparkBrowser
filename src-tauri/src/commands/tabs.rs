@@ -370,6 +370,11 @@ pub async fn move_tab_to_workspace(
 
         Ok(())
     })?;
+    // With workspace isolation, the tab's WebView must never keep writing into
+    // the previous workspace's data folder; recreate it on the next sync.
+    if state.workspace_isolation.load(std::sync::atomic::Ordering::Acquire) {
+        crate::window::webview_manager::close_tab_webview(&app, &tab_id)?;
+    }
     reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
     let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);

@@ -65,6 +65,8 @@ pub struct BrowserState {
     pub shield_script_ids: Mutex<std::collections::HashMap<String, String>>,
     pub shield_enabled: Mutex<bool>,
     pub auto_skip_ads_enabled: AtomicBool,
+    /// Opt-in per-workspace content isolation (own WebView2 data folder each).
+    pub workspace_isolation: AtomicBool,
     pub blocked_count: Mutex<u64>,
     pub db: Mutex<Option<Connection>>,
 }
@@ -104,6 +106,7 @@ impl Default for BrowserState {
             shield_script_ids: Mutex::new(std::collections::HashMap::new()),
             shield_enabled: Mutex::new(true),
             auto_skip_ads_enabled: AtomicBool::new(false),
+            workspace_isolation: AtomicBool::new(false),
             blocked_count: Mutex::new(0),
             db: Mutex::new(None),
         }

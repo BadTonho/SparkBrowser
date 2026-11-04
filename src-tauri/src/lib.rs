@@ -73,8 +73,8 @@ use commands::updates::{
     check_for_updates, download_update, get_update_state, install_update, set_update_channel,
 };
 use commands::workspaces::{
-    create_workspace, delete_workspace, get_active_workspace, get_workspaces, switch_workspace,
-    update_workspace,
+    create_workspace, delete_workspace, get_active_workspace, get_workspace_isolation,
+    get_workspaces, set_workspace_isolation, switch_workspace, update_workspace,
 };
 use database::connection::init_database;
 use state::browser_state::BrowserState;
@@ -169,6 +169,18 @@ pub fn run() {
                     .map_err(std::io::Error::other)?,
             );
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
+            database::preferences_repo::initialize_preferences_table(&conn)
+                .map_err(std::io::Error::other)?;
+            state
+                .workspace_isolation
+                .store(
+                    database::preferences_repo::load_bool(
+                        &conn,
+                        database::preferences_repo::WORKSPACE_ISOLATION_KEY,
+                    )
+                    .unwrap_or(false),
+                    std::sync::atomic::Ordering::Release,
+                );
             let recovery_status =
                 recovery::startup::restore(&state, conn).map_err(std::io::Error::other)?;
             app.manage(recovery::RecoveryService::new(recovery_status));
@@ -289,6 +301,8 @@ pub fn run() {
             get_workspaces,
             get_active_workspace,
             switch_workspace,
+            get_workspace_isolation,
+            set_workspace_isolation,
             create_workspace,
             update_workspace,
             delete_workspace,

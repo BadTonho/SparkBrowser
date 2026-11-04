@@ -6,6 +6,7 @@ import {
 import { safeStorage } from "../services/storage.js";
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility, setResidentLimit } from "../services/tauri-bridge";
+import { fetchWorkspaceIsolation, setWorkspaceIsolation } from "../services/bridge/workspaces";
 import {
   isSidebarOpen,
   sidebarWidth,
@@ -290,4 +291,21 @@ export async function setResidentTabLimit(limit: number): Promise<void> {
   applyTabsSnapshot(await setResidentLimit(limit));
   residentTabLimit.set(limit);
   safeStorage.setItem("veloce_resident_limit", String(limit));
+}
+
+/**
+ * Per-workspace content isolation is durable inside the backend database, so
+ * the shell hydrates it on demand and defers persistence to the command.
+ */
+export const workspaceIsolation = writable<boolean>(false);
+export async function loadWorkspaceIsolation(): Promise<void> {
+  try {
+    workspaceIsolation.set(await fetchWorkspaceIsolation());
+  } catch {
+    // The toggle stays on the safe default until the backend reports.
+  }
+}
+export async function setWorkspaceIsolationEnabled(enabled: boolean): Promise<void> {
+  await setWorkspaceIsolation(enabled);
+  workspaceIsolation.set(enabled);
 }

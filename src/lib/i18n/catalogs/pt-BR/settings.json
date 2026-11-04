@@ -217,5 +217,7 @@
   "settings.theme_mode": "Tema",
   "settings.theme_mode_description": "Escolha entre a aparência escura e clara",
   "settings.theme_dark": "🌙 Escuro",
-  "settings.theme_light": "☀️ Claro"
+  "settings.theme_light": "☀️ Claro",
+  "settings.content_isolation_9f15": "Isolar conteúdo por workspace",
+  "settings.content_isolation_desc_fea8": "Cada workspace ganha cookies, armazenamento, cache e processo próprios. Alternar recarrega todas as abas."
 }

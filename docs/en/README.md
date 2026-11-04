@@ -53,4 +53,6 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Floating Tools panel](features/tools-popover.md)
 
 - [Application security boundaries](security/application-boundaries.md)
+- [Workspace content isolation](features/workspace-isolation.md)
+- [AppContainer isolation (planned)](security/app-container-isolation.md)
 - [Planned protection against suspicious sites and downloads](roadmap/security-protections.md)

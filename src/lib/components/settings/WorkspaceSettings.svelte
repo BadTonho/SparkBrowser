@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { describeError } from "../../services/user-errors.js";
   import { t, plural } from "../../i18n";
@@ -10,6 +11,11 @@
     saveWorkspaceProfile,
     workspaces,
   } from "../../stores/workspaceStore";
+  import {
+    loadWorkspaceIsolation,
+    setWorkspaceIsolationEnabled,
+    workspaceIsolation,
+  } from "../../stores/settingsStore";
   import type { WorkspaceItem } from "../../types/browser";
 
   let selectedWorkspaceId = $state("");
@@ -20,6 +26,8 @@
   let isDeleteDialogOpen = $state(false);
   let deleteAction = $state<"move" | "close">("move");
   let deleteTargetId = $state("");
+  let isolationError = $state("");
+  let applyingIsolation = $state(false);
 
   const selectedWorkspace = $derived(
     $workspaces.find((workspace) => workspace.id === selectedWorkspaceId)
@@ -35,6 +43,22 @@
     errorMessage = "";
     isDeleteDialogOpen = false;
   }
+
+  async function applyIsolation(enabled: boolean): Promise<void> {
+    applyingIsolation = true;
+    isolationError = "";
+    try {
+      await setWorkspaceIsolationEnabled(enabled);
+    } catch (error) {
+      isolationError = describeError(error);
+    } finally {
+      applyingIsolation = false;
+    }
+  }
+
+  onMount(() => {
+    void loadWorkspaceIsolation();
+  });
 
   function startNewWorkspace(): void {
     const workspace = createWorkspaceDraft();
@@ -112,6 +136,26 @@
     <h2 class="group-title" id="workspaces-heading">{$t("settings.workspaces_theme_0497")}</h2>
     <button class="primary-action" onclick={startNewWorkspace}>{$t("settings.create_workspace_a862")}</button>
   </div>
+
+  <div class="setting-row" id="setting-workspace-isolation" tabindex="-1">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.content_isolation_9f15")}</span>
+      <span class="row-desc">{$t("settings.content_isolation_desc_fea8")}</span>
+    </div>
+    <button
+      class="pill-action"
+      class:active={$workspaceIsolation}
+      aria-pressed={$workspaceIsolation}
+      aria-label={$t("settings.content_isolation_9f15")}
+      disabled={applyingIsolation}
+      onclick={() => applyIsolation(!$workspaceIsolation)}
+    >
+      {$workspaceIsolation ? $t("settings.enabled_92c1") : $t("settings.paused_e159")}
+    </button>
+  </div>
+  {#if isolationError}
+    <ErrorMessage error={isolationError} />
+  {/if}
 
   <div
     class="workspace-list"

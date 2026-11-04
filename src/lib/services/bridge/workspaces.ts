@@ -12,6 +12,18 @@ export async function fetchActiveWorkspace(): Promise<string> {
   return await invoke<string>("get_active_workspace");
 }
 
+/** Reports the durable per-workspace content isolation preference. */
+export async function fetchWorkspaceIsolation(): Promise<boolean> {
+  if(!isTauriRuntime()) return false;
+  return await invoke<boolean>("get_workspace_isolation");
+}
+
+/** Applies per-workspace isolation and reloads content WebViews. */
+export async function setWorkspaceIsolation(enabled: boolean): Promise<void> {
+  if(!isTauriRuntime()) return;
+  await invoke<void>("set_workspace_isolation", { enabled });
+}
+
 export async function switchWorkspace(workspaceId: string): Promise<TabSnapshot> {
   if(!isTauriRuntime()) return preview.switchWorkspace(workspaceId);
   return await invoke<TabSnapshot>("switch_workspace", { workspaceId });

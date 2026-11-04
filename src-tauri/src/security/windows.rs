@@ -10,7 +10,11 @@ pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result
         let result = (|| -> windows_core::Result<()> {
             let core = unsafe { platform.controller().CoreWebView2()? };
             unsafe {
-                core.Settings()?.SetAreHostObjectsAllowed(false)?;
+                let settings = core.Settings()?;
+                settings.SetAreHostObjectsAllowed(false)?;
+                // DevTools stay available during development only; release
+                // pages (even internal ones) must not expose a debug bridge.
+                settings.SetAreDevToolsEnabled(tauri::is_dev())?;
             }
             let mut registration = 0;
             if internal {

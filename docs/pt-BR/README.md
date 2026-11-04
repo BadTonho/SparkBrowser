@@ -53,4 +53,6 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Painel flutuante de Ferramentas](features/tools-popover.md)
 
 - [Fronteiras de segurança do aplicativo](security/application-boundaries.md)
+- [Isolamento de conteúdo por workspace](features/workspace-isolation.md)
+- [Isolamento AppContainer (planejado)](security/app-container-isolation.md)
 - [Proteção planejada contra sites e downloads suspeitos](roadmap/security-protections.md)

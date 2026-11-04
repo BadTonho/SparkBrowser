@@ -90,6 +90,8 @@
     "allow-get-workspaces",
     "allow-get-active-workspace",
     "allow-switch-workspace",
+    "allow-get-workspace-isolation",
+    "allow-set-workspace-isolation",
     "allow-create-workspace",
     "allow-update-workspace",
     "allow-delete-workspace",
