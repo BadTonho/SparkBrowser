@@ -84,16 +84,22 @@ pub fn handle(
     if !source.active() {
         return;
     }
-    if operation == "open_gmail" {
-        let email = app
-            .state::<Widgets>()
-            .runtime
-            .lock()
-            .ok()
-            .and_then(|s| s.credential.as_ref().map(|c| c.email.clone()));
-        if let Some(email) = email {
+    if operation == "open_gmail" || (operation == "connect" && oauth::config(app).is_err()) {
+        let email = app.state::<Widgets>().runtime.lock().ok().and_then(|s| {
+            s.gmail
+                .email
+                .clone()
+                .or_else(|| s.credential.as_ref().map(|c| c.email.clone()))
+        });
+        let email_url = email
+            .as_deref()
+            .filter(|s| !s.is_empty())
+            .map(gmail::inbox_url)
+            .map(|u| u.to_string())
+            .unwrap_or_else(|| "https://mail.google.com/".into());
+        {
             let mut values = values.clone();
-            values.insert("input".into(), gmail::inbox_url(&email).to_string());
+            values.insert("input".into(), email_url);
             super::super::bridge::navigate(app, id, label, token, &values, false);
         }
         return;

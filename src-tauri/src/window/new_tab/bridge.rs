@@ -69,7 +69,9 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
                 &document,
                 sequence,
                 matches!(url.path(), "/navigate" | "/visit")
-                    || values.get("operation").is_some_and(|op| op == "open_gmail"),
+                    || values
+                        .get("operation")
+                        .is_some_and(|op| op == "open_gmail" || op == "connect"),
             ) {
                 return;
             }
@@ -202,8 +204,13 @@ pub(super) fn navigate(
         None
     };
     let epoch = super::super::favicon::epoch(app);
-    let document = values["document"].clone();
-    let sequence = values["sequence"].parse::<u64>().unwrap_or(0);
+    let Some(document) = values.get("document").cloned() else {
+        return;
+    };
+    let sequence = values
+        .get("sequence")
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(0);
     let (app, id, label, token) = (
         app.clone(),
         id.to_owned(),

@@ -171,16 +171,14 @@ pub fn run() {
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
-            state
-                .workspace_isolation
-                .store(
-                    database::preferences_repo::load_bool(
-                        &conn,
-                        database::preferences_repo::WORKSPACE_ISOLATION_KEY,
-                    )
-                    .unwrap_or(false),
-                    std::sync::atomic::Ordering::Release,
-                );
+            state.workspace_isolation.store(
+                database::preferences_repo::load_bool(
+                    &conn,
+                    database::preferences_repo::WORKSPACE_ISOLATION_KEY,
+                )
+                .unwrap_or(false),
+                std::sync::atomic::Ordering::Release,
+            );
             let recovery_status =
                 recovery::startup::restore(&state, conn).map_err(std::io::Error::other)?;
             app.manage(recovery::RecoveryService::new(recovery_status));

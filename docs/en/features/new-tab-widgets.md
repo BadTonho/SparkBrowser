@@ -10,8 +10,15 @@ The widget shows current temperature, conditions, feels-like temperature and thr
 
 Forecasts and city search use [Open-Meteo](https://open-meteo.com/). Coordinates are sent to the forecast provider; city names are sent to its geocoding service. The free endpoint is intended here for personal, non-commercial use; [commercial use requires the appropriate plan](https://open-meteo.com/en/pricing). Icons are packaged local SVGs. Attribution opens the provider's website in the current pane.
 
-## Gmail setup for personal testing
+## Gmail integration
 
+The widget supports two connection modes:
+
+### 1. Direct Browser Session (Default & Recommended)
+Veloce configures WebViews with a standard desktop browser User-Agent, allowing seamless Google sign-in directly within browser tabs without third-party app warnings. When you are signed into Gmail (`mail.google.com`) in any normal tab, the widget automatically detects the session cookies and displays your unread count and latest messages via the inbox feed. No Google Cloud Console project or credentials are required. Clicking **Connect Gmail** navigates the current tab to `https://mail.google.com/` to sign in.
+
+### 2. Desktop OAuth Setup (Optional / Automated Testing)
+For automated native testing fixtures or developer OAuth usage:
 1. Create a project in [Google Cloud Console](https://console.cloud.google.com/) and enable the Gmail API.
 2. Configure the OAuth consent screen for personal testing and add your Google account as a test user. Add only `https://www.googleapis.com/auth/gmail.metadata`.
 3. Create an OAuth client of type **Desktop app** and download its JSON configuration.

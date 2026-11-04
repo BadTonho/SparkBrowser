@@ -38,9 +38,7 @@ pub async fn get_active_workspace(state: State<'_, BrowserState>) -> Result<Stri
 /// Reports the durable per-workspace content isolation preference.
 #[tauri::command]
 pub fn get_workspace_isolation(state: State<'_, BrowserState>) -> bool {
-    state
-        .workspace_isolation
-        .load(Ordering::Acquire)
+    state.workspace_isolation.load(Ordering::Acquire)
 }
 
 /// Applies and persists per-workspace content isolation. Enabling or disabling

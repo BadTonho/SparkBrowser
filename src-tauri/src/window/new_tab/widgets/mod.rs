@@ -1,5 +1,6 @@
 //! Shared, device-local widgets. Neither account data nor tokens enter backups.
 mod actions;
+mod cookies;
 mod gmail;
 mod http;
 mod oauth;
@@ -153,7 +154,8 @@ pub fn initialize(app: &AppHandle) {
             _ => state.settings_error = Some("settings_unavailable".into()),
         }
         state.endpoints = Endpoints::for_app(app);
-        state.gmail.configured = oauth::config(app).is_ok();
+        let oauth_configured = oauth::config(app).is_ok();
+        state.gmail.configured = true;
         // Native fixtures never read the user's Windows credential vault.
         let disconnected = browser
             .db
@@ -162,7 +164,7 @@ pub fn initialize(app: &AppHandle) {
             .and_then(|db| db.as_ref().map(new_tab_repo::account_disconnected))
             .and_then(Result::ok)
             .unwrap_or(true);
-        if state.endpoints.fixture.is_none() && state.gmail.configured && !disconnected {
+        if state.endpoints.fixture.is_none() && oauth_configured && !disconnected {
             match platform::read(&platform::credential_key(app)) {
                 Ok(Some(raw)) => {
                     if let Ok(credential) = serde_json::from_str::<oauth::Credential>(&raw) {
@@ -361,6 +363,58 @@ fn schedule(app: &AppHandle) {
                         }
                         state.gmail.error = Some(error);
                         state.mail_failures += 1;
+                    }
+                }
+                state.mail_due = now() + retry_delay(state.mail_failures, 60);
+                drop(state);
+                broadcast(&app);
+            });
+        } else if state.endpoints.fixture.is_none() {
+            state.gmail.busy = true;
+            state.mail_started = time;
+            let (app, epoch) = (app.clone(), state.mail_epoch);
+            tauri::async_runtime::spawn(async move {
+                let cookies = cookies::get_cookies_for_url(&app, "https://mail.google.com").await;
+                let result = match cookies {
+                    Ok(ref c)
+                        if c.contains("SID=") || c.contains("OSID=") || c.contains("SAPISID=") =>
+                    {
+                        let c_str = c.clone();
+                        tauri::async_runtime::spawn_blocking(move || {
+                            gmail::fetch_feed("https://mail.google.com/mail/feed/atom", &c_str)
+                        })
+                        .await
+                        .map_err(|e| e.to_string())
+                        .and_then(|r| r)
+                    }
+                    _ => Err("not_connected".into()),
+                };
+                let service = app.state::<Widgets>();
+                let mut state = service.runtime.lock().unwrap();
+                if state.mail_epoch != epoch {
+                    return;
+                }
+                state.gmail.busy = false;
+                match result {
+                    Ok(inbox) => {
+                        state.gmail.email = if inbox.email.is_empty() {
+                            None
+                        } else {
+                            Some(inbox.email.clone())
+                        };
+                        state.gmail.data = Some(inbox);
+                        state.gmail.error = None;
+                        state.mail_failures = 0;
+                    }
+                    Err(e) => {
+                        if e == "not_connected" || e == "not_authenticated" {
+                            state.gmail.email = None;
+                            state.gmail.data = None;
+                            state.gmail.error = None;
+                        } else {
+                            state.gmail.error = Some(e);
+                            state.mail_failures += 1;
+                        }
                     }
                 }
                 state.mail_due = now() + retry_delay(state.mail_failures, 60);

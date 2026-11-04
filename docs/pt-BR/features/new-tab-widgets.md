@@ -10,8 +10,15 @@ O widget mostra temperatura atual, condição, sensação térmica e três dias 
 
 Previsão e busca de cidades usam o [Open-Meteo](https://open-meteo.com/). Coordenadas são enviadas ao provedor de previsão; nomes de cidades ao serviço de geocodificação. O endpoint gratuito é destinado aqui ao uso pessoal não comercial; [uso comercial exige o plano adequado](https://open-meteo.com/en/pricing). Os ícones são SVGs locais empacotados. A atribuição abre o site do provedor no painel atual.
 
-## Configuração do Gmail para testes pessoais
+## Integração com o Gmail
 
+O widget suporta dois modos de conexão:
+
+### 1. Sessão Direta do Navegador (Padrão e Recomendado)
+O Veloce configura as WebViews com um User-Agent desktop padrão de navegador, permitindo login direto no Google em abas comuns sem avisos de aplicativo de terceiro. Quando você está conectado ao Gmail (`mail.google.com`) em qualquer aba, o widget detecta automaticamente os cookies da sessão e exibe o número de mensagens não lidas e as mensagens recentes por meio do feed da caixa de entrada. Não é necessário nenhum projeto nem credenciais no Google Cloud Console. Clicar em **Conectar Gmail** abre o `https://mail.google.com/` na guia atual para realizar o login.
+
+### 2. Configuração Desktop OAuth (Opcional / Testes Automatizados)
+Para cenários de testes nativos automatizados ou uso de desenvolvedor via OAuth:
 1. Crie um projeto no [Google Cloud Console](https://console.cloud.google.com/) e ative a Gmail API.
 2. Configure a tela de consentimento OAuth para testes pessoais e adicione sua conta Google como usuário de teste. Adicione somente `https://www.googleapis.com/auth/gmail.metadata`.
 3. Crie um cliente OAuth do tipo **Aplicativo para computador** e baixe sua configuração JSON.

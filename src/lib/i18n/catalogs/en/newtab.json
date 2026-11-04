@@ -41,7 +41,7 @@
   "newtab.widgets.cancel": "Cancel connection",
   "newtab.widgets.openGmail": "Open Gmail",
   "newtab.widgets.gmailDescription": "Connect one account to see unread counts, senders and subjects. Message bodies and attachments are not downloaded.",
-  "newtab.widgets.notConfigured": "Gmail requires local Google Cloud setup. See the new-tab guide.",
+  "newtab.widgets.notConfigured": "Sign in to Gmail in the browser to view your inbox.",
   "newtab.widgets.notConnected": "Connect your Gmail account to see your inbox.",
   "newtab.widgets.connecting": "Finish authorization in the external browser. You can cancel here.",
   "newtab.widgets.unread": "{count} unread in your inbox",

@@ -71,13 +71,7 @@ pub fn content_directory(app: &AppHandle, tab_id: &str) -> Result<Option<PathBuf
         .iter()
         .find(|tab| tab.id == tab_id)
         .map(|tab| tab.workspace_id.clone())
-        .or_else(|| {
-            state
-                .active_workspace_id
-                .lock()
-                .ok()
-                .and_then(|id| Some(id.clone()))
-        })
+        .or_else(|| state.active_workspace_id.lock().ok().map(|id| id.clone()))
         .ok_or_else(|| "Workspace unavailable".to_string())?;
     directory(app, &workspace_id)
 }
@@ -109,15 +103,21 @@ mod tests {
         assert_eq!(folder_name("ws-personal"), "ws-personal");
         assert_eq!(folder_name("ws-custom-123"), "ws-custom-123");
         // Case-insensitive file systems unify both spellings into one folder.
-        assert_eq!(
-            folder_name("WS-Custom-123"),
-            folder_name("ws-custom-123")
-        );
+        assert_eq!(folder_name("WS-Custom-123"), folder_name("ws-custom-123"));
     }
 
     #[test]
     fn traversal_and_separators_never_reach_a_verbatim_folder() {
-        for id in ["", "..", "../cookies", "a/b", "a\\b", "a b", "é", "ws-a/../x"] {
+        for id in [
+            "",
+            "..",
+            "../cookies",
+            "a/b",
+            "a\\b",
+            "a b",
+            "é",
+            "ws-a/../x",
+        ] {
             assert!(!is_verbatim_id(id), "{id} must not be verbatim");
             let name = folder_name(id);
             assert!(
@@ -135,7 +135,10 @@ mod tests {
             .iter()
             .map(|id| folder_name(id))
             .collect();
-        assert_eq!(names.len(), names.iter().collect::<std::collections::HashSet<_>>().len());
+        assert_eq!(
+            names.len(),
+            names.iter().collect::<std::collections::HashSet<_>>().len()
+        );
     }
 
     #[test]

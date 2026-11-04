@@ -41,7 +41,7 @@
   "newtab.widgets.cancel": "Cancelar conexão",
   "newtab.widgets.openGmail": "Abrir Gmail",
   "newtab.widgets.gmailDescription": "Conecte uma conta para ver não lidos, remetentes e assuntos. Corpos das mensagens e anexos não são baixados.",
-  "newtab.widgets.notConfigured": "O Gmail exige configuração local no Google Cloud. Consulte o guia da nova guia.",
+  "newtab.widgets.notConfigured": "Faça login no Gmail no navegador para ver sua caixa de entrada.",
   "newtab.widgets.notConnected": "Conecte sua conta Gmail para ver a caixa de entrada.",
   "newtab.widgets.connecting": "Conclua a autorização no navegador externo. Você pode cancelar aqui.",
   "newtab.widgets.unread": "{count} não lidos na caixa de entrada",

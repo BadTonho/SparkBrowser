@@ -17,9 +17,11 @@ pub fn initialize_preferences_table(conn: &Connection) -> Result<(), String> {
 }
 
 fn load(conn: &Connection, key: &str) -> Result<Option<String>, String> {
-    conn.query_row("SELECT value FROM app_preferences WHERE key = ?1", [key], |row| {
-        row.get::<_, String>(0)
-    })
+    conn.query_row(
+        "SELECT value FROM app_preferences WHERE key = ?1",
+        [key],
+        |row| row.get::<_, String>(0),
+    )
     .optional()
     .map_err(|e| e.to_string())
 }
@@ -58,7 +60,7 @@ mod tests {
     #[test]
     fn stores_and_reloads_the_last_written_value() {
         let conn = database();
-        assert!(load_bool(&conn, WORKSPACE_ISOLATION_KEY).is_err() == false);
+        assert!(load_bool(&conn, WORKSPACE_ISOLATION_KEY).is_ok());
         store(&conn, WORKSPACE_ISOLATION_KEY, "true").unwrap();
         assert!(load_bool(&conn, WORKSPACE_ISOLATION_KEY).unwrap());
         store(&conn, WORKSPACE_ISOLATION_KEY, "false").unwrap();

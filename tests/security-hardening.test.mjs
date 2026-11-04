@@ -34,7 +34,7 @@ test('isolated data folders are never derived from untrusted workspace ids', () 
 
 test('moved tabs drop their WebView before joining another workspace', () => {
   const tabs = read('src-tauri/src/commands/tabs.rs');
-  assert.match(tabs, /state\.workspace_isolation\.load\(std::sync::atomic::Ordering::Acquire\)/);
+  assert.match(tabs, /state\s*\.\s*workspace_isolation\s*\.\s*load\(std::sync::atomic::Ordering::Acquire\)/);
   assert.match(tabs, /close_tab_webview\(&app, &tab_id\)/);
 });
 
