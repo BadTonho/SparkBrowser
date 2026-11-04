@@ -290,6 +290,7 @@ pub fn set(
     drop(inner);
     super::tools_popover::dismiss(app);
     super::downloads_popover::dismiss(app);
+    super::quick_settings_popover::dismiss(app);
     super::zoom_popover::dismiss(app);
     super::media_popover::dismiss(app);
     let result = (|| {

@@ -24,3 +24,4 @@ pub mod tools_popover;
 
 pub mod downloads_popover;
 mod panel_popover;
+pub mod quick_settings_popover;

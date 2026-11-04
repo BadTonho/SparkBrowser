@@ -316,6 +316,7 @@ pub fn set(
     super::privacy_popover::dismiss(app);
     super::tools_popover::dismiss(app);
     super::downloads_popover::dismiss(app);
+    super::quick_settings_popover::dismiss(app);
     super::zoom_popover::dismiss(app);
     super::media_popover::dismiss(app);
     let result = (|| {

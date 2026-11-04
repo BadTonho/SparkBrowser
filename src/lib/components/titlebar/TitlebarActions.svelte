@@ -7,7 +7,8 @@
   import { openHistoryDrawer } from "../../stores/persistenceStore";
   import { openDownloadsDrawer, downloadProgressText, isDownloadsDrawerOpen } from "../../stores/downloadsStore";
   import { openCommandBar } from "../../stores/commandBarStore";
-  import { tabLayout, showBookmarksBar, toggleBookmarksBar, openSettingsModal, toggleZenMode } from "../../stores/settingsStore";
+  import { tabLayout, showBookmarksBar, toggleBookmarksBar, toggleZenMode } from "../../stores/settingsStore";
+  import { isSettingsQuickOpen, openSettingsQuickMenu } from "../../stores/settingsQuickPopoverStore";
   import { privacyStats } from "../../stores/privacyStore";
   import { openPrivacy, privacyPopover } from "../../stores/privacyPopoverStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
@@ -183,9 +184,9 @@
         class:dragging={preview?.id === "settings"}
         style:translate={preview?.id === "settings" ? `${preview.offset}px 0` : undefined}
         class="icon-btn"
-        onclick={openSettingsModal}
+        onclick={event => openSettingsQuickMenu(event.currentTarget)}
         title={($t("titlebar.settings_shortcuts_p0_82b9", { p0: $keyboardShortcuts && shortcutLabel("settings") })) + " · " + $t("titlebar.reorder_hint")}
-        data-testid="open-settings" aria-label={$t("titlebar.settings_74a8")}
+        data-testid="open-settings" aria-label={$t("titlebar.settings_74a8")} aria-haspopup="dialog" aria-expanded={$isSettingsQuickOpen}
       >
         <TitlebarActionIcon action={id} />
       </button>

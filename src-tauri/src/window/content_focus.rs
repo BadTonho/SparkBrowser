@@ -21,6 +21,7 @@ pub fn focus_active_content_webview(app: &AppHandle) -> Result<(), String> {
                 || state.bookmark_context_menu_open.lock().map_or(true, |v| *v)
                 || super::media_popover::is_open(&app)
                 || super::tools_popover::is_open(&app)
+                || super::quick_settings_popover::is_open(&app)
                 || super::privacy_popover::is_open(&app)
                 || super::permission_popover::is_open(&app)
                 || super::history_overlay::is_open(&app)

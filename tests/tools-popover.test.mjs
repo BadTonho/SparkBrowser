@@ -52,6 +52,18 @@ test('panel remains below its anchor and within horizontal window margins', () =
   }
 });
 
+test('quick settings menu uses a compact width and clamps below the toolbar anchor', () => {
+  const { panelPosition } = load('src/lib/services/panel-presentation.ts');
+  for (const width of [280, 360, 900, 1280]) for (const left of [8, width / 2, width - 40]) {
+    const pos = panelPosition({ left, top: 24, width: 28, height: 28 }, width, 700, { width: 300, maxHeight: 360 });
+    assert.equal(pos.top, 60);
+    assert.ok(pos.left >= 8);
+    assert.ok(pos.left + pos.width <= width - 8);
+    assert.equal(pos.width, Math.min(300, width - 16));
+    assert.equal(pos.maxHeight, 360);
+  }
+});
+
 test('presentation excludes executable markup and opaque controls reject removed or disabled targets', () => {
   class Element {
     constructor(tag, attrs = {}, children = []) { this.localName = tag; this.attributes = Object.entries(attrs).map(([name, value]) => ({ name, value })); this.childNodes = children; this.isConnected = true; this.clicks = 0; }

@@ -286,6 +286,7 @@ pub fn set(
     super::zoom_popover::dismiss(app);
     super::tools_popover::dismiss(app);
     super::downloads_popover::dismiss(app);
+    super::quick_settings_popover::dismiss(app);
     super::privacy_popover::dismiss(app);
     let result = (|| {
         ensure_webview(app)?;

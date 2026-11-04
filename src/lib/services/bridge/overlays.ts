@@ -15,13 +15,14 @@ export type OverlayId =
   | "tools"
   | "command-bar"
   | "history"
+  | "settings-quick"
   | "downloads"
   | "settings"
   | "titlebar-menu"
   | "bookmark-editor";
 
 const activeOverlayIds = new Set<OverlayId>();
-const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history"]);
+const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history", "settings-quick"]);
 let overlaySyncQueue: Promise<void> = Promise.resolve();
 
 const openingListeners = new Set<(id?: OverlayId) => void>();

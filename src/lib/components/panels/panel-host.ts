@@ -8,7 +8,7 @@ import { onOverlayOpening } from "../../services/bridge/overlays";
 import { locale } from "../../i18n";
 
 export interface PanelSession { id: number; anchor: HTMLButtonElement }
-interface HostOptions { id: "tools" | "downloads"; sessionStore: Readable<PanelSession | null>; onTrigger?: () => void; close: (restore?: unknown) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
+interface HostOptions { id: "tools" | "downloads" | "settings-quick"; sessionStore: Readable<PanelSession | null>; onTrigger?: () => void; close: (restore?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
 export function mountPanelHost(root: HTMLElement, native: boolean, options: HostOptions) {
   const { id, sessionStore, close, set, listen } = options;
   const projection = createPanelProjection(root);
@@ -23,7 +23,7 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); void close(true); }
   };
   window.addEventListener("keydown", keys, true);
-  const themeKeys = ["--text-primary", "--text-secondary", "--text-muted", "--accent-primary", "--accent-foreground", "--border-subtle", "--bg-glass-elevated", "--bg-glass-hover", "--bg-downloads-panel"];
+  const themeKeys = ["--text-primary", "--text-secondary", "--text-muted", "--accent-primary", "--accent-foreground", "--border-subtle", "--bg-glass-elevated", "--bg-glass-hover", "--bg-downloads-panel", "--bg-permission-popover"];
   const publish = () => {
     if (disposed || !listening || get(sessionStore) !== session) return;
     if (!session.anchor.isConnected || !session.anchor.getClientRects().length) { void close(); return; }

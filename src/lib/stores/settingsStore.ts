@@ -6,6 +6,7 @@ import {
 import { safeStorage } from "../services/storage.js";
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility, setResidentLimit } from "../services/tauri-bridge";
+import { closeSettingsQuickMenu } from "./settingsQuickPopoverStore";
 import { fetchWorkspaceIsolation, setWorkspaceIsolation } from "../services/bridge/workspaces";
 import {
   isSidebarOpen,
@@ -253,6 +254,7 @@ export function setTabLayout(layout: TabLayout): void {
 }
 
 export async function openSettingsModal(): Promise<void> {
+  await closeSettingsQuickMenu(false);
   isSettingsModalOpen.set(true);
   await setOverlayVisibility(true, "settings");
 }

@@ -36,6 +36,25 @@ pub async fn set_tools_popover(
 }
 
 #[tauri::command]
+pub async fn set_quick_settings_popover(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    session_id: u64,
+    presentation: Option<crate::window::quick_settings_popover::Presentation>,
+    restore_focus: bool,
+) -> Result<(), String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::quick_settings_popover::set(
+        &app,
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
+}
+
+#[tauri::command]
 pub async fn set_zoom_popover(
     app: AppHandle,
     state: State<'_, BrowserState>,

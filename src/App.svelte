@@ -40,6 +40,7 @@
   import HistoryDrawer from "./lib/components/history/HistoryDrawer.svelte";
   import DownloadsDrawer from "./lib/components/downloads/DownloadsDrawer.svelte";
   import SettingsModal from "./lib/components/settings/SettingsModal.svelte";
+  import SettingsQuickMenu from "./lib/components/settings/SettingsQuickMenu.svelte";
   import HorizontalTabBar from "./lib/components/tabs/HorizontalTabBar.svelte";
   import BookmarkBar from "./lib/components/bookmarks/BookmarkBar.svelte";
   import BookmarkEditor from "./lib/components/bookmarks/BookmarkEditor.svelte";
@@ -378,6 +379,7 @@
   <HistoryDrawer />
   <DownloadsDrawer />
   <SettingsModal />
+  <SettingsQuickMenu />
   <ToolsPanel />
   <SitePermissionsPanel />
   <PermissionPrompt />

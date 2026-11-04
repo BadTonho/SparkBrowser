@@ -18,6 +18,8 @@ pub trait Panel: Send + Sync + 'static {
 pub struct Tools;
 #[derive(Default)]
 pub struct Downloads;
+#[derive(Default)]
+pub struct QuickSettings;
 impl Panel for Tools {
     const LABEL: &'static str = "tools-popover-webview";
     const SURFACE: &'static str = "/index.html?surface=tools";
@@ -31,6 +33,13 @@ impl Panel for Downloads {
     const HOST: &'static str = "downloads-popover";
     const SETTER: &'static str = "__veloceSetDownloadsPopover";
     const EVENT: &'static str = "downloads-popover-action";
+}
+impl Panel for QuickSettings {
+    const LABEL: &'static str = "quick-settings-popover-webview";
+    const SURFACE: &'static str = "/index.html?surface=settings-quick";
+    const HOST: &'static str = "settings-quick-popover";
+    const SETTER: &'static str = "__veloceSetQuickSettingsPopover";
+    const EVENT: &'static str = "quick-settings-popover-action";
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -292,6 +301,15 @@ pub fn set<P: Panel>(
     drop(inner);
     if P::HOST == "tools-popover" {
         super::downloads_popover::dismiss(app);
+        super::quick_settings_popover::dismiss(app);
+    } else if P::HOST == "downloads-popover" {
+        super::tools_popover::dismiss(app);
+        super::quick_settings_popover::dismiss(app);
+    } else if P::HOST == "settings-quick-popover" {
+        super::tools_popover::dismiss(app);
+        super::downloads_popover::dismiss(app);
+        super::history_overlay::dismiss(app);
+        super::permission_popover::dismiss(app);
     } else {
         super::tools_popover::dismiss(app);
     }
@@ -313,4 +331,16 @@ pub fn set<P: Panel>(
         dismiss::<P>(app);
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Downloads, Panel, QuickSettings, Tools};
+
+    #[test]
+    fn quick_settings_action_host_matches_its_surface_route() {
+        assert_eq!(Tools::HOST, "tools-popover");
+        assert_eq!(Downloads::HOST, "downloads-popover");
+        assert_eq!(QuickSettings::HOST, "settings-quick-popover");
+    }
 }

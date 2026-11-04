@@ -46,6 +46,7 @@ pub fn shell_only(
                         | "set_overlay_visibility"
                         | "set_tools_popover"
                         | "set_downloads_popover"
+                        | "set_quick_settings_popover"
                         | "set_permission_popover"
                         | "set_history_overlay"
                         | "set_media_popover"

@@ -3,12 +3,14 @@
   import PanelViewNode from "./PanelViewNode.svelte";
   import { focusDialog } from "../../actions/focusDialog";
   import { syncDownloadFocus } from "../../services/download-panel-focus";
-  let { surface }: { surface: "tools" | "downloads" } = $props();
+  let { surface }: { surface: "tools" | "downloads" | "settings-quick" } = $props();
   const downloads = $derived(surface === "downloads");
-  const setter = $derived(downloads ? "__veloceSetDownloadsPopover" : "__veloceSetToolsPopover");
+  const quickSettings = $derived(surface === "settings-quick");
+  const setter = $derived(downloads ? "__veloceSetDownloadsPopover" : quickSettings ? "__veloceSetQuickSettingsPopover" : "__veloceSetToolsPopover");
   import { panelPosition, isPanelTrigger, type PanelPresentation, type PanelViewAction } from "../../services/panel-presentation";
   import "../tools/tools.css";
   import "../downloads/downloads.css";
+  import "../settings/settings-quick.css";
 
   type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number };
   let presentation = $state<Payload | null>(null);
@@ -20,8 +22,8 @@
   const outbox: PanelViewAction[] = [];
   let inFlight: number | null = null;
   let viewport = $state({ width: innerWidth, height: innerHeight });
-  const position = $derived(presentation ? panelPosition(presentation.anchor, viewport.width, viewport.height, downloads ? { width: 480, maxHeight: 560 } : undefined) : null);
-  function downloadFocus(node: HTMLElement) { return downloads ? focusDialog(node, { onEscape: () => send({ kind: "dismiss", reason: "escape" }) }) : undefined; }
+  const position = $derived(presentation ? panelPosition(presentation.anchor, viewport.width, viewport.height, downloads ? { width: 480, maxHeight: 560 } : quickSettings ? { width: 300, maxHeight: 360 } : undefined) : null);
+  function downloadFocus(node: HTMLElement) { return downloads || quickSettings ? focusDialog(node, { onEscape: () => send({ kind: "dismiss", reason: "escape" }) }) : undefined; }
   function pump() {
     if (!presentation || inFlight !== null) return;
     const action = outbox.shift();
@@ -67,6 +69,7 @@
       await tick();
       if (presentation?.sessionId !== value.sessionId || closing) return;
       if (downloads) syncDownloadFocus(root, opening, hadForm);
+      else if (quickSettings && opening) root?.querySelector<HTMLElement>('[data-testid="settings-quick-theme-dark"], [data-testid="settings-quick-theme-light"]')?.focus();
       else if (opening) root?.querySelector<HTMLElement>("[role=tab][aria-selected=true]")?.focus();
     };
     (window as unknown as Record<string, typeof set>)[setter] = set;
@@ -107,10 +110,10 @@
 
 <svelte:window onresize={() => { viewport = { width: innerWidth, height: innerHeight }; }} />
 {#if presentation && position}
-  <div class={downloads ? "downloads-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
-    if (event.target === event.currentTarget) send({ kind: "dismiss", reason: downloads && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
+  <div class={downloads ? "downloads-dismiss" : quickSettings ? "settings-quick-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
+    if (event.target === event.currentTarget) send({ kind: "dismiss", reason: (downloads || quickSettings) && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
   }}>
-    <div class={downloads ? "downloads-surface" : "tools-surface"} bind:this={root} use:downloadFocus style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
+    <div class={downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : "tools-surface"} bind:this={root} use:downloadFocus style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
       <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
     </div>
   </div>

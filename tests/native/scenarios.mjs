@@ -34,12 +34,14 @@ import { checkNotesUi } from './notes-ui.mjs';
 import { checkPermissions } from './permissions.mjs';
 import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
+import { checkQuickSettings } from './quick-settings.mjs';
 
 export const scenarios = {
   'security-boundaries': checkSecurityBoundaries,
   'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,
   'downloads-popover': checkDownloadsPopover,
+  'quick-settings': checkQuickSettings,
   'downloads-list': checkDownloadsList,
   'titlebar-actions': checkTitlebarActions,
   'new-tab': checkNewTab,
