@@ -22,5 +22,6 @@
   "tabs.split_drop_left": "Solte para dividir à esquerda",
   "tabs.split_drop_right": "Solte para dividir à direita",
   "tabs.memory_usage": "Uso de memória: {usage}",
-  "tabs.memory_hibernated": "Hibernada"
+  "tabs.memory_hibernated": "Hibernada",
+  "tabs.memory_unavailable": "Indisponível"
 }

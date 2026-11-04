@@ -1,7 +1,9 @@
-//! Tab memory measurement for active WebViews on Windows.
+//! Per-tab renderer memory measurements for WebView2.
 
 #[cfg(windows)]
-use webview2_com::Microsoft::Web::WebView2::Win32::*;
+use webview2_com::{
+    CoTaskMemPWSTR, GetProcessExtendedInfosCompletedHandler, Microsoft::Web::WebView2::Win32::*,
+};
 #[cfg(windows)]
 use windows_core::Interface;
 
@@ -67,75 +69,237 @@ pub fn get_process_working_set_bytes(pid: u32) -> Option<u64> {
     }
 }
 
-/// Measures memory for a specific webview on Windows.
 #[cfg(windows)]
-pub fn measure_webview_memory(view: &tauri::Webview, resident_count: usize) -> Option<u64> {
+fn complete_once(
+    completion: &std::sync::Arc<
+        std::sync::Mutex<Option<tokio::sync::oneshot::Sender<Option<u64>>>>,
+    >,
+    value: Option<u64>,
+) {
+    if let Ok(mut slot) = completion.lock() {
+        if let Some(sender) = slot.take() {
+            let _ = sender.send(value);
+        }
+    }
+}
+
+#[cfg(windows)]
+pub fn current_webview_source(view: &tauri::Webview) -> Option<String> {
     let (tx, rx) = std::sync::mpsc::channel();
-    let res = view.with_webview(move |platform| {
-        let mut target_pid = 0u32;
-        let mut is_renderer = false;
-        if let Ok(core) = unsafe { platform.controller().CoreWebView2() } {
-            if let Ok(core2) = core.cast::<ICoreWebView2_2>() {
-                if let Ok(env) = unsafe { core2.Environment() } {
-                    if let Ok(env8) = env.cast::<ICoreWebView2Environment8>() {
-                        if let Ok(col) = unsafe { env8.GetProcessInfos() } {
-                            let mut count = 0u32;
-                            if unsafe { col.Count(&mut count) }.is_ok() {
-                                for i in 0..count {
-                                    if let Ok(info) = unsafe { col.GetValueAtIndex(i) } {
-                                        let mut kind = COREWEBVIEW2_PROCESS_KIND_BROWSER;
-                                        let mut p: i32 = 0;
-                                        if unsafe { info.Kind(&mut kind) }.is_ok()
-                                            && unsafe { info.ProcessId(&mut p) }.is_ok()
-                                        {
-                                            if kind == COREWEBVIEW2_PROCESS_KIND_RENDERER && p > 0 {
-                                                target_pid = p as u32;
-                                                is_renderer = true;
-                                                break;
-                                            }
+    let result = view.with_webview(move |platform| {
+        let source = unsafe {
+            platform.controller().CoreWebView2().and_then(|core| {
+                let mut raw = Default::default();
+                core.Source(&mut raw)?;
+                Ok(CoTaskMemPWSTR::from(raw).to_string())
+            })
+        };
+        let _ = tx.send(source.ok().filter(|value| !value.is_empty()));
+    });
+    if result.is_err() {
+        return None;
+    }
+    rx.recv_timeout(std::time::Duration::from_millis(150))
+        .ok()
+        .flatten()
+}
+
+#[cfg(not(windows))]
+pub fn current_webview_source(_view: &tauri::Webview) -> Option<String> {
+    None
+}
+
+/// Measures the renderer for this WebView by matching its main-frame URL to
+/// WebView2's per-process frame list. When one renderer hosts multiple tabs,
+/// its working set is apportioned across those resident tabs.
+#[cfg(windows)]
+pub async fn measure_webview_memory(
+    view: &tauri::Webview,
+    target_source: String,
+    resident_sources: Vec<String>,
+) -> Option<u64> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    let completion = std::sync::Arc::new(std::sync::Mutex::new(Some(tx)));
+    let callback_completion = completion.clone();
+    let result = view.with_webview(move |platform| unsafe {
+        let core = match platform.controller().CoreWebView2() {
+            Ok(core) => core,
+            Err(_) => {
+                complete_once(&callback_completion, None);
+                return;
+            }
+        };
+        let environment = match core
+            .cast::<ICoreWebView2_2>()
+            .and_then(|core| core.Environment())
+            .and_then(|environment| environment.cast::<ICoreWebView2Environment13>())
+        {
+            Ok(environment) => environment,
+            Err(_) => {
+                complete_once(&callback_completion, None);
+                return;
+            }
+        };
+        let callback_completion = callback_completion.clone();
+        let launch_completion = callback_completion.clone();
+        let handler =
+            GetProcessExtendedInfosCompletedHandler::create(Box::new(move |status, processes| {
+                if status.is_err() {
+                    complete_once(&callback_completion, None);
+                    return Ok(());
+                }
+                let Some(processes) = processes else {
+                    complete_once(&callback_completion, None);
+                    return Ok(());
+                };
+                let mut count = 0u32;
+                if processes.Count(&mut count).is_err() {
+                    complete_once(&callback_completion, None);
+                    return Ok(());
+                }
+                let mut measurement = None;
+                for index in 0..count {
+                    let Ok(process) = processes.GetValueAtIndex(index) else {
+                        continue;
+                    };
+                    let Ok(info) = process.ProcessInfo() else {
+                        continue;
+                    };
+                    let mut kind = COREWEBVIEW2_PROCESS_KIND_BROWSER;
+                    let mut pid = 0i32;
+                    if info.Kind(&mut kind).is_err()
+                        || kind != COREWEBVIEW2_PROCESS_KIND_RENDERER
+                        || info.ProcessId(&mut pid).is_err()
+                        || pid <= 0
+                    {
+                        continue;
+                    }
+                    let Ok(frames) = process.AssociatedFrameInfos() else {
+                        continue;
+                    };
+                    let Ok(iterator) = frames.GetIterator() else {
+                        continue;
+                    };
+                    let mut main_sources = Vec::new();
+                    loop {
+                        let mut has_current = windows_core::BOOL(0);
+                        if iterator.HasCurrent(&mut has_current).is_err() || !has_current.as_bool()
+                        {
+                            break;
+                        }
+                        if let Ok(frame) = iterator.GetCurrent() {
+                            if let Ok(frame2) = frame.cast::<ICoreWebView2FrameInfo2>() {
+                                let mut frame_kind = COREWEBVIEW2_FRAME_KIND_UNKNOWN;
+                                if frame2.FrameKind(&mut frame_kind).is_ok()
+                                    && frame_kind == COREWEBVIEW2_FRAME_KIND_MAIN_FRAME
+                                {
+                                    let mut raw_source = Default::default();
+                                    if frame.Source(&mut raw_source).is_ok() {
+                                        let source = CoTaskMemPWSTR::from(raw_source).to_string();
+                                        if !source.is_empty() {
+                                            main_sources.push(source);
                                         }
                                     }
                                 }
                             }
                         }
+                        let mut moved = windows_core::BOOL(0);
+                        if iterator.MoveNext(&mut moved).is_err() || !moved.as_bool() {
+                            break;
+                        }
                     }
+                    let Some(tab_count) = associated_resident_tab_count(
+                        &target_source,
+                        &resident_sources,
+                        &main_sources,
+                    ) else {
+                        continue;
+                    };
+                    measurement = get_process_working_set_bytes(pid as u32)
+                        .map(|bytes| bytes / tab_count as u64);
+                    break;
                 }
-            }
-            if target_pid == 0 {
-                let mut browser_pid = 0u32;
-                if unsafe { core.BrowserProcessId(&mut browser_pid) }.is_ok() {
-                    target_pid = browser_pid;
-                    is_renderer = false;
-                }
-            }
+                complete_once(&callback_completion, measurement);
+                Ok(())
+            }));
+        if environment.GetProcessExtendedInfos(&handler).is_err() {
+            complete_once(&launch_completion, None);
         }
-        let _ = tx.send((target_pid, is_renderer));
     });
-
-    if res.is_err() {
-        return None;
+    if result.is_err() {
+        complete_once(&completion, None);
     }
-
-    let (target_pid, is_renderer) = rx
-        .recv_timeout(std::time::Duration::from_millis(150))
-        .unwrap_or((0, false));
-
-    if target_pid > 0 {
-        if let Some(bytes) = get_process_working_set_bytes(target_pid) {
-            if is_renderer {
-                Some(bytes)
-            } else {
-                Some(bytes / resident_count.max(1) as u64)
-            }
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    tokio::time::timeout(std::time::Duration::from_millis(500), rx)
+        .await
+        .ok()?
+        .ok()?
 }
 
 #[cfg(not(windows))]
-pub fn measure_webview_memory(_view: &tauri::Webview, _resident_count: usize) -> Option<u64> {
+pub async fn measure_webview_memory(
+    _view: &tauri::Webview,
+    _target_source: String,
+    _resident_sources: Vec<String>,
+) -> Option<u64> {
     None
+}
+
+fn associated_resident_tab_count(
+    target: &str,
+    resident_sources: &[String],
+    main_frame_sources: &[String],
+) -> Option<usize> {
+    if !main_frame_sources.iter().any(|source| source == target) {
+        return None;
+    }
+    Some(
+        resident_sources
+            .iter()
+            .filter(|source| main_frame_sources.iter().any(|frame| frame == *source))
+            .count()
+            .max(1),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::associated_resident_tab_count;
+
+    #[test]
+    fn memory_lookup_only_matches_frames_for_the_requested_tab() {
+        let resident = vec![
+            "https://video.example/watch".into(),
+            "veloce://newtab".into(),
+        ];
+        let video_frames = vec!["https://video.example/watch".into()];
+        assert_eq!(
+            associated_resident_tab_count("https://video.example/watch", &resident, &video_frames),
+            Some(1)
+        );
+        assert_eq!(
+            associated_resident_tab_count("veloce://newtab", &resident, &video_frames),
+            None
+        );
+    }
+
+    #[test]
+    fn shared_renderer_memory_is_split_between_its_resident_tabs() {
+        let same_site_tabs = vec![
+            "https://video.example/watch/one".into(),
+            "https://video.example/watch/two".into(),
+            "https://other.example/".into(),
+        ];
+        let shared_renderer_frames = vec![
+            "https://video.example/watch/one".into(),
+            "https://video.example/watch/two".into(),
+        ];
+        assert_eq!(
+            associated_resident_tab_count(
+                "https://video.example/watch/one",
+                &same_site_tabs,
+                &shared_renderer_frames,
+            ),
+            Some(2)
+        );
+    }
 }

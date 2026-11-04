@@ -38,7 +38,7 @@
     if (tabItem.is_hibernated) {
       return `${tabItem.title} — ${host}\n${$t("tabs.memory_usage", { usage: "0 MB" })} (${$t("tabs.memory_hibernated")})`;
     }
-    const memStr = formatTabMemory(memoryBytes);
+    const memStr = formatTabMemory(memoryBytes, $t("tabs.memory_unavailable"));
     return `${tabItem.title} — ${host}\n${$t("tabs.memory_usage", { usage: memStr })}`;
   }
 

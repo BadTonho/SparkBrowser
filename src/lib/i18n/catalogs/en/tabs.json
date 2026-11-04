@@ -22,5 +22,6 @@
   "tabs.split_drop_left": "Release to split on the left",
   "tabs.split_drop_right": "Release to split on the right",
   "tabs.memory_usage": "Memory usage: {usage}",
-  "tabs.memory_hibernated": "Hibernated"
+  "tabs.memory_hibernated": "Hibernated",
+  "tabs.memory_unavailable": "Unavailable"
 }

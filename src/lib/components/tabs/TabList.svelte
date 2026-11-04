@@ -52,7 +52,7 @@
   }
 
   function getTabTooltip(tabItem: any, memoryBytes?: number): string {
-    const memStr = tabItem.is_hibernated ? "0 MB" : formatTabMemory(memoryBytes);
+    const memStr = tabItem.is_hibernated ? "0 MB" : formatTabMemory(memoryBytes, $t("tabs.memory_unavailable"));
     const memLabel = tabItem.is_hibernated
       ? `${$t("tabs.memory_usage", { usage: "0 MB" })} (${$t("tabs.memory_hibernated")})`
       : $t("tabs.memory_usage", { usage: memStr });

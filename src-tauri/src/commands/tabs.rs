@@ -19,22 +19,58 @@ pub async fn get_tabs_memory(
     let _operation = state.tab_operations.lock().await;
     let tabs = state.tabs.lock().map_err(|e| e.to_string())?.clone();
     let resident_tabs: Vec<_> = tabs.iter().filter(|t| !t.is_hibernated).collect();
-    let resident_count = resident_tabs.len().max(1);
-
     let mut result = std::collections::HashMap::new();
     for tab in &tabs {
         if tab.is_hibernated {
             result.insert(tab.id.clone(), 0);
-        } else {
-            let label = crate::state::tab_model::webview_label_for_tab(&tab.id);
-            let bytes = if let Some(view) = app.get_webview(&label) {
-                crate::window::tab_memory::measure_webview_memory(&view, resident_count)
-                    .unwrap_or(38 * 1024 * 1024)
-            } else {
-                0
-            };
-            result.insert(tab.id.clone(), bytes);
         }
+    }
+
+    let isolated_workspaces = state
+        .workspace_isolation
+        .load(std::sync::atomic::Ordering::Acquire);
+    let candidates: Vec<_> = resident_tabs
+        .iter()
+        .filter_map(|tab| {
+            let label = crate::state::tab_model::webview_label_for_tab(&tab.id);
+            let view = app.get_webview(&label)?;
+            let source = crate::window::tab_memory::current_webview_source(&view)?;
+            let environment_group = if isolated_workspaces {
+                tab.workspace_id.clone()
+            } else {
+                String::new()
+            };
+            Some((tab.id.clone(), view, source, environment_group))
+        })
+        .collect();
+    let mut resident_sources_by_environment =
+        std::collections::HashMap::<String, Vec<String>>::new();
+    for (_, _, source, environment_group) in &candidates {
+        resident_sources_by_environment
+            .entry(environment_group.clone())
+            .or_default()
+            .push(source.clone());
+    }
+    let mut measurements = tokio::task::JoinSet::new();
+    for (tab_id, view, source, environment_group) in candidates {
+        let sources = resident_sources_by_environment
+            .get(&environment_group)
+            .cloned()
+            .unwrap_or_default();
+        measurements.spawn(async move {
+            let bytes = crate::window::tab_memory::measure_webview_memory(&view, source, sources)
+                .await
+                .unwrap_or(0);
+            (tab_id, bytes)
+        });
+    }
+    while let Some(measurement) = measurements.join_next().await {
+        if let Ok((tab_id, bytes)) = measurement {
+            result.insert(tab_id, bytes);
+        }
+    }
+    for tab in resident_tabs {
+        result.entry(tab.id.clone()).or_insert(0);
     }
     Ok(result)
 }

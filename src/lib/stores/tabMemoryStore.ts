@@ -25,8 +25,8 @@ export async function refreshTabsMemory(force = false): Promise<void> {
   }
 }
 
-export function formatTabMemory(bytes?: number): string {
-  if (bytes == null || bytes === 0) return "< 1 MB";
+export function formatTabMemory(bytes?: number, unavailable = "—"): string {
+  if (bytes == null || bytes === 0) return unavailable;
   const mb = Math.round(bytes / (1024 * 1024));
   if (mb < 1) return "< 1 MB";
   return `${mb} MB`;
