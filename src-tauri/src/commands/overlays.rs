@@ -64,6 +64,18 @@ pub async fn set_privacy_popover(
 }
 
 #[tauri::command]
+pub async fn set_permission_popover(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    session_id: u64,
+    presentation: Option<crate::window::permission_popover::Presentation>,
+) -> Result<(), String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::permission_popover::set(&app, visible, session_id, presentation)
+}
+
+#[tauri::command]
 pub async fn set_media_popover(
     app: AppHandle,
     state: State<'_, BrowserState>,

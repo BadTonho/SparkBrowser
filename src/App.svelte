@@ -21,6 +21,7 @@
   import UpdateNotice from "./lib/components/status/UpdateNotice.svelte";
   import SitePermissionsPanel from "./lib/components/permissions/SitePermissionsPanel.svelte";
   import PermissionPrompt from "./lib/components/permissions/PermissionPrompt.svelte";
+  import PermissionPopoverHost from "./lib/components/permissions/PermissionPopoverHost.svelte";
   import { initializePermissionEvents } from "./lib/stores/sitePermissionsStore";
   import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
   import PrivacyPanel from "./lib/components/privacy/PrivacyPanel.svelte";
@@ -380,6 +381,7 @@
   <ToolsPanel />
   <SitePermissionsPanel />
   <PermissionPrompt />
+  <PermissionPopoverHost />
   <BookmarkEditor />
   <BookmarkContextMenu />
   <WorkspaceSwitcherOverlay />

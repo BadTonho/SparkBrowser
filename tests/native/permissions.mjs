@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-export async function checkPermissions(invoke, until, fixture, a, b, script) {
+export async function checkPermissions(invoke, until, fixture, a, b, script, withWebview, click) {
   if (process.platform !== 'win32') return;
   assert.equal((await invoke('get_site_permissions')).supported, true);
   const policy = state => invoke('set_site_permission', { origin: fixture.origin, kind: 'microphone', state });
@@ -12,8 +12,14 @@ export async function checkPermissions(invoke, until, fixture, a, b, script) {
   }
   async function request() { fixture.commands.set('p', 'microphone'); return until(pending, 'native microphone permission'); }
   await policy('ask'); await open();
+  await click('.omnibox-icon');
+  await withWebview('/permission-popover.html', () => until(() => script(`return document.querySelector('#permission-popover')?.dataset.mode === 'settings' && !document.querySelector('#permission-popover').hidden`), 'native current-site permissions panel'));
+  await withWebview('/permission-popover.html', async () => {
+    await script(`document.querySelector('#close').click(); return true`);
+    await until(() => script(`return document.querySelector('#permission-popover').hidden`), 'permissions panel closes');
+  });
   let current = await request();
-  await until(() => script(`return Boolean(document.querySelector('[data-testid="permission-request"]'))`), 'integrated permission dialog');
+  await withWebview('/permission-popover.html', () => until(() => script(`return document.querySelector('#permission-popover')?.dataset.mode === 'request' && !document.querySelector('#permission-popover').hidden`), 'native permission request popover'));
   await invoke('respond_site_permission', { id: current.id, decision: 'allow_once' });
   await until(() => fixture.reports.get('p')?.permission === 'granted', 'fake microphone granted once');
   assert.equal((await invoke('get_site_permissions')).settings.some(row => row.origin === fixture.origin && row.kind === 'microphone'), false);

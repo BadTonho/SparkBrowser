@@ -28,6 +28,10 @@
       $isSettingsModalOpen ||
       $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
   );
+  let blockingOverlayOpen = $derived(
+    $isCommandBarOpen || $isHistoryDrawerOpen || $isDownloadsDrawerOpen ||
+      $isSettingsModalOpen || $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
+  );
 
   const viewportSync = createViewportSync(() => {
     if (!viewportEl) return;
@@ -75,14 +79,14 @@
 <main class="viewport-shell" class:zen={$isZenMode}>
   <div class="viewport-frame" bind:this={viewportEl}>
     {#if inTauri && !anyOverlayOpen && viewportEl && $splitLayout}<SplitDivider frame={viewportEl} flush={viewportSync.flush} />{/if}
-    {#if !inTauri || anyOverlayOpen}
+    {#if !inTauri || blockingOverlayOpen}
       {#if (!inTauri || !$isWorkspaceSwitcherOverlayOpen) && !$titlebarMenu}
         <div class="browser-preview-fallback">
           <div class="fallback-card">
             <h2>{$t("viewport.multi_webview_viewport_5f2a")}{$tabs.length} {$tabs.length === 1 ? $t("viewport.tab_90dd") : $t("viewport.tabs_8e5e")})</h2>
             <p>{$t("viewport.active_url_fa41")} <strong>{$currentUrl}</strong></p>
             <p class="hint">
-              {#if anyOverlayOpen}
+              {#if blockingOverlayOpen}
                 {$t("viewport.overlay_active_press_bf4f")} <kbd>ESC</kbd> {$t("viewport.to_return_to_the_active_webview_9829")}
               {:else}
                 {$t("viewport.run_via_3e45")} <code>npm run tauri dev</code> {$t("viewport.to_mount_the_native_rust_child_webview_inside_this_frame_5fdc")}

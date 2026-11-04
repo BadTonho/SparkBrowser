@@ -34,7 +34,9 @@
   {/if}
 </section>
 <style>
-  .permission-settings { display: flex; flex-direction: column; gap: 14px; }
-  .permission-settings label { display: flex; justify-content: space-between; align-items: center; gap: 16px; overflow-wrap: anywhere; }
-  .permission-settings select, .permission-settings button { padding: 8px; background: #ffffff10; color: var(--text-primary, #eee); border: 1px solid var(--border-subtle, #555); border-radius: 6px; }
+  .permission-settings { display: flex; flex-direction: column; gap: 8px; }
+  .permission-settings h2 { display:none; }
+  .permission-settings > p { margin:0; font-size:11px; }
+  .permission-settings label { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height:30px; overflow-wrap: anywhere; font-size:12px; }
+  .permission-settings select, .permission-settings button { max-width: 150px; padding: 5px 7px; background: #ffffff10; color: var(--text-primary, #eee); border: 1px solid var(--border-subtle, #555); border-radius: 6px; font:inherit; }
 </style>

@@ -88,6 +88,7 @@
     "allow-toggle-adblock-shield",
     "allow-set-auto-skip-ads",
     "allow-set-privacy-popover",
+    "allow-set-permission-popover",
     "allow-get-workspaces",
     "allow-get-active-workspace",
     "allow-switch-workspace",

@@ -95,6 +95,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "toggle_adblock_shield",
     "set_auto_skip_ads",
     "set_privacy_popover",
+    "set_permission_popover",
     "get_workspaces",
     "get_active_workspace",
     "switch_workspace",

@@ -723,6 +723,12 @@
           "markdownDescription": "Enables the set_overlay_visibility command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_permission_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-permission-popover",
+          "markdownDescription": "Enables the set_permission_popover command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_pip_window_shadow command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-pip-window-shadow",
@@ -1387,6 +1393,12 @@
           "type": "string",
           "const": "deny-set-overlay-visibility",
           "markdownDescription": "Denies the set_overlay_visibility command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_permission_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-permission-popover",
+          "markdownDescription": "Denies the set_permission_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the set_pip_window_shadow command without any pre-configured scope.",

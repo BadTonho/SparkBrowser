@@ -24,5 +24,6 @@
   "permissions.reloading_may_discard_forms_or_interrupt_media_downloads_reload_this_pag_5db0": "Recarregar pode descartar formulários ou interromper mídia/downloads. Recarregar esta página?",
   "permissions.confirm_reload_a5f7": "Confirmar recarregamento",
   "permissions.cancel_1976": "Cancelar",
-  "permissions.reload_when_ready_3a1a": "Recarregar quando estiver pronto"
+  "permissions.reload_when_ready_3a1a": "Recarregar quando estiver pronto",
+  "permissions.more_details": "Mais detalhes"
 }

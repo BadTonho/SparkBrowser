@@ -24,5 +24,6 @@
   "permissions.reloading_may_discard_forms_or_interrupt_media_downloads_reload_this_pag_5db0": "Reloading may discard forms or interrupt media/downloads. Reload this page?",
   "permissions.confirm_reload_a5f7": "Confirm reload",
   "permissions.cancel_1976": "Cancel",
-  "permissions.reload_when_ready_3a1a": "Reload when ready"
+  "permissions.reload_when_ready_3a1a": "Reload when ready",
+  "permissions.more_details": "More details"
 }

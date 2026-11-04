@@ -2,6 +2,7 @@
   --overlay-backdrop-blur: 16px;
   --bg-glass-primary: rgba(12, 12, 12, 0.72);
   --bg-glass-elevated: rgba(28, 28, 28, 0.78);
+  --bg-permission-popover: #1c1c1c;
   --bg-viewport-frame: #101010;
   --bg-downloads-panel: #1c1c1c;
   --download-status-completed: #22c55e;
@@ -83,6 +84,7 @@ button {
 html[data-theme="light"] {
   --bg-glass-primary: rgba(246, 247, 249, 0.88);
   --bg-glass-elevated: rgba(255, 255, 255, 0.95);
+  --bg-permission-popover: #ffffff;
   --bg-viewport-frame: #f6f7f9;
   --bg-downloads-panel: #ffffff;
   --bg-glass-hover: rgba(0, 0, 0, 0.05);

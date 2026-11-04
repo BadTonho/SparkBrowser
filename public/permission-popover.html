@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Permissões</title><link rel="stylesheet" href="./overlays/permission-popover.css" /></head>
+<body>
+  <section id="permission-popover" role="dialog" aria-modal="false" tabindex="-1" hidden>
+    <header><h2 id="title"></h2><button id="close" type="button" aria-label="Fechar">×</button></header>
+    <p id="origin" class="origin"></p>
+    <p id="description" class="description" hidden></p>
+    <div id="settings" hidden>
+      <p id="note" class="note"></p>
+      <div id="permission-rows"></div>
+      <button id="refresh" class="wide" type="button"></button>
+      <p id="reload-warning" class="warning" hidden></p>
+      <div id="reload-actions" hidden><button id="confirm-reload" type="button"></button><button id="cancel-reload" type="button"></button></div>
+      <button id="reload" class="wide" type="button"></button>
+    </div>
+    <div id="request" hidden>
+      <details id="details"><summary id="details-label"></summary><div id="details-content"></div></details>
+      <label class="remember"><input id="remember" type="checkbox" /><span id="remember-label"></span></label>
+      <div id="request-actions"><button id="block" class="danger" type="button"></button><button id="allow-once" type="button"></button><button id="allow-always" class="primary" type="button"></button></div>
+    </div>
+    <p id="error" role="alert" hidden></p>
+  </section>
+  <script src="./overlays/permission-popover.js" defer></script>
+</body></html>

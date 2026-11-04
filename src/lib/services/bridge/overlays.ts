@@ -21,6 +21,7 @@ export type OverlayId =
   | "bookmark-editor";
 
 const activeOverlayIds = new Set<OverlayId>();
+const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt"]);
 let overlaySyncQueue: Promise<void> = Promise.resolve();
 
 const openingListeners = new Set<(id?: OverlayId) => void>();
@@ -36,7 +37,7 @@ export async function settleOverlayVisibility(): Promise<void> {
   do { pending = overlaySyncQueue; await pending; } while (pending !== overlaySyncQueue);
 }
 
-/** Keeps the native content WebView hidden while any browser overlay is open. */
+/** Keeps the native content WebView hidden while a blocking browser overlay is open. */
 export async function setOverlayVisibility(
   visible: boolean,
   overlayId: OverlayId
@@ -51,7 +52,7 @@ export async function setOverlayVisibility(
 
   if(!isTauriRuntime()) return;
 
-  const shouldHideContent = activeOverlayIds.size > 0;
+  const shouldHideContent = [...activeOverlayIds].some((id) => !nonBlockingOverlayIds.has(id));
   overlaySyncQueue = overlaySyncQueue
     .catch(() => undefined)
     .then(() => invoke("set_overlay_visibility", { visible: shouldHideContent }));

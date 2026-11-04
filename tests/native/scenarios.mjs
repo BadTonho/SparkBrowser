@@ -146,7 +146,7 @@ export const scenarios = {
   },
   permissions: async context => {
     const { a, b } = await prepareTabs(context);
-    await checkPermissions(context.invoke, context.until, context.fixture, a, b, context.script);
+    await checkPermissions(context.invoke, context.until, context.fixture, a, b, context.script, context.withWebview, context.click);
     await context.restart();
     if (process.platform === 'win32') {
       assert.ok((await context.invoke('get_site_permissions')).settings.some(row => row.origin === context.fixture.origin && row.kind === 'microphone' && row.state === 'allow'));
