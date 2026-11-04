@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -68,4 +68,14 @@ pub fn clear_downloads(conn: &Connection) -> Result<(), String> {
     conn.execute("DELETE FROM downloads", [])
         .map_err(|e| format!("Failed to clear downloads: {}", e))?;
     Ok(())
+}
+
+pub fn find_path(conn: &Connection, id: i64) -> Result<Option<String>, String> {
+    conn.query_row(
+        "SELECT save_path FROM downloads WHERE id = ?1 AND status = 'Completed'",
+        [id],
+        |row| row.get(0),
+    )
+    .optional()
+    .map_err(|_| "downloads.error".into())
 }

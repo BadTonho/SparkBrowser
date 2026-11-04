@@ -104,6 +104,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "move_tab_to_workspace",
     "get_downloads",
     "get_download_tasks",
+    "get_download_visual",
     "cancel_download",
     "enqueue_download",
     "clear_all_downloads",

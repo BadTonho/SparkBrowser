@@ -8,7 +8,7 @@ export async function createFixture() {
   const icons=iconFixture();
   const reports = new Map();
   const commands = new Map();
-  const download = { version: 1, mode: 'normal', requests: [] };
+  const download = { version: 1, mode: 'normal', requests: [], images: new Map() };
   const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
@@ -32,6 +32,12 @@ export async function createFixture() {
       let offset = start;
       const timer = setInterval(() => { const end = Math.min(offset + 32768, body.length); response.write(body.subarray(offset, end)); offset = end; if (offset === body.length) { clearInterval(timer); response.end(); } }, url.searchParams.has('slow') ? 150 : 30);
       response.on('close', () => clearInterval(timer)); return;
+    }
+    if (url.pathname.startsWith('/download/visual/')) {
+      const fixture = download.images.get(decodeURIComponent(url.pathname.slice('/download/visual/'.length)));
+      if (!fixture) { response.writeHead(404).end(); return; }
+      response.writeHead(200, { 'Content-Type': fixture.mime, 'Content-Length': fixture.bytes.length, 'Content-Disposition': 'attachment' });
+      response.end(fixture.bytes); return;
     }
     const id = url.pathname.split('/')[2] ?? 'a';
     if (!/^[a-z][a-z0-9-]{0,63}$/.test(id)) { response.writeHead(404).end(); return; }

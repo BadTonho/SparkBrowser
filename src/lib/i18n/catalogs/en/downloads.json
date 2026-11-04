@@ -29,5 +29,13 @@
   "downloads.progress_pending": "{count} downloads in progress",
   "downloads.progress_paused": "{count} downloads paused",
   "downloads.progress_completed": "{count} downloads completed · Open Downloads to dismiss",
-  "downloads.progress_error": "{count} downloads failed · Open Downloads to review"
+  "downloads.progress_error": "{count} downloads failed · Open Downloads to review",
+  "downloads.title": "Downloads",
+  "downloads.add_link": "Download from a link",
+  "downloads.link_placeholder": "Paste a link, or leave empty for this page",
+  "downloads.size_unknown": "Size unknown",
+  "downloads.action_failed": "Could not complete this action. Try again.",
+  "downloads.empty_hint": "Use the magnifying glass to download from a link.",
+  "downloads.link_failed": "Could not start the download. Check the link and try again.",
+  "downloads.load_failed": "Could not load downloads. Close this panel and try again."
 }

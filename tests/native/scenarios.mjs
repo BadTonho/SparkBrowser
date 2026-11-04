@@ -2,6 +2,7 @@ import { checkTabDocking } from './tab-docking.mjs';
 import { checkTitlebarActions } from './titlebar-actions.mjs';
 import { checkToolsPopover } from './tools-popover.mjs';
 import { checkDownloadsPopover } from './downloads-popover.mjs';
+import { checkDownloadsList } from './downloads-list.mjs';
 import { checkSecurityBoundaries } from './security-boundaries.mjs';
 import { checkWebviewRuntime } from './webview-runtime.mjs';
 import { checkNewTab } from './new-tab.mjs';
@@ -39,6 +40,7 @@ export const scenarios = {
   'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,
   'downloads-popover': checkDownloadsPopover,
+  'downloads-list': checkDownloadsList,
   'titlebar-actions': checkTitlebarActions,
   'new-tab': checkNewTab,
   'new-tab-widgets': context=>checkNewTabWidgets(context,newTabDriver(context)),

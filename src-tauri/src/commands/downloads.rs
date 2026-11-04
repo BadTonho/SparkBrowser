@@ -4,6 +4,14 @@ use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, State};
 
 #[tauri::command]
+pub async fn get_download_visual(
+    app: AppHandle,
+    source: crate::downloads::visual::VisualSource,
+) -> Result<crate::downloads::visual::DownloadVisual, String> {
+    crate::downloads::visual::get(app, source).await
+}
+
+#[tauri::command]
 pub async fn get_downloads(state: State<'_, BrowserState>) -> Result<Vec<DownloadItem>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     list_downloads(db.as_ref().ok_or("Download database is not ready")?)

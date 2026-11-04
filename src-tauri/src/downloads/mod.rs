@@ -11,3 +11,4 @@ mod native_fallback;
 #[cfg(windows)]
 mod native_windows;
 pub mod resumable;
+pub mod visual;

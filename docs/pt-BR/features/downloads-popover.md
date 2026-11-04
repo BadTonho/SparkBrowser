@@ -4,7 +4,17 @@ Downloads abre 8 px abaixo do botão, alinhado à direita e limitado por margens
 
 Clique novamente no botão, clique fora, pressione Escape ou use Fechar para dispensar. O primeiro clique externo apenas fecha o painel. Fechar pelo teclado/cabeçalho devolve o foco ao botão. Outro painel, perda de foco do aplicativo ou remoção da referência fecha Downloads sem recuperar o foco. Atalhos resolvem Downloads ou Mais no modo compacto e restauram a barra no modo Zen.
 
-O formulário de URL, SHA-256 opcional expansível, histórico, Pausar, Retomar, Reiniciar, Cancelar e verificar continuam disponíveis. O estado vazio exige ausência tanto de tarefas quanto de histórico.
+O cabeçalho mostra **Downloads** e usa botões SVG para lupa, Limpar lista (quando há registros encerrados) e Fechar. O formulário de link começa recolhido em cada abertura. A lupa alterna sua exibição e foca o campo. Um envio bem-sucedido limpa o rascunho, recolhe o formulário e devolve o foco à lupa; falhas mantêm o campo e um erro curto visíveis. Enviar vazio continua baixando a página ativa. Rascunhos sobrevivem à alternância/fechamento durante a sessão, mas nunca são gravados em disco. O estado vazio exige ausência tanto de tarefas quanto de histórico.
+
+## Lista compacta e prévias
+
+Cada linha tem uma prévia de 40 × 40 px, nome em uma linha com reticências e nome completo no tooltip, e tamanho legível abaixo. Tarefas ativas mostram bytes recebidos/totais quando conhecidos; concluídas mostram o tamanho final, e metadados antigos indisponíveis exibem **Tamanho desconhecido**. Pausar, Retomar, Cancelar, Reiniciar e a ação de voltar à origem de downloads nativos interrompidos usam botões SVG com nomes acessíveis. Reiniciar continua exigindo confirmação explícita. Pequenos símbolos de estado e descrições acessíveis distinguem processamento, pausa, conclusão e falha. Nenhum arquivo é aberto ou executado automaticamente.
+
+URLs, caminhos locais, campos de integridade, hashes e erros técnicos não aparecem neste painel. O local futuro desses detalhes ainda será definido; APIs de checksum, dados de integridade armazenados e o comportamento existente de verificação continuam disponíveis internamente.
+
+No Windows, downloads concluídos de PNG/JPEG/GIF/BMP podem mostrar uma prévia real local, identificada pela assinatura do arquivo em vez da extensão do nome. O WIC usa decodificadores explícitos da Microsoft, o primeiro quadro, dimensões limitadas e uma nova codificação PNG de até 96 × 96 px. Não usa provedores de miniaturas do Shell nem executa arquivos. Outros formatos/plataformas e prévias indisponíveis usam ícones SVG locais por tipo. As prévias rejeitam arquivos acima de 16 MiB ou 16 megapixels, imagens corrompidas, pastas, arquivos parciais e links que escapem da pasta de downloads. Somente o arquivo já aberto e validado é lido. Formatos desconhecidos exigem apenas a leitura do cabeçalho.
+
+`get_download_visual` recebe um identificador tipado de tarefa/histórico, nunca um caminho. Somente o documento esperado da interface principal tem permissão. Ele resolve o arquivo concluído registrado, retorna tamanho/PNG opcionais e executa no máximo duas leituras bloqueantes simultâneas. Arquivos ausentes usam o ícone sem aviso de erro. O cache do cliente dura uma abertura do painel; respostas pendentes não afetam linhas removidas. O orçamento agregado de 512 KiB para imagens mantém a apresentação nativa compartilhada limitada. O renderizador aceita somente pequenos PNGs codificados e limitados, nunca URLs remotas/locais nem imagens SVG. O foco do formulário segue o mesmo ciclo na superfície nativa e na prévia web. Não há mudanças no banco de downloads nem no formato dos backups.
 
 ## Borda de progresso
 

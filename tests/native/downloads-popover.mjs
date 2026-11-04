@@ -11,6 +11,10 @@ export async function checkDownloadsPopover(c) {
   const closed = () => until(() => script('return !document.querySelector(".downloads-controller")'), 'downloads closed');
   const escape = async () => { await inside(() => script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))')); await closed(); };
   const open = async () => { await click('[data-action=downloads]'); await shown(); };
+  const reveal = async () => {
+    await inside(async () => { if (!await script('return !!document.querySelector("[data-testid=download-url]")')) await click('[data-testid=download-add-toggle]'); });
+    await inside(() => until(() => script('return !!document.querySelector("[data-testid=download-url]")'), 'link field expanded'));
+  };
   const ring = () => script('const e=document.querySelector("[data-testid=download-progress-ring]"),r=e?.querySelector("rect");return e?{kind:e.dataset.kind,color:getComputedStyle(e).color,offset:getComputedStyle(r).strokeDashoffset,animation:getComputedStyle(r).animationName}:null');
   const triggerClick = async () => {
     const point = await script('const r=document.querySelector("[data-action=downloads]").getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)}');
@@ -32,21 +36,24 @@ export async function checkDownloadsPopover(c) {
   assert.equal(box.width, 480); assert.ok(Math.abs(box.top - anchor.bottom - 8) < 2); assert.ok(Math.abs(box.right - anchor.right) < 2);
   assert.ok(box.height < 560, 'empty panel fits its content');
   assert.equal(await inside(() => script('return getComputedStyle(document.querySelector("[data-testid=downloads-dialog]")).backgroundColor')), 'rgb(28, 28, 28)', 'card background is opaque');
-  assert.equal(await inside(() => script('return document.activeElement?.matches("[data-testid=download-url]")')), true);
+  assert.equal(await inside(() => script('return document.activeElement?.matches("[data-testid=download-add-toggle]")')), true);
+  assert.equal(await inside(() => script('return !!document.querySelector("[data-testid=download-url]")')), false);
   await inside(() => c.screenshot('downloads-empty'));
   await inside(() => assert.rejects(() => invoke('get_tabs'), /restricted|denied|not allowed/i));
   await inside(() => script('location.href="https://external-navigation.invalid/"')); await wait(100);
-  await inside(() => script('document.querySelector(".quick-download summary").click()'));
-  await inside(() => until(() => script('return document.querySelector(".quick-download details").open && document.querySelector("[data-testid=download-expected-hash]").checkVisibility()'), 'integrity section expands in the native panel'));
+  await reveal();
+  await inside(() => until(() => script('return document.activeElement?.matches("[data-testid=download-url]")'), 'link field receives focus'));
   const hash = createHash('sha256').update(fixture.payload(1)).digest('hex');
-  await inside(() => script(`for(const [id,value] of [['download-url',arguments[0]],['download-expected-hash',arguments[1]]]){const input=document.querySelector('[data-testid="'+id+'"]');input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));}document.querySelector('form').requestSubmit();`, fixture.origin + '/download/file?slow=1', hash));
+  await inside(() => script(`const input=document.querySelector('[data-testid=download-url]');input.value=arguments[0];input.dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('form').requestSubmit();`, fixture.origin + '/download/file?slow=1'));
   const first = await until(async () => (await invoke('get_download_tasks')).find(t => t.source === 'url'), 'native form enqueues');
+  await inside(() => until(() => script('return !document.querySelector("[data-testid=download-url]") && document.activeElement?.matches("[data-testid=download-add-toggle]")'), 'successful download collapses form and restores focus'));
   await escape();
   await until(() => script('return document.querySelector("[data-action=downloads] [data-testid=download-progress-ring]")?.dataset.kind === "determinate"'), 'closed panel still updates progress');
   await open();
-  await inside(() => until(() => script('return document.querySelector("[data-testid=download-task] progress")?.max > 0'), 'native progress element rendered'));
+  await inside(() => until(() => script('return document.querySelector("[data-testid=download-task] .download-size")?.textContent.includes("/")'), 'native compact size updates'));
   await click(`[data-task-id="${first.id}"] [data-testid=download-pause]`);
   await until(async () => (await state(first.id)).status === 'Paused', 'native pause');
+  await invoke('set_download_checksum', { taskId: first.id, checksum: hash });
   await until(() => script('return document.querySelector("[data-action=downloads] [data-testid=download-progress-ring]")?.dataset.kind === "paused"'), 'paused static border');
   assert.equal((await ring()).color, 'rgb(234, 179, 8)');
   assert.equal((await ring()).animation, 'none');
@@ -109,7 +116,7 @@ export async function checkDownloadsPopover(c) {
   assert.deepEqual(['downloads-a','downloads-b'].map(id => fixture.reports.get(id).pageClicks), clicks);
 
   // A duplicated field is rejected before dispatch, then the valid sequence can act once.
-  await open();
+  await open(); await reveal();
   await inside(() => script(`window.originalDownloadUrlString=URL.prototype.toString;URL.prototype.toString=function(){window.savedDownloadAction=window.originalDownloadUrlString.call(this);return window.savedDownloadAction+'&token=duplicate'};const input=document.querySelector('[data-testid=download-url]');input.value='https://fixture.example/original';input.dispatchEvent(new Event('input',{bubbles:true}));`));
   await wait(100);
   assert.notEqual(await script('return document.querySelector("[data-testid=download-url]").value'), 'https://fixture.example/original');
@@ -118,7 +125,7 @@ export async function checkDownloadsPopover(c) {
   await inside(() => script(`const u=new URL(window.savedDownloadAction),p=JSON.parse(u.searchParams.get('payload'));p.value='https://fixture.example/replayed';u.searchParams.set('payload',JSON.stringify(p));location.href=u.toString();`));
   await wait(100);
   assert.equal(await script('return document.querySelector("[data-testid=download-url]").value'), 'https://fixture.example/original', 'replayed sequence is inert');
-  await escape(); await open();
+  await escape(); await open(); await reveal();
   await inside(() => script(`const u=new URL(window.savedDownloadAction),p=JSON.parse(u.searchParams.get('payload'));p.value='https://fixture.example/stale';u.searchParams.set('sequence','999');u.searchParams.set('payload',JSON.stringify(p));location.href=u.toString();`));
   await wait(100);
   assert.equal(await script('return document.querySelector("[data-testid=download-url]").value'), 'https://fixture.example/original', 'closed session token is inert');

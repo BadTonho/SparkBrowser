@@ -2,6 +2,7 @@
   import { onMount, tick } from "svelte";
   import PanelViewNode from "./PanelViewNode.svelte";
   import { focusDialog } from "../../actions/focusDialog";
+  import { syncDownloadFocus } from "../../services/download-panel-focus";
   let { surface }: { surface: "tools" | "downloads" } = $props();
   const downloads = $derived(surface === "downloads");
   const setter = $derived(downloads ? "__veloceSetDownloadsPopover" : "__veloceSetToolsPopover");
@@ -57,12 +58,16 @@
       const opening = presentation?.sessionId !== value.sessionId;
       if (!opening && presentation && value.revision < presentation.revision) return;
       if (opening) { sequence = 0; pending.clear(); closing = false; outbox.length = 0; inFlight = null; }
+      const hadForm = !!root?.querySelector('[data-testid="download-url"]');
       presentation = value;
       if (inFlight !== null && value.ack >= inFlight) inFlight = null;
       pump();
       document.documentElement.lang = value.locale;
       for (const [key, color] of Object.entries(value.theme)) document.documentElement.style.setProperty(key, color);
-      if (opening) { await tick(); root?.querySelector<HTMLElement>(downloads ? "[data-testid=download-url]" : "[role=tab][aria-selected=true]")?.focus(); }
+      await tick();
+      if (presentation?.sessionId !== value.sessionId || closing) return;
+      if (downloads) syncDownloadFocus(root, opening, hadForm);
+      else if (opening) root?.querySelector<HTMLElement>("[role=tab][aria-selected=true]")?.focus();
     };
     (window as unknown as Record<string, typeof set>)[setter] = set;
     const click = (event: MouseEvent) => {

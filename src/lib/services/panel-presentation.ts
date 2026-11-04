@@ -1,4 +1,5 @@
 /** A presentation-only tree. No markup, scripts, selectors or IPC names cross the bridge. */
+import { isDownloadThumbnail, DOWNLOAD_THUMBNAIL_BUDGET } from "./download-visual";
 export interface PanelViewNode {
   id: number;
   tag?: string;
@@ -24,22 +25,28 @@ export interface PanelPresentation {
 export function isPanelTrigger(anchor: PanelPresentation["anchor"], x: number, y: number): boolean {
   return x >= anchor.left && x <= anchor.left + anchor.width && y >= anchor.top && y <= anchor.top + anchor.height;
 }
-const tags = new Set(["div", "header", "h2", "h3", "nav", "button", "span", "p", "form", "input", "textarea", "select", "option", "article", "strong", "small", "label", "ul", "li", "details", "summary", "pre", "progress", "svg", "path", "circle"]);
+const tags = new Set(["div", "header", "h2", "h3", "nav", "button", "span", "p", "form", "input", "textarea", "select", "option", "article", "strong", "small", "label", "ul", "li", "details", "summary", "pre", "progress", "svg", "path", "circle", "img"]);
 const attributes = new Set(["class", "id", "role", "title", "type", "name", "placeholder", "maxlength", "min", "max", "rows", "required", "disabled", "open", "tabindex", "value", "width", "height", "viewBox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "d", "cx", "cy", "r", "focusable"]);
 
 /** Keeps existing Svelte controllers (including the single note writer) in the shell.
  * Only their safe presentation and opaque control handles are projected into the native surface. */
 export function createPanelProjection(root: HTMLElement) {
   let serial = 0;
+  let imageBytes = 0;
   const ids = new WeakMap<Node, number>();
   const handles = new Map<number, HTMLElement>();
   const id = (node: Node) => { let value = ids.get(node); if (!value) { value = ++serial; ids.set(node, value); } return value; };
   function node(source: Node): PanelViewNode | null {
     if (source.nodeType === Node.TEXT_NODE) return { id: id(source), text: source.textContent ?? "" };
     if (!(source instanceof Element) || !tags.has(source.localName)) return null;
+    if (source.localName === "img") {
+      const src = [...source.attributes].find(attr => attr.name === "src")?.value;
+      if (!isDownloadThumbnail(src) || imageBytes + src.length > DOWNLOAD_THUMBNAIL_BUDGET) return null;
+      imageBytes += src.length;
+    }
     const attrs: Record<string, string | boolean> = {};
     for (const attr of source.attributes) {
-      if (attributes.has(attr.name) || attr.name.startsWith("aria-") || attr.name.startsWith("data-"))
+      if (attributes.has(attr.name) || attr.name.startsWith("aria-") || attr.name.startsWith("data-") || (source.localName === "img" && ["src", "alt"].includes(attr.name)))
         attrs[attr.name] = ["disabled", "required", "open"].includes(attr.name) ? true : attr.value;
     }
     const result: PanelViewNode = { id: id(source), tag: source.localName, attributes: attrs,
@@ -50,7 +57,7 @@ export function createPanelProjection(root: HTMLElement) {
     return result;
   }
   return {
-    snapshot() { handles.clear(); return node(root)!; },
+    snapshot() { handles.clear(); imageBytes = 0; return node(root)!; },
     dispatch(action: PanelViewAction) {
       if (action.kind === "dismiss") return;
       const target = handles.get(action.target);

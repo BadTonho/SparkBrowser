@@ -6,7 +6,7 @@ import ts from 'typescript';
 function load(path, imports = {}, globals = {}) {
   const exports = {};
   runInNewContext(ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
-    { exports, require: name => { if (!(name in imports)) throw Error(name); return imports[name]; }, ...globals });
+    { exports, require: name => { if (name === './download-visual') return load('src/lib/services/download-visual.ts', {}, { atob }); if (!(name in imports)) throw Error(name); return imports[name]; }, ...globals });
   return exports;
 }
 const { summarizeDownloads } = load('src/lib/services/download-progress.ts');

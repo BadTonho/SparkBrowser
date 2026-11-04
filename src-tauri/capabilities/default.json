@@ -15,6 +15,7 @@
     "allow-get-tab-media",
     "allow-set-tab-muted",
     "allow-control-download",
+    "allow-get-download-visual",
     "allow-set-download-checksum",
     "allow-get-recovery-status",
     "allow-get-update-state",

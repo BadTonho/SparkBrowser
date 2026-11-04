@@ -1,7 +1,7 @@
 import { invoke } from "./runtime";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-import type { DownloadItem, DownloadTask } from "../../types/browser";
+import type { DownloadItem, DownloadTask, DownloadVisual, DownloadVisualSource } from "../../types/browser";
 
 import { isTauriRuntime } from "./runtime";
 
@@ -17,6 +17,8 @@ export async function enqueueDownloadUrl(url: string, expectedSha256: string | n
 export async function fetchDownloadTasks(): Promise<DownloadTask[]> {
   return isTauriRuntime() ? invoke<DownloadTask[]>("get_download_tasks") : [];
 }
+export const fetchDownloadVisual = (source: DownloadVisualSource): Promise<DownloadVisual> => isTauriRuntime()
+  ? invoke("get_download_visual", { source }) : Promise.resolve({ size_bytes: null, thumbnail_png: null });
 export async function cancelDownload(taskId: string): Promise<void> {
   await invoke("cancel_download", { taskId });
 }

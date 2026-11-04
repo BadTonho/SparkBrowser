@@ -32,7 +32,7 @@ use commands::media::{
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
     cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
-    get_downloads, set_download_checksum,
+    get_download_visual, get_downloads, set_download_checksum,
 };
 use commands::navigation::{
     focus_address_bar, go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds,
@@ -296,6 +296,7 @@ pub fn run() {
             move_tab_to_workspace,
             get_downloads,
             get_download_tasks,
+            get_download_visual,
             cancel_download,
             enqueue_download,
             clear_all_downloads

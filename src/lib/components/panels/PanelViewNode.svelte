@@ -1,6 +1,7 @@
 <script lang="ts">
   import PanelNodeView from "./PanelViewNode.svelte";
   import type { PanelViewNode } from "../../services/panel-presentation";
+  import { isDownloadThumbnail } from "../../services/download-visual";
   let { node, pending, ack }: { node: PanelViewNode; pending: Map<number, number>; ack: number } = $props();
   function field(element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, value: PanelViewNode) {
     function sync(next: PanelViewNode) {
@@ -23,6 +24,8 @@
   <select {...node.attributes} data-panel-control={node.id} use:field={node}>
     {#each node.children ?? [] as child (child.id)}<PanelNodeView node={child} {pending} {ack} />{/each}
   </select>
+{:else if node.tag === "img"}
+  {#if isDownloadThumbnail(node.attributes?.src)}<img src={node.attributes.src} alt="" width="40" height="40" draggable="false" />{/if}
 {:else}
   <svelte:element this={node.tag} {...node.attributes} data-panel-control={node.id}
     xmlns={["svg", "path", "circle"].includes(node.tag) ? "http://www.w3.org/2000/svg" : undefined}>

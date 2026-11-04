@@ -4,7 +4,17 @@ Downloads opens 8 px below its toolbar button, aligned right and clamped to 8 px
 
 Click the trigger again, click outside, press Escape or use Close to dismiss. The first outside click only closes the panel. Keyboard/header dismissal returns focus to the trigger. Another panel, application blur or a removed anchor closes Downloads without reclaiming focus. Shortcuts resolve Downloads or More in compact mode and restore the toolbar from Zen.
 
-The URL form, expandable optional SHA-256 field, history, Pause, Resume, Restart, Cancel and verification remain available. The empty state requires both tasks and history to be empty.
+The header reads **Downloads** and uses SVG buttons for the magnifying glass, Clear List (when finished entries exist), and Close. The link form starts collapsed on every opening. The magnifying glass toggles it and focuses the field. A successful submission clears the draft, collapses the form and returns focus to the magnifying glass; failure keeps the field and a short error visible. A blank submission still downloads the active page. Drafts survive toggling/closing during the session, but are never saved to disk. The empty state requires both tasks and history to be empty.
+
+## Compact list and previews
+
+Each row has a 40 × 40 px preview, a single-line filename with ellipsis and its full name in a tooltip, and a readable size below it. Active tasks show received/total bytes where known; completed tasks show their final size, and missing historical metadata says **Size unknown**. Pause, Resume, Cancel, Restart and the interrupted native download's source-page action use labeled SVG buttons. Restart still requires explicit confirmation. Small status symbols and accessible labels distinguish processing, pause, completion and failure. No file is automatically opened or executed.
+
+URLs, local paths, checksum fields, hashes and technical errors are absent from this popover. Their future location remains undecided; checksum APIs, stored integrity information and existing verification behavior remain available internally.
+
+On Windows, completed PNG/JPEG/GIF/BMP downloads can show a real local image preview, detected from file signatures rather than filename extensions. WIC uses explicit Microsoft decoders, the first frame, bounded dimensions and a PNG re-encode up to 96 × 96 px. It never uses Shell thumbnail handlers or launches files. Other formats/platforms and unavailable previews use local SVG file-type icons. Previews reject files over 16 MiB or 16 megapixels, corrupt images, directories, partials and links escaping the downloads directory. Only the validated, already-open file handle is read. Unknown formats require only a header read.
+
+`get_download_visual` accepts a typed task/history identifier, never a path. Only the expected main shell document has permission. It resolves the registered completed file, returns optional size/PNG, and performs at most two blocking reads concurrently. Missing files fall back quietly. Its client cache lasts for one panel opening; pending replies cannot affect removed rows. A 512 KiB aggregate image budget keeps the shared native presentation bounded. The renderer accepts only bounded small PNG data URLs, never remote/local URLs or SVG images. Native and web form focus follow the same lifecycle. No download database or backup format changes are required.
 
 ## Progress border
 

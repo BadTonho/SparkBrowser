@@ -88,6 +88,8 @@ export interface DownloadItem {
   status: string;
   created_at: number;
 }
+export type DownloadVisualSource = { kind: "task"; id: string } | { kind: "history"; id: number };
+export interface DownloadVisual { size_bytes: number | null; thumbnail_png: string | null }
 
 export interface DownloadTask {
   id: string; revision: number; file_name: string; url: string; source: "url" | "native";

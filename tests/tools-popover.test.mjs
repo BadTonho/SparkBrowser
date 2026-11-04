@@ -7,7 +7,7 @@ import ts from 'typescript';
 function load(path, imports = {}, globals = {}) {
   const exports = {};
   runInNewContext(ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
-    { exports, require: name => { if (!(name in imports)) throw Error(name); return imports[name]; }, ...globals });
+    { exports, require: name => { if (name === './download-visual') return load('src/lib/services/download-visual.ts', {}, { atob }); if (!(name in imports)) throw Error(name); return imports[name]; }, ...globals });
   return exports;
 }
 function fixture(tick = async () => {}) {
@@ -77,4 +77,22 @@ test('presentation excludes executable markup and opaque controls reject removed
   f.dispatch({ kind: 'click', target: control.id }); assert.equal(button.clicks, 1);
   button.attributes = []; button.isConnected = false;
   f.dispatch({ kind: 'click', target: control.id }); f.dispatch({ kind: 'click', target: 999999 }); assert.equal(button.clicks, 1);
+});
+
+test('image projection accepts only small local PNG data, enforces the total budget and resets it per snapshot', () => {
+  class Element {
+    constructor(tag, attrs = {}, children = []) { this.localName=tag; this.attributes=Object.entries(attrs).map(([name,value])=>({name,value})); this.childNodes=children; }
+  }
+  class Input extends Element {} class Textarea extends Element {} class Select extends Element {}
+  const bytes=Buffer.alloc(45); Buffer.from([137,80,78,71,13,10,26,10]).copy(bytes); bytes.writeUInt32BE(13,8); bytes.write('IHDR',12); bytes.writeUInt32BE(96,16); bytes.writeUInt32BE(96,20);
+  const valid='data:image/png;base64,'+bytes.toString('base64');
+  const oversized=Buffer.from(bytes); oversized.writeUInt32BE(4096,16);
+  const bad=['https://external.test/a.png','file:///C:/private/a.png','data:image/svg+xml,<svg/>','data:image/png;base64,'+oversized.toString('base64')];
+  const root=new Element('div',{},[new Element('img',{src:valid,onerror:'unsafe()',style:'position:fixed'}), ...bad.map(src=>new Element('img',{src})),new Element('button',{src:valid})]);
+  const {createPanelProjection}=load('src/lib/services/panel-presentation.ts',{}, {Element,HTMLElement:Element,HTMLInputElement:Input,HTMLTextAreaElement:Textarea,HTMLSelectElement:Select,Node:{TEXT_NODE:3}});
+  const projection=createPanelProjection(root), tree=projection.snapshot();
+  assert.equal(tree.children.length,2); assert.equal(tree.children[0].attributes.src,valid); assert.equal(tree.children[0].attributes.onerror,undefined); assert.equal(tree.children[0].attributes.style,undefined); assert.equal(tree.children[1].attributes.src,undefined);
+  root.childNodes=Array.from({length:8000},()=>new Element('img',{src:valid}));
+  const first=projection.snapshot(); assert.ok(first.children.length<8000); assert.ok(first.children.length*valid.length<=512*1024);
+  assert.equal(projection.snapshot().children.length,first.children.length);
 });
