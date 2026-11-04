@@ -5,6 +5,7 @@
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { t } from "../../i18n";
   import TabMuteButton from "../media/TabMuteButton.svelte";
+  import { tabsMemory, refreshTabsMemory, formatTabMemory } from "../../stores/tabMemoryStore";
   let { tab, selected = false }: { tab: TabItem; selected?: boolean } = $props();
   let element: HTMLDivElement | undefined = $state();
   $effect(() => { if (selected) element?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
@@ -32,6 +33,15 @@
     removeTab(tabId);
   }
 
+  function getTabTooltip(tabItem: TabItem, memoryBytes?: number): string {
+    const host = getTabHost(tabItem.url);
+    if (tabItem.is_hibernated) {
+      return `${tabItem.title} — ${host}\n${$t("tabs.memory_usage", { usage: "0 MB" })} (${$t("tabs.memory_hibernated")})`;
+    }
+    const memStr = formatTabMemory(memoryBytes);
+    return `${tabItem.title} — ${host}\n${$t("tabs.memory_usage", { usage: memStr })}`;
+  }
+
 </script>
       <div
         class="h-tab"
@@ -45,7 +55,8 @@
         onkeydown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void selectTab(tab.id); } }}
         role="button"
         tabindex="0"
-        title="{tab.title} — {getTabHost(tab.url)}"
+        onpointerenter={() => refreshTabsMemory()}
+        title={getTabTooltip(tab, $tabsMemory[tab.id])}
       >
         <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>

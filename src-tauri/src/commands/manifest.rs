@@ -64,6 +64,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "reload_page",
     "sync_viewport_bounds",
     "get_tabs",
+    "get_tabs_memory",
     "set_resident_limit",
     "set_tab_pinned",
     "create_tab",

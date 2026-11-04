@@ -489,6 +489,12 @@
           "markdownDescription": "Enables the get_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_tabs_memory command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-tabs-memory",
+          "markdownDescription": "Enables the get_tabs_memory command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_update_state command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-update-state",
@@ -1147,6 +1153,12 @@
           "type": "string",
           "const": "deny-get-tabs",
           "markdownDescription": "Denies the get_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_tabs_memory command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-tabs-memory",
+          "markdownDescription": "Denies the get_tabs_memory command without any pre-configured scope."
         },
         {
           "description": "Denies the get_update_state command without any pre-configured scope.",

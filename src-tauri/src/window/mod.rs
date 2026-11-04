@@ -10,6 +10,7 @@ pub mod privacy_popover;
 pub mod shield_policy;
 mod split_focus;
 pub mod tab_drag_preview;
+pub mod tab_memory;
 pub(crate) mod url_input;
 pub mod vibrancy;
 pub mod viewport;

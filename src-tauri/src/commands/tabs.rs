@@ -3,12 +3,40 @@ use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::state::{tab_checkpoint::TabCheckpoint, tab_model::TabInfo};
 use crate::window::webview_manager::sync_all_webviews;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
     Ok(state.snapshot_packet())
+}
+
+#[tauri::command]
+pub async fn get_tabs_memory(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+) -> Result<std::collections::HashMap<String, u64>, String> {
+    let _operation = state.tab_operations.lock().await;
+    let tabs = state.tabs.lock().map_err(|e| e.to_string())?.clone();
+    let resident_tabs: Vec<_> = tabs.iter().filter(|t| !t.is_hibernated).collect();
+    let resident_count = resident_tabs.len().max(1);
+
+    let mut result = std::collections::HashMap::new();
+    for tab in &tabs {
+        if tab.is_hibernated {
+            result.insert(tab.id.clone(), 0);
+        } else {
+            let label = crate::state::tab_model::webview_label_for_tab(&tab.id);
+            let bytes = if let Some(view) = app.get_webview(&label) {
+                crate::window::tab_memory::measure_webview_memory(&view, resident_count)
+                    .unwrap_or(38 * 1024 * 1024)
+            } else {
+                0
+            };
+            result.insert(tab.id.clone(), bytes);
+        }
+    }
+    Ok(result)
 }
 
 #[tauri::command]

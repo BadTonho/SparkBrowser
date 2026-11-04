@@ -59,6 +59,7 @@
     "allow-reload-page",
     "allow-sync-viewport-bounds",
     "allow-get-tabs",
+    "allow-get-tabs-memory",
     "allow-set-resident-limit",
     "allow-set-tab-pinned",
     "allow-create-tab",

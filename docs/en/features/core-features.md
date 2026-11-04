@@ -6,8 +6,9 @@
 - A Spotlight-inspired, spring-animated floating bar centered on the screen.
 - Allows instant URL navigation, web search, switching between open tabs, and executing quick browser actions.
 
-## 2. 💤 Smart Tab Hibernation (RAM Saver)
+## 2. 💤 Smart Tab Hibernation & Memory Inspection (RAM Saver)
 - Managed natively in Rust.
+- Hovering over any tab displays its real-time physical memory (RAM) usage directly below the page title and host in the tooltip. Hibernated tabs report 0 MB to highlight memory savings.
 - Automatically suspends background tabs after 5, 10, or 30 minutes, or with adaptive **Auto** mode. Auto hibernates regular tabs after 10 minutes and tabs activated at least 10 times in the last 7 days after 5 hours of inactivity.
 - **Off** disables automatic hibernation while keeping manual hibernation available. Local activation timestamps are kept in SQLite for the 7-day adaptive window without storing page URLs.
 

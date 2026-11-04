@@ -15,6 +15,7 @@
   } from "../../stores/browserStore";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
+  import { tabsMemory, refreshTabsMemory, formatTabMemory } from "../../stores/tabMemoryStore";
 
   let workspaceTabs = $derived(
     $tabs.filter(
@@ -48,6 +49,15 @@
   function handleCloseClick(event: MouseEvent, tabId: string) {
     event.stopPropagation();
     removeTab(tabId);
+  }
+
+  function getTabTooltip(tabItem: any, memoryBytes?: number): string {
+    const memStr = tabItem.is_hibernated ? "0 MB" : formatTabMemory(memoryBytes);
+    const memLabel = tabItem.is_hibernated
+      ? `${$t("tabs.memory_usage", { usage: "0 MB" })} (${$t("tabs.memory_hibernated")})`
+      : $t("tabs.memory_usage", { usage: memStr });
+    const reorderHint = `${$t("tabs.drag_to_reorder_f64b")} ${$keyboardShortcuts && shortcutLabel('move-tab-up')} / ${$keyboardShortcuts && shortcutLabel('move-tab-down')})`;
+    return `${tabItem.title} ${reorderHint}\n${memLabel}`;
   }
 
   function handleHibernateClick(event: MouseEvent, tabId: string) {
@@ -91,7 +101,8 @@
         onkeydown={(e) => handleKeydown(e, tab.id)}
         role="button"
         tabindex="0"
-        title="{tab.title} {$t("tabs.drag_to_reorder_f64b")} {$keyboardShortcuts && shortcutLabel('move-tab-up')} / {$keyboardShortcuts && shortcutLabel('move-tab-down')})"
+        onpointerenter={() => refreshTabsMemory()}
+        title={getTabTooltip(tab, $tabsMemory[tab.id])}
         transition:slide={{ duration: 220, easing: cubicOut }}
       >
         <div class="drag-grip" title={$t("tabs.drag_to_reorder_ef86")}>
