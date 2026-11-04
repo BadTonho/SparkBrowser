@@ -3,7 +3,7 @@ use crate::state::{
     split_layout::SplitLayout,
     tab_checkpoint::TabCheckpoint,
 };
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub async fn move_tab_in_split(
@@ -24,13 +24,13 @@ pub async fn move_tab_in_split(
     crate::state::split_transfer::commit(&state, &context, &tab_id, side, before_id.as_deref())?;
     super::tabs::reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit_to("main", "tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     let active = state
         .snapshot_tabs()
         .into_iter()
         .find(|tab| tab.is_active)
         .ok_or("Active tab not found")?;
-    let _ = app.emit_to("main", "content-url-changed", active.url);
+    let _ = crate::security::emit_shell(&app, "content-url-changed", active.url);
     Ok(snapshot)
 }
 
@@ -52,8 +52,8 @@ pub async fn dock_tab_to_split(
     };
     let url = result.inspect_err(|_| {
         if let Err(error) = crate::window::tab_drag_preview::cancel(&app, &state) {
-            let _ = app.emit_to(
-                "main",
+            let _ = crate::security::emit_shell(
+                &app,
                 "browser-error",
                 format!("Could not restore split geometry: {error}"),
             );
@@ -64,15 +64,15 @@ pub async fn dock_tab_to_split(
     super::tabs::reconcile_committed(&app, &state);
     crate::window::tab_drag_preview::hide_surface(&app);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit_to("main", "tabs-updated", &snapshot);
-    let _ = app.emit_to(
-        "main",
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(
+        &app,
         "privacy-stats-updated",
         state.snapshot_privacy_stats(),
     );
-    let _ = app.emit_to("main", "content-url-changed", url);
+    let _ = crate::security::emit_shell(&app, "content-url-changed", url);
     if let Err(error) = crate::window::webview_manager::focus_active_content_webview(&app) {
-        let _ = app.emit_to("main", "browser-error", error);
+        let _ = crate::security::emit_shell(&app, "browser-error", error);
     }
     Ok(snapshot)
 }
@@ -130,7 +130,7 @@ pub async fn set_split_view(
     *state.split_preview.lock().map_err(|e| e.to_string())? = None;
     super::tabs::reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(snapshot)
 }
 pub fn update_ratio(state: &BrowserState, key: &str, ratio: f64) -> Result<(), String> {
@@ -162,8 +162,8 @@ pub async fn commit_split_ratio(
     state.clear_split_preview(&key)?;
     if let Err(error) = result {
         if let Err(resize_error) = crate::window::viewport::resize_visible_webviews(&app, &state) {
-            let _ = app.emit_to(
-                "main",
+            let _ = crate::security::emit_shell(
+                &app,
                 "browser-error",
                 format!("Could not restore split geometry: {resize_error}"),
             );
@@ -172,6 +172,6 @@ pub async fn commit_split_ratio(
     }
     super::tabs::reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(snapshot)
 }

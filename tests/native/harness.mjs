@@ -22,6 +22,7 @@ export async function runScenario(name, scenario) {
   let driverError;
 
   let session;
+  let shellWebview;
   let fixture;
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   async function until(check, message, timeout = 20_000) {
@@ -105,6 +106,25 @@ export async function runScenario(name, scenario) {
     }
   }
   async function floatingWindow(action='Inspect',name='pip-window') {
+    if (['Drag', 'Resize', 'Capture'].includes(action)) {
+      // Activate through the privileged shell before the OS gesture. Selecting
+      // a WebDriver document alone does not give the native popup foreground focus.
+      const previous = await request('GET', `/session/${session}/window`);
+      try {
+        let label;
+        for (const handle of await request('GET', `/session/${session}/window/handles`)) {
+          await request('POST', `/session/${session}/window`, { handle });
+          const url = await request('GET', `/session/${session}/url`);
+          const id = /^about:blank#veloce-pip-([a-f0-9]{64})$/.exec(url)?.[1];
+          if (id) { label = `floating-video-${id}`; break; }
+        }
+        assert.ok(label && shellWebview, 'Only the isolated floating player can receive focus');
+        await request('POST', `/session/${session}/window`, { handle: shellWebview });
+        await invoke('plugin:window|set_focus', { label });
+      } finally {
+        await request('POST', `/session/${session}/window`, { handle: previous });
+      }
+    }
     return new Promise((resolveAction,reject)=>{
       const args=['-NoProfile','-ExecutionPolicy','Bypass','-File',resolve('tests/native/floating-window.ps1'),'-Executable',binary,'-Action',action];
       if(action==='Capture'){assert.match(name,/^[a-z0-9-]+$/);args.push('-ScreenshotPath',resolve(directory,'artifacts',name+'.png'));}
@@ -133,7 +153,7 @@ export async function runScenario(name, scenario) {
       for (const handle of handles) {
         try {
           await request('POST', `/session/${session}/window`, { handle });
-          if (await script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))')) return true;
+          if (await script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))')) { shellWebview = handle; return true; }
         } catch (error) {
           if (!/no such window|web view not found/i.test(String(error))) throw error;
         }

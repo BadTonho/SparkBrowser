@@ -5,7 +5,7 @@ use crate::{
 };
 use sha2::{Digest, Sha256};
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 pub struct PendingPreview {
     fingerprint: [u8; 32],
@@ -208,7 +208,7 @@ pub async fn import(
     *preview_guard = None;
     drop(preview_guard);
     *service.source.lock().map_err(|e| e.to_string())? = None;
-    let _ = app.emit_to("main", "tabs-updated", &result.snapshot);
+    let _ = crate::security::emit_shell(app, "tabs-updated", &result.snapshot);
     Ok(result)
 }
 

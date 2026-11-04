@@ -20,6 +20,7 @@ function apply(state: ShutdownState) {
   }
   if (state.phase === "idle") flushing = null;
 }
+export { apply as applyShutdownState };
 export async function retryShutdown() {
   const attempt = get(shutdownState).attempt;
   if (!attempt || get(shutdownBusy)) return;

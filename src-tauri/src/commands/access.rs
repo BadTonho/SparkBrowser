@@ -3,13 +3,20 @@ pub fn shell_only(
     handler: impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static,
 ) -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static {
     move |invoke| {
-        if invoke.message.webview_ref().label() != "main" {
+        use tauri::Manager;
+        if invoke.message.webview_ref().label() != "main"
+            || !invoke.message.webview_ref().url().is_ok_and(|url| {
+                crate::security::documents::is_shell(
+                    invoke.message.webview_ref().app_handle(),
+                    &url,
+                )
+            })
+        {
             invoke
                 .resolver
                 .reject("Application commands are restricted to the browser shell");
             true
         } else {
-            use tauri::Manager;
             if invoke.message.command() != "get_diagnostics"
                 && !invoke
                     .message

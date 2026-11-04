@@ -1,5 +1,5 @@
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
     // Capture this guard before queuing: presentation events may finish after drop.
     if super::tab_drag_preview::active(app) {
@@ -43,10 +43,14 @@ pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
             .and_then(|_| state.persist_session())
             .is_err()
         {
-            let _ = app.emit("browser-error", "Could not select the focused split pane");
+            let _ = crate::security::emit_shell(
+                &app,
+                "browser-error",
+                "Could not select the focused split pane",
+            );
             return;
         }
-        let _ = app.emit("tabs-updated", state.snapshot_packet());
+        let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
     });
 }
 #[cfg(windows)]

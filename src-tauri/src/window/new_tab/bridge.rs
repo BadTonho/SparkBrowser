@@ -4,7 +4,6 @@ use crate::{
     state::{tab_checkpoint::TabCheckpoint, tab_model::webview_label_for_tab},
 };
 use std::collections::HashMap;
-use tauri::Emitter;
 
 pub(super) fn valid(app: &AppHandle, id: &str, label: &str, token: &str) -> bool {
     super::super::navigation_state::is_current_generation(app, label, token)
@@ -20,10 +19,24 @@ pub(super) fn valid(app: &AppHandle, id: &str, label: &str, token: &str) -> bool
 }
 
 pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
-    let values: HashMap<_, _> = url
-        .query_pairs()
-        .map(|(k, v)| (k.into_owned(), v.into_owned()))
-        .collect();
+    let Some(values) = crate::security::bridge::query(
+        url,
+        &[
+            "token",
+            "sequence",
+            "document",
+            "request",
+            "input",
+            "site_key",
+            "operation",
+            "data",
+        ],
+    ) else {
+        return;
+    };
+    if !super::message::valid(url.path(), &values) {
+        return;
+    }
     if values.get("token").map(String::as_str) != Some(token) || !valid(app, id, label, token) {
         return;
     }
@@ -274,11 +287,11 @@ pub(super) fn navigate(
                 .ok_or("Page unavailable")?
                 .navigate(physical_url(&app, target.as_str())?)
                 .map_err(|e| e.to_string())?;
-            let _ = app.emit("tabs-updated", state.snapshot_packet());
+            let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
             Ok::<_, String>(())
         })();
         if let Err(error) = result {
-            let _ = app.emit_to("main", "browser-error", error);
+            let _ = crate::security::emit_shell(&app, "browser-error", error);
         }
     });
 }

@@ -5,7 +5,7 @@ use std::{
     collections::HashMap,
     time::{Duration, Instant},
 };
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 use webview2_com::{
     BytesReceivedChangedEventHandler, CoTaskMemPWSTR, DownloadStartingEventHandler,
     Microsoft::Web::WebView2::Win32::*, StateChangedEventHandler,
@@ -229,7 +229,7 @@ pub fn install(
                     unsafe {
                         let _ = args.SetCancel(true);
                     }
-                    let _ = a.emit_to("main", "browser-error", error);
+                    let _ = crate::security::emit_shell(&a, "browser-error", error);
                 }
                 Ok(())
             }));
@@ -239,8 +239,8 @@ pub fn install(
             Ok(())
         })();
         if let Err(e) = result {
-            let _ = app.emit_to(
-                "main",
+            let _ = crate::security::emit_shell(
+                &app,
                 "browser-error",
                 format!("downloads.native_unavailable: {e}"),
             );

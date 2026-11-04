@@ -1,7 +1,7 @@
 use super::{current, Action, ToolsPopover};
 use crate::state::browser_state::BrowserState;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, Url};
+use tauri::{AppHandle, Manager, Url};
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -68,11 +68,11 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     {
         return;
     }
-    let query = |name: &str| {
-        url.query_pairs()
-            .find(|(key, _)| key == name)
-            .map(|(_, value)| value.into_owned())
+    let Some(parameters) = crate::security::bridge::query(url, &["token", "sequence", "payload"])
+    else {
+        return;
     };
+    let query = |name: &str| parameters.get(name).cloned();
     let Some(sequence) = query("sequence").and_then(|value| value.parse::<u64>().ok()) else {
         return;
     };
@@ -106,7 +106,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
         action: value,
     };
     drop(inner);
-    let _ = app.emit_to("main", "tools-popover-action", event);
+    let _ = crate::security::emit_shell(app, "tools-popover-action", event);
 }
 
 #[cfg(test)]

@@ -4,14 +4,8 @@ use super::webview_manager::{
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::workspace_model::WorkspaceItem;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::hash_map::RandomState,
-    hash::{BuildHasher, Hash, Hasher},
-    time::{SystemTime, UNIX_EPOCH},
-};
 use tauri::{
-    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Url,
-    WebviewUrl,
+    webview::WebviewBuilder, AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,14 +31,9 @@ pub struct BookmarkContextMenuAction {
 }
 
 pub fn create_internal_bridge_token() -> String {
-    let mut hasher = RandomState::new().build_hasher();
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos()
-        .hash(&mut hasher);
-    std::process::id().hash(&mut hasher);
-    format!("{:016x}", hasher.finish())
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes).expect("OS cryptographic randomness unavailable");
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 pub fn build_workspace_switcher_update_script(
@@ -98,11 +87,12 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
         return;
     }
 
+    let Some(parameters) = crate::security::bridge::query(nav_url, &["token", "workspace_id"])
+    else {
+        return;
+    };
     let action = nav_url.path().trim_matches('/');
-    let request_token = nav_url
-        .query_pairs()
-        .find(|(key, _)| key == "token")
-        .map(|(_, value)| value.into_owned());
+    let request_token = parameters.get("token").cloned();
     let window_is_focused = app
         .get_webview_window("main")
         .and_then(|window| window.is_focused().ok())
@@ -127,10 +117,7 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
 
     match action {
         "select" if token_matches => {
-            let workspace_id = nav_url
-                .query_pairs()
-                .find(|(key, _)| key == "workspace_id")
-                .map(|(_, value)| value.into_owned());
+            let workspace_id = parameters.get("workspace_id").cloned();
             let Some(workspace_id) = workspace_id else {
                 return;
             };
@@ -145,16 +132,19 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
             if let Ok(mut token) = state.workspace_switcher_token.lock() {
                 *token = None;
             }
-            let _ = app.emit("workspace-switcher-selected", workspace_id);
+            let _ = crate::security::emit_shell(app, "workspace-switcher-selected", workspace_id);
         }
-        "dismiss" => {
+        "dismiss" if token_matches && !parameters.contains_key("workspace_id") => {
             let is_open = state
                 .workspace_switcher_open
                 .lock()
                 .map(|open| *open)
                 .unwrap_or(false);
             if is_open {
-                let _ = app.emit("workspace-switcher-dismissed", ());
+                if let Ok(mut token) = state.workspace_switcher_token.lock() {
+                    *token = None;
+                }
+                let _ = crate::security::emit_shell(app, "workspace-switcher-dismissed", ());
             }
         }
         _ => {}
@@ -162,6 +152,9 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
 }
 
 fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
+    if crate::security::bridge::query(nav_url, &["token"]).is_none() {
+        return;
+    }
     if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("bookmark-context-menu")
     {
         return;
@@ -215,7 +208,7 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
     }
     // Let the frontend close the overlay after it receives the action. Hiding
     // this WebView inside its own navigation callback can interrupt delivery.
-    let _ = app.emit("bookmark-context-menu-action", action);
+    let _ = crate::security::emit_shell(app, "bookmark-context-menu-action", action);
 }
 
 pub(super) fn spawn_workspace_switcher_webview(
@@ -230,6 +223,9 @@ pub(super) fn spawn_workspace_switcher_webview(
         .get_window("main")
         .ok_or_else(|| "Main window not found".to_string())?;
     let app_for_navigation = app.clone();
+    let document = crate::security::documents::asset_base(app)
+        .join("/workspace-switcher.html")
+        .map_err(|_| "security.invalid_document")?;
     let webview_builder = WebviewBuilder::new(
         WORKSPACE_SWITCHER_WEBVIEW_LABEL,
         WebviewUrl::App("workspace-switcher.html".into()),
@@ -241,7 +237,7 @@ pub(super) fn spawn_workspace_switcher_webview(
             handle_workspace_switcher_navigation(&app_for_navigation, nav_url);
             return false;
         }
-        true
+        crate::security::documents::same_document(nav_url, &document)
     });
 
     main_window
@@ -253,6 +249,7 @@ pub(super) fn spawn_workspace_switcher_webview(
         .map_err(|error| format!("Failed to create workspace switcher WebView: {error}"))?;
 
     if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
+        crate::security::harden(app, &webview, true)?;
         let _ = webview.hide();
     }
 
@@ -271,6 +268,9 @@ pub(super) fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(),
         .get_window("main")
         .ok_or_else(|| "Main window not found".to_string())?;
     let app_for_navigation = app.clone();
+    let document = crate::security::documents::asset_base(app)
+        .join("/bookmark-context-menu.html")
+        .map_err(|_| "security.invalid_document")?;
     let webview_builder = WebviewBuilder::new(
         BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
         WebviewUrl::App("bookmark-context-menu.html".into()),
@@ -284,7 +284,7 @@ pub(super) fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(),
             handle_bookmark_context_menu_navigation(&app_for_navigation, nav_url);
             return false;
         }
-        true
+        crate::security::documents::same_document(nav_url, &document)
     });
 
     main_window
@@ -296,6 +296,7 @@ pub(super) fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(),
         .map_err(|error| format!("Failed to create bookmark context menu WebView: {error}"))?;
 
     if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
+        crate::security::harden(app, &webview, true)?;
         let _ = webview.hide();
     }
     Ok(())

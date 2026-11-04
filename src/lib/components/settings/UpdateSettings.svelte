@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RuntimeSettings from "./RuntimeSettings.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { t, formatDate, formatNumber } from "../../i18n";
   import { updateState, updateBusy, updateActionError, checkUpdates, selectUpdateChannel, startUpdateDownload, startUpdateInstall } from "../../stores/updatesStore";
@@ -59,6 +60,7 @@
     <pre>{$updateState.update.notes || $t("common.no_release_notes")}</pre>
   {/if}
   <p>{$t("settings.updates_are_checked_when_the_browser_opens_downloading_and_installing_re_d689")}</p>
+  <RuntimeSettings />
 </section>
 
 <style>

@@ -1,6 +1,9 @@
 (() => {
   if (window.top !== window) return;
   const token = __ACTIVITY_TOKEN__;
+  const nonce = new Uint32Array(4); crypto.getRandomValues(nonce);
+  const documentId = Array.from(nonce, n => n.toString(16).padStart(8, '0')).join('');
+  let sequence = 0;
   let dirty = false;
   let last = '';
   let scheduled = false;
@@ -10,7 +13,7 @@
     const key = `${dirty}:${media}`;
     if (key === last) return;
     last = key;
-    const query = new URLSearchParams({ token, dirty: String(dirty), media: String(media) });
+    const query = new URLSearchParams({ token, document: documentId, sequence: String(++sequence), dirty: String(dirty), media: String(media) });
     window.location.href = `veloce-internal://page-activity/state?${query}`;
   }
   function schedule() {

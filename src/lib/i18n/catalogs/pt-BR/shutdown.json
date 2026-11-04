@@ -17,5 +17,7 @@
   "shutdown.stale_attempt": "A atividade mudou. Revise o estado atual antes de continuar.",
   "shutdown.update_unavailable": "Conclua ou cancele as transferências ativas antes de instalar a atualização.",
   "shutdown.installer_returned": "O instalador retornou sem fechar o navegador.",
-  "shutdown.details": "Detalhes técnicos"
+  "shutdown.details": "Detalhes técnicos",
+  "shutdown.runtime_heading": "Reiniciar o mecanismo de navegação?",
+  "shutdown.restart": "Reiniciar mesmo assim"
 }

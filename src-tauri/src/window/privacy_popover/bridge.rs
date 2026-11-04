@@ -1,6 +1,6 @@
 use super::{action, current, PrivacyPopover};
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Emitter, Manager, Url};
+use tauri::{AppHandle, Manager, Url};
 
 /// Child content pages have no IPC grants. Only this WebView's authenticated
 /// navigation callback can forward the two fixed popover actions to the shell.
@@ -8,15 +8,19 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     if url.scheme() != "veloce-internal" || url.host_str() != Some("privacy-popover") {
         return;
     }
-    let query = |name: &str| {
-        url.query_pairs()
-            .find(|(key, _)| key == name)
-            .map(|(_, value)| value.into_owned())
+    let Some(parameters) =
+        crate::security::bridge::query(url, &["token", "sequence", "value", "reason"])
+    else {
+        return;
     };
+    let query = |name: &str| parameters.get(name).cloned();
     let Some(sequence) = query("sequence").and_then(|value| value.parse::<u64>().ok()) else {
         return;
     };
     let value = query("value").and_then(|value| value.parse::<bool>().ok());
+    if parameters.contains_key("value") && value.is_none() {
+        return;
+    }
     let service = app.state::<PrivacyPopover>();
     let Ok(mut inner) = service.0.lock() else {
         return;
@@ -47,5 +51,5 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     drop(inner);
     // The shell hides the WebView after delivery, rather than interrupting its
     // own navigation callback, and applies only these fixed privacy actions.
-    let _ = app.emit_to("main", "privacy-popover-action", event);
+    let _ = crate::security::emit_shell(app, "privacy-popover-action", event);
 }

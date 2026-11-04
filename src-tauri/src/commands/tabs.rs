@@ -3,7 +3,7 @@ use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::state::{tab_checkpoint::TabCheckpoint, tab_model::TabInfo};
 use crate::window::webview_manager::sync_all_webviews;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<TabSnapshot, String> {
@@ -90,8 +90,8 @@ pub(super) fn create_tab_inner(
     reconcile_committed(app, state);
 
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
-    let _ = app.emit("content-url-changed", &resolved_url);
+    let _ = crate::security::emit_shell(app, "tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(app, "content-url-changed", &resolved_url);
 
     Ok(snapshot)
 }
@@ -128,10 +128,10 @@ pub(super) fn switch_tab_inner(
 
     let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
-    let _ = app.emit("tabs-updated", &snapshot);
-    let _ = app.emit("privacy-stats-updated", &stats);
+    let _ = crate::security::emit_shell(app, "tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(app, "privacy-stats-updated", &stats);
     if !active_url.is_empty() {
-        let _ = app.emit("content-url-changed", &active_url);
+        let _ = crate::security::emit_shell(app, "content-url-changed", &active_url);
     }
 
     Ok(snapshot)
@@ -189,8 +189,8 @@ pub async fn hibernate_tab(
 
     let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
-    let _ = app.emit("tabs-updated", &snapshot);
-    let _ = app.emit("privacy-stats-updated", &stats);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
 
     Ok(snapshot)
 }
@@ -237,8 +237,8 @@ pub async fn hibernate_inactive_tabs(
     finish_change(&app, &state, before, changed)?;
     let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
-    let _ = app.emit("tabs-updated", &snapshot);
-    let _ = app.emit("privacy-stats-updated", &stats);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
 
     Ok(snapshot)
 }
@@ -318,8 +318,8 @@ pub async fn auto_hibernate_inactive_tabs(
     finish_change(&app, &state, before, changed)?;
     let snapshot = state.snapshot_packet();
     let stats = state.snapshot_privacy_stats();
-    let _ = app.emit("tabs-updated", &snapshot);
-    let _ = app.emit("privacy-stats-updated", &stats);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
     Ok(snapshot)
 }
 
@@ -353,7 +353,7 @@ pub async fn reorder_tabs(
     })?;
     reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(snapshot)
 }
 
@@ -372,7 +372,7 @@ pub async fn move_tab_to_workspace(
     })?;
     reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(snapshot)
 }
 
@@ -394,7 +394,7 @@ pub async fn set_resident_limit(
     })?;
     reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(snapshot)
 }
 
@@ -419,15 +419,15 @@ pub async fn set_tab_pinned(
     })?;
     reconcile_committed(&app, &state);
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(snapshot)
 }
 
 /// A committed session remains authoritative if native reconciliation fails.
 pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
     if let Err(error) = sync_all_webviews(app, state) {
-        let _ = app.emit_to(
-            "main",
+        let _ = crate::security::emit_shell(
+            app,
             "browser-error",
             format!("The session was saved, but a page could not be displayed: {error}"),
         );

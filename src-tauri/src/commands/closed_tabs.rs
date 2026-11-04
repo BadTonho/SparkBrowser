@@ -8,7 +8,7 @@ use crate::{
     window::webview_manager::sync_all_webviews,
 };
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 fn now() -> i64 {
     TabInfo::current_epoch_secs() as i64
@@ -25,24 +25,21 @@ pub fn notify(app: &AppHandle, state: &BrowserState) {
             .and_then(|conn| closed_tabs_repo::list(conn, now()).ok())
     });
     if let Some(rows) = rows {
-        let _ = app.emit_to("main", "closed-tabs-updated", rows);
+        let _ = crate::security::emit_shell(app, "closed-tabs-updated", rows);
     }
 }
 pub(super) fn publish(app: &AppHandle, state: &BrowserState) -> TabSnapshot {
     if let Err(error) = sync_all_webviews(app, state) {
-        let _ = app.emit_to(
-            "main",
+        let _ = crate::security::emit_shell(
+            app,
             "browser-error",
             format!("The session was saved, but a page could not be displayed: {error}"),
         );
     }
     let snapshot = state.snapshot_packet();
-    let _ = app.emit_to("main", "tabs-updated", &snapshot);
-    let _ = app.emit_to(
-        "main",
-        "privacy-stats-updated",
-        state.snapshot_privacy_stats(),
-    );
+    let _ = crate::security::emit_shell(app, "tabs-updated", &snapshot);
+    let _ =
+        crate::security::emit_shell(app, "privacy-stats-updated", state.snapshot_privacy_stats());
     notify(app, state);
     snapshot
 }

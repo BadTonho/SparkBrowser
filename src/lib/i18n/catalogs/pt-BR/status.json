@@ -4,5 +4,17 @@
   "status.is_fa51": "está",
   "status.ready_to_install_519c": "pronta para instalar",
   "status.view_update_9785": "Ver atualização",
-  "status.later_73b6": "Depois"
+  "status.later_73b6": "Depois",
+  "runtime.heading": "Mecanismo de navegação WebView2",
+  "runtime.notice": "Uma atualização do mecanismo de navegação está pronta. Reinicie para usá-la.",
+  "runtime.restart": "Reiniciar",
+  "runtime.later": "Depois",
+  "runtime.current": "WebView2 em uso: {version}",
+  "runtime.available": "Versão disponível: {version}",
+  "runtime.unsupported": "A detecção de atualizações do mecanismo está indisponível neste ambiente.",
+  "runtime.managed": "As atualizações do WebView2 são gerenciadas pela Microsoft. Um aviso de reinício aparece quando um novo mecanismo está disponível.",
+  "runtime.unavailable": "Não foi possível verificar o mecanismo WebView2.",
+  "runtime.no_update": "Não há atualização do mecanismo aguardando reinício.",
+  "runtime.restart_failed": "Não foi possível reiniciar o navegador. Ele continua aberto; tente novamente.",
+  "security.initialization_failed": "Não foi possível estabelecer as fronteiras de segurança do navegador."
 }

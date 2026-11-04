@@ -99,12 +99,17 @@ pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String>
             WebviewBuilder::new(LABEL, WebviewUrl::App("tab-drag-preview.html".into()))
                 .transparent(true)
                 .focused(false)
-                .on_navigation(move |url| url == &document),
+                .on_navigation(move |url| {
+                    crate::security::documents::same_document(url, &document)
+                }),
             LogicalPosition::new(0.0, 0.0),
             logical,
         ) {
             let _ = window.destroy();
             return Err(error.to_string());
+        }
+        if let Some(view) = app.get_webview(LABEL) {
+            crate::security::harden(app, &view, true)?;
         }
         if let Err(error) = window.set_ignore_cursor_events(true) {
             let _ = window.destroy();

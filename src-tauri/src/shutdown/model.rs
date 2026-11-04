@@ -1,5 +1,14 @@
 use serde::Serialize;
 
+#[derive(Clone, Copy, Debug, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ShutdownPurpose {
+    #[default]
+    Exit,
+    InstallUpdate,
+    RestartRuntime,
+}
+
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub struct ShutdownRisk {
     pub id: String,
@@ -28,6 +37,7 @@ impl ShutdownReview {
 }
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct ShutdownState {
+    pub purpose: ShutdownPurpose,
     pub revision: u64,
     pub phase: String,
     pub attempt: Option<String>,

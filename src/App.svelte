@@ -1,4 +1,6 @@
 <script lang="ts">
+  import RuntimeNotice from "./lib/components/status/RuntimeNotice.svelte";
+  import { initializeRuntime } from "./lib/stores/webviewRuntimeStore";
   import { initializeNewTab } from "./lib/services/new-tab";
   import { focusAddressBar } from "./lib/services/bridge/navigation";
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
@@ -120,6 +122,7 @@
     const stopZoom = initializeZoom();
     const stopNewTab = initializeNewTab();
     const stopShutdown = initializeShutdown();
+    const stopRuntime = initializeRuntime();
     void initializeRecovery();
     initializeBackupStatus();
     const stopClosedTabs = initializeClosedTabEvents();
@@ -256,6 +259,7 @@
       stopZoom();
       stopNewTab();
       stopShutdown();
+      stopRuntime();
       stopPermissionEvents();
       stopUpdates();
       stopClosedTabs();
@@ -348,6 +352,7 @@
     {/if}
     <Titlebar />
     <UpdateNotice />
+  <RuntimeNotice />
     <BackupNotice />
     <RecoveryNotice />
     <ClosedTabsNotice />

@@ -1,5 +1,5 @@
 use crate::state::{browser_state::BrowserState, tab_model::TabInfo};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 pub(super) fn is_current_generation(app: &AppHandle, label: &str, token: &str) -> bool {
     app.state::<BrowserState>()
@@ -52,7 +52,7 @@ pub(super) fn update_navigation(
     tab.navigation.revision += 1;
     let payload = serde_json::json!({ "id": tab.id, "url": tab.url, "title": tab.title, "navigation": tab.navigation, "activity": tab.activity });
     drop(tabs);
-    let _ = app.emit("tab-navigation-updated", payload);
+    let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
 }
 
 #[cfg(windows)]
@@ -164,7 +164,8 @@ pub(super) fn install_native_navigation(
             Ok::<(), webview2_com::Error>(())
         })();
         if result.is_err() {
-            let _ = app.emit(
+            let _ = crate::security::emit_shell(
+                &app,
                 "browser-error",
                 "Could not attach native navigation observers",
             );
@@ -255,8 +256,11 @@ pub(super) fn with_page_events(
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
             ) {
                 if writer.session().is_err() {
-                    let _ = app_for_page_load
-                        .emit("browser-error", "Session persistence queue is unavailable");
+                    let _ = crate::security::emit_shell(
+                        &app_for_page_load,
+                        "browser-error",
+                        "Session persistence queue is unavailable",
+                    );
                 }
             }
         } else if matches!(payload.url().scheme(), "http" | "https")
@@ -266,7 +270,8 @@ pub(super) fn with_page_events(
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
             ) {
                 if writer.visit(title, payload.url().to_string()).is_err() {
-                    let _ = app_for_page_load.emit(
+                    let _ = crate::security::emit_shell(
+                        &app_for_page_load,
                         "browser-error",
                         "Navigation persistence queue is unavailable",
                     );
@@ -303,7 +308,11 @@ pub(super) fn with_page_events(
             title_app.try_state::<crate::database::navigation_writer::NavigationWriter>()
         {
             if writer.session().is_err() {
-                let _ = title_app.emit("browser-error", "Session persistence queue is unavailable");
+                let _ = crate::security::emit_shell(
+                    &title_app,
+                    "browser-error",
+                    "Session persistence queue is unavailable",
+                );
             }
         }
     });

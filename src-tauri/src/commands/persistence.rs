@@ -3,7 +3,7 @@ use crate::database::{
     executor,
     history_repo::{self, HistoryCursor, HistoryEntry},
 };
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 #[tauri::command]
 pub async fn get_history(
@@ -43,8 +43,8 @@ pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
     })
     .await?;
     crate::window::new_tab::invalidate(&app);
-    let _ = app.emit_to(
-        "main",
+    let _ = crate::security::emit_shell(
+        &app,
         "closed-tabs-updated",
         Vec::<crate::database::closed_tabs_repo::ClosedTab>::new(),
     );

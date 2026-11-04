@@ -489,6 +489,12 @@
           "markdownDescription": "Enables the get_update_state command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_webview_runtime_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-webview-runtime-status",
+          "markdownDescription": "Enables the get_webview_runtime_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_workspaces command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-workspaces",
@@ -601,6 +607,12 @@
           "type": "string",
           "const": "allow-respond-site-permission",
           "markdownDescription": "Enables the respond_site_permission command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the restart_webview_runtime command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-restart-webview-runtime",
+          "markdownDescription": "Enables the restart_webview_runtime command without any pre-configured scope."
         },
         {
           "description": "Enables the restore_named_session command without any pre-configured scope.",
@@ -1113,6 +1125,12 @@
           "markdownDescription": "Denies the get_update_state command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_webview_runtime_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-webview-runtime-status",
+          "markdownDescription": "Denies the get_webview_runtime_status command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_workspaces command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-workspaces",
@@ -1225,6 +1243,12 @@
           "type": "string",
           "const": "deny-respond-site-permission",
           "markdownDescription": "Denies the respond_site_permission command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the restart_webview_runtime command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-restart-webview-runtime",
+          "markdownDescription": "Denies the restart_webview_runtime command without any pre-configured scope."
         },
         {
           "description": "Denies the restore_named_session command without any pre-configured scope.",

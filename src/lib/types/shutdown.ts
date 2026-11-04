@@ -5,6 +5,7 @@ export interface ShutdownReview {
   native_downloads: string[];
 }
 export interface ShutdownState {
+  purpose: "exit" | "install_update" | "restart_runtime";
   revision: number;
   phase: "idle" | "flushing" | "review" | "committing" | "error";
   attempt: string | null;

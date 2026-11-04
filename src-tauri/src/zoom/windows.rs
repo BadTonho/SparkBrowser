@@ -165,8 +165,11 @@ pub fn install(
             }
         })();
         if let Err(e) = result {
-            use tauri::Emitter;
-            let _ = app.emit_to("main", "browser-error", format!("zoom.unavailable: {e}"));
+            let _ = crate::security::emit_shell(
+                &app,
+                "browser-error",
+                format!("zoom.unavailable: {e}"),
+            );
         }
     })
     .map_err(|e| e.to_string())

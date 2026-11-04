@@ -29,3 +29,5 @@ pub mod zoom;
 pub mod command_search;
 pub mod media;
 pub mod new_tab;
+
+pub mod webview_runtime;

@@ -3,9 +3,9 @@ use crate::{
     database::navigation_writer::NavigationWriter, downloads::manager::DownloadManager,
     state::browser_state::BrowserState,
 };
-use model::{ShutdownReview, ShutdownRisk, ShutdownState};
+use model::{ShutdownPurpose, ShutdownReview, ShutdownRisk, ShutdownState};
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 pub struct ShutdownService(Mutex<ShutdownState>);
 impl Default for ShutdownService {
@@ -25,7 +25,7 @@ impl ShutdownService {
     }
     fn publish(&self, app: &AppHandle) -> Result<ShutdownState, String> {
         let state = self.snapshot()?;
-        let _ = app.emit_to("main", "shutdown-state", &state);
+        let _ = crate::security::emit_shell(app, "shutdown-state", &state);
         Ok(state)
     }
     pub fn request(
@@ -33,11 +33,28 @@ impl ShutdownService {
         app: &AppHandle,
         update_version: Option<String>,
     ) -> Result<ShutdownState, String> {
+        let purpose = if update_version.is_some() {
+            ShutdownPurpose::InstallUpdate
+        } else {
+            ShutdownPurpose::Exit
+        };
+        self.request_purpose(app, purpose, update_version)
+    }
+    pub fn request_restart(&self, app: &AppHandle) -> Result<ShutdownState, String> {
+        self.request_purpose(app, ShutdownPurpose::RestartRuntime, None)
+    }
+    fn request_purpose(
+        &self,
+        app: &AppHandle,
+        purpose: ShutdownPurpose,
+        update_version: Option<String>,
+    ) -> Result<ShutdownState, String> {
         let mut state = self.0.lock().map_err(|e| e.to_string())?;
         if state.phase != "idle" {
             return Ok(state.clone());
         }
         *state = ShutdownState {
+            purpose,
             revision: state.revision + 1,
             phase: "flushing".into(),
             attempt: Some(crate::window::webview_manager::create_internal_bridge_token()),
@@ -121,6 +138,7 @@ impl ShutdownService {
             state.clone()
         };
         self.publish(&app)?;
+        let purpose = approved.purpose;
         let a = app.clone();
         let result = tauri::async_runtime::spawn_blocking(move || persist(&a, &approved))
             .await
@@ -139,6 +157,13 @@ impl ShutdownService {
                 self.publish(&app)
             }
             Ok(None) => {
+                if purpose == ShutdownPurpose::RestartRuntime {
+                    if let Err(error) = crate::webview_runtime::restart(&app) {
+                        let _ = resume(&app);
+                        return self.failed(&app, error);
+                    }
+                    return self.snapshot();
+                }
                 let version = self.snapshot()?.update_version;
                 if let Some(version) = version {
                     #[cfg(windows)]

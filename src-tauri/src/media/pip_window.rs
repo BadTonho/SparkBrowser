@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{
     webview::{NewWindowFeatures, NewWindowResponse},
-    AppHandle, Emitter, Manager, Url, WebviewWindowBuilder,
+    AppHandle, Manager, Url, WebviewWindowBuilder,
 };
 
 #[derive(Clone)]
@@ -114,6 +114,12 @@ pub fn new_window(
     .build();
     match window {
         Ok(window) => {
+            if let Some(view) = app.get_webview(window.label()) {
+                if crate::security::harden(app, &view, true).is_err() {
+                    let _ = window.destroy();
+                    return NewWindowResponse::Deny;
+                }
+            }
             if let Ok(mut state) = SESSION.lock() {
                 if let Some(s) = state.as_mut().filter(|s| s.id == session.id) {
                     s.normal_size = window.inner_size().ok();
@@ -226,18 +232,22 @@ fn emit(app: &AppHandle, id: &str, action: &str, value: Option<u16>) {
     if !current(app, &webview_label_for_tab(&s.tab), &s.token) {
         return;
     }
-    let _ = app.emit_to("main", "media-pip-action", json!({"session":s.id,"sequence":s.sequence,"tabId":s.tab,"documentKey":s.document_key,"action":action,"value":value}));
+    let _ = crate::security::emit_shell(
+        app,
+        "media-pip-action",
+        json!({"session":s.id,"sequence":s.sequence,"tabId":s.tab,"documentKey":s.document_key,"action":action,"value":value}),
+    );
 }
 
 fn navigation(app: &AppHandle, id: &str, url: &Url) {
     if url.host_str() != Some("pip-player") {
         return;
     }
-    let query = |key: &str| {
-        url.query_pairs()
-            .find(|(k, _)| k == key)
-            .map(|(_, v)| v.into_owned())
+    let Some(parameters) = crate::security::bridge::query(url, &["session", "sequence", "value"])
+    else {
+        return;
     };
+    let query = |key: &str| parameters.get(key).cloned();
     let Some(sequence) = query("sequence").and_then(|s| s.parse::<u64>().ok()) else {
         return;
     };
@@ -248,7 +258,7 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
     if !matches!(
         action,
         "ready" | "volume" | "flush" | "return" | "close" | "capture-failed" | "minimize" | "drag"
-    ) || (action == "volume" && value.is_none())
+    ) || ((action == "volume" || parameters.contains_key("value")) && value.is_none())
     {
         return;
     }

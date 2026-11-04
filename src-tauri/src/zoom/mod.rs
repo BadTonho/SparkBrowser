@@ -4,7 +4,7 @@ use crate::{database::site_zoom_repo as repo, state::browser_state::BrowserState
 pub use repo::SiteZoom;
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 #[derive(Clone, Default, Serialize)]
 pub struct ZoomSnapshot {
     pub revision: u64,
@@ -55,7 +55,7 @@ impl ZoomService {
     }
     pub fn publish(&self, app: &AppHandle) -> Result<ZoomSnapshot, String> {
         let s = self.snapshot()?;
-        let _ = app.emit_to("main", "site-zoom-state", &s);
+        let _ = crate::security::emit_shell(app, "site-zoom-state", &s);
         Ok(s)
     }
     pub fn apply_all(&self, app: &AppHandle) -> Result<(), String> {

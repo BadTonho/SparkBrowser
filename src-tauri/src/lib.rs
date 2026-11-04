@@ -6,6 +6,7 @@ use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_ta
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::new_tab::set_new_tab_preferences;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
+use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
 pub mod commands;
@@ -15,10 +16,12 @@ pub mod media;
 mod native_tests;
 pub mod privacy;
 pub mod recovery;
+pub mod security;
 pub mod shutdown;
 pub mod site_permissions;
 pub mod state;
 pub mod updates;
+pub mod webview_runtime;
 pub mod window;
 pub mod zoom;
 use commands::media::{
@@ -74,19 +77,22 @@ use commands::workspaces::{
 };
 use database::connection::init_database;
 use state::browser_state::BrowserState;
-use tauri::{Emitter, Manager, WindowEvent};
+use tauri::{Manager, WindowEvent};
 use window::tab_drag_preview::set_tab_drag_preview;
 use window::vibrancy::apply_native_vibrancy;
 use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    webview_runtime::restart::wait_for_parent()
+        .expect("Runtime restart could not wait for the previous process");
     updates::initialize_crypto();
     let mut context = tauri::generate_context!();
     native_tests::configure(&mut context).expect("invalid native test directory");
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
+        .manage(webview_runtime::RuntimeService::default())
         .manage(window::new_tab::NewTabService::default())
         .manage(window::new_tab::widgets::Widgets::default())
         .manage(window::tab_drag_preview::DragPreview::default())
@@ -133,7 +139,11 @@ pub fn run() {
                         let _ = webview.hide();
                     }
                 }
-                let _ = window.emit("workspace-shortcut-cancel", ());
+                let _ = crate::security::emit_shell(
+                    window.app_handle(),
+                    "workspace-shortcut-cancel",
+                    (),
+                );
             }
         })
         .setup(|app| {
@@ -144,6 +154,10 @@ pub fn run() {
                 apply_native_vibrancy(&main_webview_window);
             }
 
+            if let Some(view) = app.get_webview("main") {
+                security::harden(app.handle(), &view, true).map_err(std::io::Error::other)?;
+                webview_runtime::initialize(app.handle(), &view).map_err(std::io::Error::other)?;
+            }
             let state = app.state::<BrowserState>();
 
             let data_directory = app.path().app_data_dir()?;
@@ -175,6 +189,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_webview_runtime_status,
+            restart_webview_runtime,
             focus_address_bar,
             set_new_tab_preferences,
             refresh_tab_media,

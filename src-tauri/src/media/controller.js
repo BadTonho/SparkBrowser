@@ -10,13 +10,14 @@
   const videoIds = new WeakMap();
   let videoCounter=0;
   let floating=null;
+  let signalSequence=0;
   const createFloatingPlayer = __PIP_PLAYER__;
   const pipElement=()=>floating?.element ?? document.pictureInPictureElement;
   const videoId=el=> {if(!videoIds.has(el))videoIds.set(el,`${documentId}-${++videoCounter}`);return videoIds.get(el);};
   function candidates() {return [...document.querySelectorAll('video')].slice(0,64).map(el=>({id:videoId(el),label:(el.title||el.getAttribute('aria-label')||document.title||'').slice(0,160),width:el.videoWidth,height:el.videoHeight,eligible:Boolean(document.pictureInPictureEnabled && !el.disablePictureInPicture && !el.mediaKeys && el.readyState>=2 && el.videoWidth>0)}));}
   function signal() {
     if(typeof window.__veloceMediaSignal!=='function')return;
-    window.__veloceMediaSignal(JSON.stringify({token,document:documentId,playing:media().some(el=>!el.paused&&!el.ended),picture_in_picture:Boolean(pipElement()),pip_video:pipElement()?videoId(pipElement()):null,pip_mode:floating?'custom':document.pictureInPictureElement?'native':null,pip_session:floating?.session??null}));
+    window.__veloceMediaSignal(JSON.stringify({token,document:documentId,sequence:++signalSequence,playing:media().some(el=>!el.paused&&!el.ended),picture_in_picture:Boolean(pipElement()),pip_video:pipElement()?videoId(pipElement()):null,pip_mode:floating?'custom':document.pictureInPictureElement?'native':null,pip_session:floating?.session??null}));
   }
   const volume = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'volume');
   const muted = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');

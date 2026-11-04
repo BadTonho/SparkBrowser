@@ -5,9 +5,7 @@ use super::webview_manager::create_internal_bridge_token;
 use crate::state::browser_state::BrowserState;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
-use tauri::{
-    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, Manager, Rect, WebviewUrl,
-};
+use tauri::{webview::WebviewBuilder, AppHandle, LogicalPosition, Manager, Rect, WebviewUrl};
 
 pub const LABEL: &str = "tools-popover-webview";
 
@@ -97,7 +95,7 @@ fn ensure_webview(app: &AppHandle) -> Result<(), String> {
                         return false;
                     }
                     // Keep the auxiliary WebView on its packaged document.
-                    url == &document
+                    crate::security::documents::same_document(url, &document)
                 }),
             LogicalPosition::new(0.0, 0.0),
             main.inner_size()
@@ -105,6 +103,7 @@ fn ensure_webview(app: &AppHandle) -> Result<(), String> {
                 .to_logical::<f64>(main.scale_factor().map_err(|e| e.to_string())?),
         )
         .map_err(|e| e.to_string())?;
+    crate::security::harden(app, &view, true)?;
     view.hide().map_err(|e| e.to_string())
 }
 
@@ -144,8 +143,8 @@ pub fn dismiss(app: &AppHandle) {
     };
     inner.closed_session = inner.closed_session.max(session.id);
     drop(inner);
-    let _ = app.emit_to(
-        "main",
+    let _ = crate::security::emit_shell(
+        app,
         "tools-popover-action",
         action(
             &session,

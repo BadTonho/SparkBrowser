@@ -50,3 +50,6 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Correctness fixes and verification — November 2, 2026](reviews/2026-11-02/correctness-fixes.md)
 - [Reorder quick actions](./features/titlebar-actions.md)
 - [Floating Tools panel](features/tools-popover.md)
+
+- [Application security boundaries](security/application-boundaries.md)
+- [Planned protection against suspicious sites and downloads](roadmap/security-protections.md)

@@ -13,6 +13,8 @@ use windows_core::{Interface, PCWSTR};
 struct Context {
     unique: String,
     session: String,
+    document: Option<String>,
+    sequence: u64,
 }
 #[derive(Default)]
 struct ViewContexts {
@@ -188,6 +190,8 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                                         Context {
                                                             unique: unique.into(),
                                                             session,
+                                                            document: None,
+                                                            sequence: 0,
                                                         },
                                                     );
                                                 }
@@ -226,8 +230,28 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                     value["payload"].as_str().filter(|s| s.len() <= 2048),
                                     l.strip_prefix("content-webview-"),
                                 ) {
-                                    if let Ok(payload) = serde_json::from_str::<Value>(raw) {
-                                        if payload["token"] == t {
+                                    if let Some(payload) = super::signal_message::parse(raw, &t) {
+                                        let accepted = VIEWS.with(|views| {
+                                            let mut views = views.borrow_mut();
+                                            let Some(context) = views.get_mut(&l).and_then(|v| {
+                                                v.contexts
+                                                    .values_mut()
+                                                    .find(|entry| entry.unique == c.unique)
+                                            }) else {
+                                                return false;
+                                            };
+                                            if payload.sequence <= context.sequence
+                                                || context.document.as_deref().is_some_and(
+                                                    |document| document != payload.document,
+                                                )
+                                            {
+                                                return false;
+                                            }
+                                            context.document = Some(payload.document.clone());
+                                            context.sequence = payload.sequence;
+                                            true
+                                        });
+                                        if accepted {
                                             signals::receive(&a, id, &c.unique, &payload);
                                         }
                                     }

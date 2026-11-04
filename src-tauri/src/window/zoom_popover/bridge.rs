@@ -1,17 +1,18 @@
 use super::{action, current, ZoomPopover};
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Emitter, Manager, Url};
+use tauri::{AppHandle, Manager, Url};
 
 /// The auxiliary page has no IPC grants; only its current authenticated session can act.
 pub(super) fn navigation(app: &AppHandle, url: &Url) {
     if url.scheme() != "veloce-internal" || url.host_str() != Some("zoom-popover") {
         return;
     }
-    let query = |name: &str| {
-        url.query_pairs()
-            .find(|(key, _)| key == name)
-            .map(|(_, value)| value.into_owned())
+    let Some(parameters) =
+        crate::security::bridge::query(url, &["token", "sequence", "value", "reason"])
+    else {
+        return;
     };
+    let query = |name: &str| parameters.get(name).cloned();
     let Some(sequence) = query("sequence").and_then(|value| value.parse::<u64>().ok()) else {
         return;
     };
@@ -48,7 +49,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     session.closing = name == "dismiss";
     let event = action(session, name, value, &reason);
     drop(inner);
-    let _ = app.emit_to("main", "zoom-popover-action", event);
+    let _ = crate::security::emit_shell(app, "zoom-popover-action", event);
 }
 
 fn valid_value(value: f64, levels: &[f64]) -> bool {

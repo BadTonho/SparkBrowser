@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::AppHandle;
 #[cfg(windows)]
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct MediaVideoCandidate {
@@ -118,7 +118,7 @@ pub async fn enter(
         }
         let result = result?;
         if result["custom"] == false && result["ok"] == true {
-            let _ = app.emit_to("main", "media-pip-fallback", ());
+            let _ = crate::security::emit_shell(app, "media-pip-fallback", ());
         }
         if let Some(code) = result["error"].as_str() {
             return Err(code.into());

@@ -1,17 +1,5 @@
 use crate::state::browser_state::BrowserState;
-use tauri::{AppHandle, Emitter, Manager};
-
-pub const WORKSPACE_SWITCHER_ESCAPE_SCRIPT: &str = r#"
-  (() => {
-    window.__veloceWorkspaceSwitcherOpen = false;
-    window.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape" || !window.__veloceWorkspaceSwitcherOpen) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      window.location.href = "veloce-internal://workspace-switcher/dismiss";
-    }, true);
-  })();
-"#;
+use tauri::{AppHandle, Manager};
 
 pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: bool) -> String {
     format!(
@@ -19,7 +7,10 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
         (() => {{
           if (window.top !== window) return;
           const bridgeToken = "{token}";
+          const nonce = new Uint32Array(4); crypto.getRandomValues(nonce);
+          const documentId = Array.from(nonce, n => n.toString(16).padStart(8, "0")).join("");
           const nativeAltCapture = {native_alt_capture};
+          window.__veloceWorkspaceSwitcherOpen = false;
           let shortcuts = {{}};
           let holdPressed = false;
           let nextSequence = 0;
@@ -32,9 +23,9 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
             const request = requestQueue[0];
             const query = new URLSearchParams({{
               token: bridgeToken,
+              document: documentId,
               sequence: String(request.sequence)
             }});
-            if (request.index !== undefined) query.set("index", String(request.index));
             if (request.action) query.set("action", request.action);
             if (request.key) query.set("key", request.key);
             window.location.href = `veloce-internal://keyboard-shortcut/${{request.type}}?${{query.toString()}}`;
@@ -89,7 +80,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
             if (event.key === "Escape" && window.__veloceWorkspaceSwitcherOpen) {{
               event.preventDefault();
               event.stopImmediatePropagation();
-              window.location.href = "veloce-internal://workspace-switcher/dismiss";
+              notifyBrowser("alt-cancel");
               return;
             }}
 
@@ -272,7 +263,11 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                 if let Some(key) = key {
                                     payload["key"] = serde_json::json!(key);
                                 }
-                                let _ = app_for_handler.emit("browser-shortcut-action", payload);
+                                let _ = crate::security::emit_shell(
+                                    &app_for_handler,
+                                    "browser-shortcut-action",
+                                    payload,
+                                );
                             }
                             return Ok(());
                         }
@@ -289,7 +284,11 @@ pub(super) fn install_workspace_shortcut_accelerator(
                         unsafe {
                             args.SetHandled(true)?;
                         }
-                        let _ = app_for_handler.emit("workspace-switcher-dismissed", ());
+                        let _ = crate::security::emit_shell(
+                            &app_for_handler,
+                            "workspace-switcher-dismissed",
+                            (),
+                        );
                         return Ok(());
                     }
 
@@ -356,7 +355,11 @@ pub(super) fn install_workspace_shortcut_accelerator(
                         }
 
                         if let Some(payload) = payload {
-                            let _ = app_for_handler.emit("workspace-shortcut-event", payload);
+                            let _ = crate::security::emit_shell(
+                                &app_for_handler,
+                                "workspace-shortcut-event",
+                                payload,
+                            );
                         }
                         return Ok(());
                     }
@@ -375,7 +378,8 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                 args.SetHandled(true)?;
                             }
                             if !is_repeat {
-                                let _ = app_for_handler.emit(
+                                let _ = crate::security::emit_shell(
+                                    &app_for_handler,
                                     "browser-shortcut-action",
                                     serde_json::json!({
                                         "action": "switch-workspaces",
@@ -498,7 +502,26 @@ pub(super) fn handle_keyboard_navigation(
     label_for_nav: &str,
     keyboard_bridge_token: &str,
 ) {
+    if crate::security::bridge::query(nav_url, &["token", "sequence", "document", "action", "key"])
+        .is_none()
+    {
+        return;
+    }
     let params = nav_url.query_pairs().collect::<Vec<_>>();
+    let event_type = nav_url.path().trim_matches('/');
+    let action = params
+        .iter()
+        .find(|(key, _)| key == "action")
+        .map(|(_, value)| value.as_ref());
+    let key = params
+        .iter()
+        .find(|(key, _)| key == "key")
+        .map(|(_, value)| value.as_ref());
+    match event_type {
+        "action" if action.is_some_and(valid_action) => {}
+        "alt-down" | "alt-up" | "alt-cancel" if action.is_none() && key.is_none() => {}
+        _ => return,
+    }
     let request_token = params
         .iter()
         .find(|(key, _)| key == "token")
@@ -506,7 +529,11 @@ pub(super) fn handle_keyboard_navigation(
     let sequence = params
         .iter()
         .find(|(key, _)| key == "sequence")
-        .and_then(|(_, value)| value.parse::<u64>().ok());
+        .and_then(|(_, value)| value.parse::<u64>().ok())
+        .filter(|v| *v > 0);
+    if sequence.is_none() {
+        return;
+    }
     let token_matches = app_handle_for_nav
         .try_state::<BrowserState>()
         .and_then(|state| {
@@ -527,11 +554,31 @@ pub(super) fn handle_keyboard_navigation(
         .and_then(|window| window.is_focused().ok())
         .unwrap_or(false);
 
-    if token_matches && focused {
-        let event_type = nav_url.path().trim_matches('/');
+    if !token_matches {
+        return;
+    }
+    if focused {
+        let Some(sequence) = sequence else {
+            return;
+        };
+        let document = params
+            .iter()
+            .find(|(key, _)| key == "document")
+            .map(|(_, value)| value.as_ref())
+            .unwrap_or("");
+        if !app_handle_for_nav
+            .state::<BrowserState>()
+            .keyboard_bridge_sequences
+            .lock()
+            .is_ok_and(|mut states| states.admit(label_for_nav, document, sequence))
+        {
+            return;
+        }
+
         match event_type {
             "alt-down" | "alt-up" | "alt-cancel" => {
-                let _ = app_handle_for_nav.emit(
+                let _ = crate::security::emit_shell(
+                    app_handle_for_nav,
                     "workspace-shortcut-event",
                     serde_json::json!({ "type": event_type }),
                 );
@@ -545,37 +592,9 @@ pub(super) fn handle_keyboard_navigation(
                     .iter()
                     .find(|(key, _)| key == "key")
                     .map(|(_, value)| value.as_ref());
-                if let Some(action) = action.filter(|action| {
-                    matches!(
-                        *action,
-                        "zoom-in"
-                            | "zoom-out"
-                            | "zoom-reset"
-                            | "switch-tabs"
-                            | "next-tab"
-                            | "previous-tab"
-                            | "switch-workspaces"
-                            | "move-tab-up"
-                            | "move-tab-up-ctrl-shift"
-                            | "move-tab-down"
-                            | "move-tab-down-ctrl-shift"
-                            | "new-tab"
-                            | "navigate-back"
-                            | "navigate-forward"
-                            | "command-bar"
-                            | "edit-url"
-                            | "focus-address"
-                            | "sidebar"
-                            | "zen"
-                            | "history"
-                            | "downloads"
-                            | "settings"
-                            | "reopen-tab"
-                            | "close-tab"
-                            | "reload-tab"
-                    )
-                }) {
-                    let _ = app_handle_for_nav.emit(
+                if let Some(action) = action {
+                    let _ = crate::security::emit_shell(
+                        app_handle_for_nav,
                         "browser-shortcut-action",
                         serde_json::json!({ "action": action, "key": key }),
                     );
@@ -584,7 +603,7 @@ pub(super) fn handle_keyboard_navigation(
             _ => {}
         }
     } else if !focused {
-        let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
+        let _ = crate::security::emit_shell(app_handle_for_nav, "workspace-shortcut-cancel", ());
     }
 
     if let Some(sequence) = sequence {
@@ -592,6 +611,37 @@ pub(super) fn handle_keyboard_navigation(
             let _ = webview.eval(format!("window.__veloceWorkspaceShortcutAck({sequence});"));
         }
     }
+}
+
+fn valid_action(action: &str) -> bool {
+    matches!(
+        action,
+        "zoom-in"
+            | "zoom-out"
+            | "zoom-reset"
+            | "switch-tabs"
+            | "next-tab"
+            | "previous-tab"
+            | "switch-workspaces"
+            | "move-tab-up"
+            | "move-tab-up-ctrl-shift"
+            | "move-tab-down"
+            | "move-tab-down-ctrl-shift"
+            | "new-tab"
+            | "navigate-back"
+            | "navigate-forward"
+            | "command-bar"
+            | "edit-url"
+            | "focus-address"
+            | "sidebar"
+            | "zen"
+            | "history"
+            | "downloads"
+            | "settings"
+            | "reopen-tab"
+            | "close-tab"
+            | "reload-tab"
+    )
 }
 
 #[cfg(windows)]

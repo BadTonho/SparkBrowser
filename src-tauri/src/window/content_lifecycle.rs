@@ -25,6 +25,11 @@ pub fn prepare_content_reset(state: &BrowserState, enabled: bool) -> Result<(), 
 /// Rebuild views only after their fallback metadata has been committed.
 pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
     state
+        .keyboard_bridge_sequences
+        .lock()
+        .map_err(|_| "security.state_unavailable")?
+        .clear();
+    state
         .shield_script_ids
         .lock()
         .map_err(|e| e.to_string())?
@@ -113,6 +118,11 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                 .map_err(|e| e.to_string())?;
                 webview.close().map_err(|e| e.to_string())?;
                 super::new_tab::revoke(app, &label);
+                state
+                    .keyboard_bridge_sequences
+                    .lock()
+                    .map_err(|_| "security.state_unavailable")?
+                    .remove(&label);
                 state
                     .keyboard_bridge_tokens
                     .lock()

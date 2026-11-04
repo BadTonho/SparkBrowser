@@ -1,17 +1,15 @@
 use super::internal_overlays::{
-    handle_workspace_switcher_navigation, spawn_bookmark_context_menu_webview,
-    spawn_workspace_switcher_webview,
+    spawn_bookmark_context_menu_webview, spawn_workspace_switcher_webview,
 };
+use super::keyboard_bridge::build_workspace_shortcut_script;
 #[cfg(windows)]
 use super::keyboard_bridge::install_workspace_shortcut_accelerator;
-use super::keyboard_bridge::{build_workspace_shortcut_script, WORKSPACE_SWITCHER_ESCAPE_SCRIPT};
 use super::navigation_state::update_navigation;
 use crate::privacy::adblock_engine::{build_content_shield_script, should_block_url};
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::tab_model::webview_label_for_tab;
 use tauri::{
-    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Webview,
-    WebviewUrl,
+    webview::WebviewBuilder, AppHandle, LogicalPosition, LogicalSize, Manager, Webview, WebviewUrl,
 };
 
 pub use super::content_focus::focus_active_content_webview;
@@ -93,6 +91,9 @@ pub(super) fn ensure_tab_webview(
     if let Some(state) = app.try_state::<BrowserState>() {
         if let Ok(mut tokens) = state.keyboard_bridge_tokens.lock() {
             tokens.insert(label.clone(), keyboard_bridge_token.clone());
+            if let Ok(mut sequences) = state.keyboard_bridge_sequences.lock() {
+                sequences.remove(&label);
+            }
         }
     }
     #[cfg(windows)]
@@ -145,8 +146,7 @@ pub(super) fn ensure_tab_webview(
         .initialization_script(build_content_shield_script(
             shield_enabled,
             &keyboard_bridge_token,
-        ))
-        .initialization_script(WORKSPACE_SWITCHER_ESCAPE_SCRIPT);
+        ));
 
     #[cfg(not(windows))]
     let webview_builder = webview_builder.on_download(crate::downloads::native::handler(
@@ -193,17 +193,49 @@ pub(super) fn ensure_tab_webview(
             return false;
         }
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("page-activity") {
-            let values: std::collections::HashMap<_, _> = nav_url.query_pairs().collect();
-            if values.get("token").map(|v| v.as_ref()) == Some(keyboard_bridge_token.as_str()) {
+            if nav_url.path() != "/state" {
+                return false;
+            }
+            let Some(values) = crate::security::bridge::query(
+                nav_url,
+                &["token", "document", "sequence", "dirty", "media"],
+            ) else {
+                return false;
+            };
+            let (Some(dirty), Some(media)) = (
+                crate::security::bridge::boolean(values.get("dirty")),
+                crate::security::bridge::boolean(values.get("media")),
+            ) else {
+                return false;
+            };
+            let (Some(document), Some(sequence)) = (
+                values.get("document"),
+                values.get("sequence").and_then(|v| v.parse::<u64>().ok()),
+            ) else {
+                return false;
+            };
+            if values.get("token").map(String::as_str) == Some(keyboard_bridge_token.as_str())
+                && super::navigation_state::is_current_generation(
+                    &app_handle_for_nav,
+                    &label_for_nav,
+                    &keyboard_bridge_token,
+                )
+                && app_handle_for_nav
+                    .state::<BrowserState>()
+                    .keyboard_bridge_sequences
+                    .lock()
+                    .is_ok_and(|mut states| {
+                        states.admit(&format!("{label_for_nav}:activity"), document, sequence)
+                    })
+            {
                 update_navigation(
                     &app_handle_for_nav,
                     &tab_for_nav,
                     &label_for_nav,
                     &keyboard_bridge_token,
                     |tab| {
-                        tab.activity.dirty_form = values.get("dirty").is_some_and(|v| v == "true");
-                        tab.activity.document_media =
-                            values.get("media").is_some_and(|v| v == "true");
+                        tab.activity.dirty_form = dirty;
+                        tab.activity.document_media = media;
                         tab.activity.refresh_media();
                     },
                 );
@@ -212,7 +244,8 @@ pub(super) fn ensure_tab_webview(
         }
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("workspace-switcher")
         {
-            handle_workspace_switcher_navigation(&app_handle_for_nav, nav_url);
+            // Workspace selection belongs only to the packaged picker surface.
+            // Content Escape uses the authenticated keyboard channel instead.
             return false;
         }
 
@@ -229,6 +262,12 @@ pub(super) fn ensure_tab_webview(
         }
 
         if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("pane-focus") {
+            if !matches!(nav_url.path(), "" | "/") {
+                return false;
+            }
+            if crate::security::bridge::query(nav_url, &["token"]).is_none() {
+                return false;
+            }
             if nav_url
                 .query_pairs()
                 .any(|(key, value)| key == "token" && value == keyboard_bridge_token)
@@ -270,8 +309,13 @@ pub(super) fn ensure_tab_webview(
                     *open = false;
                 }
             }
-            let _ = app_handle_for_nav.emit("workspace-shortcut-cancel", ());
-            let _ = app_handle_for_nav.emit("workspace-switcher-dismissed", ());
+            let _ =
+                crate::security::emit_shell(&app_handle_for_nav, "workspace-shortcut-cancel", ());
+            let _ = crate::security::emit_shell(
+                &app_handle_for_nav,
+                "workspace-switcher-dismissed",
+                (),
+            );
         }
 
         if super::new_tab::is_document(&app_handle_for_nav, nav_url) {
@@ -279,6 +323,8 @@ pub(super) fn ensure_tab_webview(
         }
         if !matches!(nav_url.scheme(), "http" | "https")
             || nav_url.host_str() == Some("tauri.localhost")
+            || nav_url.origin()
+                == crate::security::documents::asset_base(&app_handle_for_nav).origin()
         {
             return false;
         }
@@ -292,7 +338,11 @@ pub(super) fn ensure_tab_webview(
                     *count += 1;
                 }
                 let stats = state.snapshot_privacy_stats();
-                let _ = app_handle_for_nav.emit("privacy-stats-updated", &stats);
+                let _ = crate::security::emit_shell(
+                    &app_handle_for_nav,
+                    "privacy-stats-updated",
+                    &stats,
+                );
                 return false;
             }
         }
@@ -319,6 +369,11 @@ pub(super) fn ensure_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         tab_id,
         &navigation_registration_token,
+    )?;
+    crate::security::harden(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        false,
     )?;
     #[cfg(windows)]
     super::navigation_state::install_native_navigation(

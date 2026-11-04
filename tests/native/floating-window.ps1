@@ -150,4 +150,4 @@ if($Action -in @('Drag','Resize','Capture')){
 }
 $clientOrigin=New-Object FloatingTestWindow+Point
 if(-not [FloatingTestWindow]::ClientToScreen($script:floatingHandle,[ref]$clientOrigin)){throw 'Could not read floating client origin'}
-@{handle=$script:floatingHandle.ToInt64();minimized=[FloatingTestWindow]::IsIconic($script:floatingHandle);topInset=$clientOrigin.y-$bounds.top;leftInset=$clientOrigin.x-$bounds.left;left=$bounds.left;top=$bounds.top;width=$bounds.right-$bounds.left;height=$bounds.bottom-$bounds.top} | ConvertTo-Json -Compress
+@{handle=$script:floatingHandle.ToInt64();visible=[FloatingTestWindow]::IsWindowVisible($script:floatingHandle);foreground=([FloatingTestWindow]::GetForegroundWindow() -eq $script:floatingHandle);minimized=[FloatingTestWindow]::IsIconic($script:floatingHandle);topInset=$clientOrigin.y-$bounds.top;leftInset=$clientOrigin.x-$bounds.left;left=$bounds.left;top=$bounds.top;width=$bounds.right-$bounds.left;height=$bounds.bottom-$bounds.top} | ConvertTo-Json -Compress

@@ -9,7 +9,7 @@ use std::{
     sync::{atomic::Ordering, Arc, Mutex},
     time::Duration,
 };
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 use webview2_com::{
     CoTaskMemPWSTR, Microsoft::Web::WebView2::Win32::*, NavigationStartingEventHandler,
     PermissionRequestedEventHandler, SetPermissionStateCompletedHandler,
@@ -33,7 +33,7 @@ fn emit(app: &AppHandle) {
         .lock()
         .map(|v| v.clone())
         .unwrap_or_default();
-    let _ = app.emit_to("main", "permission-requests-updated", pending);
+    let _ = crate::security::emit_shell(app, "permission-requests-updated", pending);
 }
 fn valid(app: &AppHandle, pending: &Pending) -> bool {
     let generation_matches = app
@@ -355,7 +355,8 @@ pub fn install_and_navigate(
             Ok(())
         })();
         if result.is_err() {
-            let _ = app.emit(
+            let _ = crate::security::emit_shell(
+                &app,
                 "browser-error",
                 "Could not initialize native page permissions",
             );

@@ -4,5 +4,17 @@
   "status.is_fa51": "is",
   "status.ready_to_install_519c": "ready to install",
   "status.view_update_9785": "View update",
-  "status.later_73b6": "Later"
+  "status.later_73b6": "Later",
+  "runtime.heading": "WebView2 browser engine",
+  "runtime.notice": "A browser engine update is ready. Restart to use it.",
+  "runtime.restart": "Restart",
+  "runtime.later": "Later",
+  "runtime.current": "WebView2 in use: {version}",
+  "runtime.available": "Available version: {version}",
+  "runtime.unsupported": "Runtime update detection is unavailable in this environment.",
+  "runtime.managed": "WebView2 updates are managed by Microsoft. A restart notice appears when a newer runtime is available.",
+  "runtime.unavailable": "Could not check the WebView2 runtime.",
+  "runtime.no_update": "No browser engine update is awaiting restart.",
+  "runtime.restart_failed": "Could not restart the browser. Your browser remains open; try again.",
+  "security.initialization_failed": "Could not establish the browser security boundaries."
 }

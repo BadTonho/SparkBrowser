@@ -5,6 +5,7 @@ pub mod pip;
 pub mod pip_window;
 #[cfg(windows)]
 pub mod protocol;
+mod signal_message;
 pub mod signals;
 pub mod volume;
 #[cfg(windows)]
@@ -13,7 +14,7 @@ pub mod windows;
 use crate::state::{browser_state::BrowserState, tab_model::webview_label_for_tab};
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 #[derive(Clone, PartialEq, Serialize)]
 pub struct TabMediaState {
@@ -128,7 +129,7 @@ impl MediaService {
             }
             #[cfg(windows)]
             let changed = inner.tabs.iter().find(|t| t.tab_id == id).unwrap().clone();
-            let _ = app.emit_to("main", "tab-media-state", inner.clone());
+            let _ = crate::security::emit_shell(app, "tab-media-state", inner.clone());
             drop(inner);
             #[cfg(windows)]
             pip_window::sync(app, &changed);

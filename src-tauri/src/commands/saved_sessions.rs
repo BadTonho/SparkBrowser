@@ -5,7 +5,7 @@ use crate::state::{
 };
 use crate::window::webview_manager::{ensure_active_content_webview, sync_all_webviews};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn get_saved_sessions(
@@ -156,6 +156,6 @@ pub async fn restore_named_session(
     }
     sync_all_webviews(&app, &state)?;
     let snapshot = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &snapshot);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(SessionRestore { snapshot, warnings })
 }

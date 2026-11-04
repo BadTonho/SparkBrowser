@@ -1,4 +1,5 @@
 mod bridge;
+mod message;
 mod recent;
 pub mod widgets;
 
@@ -67,24 +68,7 @@ pub fn revoke(app: &AppHandle, label: &str) {
 }
 
 pub fn document_url(app: &AppHandle) -> Result<Url, String> {
-    // During setup the shell is still about:blank. Use the same configured base
-    // as WebviewUrl::App rather than observing a document that has not loaded.
-    let configured = if tauri::is_dev() {
-        app.config().build.dev_url.clone()
-    } else {
-        match &app.config().build.frontend_dist {
-            Some(tauri::utils::config::FrontendDist::Url(url)) => Some(url.clone()),
-            _ => None,
-        }
-    };
-    let base = configured.unwrap_or_else(|| {
-        Url::parse(if cfg!(windows) {
-            "http://tauri.localhost/"
-        } else {
-            "tauri://localhost/"
-        })
-        .expect("application asset origin")
-    });
+    let base = crate::security::documents::asset_base(app);
     base.join("/new-tab.html").map_err(|e| e.to_string())
 }
 pub fn is_document(app: &AppHandle, url: &Url) -> bool {

@@ -2,7 +2,7 @@ use crate::privacy::adblock_engine::PrivacyStats;
 use crate::state::browser_state::BrowserState;
 #[cfg(not(windows))]
 use crate::window::webview_manager::{reset_content_webviews, sync_all_webviews};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub fn get_privacy_stats(state: State<'_, BrowserState>) -> PrivacyStats {
@@ -26,8 +26,8 @@ pub async fn set_auto_skip_ads(
             .auto_skip_ads_enabled
             .store(previous, Ordering::Release);
         if crate::privacy::auto_skip::apply(&app, previous).is_err() {
-            let _ = app.emit_to(
-                "main",
+            let _ = crate::security::emit_shell(
+                &app,
                 "browser-error",
                 "Could not fully restore auto skip policy",
             );
@@ -35,7 +35,7 @@ pub async fn set_auto_skip_ads(
         return Err(error);
     }
     let stats = state.snapshot_privacy_stats();
-    let _ = app.emit_to("main", "privacy-stats-updated", &stats);
+    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
     Ok(stats)
 }
 
@@ -58,7 +58,11 @@ pub async fn toggle_adblock_shield(
                 .await
                 .is_err()
             {
-                let _ = app.emit("browser-error", "Could not fully restore the shield policy");
+                let _ = crate::security::emit_shell(
+                    &app,
+                    "browser-error",
+                    "Could not fully restore the shield policy",
+                );
             }
             return Err(error);
         }
@@ -86,20 +90,21 @@ pub async fn toggle_adblock_shield(
         if let Err(error) =
             reset_content_webviews(&app, &state).and_then(|()| sync_all_webviews(&app, &state))
         {
-            let _ = app.emit_to(
-                "main",
+            let _ = crate::security::emit_shell(
+                &app,
                 "browser-error",
                 format!("The shield was changed, but some pages could not be rebuilt: {error}"),
             );
         }
-        let _ = app.emit(
+        let _ = crate::security::emit_shell(
+            &app,
             "browser-error",
             "This engine rebuilt WebViews to update the shield; page state and history were reset",
         );
     }
-    let _ = app.emit("tabs-updated", state.snapshot_packet());
+    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
 
     let stats = state.snapshot_privacy_stats();
-    let _ = app.emit("privacy-stats-updated", &stats);
+    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
     Ok(stats)
 }

@@ -1,7 +1,7 @@
 use super::{files, manager::DownloadManager};
 use crate::state::browser_state::BrowserState;
 use std::{path::PathBuf, sync::Mutex};
-use tauri::{webview::DownloadEvent, AppHandle, Emitter, Manager};
+use tauri::{webview::DownloadEvent, AppHandle, Manager};
 struct Pending {
     id: String,
     url: String,
@@ -72,7 +72,7 @@ pub fn handler(
                     Ok(())
                 })();
                 if let Err(error) = result {
-                    let _ = app.emit_to("main", "browser-error", error);
+                    let _ = crate::security::emit_shell(&app, "browser-error", error);
                     return false;
                 }
             }

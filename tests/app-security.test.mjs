@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -15,6 +15,15 @@ test('every application command is ACL covered and only the local shell receives
   assert.deepEqual(capability.webviews, ['main']);
   assert.deepEqual(capability.permissions.filter(p => p.startsWith('allow-')).sort(), commands.map(c => `allow-${c.replaceAll('_', '-')}`).sort());
   assert.match(lib, /commands::access::shell_only/);
+});
+
+test('internal browser events have an explicit WebView recipient and Windows uses Evergreen', () => {
+  for (const file of readdirSync(new URL('../src-tauri/src/', import.meta.url), { recursive: true }).filter(file => file.endsWith('.rs'))) {
+    if (file.replaceAll('\\', '/') === 'security/mod.rs') continue;
+    assert.doesNotMatch(read(`src-tauri/src/${file}`), /\.emit\(|\.emit_to\(\s*"main"/, `unscoped event in ${file}`);
+  }
+  assert.match(read('src-tauri/src/security/mod.rs'), /EventTarget::Webview\s*\{\s*label: "main"/);
+  assert.deepEqual(JSON.parse(read('src-tauri/tauri.conf.json')).bundle.windows.webviewInstallMode, { type: 'downloadBootstrapper', silent: true });
 });
 
 test('local assets use CSP without inline scripts or remote script sources', () => {

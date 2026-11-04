@@ -1,5 +1,7 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_webview_runtime_status",
+    "restart_webview_runtime",
     "set_pip_window_shadow",
     "exit_video_pip",
     "enter_video_pip",

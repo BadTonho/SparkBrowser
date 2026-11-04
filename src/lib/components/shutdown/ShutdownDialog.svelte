@@ -14,8 +14,8 @@
 </script>
 {#if $shutdownState.phase !== "idle"}
   <div class="shutdown-backdrop">
-    <div class="shutdown-dialog" role="dialog" aria-modal="true" aria-label={$t("shutdown.heading")} tabindex="-1" use:focusDialog={{ onEscape: continueBrowsing }} data-testid="shutdown-dialog">
-      <h2>{$t($shutdownState.update_version ? "shutdown.update_heading" : "shutdown.heading")}</h2>
+    <div class="shutdown-dialog" role="dialog" aria-modal="true" aria-label={$t($shutdownState.purpose === "restart_runtime" ? "shutdown.runtime_heading" : "shutdown.heading")} tabindex="-1" use:focusDialog={{ onEscape: continueBrowsing }} data-testid="shutdown-dialog">
+      <h2>{$t($shutdownState.purpose === "restart_runtime" ? "shutdown.runtime_heading" : $shutdownState.update_version ? "shutdown.update_heading" : "shutdown.heading")}</h2>
       {#if $shutdownState.phase === "review" && $shutdownState.review}
         <p>{$t("shutdown.review")}</p>
         <ul>{#each $shutdownState.review.tabs as tab}<li>{tab.title || tab.url} — {tab.form ? $t("shutdown.form") : ""} {tab.media ? $t("shutdown.media") : ""}</li>{/each}</ul>
@@ -25,7 +25,7 @@
       {#if $shutdownError}<p role="alert">{$errorText($shutdownError)}</p><details><summary>{$t("shutdown.details")}</summary><pre>{technicalError($shutdownError)}</pre></details>{/if}
       <footer>
         <button bind:this={continueButton} data-testid="shutdown-continue" disabled={$shutdownBusy || $shutdownState.phase === "committing"} onclick={continueBrowsing}>{$t("shutdown.continue")}</button>
-        {#if $shutdownState.phase === "review" && !$shutdownError}<button data-testid="shutdown-confirm" disabled={$shutdownBusy} onclick={exitAnyway}>{$t($shutdownState.update_version ? "shutdown.install" : "shutdown.exit")}</button>{/if}
+        {#if $shutdownState.phase === "review" && !$shutdownError}<button data-testid="shutdown-confirm" disabled={$shutdownBusy} onclick={exitAnyway}>{$t($shutdownState.purpose === "restart_runtime" ? "shutdown.restart" : $shutdownState.update_version ? "shutdown.install" : "shutdown.exit")}</button>{/if}
         {#if $shutdownError}<button data-testid="shutdown-retry" disabled={$shutdownBusy} onclick={retryShutdown}>{$t("shutdown.retry")}</button>{/if}
       </footer>
     </div>

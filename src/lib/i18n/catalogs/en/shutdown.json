@@ -17,5 +17,7 @@
   "shutdown.stale_attempt": "Activity changed. Review the current state before continuing.",
   "shutdown.update_unavailable": "Finish or cancel active transfers before installing the update.",
   "shutdown.installer_returned": "The installer returned without closing the browser.",
-  "shutdown.details": "Technical details"
+  "shutdown.details": "Technical details",
+  "shutdown.runtime_heading": "Restart browser engine?",
+  "shutdown.restart": "Restart anyway"
 }

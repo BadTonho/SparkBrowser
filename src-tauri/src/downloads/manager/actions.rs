@@ -25,7 +25,7 @@ impl DownloadManager {
             tasks.remove(id);
         }
         drop(tasks);
-        let _ = app.emit_to("main", "downloads-updated", ());
+        let _ = crate::security::emit_shell(app, "downloads-updated", ());
         Ok(removed)
     }
     pub async fn control(&self, app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
@@ -66,7 +66,11 @@ impl DownloadManager {
                             live.record = before;
                             return Err(e);
                         }
-                        let _ = app.emit_to("main", "download-task-updated", &live.record.task);
+                        let _ = crate::security::emit_shell(
+                            app,
+                            "download-task-updated",
+                            &live.record.task,
+                        );
                         live.control
                             .requested
                             .store(if action == "pause" { 1 } else { 2 }, Ordering::Release);

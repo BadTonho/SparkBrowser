@@ -4,7 +4,7 @@ use std::sync::{
     mpsc::{self, Sender, SyncSender},
     Arc, Mutex,
 };
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 enum Write {
     Session,
@@ -36,7 +36,11 @@ impl NavigationWriter {
                             let _operation = state.tab_operations.blocking_lock();
                             if let Err(error) = state.persist_session() {
                                 last_error = Some(error);
-                                let _ = app.emit("browser-error", "Could not persist the session");
+                                let _ = crate::security::emit_shell(
+                                    &app,
+                                    "browser-error",
+                                    "Could not persist the session",
+                                );
                             }
                         }
                         Write::Visit { title, url } => {
@@ -48,8 +52,11 @@ impl NavigationWriter {
                                 .and_then(|()| state.persist_session());
                             if let Err(error) = result {
                                 last_error = Some(error);
-                                let _ =
-                                    app.emit("browser-error", "Could not persist navigation data");
+                                let _ = crate::security::emit_shell(
+                                    &app,
+                                    "browser-error",
+                                    "Could not persist navigation data",
+                                );
                             } else {
                                 crate::window::new_tab::invalidate(&app);
                             }

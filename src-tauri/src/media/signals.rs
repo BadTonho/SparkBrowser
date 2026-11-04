@@ -1,13 +1,11 @@
 //! Runtime events report only media state; they cannot invoke browser commands.
+use super::signal_message::Signal;
 use super::{volume::FrameMedia, MediaService};
 use crate::state::browser_state::BrowserState;
-use serde_json::Value;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
-pub fn receive(app: &AppHandle, id: &str, context: &str, value: &Value) {
-    let Some(document) = value["document"].as_str().filter(|v| v.len() <= 128) else {
-        return;
-    };
+pub(super) fn receive(app: &AppHandle, id: &str, context: &str, value: &Signal) {
+    let document = value.document.as_str();
     app.state::<MediaService>().update(app, id, |t| {
         let index = t
             .frames
@@ -27,20 +25,11 @@ pub fn receive(app: &AppHandle, id: &str, context: &str, value: &Value) {
         if f.document != document {
             return;
         }
-        f.playing = value["playing"].as_bool().unwrap_or(false);
-        f.picture_in_picture = value["picture_in_picture"].as_bool().unwrap_or(false);
-        f.pip_video = value["pip_video"]
-            .as_str()
-            .filter(|v| v.len() <= 128)
-            .map(str::to_string);
-        f.pip_mode = value["pip_mode"]
-            .as_str()
-            .filter(|s| matches!(*s, "custom" | "native"))
-            .map(str::to_string);
-        f.pip_session = value["pip_session"]
-            .as_str()
-            .filter(|s| s.len() <= 128)
-            .map(str::to_string);
+        f.playing = value.playing;
+        f.picture_in_picture = value.picture_in_picture;
+        f.pip_video = value.pip_video.clone();
+        f.pip_mode = value.pip_mode.clone();
+        f.pip_session = value.pip_session.clone();
     });
     sync_activity(app, id);
 }
@@ -54,7 +43,7 @@ pub fn remove(app: &AppHandle, id: &str, context: Option<&str>) {
         .any(|t| t.id == id)
     {
         if let Ok(snapshot) = app.state::<MediaService>().snapshot(app) {
-            let _ = app.emit_to("main", "tab-media-state", snapshot);
+            let _ = crate::security::emit_shell(app, "tab-media-state", snapshot);
         }
         return;
     }
@@ -89,5 +78,5 @@ pub fn sync_activity(app: &AppHandle, id: &str) {
     tab.navigation.revision += 1;
     let payload = serde_json::json!({"id":tab.id,"url":tab.url,"title":tab.title,"navigation":tab.navigation,"activity":tab.activity});
     drop(tabs);
-    let _ = app.emit_to("main", "tab-navigation-updated", payload);
+    let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
 }

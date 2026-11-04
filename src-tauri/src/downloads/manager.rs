@@ -11,7 +11,7 @@ use std::{
     },
     time::{Duration, Instant},
 };
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
 pub struct Control {
     pub requested: AtomicU8,
@@ -241,7 +241,7 @@ impl DownloadManager {
             }
             live.record.task.clone()
         };
-        let _ = app.emit_to("main", "download-task-updated", &task);
+        let _ = crate::security::emit_shell(app, "download-task-updated", &task);
         self.refresh_protection(app, &self.record(id)?.tab_id);
         Ok(task)
     }
@@ -348,8 +348,8 @@ impl DownloadManager {
             v.record = record.clone();
         }
         self.refresh_protection(app, &record.tab_id);
-        let _ = app.emit_to("main", "download-task-updated", record.task);
-        let _ = app.emit_to("main", "downloads-updated", ());
+        let _ = crate::security::emit_shell(app, "download-task-updated", record.task);
+        let _ = crate::security::emit_shell(app, "downloads-updated", ());
         Ok(())
     }
     pub fn shutdown(&self) {

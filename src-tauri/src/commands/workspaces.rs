@@ -7,7 +7,7 @@ use crate::state::tab_model::TabInfo;
 use crate::state::workspace_model::WorkspaceItem;
 use rusqlite::Connection;
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 #[derive(Debug, Serialize)]
 pub struct WorkspaceDeleteResult {
@@ -321,11 +321,11 @@ pub async fn delete_workspace(
     *state.next_tab_counter.lock().map_err(|e| e.to_string())? = next_counter;
 
     if was_active {
-        let _ = app.emit("content-url-changed", &active_url);
+        let _ = crate::security::emit_shell(&app, "content-url-changed", &active_url);
     }
     reconcile_committed(&app, &state);
     let tabs = state.snapshot_packet();
-    let _ = app.emit("tabs-updated", &tabs);
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &tabs);
 
     Ok(WorkspaceDeleteResult {
         workspaces: updated_workspaces,

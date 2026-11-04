@@ -1,6 +1,8 @@
 import { checkTabDocking } from './tab-docking.mjs';
 import { checkTitlebarActions } from './titlebar-actions.mjs';
 import { checkToolsPopover } from './tools-popover.mjs';
+import { checkSecurityBoundaries } from './security-boundaries.mjs';
+import { checkWebviewRuntime } from './webview-runtime.mjs';
 import { checkNewTab } from './new-tab.mjs';
 import {checkNewTabWidgets} from './new-tab-widgets.mjs';
 import {newTabDriver} from './new-tab-driver.mjs';
@@ -32,6 +34,8 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 
 export const scenarios = {
+  'security-boundaries': checkSecurityBoundaries,
+  'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,
   'titlebar-actions': checkTitlebarActions,
   'new-tab': checkNewTab,
