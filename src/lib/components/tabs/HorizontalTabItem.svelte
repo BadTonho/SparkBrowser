@@ -65,8 +65,9 @@
   .h-tab {
     touch-action: none;
     position: relative;
+    width: 180px;
     min-width: 120px;
-    max-width: 210px;
+    max-width: 180px;
     height: 28px;
     padding: 0 8px 0 10px;
     border-radius: var(--radius-sm);
@@ -76,7 +77,7 @@
     background: rgba(255, 255, 255, 0.035);
     border: 1px solid var(--border-subtle);
     cursor: grab;
-    flex-shrink: 0;
+    flex: 0 1 180px;
     transition:
       background 0.16s ease,
       border-color 0.16s ease,
