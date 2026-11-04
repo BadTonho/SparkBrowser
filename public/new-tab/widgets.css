@@ -46,3 +46,64 @@ dialog input:focus-visible,dialog select:focus-visible { outline:2px solid #bcb6
 @media (max-height:760px) and (min-width:721px) {
   body:has(#widgets:not([hidden])) main { padding-bottom:80px; }
 }
+
+html[data-theme="light"] .widget {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+html[data-theme="light"] .icon-button {
+  background: #f0f1f3;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #171717;
+}
+
+html[data-theme="light"] .widget button,
+html[data-theme="light"] dialog button {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  color: #171717;
+}
+
+html[data-theme="light"] #settings-panel {
+  background: #ffffff;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: -16px 0 50px rgba(0, 0, 0, 0.1);
+  color: #171717;
+}
+
+html[data-theme="light"] #settings-panel::backdrop {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="light"] dialog section {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="light"] dialog select,
+html[data-theme="light"] dialog input[type=search] {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #f8f9fa;
+  color: #171717;
+}
+
+html[data-theme="light"] #settings-status,
+html[data-theme="light"] #city-status,
+html[data-theme="light"] #weather-status,
+html[data-theme="light"] #gmail-status,
+html[data-theme="light"] #gmail-config-status {
+  color: #737373;
+}
+
+html[data-theme="light"] #weather-attribution {
+  color: #737373;
+}
+
+html[data-theme="light"] .gmail-message {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="light"] .gmail-message time {
+  color: #737373;
+}

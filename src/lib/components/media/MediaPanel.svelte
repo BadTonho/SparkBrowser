@@ -57,7 +57,7 @@
       volume: $volumeDrafts[session.tabId] ?? media?.applied_volume ?? 100,
       disabled: !media?.document_key || media.volume_status === "unavailable" || !media.mute_available,
       label: $t("media.volume"), locale: $locale,
-      theme: { background: "#1c1c1c", border: style.getPropertyValue("--border-subtle").trim(), accent: style.getPropertyValue("--accent-primary").trim() },
+      theme: { background: style.getPropertyValue("--bg-downloads-panel").trim() || "#1c1c1c", border: style.getPropertyValue("--border-subtle").trim(), accent: style.getPropertyValue("--accent-primary").trim() },
     }).catch(error => {
       if ($mediaPopover?.id !== session.id) return;
       mediaError.set(describeError(error));
@@ -94,7 +94,7 @@
 
 <style>
   .preview-dismiss { position: fixed; inset: 0; z-index: 2000; }
-  .volume-popover { position: absolute; width: 200px; max-width: calc(100vw - 16px); height: 64px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #1c1c1c; border: 1px solid var(--border-subtle); border-radius: 8px; box-shadow: 0 4px 12px #0004; }
+  .volume-popover { position: absolute; width: 200px; max-width: calc(100vw - 16px); height: 64px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: var(--bg-downloads-panel, #1c1c1c); border: 1px solid var(--border-subtle); border-radius: 8px; box-shadow: 0 4px 12px #0004; }
   input { width: 100%; min-width: 0; height: 24px; margin: 0; flex-shrink: 0; accent-color: var(--accent-primary); opacity: .45; }
   .volume-percentage { color: #c9c9ce; font: 12px/16px system-ui, sans-serif; font-variant-numeric: tabular-nums; text-align: center; }
 </style>

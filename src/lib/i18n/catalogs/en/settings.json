@@ -213,5 +213,9 @@
   "settings.close_active_tab_3816": "Close Active Tab",
   "settings.close_the_active_tab_318b": "Close the active tab",
   "settings.reload_active_tab_89d3": "Reload Active Tab",
-  "settings.reload_the_current_page_982e": "Reload the current page"
+  "settings.reload_the_current_page_982e": "Reload the current page",
+  "settings.theme_mode": "Theme",
+  "settings.theme_mode_description": "Choose between dark and light appearance",
+  "settings.theme_dark": "🌙 Dark",
+  "settings.theme_light": "☀️ Light"
 }

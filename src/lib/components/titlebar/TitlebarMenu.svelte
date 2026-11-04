@@ -109,7 +109,7 @@
 
 <style>
   .menu-dismiss { position:fixed; inset:0; z-index:1000; }
-  .titlebar-menu { position:absolute; display:flex; flex-direction:column; gap:2px; width:240px; max-width:calc(100vw - 16px); max-height:calc(100vh - 56px); overflow-y:auto; padding:6px; background:var(--bg-primary,#1c1c1c); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:0 8px 24px #0006; }
+  .titlebar-menu { position:absolute; display:flex; flex-direction:column; gap:2px; width:240px; max-width:calc(100vw - 16px); max-height:calc(100vh - 56px); overflow-y:auto; padding:6px; background:var(--bg-downloads-panel, #1c1c1c); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:0 8px 24px #0006; }
   button { padding:8px 12px; border-radius:var(--radius-sm); text-align:left; color:var(--text-primary); font-size:12px; }
   button:hover,button:focus-visible { background:var(--bg-glass-hover); outline:2px solid var(--accent-primary); outline-offset:-2px; }
   button:disabled { opacity:.5; }

@@ -1,3 +1,8 @@
+import {
+  createThemePreference,
+  type ThemeMode,
+  THEME_MODES,
+} from "../services/theme-preference.js";
 import { safeStorage } from "../services/storage.js";
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility, setResidentLimit } from "../services/tauri-bridge";
@@ -82,6 +87,22 @@ export function setShowBookmarksBar(visible: boolean): void {
 
 export function toggleBookmarksBar(): void {
   setShowBookmarksBar(!get(showBookmarksBar));
+}
+
+export type { ThemeMode };
+export { THEME_MODES };
+
+const themePref = createThemePreference({
+  storage: typeof safeStorage !== 'undefined' ? safeStorage : undefined,
+  root: typeof document !== 'undefined' ? document.documentElement : undefined,
+  changed: (mode) => themeMode.set(mode),
+});
+
+export const themeMode = writable<ThemeMode>(themePref.get());
+
+export function setThemeMode(mode: ThemeMode): void {
+  const applied = themePref.set(mode);
+  themeMode.set(applied);
 }
 
 export const DEFAULT_OVERLAY_BLUR_PX = 16;

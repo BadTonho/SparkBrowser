@@ -13,6 +13,8 @@ import {
   setShowBookmarksBar,
   workspaceSwitcherDisplay,
   setWorkspaceSwitcherDisplay,
+  themeMode,
+  setThemeMode,
 } from "../../stores/settingsStore";
 import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../stores/shortcutsStore";
 </script>
@@ -22,6 +24,31 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
 
   <LanguageSettings />
   <PipAppearanceSettings />
+
+  <div class="setting-row" id="setting-theme-mode" tabindex="-1">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.theme_mode")}</span>
+      <span class="row-desc">{$t("settings.theme_mode_description")}</span>
+    </div>
+    <div class="timer-pills">
+      <button
+        class="mini-pill"
+        class:selected={$themeMode === "dark"}
+        aria-pressed={$themeMode === "dark"}
+        onclick={() => setThemeMode("dark")}
+      >
+        {$t("settings.theme_dark")}
+      </button>
+      <button
+        class="mini-pill"
+        class:selected={$themeMode === "light"}
+        aria-pressed={$themeMode === "light"}
+        onclick={() => setThemeMode("light")}
+      >
+        {$t("settings.theme_light")}
+      </button>
+    </div>
+  </div>
 
   <div class="setting-row" id="setting-browser-layout" tabindex="-1">
     <div class="row-text">

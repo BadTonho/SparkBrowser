@@ -1,4 +1,18 @@
 (() => {
+  const applyTheme = () => {
+    try {
+      const mode = (typeof localStorage !== 'undefined' && localStorage.getItem('veloce_theme_mode')) || 'dark';
+      if (document.documentElement && typeof document.documentElement.setAttribute === 'function') {
+        document.documentElement.setAttribute('data-theme', mode);
+      }
+    } catch {}
+  };
+  applyTheme();
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('storage', event => {
+      if (event.key === 'veloce_theme_mode') applyTheme();
+    });
+  }
   const input = document.querySelector('#search');
   const recent = document.querySelector('#recent');
   let focused = false;
@@ -9,6 +23,7 @@
   });
   document.querySelector('#retry').addEventListener('click', () => send({ action:'read' }));
   window.addEventListener('veloce-new-tab', event => {
+    applyTheme();
     const { labels, preferences, sites, error, autofocus } = event.detail;
     document.documentElement.lang = preferences.language;
     document.title = labels['newtab.title'];

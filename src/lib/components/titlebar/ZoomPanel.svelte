@@ -44,7 +44,7 @@
       levels:ZOOM_LEVELS, pending:$zoomDrafts[session.origin] !== undefined,
       error:$zoomErrors[session.origin] ? $errorText($zoomErrors[session.origin]) : "",
       label:$t("zoom.heading"), inLabel:$t("zoom.in"), outLabel:$t("zoom.out"), resetLabel:$t("zoom.reset_100"), locale:$locale,
-      theme:{ background:"#1c1c1c", border:style.getPropertyValue("--border-subtle").trim(), accent:style.getPropertyValue("--accent-primary").trim() },
+      theme:{ background:style.getPropertyValue("--bg-downloads-panel").trim() || "#1c1c1c", border:style.getPropertyValue("--border-subtle").trim(), accent:style.getPropertyValue("--accent-primary").trim() },
     }).catch(error => {
       if ($zoomPopover?.id === session.id) { zoomError.set(describeError(error)); void closeZoom(); }
     });

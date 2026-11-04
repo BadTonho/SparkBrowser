@@ -27,6 +27,7 @@ export type SearchEntry = {
 
 export const searchableSettings: SearchEntry[] = [
   {id:"pip-window-shadow",title:"Floating window shadow",description:"Show a shadow around the floating video window.",category:"appearance_layout",targetId:"setting-pip-window-shadow",keywords:"pip picture in picture floating video window shadow sombra janela video flutuante"},
+  { id: "theme-mode", title: "Theme Mode", description: "Choose between dark and light appearance.", category: "appearance_layout", targetId: "setting-theme-mode", keywords: "theme dark light modo tema escuro claro appearance aparencia" },
   { id: "data-backup", title: "Data & Backup", description: "Export or merge a local backup.", category: "data_backup", targetId: "backup-heading", keywords: "backup import export restore data dados importar exportar restaurar" },
   { id: "updates", title: "About & Updates", description: "Check for signed releases and choose Stable or Beta.", category: "updates", targetId: "updates-heading", keywords: "version upgrade update github release channel stable beta" },
   { id: "site-permissions", title: "Site Permissions", description: "Control saved camera, microphone, location and notification decisions.", category: "performance_privacy", targetId: "site-permissions-heading", keywords: "origin camera microphone location notifications allow block ask" },

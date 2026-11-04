@@ -58,6 +58,7 @@ O escudo da barra abre um [pop-up de Proteção](auto-skip-ads.md) ancorado ao b
 - Pesquise em todas as categorias, configurações e atalhos pelo campo ao lado do título Browser Settings; selecionar um resultado abre a categoria e destaca o destino.
 - Escolha Google ou DuckDuckGo como mecanismo de busca padrão em **Pesquisa e Navegação**. Google vem selecionado por padrão; a escolha vale para buscas na barra de endereço, na Command Bar e para novas guias.
 - Ajuste em Aparência e Layout o desfoque de fundo compartilhado pelos overlays temporários, de **0 a 24 px**; a preferência é aplicada imediatamente e lembrada após reiniciar.
+- Escolha entre a aparência **Escura** e **Clara** em Aparência e Layout. O modo escuro vem ativado por padrão; as mudanças se aplicam imediatamente à interface, configurações e overlays, sendo lembradas entre reinicializações.
 - Mostre ou oculte a barra horizontal de bookmarks em Aparência e Layout ou pelo botão na barra superior; a escolha é lembrada após reiniciar e não afeta os bookmarks da barra lateral vertical. A barra só aparece quando há pelo menos um bookmark ou pasta.
 - Use a barra fixa de categorias para alternar entre os painéis; somente o painel selecionado é exibido e rola quando seu conteúdo ultrapassa a altura da janela.
 - A última categoria selecionada é restaurada ao reabrir o modal e também após reiniciar o aplicativo.

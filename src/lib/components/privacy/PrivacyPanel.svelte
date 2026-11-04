@@ -55,7 +55,7 @@
       busy: $privacyBusy, error: $privacyError,
       label: $t("privacy.controls"), adblockLabel: $t("privacy.adblock"), autoSkipLabel: $t("privacy.auto_skip"),
       blocked: $t("privacy.blocked", { count: $privacyStats.blocked_count }), description: $t("privacy.auto_skip_description"), locale: $locale,
-      theme: { background: "#1c1c1c", border: style.getPropertyValue("--border-subtle").trim(), accent: style.getPropertyValue("--accent-primary").trim() },
+      theme: { background: style.getPropertyValue("--bg-downloads-panel").trim() || "#1c1c1c", border: style.getPropertyValue("--border-subtle").trim(), accent: style.getPropertyValue("--accent-primary").trim() },
     }).catch(error => { if ($privacyPopover?.id === session.id) { privacyError.set(describeError(error)); void closePrivacy(); } });
   });
   onMount(() => {
@@ -90,7 +90,7 @@
 
 <style>
   .preview-dismiss { position:fixed;inset:0;z-index:2000; }
-  .privacy-preview { position:absolute;box-sizing:border-box;width:300px;max-width:calc(100vw - 16px);padding:16px;background:#1c1c1c;border:1px solid var(--border-subtle);border-radius:10px;box-shadow:0 4px 16px #0005; }
+  .privacy-preview { position:absolute;box-sizing:border-box;width:300px;max-width:calc(100vw - 16px);padding:16px;background:var(--bg-downloads-panel, #1c1c1c);border:1px solid var(--border-subtle);border-radius:10px;box-shadow:0 4px 16px #0005; }
   label { display:flex;align-items:center;justify-content:space-between;margin-top:16px; }
   small { display:block;color:#b9b9c2;font-size:12px; }
   input { accent-color:var(--accent-primary); }
