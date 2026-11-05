@@ -12,6 +12,7 @@
   import { privacyStats } from "../../stores/privacyStore";
   import { openPrivacy, privacyPopover } from "../../stores/privacyPopoverStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
+  import { toggleExtensionsModal, isExtensionsModalOpen } from "../../stores/extensionsStore";
   import { titlebarActionOrder, moveTitlebarAction, type TitlebarAction } from "../../stores/titlebarActionsStore";
   import { createActionDrag, type ActionDragPreview } from "../../services/titlebar-action-drag";
 
@@ -175,6 +176,21 @@
       >
         <TitlebarActionIcon action={id} />
         <span class="shield-dot"></span>
+      </button>
+    {/if}
+    {#if id === "extensions"}
+      <button
+        data-action="extensions"
+        aria-describedby="titlebar-reorder-hint"
+        class:dragging={preview?.id === "extensions"}
+        style:translate={preview?.id === "extensions" ? `${preview.offset}px 0` : undefined}
+        class="icon-btn"
+        class:active={$isExtensionsModalOpen}
+        onclick={() => void toggleExtensionsModal()}
+        title={$t("extensions.manage") + " · " + $t("titlebar.reorder_hint")}
+        data-testid="open-extensions" aria-label={$t("extensions.title")} aria-haspopup="dialog" aria-expanded={$isExtensionsModalOpen}
+      >
+        <TitlebarActionIcon action={id} />
       </button>
     {/if}
     {#if id === "settings"}

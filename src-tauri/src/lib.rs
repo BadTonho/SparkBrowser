@@ -12,6 +12,7 @@ pub mod backup;
 pub mod commands;
 pub mod database;
 pub mod downloads;
+pub mod extensions;
 pub mod media;
 mod native_tests;
 pub mod privacy;
@@ -30,6 +31,10 @@ use commands::media::{
 };
 
 use commands::diagnostics::get_diagnostics;
+use commands::extensions::{
+    get_extension_action, get_installed_extensions, load_unpacked_extension, remove_extension,
+    toggle_extension,
+};
 use commands::downloads::{
     cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
     get_download_visual, get_downloads, set_download_checksum,
@@ -322,7 +327,12 @@ pub fn run() {
             get_download_visual,
             cancel_download,
             enqueue_download,
-            clear_all_downloads
+            clear_all_downloads,
+            get_installed_extensions,
+            load_unpacked_extension,
+            toggle_extension,
+            remove_extension,
+            get_extension_action
         ]))
         .build(context)
         .expect("error while building Veloce Browser")

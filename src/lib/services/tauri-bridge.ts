@@ -10,3 +10,4 @@ export * from "./bridge/privacy";
 export * from "./bridge/events";
 export * from "./bridge/windows";
 export * from "./bridge/diagnostics";
+export * from "./bridge/extensions";

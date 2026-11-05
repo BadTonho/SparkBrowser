@@ -41,6 +41,9 @@
   import DownloadsDrawer from "./lib/components/downloads/DownloadsDrawer.svelte";
   import SettingsModal from "./lib/components/settings/SettingsModal.svelte";
   import SettingsQuickMenu from "./lib/components/settings/SettingsQuickMenu.svelte";
+  import ExtensionsModal from "./lib/components/extensions/ExtensionsModal.svelte";
+  import ExtensionActionPopover from "./lib/components/extensions/ExtensionActionPopover.svelte";
+  import { refreshExtensions } from "./lib/stores/extensionsStore";
   import HorizontalTabBar from "./lib/components/tabs/HorizontalTabBar.svelte";
   import BookmarkBar from "./lib/components/bookmarks/BookmarkBar.svelte";
   import BookmarkEditor from "./lib/components/bookmarks/BookmarkEditor.svelte";
@@ -131,6 +134,7 @@
     const stopUpdates = initializeUpdates();
     const stopPermissionEvents = initializePermissionEvents();
     const stopDownloadEvents = initializeDownloadEvents();
+    void refreshExtensions();
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const updateMotionPreference = () => {
       prefersReducedMotion = motionPreference.matches;
@@ -387,6 +391,8 @@
   <BookmarkEditor />
   <BookmarkContextMenu />
   <WorkspaceSwitcherOverlay />
+  <ExtensionsModal />
+  <ExtensionActionPopover />
 </div>
 
 <style>

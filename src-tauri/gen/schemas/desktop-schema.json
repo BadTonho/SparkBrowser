@@ -417,10 +417,22 @@
           "markdownDescription": "Enables the get_downloads command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_extension_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-extension-action",
+          "markdownDescription": "Enables the get_extension_action command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_history command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-history",
           "markdownDescription": "Enables the get_history command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_installed_extensions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-installed-extensions",
+          "markdownDescription": "Enables the get_installed_extensions command without any pre-configured scope."
         },
         {
           "description": "Enables the get_page_note command without any pre-configured scope.",
@@ -549,6 +561,12 @@
           "markdownDescription": "Enables the install_update command without any pre-configured scope."
         },
         {
+          "description": "Enables the load_unpacked_extension command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-load-unpacked-extension",
+          "markdownDescription": "Enables the load_unpacked_extension command without any pre-configured scope."
+        },
+        {
           "description": "Enables the move_tab_in_split command without any pre-configured scope.",
           "type": "string",
           "const": "allow-move-tab-in-split",
@@ -595,6 +613,12 @@
           "type": "string",
           "const": "allow-remove-bookmark",
           "markdownDescription": "Enables the remove_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the remove_extension command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-remove-extension",
+          "markdownDescription": "Enables the remove_extension command without any pre-configured scope."
         },
         {
           "description": "Enables the rename_bookmark_folder command without any pre-configured scope.",
@@ -855,6 +879,12 @@
           "markdownDescription": "Enables the toggle_adblock_shield command without any pre-configured scope."
         },
         {
+          "description": "Enables the toggle_extension command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-toggle-extension",
+          "markdownDescription": "Enables the toggle_extension command without any pre-configured scope."
+        },
+        {
           "description": "Enables the update_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-update-workspace",
@@ -1101,10 +1131,22 @@
           "markdownDescription": "Denies the get_downloads command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_extension_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-extension-action",
+          "markdownDescription": "Denies the get_extension_action command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_history command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-history",
           "markdownDescription": "Denies the get_history command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_installed_extensions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-installed-extensions",
+          "markdownDescription": "Denies the get_installed_extensions command without any pre-configured scope."
         },
         {
           "description": "Denies the get_page_note command without any pre-configured scope.",
@@ -1233,6 +1275,12 @@
           "markdownDescription": "Denies the install_update command without any pre-configured scope."
         },
         {
+          "description": "Denies the load_unpacked_extension command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-load-unpacked-extension",
+          "markdownDescription": "Denies the load_unpacked_extension command without any pre-configured scope."
+        },
+        {
           "description": "Denies the move_tab_in_split command without any pre-configured scope.",
           "type": "string",
           "const": "deny-move-tab-in-split",
@@ -1279,6 +1327,12 @@
           "type": "string",
           "const": "deny-remove-bookmark",
           "markdownDescription": "Denies the remove_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the remove_extension command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-remove-extension",
+          "markdownDescription": "Denies the remove_extension command without any pre-configured scope."
         },
         {
           "description": "Denies the rename_bookmark_folder command without any pre-configured scope.",
@@ -1537,6 +1591,12 @@
           "type": "string",
           "const": "deny-toggle-adblock-shield",
           "markdownDescription": "Denies the toggle_adblock_shield command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the toggle_extension command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-toggle-extension",
+          "markdownDescription": "Denies the toggle_extension command without any pre-configured scope."
         },
         {
           "description": "Denies the update_workspace command without any pre-configured scope.",
@@ -3649,6 +3709,60 @@
           "type": "string",
           "const": "dialog:deny-save",
           "markdownDescription": "Denies the save command without any pre-configured scope."
+        },
+        {
+          "description": "This permission set configures which kind of\nupdater functions are exposed to the frontend.\n\n#### Granted Permissions\n\nThe full workflow from checking for updates to installing them\nis enabled.\n\n\n#### This default permission set includes:\n\n- `allow-check`\n- `allow-download`\n- `allow-install`\n- `allow-download-and-install`",
+          "type": "string",
+          "const": "updater:default",
+          "markdownDescription": "This permission set configures which kind of\nupdater functions are exposed to the frontend.\n\n#### Granted Permissions\n\nThe full workflow from checking for updates to installing them\nis enabled.\n\n\n#### This default permission set includes:\n\n- `allow-check`\n- `allow-download`\n- `allow-install`\n- `allow-download-and-install`"
+        },
+        {
+          "description": "Enables the check command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:allow-check",
+          "markdownDescription": "Enables the check command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the download command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:allow-download",
+          "markdownDescription": "Enables the download command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the download_and_install command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:allow-download-and-install",
+          "markdownDescription": "Enables the download_and_install command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the install command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:allow-install",
+          "markdownDescription": "Enables the install command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the check command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:deny-check",
+          "markdownDescription": "Denies the check command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the download command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:deny-download",
+          "markdownDescription": "Denies the download command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the download_and_install command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:deny-download-and-install",
+          "markdownDescription": "Denies the download_and_install command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the install command without any pre-configured scope.",
+          "type": "string",
+          "const": "updater:deny-install",
+          "markdownDescription": "Denies the install command without any pre-configured scope."
         }
       ]
     },

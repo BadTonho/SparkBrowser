@@ -1,0 +1,23 @@
+{
+  "extensions.title": "Extensions",
+  "extensions.manage": "Manage Extensions",
+  "extensions.load_unpacked": "Load unpacked",
+  "extensions.load_unpacked_desc": "Select a folder containing a manifest.json file",
+  "extensions.installed_title": "Installed Extensions",
+  "extensions.no_extensions": "No extensions installed",
+  "extensions.no_extensions_hint": "Click 'Load unpacked' to install your first extension.",
+  "extensions.enabled": "Enabled",
+  "extensions.disabled": "Disabled",
+  "extensions.remove": "Remove",
+  "extensions.remove_confirm": "Are you sure you want to remove this extension?",
+  "extensions.version": "Version",
+  "extensions.id": "ID",
+  "extensions.permissions": "Permissions",
+  "extensions.no_permissions": "No special permissions requested",
+  "extensions.open_popup": "Open extension popup",
+  "extensions.options": "Options",
+  "extensions.installed_at": "Installed on",
+  "extensions.search_placeholder": "Search extensions...",
+  "extensions.error_loading": "Failed to load extension"
+}
+

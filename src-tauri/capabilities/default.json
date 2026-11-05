@@ -124,7 +124,12 @@
     "allow-set-site-zoom",
     "allow-apply-backup-zoom",
     "allow-search-command-items",
-    "allow-get-saved-session"
+    "allow-get-saved-session",
+    "allow-get-installed-extensions",
+    "allow-load-unpacked-extension",
+    "allow-toggle-extension",
+    "allow-remove-extension",
+    "allow-get-extension-action"
   ],
   "webviews": [
     "main"

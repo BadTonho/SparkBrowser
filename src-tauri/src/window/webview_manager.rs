@@ -435,6 +435,10 @@ pub(super) fn ensure_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         &navigation_registration_token,
     )?;
+    crate::extensions::platform::sync_new_webview(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+    )?;
     #[cfg(windows)]
     crate::site_permissions::requests::install_and_navigate(
         app,

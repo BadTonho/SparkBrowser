@@ -1,0 +1,23 @@
+{
+  "extensions.title": "Extensões",
+  "extensions.manage": "Gerenciar Extensões",
+  "extensions.load_unpacked": "Carregar descompactada",
+  "extensions.load_unpacked_desc": "Selecione uma pasta contendo o arquivo manifest.json",
+  "extensions.installed_title": "Extensões Instaladas",
+  "extensions.no_extensions": "Nenhuma extensão instalada",
+  "extensions.no_extensions_hint": "Clique em 'Carregar descompactada' para instalar sua primeira extensão.",
+  "extensions.enabled": "Ativada",
+  "extensions.disabled": "Desativada",
+  "extensions.remove": "Remover",
+  "extensions.remove_confirm": "Tem certeza que deseja remover esta extensão?",
+  "extensions.version": "Versão",
+  "extensions.id": "ID",
+  "extensions.permissions": "Permissões",
+  "extensions.no_permissions": "Nenhuma permissão especial solicitada",
+  "extensions.open_popup": "Abrir popup da extensão",
+  "extensions.options": "Opções",
+  "extensions.installed_at": "Instalada em",
+  "extensions.search_placeholder": "Buscar extensões...",
+  "extensions.error_loading": "Falha ao carregar extensão"
+}
+

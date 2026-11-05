@@ -15,6 +15,7 @@ pub mod workspaces;
 
 pub mod access;
 pub mod diagnostics;
+pub mod extensions;
 pub mod overlays;
 
 pub mod backup;

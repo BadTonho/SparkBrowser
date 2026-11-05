@@ -114,4 +114,9 @@ pub const APP_COMMANDS: &[&str] = &[
     "cancel_download",
     "enqueue_download",
     "clear_all_downloads",
+    "get_installed_extensions",
+    "load_unpacked_extension",
+    "toggle_extension",
+    "remove_extension",
+    "get_extension_action",
 ];
