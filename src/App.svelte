@@ -19,11 +19,9 @@
   import { onMount } from "svelte";
   import { initializeUpdates } from "./lib/stores/updatesStore";
   import UpdateNotice from "./lib/components/status/UpdateNotice.svelte";
-  import SitePermissionsPanel from "./lib/components/permissions/SitePermissionsPanel.svelte";
   import PermissionPrompt from "./lib/components/permissions/PermissionPrompt.svelte";
   import PermissionPopoverHost from "./lib/components/permissions/PermissionPopoverHost.svelte";
   import { initializePermissionEvents } from "./lib/stores/sitePermissionsStore";
-  import ToolsPanel from "./lib/components/tools/ToolsPanel.svelte";
   import PrivacyPanel from "./lib/components/privacy/PrivacyPanel.svelte";
   import MediaPanel from "./lib/components/media/MediaPanel.svelte";
   import ZoomPanel from "./lib/components/titlebar/ZoomPanel.svelte";
@@ -37,17 +35,9 @@
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
   import ViewportFrame from "./lib/components/viewport/ViewportFrame.svelte";
   import CommandBar from "./lib/components/commandbar/CommandBar.svelte";
-  import HistoryDrawer from "./lib/components/history/HistoryDrawer.svelte";
-  import DownloadsDrawer from "./lib/components/downloads/DownloadsDrawer.svelte";
-  import SettingsModal from "./lib/components/settings/SettingsModal.svelte";
-  import SettingsQuickMenu from "./lib/components/settings/SettingsQuickMenu.svelte";
-  import ExtensionsModal from "./lib/components/extensions/ExtensionsModal.svelte";
-  import ExtensionActionPopover from "./lib/components/extensions/ExtensionActionPopover.svelte";
-  import ReaderOverlay from "./lib/components/reader/ReaderOverlay.svelte";
   import { refreshExtensions } from "./lib/stores/extensionsStore";
   import HorizontalTabBar from "./lib/components/tabs/HorizontalTabBar.svelte";
   import BookmarkBar from "./lib/components/bookmarks/BookmarkBar.svelte";
-  import BookmarkEditor from "./lib/components/bookmarks/BookmarkEditor.svelte";
   import BookmarkContextMenu from "./lib/components/bookmarks/BookmarkContextMenu.svelte";
   import {
     tabs,
@@ -123,7 +113,28 @@
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
+  // Surfaces that start hidden load after first paint so they do not delay startup.
+  let Lazy = $state.raw<Record<string, any>>({});
+  async function loadDeferredSurfaces() {
+    const entries = await Promise.all(
+      Object.entries({
+        HistoryDrawer: () => import("./lib/components/history/HistoryDrawer.svelte"),
+        DownloadsDrawer: () => import("./lib/components/downloads/DownloadsDrawer.svelte"),
+        SettingsModal: () => import("./lib/components/settings/SettingsModal.svelte"),
+        SettingsQuickMenu: () => import("./lib/components/settings/SettingsQuickMenu.svelte"),
+        ToolsPanel: () => import("./lib/components/tools/ToolsPanel.svelte"),
+        SitePermissionsPanel: () => import("./lib/components/permissions/SitePermissionsPanel.svelte"),
+        BookmarkEditor: () => import("./lib/components/bookmarks/BookmarkEditor.svelte"),
+        ExtensionsModal: () => import("./lib/components/extensions/ExtensionsModal.svelte"),
+        ExtensionActionPopover: () => import("./lib/components/extensions/ExtensionActionPopover.svelte"),
+        ReaderOverlay: () => import("./lib/components/reader/ReaderOverlay.svelte"),
+      }).map(async ([name, load]) => [name, (await load()).default] as const)
+    );
+    Lazy = Object.fromEntries(entries);
+  }
+
   onMount(() => {
+    requestAnimationFrame(() => setTimeout(() => void loadDeferredSurfaces(), 0));
     const stopTabDrag = initializeTabDrag();
     const stopMedia = initializeMedia();
     const stopZoom = initializeZoom();
@@ -175,9 +186,8 @@
 
     void Promise.all([navigationListener, tabsListener, privacyListener, shortcutListener]).then(async () => {
       if (disposed) return;
-      await initializeWorkspaces();
-      if (disposed) return;
-      await initializeTabs();
+      // Independent backend reads: fetch concurrently.
+      await Promise.all([initializeWorkspaces(), initializeTabs()]);
       if (disposed) return;
       await Promise.all([setResidentTabLimit(get(residentTabLimit)), loadBookmarks(), initializePrivacyStats(), initializeKeyboardShortcuts()]);
     });
@@ -383,20 +393,20 @@
   <ShutdownDialog />
   <TitlebarMenu />
   <CommandBar />
-  <HistoryDrawer />
-  <DownloadsDrawer />
-  <SettingsModal />
-  <SettingsQuickMenu />
-  <ToolsPanel />
-  <SitePermissionsPanel />
+  {#if Lazy.HistoryDrawer}<Lazy.HistoryDrawer />{/if}
+  {#if Lazy.DownloadsDrawer}<Lazy.DownloadsDrawer />{/if}
+  {#if Lazy.SettingsModal}<Lazy.SettingsModal />{/if}
+  {#if Lazy.SettingsQuickMenu}<Lazy.SettingsQuickMenu />{/if}
+  {#if Lazy.ToolsPanel}<Lazy.ToolsPanel />{/if}
+  {#if Lazy.SitePermissionsPanel}<Lazy.SitePermissionsPanel />{/if}
   <PermissionPrompt />
   <PermissionPopoverHost />
-  <BookmarkEditor />
+  {#if Lazy.BookmarkEditor}<Lazy.BookmarkEditor />{/if}
   <BookmarkContextMenu />
   <WorkspaceSwitcherOverlay />
-  <ExtensionsModal />
-  <ExtensionActionPopover />
-  <ReaderOverlay />
+  {#if Lazy.ExtensionsModal}<Lazy.ExtensionsModal />{/if}
+  {#if Lazy.ExtensionActionPopover}<Lazy.ExtensionActionPopover />{/if}
+  {#if Lazy.ReaderOverlay}<Lazy.ReaderOverlay />{/if}
 </div>
 
 <style>

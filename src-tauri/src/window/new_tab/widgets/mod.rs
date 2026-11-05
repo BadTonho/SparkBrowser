@@ -165,18 +165,30 @@ pub fn initialize(app: &AppHandle) {
             .and_then(Result::ok)
             .unwrap_or(true);
         if state.endpoints.fixture.is_none() && oauth_configured && !disconnected {
-            match platform::read(&platform::credential_key(app)) {
-                Ok(Some(raw)) => {
-                    if let Ok(credential) = serde_json::from_str::<oauth::Credential>(&raw) {
-                        if oauth::config(app).is_ok_and(|c| c.client_id == credential.client_id) {
-                            state.gmail.email = Some(credential.email.clone());
-                            state.credential = Some(credential);
+            // The OS credential vault can be slow; read it off the startup path.
+            let app = app.clone();
+            std::thread::spawn(move || {
+                let read = platform::read(&platform::credential_key(&app));
+                let widgets = app.state::<Widgets>();
+                let Ok(mut state) = widgets.runtime.lock() else {
+                    return;
+                };
+                match read {
+                    Ok(Some(raw)) => {
+                        if let Ok(credential) = serde_json::from_str::<oauth::Credential>(&raw) {
+                            if oauth::config(&app).is_ok_and(|c| c.client_id == credential.client_id)
+                            {
+                                state.gmail.email = Some(credential.email.clone());
+                                state.credential = Some(credential);
+                            }
                         }
                     }
+                    Err(error) => state.gmail.error = Some(error),
+                    _ => {}
                 }
-                Err(error) => state.gmail.error = Some(error),
-                _ => {}
-            }
+                drop(state);
+                broadcast(&app);
+            });
         }
     }
     let app = app.clone();

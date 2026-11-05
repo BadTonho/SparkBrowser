@@ -45,3 +45,10 @@ webkit2gtk = "2.0"
 [dev-dependencies]
 tauri = { version = "2", features = ["test"] }
 
+# Faster startup and smaller binary: fewer page faults when the executable loads.
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+

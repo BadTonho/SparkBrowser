@@ -43,11 +43,17 @@ pub fn purge_ephemeral_tab_data(app: &AppHandle, tab_id: &str) {
 }
 
 /// Purges all leftover ephemeral data on browser startup.
+///
+/// Deletion runs on a background thread so a large leftover tree never delays
+/// the first window. Ephemeral tabs are never restored, so nothing reads this
+/// directory before it is removed.
 pub fn purge_all_ephemeral_data(app: &AppHandle) {
     if let Ok(data_dir) = app.path().app_local_data_dir() {
         let root = data_dir.join(EPHEMERAL_DATA_DIR);
         if root.is_dir() {
-            let _ = std::fs::remove_dir_all(&root);
+            std::thread::spawn(move || {
+                let _ = std::fs::remove_dir_all(&root);
+            });
         }
     }
 }
