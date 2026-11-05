@@ -83,12 +83,18 @@ pub fn new_window(
     };
     let a = app.clone();
     let id = session.id.clone();
-    let window = WebviewWindowBuilder::new(
+    #[allow(unused_mut)]
+    let mut window_builder = WebviewWindowBuilder::new(
         app,
         label(&session.id),
         tauri::WebviewUrl::External(url.clone()),
-    )
-    .window_features(features)
+    );
+    #[cfg(windows)]
+    {
+        window_builder = window_builder.browser_extensions_enabled(true);
+    }
+    let window = window_builder
+        .window_features(features)
     .title("Floating video")
     .decorations(false)
     .shadow(

@@ -9,7 +9,7 @@ use crate::privacy::adblock_engine::{build_content_shield_script, should_block_u
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::tab_model::webview_label_for_tab;
 use tauri::{
-    webview::WebviewBuilder, AppHandle, LogicalPosition, LogicalSize, Manager, Webview, WebviewUrl,
+    AppHandle, LogicalPosition, LogicalSize, Manager, Webview, WebviewUrl,
 };
 
 pub use super::content_focus::focus_active_content_webview;
@@ -113,8 +113,7 @@ pub(super) fn ensure_tab_webview(
     let initial_target = initial_url.to_string();
     #[cfg(windows)]
     let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
-    let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
-        .browser_extensions_enabled(true)
+    let webview_builder = super::create_webview_builder(&label, WebviewUrl::External(initial_url))
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
         .initialization_script(super::new_tab::initializer(
             app,

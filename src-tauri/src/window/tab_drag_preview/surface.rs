@@ -1,5 +1,5 @@
 use tauri::{
-    webview::WebviewBuilder, AppHandle, LogicalPosition, LogicalSize, Manager, Rect, WebviewUrl,
+    AppHandle, LogicalPosition, LogicalSize, Manager, Rect, WebviewUrl,
     WindowBuilder,
 };
 
@@ -96,7 +96,7 @@ pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String>
             .build()
             .map_err(|e| e.to_string())?;
         if let Err(error) = window.add_child(
-            WebviewBuilder::new(LABEL, WebviewUrl::App("tab-drag-preview.html".into()))
+            crate::window::create_webview_builder(LABEL, WebviewUrl::App("tab-drag-preview.html".into()))
                 .transparent(true)
                 .focused(false)
                 .on_navigation(move |url| {

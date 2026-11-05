@@ -5,7 +5,7 @@ use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::workspace_model::WorkspaceItem;
 use serde::{Deserialize, Serialize};
 use tauri::{
-    webview::WebviewBuilder, AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl,
+    AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -226,7 +226,7 @@ pub(super) fn spawn_workspace_switcher_webview(
     let document = crate::security::documents::asset_base(app)
         .join("/workspace-switcher.html")
         .map_err(|_| "security.invalid_document")?;
-    let webview_builder = WebviewBuilder::new(
+    let webview_builder = super::create_webview_builder(
         WORKSPACE_SWITCHER_WEBVIEW_LABEL,
         WebviewUrl::App("workspace-switcher.html".into()),
     )
@@ -282,7 +282,7 @@ pub(super) fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(),
     let document = crate::security::documents::asset_base(app)
         .join("/bookmark-context-menu.html")
         .map_err(|_| "security.invalid_document")?;
-    let webview_builder = WebviewBuilder::new(
+    let webview_builder = super::create_webview_builder(
         BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
         WebviewUrl::App("bookmark-context-menu.html".into()),
     )

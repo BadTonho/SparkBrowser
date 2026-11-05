@@ -6,7 +6,7 @@ use crate::state::browser_state::BrowserState;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 #[cfg_attr(target_os = "linux", allow(unused_imports))]
-use tauri::{webview::WebviewBuilder, AppHandle, LogicalPosition, Manager, Rect, WebviewUrl};
+use tauri::{AppHandle, LogicalPosition, Manager, Rect, WebviewUrl};
 
 pub trait Panel: Send + Sync + 'static {
     const LABEL: &'static str;
@@ -120,7 +120,7 @@ fn ensure_webview<P: Panel>(app: &AppHandle) -> Result<(), String> {
     let callback_app = app.clone();
     let view = main
         .add_child(
-            WebviewBuilder::new(P::LABEL, WebviewUrl::External(document.clone()))
+            crate::window::create_webview_builder(P::LABEL, WebviewUrl::External(document.clone()))
                 .transparent(true)
                 .focused(false)
                 .on_navigation(move |url| {

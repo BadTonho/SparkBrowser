@@ -29,3 +29,17 @@ pub mod ephemeral;
 pub mod linux_layout;
 mod panel_popover;
 pub mod quick_settings_popover;
+
+pub fn create_webview_builder(
+    label: &str,
+    url: tauri::WebviewUrl,
+) -> tauri::webview::WebviewBuilder<tauri::Wry> {
+    #[allow(unused_mut)]
+    let mut builder = tauri::webview::WebviewBuilder::new(label, url);
+    #[cfg(windows)]
+    {
+        builder = builder.browser_extensions_enabled(true);
+    }
+    builder
+}
+

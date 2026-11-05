@@ -27,7 +27,7 @@ fn generate_extension_id() -> String {
     )
 }
 
-/// Loads an unpacked extension folder, validates its manifest, copies it to persistent storage,
+/// Loads an unpacked extension folder, validates its manifest, copies it to persistent storage if needed,
 /// registers it with the underlying browser engine, and saves it into the SQLite database.
 pub async fn load_unpacked_extension(
     app: &AppHandle,
@@ -42,26 +42,33 @@ pub async fn load_unpacked_extension(
 
     let (manifest, manifest_raw) = manifest::read_manifest_from_directory(source_dir)?;
 
-    // Register with browser engine (WebView2 on Windows, stub/bridge on Linux)
-    let engine_id = platform::add_browser_extension(app, &source_dir.to_string_lossy()).await?;
-    let extension_id = if engine_id.is_empty() {
-        generate_extension_id()
-    } else {
-        engine_id
-    };
+    let extensions_base = storage::extensions_dir(app)?;
 
-    // Store a persistent copy in app_data_dir/extensions/<id>
-    let dest_dir = storage::extensions_dir(app)?.join(&extension_id);
-    let installed_path = if dest_dir.exists() {
-        dest_dir
-    } else if let Err(e) = storage::copy_dir_all(source_dir, &dest_dir) {
-        eprintln!(
-            "Could not create isolated copy of extension, using source: {}",
-            e
-        );
+    // Store a persistent copy in app_data_dir/extensions/<id> BEFORE registering with the browser engine,
+    // so WebView2 never points to a temporary directory that will be deleted.
+    let installed_path = if source_dir.starts_with(&extensions_base) {
         source_dir.to_path_buf()
     } else {
-        dest_dir
+        let temp_id = generate_extension_id();
+        let target = extensions_base.join(&temp_id);
+        if target.exists() {
+            let _ = std::fs::remove_dir_all(&target);
+        }
+        storage::copy_dir_all(source_dir, &target)
+            .map_err(|e| format!("Could not create persistent copy of extension: {}", e))?;
+        target
+    };
+
+    // Register persistent directory with browser engine (WebView2 on Windows, stub/bridge on Linux)
+    let engine_id = platform::add_browser_extension(app, &installed_path.to_string_lossy()).await?;
+    let extension_id = if engine_id.is_empty() {
+        installed_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("ext")
+            .to_string()
+    } else {
+        engine_id
     };
 
     let now = std::time::SystemTime::now()
@@ -94,14 +101,21 @@ pub async fn install_from_webstore(
     let id = crx::parse_webstore_id(url_or_id)
         .ok_or_else(|| "Invalid Chrome Web Store URL or Extension ID".to_string())?;
 
-    let bytes = tauri::async_runtime::spawn_blocking(move || crx::download_webstore_crx(&id))
+    let download_id = id.clone();
+    let bytes = tauri::async_runtime::spawn_blocking(move || crx::download_webstore_crx(&download_id))
         .await
         .map_err(|e| e.to_string())??;
 
-    let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
-    crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
+    // Extract directly into the permanent extension directory: app_data_dir/extensions/<id>
+    let dest_dir = storage::extensions_dir(app)?.join(&id);
+    if dest_dir.exists() {
+        let _ = std::fs::remove_dir_all(&dest_dir);
+    }
+    std::fs::create_dir_all(&dest_dir)
+        .map_err(|e| format!("Failed to create extension directory: {}", e))?;
+    crx::extract_crx_or_zip(&bytes, &dest_dir)?;
 
-    load_unpacked_extension(app, temp_dir.path()).await
+    load_unpacked_extension(app, &dest_dir).await
 }
 
 /// Installs an extension from a local `.crx` or `.zip` archive.
