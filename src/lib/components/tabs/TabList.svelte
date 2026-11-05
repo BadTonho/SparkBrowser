@@ -8,6 +8,7 @@
   import {
     tabs,
     addTab,
+    addEphemeralTab,
     selectTab,
     removeTab,
     toggleTabPin,
@@ -15,7 +16,7 @@
   } from "../../stores/browserStore";
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
-  import { tabsMemory, refreshTabsMemory, formatTabMemory } from "../../stores/tabMemoryStore";
+  import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
 
   let workspaceTabs = $derived(
     $tabs.filter(
@@ -52,10 +53,9 @@
   }
 
   function getTabTooltip(tabItem: any, memoryBytes?: number): string {
-    const memStr = tabItem.is_hibernated ? "0 MB" : formatTabMemory(memoryBytes, $t("tabs.memory_unavailable"));
     const memLabel = tabItem.is_hibernated
-      ? `${$t("tabs.memory_usage", { usage: "0 MB" })} (${$t("tabs.memory_hibernated")})`
-      : $t("tabs.memory_usage", { usage: memStr });
+      ? $t("tabs.sleeping_savings", { savings: formatTabSavings(tabItem.id) })
+      : $t("tabs.memory_usage", { usage: formatTabMemory(memoryBytes, $t("tabs.memory_unavailable")) });
     const reorderHint = `${$t("tabs.drag_to_reorder_f64b")} ${$keyboardShortcuts && shortcutLabel('move-tab-up')} / ${$keyboardShortcuts && shortcutLabel('move-tab-down')})`;
     return `${tabItem.title} ${reorderHint}\n${memLabel}`;
   }
@@ -79,14 +79,23 @@
     <span class="section-label">
       {currentWorkspaceName.toUpperCase()} {$t("tabs.tabs_d820")}{workspaceTabs.length})
     </span>
-    <button
-      class="new-tab-pill"
-      onclick={() => addTab(undefined, $activeWorkspaceId)}
-      title={$t("tabs.create_new_tab_p0_8ca3", { p0: $keyboardShortcuts && shortcutLabel("new-tab") })}
-    >
-      <span>{$t("tabs.new_af6a")}</span>
-      <kbd>{$keyboardShortcuts && shortcutLabel("new-tab")}</kbd>
-    </button>
+    <div class="tabs-header-actions">
+      <button
+        class="new-tab-pill ephemeral"
+        onclick={() => addEphemeralTab()}
+        title={$t("tabs.new_ephemeral") + " · " + $t("tabs.ephemeral_tooltip")}
+      >
+        <span>{$t("tabs.ephemeral_badge")}</span>
+      </button>
+      <button
+        class="new-tab-pill"
+        onclick={() => addTab(undefined, $activeWorkspaceId)}
+        title={$t("tabs.create_new_tab_p0_8ca3", { p0: $keyboardShortcuts && shortcutLabel("new-tab") })}
+      >
+        <span>{$t("tabs.new_af6a")}</span>
+        <kbd>{$keyboardShortcuts && shortcutLabel("new-tab")}</kbd>
+      </button>
+    </div>
   </div>
 
   <div class="tabs-list">
@@ -96,6 +105,7 @@
         data-tab-id={tab.id}
         class:active={tab.is_active}
         class:hibernated={tab.is_hibernated}
+        class:ephemeral={tab.is_ephemeral}
         class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
         onpointerdown={(e) => startTabDrag(e, tab.id)}
         onkeydown={(e) => handleKeydown(e, tab.id)}
@@ -119,9 +129,15 @@
         <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
         <div class="tab-meta">
-          <span class="tab-title">{tab.title}</span>
+          <span class="tab-title" class:is-hibernated={tab.is_hibernated}>{tab.title}</span>
           <span class="tab-host">
-            {getTabHost(tab.url)}{tab.is_hibernated ? $t("tabs.suspended_8be3") : ""}
+            {getTabHost(tab.url)}
+            {#if tab.is_hibernated}
+              <span class="hibernated-badge">· 💤 {formatTabSavings(tab.id)}</span>
+            {/if}
+            {#if tab.is_ephemeral}
+              <span class="ephemeral-tag">· 🕵️ {$t("tabs.ephemeral_badge")}</span>
+            {/if}
           </span>
         </div>
 
@@ -175,6 +191,12 @@
     color: var(--text-muted);
   }
 
+  .tabs-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   .new-tab-pill {
     display: flex;
     align-items: center;
@@ -186,10 +208,22 @@
     color: var(--text-primary);
     font-size: 11px;
     font-weight: 600;
+    cursor: pointer;
     transition:
       background 0.18s ease,
       transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
       box-shadow 0.18s ease;
+  }
+
+  .new-tab-pill.ephemeral {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.35);
+    color: #d8b4fe;
+  }
+
+  .new-tab-pill.ephemeral:hover {
+    background: rgba(168, 85, 247, 0.22);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
   }
 
   .new-tab-pill:hover {
@@ -271,8 +305,44 @@
     pointer-events: none;
   }
 
+  .tab-row.ephemeral {
+    border-color: rgba(168, 85, 247, 0.25);
+  }
+
+  .tab-row.ephemeral.active {
+    background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.22) 0%,
+      rgba(126, 34, 206, 0.14) 100%
+    );
+    border-color: rgba(168, 85, 247, 0.45);
+  }
+
+  .ephemeral-tag {
+    color: #c084fc;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
   .tab-row.hibernated {
-    opacity: 0.68;
+    opacity: 0.65;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+  }
+
+  .tab-row.hibernated:hover {
+    opacity: 0.95;
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .tab-title.is-hibernated {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .hibernated-badge {
+    color: #a78bfa;
+    font-size: 10px;
+    font-weight: 500;
   }
 
   .tab-row:hover {

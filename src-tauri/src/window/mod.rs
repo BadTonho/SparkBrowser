@@ -9,6 +9,7 @@ mod navigation_state;
 pub mod new_tab;
 pub mod permission_popover;
 pub mod privacy_popover;
+pub mod reader;
 pub mod shield_policy;
 mod split_focus;
 pub mod tab_drag_preview;
@@ -23,6 +24,7 @@ pub mod zoom_popover;
 pub mod tools_popover;
 
 pub mod downloads_popover;
+pub mod ephemeral;
 #[cfg(target_os = "linux")]
 pub mod linux_layout;
 mod panel_popover;

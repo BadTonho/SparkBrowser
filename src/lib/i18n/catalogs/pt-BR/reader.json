@@ -1,0 +1,23 @@
+{
+  "reader.title": "Modo Leitura",
+  "reader.close": "Fechar Modo Leitura",
+  "reader.loading": "Extraindo conteúdo do artigo...",
+  "reader.error_title": "Não foi possível exibir no Modo Leitura",
+  "reader.error_hint": "Esta página pode não conter um artigo ou texto legível.",
+  "reader.read_time": "~{mins} min de leitura",
+  "reader.words": "{words} palavras",
+  "reader.theme_paper": "Papel",
+  "reader.theme_sepia": "Sépia",
+  "reader.theme_dark": "Escuro",
+  "reader.theme_oled": "OLED",
+  "reader.font_serif": "Serifa",
+  "reader.font_sans": "Sem serifa",
+  "reader.font_mono": "Monoespaçada",
+  "reader.width_narrow": "Estreito",
+  "reader.width_medium": "Médio",
+  "reader.width_wide": "Largo",
+  "reader.decrease_font": "Diminuir fonte",
+  "reader.increase_font": "Aumentar fonte",
+  "reader.button_tooltip": "Alternar Modo Leitura (Leitura imersiva sem distrações)"
+}
+

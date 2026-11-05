@@ -9,12 +9,16 @@
     isExtensionsModalOpen,
     closeExtensionsModal,
     installUnpacked,
+    installFromWebStore,
+    installArchive,
     extensionsLoading,
     extensionsError,
   } from "../../stores/extensionsStore";
   import ExtensionItem from "./ExtensionItem.svelte";
 
   let searchQuery = $state("");
+  let webstoreInput = $state("");
+  let isInstallingWebStore = $state(false);
 
   onMount(() => {
     return onOverlayOpening((id) => {
@@ -42,6 +46,30 @@
 
   async function handleLoadUnpacked() {
     await installUnpacked();
+  }
+
+  async function handleLoadArchive() {
+    await installArchive();
+  }
+
+  async function handleInstallWebStore() {
+    if (!webstoreInput.trim() || isInstallingWebStore) return;
+    try {
+      isInstallingWebStore = true;
+      const res = await installFromWebStore(webstoreInput.trim());
+      if (res) {
+        webstoreInput = "";
+      }
+    } finally {
+      isInstallingWebStore = false;
+    }
+  }
+
+  function handleWebStoreKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void handleInstallWebStore();
+    }
   }
 </script>
 
@@ -78,11 +106,26 @@
         <div class="header-actions">
           <button
             type="button"
-            class="load-btn"
-            disabled={$extensionsLoading}
+            class="action-btn secondary-btn"
+            disabled={$extensionsLoading || isInstallingWebStore}
+            onclick={handleLoadArchive}
+            title="Instalar extensão a partir de arquivo .zip ou .crx"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
+            <span>{$t("extensions.load_archive")}</span>
+          </button>
+
+          <button
+            type="button"
+            class="action-btn primary-btn"
+            disabled={$extensionsLoading || isInstallingWebStore}
             onclick={handleLoadUnpacked}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -102,6 +145,45 @@
             </svg>
           </button>
         </div>
+      </div>
+
+      <!-- WebStore Install Row -->
+      <div class="webstore-install-row">
+        <div class="webstore-input-wrapper">
+          <svg class="webstore-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="4" />
+            <line x1="21.17" y1="8" x2="12" y2="8" />
+            <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
+            <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
+          </svg>
+          <input
+            type="text"
+            class="webstore-input"
+            placeholder={$t("extensions.webstore_placeholder")}
+            bind:value={webstoreInput}
+            onkeydown={handleWebStoreKeydown}
+            disabled={$extensionsLoading || isInstallingWebStore}
+          />
+        </div>
+        <button
+          type="button"
+          class="webstore-btn"
+          disabled={!webstoreInput.trim() || $extensionsLoading || isInstallingWebStore}
+          onclick={handleInstallWebStore}
+        >
+          {#if isInstallingWebStore}
+            <div class="spinner"></div>
+            <span>{$t("extensions.installing")}</span>
+          {:else}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>{$t("extensions.install_webstore")}</span>
+          {/if}
+        </button>
       </div>
 
       <!-- Search & Error banner -->
@@ -211,29 +293,43 @@
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
   }
 
-  .load-btn {
+  .action-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: var(--accent-primary, #3b82f6);
-    color: #ffffff;
-    border: none;
-    padding: 7px 14px;
+    gap: 6px;
+    padding: 7px 12px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 500;
     cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
+    transition: opacity 0.15s, background 0.15s;
+    border: none;
+    white-space: nowrap;
   }
 
-  .load-btn:hover:not(:disabled) {
+  .primary-btn {
+    background: var(--accent-primary, #3b82f6);
+    color: #ffffff;
+  }
+
+  .primary-btn:hover:not(:disabled) {
     opacity: 0.9;
   }
 
-  .load-btn:disabled {
+  .secondary-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-primary, #ffffff);
+  }
+
+  .secondary-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .action-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -249,11 +345,90 @@
     align-items: center;
     justify-content: center;
     transition: background 0.15s, color 0.15s;
+    margin-left: 4px;
   }
 
   .close-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
+  }
+
+  .webstore-install-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+  }
+
+  .webstore-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 6px 12px;
+  }
+
+  .webstore-icon {
+    color: var(--text-muted, rgba(255, 255, 255, 0.4));
+    flex-shrink: 0;
+  }
+
+  .webstore-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary, #ffffff);
+    font-size: 13px;
+  }
+
+  .webstore-input::placeholder {
+    color: var(--text-muted, rgba(255, 255, 255, 0.35));
+  }
+
+  .webstore-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #10b981;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+    flex-shrink: 0;
+  }
+
+  .webstore-btn:hover:not(:disabled) {
+    background: #059669;
+  }
+
+  .webstore-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .modal-subbar {

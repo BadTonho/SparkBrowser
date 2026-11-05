@@ -23,5 +23,10 @@
   "tabs.split_drop_right": "Release to split on the right",
   "tabs.memory_usage": "Memory usage: {usage}",
   "tabs.memory_hibernated": "Hibernated",
-  "tabs.memory_unavailable": "Unavailable"
+  "tabs.memory_unavailable": "Unavailable",
+  "tabs.sleeping_savings": "Sleeping · Saving {savings} RAM",
+  "tabs.sleeping_badge": "Sleeping",
+  "tabs.new_ephemeral": "New Ephemeral Tab",
+  "tabs.ephemeral_badge": "Ephemeral",
+  "tabs.ephemeral_tooltip": "Disposable container: cookies and storage are wiped on close and never saved."
 }

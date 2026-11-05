@@ -1,3 +1,4 @@
+pub mod crx;
 pub mod manifest;
 pub mod storage;
 pub mod types;
@@ -74,6 +75,36 @@ pub async fn load_unpacked_extension(
     extensions_repo::save(&conn, &record)?;
 
     to_extension_details(&installed_path, &record, &manifest)
+}
+
+/// Downloads and installs an extension directly from a Chrome Web Store URL or ID.
+pub async fn install_from_webstore(
+    app: &AppHandle,
+    url_or_id: &str,
+) -> Result<ExtensionDetails, String> {
+    let id = crx::parse_webstore_id(url_or_id)
+        .ok_or_else(|| "Invalid Chrome Web Store URL or Extension ID".to_string())?;
+
+    let bytes = tauri::async_runtime::spawn_blocking(move || crx::download_webstore_crx(&id))
+        .await
+        .map_err(|e| e.to_string())??;
+
+    let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
+    crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
+
+    load_unpacked_extension(app, temp_dir.path()).await
+}
+
+/// Installs an extension from a local `.crx` or `.zip` archive.
+pub async fn install_from_archive(
+    app: &AppHandle,
+    archive_path: &Path,
+) -> Result<ExtensionDetails, String> {
+    let bytes = std::fs::read(archive_path).map_err(|e| format!("Failed to read archive: {}", e))?;
+    let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
+    crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
+
+    load_unpacked_extension(app, temp_dir.path()).await
 }
 
 /// Retrieves all installed extensions from the database and constructs full details.

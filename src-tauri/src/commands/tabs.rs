@@ -90,12 +90,37 @@ pub async fn create_tab(
     result
 }
 
+#[tauri::command]
+pub async fn create_ephemeral_tab(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    url: Option<String>,
+    search_engine: Option<String>,
+) -> Result<TabSnapshot, String> {
+    let mut span = state.diagnostics.span("tabs.create_ephemeral");
+    let _operation = state.tab_operations.lock().await;
+    let result = create_tab_inner_ext(&app, &state, url, search_engine, None, true);
+    span.finish(result.is_ok(), 0);
+    result
+}
+
 pub(super) fn create_tab_inner(
     app: &AppHandle,
     state: &BrowserState,
     url: Option<String>,
     search_engine: Option<String>,
     side: Option<crate::state::split_docking::DockSide>,
+) -> Result<TabSnapshot, String> {
+    create_tab_inner_ext(app, state, url, search_engine, side, false)
+}
+
+pub(super) fn create_tab_inner_ext(
+    app: &AppHandle,
+    state: &BrowserState,
+    url: Option<String>,
+    search_engine: Option<String>,
+    side: Option<crate::state::split_docking::DockSide>,
+    is_ephemeral: bool,
 ) -> Result<TabSnapshot, String> {
     let raw_target = url.unwrap_or_else(|| DEFAULT_HOME_URL.to_string());
     let resolved_url = crate::window::url_input::resolve_browser_input(
@@ -123,16 +148,26 @@ pub(super) fn create_tab_inner(
         .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string());
 
     TabCheckpoint::commit_with_activation(state, Some((&new_tab_id, true)), || {
-        state
-            .tabs
-            .lock()
-            .map_err(|e| e.to_string())?
-            .push(TabInfo::new(
+        let tab_info = if is_ephemeral {
+            TabInfo::new_ephemeral(
                 new_tab_id.clone(),
                 resolved_url.clone(),
                 active_ws_id,
                 true,
-            ));
+            )
+        } else {
+            TabInfo::new(
+                new_tab_id.clone(),
+                resolved_url.clone(),
+                active_ws_id,
+                true,
+            )
+        };
+        state
+            .tabs
+            .lock()
+            .map_err(|e| e.to_string())?
+            .push(tab_info);
         if let Some(side) = side {
             if let Some(layout) = state
                 .split_layouts

@@ -5,7 +5,7 @@
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { t } from "../../i18n";
   import TabMuteButton from "../media/TabMuteButton.svelte";
-  import { tabsMemory, refreshTabsMemory, formatTabMemory } from "../../stores/tabMemoryStore";
+  import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
   let { tab, selected = false }: { tab: TabItem; selected?: boolean } = $props();
   let element: HTMLDivElement | undefined = $state();
   $effect(() => { if (selected) element?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
@@ -36,7 +36,8 @@
   function getTabTooltip(tabItem: TabItem, memoryBytes?: number): string {
     const host = getTabHost(tabItem.url);
     if (tabItem.is_hibernated) {
-      return `${tabItem.title} — ${host}\n${$t("tabs.memory_usage", { usage: "0 MB" })} (${$t("tabs.memory_hibernated")})`;
+      const savings = formatTabSavings(tabItem.id);
+      return `${tabItem.title} — ${host}\n${$t("tabs.sleeping_savings", { savings })}`;
     }
     const memStr = formatTabMemory(memoryBytes, $t("tabs.memory_unavailable"));
     return `${tabItem.title} — ${host}\n${$t("tabs.memory_usage", { usage: memStr })}`;
@@ -49,6 +50,7 @@
         data-tab-id={tab.id}
         class:active={selected}
         class:hibernated={tab.is_hibernated}
+        class:ephemeral={tab.is_ephemeral}
         class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
         onpointerdown={(e) => startTabDrag(e, tab.id)}
         onmouseup={(e) => e.button === 1 && removeTab(tab.id)}
@@ -60,7 +62,20 @@
       >
         <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
-        <span class="tab-title">{tab.title}</span>
+        {#if tab.is_ephemeral}
+          <span class="ephemeral-badge" title={$t("tabs.ephemeral_tooltip")}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">
+              <path d="M12 2a10 10 0 0 0-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10a10 10 0 0 0-10-10z" />
+              <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+            </svg>
+          </span>
+        {/if}
+        <span class="tab-title" class:is-hibernated={tab.is_hibernated}>{tab.title}</span>
+        {#if tab.is_hibernated}
+          <span class="sleep-badge" title={$t("tabs.sleeping_savings", { savings: formatTabSavings(tab.id) })}>
+            {formatTabSavings(tab.id)}
+          </span>
+        {/if}
         <button class="tab-action-btn tab-close-btn" aria-label={tab.is_pinned ? $t("tabs.unpin_tab_2055") : $t("tabs.pin_tab_bf50")} title={tab.is_pinned ? $t("tabs.unpin_tab_2055") : "Pin tab: protect from hibernation"} aria-pressed={!!tab.is_pinned} onclick={(event) => { event.stopPropagation(); void toggleTabPin(tab.id); }}>{tab.is_pinned ? "\u25C6" : "\u25C7"}</button>
         <button
           class="tab-close-btn"
@@ -115,8 +130,52 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   }
 
+  .h-tab.ephemeral {
+    border-color: rgba(168, 85, 247, 0.35);
+  }
+
+  .h-tab.ephemeral.active {
+    background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.22) 0%,
+      rgba(126, 34, 206, 0.14) 100%
+    );
+    border-color: rgba(168, 85, 247, 0.55);
+  }
+
+  .ephemeral-badge {
+    color: #c084fc;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
   .h-tab.hibernated {
-    opacity: 0.7;
+    opacity: 0.65;
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .h-tab.hibernated:hover {
+    opacity: 0.95;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .tab-title.is-hibernated {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .sleep-badge {
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.12);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    padding: 1px 5px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.2px;
   }
 
   .h-tab.is-dragging {

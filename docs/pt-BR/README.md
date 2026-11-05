@@ -52,6 +52,9 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Reorganizar atalhos rápidos](./features/titlebar-actions.md)
 - [Painel flutuante de Ferramentas](features/tools-popover.md)
 
+- [Suporte a WebExtensions do Chrome](features/extensions.md)
+- [Modo Leitura Imersivo](features/reader-mode.md)
+- [Abas Efêmeras e containers descartáveis](features/ephemeral-tabs.md)
 - [Fronteiras de segurança do aplicativo](security/application-boundaries.md)
 - [Isolamento de conteúdo por workspace](features/workspace-isolation.md)
 - [Isolamento AppContainer (planejado)](security/app-container-isolation.md)

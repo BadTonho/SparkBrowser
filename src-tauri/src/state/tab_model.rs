@@ -19,6 +19,8 @@ pub struct TabInfo {
     #[serde(default)]
     pub is_pinned: bool,
     #[serde(default)]
+    pub is_ephemeral: bool,
+    #[serde(default)]
     pub activity: TabActivity,
 }
 
@@ -79,8 +81,15 @@ impl TabInfo {
             last_active_epoch: Self::current_epoch_secs(),
             navigation: NavigationState::default(),
             is_pinned: false,
+            is_ephemeral: false,
             activity: TabActivity::default(),
         }
+    }
+
+    pub fn new_ephemeral(id: String, url: String, workspace_id: String, is_active: bool) -> Self {
+        let mut tab = Self::new(id, url, workspace_id, is_active);
+        tab.is_ephemeral = true;
+        tab
     }
 
     pub fn new_default(id: String, url: String, is_active: bool) -> Self {

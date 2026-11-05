@@ -3,6 +3,8 @@ import type { ExtensionDetails } from "../types/extensions";
 import {
   fetchInstalledExtensions,
   loadUnpackedExtension,
+  installExtensionFromUrl,
+  installExtensionFromArchive,
   toggleNativeExtension,
   removeNativeExtension,
 } from "../services/tauri-bridge";
@@ -36,6 +38,46 @@ export async function installUnpacked(path?: string): Promise<ExtensionDetails |
     extensionsLoading.set(true);
     extensionsError.set(null);
     const result = await loadUnpackedExtension(path);
+    if (result) {
+      installedExtensions.update(list => {
+        const filtered = list.filter(e => e.id !== result.id);
+        return [...filtered, result];
+      });
+    }
+    return result;
+  } catch (e: any) {
+    extensionsError.set(e?.message ?? String(e));
+    return null;
+  } finally {
+    extensionsLoading.set(false);
+  }
+}
+
+export async function installFromWebStore(url: string): Promise<ExtensionDetails | null> {
+  try {
+    extensionsLoading.set(true);
+    extensionsError.set(null);
+    const result = await installExtensionFromUrl(url);
+    if (result) {
+      installedExtensions.update(list => {
+        const filtered = list.filter(e => e.id !== result.id);
+        return [...filtered, result];
+      });
+    }
+    return result;
+  } catch (e: any) {
+    extensionsError.set(e?.message ?? String(e));
+    return null;
+  } finally {
+    extensionsLoading.set(false);
+  }
+}
+
+export async function installArchive(path?: string): Promise<ExtensionDetails | null> {
+  try {
+    extensionsLoading.set(true);
+    extensionsError.set(null);
+    const result = await installExtensionFromArchive(path);
     if (result) {
       installedExtensions.update(list => {
         const filtered = list.filter(e => e.id !== result.id);

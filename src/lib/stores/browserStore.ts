@@ -18,6 +18,7 @@ import {
   reloadCurrentPage,
   fetchTabs,
   createNewTab,
+  createNewEphemeralTab,
   switchActiveTab,
   closeExistingTab,
   hibernateSingleTab,
@@ -152,6 +153,28 @@ export async function addTab(
     return;
   }
   const snapshot = await createNewTab(urlToOpen, get(defaultSearchEngine), side);
+  applyTabsSnapshot(snapshot);
+}
+
+export async function addEphemeralTab(targetUrl?: string): Promise<void> {
+  const urlToOpen = targetUrl?.trim() || NEW_TAB_URL;
+  if (!isTauriRuntime()) {
+    const resolved = await navigateToUrl(urlToOpen, get(defaultSearchEngine));
+    const newId = `tab-${fallbackCounter++}`;
+    const updated = get(tabs).map((t) => ({ ...t, is_active: false }));
+    updated.push({
+      id: newId,
+      title: isNewTab(resolved) ? tr("newtab.title") : resolved.replace(/^https?:\/\//, ""),
+      url: resolved,
+      workspace_id: get(activeWorkspaceId),
+      is_active: true,
+      is_hibernated: false,
+      is_ephemeral: true,
+    });
+    applyTabsSnapshot(updated);
+    return;
+  }
+  const snapshot = await createNewEphemeralTab(urlToOpen, get(defaultSearchEngine));
   applyTabsSnapshot(snapshot);
 }
 

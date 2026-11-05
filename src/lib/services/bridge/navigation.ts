@@ -77,6 +77,11 @@ export async function createNewTab(url?: string, searchEngine: SearchEngine = "g
   return await invoke<TabSnapshot>("create_tab", { url: url ?? null, searchEngine, side: side ?? null });
 }
 
+export async function createNewEphemeralTab(url?: string, searchEngine: SearchEngine = "google"): Promise<TabSnapshot> {
+  if(!isTauriRuntime()) return [];
+  return await invoke<TabSnapshot>("create_ephemeral_tab", { url: url ?? null, searchEngine });
+}
+
 export async function switchActiveTab(tabId: string): Promise<TabSnapshot> {
   if(!isTauriRuntime()) return [];
   return await invoke<TabSnapshot>("switch_tab", { tabId });

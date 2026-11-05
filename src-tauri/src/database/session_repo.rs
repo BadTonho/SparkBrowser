@@ -15,8 +15,9 @@ pub fn save_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Stri
 }
 
 fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), String> {
-    let ids: std::collections::HashSet<_> = tabs.iter().map(|tab| tab.id.as_str()).collect();
-    if ids.len() != tabs.len() {
+    let persistent_tabs: Vec<_> = tabs.iter().filter(|tab| !tab.is_ephemeral).collect();
+    let ids: std::collections::HashSet<_> = persistent_tabs.iter().map(|tab| tab.id.as_str()).collect();
+    if ids.len() != persistent_tabs.len() {
         return Err("Duplicate session tab ID".into());
     }
     let existing = conn
@@ -44,7 +45,7 @@ fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Strin
            OR workspace_id IS NOT excluded.workspace_id OR is_active IS NOT excluded.is_active
            OR is_hibernated IS NOT excluded.is_hibernated OR position IS NOT excluded.position OR is_pinned IS NOT excluded.is_pinned"
     ).map_err(|e| e.to_string())?;
-    for (idx, tab) in tabs.iter().enumerate() {
+    for (idx, tab) in persistent_tabs.iter().enumerate() {
         upsert
             .execute(params![
                 tab.id,
@@ -90,6 +91,7 @@ pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
                 last_active_epoch: TabInfo::current_epoch_secs(),
                 navigation: Default::default(),
                 is_pinned: row.get(5)?,
+                is_ephemeral: false,
                 activity: Default::default(),
             })
         })

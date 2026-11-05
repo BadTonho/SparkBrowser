@@ -63,6 +63,8 @@
     "allow-set-resident-limit",
     "allow-set-tab-pinned",
     "allow-create-tab",
+    "allow-create-ephemeral-tab",
+    "allow-get-reader-article",
     "allow-switch-tab",
     "allow-close-tab",
     "allow-hibernate-tab",
@@ -129,7 +131,9 @@
     "allow-load-unpacked-extension",
     "allow-toggle-extension",
     "allow-remove-extension",
-    "allow-get-extension-action"
+    "allow-get-extension-action",
+    "allow-install-extension-from-url",
+    "allow-install-extension-from-archive"
   ],
   "webviews": [
     "main"

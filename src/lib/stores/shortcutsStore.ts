@@ -55,6 +55,7 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
   { id: "settings", label: "Open Settings & Shortcuts Panel", description: "Open browser settings", defaults: [combo(",", { ctrl: true })] },
   { id: "close-tab", label: "Close Active Tab", description: "Close the active tab", defaults: [combo("W", { ctrl: true })] },
   { id: "reload-tab", label: "Reload Active Tab", description: "Reload the current page", defaults: [combo("R", { ctrl: true })] },
+  { id: "toggle-pip", label: "Toggle Picture-in-Picture", description: "Pop out video from active tab into floating window", defaults: [combo("P", { alt: true })] },
 ];
 
 export type ShortcutMap = Record<string, ShortcutCombo[]>;

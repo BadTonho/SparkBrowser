@@ -3,6 +3,7 @@
   import { get } from "svelte/store";
   import MediaButton from "../media/MediaButton.svelte";
   import PipButton from "../media/PipButton.svelte";
+  import ReaderModeButton from "../reader/ReaderModeButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
   import TitlebarActions from "./TitlebarActions.svelte";
   import DownloadProgressIndicator from "../downloads/DownloadProgressIndicator.svelte";
@@ -178,6 +179,7 @@
         />
         <MediaButton />
         <PipButton />
+        <ReaderModeButton />
         <ZoomControls />
         <button
           class="star-btn"

@@ -20,7 +20,8 @@ export type OverlayId =
   | "settings"
   | "titlebar-menu"
   | "bookmark-editor"
-  | "extensions";
+  | "extensions"
+  | "reader-mode";
 
 const activeOverlayIds = new Set<OverlayId>();
 const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history", "settings-quick"]);

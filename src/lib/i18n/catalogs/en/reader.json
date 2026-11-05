@@ -1,0 +1,23 @@
+{
+  "reader.title": "Reader View",
+  "reader.close": "Close Reader View",
+  "reader.loading": "Extracting article content...",
+  "reader.error_title": "Unable to display in Reader View",
+  "reader.error_hint": "This page might not contain an article or full text.",
+  "reader.read_time": "~{mins} min read",
+  "reader.words": "{words} words",
+  "reader.theme_paper": "Paper",
+  "reader.theme_sepia": "Sepia",
+  "reader.theme_dark": "Dark",
+  "reader.theme_oled": "OLED",
+  "reader.font_serif": "Serif",
+  "reader.font_sans": "Sans-serif",
+  "reader.font_mono": "Monospace",
+  "reader.width_narrow": "Narrow",
+  "reader.width_medium": "Medium",
+  "reader.width_wide": "Wide",
+  "reader.decrease_font": "Decrease font size",
+  "reader.increase_font": "Increase font size",
+  "reader.button_tooltip": "Toggle Reader View (Immersive article reader)"
+}
+

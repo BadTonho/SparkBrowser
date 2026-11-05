@@ -273,6 +273,12 @@
           "markdownDescription": "Enables the create_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Enables the create_ephemeral_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-ephemeral-tab",
+          "markdownDescription": "Enables the create_ephemeral_tab command without any pre-configured scope."
+        },
+        {
           "description": "Enables the create_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-create-tab",
@@ -447,6 +453,12 @@
           "markdownDescription": "Enables the get_privacy_stats command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_reader_article command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-reader-article",
+          "markdownDescription": "Enables the get_reader_article command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_recovery_status command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-recovery-status",
@@ -553,6 +565,18 @@
           "type": "string",
           "const": "allow-hibernate-tab",
           "markdownDescription": "Enables the hibernate_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the install_extension_from_archive command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-install-extension-from-archive",
+          "markdownDescription": "Enables the install_extension_from_archive command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the install_extension_from_url command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-install-extension-from-url",
+          "markdownDescription": "Enables the install_extension_from_url command without any pre-configured scope."
         },
         {
           "description": "Enables the install_update command without any pre-configured scope.",
@@ -987,6 +1011,12 @@
           "markdownDescription": "Denies the create_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Denies the create_ephemeral_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-ephemeral-tab",
+          "markdownDescription": "Denies the create_ephemeral_tab command without any pre-configured scope."
+        },
+        {
           "description": "Denies the create_tab command without any pre-configured scope.",
           "type": "string",
           "const": "deny-create-tab",
@@ -1161,6 +1191,12 @@
           "markdownDescription": "Denies the get_privacy_stats command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_reader_article command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-reader-article",
+          "markdownDescription": "Denies the get_reader_article command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_recovery_status command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-recovery-status",
@@ -1267,6 +1303,18 @@
           "type": "string",
           "const": "deny-hibernate-tab",
           "markdownDescription": "Denies the hibernate_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the install_extension_from_archive command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-install-extension-from-archive",
+          "markdownDescription": "Denies the install_extension_from_archive command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the install_extension_from_url command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-install-extension-from-url",
+          "markdownDescription": "Denies the install_extension_from_url command without any pre-configured scope."
         },
         {
           "description": "Denies the install_update command without any pre-configured scope.",

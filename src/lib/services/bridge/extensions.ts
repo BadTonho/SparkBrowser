@@ -11,6 +11,15 @@ export async function loadUnpackedExtension(path?: string): Promise<ExtensionDet
   return await invoke<ExtensionDetails | null>("load_unpacked_extension", { path: path ?? null });
 }
 
+export async function installExtensionFromUrl(url: string): Promise<ExtensionDetails> {
+  return await invoke<ExtensionDetails>("install_extension_from_url", { url });
+}
+
+export async function installExtensionFromArchive(path?: string): Promise<ExtensionDetails | null> {
+  if (!isTauriRuntime()) return null;
+  return await invoke<ExtensionDetails | null>("install_extension_from_archive", { path: path ?? null });
+}
+
 export async function toggleNativeExtension(id: string, enabled: boolean): Promise<void> {
   if (!isTauriRuntime()) return;
   await invoke<void>("toggle_extension", { id, enabled });

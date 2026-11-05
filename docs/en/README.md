@@ -52,6 +52,9 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Reorder quick actions](./features/titlebar-actions.md)
 - [Floating Tools panel](features/tools-popover.md)
 
+- [Chrome WebExtensions support](features/extensions.md)
+- [Immersive Reader View](features/reader-mode.md)
+- [Ephemeral Tabs and disposable containers](features/ephemeral-tabs.md)
 - [Application security boundaries](security/application-boundaries.md)
 - [Workspace content isolation](features/workspace-isolation.md)
 - [AppContainer isolation (planned)](security/app-container-isolation.md)

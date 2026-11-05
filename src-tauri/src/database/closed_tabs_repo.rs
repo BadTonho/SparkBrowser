@@ -38,6 +38,7 @@ pub fn records(
     let ids: HashSet<_> = ids.iter().collect();
     let mut positions: HashMap<&str, usize> = HashMap::new();
     tabs.iter()
+        .filter(|tab| !tab.is_ephemeral)
         .filter_map(|tab| {
             let position = positions.entry(&tab.workspace_id).or_default();
             let row = ids.contains(&tab.id).then(|| ClosedTab {

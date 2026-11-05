@@ -23,5 +23,10 @@
   "tabs.split_drop_right": "Solte para dividir à direita",
   "tabs.memory_usage": "Uso de memória: {usage}",
   "tabs.memory_hibernated": "Hibernada",
-  "tabs.memory_unavailable": "Indisponível"
+  "tabs.memory_unavailable": "Indisponível",
+  "tabs.sleeping_savings": "Em repouso · Economizando {savings} de RAM",
+  "tabs.sleeping_badge": "Em repouso",
+  "tabs.new_ephemeral": "Nova Aba Efêmera",
+  "tabs.ephemeral_badge": "Efêmera",
+  "tabs.ephemeral_tooltip": "Container descartável: cookies e dados são destruídos ao fechar e não vão para o histórico."
 }

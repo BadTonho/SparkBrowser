@@ -241,14 +241,14 @@ pub(super) fn with_page_events(
             return;
         };
         crate::privacy::auto_skip::loaded(&webview, &state, &keyboard_token_for_load);
-        let title = state
+        let (title, is_ephemeral) = state
             .tabs
             .lock()
             .ok()
             .and_then(|tabs| {
                 tabs.iter()
                     .find(|tab| tab.id == tab_for_load)
-                    .map(|tab| tab.title.clone())
+                    .map(|tab| (tab.title.clone(), tab.is_ephemeral))
             })
             .unwrap_or_default();
         if super::new_tab::is_document(&app_for_page_load, payload.url()) {
@@ -265,6 +265,7 @@ pub(super) fn with_page_events(
             }
         } else if matches!(payload.url().scheme(), "http" | "https")
             && !super::new_tab::is_document(&app_for_page_load, payload.url())
+            && !is_ephemeral
         {
             if let Some(writer) = app_for_page_load
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(

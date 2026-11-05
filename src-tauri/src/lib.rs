@@ -32,8 +32,8 @@ use commands::media::{
 
 use commands::diagnostics::get_diagnostics;
 use commands::extensions::{
-    get_extension_action, get_installed_extensions, load_unpacked_extension, remove_extension,
-    toggle_extension,
+    get_extension_action, get_installed_extensions, install_extension_from_archive,
+    install_extension_from_url, load_unpacked_extension, remove_extension, toggle_extension,
 };
 use commands::downloads::{
     cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
@@ -59,6 +59,7 @@ use commands::saved_sessions::{
     delete_named_session, get_saved_sessions, rename_named_session, restore_named_session,
     save_named_session,
 };
+use commands::reader::get_reader_article;
 use commands::shortcuts::set_keyboard_shortcuts;
 use commands::site_permissions::{
     get_site_permissions, respond_site_permission, set_site_permission,
@@ -71,7 +72,7 @@ use commands::split_view::{
 };
 use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
-    auto_hibernate_inactive_tabs, close_tab, create_tab, get_tabs, get_tabs_memory,
+    auto_hibernate_inactive_tabs, close_tab, create_tab, create_ephemeral_tab, get_tabs, get_tabs_memory,
     hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace, reorder_tabs,
     set_resident_limit, set_tab_pinned, switch_tab,
 };
@@ -176,6 +177,7 @@ pub fn run() {
             let state = app.state::<BrowserState>();
 
             let data_directory = app.path().app_data_dir()?;
+            window::ephemeral::purge_all_ephemeral_data(app.handle());
             app.manage(
                 recovery::profile_lock::ProfileLock::acquire(&data_directory)
                     .map_err(std::io::Error::other)?,
@@ -284,6 +286,8 @@ pub fn run() {
             set_resident_limit,
             set_tab_pinned,
             create_tab,
+            create_ephemeral_tab,
+            get_reader_article,
             switch_tab,
             close_tab,
             hibernate_tab,
@@ -332,7 +336,9 @@ pub fn run() {
             load_unpacked_extension,
             toggle_extension,
             remove_extension,
-            get_extension_action
+            get_extension_action,
+            install_extension_from_url,
+            install_extension_from_archive
         ]))
         .build(context)
         .expect("error while building Veloce Browser")

@@ -68,6 +68,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_resident_limit",
     "set_tab_pinned",
     "create_tab",
+    "create_ephemeral_tab",
+    "get_reader_article",
     "focus_address_bar",
     "set_new_tab_preferences",
     "switch_tab",
@@ -119,4 +121,6 @@ pub const APP_COMMANDS: &[&str] = &[
     "toggle_extension",
     "remove_extension",
     "get_extension_action",
+    "install_extension_from_url",
+    "install_extension_from_archive",
 ];

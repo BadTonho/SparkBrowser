@@ -43,6 +43,7 @@
   import SettingsQuickMenu from "./lib/components/settings/SettingsQuickMenu.svelte";
   import ExtensionsModal from "./lib/components/extensions/ExtensionsModal.svelte";
   import ExtensionActionPopover from "./lib/components/extensions/ExtensionActionPopover.svelte";
+  import ReaderOverlay from "./lib/components/reader/ReaderOverlay.svelte";
   import { refreshExtensions } from "./lib/stores/extensionsStore";
   import HorizontalTabBar from "./lib/components/tabs/HorizontalTabBar.svelte";
   import BookmarkBar from "./lib/components/bookmarks/BookmarkBar.svelte";
@@ -80,6 +81,7 @@
     activeWorkspaceId,
   } from "./lib/stores/workspaceStore";
   import { toggleDownloadsDrawer, initializeDownloadEvents } from "./lib/stores/downloadsStore";
+  import { toggleVideoPip } from "./lib/stores/pipStore";
   import {
     toggleSettingsModal,
     autoHibernateMode,
@@ -340,6 +342,7 @@
       }
       case "reopen-tab": void restoreClosedTab(); break;
       case "reload-tab": triggerReload(); break;
+      case "toggle-pip": void toggleVideoPip(); break;
     }
   }
 </script>
@@ -393,6 +396,7 @@
   <WorkspaceSwitcherOverlay />
   <ExtensionsModal />
   <ExtensionActionPopover />
+  <ReaderOverlay />
 </div>
 
 <style>

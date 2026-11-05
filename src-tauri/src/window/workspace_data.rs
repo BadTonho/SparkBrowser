@@ -60,6 +60,14 @@ pub fn directory(app: &AppHandle, workspace_id: &str) -> Result<Option<PathBuf>,
 /// Data directory for a tab's content WebView. Unknown tabs fall back to the
 /// active workspace so creation can still proceed inside a scoped folder.
 pub fn content_directory(app: &AppHandle, tab_id: &str) -> Result<Option<PathBuf>, String> {
+    let state = app.state::<crate::state::browser_state::BrowserState>();
+    if let Ok(tabs) = state.tabs.lock() {
+        if let Some(tab) = tabs.iter().find(|tab| tab.id == tab_id) {
+            if tab.is_ephemeral {
+                return crate::window::ephemeral::ephemeral_directory(app, tab_id).map(Some);
+            }
+        }
+    }
     if !enabled(app) {
         return Ok(None);
     }
