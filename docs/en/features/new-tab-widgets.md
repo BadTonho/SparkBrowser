@@ -1,6 +1,6 @@
 # New-tab widgets
 
-Open **Customize new tab** in the bottom-right corner to configure **Weather**, **Gmail**, and **Wallpaper**. It opens as a compact popover right above the button, presenting a clean vertical menu of options (**Weather**, **Gmail**, and **Wallpaper**). Selecting an option smoothly transitions to its dedicated configuration view with a back button to return to the main list. Preferences are local to the device, shared across workspaces and restored after restart. Weather sits in the upper-left corner and Gmail in the upper-right; narrow panes stack them above search. Small windows scroll. The settings dialog supports Tab, Escape and outside clicks, returning focus to its button when closed. Search drafts and recent sites remain intact while widgets update.
+Open **Customize new tab** in the bottom-right corner to configure **Weather**, **Gmail**, **Wallpaper**, and **Clock**. It opens as a compact popover right above the button, presenting a clean vertical menu of options (**Weather**, **Gmail**, **Wallpaper**, and **Clock**). Selecting an option smoothly transitions to its dedicated configuration view with a back button to return to the main list. Preferences are local to the device, shared across workspaces and restored after restart. Weather sits in the upper-left corner and Gmail in the upper-right; narrow panes stack them above search. Small windows scroll. The settings dialog supports Tab, Escape and outside clicks, returning focus to its button when closed. Search drafts and recent sites remain intact while widgets update.
 
 ## Weather
 
@@ -43,6 +43,20 @@ You can set a custom background image or looping video from your device through 
 - **Glassmorphism**: When a wallpaper is active, widgets and search cards gain subtle translucency and backdrop blur.
 - **Cross-tab sync & Persistence**: The chosen media is stored locally in device storage (IndexedDB Blobs and local preferences) and updates across all open new tabs in real time without entering backups.
 - **Remove**: Deleting the wallpaper immediately cleans up object URLs and restores the default solid background.
+
+## Clock
+
+The customizable clock widget provides local, offline time presentation on the new tab page:
+- **Enabled by Default**: Starts active and positioned centered in the lower area of the page below the recent shortcuts.
+- **Position Options**: Selectable via the Clock settings category:
+  - **Bottom (centered)** (default): Spacious display positioned below recent shortcuts.
+  - **Above search**: Center dashboard style prominent time display above the search form.
+  - **Widget card**: Rectangular card in the upper widgets grid alongside Weather and Gmail.
+- **Font Selection**: Choose between **System default**, **Digital (Monospace)**, **Classic (Serif)**, **Modern rounded**, and **Elegance display**. All fonts render with tabular figures (`font-variant-numeric: tabular-nums`) to prevent digit jitter.
+- **Format Options**: Toggle between 24-hour (`14:30`) and 12-hour (`2:30 PM`) format.
+- **Seconds & Date**: Toggles to display live seconds and localized date formatting (e.g. `Thursday, November 5`).
+- **Dynamic Greeting**: Optional greeting based on the local time of day (*Good morning*, *Good afternoon*, *Good evening*, or *Good night*).
+- **Efficiency**: Updates align with the next whole minute when seconds are disabled, eliminating unnecessary timer overhead and conserving battery. Sychronizes in real time across open tabs through local storage events.
 
 ## Data and validation
 

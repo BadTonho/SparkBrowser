@@ -1,6 +1,6 @@
 # Widgets da nova guia
 
-Abra **Personalizar nova guia** no canto inferior direito para configurar **Clima**, **Gmail** e **Plano de fundo**. Abre como uma janela compacta logo acima do botão, apresentando uma lista vertical clara de opções (**Clima**, **Gmail** e **Plano de fundo**). Ao clicar em uma opção, a janela muda para as configurações daquele item com um botão de voltar para retornar à lista principal. As preferências são locais do dispositivo, compartilhadas entre workspaces e restauradas após reiniciar. O clima fica no canto superior esquerdo e o Gmail no superior direito; painéis estreitos os empilham acima da busca. Janelas pequenas permitem rolagem. O diálogo de configurações aceita Tab, Escape e clique externo, devolvendo o foco ao botão ao fechar. Rascunhos da busca e sites recentes são preservados durante atualizações.
+Abra **Personalizar nova guia** no canto inferior direito para configurar **Clima**, **Gmail**, **Plano de fundo** e **Relógio**. Abre como uma janela compacta logo acima do botão, apresentando uma lista vertical clara de opções (**Clima**, **Gmail**, **Plano de fundo** e **Relógio**). Ao clicar em uma opção, a janela muda para as configurações daquele item com um botão de voltar para retornar à lista principal. As preferências são locais do dispositivo, compartilhadas entre workspaces e restauradas após reiniciar. O clima fica no canto superior esquerdo e o Gmail no superior direito; painéis estreitos os empilham acima da busca. Janelas pequenas permitem rolagem. O diálogo de configurações aceita Tab, Escape e clique externo, devolvendo o foco ao botão ao fechar. Rascunhos da busca e sites recentes são preservados durante atualizações.
 
 ## Clima
 
@@ -43,6 +43,20 @@ Você pode definir uma imagem ou vídeo em loop personalizado a partir do seu di
 - **Efeito translúcido (Glassmorphism)**: Com uma mídia de fundo ativa, os cartões de busca e widgets adotam transparência com desfoque de fundo (*backdrop blur*).
 - **Sincronização entre guias e persistência**: A mídia escolhida fica salva localmente no armazenamento do dispositivo (Blobs no IndexedDB e preferências locais) e sincroniza entre todas as novas guias abertas em tempo real, sem vazar para backups.
 - **Remover**: Excluir a mídia limpa as URLs de objetos e restaura imediatamente a cor sólida padrão.
+
+## Relógio
+
+O widget de relógio personalizável oferece exibição de horário local e offline na nova guia:
+- **Habilitado por Padrão**: Inicia ativo e centralizado na parte inferior da página, abaixo dos atalhos recentes.
+- **Opções de Posição**: Selecionáveis pela categoria Relógio nas configurações:
+  - **Parte de baixo (centralizado)** (padrão): Exibição ampla posicionada abaixo dos atalhos recentes.
+  - **Acima da busca**: Estilo dashboard com hora em destaque acima do formulário de busca.
+  - **Cartão de widget**: Cartão retangular na grade superior de widgets ao lado de Clima e Gmail.
+- **Seleção de Fonte**: Escolha entre **Padrão do sistema**, **Digital (Monoespaçada)**, **Clássica (Serifada)**, **Moderna arredondada** e **Elegante display**. Todas as fontes utilizam números tabulares (`font-variant-numeric: tabular-nums`) para evitar oscilações na largura dos dígitos.
+- **Opções de Formato**: Alternância entre formato 24 horas (`14:30`) e 12 horas (`2:30 PM`).
+- **Segundos e Data**: Opções para exibir segundos em tempo real e data por extenso localizada (ex: `quinta-feira, 5 de novembro`).
+- **Saudação Dinâmica**: Saudação opcional baseada na hora do dia (*Bom dia*, *Boa tarde*, *Boa noite*).
+- **Eficiência**: As atualizações se alinham à virada do próximo minuto quando os segundos estão desativados, eliminando temporizadores desnecessários e poupando bateria. Sincroniza em tempo real entre guias abertas por eventos de armazenamento local.
 
 ## Dados e validação
 

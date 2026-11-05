@@ -1,0 +1,154 @@
+.clock-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  user-select: none;
+}
+
+.clock-time {
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+}
+
+.clock-font-system {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.clock-font-monospace {
+  font-family: "Consolas", "Courier New", "Cascadia Code", monospace;
+  letter-spacing: -0.01em;
+}
+
+.clock-font-serif {
+  font-family: "Georgia", "Times New Roman", "Cambria", serif;
+}
+
+.clock-font-rounded {
+  font-family: "Trebuchet MS", "Lucida Sans", "Quicksand", sans-serif;
+}
+
+.clock-font-display {
+  font-family: "Impact", "Arial Black", "Segoe UI Light", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* Bottom centered layout (default) */
+.clock-bottom {
+  margin-top: 14px;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+.clock-bottom .clock-time {
+  font-size: clamp(44px, 6vw, 68px);
+  font-weight: 300;
+  line-height: 1.05;
+}
+
+.clock-bottom .clock-date {
+  font-size: 13px;
+  opacity: 0.8;
+  margin: 6px 0 0;
+  text-transform: capitalize;
+}
+
+.clock-bottom .clock-greeting {
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0.9;
+  margin: 0 0 4px;
+}
+
+/* Top centered layout (above search) */
+.clock-top {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.clock-top .clock-time {
+  font-size: clamp(52px, 7.5vw, 84px);
+  font-weight: 300;
+  line-height: 1.05;
+}
+
+.clock-top .clock-date {
+  font-size: 15px;
+  opacity: 0.82;
+  margin: 8px 0 0;
+  text-transform: capitalize;
+}
+
+.clock-top .clock-greeting {
+  font-size: 17px;
+  font-weight: 500;
+  opacity: 0.9;
+  margin: 0 0 6px;
+}
+
+/* Card layout (widget grid) */
+.clock-card {
+  min-width: 0;
+  text-align: left;
+  align-items: flex-start;
+}
+
+.clock-card .clock-time {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 10px 0 4px;
+}
+
+.clock-card .clock-date {
+  font-size: 12px;
+  opacity: 0.75;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.clock-card .clock-greeting {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.85;
+  margin: 0 0 2px;
+}
+
+/* Wallpaper Contrast & Glassmorphism */
+body.has-wallpaper .clock-top .clock-time,
+body.has-wallpaper .clock-bottom .clock-time {
+  color: #ffffff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7), 0 0 28px rgba(0, 0, 0, 0.45);
+}
+
+body.has-wallpaper .clock-top .clock-date,
+body.has-wallpaper .clock-bottom .clock-date,
+body.has-wallpaper .clock-top .clock-greeting,
+body.has-wallpaper .clock-bottom .clock-greeting {
+  color: #f3f3f8;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+}
+
+body.has-wallpaper .clock-card {
+  background: rgba(23, 23, 23, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Light Mode Overrides (when no wallpaper) */
+html[data-theme="light"] body:not(.has-wallpaper) .clock-time {
+  color: #171717;
+}
+
+html[data-theme="light"] body:not(.has-wallpaper) .clock-date,
+html[data-theme="light"] body:not(.has-wallpaper) .clock-greeting {
+  color: #555555;
+}
+
+html[data-theme="light"] body:not(.has-wallpaper) .clock-card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}

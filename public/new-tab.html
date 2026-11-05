@@ -11,6 +11,8 @@
   <script src="/new-tab/widgets.js" defer></script>
   <link rel="stylesheet" href="/new-tab/wallpaper.css">
   <script src="/new-tab/wallpaper.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/clock.css">
+  <script src="/new-tab/clock.js" defer></script>
 </head>
 <body>
   <div id="wallpaper-container" aria-hidden="true" hidden>
@@ -19,6 +21,12 @@
     <div id="wallpaper-overlay"></div>
   </div>
   <div id="widgets" hidden>
+    <section id="clock-card-widget" class="widget clock-widget clock-card" aria-labelledby="clock-card-heading" hidden>
+      <div class="widget-heading"><h2 id="clock-card-heading" data-label="clock"></h2></div>
+      <p id="clock-card-greeting" class="clock-greeting" hidden></p>
+      <div id="clock-card-time" class="clock-time" aria-live="off"></div>
+      <p id="clock-card-date" class="clock-date"></p>
+    </section>
     <section id="weather-widget" class="widget" aria-labelledby="weather-heading" hidden>
       <div class="widget-heading"><h2 id="weather-heading"></h2><button id="weather-refresh" type="button" class="icon-button" data-label="refresh">↻</button></div>
       <p id="weather-place"></p>
@@ -40,6 +48,11 @@
   </div>
   <main>
     <section class="content" aria-label="Search">
+      <section id="clock-top-widget" class="clock-widget clock-top" aria-label="Clock" hidden>
+        <p id="clock-top-greeting" class="clock-greeting" hidden></p>
+        <div id="clock-top-time" class="clock-time" aria-live="off"></div>
+        <p id="clock-top-date" class="clock-date"></p>
+      </section>
       <form id="search-form" role="search">
         <input id="search" type="text" autocomplete="off" spellcheck="false" aria-label="Search or enter address" placeholder="Search or enter address">
         <button id="submit" type="submit" aria-label="Search" title="Search">
@@ -49,6 +62,11 @@
       <div id="recent" aria-label="Recent sites"></div>
       <p id="empty" role="status" hidden></p>
       <div id="error" role="status" hidden><span id="error-text"></span> <button id="retry" type="button">Try again</button></div>
+      <section id="clock-bottom-widget" class="clock-widget clock-bottom" aria-label="Clock" hidden>
+        <p id="clock-bottom-greeting" class="clock-greeting" hidden></p>
+        <div id="clock-bottom-time" class="clock-time" aria-live="off"></div>
+        <p id="clock-bottom-date" class="clock-date"></p>
+      </section>
     </section>
   </main>
   <footer id="customization"><button id="widget-settings" class="icon-button" type="button" aria-controls="settings-panel" aria-expanded="false" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 3-.7 2.3-2 .9L4 5.7 2.5 8.3 4 10v2l-1.5 1.7L4 16.3l2.3-.5 2 .9L9 19h3l.7-2.3 2-.9 2.3.5 1.5-2.6L17 12v-2l1.5-1.7L17 5.7l-2.3.5-2-.9L12 3Z" transform="translate(1.5 1)"/><circle cx="12" cy="12" r="3"/></svg></button></footer>
@@ -74,6 +92,11 @@
         <button id="menu-item-wallpaper" type="button" class="settings-menu-item" data-category="wallpaper" role="menuitem">
           <span class="menu-item-icon" aria-hidden="true">🖼️</span>
           <span class="menu-item-label" data-label="wallpaper"></span>
+          <span class="menu-item-chevron" aria-hidden="true">›</span>
+        </button>
+        <button id="menu-item-clock" type="button" class="settings-menu-item" data-category="clock" role="menuitem">
+          <span class="menu-item-icon" aria-hidden="true">⏰</span>
+          <span class="menu-item-label" data-label="clock"></span>
           <span class="menu-item-chevron" aria-hidden="true">›</span>
         </button>
       </nav>
@@ -124,6 +147,34 @@
             <span id="wallpaper-dim-val">40%</span>
           </div>
         </div>
+      </div>
+    </section>
+    <section id="clock-section" aria-labelledby="clock-settings-heading" hidden>
+      <h3 id="clock-settings-heading" data-label="clock"></h3>
+      <label class="toggle"><span data-label="showClock"></span><input id="clock-enabled" type="checkbox"></label>
+      <div id="clock-options" hidden>
+        <label for="clock-font" data-label="clockFont"></label>
+        <select id="clock-font">
+          <option value="system" data-label="clockFontSystem"></option>
+          <option value="monospace" data-label="clockFontMonospace"></option>
+          <option value="serif" data-label="clockFontSerif"></option>
+          <option value="rounded" data-label="clockFontRounded"></option>
+          <option value="display" data-label="clockFontDisplay"></option>
+        </select>
+        <label for="clock-format" data-label="clockFormat"></label>
+        <select id="clock-format">
+          <option value="24h" data-label="clockFormat24"></option>
+          <option value="12h" data-label="clockFormat12"></option>
+        </select>
+        <label for="clock-position" data-label="clockPosition"></label>
+        <select id="clock-position">
+          <option value="bottom" data-label="clockPositionBottom"></option>
+          <option value="top" data-label="clockPositionTop"></option>
+          <option value="card" data-label="clockPositionCard"></option>
+        </select>
+        <label class="toggle"><span data-label="clockShowSeconds"></span><input id="clock-seconds" type="checkbox"></label>
+        <label class="toggle"><span data-label="clockShowDate"></span><input id="clock-date" type="checkbox"></label>
+        <label class="toggle"><span data-label="clockShowGreeting"></span><input id="clock-greeting" type="checkbox"></label>
       </div>
     </section>
   </dialog>

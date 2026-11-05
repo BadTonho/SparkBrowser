@@ -46,7 +46,7 @@
   });
   panel.addEventListener('close', () => gear.setAttribute('aria-expanded', 'false'));
 
-  const categories = ['weather', 'gmail', 'wallpaper'];
+  const categories = ['weather', 'gmail', 'wallpaper', 'clock'];
   let currentCategory = null;
 
   function showCategory(cat) {
