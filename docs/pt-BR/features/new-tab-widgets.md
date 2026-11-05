@@ -33,15 +33,16 @@ Refresh tokens usam o Gerenciador de Credenciais do Windows, isolados por aplica
 
 O modo de testes do Google pode [expirar refresh tokens após sete dias](https://developers.google.com/identity/protocols/oauth2). `gmail.metadata` é um [escopo restrito](https://developers.google.com/workspace/gmail/api/auth/scopes); distribuição pública exige um processo separado de verificação e preparação. Outros provedores e a configuração para distribuição pública ficam fora desta primeira versão. A conexão Gmail exige atualmente armazenamento seguro do Windows e Microsoft Edge.
 
-## Plano de fundo
+## Plano de fundo (Imagens e Vídeos)
 
-Você pode definir uma imagem de fundo personalizada a partir do seu dispositivo pelo painel **Personalizar nova guia** (`⚙️`).
-- **Escolher imagem**: Abre o seletor de arquivos do sistema para escolher uma imagem (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`).
-- **Escala e Otimização**: Imagens de alta resolução são redimensionadas e otimizadas localmente via HTML Canvas para manter a fluidez e reduzir o uso de memória.
-- **Escurecimento do fundo**: Um controle deslizante ajusta a camada escura sobre a imagem (0% a 90%, padrão de 40%) para garantir legibilidade dos textos, widgets e atalhos.
-- **Efeito translúcido (Glassmorphism)**: Com um papel de parede ativo, os cartões de busca e widgets adotam transparência com desfoque de fundo (*backdrop blur*).
-- **Sincronização entre guias e persistência**: A imagem escolhida fica salva localmente no armazenamento do dispositivo (IndexedDB e preferências locais) e sincroniza entre todas as novas guias abertas em tempo real, sem vazar para backups.
-- **Remover**: Excluir o plano de fundo restaura imediatamente a cor sólida padrão.
+Você pode definir uma imagem ou vídeo em loop personalizado a partir do seu dispositivo pelo painel **Personalizar nova guia** (`⚙️`).
+- **Escolher imagem ou vídeo**: Abre o seletor de arquivos do sistema para escolher uma imagem (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`) ou vídeo (`.mp4`, `.webm`, `.ogg`).
+- **Reprodução de vídeo**: Vídeos são reproduzidos automaticamente em loop contínuo, sem som (*muted*) e ajustados para cobrir a tela (`object-fit: cover`) sob a busca e os widgets. Há suporte para arquivos de até 50 MB.
+- **Escala e Otimização de imagens**: Imagens de alta resolução são redimensionadas e otimizadas localmente via HTML Canvas para manter a fluidez e reduzir o uso de memória.
+- **Escurecimento do fundo**: Um controle deslizante ajusta a camada escura sobre a mídia (0% a 90%, padrão de 40%) para garantir legibilidade dos textos, widgets e atalhos.
+- **Efeito translúcido (Glassmorphism)**: Com uma mídia de fundo ativa, os cartões de busca e widgets adotam transparência com desfoque de fundo (*backdrop blur*).
+- **Sincronização entre guias e persistência**: A mídia escolhida fica salva localmente no armazenamento do dispositivo (Blobs no IndexedDB e preferências locais) e sincroniza entre todas as novas guias abertas em tempo real, sem vazar para backups.
+- **Remover**: Excluir a mídia limpa as URLs de objetos e restaura imediatamente a cor sólida padrão.
 
 ## Dados e validação
 

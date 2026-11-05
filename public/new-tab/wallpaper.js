@@ -6,7 +6,8 @@
   const KEY = 'current';
 
   let labels = {};
-  let currentDataUrl = null;
+  let currentMedia = null; // { mediaType: 'image' | 'video', url: string }
+  let activeBlobUrl = null;
   const text = key => labels[`newtab.widgets.${key}`] ?? key;
 
   const getStorage = key => {
@@ -28,6 +29,13 @@
       if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
     } catch {}
   };
+
+  function cleanupUrls() {
+    if (activeBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      try { URL.revokeObjectURL(activeBlobUrl); } catch {}
+      activeBlobUrl = null;
+    }
+  }
 
   function openDB() {
     return new Promise((resolve, reject) => {
@@ -65,12 +73,12 @@
     }
   }
 
-  async function saveStoredWallpaper(dataUrl) {
+  async function saveStoredWallpaper(media) {
     try {
       const db = await openDB();
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
-        const req = tx.objectStore(STORE_NAME).put(dataUrl, KEY);
+        const req = tx.objectStore(STORE_NAME).put(media, KEY);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
@@ -101,20 +109,62 @@
     if (status) status.textContent = msg;
   }
 
+  async function loadMediaRecord() {
+    const record = await getStoredWallpaper();
+    cleanupUrls();
+
+    if (!record) {
+      currentMedia = null;
+      return;
+    }
+
+    if (typeof record === 'string') {
+      const isVideo = record.startsWith('data:video/');
+      currentMedia = {
+        mediaType: isVideo ? 'video' : 'image',
+        url: record
+      };
+      return;
+    }
+
+    if (record.blob) {
+      const url = typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
+        ? URL.createObjectURL(record.blob)
+        : (record.dataUrl || '');
+      activeBlobUrl = url;
+      currentMedia = {
+        mediaType: record.mediaType || (record.mime?.startsWith('video/') ? 'video' : 'image'),
+        url
+      };
+      return;
+    }
+
+    if (record.dataUrl) {
+      currentMedia = {
+        mediaType: record.mediaType || 'image',
+        url: record.dataUrl
+      };
+    } else {
+      currentMedia = null;
+    }
+  }
+
   async function applyWallpaper() {
     const isEnabled = getStorage('veloce_wallpaper_enabled') === 'true';
     const dim = Math.min(90, Math.max(0, parseInt(getStorage('veloce_wallpaper_dim') ?? '40', 10) || 40));
 
-    currentDataUrl = await getStoredWallpaper();
+    await loadMediaRecord();
 
     const container = $('wallpaper-container');
     const image = $('wallpaper-image');
+    const video = $('wallpaper-video');
     const overlay = $('wallpaper-overlay');
     const enabledToggle = $('wallpaper-enabled');
     const options = $('wallpaper-options');
     const dimInput = $('wallpaper-dim');
     const dimVal = $('wallpaper-dim-val');
     const preview = $('wallpaper-preview');
+    const videoPreview = $('wallpaper-video-preview');
     const previewWrap = $('wallpaper-preview-wrap');
     const removeBtn = $('wallpaper-remove');
 
@@ -123,30 +173,91 @@
     if (dimInput) dimInput.value = dim.toString();
     if (dimVal) dimVal.textContent = `${dim}%`;
 
-    const active = isEnabled && Boolean(currentDataUrl);
+    const active = isEnabled && Boolean(currentMedia?.url);
 
-    if (container && image) {
+    if (container) {
       if (active) {
         container.hidden = false;
-        image.src = currentDataUrl;
         if (overlay) overlay.style.setProperty('--wallpaper-dim', (dim / 100).toString());
         if (document.body) document.body.classList.add('has-wallpaper');
+
+        if (currentMedia.mediaType === 'video') {
+          if (image) {
+            image.hidden = true;
+            image.removeAttribute('src');
+          }
+          if (video) {
+            video.hidden = false;
+            if (video.getAttribute('src') !== currentMedia.url) {
+              video.src = currentMedia.url;
+              try { video.play?.(); } catch {}
+            }
+          }
+        } else {
+          if (video) {
+            video.hidden = true;
+            try { video.pause?.(); } catch {}
+            video.removeAttribute('src');
+          }
+          if (image) {
+            image.hidden = false;
+            image.src = currentMedia.url;
+          }
+        }
       } else {
         container.hidden = true;
-        image.removeAttribute('src');
         if (document.body) document.body.classList.remove('has-wallpaper');
+        if (image) {
+          image.hidden = true;
+          image.removeAttribute('src');
+        }
+        if (video) {
+          video.hidden = true;
+          try { video.pause?.(); } catch {}
+          video.removeAttribute('src');
+        }
       }
     }
 
-    if (preview && previewWrap && removeBtn) {
-      if (currentDataUrl) {
+    if (previewWrap && removeBtn) {
+      if (currentMedia?.url) {
         previewWrap.hidden = false;
-        preview.src = currentDataUrl;
         removeBtn.hidden = false;
+        if (currentMedia.mediaType === 'video') {
+          if (preview) {
+            preview.hidden = true;
+            preview.removeAttribute('src');
+          }
+          if (videoPreview) {
+            videoPreview.hidden = false;
+            if (videoPreview.getAttribute('src') !== currentMedia.url) {
+              videoPreview.src = currentMedia.url;
+              try { videoPreview.play?.(); } catch {}
+            }
+          }
+        } else {
+          if (videoPreview) {
+            videoPreview.hidden = true;
+            try { videoPreview.pause?.(); } catch {}
+            videoPreview.removeAttribute('src');
+          }
+          if (preview) {
+            preview.hidden = false;
+            preview.src = currentMedia.url;
+          }
+        }
       } else {
         previewWrap.hidden = true;
-        preview.removeAttribute('src');
         removeBtn.hidden = true;
+        if (preview) {
+          preview.hidden = true;
+          preview.removeAttribute('src');
+        }
+        if (videoPreview) {
+          videoPreview.hidden = true;
+          try { videoPreview.pause?.(); } catch {}
+          videoPreview.removeAttribute('src');
+        }
       }
     }
   }
@@ -166,7 +277,7 @@
         setStorage('veloce_wallpaper_enabled', checked ? 'true' : 'false');
         notifyUpdated();
         await applyWallpaper();
-        if (checked && !currentDataUrl) {
+        if (checked && !currentMedia?.url) {
           setStatus(text('chooseWallpaper'));
         } else {
           setStatus('');
@@ -198,17 +309,47 @@
         const file = fileInput.files?.[0];
         if (!file) return;
 
+        const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogg)$/i.test(file.name);
+        const maxVideoSize = 50 * 1024 * 1024; // 50MB
+
+        if (isVideo) {
+          if (file.size > maxVideoSize) {
+            setStatus(text('wallpaperVideoTooLarge'));
+            return;
+          }
+
+          setStatus(text('wallpaperLoading'));
+          saveStoredWallpaper({
+            mediaType: 'video',
+            mime: file.type || 'video/mp4',
+            blob: file
+          })
+          .then(async () => {
+            setStorage('veloce_wallpaper_enabled', 'true');
+            notifyUpdated();
+            await applyWallpaper();
+            setStatus(text('wallpaperSaved'));
+          })
+          .catch(() => setStatus(text('wallpaperError')));
+          return;
+        }
+
         setStatus(text('wallpaperLoading'));
 
         const reader = new FileReader();
         reader.onload = () => {
           const rawData = reader.result;
           if (typeof Image === 'undefined') {
-            saveStoredWallpaper(rawData)
-              .then(() => {
+            saveStoredWallpaper({
+              mediaType: 'image',
+              mime: file.type || 'image/png',
+              blob: file,
+              dataUrl: rawData
+            })
+              .then(async () => {
                 setStorage('veloce_wallpaper_enabled', 'true');
                 notifyUpdated();
-                applyWallpaper();
+                await applyWallpaper();
                 setStatus(text('wallpaperSaved'));
               })
               .catch(() => setStatus(text('wallpaperError')));
@@ -221,6 +362,7 @@
             let h = img.naturalHeight || img.height;
             const maxDim = 2560;
             let finalData = rawData;
+            let finalBlob = file;
 
             if (typeof document !== 'undefined' && (w > maxDim || h > maxDim)) {
               try {
@@ -238,6 +380,9 @@
                 if (ctx) {
                   ctx.drawImage(img, 0, 0, w, h);
                   finalData = canvas.toDataURL('image/jpeg', 0.9);
+                  if (typeof canvas.toBlob === 'function') {
+                    finalBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+                  }
                 }
               } catch {
                 finalData = rawData;
@@ -245,7 +390,12 @@
             }
 
             try {
-              await saveStoredWallpaper(finalData);
+              await saveStoredWallpaper({
+                mediaType: 'image',
+                mime: file.type || 'image/jpeg',
+                blob: finalBlob,
+                dataUrl: finalData
+              });
               setStorage('veloce_wallpaper_enabled', 'true');
               notifyUpdated();
               await applyWallpaper();
@@ -264,6 +414,7 @@
 
     if (removeBtn) {
       removeBtn.addEventListener('click', async () => {
+        cleanupUrls();
         await deleteStoredWallpaper();
         notifyUpdated();
         await applyWallpaper();

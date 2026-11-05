@@ -49,6 +49,8 @@ function createWallpaperFixture(initialStorage = {}) {
       if (k === 'src') delete this.src;
       delete this.attributes[k];
     }
+    play() { return Promise.resolve(); }
+    pause() {}
     click() { this.listeners.click?.({ target: this }); }
   }
 
@@ -121,6 +123,10 @@ function createWallpaperFixture(initialStorage = {}) {
     Date,
     parseInt,
     Math,
+    URL: {
+      createObjectURL: blob => 'blob:http://tauri.localhost/test-blob',
+      revokeObjectURL: () => {}
+    },
     CustomEvent: class {
       constructor(type, init) {
         this.type = type;
@@ -254,4 +260,61 @@ test('settings menu list opens option detail view and back button returns to lis
   assert.ok(weatherItem);
   assert.ok(gmailItem);
   assert.ok(wallpaperItem);
+});
+
+test('wallpaper applies stored video and plays in wallpaper-video element', async () => {
+  const f = createWallpaperFixture({
+    veloce_wallpaper_enabled: 'true',
+    veloce_wallpaper_dim: '30'
+  });
+  f.idbStore.set('current', {
+    mediaType: 'video',
+    mime: 'video/mp4',
+    blob: { type: 'video/mp4', size: 1024 }
+  });
+
+  // Trigger DOMContentLoaded
+  for (const fn of f.listeners.get('DOMContentLoaded') || []) fn();
+  await new Promise(r => setTimeout(r, 25));
+
+  const container = f.nodes.get('wallpaper-container');
+  const video = f.nodes.get('wallpaper-video');
+  const image = f.nodes.get('wallpaper-image');
+  const previewWrap = f.nodes.get('wallpaper-preview-wrap');
+  const videoPreview = f.nodes.get('wallpaper-video-preview');
+
+  assert.equal(container.hidden, false);
+  assert.equal(video.hidden, false);
+  assert.equal(video.src, 'blob:http://tauri.localhost/test-blob');
+  assert.equal(image.hidden, true);
+  assert.equal(image.src, undefined);
+  assert.equal(previewWrap.hidden, false);
+  assert.equal(videoPreview.hidden, false);
+  assert.equal(videoPreview.src, 'blob:http://tauri.localhost/test-blob');
+});
+
+test('video file size limit rejects files larger than 50MB', async () => {
+  const f = createWallpaperFixture({
+    veloce_wallpaper_enabled: 'true'
+  });
+  await new Promise(r => setTimeout(r, 20));
+
+  const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/pt-BR/newtab.json', 'utf8'));
+  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels, preferences: { language: 'pt-BR' } } });
+
+  const fileInput = f.nodes.get('wallpaper-file');
+  const status = f.nodes.get('wallpaper-status');
+
+  // Simulate file > 50MB
+  fileInput.files = [{
+    name: 'huge-video.mp4',
+    type: 'video/mp4',
+    size: 55 * 1024 * 1024
+  }];
+
+  fileInput.listeners.change();
+  await new Promise(r => setTimeout(r, 20));
+
+  assert.match(status.textContent, /50 MB/i);
+  assert.equal(f.idbStore.has('current'), false);
 });

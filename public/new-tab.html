@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <title>New tab</title>
   <link rel="stylesheet" href="/new-tab/page.css">
   <script src="/new-tab/page.js" defer></script>
@@ -14,7 +14,8 @@
 </head>
 <body>
   <div id="wallpaper-container" aria-hidden="true" hidden>
-    <img id="wallpaper-image" alt="">
+    <img id="wallpaper-image" alt="" hidden>
+    <video id="wallpaper-video" autoplay loop muted playsinline hidden></video>
     <div id="wallpaper-overlay"></div>
   </div>
   <div id="widgets" hidden>
@@ -107,13 +108,14 @@
       <label class="toggle"><span data-label="showWallpaper"></span><input id="wallpaper-enabled" type="checkbox"></label>
       <div id="wallpaper-options" hidden>
         <div class="wallpaper-actions">
-          <input id="wallpaper-file" type="file" accept="image/*" hidden>
+          <input id="wallpaper-file" type="file" accept="image/*,video/mp4,video/webm,video/ogg" hidden>
           <button id="wallpaper-choose" type="button" data-label="chooseWallpaper"></button>
           <button id="wallpaper-remove" type="button" data-label="removeWallpaper" hidden></button>
         </div>
         <p id="wallpaper-status" role="status"></p>
         <div id="wallpaper-preview-wrap" hidden>
-          <img id="wallpaper-preview" alt="">
+          <img id="wallpaper-preview" alt="" hidden>
+          <video id="wallpaper-video-preview" muted loop autoplay playsinline hidden></video>
         </div>
         <div class="wallpaper-slider-wrap">
           <label for="wallpaper-dim" data-label="wallpaperDim"></label>
