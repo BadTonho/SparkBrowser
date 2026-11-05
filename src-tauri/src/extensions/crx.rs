@@ -38,7 +38,10 @@ pub fn download_webstore_crx(extension_id: &str) -> Result<Vec<u8>, String> {
         .map_err(|e| format!("Failed to download extension: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("Download failed with HTTP status {}", response.status()));
+        return Err(format!(
+            "Download failed with HTTP status {}",
+            response.status()
+        ));
     }
 
     response
@@ -60,8 +63,10 @@ pub fn extract_crx_or_zip(bytes: &[u8], target_dir: &Path) -> Result<(), String>
         let version = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
         match version {
             2 => {
-                let pubkey_len = u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]) as usize;
-                let sig_len = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]) as usize;
+                let pubkey_len =
+                    u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]) as usize;
+                let sig_len =
+                    u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]) as usize;
                 let offset = 16 + pubkey_len + sig_len;
                 if bytes.len() < offset {
                     return Err("CRX2 payload offset truncated".into());
@@ -69,7 +74,8 @@ pub fn extract_crx_or_zip(bytes: &[u8], target_dir: &Path) -> Result<(), String>
                 &bytes[offset..]
             }
             3 => {
-                let header_len = u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]) as usize;
+                let header_len =
+                    u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]) as usize;
                 let offset = 12 + header_len;
                 if bytes.len() < offset {
                     return Err("CRX3 payload offset truncated".into());
@@ -145,9 +151,9 @@ fn extract_zip_stream(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
                     8 => {
                         let mut decoder = DeflateDecoder::new(entry_data);
                         let mut buf = Vec::with_capacity(uncompressed_size);
-                        decoder.read_to_end(&mut buf).map_err(|e| {
-                            format!("Failed to decompress {}: {}", safe_name, e)
-                        })?;
+                        decoder
+                            .read_to_end(&mut buf)
+                            .map_err(|e| format!("Failed to decompress {}: {}", safe_name, e))?;
                         buf
                     }
                     m => return Err(format!("Unsupported compression method in ZIP: {}", m)),
@@ -195,4 +201,3 @@ mod tests {
         assert_eq!(parse_webstore_id("https://google.com"), None);
     }
 }
-

@@ -166,4 +166,3 @@ mod tests {
         assert!(get(&conn, "ext-1").unwrap().is_none());
     }
 }
-

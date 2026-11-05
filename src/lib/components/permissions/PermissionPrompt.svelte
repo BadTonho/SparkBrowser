@@ -147,9 +147,11 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px;
-    background: var(--bg-permission-popover, #1c1c1c);
+    background: var(--modal-surface-bg, var(--bg-permission-popover, #1c1c1c));
+    backdrop-filter: var(--modal-surface-filter);
+    -webkit-backdrop-filter: var(--modal-surface-filter);
     color: var(--text-primary, #f5f5f5);
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+    border: var(--modal-surface-border, 1px solid rgba(255, 255, 255, 0.12));
     border-radius: var(--radius-md, 12px);
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
     pointer-events: auto;

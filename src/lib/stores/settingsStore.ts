@@ -151,6 +151,131 @@ export function setOverlayBlurPx(value: number): void {
   }
 }
 
+export type WindowSurfaceStyle = "frosted" | "solid";
+export const DEFAULT_WINDOW_SURFACE_STYLE: WindowSurfaceStyle = "solid";
+const WINDOW_SURFACE_STYLE_STORAGE_KEY = "veloce_window_surface_style";
+
+export const DEFAULT_WINDOW_SURFACE_OPACITY = 70;
+export const MIN_WINDOW_SURFACE_OPACITY = 30;
+export const MAX_WINDOW_SURFACE_OPACITY = 100;
+const WINDOW_SURFACE_OPACITY_STORAGE_KEY = "veloce_window_surface_opacity";
+
+export const DEFAULT_WINDOW_SURFACE_BLUR_PX = 20;
+export const MAX_WINDOW_SURFACE_BLUR_PX = 32;
+const WINDOW_SURFACE_BLUR_STORAGE_KEY = "veloce_window_surface_blur_px";
+
+function getInitialWindowSurfaceStyle(): WindowSurfaceStyle {
+  if (typeof safeStorage === "undefined") return DEFAULT_WINDOW_SURFACE_STYLE;
+  try {
+    const saved = safeStorage.getItem(WINDOW_SURFACE_STYLE_STORAGE_KEY);
+    return saved === "solid" || saved === "frosted" ? saved : DEFAULT_WINDOW_SURFACE_STYLE;
+  } catch {
+    return DEFAULT_WINDOW_SURFACE_STYLE;
+  }
+}
+
+function getInitialWindowSurfaceOpacity(): number {
+  if (typeof safeStorage === "undefined") return DEFAULT_WINDOW_SURFACE_OPACITY;
+  try {
+    const saved = safeStorage.getItem(WINDOW_SURFACE_OPACITY_STORAGE_KEY);
+    if (saved === null || saved.trim() === "") return DEFAULT_WINDOW_SURFACE_OPACITY;
+    const value = Number(saved);
+    return Number.isInteger(value) && value >= MIN_WINDOW_SURFACE_OPACITY && value <= MAX_WINDOW_SURFACE_OPACITY
+      ? value
+      : DEFAULT_WINDOW_SURFACE_OPACITY;
+  } catch {
+    return DEFAULT_WINDOW_SURFACE_OPACITY;
+  }
+}
+
+function getInitialWindowSurfaceBlurPx(): number {
+  if (typeof safeStorage === "undefined") return DEFAULT_WINDOW_SURFACE_BLUR_PX;
+  try {
+    const saved = safeStorage.getItem(WINDOW_SURFACE_BLUR_STORAGE_KEY);
+    if (saved === null || saved.trim() === "") return DEFAULT_WINDOW_SURFACE_BLUR_PX;
+    const value = Number(saved);
+    return Number.isInteger(value) && value >= 0 && value <= MAX_WINDOW_SURFACE_BLUR_PX
+      ? value
+      : DEFAULT_WINDOW_SURFACE_BLUR_PX;
+  } catch {
+    return DEFAULT_WINDOW_SURFACE_BLUR_PX;
+  }
+}
+
+function applyWindowSurfaceStyle(style: WindowSurfaceStyle): void {
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.windowStyle = style;
+  }
+}
+
+function applyWindowSurfaceOpacity(opacity: number): void {
+  if (typeof document !== "undefined") {
+    document.documentElement.style.setProperty(
+      "--modal-surface-opacity",
+      (opacity / 100).toFixed(2)
+    );
+  }
+}
+
+function applyWindowSurfaceBlurPx(px: number): void {
+  if (typeof document !== "undefined") {
+    document.documentElement.style.setProperty("--modal-surface-blur", `${px}px`);
+  }
+}
+
+export const windowSurfaceStyle = writable<WindowSurfaceStyle>(getInitialWindowSurfaceStyle());
+applyWindowSurfaceStyle(get(windowSurfaceStyle));
+
+export function setWindowSurfaceStyle(style: WindowSurfaceStyle): void {
+  const next = style === "solid" ? "solid" : "frosted";
+  windowSurfaceStyle.set(next);
+  applyWindowSurfaceStyle(next);
+
+  if (typeof safeStorage !== "undefined") {
+    try {
+      safeStorage.setItem(WINDOW_SURFACE_STYLE_STORAGE_KEY, next);
+    } catch {
+      // Keep setting active in memory
+    }
+  }
+}
+
+export const windowSurfaceOpacity = writable<number>(getInitialWindowSurfaceOpacity());
+applyWindowSurfaceOpacity(get(windowSurfaceOpacity));
+
+export function setWindowSurfaceOpacity(value: number): void {
+  const rounded = Number.isFinite(value) ? Math.round(value) : DEFAULT_WINDOW_SURFACE_OPACITY;
+  const next = Math.max(MIN_WINDOW_SURFACE_OPACITY, Math.min(MAX_WINDOW_SURFACE_OPACITY, rounded));
+  windowSurfaceOpacity.set(next);
+  applyWindowSurfaceOpacity(next);
+
+  if (typeof safeStorage !== "undefined") {
+    try {
+      safeStorage.setItem(WINDOW_SURFACE_OPACITY_STORAGE_KEY, String(next));
+    } catch {
+      // Keep setting active in memory
+    }
+  }
+}
+
+export const windowSurfaceBlurPx = writable<number>(getInitialWindowSurfaceBlurPx());
+applyWindowSurfaceBlurPx(get(windowSurfaceBlurPx));
+
+export function setWindowSurfaceBlurPx(value: number): void {
+  const rounded = Number.isFinite(value) ? Math.round(value) : DEFAULT_WINDOW_SURFACE_BLUR_PX;
+  const next = Math.max(0, Math.min(MAX_WINDOW_SURFACE_BLUR_PX, rounded));
+  windowSurfaceBlurPx.set(next);
+  applyWindowSurfaceBlurPx(next);
+
+  if (typeof safeStorage !== "undefined") {
+    try {
+      safeStorage.setItem(WINDOW_SURFACE_BLUR_STORAGE_KEY, String(next));
+    } catch {
+      // Keep setting active in memory
+    }
+  }
+}
+
 export type SettingsCategory =
   | "data_backup"
   | "updates"

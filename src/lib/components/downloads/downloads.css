@@ -2,7 +2,7 @@
 .downloads-surface { position: absolute; max-height: min(560px, calc(100vh - 16px)); }
 .downloads-controller { position: fixed; left: -10000px; top: 0; width: 480px; height: 560px; visibility: hidden; pointer-events: none; }
 .downloads-controller .downloads-surface { position: static; width: 480px !important; max-height: 560px !important; }
-.downloads-panel { display: flex; flex-direction: column; width: 100%; min-height: 0; max-height: inherit; overflow: hidden; padding: 12px; gap: 10px; color: var(--text-primary, #f5f5f5); background: var(--bg-downloads-panel, #1c1c1c); border: 1px solid var(--border-subtle, #ffffff17); border-radius: 12px; box-shadow: 0 12px 32px #0005; font-size: 12px; line-height: 1.5; }
+.downloads-panel { display: flex; flex-direction: column; width: 100%; min-height: 0; max-height: inherit; overflow: hidden; padding: 12px; gap: 10px; color: var(--text-primary, #f5f5f5); background: var(--modal-surface-bg); backdrop-filter: var(--modal-surface-filter); -webkit-backdrop-filter: var(--modal-surface-filter); border: var(--modal-surface-border); border-radius: 12px; box-shadow: var(--modal-surface-shadow); font-size: 12px; line-height: 1.5; }
 .downloads-panel * { box-sizing: border-box; }
 .downloads-panel h2, .downloads-panel p { margin: 0; }
 .downloads-header { display: flex; flex-shrink: 0; justify-content: space-between; align-items: center; gap: 8px; padding-left: 4px; }

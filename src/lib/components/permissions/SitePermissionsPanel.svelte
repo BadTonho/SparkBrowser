@@ -30,7 +30,7 @@
 {/if}
 <style>
   .permissions-dismiss { position: fixed; inset: 0; z-index: 1500; }
-  .permission-settings-popover { position: fixed; top: var(--permission-popover-top, 54px); left: var(--permission-popover-left, 8px); width: min(360px, calc(100vw - 16px)); max-height: var(--permission-popover-max-height, calc(100vh - 62px)); overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--border-subtle, #ffffff20); border-radius: 10px; background: var(--bg-permission-popover, #1c1c1c); color: var(--text-primary, #f5f5f5); box-shadow: 0 12px 36px #0008; font-size: 12px; line-height: 1.45; }
+  .permission-settings-popover { position: fixed; top: var(--permission-popover-top, 54px); left: var(--permission-popover-left, 8px); width: min(360px, calc(100vw - 16px)); max-height: var(--permission-popover-max-height, calc(100vh - 62px)); overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: var(--modal-surface-border, 1px solid #ffffff20); border-radius: 10px; background: var(--modal-surface-bg, var(--bg-permission-popover, #1c1c1c)); backdrop-filter: var(--modal-surface-filter); -webkit-backdrop-filter: var(--modal-surface-filter); color: var(--text-primary, #f5f5f5); box-shadow: var(--modal-surface-shadow, 0 12px 36px #0008); font-size: 12px; line-height: 1.45; }
   header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
   h2 { margin:0; font-size:13px; font-weight:650; }
   button { min-height:28px; padding:5px 8px; border:1px solid var(--border-subtle, #ffffff20); border-radius:6px; background:#ffffff08; color:inherit; font:inherit; cursor:pointer; }

@@ -8,4 +8,3 @@ pub async fn get_reader_article(
 ) -> Result<ReaderArticle, String> {
     extract_article(&app, tab_id).await
 }
-

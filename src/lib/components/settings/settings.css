@@ -16,9 +16,11 @@
     max-width: calc(100vw - 32px);
     max-height: calc(100dvh - 32px);
     border-radius: var(--radius-lg);
-    background: rgba(18, 18, 18, 0.96);
-    border: 1px solid var(--border-glow);
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+    background: var(--modal-surface-bg);
+    backdrop-filter: var(--modal-surface-filter);
+    -webkit-backdrop-filter: var(--modal-surface-filter);
+    border: var(--modal-surface-border);
+    box-shadow: var(--modal-surface-shadow);
     display: flex;
     flex-direction: column;
     overflow: hidden;

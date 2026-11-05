@@ -16,7 +16,7 @@ function load(path, imports = {}, globals = {}) {
   return exports;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
-const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'settings', 'zen'];
+const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'zen'];
 
 function storeFixture(saved = null, failWrite = false) {
   const storage = new Map(saved == null ? [] : [['veloce_titlebar_action_order', saved]]);
@@ -65,7 +65,7 @@ function dragFixture() {
   const point = (x = 15, y = 16, pointerId = 1) => ({ pointerId, clientX: x, clientY: y });
   const drag = createActionDrag({
     items: () => defaults.map((id, i) => ({ id, left: i * 30, right: i * 30 + 27, top: 0, bottom: 32 })),
-    bounds: () => ({ left: 0, right: 240, top: 0, bottom: 32 }),
+    bounds: () => ({ left: 0, right: defaults.length * 30, top: 0, bottom: 32 }),
     capture: id => captures.push(id), release: id => releases.push(id),
     preview: value => preview = value, commit: (...args) => commits.push(plain(args)),
   });
@@ -92,7 +92,7 @@ test('quick click stays available; hold activates at 500ms and consumes the rele
 });
 
 test('a held action can move to either end, with a visible insertion marker', () => {
-  for (const [id, start, end, before] of [['tools', 15, 239, null], ['zen', 225, 1, 'tools']]) {
+  for (const [id, start, end, before] of [['tools', 15, defaults.length * 30 - 1, null], ['zen', (defaults.length - 1) * 30 + 15, 1, 'tools']]) {
     const f = dragFixture(); f.down(id, start); f.tick(500); f.drag.move(f.point(end));
     assert.equal(f.preview().before, before);
     assert.equal(typeof f.preview().marker, 'number');
@@ -106,7 +106,7 @@ test('a held action can move to either end, with a visible insertion marker', ()
 test('more than 6px before activation cancels the hold and blocks the accidental click', () => {
   const f = dragFixture(); f.down(); f.drag.move(f.point(21)); f.tick(499);
   assert.equal(f.preview(), undefined);
-  f.drag.move(f.point(22)); f.tick(1000); f.drag.up(f.point(239));
+  f.drag.move(f.point(22)); f.tick(1000); f.drag.up(f.point(defaults.length * 30 - 1));
   assert.equal(f.preview(), null); assert.equal(f.commits.length, 0);
   assert.equal(f.drag.consumeClick({ detail: 1 }), true);
 });

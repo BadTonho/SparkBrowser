@@ -228,4 +228,3 @@ mod tests {
         assert_eq!(manifest.host_permissions, vec!["*://*/*"]);
     }
 }
-

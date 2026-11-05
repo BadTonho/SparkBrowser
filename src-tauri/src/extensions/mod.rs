@@ -21,7 +21,10 @@ use types::{ExtensionAction, ExtensionDetails, ExtensionManifest};
 fn generate_extension_id() -> String {
     let mut bytes = [0u8; 16];
     let _ = getrandom::fill(&mut bytes);
-    format!("ext-{}", bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
+    format!(
+        "ext-{}",
+        bytes.iter().map(|b| format!("{b:02x}")).collect::<String>()
+    )
 }
 
 /// Loads an unpacked extension folder, validates its manifest, copies it to persistent storage,
@@ -31,7 +34,10 @@ pub async fn load_unpacked_extension(
     source_dir: &Path,
 ) -> Result<ExtensionDetails, String> {
     if !source_dir.exists() || !source_dir.is_dir() {
-        return Err(format!("Directory does not exist: {}", source_dir.display()));
+        return Err(format!(
+            "Directory does not exist: {}",
+            source_dir.display()
+        ));
     }
 
     let (manifest, manifest_raw) = manifest::read_manifest_from_directory(source_dir)?;
@@ -49,7 +55,10 @@ pub async fn load_unpacked_extension(
     let installed_path = if dest_dir.exists() {
         dest_dir
     } else if let Err(e) = storage::copy_dir_all(source_dir, &dest_dir) {
-        eprintln!("Could not create isolated copy of extension, using source: {}", e);
+        eprintln!(
+            "Could not create isolated copy of extension, using source: {}",
+            e
+        );
         source_dir.to_path_buf()
     } else {
         dest_dir
@@ -100,7 +109,8 @@ pub async fn install_from_archive(
     app: &AppHandle,
     archive_path: &Path,
 ) -> Result<ExtensionDetails, String> {
-    let bytes = std::fs::read(archive_path).map_err(|e| format!("Failed to read archive: {}", e))?;
+    let bytes =
+        std::fs::read(archive_path).map_err(|e| format!("Failed to read archive: {}", e))?;
     let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
     crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
 
@@ -114,8 +124,8 @@ pub fn get_installed_extensions(app: &AppHandle) -> Result<Vec<ExtensionDetails>
 
     let mut details = Vec::new();
     for rec in records {
-        let manifest = manifest::parse_manifest(&rec.manifest_json)
-            .unwrap_or_else(|_| ExtensionManifest {
+        let manifest =
+            manifest::parse_manifest(&rec.manifest_json).unwrap_or_else(|_| ExtensionManifest {
                 manifest_version: 2,
                 name: rec.name.clone(),
                 version: rec.version.clone(),
@@ -152,13 +162,10 @@ pub async fn remove_extension(app: &AppHandle, id: &str) -> Result<(), String> {
 }
 
 /// Retrieves action/popup info for an installed extension.
-pub fn get_extension_action(
-    app: &AppHandle,
-    id: &str,
-) -> Result<Option<ExtensionAction>, String> {
+pub fn get_extension_action(app: &AppHandle, id: &str) -> Result<Option<ExtensionAction>, String> {
     let conn = crate::database::connection::init_database(app)?;
-    let rec = extensions_repo::get(&conn, id)?
-        .ok_or_else(|| format!("Extension {} not found", id))?;
+    let rec =
+        extensions_repo::get(&conn, id)?.ok_or_else(|| format!("Extension {} not found", id))?;
 
     let manifest = manifest::parse_manifest(&rec.manifest_json)?;
     Ok(manifest.action)

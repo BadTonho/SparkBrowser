@@ -58,6 +58,7 @@ O escudo da barra abre um [pop-up de Proteção](auto-skip-ads.md) ancorado ao b
 - As configurações são divididas em **Aparência e Layout**, **Pesquisa e Navegação**, **Espaços de Trabalho e Tema**, **Desempenho e Privacidade** e **Atalhos de Teclado**.
 - Pesquise em todas as categorias, configurações e atalhos pelo campo ao lado do título Browser Settings; selecionar um resultado abre a categoria e destaca o destino.
 - Escolha Google ou DuckDuckGo como mecanismo de busca padrão em **Pesquisa e Navegação**. Google vem selecionado por padrão; a escolha vale para buscas na barra de endereço, na Command Bar e para novas guias.
+- Personalize a superfície do fundo das janelas entre **Vidro Fosco** (efeito de gelatina/blur translúcido) e **Preto Fosco**, regule a opacidade das janelas de 30% a 100% e ajuste o desfoque de 0 a 32 px. Consulte [Aparência das Janelas](window-appearance.md).
 - Ajuste em Aparência e Layout o desfoque de fundo compartilhado pelos overlays temporários, de **0 a 24 px**; a preferência é aplicada imediatamente e lembrada após reiniciar.
 - Escolha entre a aparência **Escura** e **Clara** em Aparência e Layout. O modo escuro vem ativado por padrão; as mudanças se aplicam imediatamente à interface, configurações e overlays, sendo lembradas entre reinicializações.
 - Mostre ou oculte a barra horizontal de bookmarks em Aparência e Layout ou pelo botão na barra superior; a escolha é lembrada após reiniciar e não afeta os bookmarks da barra lateral vertical. A barra só aparece quando há pelo menos um bookmark ou pasta.

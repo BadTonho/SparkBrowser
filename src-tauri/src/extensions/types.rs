@@ -35,4 +35,3 @@ pub struct ExtensionDetails {
     pub options_url: Option<String>,
     pub permissions: Vec<String>,
 }
-

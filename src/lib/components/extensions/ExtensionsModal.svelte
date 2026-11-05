@@ -243,15 +243,17 @@
   }
 
   .modal-window {
-    background: var(--bg-surface, #1e1e24);
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    background: var(--modal-surface-bg, var(--bg-surface, #1e1e24));
+    backdrop-filter: var(--modal-surface-filter, blur(20px));
+    -webkit-backdrop-filter: var(--modal-surface-filter, blur(20px));
+    border: var(--modal-surface-border, 1px solid var(--border-color, rgba(255, 255, 255, 0.12)));
     border-radius: 12px;
     width: 100%;
     max-width: 680px;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--modal-surface-shadow, 0 20px 40px rgba(0, 0, 0, 0.5));
     overflow: hidden;
   }
 

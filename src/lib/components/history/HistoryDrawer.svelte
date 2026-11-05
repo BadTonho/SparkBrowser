@@ -231,9 +231,11 @@
     width: min(420px, 90vw);
     height: 100%;
     border-radius: var(--radius-lg);
-    background: var(--bg-permission-popover, #1c1c1c);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
-    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.6);
+    background: var(--modal-surface-bg, var(--bg-permission-popover, #1c1c1c));
+    backdrop-filter: var(--modal-surface-filter);
+    -webkit-backdrop-filter: var(--modal-surface-filter);
+    border: var(--modal-surface-border, 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent));
+    box-shadow: var(--modal-surface-shadow, 0 20px 56px rgba(0, 0, 0, 0.6));
     display: flex;
     flex-direction: column;
     overflow: hidden;

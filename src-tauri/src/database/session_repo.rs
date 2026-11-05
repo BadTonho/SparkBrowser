@@ -16,7 +16,8 @@ pub fn save_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Stri
 
 fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), String> {
     let persistent_tabs: Vec<_> = tabs.iter().filter(|tab| !tab.is_ephemeral).collect();
-    let ids: std::collections::HashSet<_> = persistent_tabs.iter().map(|tab| tab.id.as_str()).collect();
+    let ids: std::collections::HashSet<_> =
+        persistent_tabs.iter().map(|tab| tab.id.as_str()).collect();
     if ids.len() != persistent_tabs.len() {
         return Err("Duplicate session tab ID".into());
     }

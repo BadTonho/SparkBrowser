@@ -51,4 +51,3 @@ pub fn purge_all_ephemeral_data(app: &AppHandle) {
         }
     }
 }
-

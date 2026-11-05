@@ -149,25 +149,11 @@ pub(super) fn create_tab_inner_ext(
 
     TabCheckpoint::commit_with_activation(state, Some((&new_tab_id, true)), || {
         let tab_info = if is_ephemeral {
-            TabInfo::new_ephemeral(
-                new_tab_id.clone(),
-                resolved_url.clone(),
-                active_ws_id,
-                true,
-            )
+            TabInfo::new_ephemeral(new_tab_id.clone(), resolved_url.clone(), active_ws_id, true)
         } else {
-            TabInfo::new(
-                new_tab_id.clone(),
-                resolved_url.clone(),
-                active_ws_id,
-                true,
-            )
+            TabInfo::new(new_tab_id.clone(), resolved_url.clone(), active_ws_id, true)
         };
-        state
-            .tabs
-            .lock()
-            .map_err(|e| e.to_string())?
-            .push(tab_info);
+        state.tabs.lock().map_err(|e| e.to_string())?.push(tab_info);
         if let Some(side) = side {
             if let Some(layout) = state
                 .split_layouts

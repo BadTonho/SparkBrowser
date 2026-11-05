@@ -15,6 +15,15 @@ import {
   setWorkspaceSwitcherDisplay,
   themeMode,
   setThemeMode,
+  windowSurfaceStyle,
+  setWindowSurfaceStyle,
+  windowSurfaceOpacity,
+  setWindowSurfaceOpacity,
+  windowSurfaceBlurPx,
+  setWindowSurfaceBlurPx,
+  MIN_WINDOW_SURFACE_OPACITY,
+  MAX_WINDOW_SURFACE_OPACITY,
+  MAX_WINDOW_SURFACE_BLUR_PX,
 } from "../../stores/settingsStore";
 import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../stores/shortcutsStore";
 </script>
@@ -74,6 +83,73 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
       </button>
     </div>
   </div>
+
+  <div class="setting-row" id="setting-window-surface-style" tabindex="-1">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.window_surface_style")}</span>
+      <span class="row-desc">{$t("settings.window_surface_style_desc")}</span>
+    </div>
+    <div class="timer-pills">
+      <button
+        class="mini-pill"
+        class:selected={$windowSurfaceStyle === "frosted"}
+        aria-pressed={$windowSurfaceStyle === "frosted"}
+        onclick={() => setWindowSurfaceStyle("frosted")}
+      >
+        {$t("settings.window_surface_frosted")}
+      </button>
+      <button
+        class="mini-pill"
+        class:selected={$windowSurfaceStyle === "solid"}
+        aria-pressed={$windowSurfaceStyle === "solid"}
+        onclick={() => setWindowSurfaceStyle("solid")}
+      >
+        {$t("settings.window_surface_solid")}
+      </button>
+    </div>
+  </div>
+
+  {#if $windowSurfaceStyle === "frosted"}
+    <div class="setting-row" id="setting-window-surface-opacity" tabindex="-1">
+      <div class="row-text">
+        <span class="row-label">{$t("settings.window_surface_opacity")}</span>
+        <span class="row-desc">{$t("settings.window_surface_opacity_desc")}</span>
+      </div>
+      <div class="range-control">
+        <input
+          type="range"
+          min={MIN_WINDOW_SURFACE_OPACITY}
+          max={MAX_WINDOW_SURFACE_OPACITY}
+          step="1"
+          value={$windowSurfaceOpacity}
+          oninput={(event) => setWindowSurfaceOpacity(Number(event.currentTarget.value))}
+          aria-label={$t("settings.window_surface_opacity")}
+          aria-valuetext="{$windowSurfaceOpacity}%"
+        />
+        <output>{ $windowSurfaceOpacity }%</output>
+      </div>
+    </div>
+
+    <div class="setting-row" id="setting-window-surface-blur" tabindex="-1">
+      <div class="row-text">
+        <span class="row-label">{$t("settings.window_surface_blur")}</span>
+        <span class="row-desc">{$t("settings.window_surface_blur_desc")}</span>
+      </div>
+      <div class="range-control">
+        <input
+          type="range"
+          min="0"
+          max={MAX_WINDOW_SURFACE_BLUR_PX}
+          step="1"
+          value={$windowSurfaceBlurPx}
+          oninput={(event) => setWindowSurfaceBlurPx(Number(event.currentTarget.value))}
+          aria-label={$t("settings.window_surface_blur")}
+          aria-valuetext="{$windowSurfaceBlurPx} px"
+        />
+        <output>{ $windowSurfaceBlurPx } px</output>
+      </div>
+    </div>
+  {/if}
 
   <div class="setting-row" id="setting-background-blur" tabindex="-1">
     <div class="row-text">

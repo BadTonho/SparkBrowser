@@ -31,13 +31,13 @@ use commands::media::{
 };
 
 use commands::diagnostics::get_diagnostics;
-use commands::extensions::{
-    get_extension_action, get_installed_extensions, install_extension_from_archive,
-    install_extension_from_url, load_unpacked_extension, remove_extension, toggle_extension,
-};
 use commands::downloads::{
     cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
     get_download_visual, get_downloads, set_download_checksum,
+};
+use commands::extensions::{
+    get_extension_action, get_installed_extensions, install_extension_from_archive,
+    install_extension_from_url, load_unpacked_extension, remove_extension, toggle_extension,
 };
 use commands::navigation::{
     focus_address_bar, go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds,
@@ -54,12 +54,12 @@ use commands::persistence::{
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
 use commands::privacy::{get_privacy_stats, set_auto_skip_ads, toggle_adblock_shield};
+use commands::reader::get_reader_article;
 use commands::recovery::get_recovery_status;
 use commands::saved_sessions::{
     delete_named_session, get_saved_sessions, rename_named_session, restore_named_session,
     save_named_session,
 };
-use commands::reader::get_reader_article;
 use commands::shortcuts::set_keyboard_shortcuts;
 use commands::site_permissions::{
     get_site_permissions, respond_site_permission, set_site_permission,
@@ -72,8 +72,8 @@ use commands::split_view::{
 };
 use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
-    auto_hibernate_inactive_tabs, close_tab, create_tab, create_ephemeral_tab, get_tabs, get_tabs_memory,
-    hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace, reorder_tabs,
+    auto_hibernate_inactive_tabs, close_tab, create_ephemeral_tab, create_tab, get_tabs,
+    get_tabs_memory, hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace, reorder_tabs,
     set_resident_limit, set_tab_pinned, switch_tab,
 };
 use commands::updates::{

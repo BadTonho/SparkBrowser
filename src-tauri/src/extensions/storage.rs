@@ -40,4 +40,3 @@ pub fn remove_extension_dir(app: &AppHandle, id: &str) -> Result<(), String> {
     }
     Ok(())
 }
-

@@ -89,4 +89,3 @@ pub async fn get_extension_action(
 ) -> Result<Option<ExtensionAction>, String> {
     crate::extensions::get_extension_action(&app, &id)
 }
-

@@ -90,7 +90,7 @@
 
 <style>
   .preview-dismiss { position:fixed;inset:0;z-index:2000; }
-  .privacy-preview { position:absolute;box-sizing:border-box;width:300px;max-width:calc(100vw - 16px);padding:16px;background:var(--bg-downloads-panel, #1c1c1c);border:1px solid var(--border-subtle);border-radius:10px;box-shadow:0 4px 16px #0005; }
+  .privacy-preview { position:absolute;box-sizing:border-box;width:300px;max-width:calc(100vw - 16px);padding:16px;background:var(--modal-surface-bg, var(--bg-downloads-panel, #1c1c1c));backdrop-filter:var(--modal-surface-filter);-webkit-backdrop-filter:var(--modal-surface-filter);border:var(--modal-surface-border, 1px solid var(--border-subtle));border-radius:10px;box-shadow:var(--modal-surface-shadow, 0 4px 16px #0005); }
   label { display:flex;align-items:center;justify-content:space-between;margin-top:16px; }
   small { display:block;color:#b9b9c2;font-size:12px; }
   input { accent-color:var(--accent-primary); }

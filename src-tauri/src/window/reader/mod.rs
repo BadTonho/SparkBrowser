@@ -104,7 +104,10 @@ const EXTRACT_SCRIPT: &str = r#"
 })()
 "#;
 
-pub async fn extract_article(app: &AppHandle, tab_id: Option<String>) -> Result<ReaderArticle, String> {
+pub async fn extract_article(
+    app: &AppHandle,
+    tab_id: Option<String>,
+) -> Result<ReaderArticle, String> {
     let state = app.state::<crate::state::browser_state::BrowserState>();
     let id = match tab_id {
         Some(id) => id,
@@ -136,18 +139,19 @@ pub async fn extract_article(app: &AppHandle, tab_id: Option<String>) -> Result<
             let res = (|| -> windows_core::Result<()> {
                 let core = unsafe { platform.controller().CoreWebView2()? };
                 let cb = sender_for_eval.clone();
-                let handler = ExecuteScriptCompletedHandler::create(Box::new(move |hr, json_str| {
-                    let result_str = (|| -> windows_core::Result<String> {
-                        hr?;
-                        Ok(json_str)
-                    })();
-                    if let Ok(mut lock) = cb.lock() {
-                        if let Some(tx) = lock.take() {
-                            let _ = tx.send(result_str.map_err(|e| e.to_string()));
+                let handler =
+                    ExecuteScriptCompletedHandler::create(Box::new(move |hr, json_str| {
+                        let result_str = (|| -> windows_core::Result<String> {
+                            hr?;
+                            Ok(json_str)
+                        })();
+                        if let Ok(mut lock) = cb.lock() {
+                            if let Some(tx) = lock.take() {
+                                let _ = tx.send(result_str.map_err(|e| e.to_string()));
+                            }
                         }
-                    }
-                    Ok(())
-                }));
+                        Ok(())
+                    }));
                 unsafe {
                     core.ExecuteScript(PCWSTR(script_wide.as_ptr()), &handler)?;
                 }
@@ -168,8 +172,7 @@ pub async fn extract_article(app: &AppHandle, tab_id: Option<String>) -> Result<
             .map_err(|_| "Evaluation channel closed".to_string())??;
 
         // WebView2 ExecuteScript returns the result JSON-encoded as a JSON string
-        let inner_json: String = serde_json::from_str(&raw_result)
-            .unwrap_or(raw_result);
+        let inner_json: String = serde_json::from_str(&raw_result).unwrap_or(raw_result);
 
         let article: ReaderArticle = serde_json::from_str(&inner_json)
             .map_err(|e| format!("Failed to parse article data: {e}"))?;
@@ -190,7 +193,10 @@ pub async fn extract_article(app: &AppHandle, tab_id: Option<String>) -> Result<
             title: tab.title,
             byline: String::new(),
             site_name: String::new(),
-            content_html: format!("<p>Reading mode for {} is available on Windows.</p>", tab.url),
+            content_html: format!(
+                "<p>Reading mode for {} is available on Windows.</p>",
+                tab.url
+            ),
             text_content: String::new(),
             word_count: 10,
             reading_time_mins: 1,

@@ -1,10 +1,9 @@
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager, Webview};
 use webview2_com::{
-    CoTaskMemPWSTR,
-    BrowserExtensionEnableCompletedHandler, BrowserExtensionRemoveCompletedHandler,
-    ProfileAddBrowserExtensionCompletedHandler, ProfileGetBrowserExtensionsCompletedHandler,
-    Microsoft::Web::WebView2::Win32::*,
+    BrowserExtensionEnableCompletedHandler, BrowserExtensionRemoveCompletedHandler, CoTaskMemPWSTR,
+    Microsoft::Web::WebView2::Win32::*, ProfileAddBrowserExtensionCompletedHandler,
+    ProfileGetBrowserExtensionsCompletedHandler,
 };
 use windows_core::{Interface, PCWSTR};
 
@@ -56,7 +55,10 @@ async fn with_profile7<T: Send + 'static>(
 
 /// Adds an unpacked browser extension to WebView2.
 /// Returns the WebView2 Extension ID.
-pub async fn add_browser_extension(app: &AppHandle, extension_folder_path: &str) -> Result<String, String> {
+pub async fn add_browser_extension(
+    app: &AppHandle,
+    extension_folder_path: &str,
+) -> Result<String, String> {
     let wide_path: Vec<u16> = extension_folder_path
         .encode_utf16()
         .chain(std::iter::once(0))
@@ -69,14 +71,20 @@ pub async fn add_browser_extension(app: &AppHandle, extension_folder_path: &str)
         let handler = ProfileAddBrowserExtensionCompletedHandler::create(Box::new(
             move |status, extension_opt| {
                 if let Err(e) = status {
-                    reply(&send_clone, Err(format!("AddBrowserExtension failed: {}", e)));
+                    reply(
+                        &send_clone,
+                        Err(format!("AddBrowserExtension failed: {}", e)),
+                    );
                     return Ok(());
                 }
 
                 let ext = match extension_opt {
                     Some(e) => e,
                     None => {
-                        reply(&send_clone, Err("Extension added but handle is null".into()));
+                        reply(
+                            &send_clone,
+                            Err("Extension added but handle is null".into()),
+                        );
                         return Ok(());
                     }
                 };
@@ -84,7 +92,10 @@ pub async fn add_browser_extension(app: &AppHandle, extension_folder_path: &str)
                 let mut raw_id = Default::default();
                 unsafe {
                     if let Err(e) = ext.Id(&mut raw_id) {
-                        reply(&send_clone, Err(format!("Failed to retrieve extension ID: {}", e)));
+                        reply(
+                            &send_clone,
+                            Err(format!("Failed to retrieve extension ID: {}", e)),
+                        );
                         return Ok(());
                     }
                 }
@@ -117,7 +128,10 @@ pub async fn set_browser_extension_enabled(
         let get_handler = ProfileGetBrowserExtensionsCompletedHandler::create(Box::new(
             move |status, list_opt| {
                 if let Err(e) = status {
-                    reply(&send_clone, Err(format!("GetBrowserExtensions failed: {}", e)));
+                    reply(
+                        &send_clone,
+                        Err(format!("GetBrowserExtensions failed: {}", e)),
+                    );
                     return Ok(());
                 }
 
@@ -132,7 +146,10 @@ pub async fn set_browser_extension_enabled(
                 let mut count = 0;
                 unsafe {
                     if let Err(e) = list.Count(&mut count) {
-                        reply(&send_clone, Err(format!("Failed to get extension count: {}", e)));
+                        reply(
+                            &send_clone,
+                            Err(format!("Failed to get extension count: {}", e)),
+                        );
                         return Ok(());
                     }
                 }
@@ -163,16 +180,15 @@ pub async fn set_browser_extension_enabled(
                 };
 
                 let send_inner = send_clone.clone();
-                let enable_handler = BrowserExtensionEnableCompletedHandler::create(Box::new(
-                    move |status| {
+                let enable_handler =
+                    BrowserExtensionEnableCompletedHandler::create(Box::new(move |status| {
                         if let Err(e) = status {
                             reply(&send_inner, Err(format!("Enable/disable failed: {}", e)));
                         } else {
                             reply(&send_inner, Ok(()));
                         }
                         Ok(())
-                    },
-                ));
+                    }));
 
                 unsafe {
                     if let Err(e) = ext.Enable(enabled, &enable_handler) {
@@ -202,7 +218,10 @@ pub async fn remove_browser_extension(app: &AppHandle, extension_id: String) -> 
         let get_handler = ProfileGetBrowserExtensionsCompletedHandler::create(Box::new(
             move |status, list_opt| {
                 if let Err(e) = status {
-                    reply(&send_clone, Err(format!("GetBrowserExtensions failed: {}", e)));
+                    reply(
+                        &send_clone,
+                        Err(format!("GetBrowserExtensions failed: {}", e)),
+                    );
                     return Ok(());
                 }
 
@@ -217,7 +236,10 @@ pub async fn remove_browser_extension(app: &AppHandle, extension_id: String) -> 
                 let mut count = 0;
                 unsafe {
                     if let Err(e) = list.Count(&mut count) {
-                        reply(&send_clone, Err(format!("Failed to count extensions: {}", e)));
+                        reply(
+                            &send_clone,
+                            Err(format!("Failed to count extensions: {}", e)),
+                        );
                         return Ok(());
                     }
                 }
@@ -247,16 +269,15 @@ pub async fn remove_browser_extension(app: &AppHandle, extension_id: String) -> 
                 };
 
                 let send_inner = send_clone.clone();
-                let remove_handler = BrowserExtensionRemoveCompletedHandler::create(Box::new(
-                    move |status| {
+                let remove_handler =
+                    BrowserExtensionRemoveCompletedHandler::create(Box::new(move |status| {
                         if let Err(e) = status {
                             reply(&send_inner, Err(format!("Remove extension failed: {}", e)));
                         } else {
                             reply(&send_inner, Ok(()));
                         }
                         Ok(())
-                    },
-                ));
+                    }));
 
                 unsafe {
                     if let Err(e) = ext.Remove(&remove_handler) {
@@ -294,11 +315,13 @@ pub fn sync_new_webview(app: &AppHandle, view: &Webview) -> Result<(), String> {
     view.with_webview(move |platform| {
         let result = (|| -> windows_core::Result<()> {
             let core = unsafe { platform.controller().CoreWebView2()? };
-            let profile7 = get_profile7(&core).map_err(|_| windows_core::Error::from_hresult(windows_core::HRESULT(-1)))?;
+            let profile7 = get_profile7(&core)
+                .map_err(|_| windows_core::Error::from_hresult(windows_core::HRESULT(-1)))?;
 
             for path in enabled_paths {
                 let wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
-                let handler = ProfileAddBrowserExtensionCompletedHandler::create(Box::new(|_, _| Ok(())));
+                let handler =
+                    ProfileAddBrowserExtensionCompletedHandler::create(Box::new(|_, _| Ok(())));
                 unsafe {
                     let _ = profile7.AddBrowserExtension(PCWSTR(wide.as_ptr()), &handler);
                 }
@@ -311,4 +334,3 @@ pub fn sync_new_webview(app: &AppHandle, view: &Webview) -> Result<(), String> {
 
     Ok(())
 }
-
