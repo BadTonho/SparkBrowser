@@ -33,6 +33,16 @@ Refresh tokens usam o Gerenciador de Credenciais do Windows, isolados por aplica
 
 O modo de testes do Google pode [expirar refresh tokens após sete dias](https://developers.google.com/identity/protocols/oauth2). `gmail.metadata` é um [escopo restrito](https://developers.google.com/workspace/gmail/api/auth/scopes); distribuição pública exige um processo separado de verificação e preparação. Outros provedores e a configuração para distribuição pública ficam fora desta primeira versão. A conexão Gmail exige atualmente armazenamento seguro do Windows e Microsoft Edge.
 
+## Plano de fundo
+
+Você pode definir uma imagem de fundo personalizada a partir do seu dispositivo pelo painel **Personalizar nova guia** (`⚙️`).
+- **Escolher imagem**: Abre o seletor de arquivos do sistema para escolher uma imagem (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`).
+- **Escala e Otimização**: Imagens de alta resolução são redimensionadas e otimizadas localmente via HTML Canvas para manter a fluidez e reduzir o uso de memória.
+- **Escurecimento do fundo**: Um controle deslizante ajusta a camada escura sobre a imagem (0% a 90%, padrão de 40%) para garantir legibilidade dos textos, widgets e atalhos.
+- **Efeito translúcido (Glassmorphism)**: Com um papel de parede ativo, os cartões de busca e widgets adotam transparência com desfoque de fundo (*backdrop blur*).
+- **Sincronização entre guias e persistência**: A imagem escolhida fica salva localmente no armazenamento do dispositivo (IndexedDB e preferências locais) e sincroniza entre todas as novas guias abertas em tempo real, sem vazar para backups.
+- **Remover**: Excluir o plano de fundo restaura imediatamente a cor sólida padrão.
+
 ## Dados e validação
 
 Uma migração SQLite idempotente armazena somente preferências dos widgets e a cidade escolhida manualmente. Backups continuam na versão 4 e excluem essas configurações, configuração OAuth, coordenadas, credenciais e e-mails. O documento local mantém `connect-src 'none'`: o Rust faz as consultas remotas e envia dados seguros de apresentação pela ponte autenticada existente. Respostas antigas não restauram widgets desativados nem e-mails desconectados. Abrir configurações cancela prévias de arraste de guias sem ocultar ou recarregar páginas.

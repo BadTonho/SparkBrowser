@@ -33,6 +33,16 @@ Refresh tokens use Windows Credential Manager, isolated by application/profile. 
 
 Google's testing mode can [expire refresh tokens after seven days](https://developers.google.com/identity/protocols/oauth2). `gmail.metadata` is a [restricted scope](https://developers.google.com/workspace/gmail/api/auth/scopes); public distribution requires a separate verification/readiness process. Other providers and public-release onboarding are outside this first version. Gmail connection currently requires Windows secure storage and Microsoft Edge.
 
+## Wallpaper
+
+You can set a custom background image from your device through the **Customize new tab** panel (`⚙️`).
+- **Choose image**: Opens the system file picker to select an image (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`).
+- **Scaling & Optimization**: High-resolution images are scaled and optimized locally via HTML Canvas to preserve smooth rendering performance and minimize memory usage.
+- **Background dimming**: A slider controls the dark overlay level (0% to 90%, default 40%) to ensure all search text, widgets, and recent-site cards maintain crisp readability.
+- **Glassmorphism**: When a wallpaper is active, widgets and search cards gain subtle translucency and backdrop blur.
+- **Cross-tab sync & Persistence**: The chosen image is stored locally in device storage (IndexedDB and local preferences) and updates across all open new tabs in real time without entering backups.
+- **Remove**: Deleting the wallpaper immediately restores the default solid background.
+
 ## Data and validation
 
 An idempotent SQLite migration stores only widget preferences and the manually selected city. Backups remain version 4 and exclude these settings, OAuth configuration, coordinates, credentials and mail. The local document keeps `connect-src 'none'`: Rust performs remote requests and sends safe display data through the existing authenticated document bridge. Old responses cannot restore disabled widgets or disconnected mail. Opening settings cancels tab-drag previews without hiding or reloading pages.
