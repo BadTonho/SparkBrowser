@@ -53,8 +53,12 @@ function createWallpaperFixture(initialStorage = {}) {
   }
 
   const nodes = new Map();
-  for (const [, id] of readFileSync('public/new-tab.html', 'utf8').matchAll(/id="([^"]+)"/g)) {
-    nodes.set(id, new ElementNode(id));
+  const html = readFileSync('public/new-tab.html', 'utf8');
+  for (const match of html.matchAll(/<([a-z0-9-]+)[^>]*id="([^"]+)"[^>]*>/gi)) {
+    const id = match[2];
+    const node = new ElementNode(id);
+    if (match[0].includes(' hidden')) node.hidden = true;
+    nodes.set(id, node);
   }
 
   const document = {
@@ -130,7 +134,7 @@ function createWallpaperFixture(initialStorage = {}) {
 
 test('wallpaper starts hidden when no custom image is saved', async () => {
   const f = createWallpaperFixture();
-  await new Promise(r => setTimeout(r, 10));
+  await new Promise(r => setTimeout(r, 25));
 
   const container = f.nodes.get('wallpaper-container');
   const toggle = f.nodes.get('wallpaper-enabled');
@@ -225,4 +229,29 @@ test('storage events from another tab update wallpaper state', async () => {
 
   assert.equal(container.hidden, false);
   assert.equal(f.nodes.get('wallpaper-image').src, 'data:image/png;base64,tab2');
+});
+
+test('settings menu list opens option detail view and back button returns to list', async () => {
+  const f = createWallpaperFixture();
+  await new Promise(r => setTimeout(r, 20));
+
+  const mainView = f.nodes.get('settings-main-view');
+  const weatherSec = f.nodes.get('weather-section');
+  const gmailSec = f.nodes.get('gmail-section');
+  const wallpaperSec = f.nodes.get('wallpaper-section');
+
+  const weatherItem = f.nodes.get('menu-item-weather');
+  const gmailItem = f.nodes.get('menu-item-gmail');
+  const wallpaperItem = f.nodes.get('menu-item-wallpaper');
+  const backBtn = f.nodes.get('settings-back');
+
+  // Initial state: main menu visible, detail sections hidden, back hidden
+  assert.equal(mainView.hidden, false);
+  assert.equal(weatherSec.hidden, true);
+  assert.equal(gmailSec.hidden, true);
+  assert.equal(wallpaperSec.hidden, true);
+  assert.equal(backBtn.hidden, true);
+  assert.ok(weatherItem);
+  assert.ok(gmailItem);
+  assert.ok(wallpaperItem);
 });

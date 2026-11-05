@@ -1,6 +1,6 @@
 # New-tab widgets
 
-Open **Customize new tab** in the bottom-right corner to enable **Weather** and **Gmail**. Both start disabled. Preferences are local to the device, shared across workspaces and restored after restart. Weather sits in the upper-left corner and Gmail in the upper-right; narrow panes stack them above search. Small windows scroll. The settings dialog supports Tab, Escape and outside clicks, returning focus to its button when closed. Search drafts and recent sites remain intact while widgets update.
+Open **Customize new tab** in the bottom-right corner to configure **Weather**, **Gmail**, and **Wallpaper**. It opens as a compact popover right above the button, presenting a clean vertical menu of options (**Weather**, **Gmail**, and **Wallpaper**). Selecting an option smoothly transitions to its dedicated configuration view with a back button to return to the main list. Preferences are local to the device, shared across workspaces and restored after restart. Weather sits in the upper-left corner and Gmail in the upper-right; narrow panes stack them above search. Small windows scroll. The settings dialog supports Tab, Escape and outside clicks, returning focus to its button when closed. Search drafts and recent sites remain intact while widgets update.
 
 ## Weather
 

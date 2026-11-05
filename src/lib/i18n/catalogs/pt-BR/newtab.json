@@ -9,6 +9,8 @@
   "newtab.internal": "Página interna do navegador",
   "newtab.widgets.settings": "Personalizar nova guia",
   "newtab.widgets.close": "Fechar configurações",
+  "newtab.widgets.back": "Voltar",
+  "newtab.widgets.categories": "Categorias",
   "newtab.widgets.weather": "Clima",
   "newtab.widgets.showWeather": "Mostrar clima",
   "newtab.widgets.wallpaper": "Plano de fundo",

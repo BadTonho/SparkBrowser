@@ -9,6 +9,8 @@
   "newtab.internal": "Internal browser page",
   "newtab.widgets.settings": "Customize new tab",
   "newtab.widgets.close": "Close settings",
+  "newtab.widgets.back": "Back",
+  "newtab.widgets.categories": "Categories",
   "newtab.widgets.weather": "Weather",
   "newtab.widgets.showWeather": "Show weather",
   "newtab.widgets.wallpaper": "Wallpaper",

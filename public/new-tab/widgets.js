@@ -23,10 +23,19 @@
     const name = condition(code); image.src = `/new-tab/weather/${name}.svg`; image.alt = text(name);
     return image;
   }
-  function close() { if (panel.open) panel.close(); gear.setAttribute('aria-expanded', 'false'); gear.focus(); }
+  function close() {
+    if (panel.open) panel.close();
+    showCategory(null);
+    gear.setAttribute('aria-expanded', 'false');
+    gear.focus();
+  }
   gear.addEventListener('click', () => {
     if (panel.open) { close(); return; }
-    send('panel'); panel.showModal(); gear.setAttribute('aria-expanded', 'true'); $('settings-close').focus();
+    send('panel');
+    if (!currentCategory) showCategory(null);
+    panel.showModal();
+    gear.setAttribute('aria-expanded', 'true');
+    $('settings-close').focus();
   });
   $('settings-close').addEventListener('click', close);
   panel.addEventListener('cancel', event => { event.preventDefault(); close(); });
@@ -36,6 +45,47 @@
     if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close();
   });
   panel.addEventListener('close', () => gear.setAttribute('aria-expanded', 'false'));
+
+  const categories = ['weather', 'gmail', 'wallpaper'];
+  let currentCategory = null;
+
+  function showCategory(cat) {
+    currentCategory = cat;
+    const mainView = $('settings-main-view');
+    const backBtn = $('settings-back');
+    const heading = $('settings-heading');
+
+    if (cat && categories.includes(cat)) {
+      if (mainView) mainView.hidden = true;
+      if (backBtn) backBtn.hidden = false;
+      if (heading) heading.textContent = cat === 'gmail' ? 'Gmail' : text(cat);
+      for (const c of categories) {
+        const sec = $(`${c}-section`);
+        if (sec) sec.hidden = c !== cat;
+      }
+    } else {
+      if (mainView) mainView.hidden = false;
+      if (backBtn) backBtn.hidden = true;
+      if (heading) heading.textContent = text('settings');
+      for (const c of categories) {
+        const sec = $(`${c}-section`);
+        if (sec) sec.hidden = true;
+      }
+    }
+  }
+
+  $('settings-back')?.addEventListener('click', () => {
+    const prev = currentCategory;
+    showCategory(null);
+    if (prev) $(`menu-item-${prev}`)?.focus();
+    else $('settings-close')?.focus();
+  });
+
+  for (const c of categories) {
+    $(`menu-item-${c}`)?.addEventListener('click', () => showCategory(c));
+    $(`${c}-section`)?.addEventListener('focusin', () => showCategory(c));
+  }
+
   function flush() {
     if (saving || !desired || !snapshot) return;
     saving = true; saveRevision = snapshot.revision;
@@ -46,8 +96,8 @@
     desired = { ...settings(), ...patch }; $('settings-status').textContent = '';
     render(); flush();
   }
-  $('weather-enabled').addEventListener('change', event => change({ weather_enabled: event.target.checked }));
-  $('gmail-enabled').addEventListener('change', event => change({ gmail_enabled: event.target.checked }));
+  $('weather-enabled').addEventListener('change', event => { showCategory('weather'); change({ weather_enabled: event.target.checked }); });
+  $('gmail-enabled').addEventListener('change', event => { showCategory('gmail'); change({ gmail_enabled: event.target.checked }); });
   $('temperature-unit').addEventListener('change', event => change({ fahrenheit: event.target.value === 'fahrenheit' }));
   $('location-mode').addEventListener('change', event => change({ automatic_location: event.target.value === 'automatic' }));
   function searchCities() {
@@ -68,7 +118,7 @@
     }
   }
   for (const id of ['location-request', 'weather-locate']) $(id).addEventListener('click', () => send('locate'));
-  $('weather-configure').addEventListener('click', () => gear.click());
+  $('weather-configure').addEventListener('click', () => { showCategory('weather'); gear.click(); });
   $('weather-refresh').addEventListener('click', () => send('refresh_weather'));
   $('gmail-refresh').addEventListener('click', () => send('refresh_gmail'));
   for (const id of ['gmail-connect', 'gmail-widget-connect']) $(id).addEventListener('click', () => send('connect'));

@@ -1,6 +1,6 @@
 # Widgets da nova guia
 
-Abra **Personalizar nova guia** no canto inferior direito para ativar **Clima** e **Gmail**. Ambos começam desativados. As preferências são locais do dispositivo, compartilhadas entre workspaces e restauradas após reiniciar. O clima fica no canto superior esquerdo e o Gmail no superior direito; painéis estreitos os empilham acima da busca. Janelas pequenas permitem rolagem. O diálogo de configurações aceita Tab, Escape e clique externo, devolvendo o foco ao botão ao fechar. Rascunhos da busca e sites recentes são preservados durante atualizações.
+Abra **Personalizar nova guia** no canto inferior direito para configurar **Clima**, **Gmail** e **Plano de fundo**. Abre como uma janela compacta logo acima do botão, apresentando uma lista vertical clara de opções (**Clima**, **Gmail** e **Plano de fundo**). Ao clicar em uma opção, a janela muda para as configurações daquele item com um botão de voltar para retornar à lista principal. As preferências são locais do dispositivo, compartilhadas entre workspaces e restauradas após reiniciar. O clima fica no canto superior esquerdo e o Gmail no superior direito; painéis estreitos os empilham acima da busca. Janelas pequenas permitem rolagem. O diálogo de configurações aceita Tab, Escape e clique externo, devolvendo o foco ao botão ao fechar. Rascunhos da busca e sites recentes são preservados durante atualizações.
 
 ## Clima
 

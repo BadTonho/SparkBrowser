@@ -52,9 +52,32 @@
   </main>
   <footer id="customization"><button id="widget-settings" class="icon-button" type="button" aria-controls="settings-panel" aria-expanded="false" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 3-.7 2.3-2 .9L4 5.7 2.5 8.3 4 10v2l-1.5 1.7L4 16.3l2.3-.5 2 .9L9 19h3l.7-2.3 2-.9 2.3.5 1.5-2.6L17 12v-2l1.5-1.7L17 5.7l-2.3.5-2-.9L12 3Z" transform="translate(1.5 1)"/><circle cx="12" cy="12" r="3"/></svg></button></footer>
   <dialog id="settings-panel" aria-labelledby="settings-heading">
-    <div class="widget-heading"><h2 id="settings-heading" data-label="settings"></h2><button id="settings-close" type="button" class="icon-button" data-label="close">×</button></div>
+    <div class="widget-heading">
+      <button id="settings-back" type="button" class="icon-button" aria-label="Voltar" data-label="back" hidden>‹</button>
+      <h2 id="settings-heading" data-label="settings"></h2>
+      <button id="settings-close" type="button" class="icon-button" data-label="close">×</button>
+    </div>
     <p id="settings-status" role="status"></p>
-    <section aria-labelledby="weather-settings-heading">
+    <div id="settings-main-view">
+      <nav class="settings-menu-list" role="menu">
+        <button id="menu-item-weather" type="button" class="settings-menu-item" data-category="weather" role="menuitem">
+          <span class="menu-item-icon" aria-hidden="true">☁️</span>
+          <span class="menu-item-label" data-label="weather"></span>
+          <span class="menu-item-chevron" aria-hidden="true">›</span>
+        </button>
+        <button id="menu-item-gmail" type="button" class="settings-menu-item" data-category="gmail" role="menuitem">
+          <span class="menu-item-icon" aria-hidden="true">✉️</span>
+          <span class="menu-item-label">Gmail</span>
+          <span class="menu-item-chevron" aria-hidden="true">›</span>
+        </button>
+        <button id="menu-item-wallpaper" type="button" class="settings-menu-item" data-category="wallpaper" role="menuitem">
+          <span class="menu-item-icon" aria-hidden="true">🖼️</span>
+          <span class="menu-item-label" data-label="wallpaper"></span>
+          <span class="menu-item-chevron" aria-hidden="true">›</span>
+        </button>
+      </nav>
+    </div>
+    <section id="weather-section" aria-labelledby="weather-settings-heading" hidden>
       <h3 id="weather-settings-heading" data-label="weather"></h3>
       <label class="toggle"><span data-label="showWeather"></span><input id="weather-enabled" type="checkbox"></label>
       <div id="weather-options" hidden>
@@ -69,7 +92,7 @@
         <select id="temperature-unit"><option value="celsius">°C</option><option value="fahrenheit">°F</option></select>
       </div>
     </section>
-    <section aria-labelledby="gmail-settings-heading">
+    <section id="gmail-section" aria-labelledby="gmail-settings-heading" hidden>
       <h3 id="gmail-settings-heading">Gmail</h3>
       <label class="toggle"><span data-label="showGmail"></span><input id="gmail-enabled" type="checkbox"></label>
       <div id="gmail-options" hidden>
@@ -79,7 +102,7 @@
         <button id="gmail-disconnect" type="button" data-label="disconnect" hidden></button>
       </div>
     </section>
-    <section aria-labelledby="wallpaper-settings-heading">
+    <section id="wallpaper-section" aria-labelledby="wallpaper-settings-heading" hidden>
       <h3 id="wallpaper-settings-heading" data-label="wallpaper"></h3>
       <label class="toggle"><span data-label="showWallpaper"></span><input id="wallpaper-enabled" type="checkbox"></label>
       <div id="wallpaper-options" hidden>

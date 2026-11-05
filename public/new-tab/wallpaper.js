@@ -161,6 +161,7 @@
 
     if (enabledToggle) {
       enabledToggle.addEventListener('change', async event => {
+        $('menu-item-wallpaper')?.click();
         const checked = event.target.checked;
         setStorage('veloce_wallpaper_enabled', checked ? 'true' : 'false');
         notifyUpdated();
