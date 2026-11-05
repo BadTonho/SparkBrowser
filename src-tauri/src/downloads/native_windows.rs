@@ -114,6 +114,47 @@ pub fn install(
                     }
                     let url = CoTaskMemPWSTR::from(uri).to_string();
                     let parsed = tauri::Url::parse(&url).map_err(|_| "downloads.invalid_url")?;
+
+                    // If it is a Chrome Web Store extension or CRX package, intercept and install natively into Veloce
+                    let is_crx = url.contains("clients2.google.com/service/update2/crx")
+                        || parsed.path().ends_with(".crx");
+                    if is_crx {
+                        if let Some(ext_id) = crate::extensions::crx::parse_webstore_id(&url) {
+                            let install_app = a.clone();
+                            tauri::async_runtime::spawn(async move {
+                                match crate::extensions::install_from_webstore(
+                                    &install_app,
+                                    &ext_id,
+                                )
+                                .await
+                                {
+                                    Ok(details) => {
+                                        let _ = crate::security::emit_shell(
+                                            &install_app,
+                                            "extension-installed",
+                                            details,
+                                        );
+                                    }
+                                    Err(err) => {
+                                        eprintln!(
+                                            "Failed to install extension {}: {}",
+                                            ext_id, err
+                                        );
+                                        let _ = crate::security::emit_shell(
+                                            &install_app,
+                                            "extension-install-failed",
+                                            serde_json::json!({ "id": ext_id, "error": err }),
+                                        );
+                                    }
+                                }
+                            });
+                            unsafe {
+                                let _ = args.SetCancel(true);
+                                let _ = args.SetHandled(true);
+                            }
+                            return Ok(());
+                        }
+                    }
                     if !matches!(parsed.scheme(), "http" | "https" | "blob")
                         || !parsed.username().is_empty()
                         || parsed.password().is_some()

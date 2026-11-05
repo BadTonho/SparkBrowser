@@ -4,6 +4,7 @@
   import MediaButton from "../media/MediaButton.svelte";
   import PipButton from "../media/PipButton.svelte";
   import ReaderModeButton from "../reader/ReaderModeButton.svelte";
+  import WebStoreInstallButton from "./WebStoreInstallButton.svelte";
   import ZoomControls from "./ZoomControls.svelte";
   import TitlebarActions from "./TitlebarActions.svelte";
   import DownloadProgressIndicator from "../downloads/DownloadProgressIndicator.svelte";
@@ -179,6 +180,7 @@
         />
         <MediaButton />
         <PipButton />
+        <WebStoreInstallButton />
         <ReaderModeButton />
         <ZoomControls />
         <button

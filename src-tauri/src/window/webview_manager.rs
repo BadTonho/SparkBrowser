@@ -114,6 +114,7 @@ pub(super) fn ensure_tab_webview(
     #[cfg(windows)]
     let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
     let webview_builder = WebviewBuilder::new(&label, WebviewUrl::External(initial_url))
+        .browser_extensions_enabled(true)
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
         .initialization_script(super::new_tab::initializer(
             app,

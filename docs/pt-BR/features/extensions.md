@@ -6,7 +6,9 @@ O Veloce Browser suporta o carregamento e execução de extensões padrão do Ch
 
 ## Funcionalidades
 
-* **Instalador da Chrome Web Store:** Cole qualquer URL da Chrome Web Store ou o ID de 32 caracteres da extensão para baixar, descompactar e instalar diretamente.
+* **Instalação em 1-Clique na Chrome Web Store:** Ao navegar em qualquer extensão na `chromewebstore.google.com`, um botão interativo **`[🧩 Instalar no Veloce]`** aparece automaticamente no Omnibox. Um clique baixa, valida e ativa a extensão na hora.
+* **Interceptador de Download de CRX:** O clique no botão "Usar no Chrome" da Google é interceptado nativamente antes da barreira de downloads do WebView2, direcionando o pacote diretamente para o instalador em segundo plano do Veloce.
+* **Instalador da Chrome Web Store (Manual):** Cole qualquer URL da Chrome Web Store ou o ID de 32 caracteres da extensão no modal para baixar, descompactar e instalar diretamente.
 * **Instalador de Arquivos (.zip / .crx):** Instale extensões empacotadas diretamente a partir de arquivos `.zip` ou `.crx` locais (formatos CRX2 e CRX3).
 * **Extensões Descompactadas:** Carregue pastas de extensões descompactadas diretamente do disco.
 * **Instalação Persistente:** Extensões instaladas são salvas na pasta de dados do navegador e registradas no banco SQLite local, mantendo-se ativas após reinicializações.
@@ -18,17 +20,22 @@ O Veloce Browser suporta o carregamento e execução de extensões padrão do Ch
 
 ## Como Instalar uma Extensão
 
-### 1. Pela Chrome Web Store
+### 1. Em 1-Clique pela Chrome Web Store (Recomendado)
+1. Navegue até a página de qualquer extensão na Chrome Web Store (ex: `https://chromewebstore.google.com/detail/...`).
+2. O botão **`[🧩 Instalar no Veloce]`** aparecerá diretamente dentro da barra de endereços (Omnibox).
+3. Dê 1 clique: o Veloce baixa e ativa a extensão imediatamente, e uma notificação toast confirma a instalação.
+
+### 2. Pela Janela de Extensões
 1. Clique no ícone de **Extensões** (peça de quebra-cabeça) na barra superior.
-2. No campo de texto, cole a URL da Chrome Web Store (ex: `https://chromewebstore.google.com/detail/...`) ou o ID de 32 caracteres.
+2. No campo de texto, cole a URL da Chrome Web Store ou o ID de 32 caracteres.
 3. Clique em **Instalar**. A extensão será baixada, validada, extraída e ativada automaticamente.
 
-### 2. A Partir de Arquivo .zip ou .crx
+### 3. A Partir de Arquivo .zip ou .crx
 1. Clique em **Carregar .zip / .crx** na janela de Extensões.
 2. Selecione o arquivo no gerenciador de arquivos.
 3. O Veloce extrairá o pacote em uma pasta gerenciada e ativará a extensão.
 
-### 3. Carregar Descompactada
+### 4. Carregar Descompactada
 1. Clique em **Carregar Descompactada**.
 2. Selecione a pasta que contém o arquivo `manifest.json`.
 3. A extensão aparecerá na lista de instaladas.

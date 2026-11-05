@@ -27,6 +27,7 @@
   import ZoomPanel from "./lib/components/titlebar/ZoomPanel.svelte";
   import MediaNotice from "./lib/components/media/MediaNotice.svelte";
   import BrowserErrorBanner from "./lib/components/status/BrowserErrorBanner.svelte";
+  import ToastNotification from "./lib/components/notifications/ToastNotification.svelte";
   import { slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { get } from "svelte/store";
@@ -359,6 +360,7 @@
 
 <div class="browser-root">
   <BrowserErrorBanner />
+  <ToastNotification />
   <MediaNotice />
   <MediaPanel />
   <ZoomPanel />

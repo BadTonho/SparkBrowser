@@ -3,7 +3,30 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-/// Extracts a 32-character Chrome extension ID from a URL or raw ID string.
+fn percent_decode(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        if c == '%' {
+            let h1 = chars.next();
+            let h2 = chars.next();
+            if let (Some(h1), Some(h2)) = (h1, h2) {
+                if let Ok(byte) = u8::from_str_radix(&format!("{h1}{h2}"), 16) {
+                    result.push(byte as char);
+                    continue;
+                }
+                result.push('%');
+                result.push(h1);
+                result.push(h2);
+                continue;
+            }
+        }
+        result.push(c);
+    }
+    result
+}
+
+/// Extracts a 32-character Chrome extension ID from a URL, download query string, or raw ID string.
 pub fn parse_webstore_id(input: &str) -> Option<String> {
     let clean = input.trim();
     // Check if entire input is already a 32-char ID [a-p]{32}
@@ -11,10 +34,19 @@ pub fn parse_webstore_id(input: &str) -> Option<String> {
         return Some(clean.to_string());
     }
 
-    // Match segment in URL (e.g. /detail/<name>/<id> or /detail/<id>)
-    for part in clean.split(['/', '?', '&', '=']) {
-        if part.len() == 32 && part.chars().all(|c| ('a'..='p').contains(&c)) {
-            return Some(part.to_string());
+    let decoded = if clean.contains('%') {
+        percent_decode(clean)
+    } else {
+        clean.to_string()
+    };
+
+    // Match segment in URL (e.g. /detail/<name>/<id> or /detail/<id> or x=id%3D<id>)
+    for text in [&decoded, &clean.to_string()] {
+        for part in text.split(['/', '?', '&', '=', '%', '#']) {
+            let candidate = part.trim();
+            if candidate.len() == 32 && candidate.chars().all(|c| ('a'..='p').contains(&c)) {
+                return Some(candidate.to_string());
+            }
         }
     }
     None
@@ -94,6 +126,140 @@ pub fn extract_crx_or_zip(bytes: &[u8], target_dir: &Path) -> Result<(), String>
 }
 
 fn extract_zip_stream(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
+    // Try to extract using the ZIP Central Directory (EOCD).
+    // The Central Directory contains authoritative compressed_size, uncompressed_size,
+    // and offsets even when streaming data descriptors (flags bit 3) are used in CRX archives.
+    let mut eocd_offset = None;
+    if bytes.len() >= 22 {
+        let max_search = bytes.len().saturating_sub(65535 + 22);
+        for i in (max_search..=bytes.len() - 22).rev() {
+            if &bytes[i..i + 4] == b"PK\x05\x06" {
+                eocd_offset = Some(i);
+                break;
+            }
+        }
+    }
+
+    if let Some(eocd) = eocd_offset {
+        let cd_size = u32::from_le_bytes([
+            bytes[eocd + 12],
+            bytes[eocd + 13],
+            bytes[eocd + 14],
+            bytes[eocd + 15],
+        ]) as usize;
+        let cd_offset = u32::from_le_bytes([
+            bytes[eocd + 16],
+            bytes[eocd + 17],
+            bytes[eocd + 18],
+            bytes[eocd + 19],
+        ]) as usize;
+
+        if cd_offset + cd_size <= bytes.len() {
+            return extract_from_central_directory(bytes, cd_offset, cd_size, target_dir);
+        }
+    }
+
+    // Fallback: sequential local headers (for simple archives without EOCD)
+    extract_local_headers_fallback(bytes, target_dir)
+}
+
+fn extract_from_central_directory(
+    bytes: &[u8],
+    cd_offset: usize,
+    cd_size: usize,
+    target_dir: &Path,
+) -> Result<(), String> {
+    let mut cursor = cd_offset;
+    let cd_end = cd_offset + cd_size;
+
+    while cursor + 46 <= cd_end {
+        if &bytes[cursor..cursor + 4] != b"PK\x01\x02" {
+            break;
+        }
+
+        let compression_method = u16::from_le_bytes([bytes[cursor + 10], bytes[cursor + 11]]);
+        let compressed_size = u32::from_le_bytes([
+            bytes[cursor + 20],
+            bytes[cursor + 21],
+            bytes[cursor + 22],
+            bytes[cursor + 23],
+        ]) as usize;
+        let uncompressed_size = u32::from_le_bytes([
+            bytes[cursor + 24],
+            bytes[cursor + 25],
+            bytes[cursor + 26],
+            bytes[cursor + 27],
+        ]) as usize;
+        let fn_len = u16::from_le_bytes([bytes[cursor + 28], bytes[cursor + 29]]) as usize;
+        let extra_len = u16::from_le_bytes([bytes[cursor + 30], bytes[cursor + 31]]) as usize;
+        let comment_len = u16::from_le_bytes([bytes[cursor + 32], bytes[cursor + 33]]) as usize;
+        let local_offset = u32::from_le_bytes([
+            bytes[cursor + 42],
+            bytes[cursor + 43],
+            bytes[cursor + 44],
+            bytes[cursor + 45],
+        ]) as usize;
+
+        let name_start = cursor + 46;
+        let name_end = name_start + fn_len;
+        if name_end > cd_end {
+            return Err("ZIP filename in central directory truncated".into());
+        }
+
+        let raw_name = String::from_utf8_lossy(&bytes[name_start..name_end]).to_string();
+        cursor = name_end + extra_len + comment_len;
+
+        if local_offset + 30 > bytes.len() {
+            return Err("ZIP local header offset out of bounds".into());
+        }
+        if &bytes[local_offset..local_offset + 4] != b"PK\x03\x04" {
+            return Err("Invalid ZIP local header signature".into());
+        }
+
+        let local_fn_len =
+            u16::from_le_bytes([bytes[local_offset + 26], bytes[local_offset + 27]]) as usize;
+        let local_extra_len =
+            u16::from_le_bytes([bytes[local_offset + 28], bytes[local_offset + 29]]) as usize;
+
+        let data_start = local_offset + 30 + local_fn_len + local_extra_len;
+        let data_end = data_start + compressed_size;
+        if data_end > bytes.len() {
+            return Err("ZIP entry data out of bounds".into());
+        }
+
+        let entry_data = &bytes[data_start..data_end];
+        let safe_name = raw_name.replace('\\', "/");
+        if !safe_name.contains("..") {
+            let out_path = safe_path(target_dir, &safe_name);
+            if safe_name.ends_with('/') {
+                fs::create_dir_all(&out_path).map_err(|e| e.to_string())?;
+            } else {
+                if let Some(parent) = out_path.parent() {
+                    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+                }
+
+                let decompressed = match compression_method {
+                    0 => entry_data.to_vec(),
+                    8 => {
+                        let mut decoder = DeflateDecoder::new(entry_data);
+                        let mut buf = Vec::with_capacity(uncompressed_size);
+                        decoder
+                            .read_to_end(&mut buf)
+                            .map_err(|e| format!("Failed to decompress {}: {}", safe_name, e))?;
+                        buf
+                    }
+                    m => return Err(format!("Unsupported compression method in ZIP: {}", m)),
+                };
+
+                fs::write(&out_path, decompressed).map_err(|e| e.to_string())?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn extract_local_headers_fallback(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
     let mut cursor = 0;
     while cursor + 30 <= bytes.len() {
         // Local file header signature 0x04034b50
@@ -198,6 +364,83 @@ mod tests {
             Some("eimadpbcbfnmbkopoojfekhnkhdbieeh".to_string())
         );
 
+        let download_url = "https://clients2.google.com/service/update2/crx?response=redirect&os=win&arch=x86-64&os_arch=x86-64&nacl_arch=x86-64&prod=chromecrx&prodchannel=&prodversion=130.0&lang=pt-BR&acceptformat=crx2,crx3&x=id%3Dcjpalhdlnbpafiamejdnhcphjbkeiagm%26installsource%3Dondemand%26uc";
+        assert_eq!(
+            parse_webstore_id(download_url),
+            Some("cjpalhdlnbpafiamejdnhcphjbkeiagm".to_string())
+        );
+
         assert_eq!(parse_webstore_id("https://google.com"), None);
+    }
+
+    #[test]
+    fn extracts_zip_with_central_directory() {
+        use flate2::write::DeflateEncoder;
+        use flate2::Compression;
+        use std::io::Write;
+
+        let content = b"# MIT License\nCopyright (c) 2026 Test\n";
+        let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(content).unwrap();
+        let compressed = encoder.finish().unwrap();
+
+        let filename = b"LICENSE.md";
+        let mut zip = Vec::new();
+
+        // Local header (simulating streaming with size = 0 in local header)
+        zip.extend_from_slice(b"PK\x03\x04");
+        zip.extend_from_slice(&[20, 0]); // version needed
+        zip.extend_from_slice(&[8, 0]); // flags: bit 3 set
+        zip.extend_from_slice(&[8, 0]); // compression method: 8 (deflate)
+        zip.extend_from_slice(&[0, 0, 0, 0]); // mod time/date
+        zip.extend_from_slice(&[0, 0, 0, 0]); // crc32 (zero in local header)
+        zip.extend_from_slice(&[0, 0, 0, 0]); // compressed size (zero in local header)
+        zip.extend_from_slice(&[0, 0, 0, 0]); // uncompressed size (zero in local header)
+        zip.extend_from_slice(&(filename.len() as u16).to_le_bytes());
+        zip.extend_from_slice(&[0, 0]); // extra len
+        zip.extend_from_slice(filename);
+        zip.extend_from_slice(&compressed);
+
+        // Central directory offset
+        let cd_offset = zip.len();
+
+        // Central directory header (authoritative sizes)
+        zip.extend_from_slice(b"PK\x01\x02");
+        zip.extend_from_slice(&[20, 0]); // version made by
+        zip.extend_from_slice(&[20, 0]); // version needed
+        zip.extend_from_slice(&[8, 0]); // flags
+        zip.extend_from_slice(&[8, 0]); // compression: deflate
+        zip.extend_from_slice(&[0, 0, 0, 0]); // mod time/date
+        zip.extend_from_slice(&[0x12, 0x34, 0x56, 0x78]); // crc32
+        zip.extend_from_slice(&(compressed.len() as u32).to_le_bytes());
+        zip.extend_from_slice(&(content.len() as u32).to_le_bytes());
+        zip.extend_from_slice(&(filename.len() as u16).to_le_bytes());
+        zip.extend_from_slice(&[0, 0]); // extra len
+        zip.extend_from_slice(&[0, 0]); // comment len
+        zip.extend_from_slice(&[0, 0]); // disk start
+        zip.extend_from_slice(&[0, 0]); // internal attr
+        zip.extend_from_slice(&[0, 0, 0, 0]); // external attr
+        zip.extend_from_slice(&[0, 0, 0, 0]); // local header offset = 0
+        zip.extend_from_slice(filename);
+
+        let cd_size = zip.len() - cd_offset;
+
+        // End of central directory record (EOCD)
+        zip.extend_from_slice(b"PK\x05\x06");
+        zip.extend_from_slice(&[0, 0]); // disk num
+        zip.extend_from_slice(&[0, 0]); // cd start disk
+        zip.extend_from_slice(&[1, 0]); // cd entries on disk
+        zip.extend_from_slice(&[1, 0]); // total cd entries
+        zip.extend_from_slice(&(cd_size as u32).to_le_bytes());
+        zip.extend_from_slice(&(cd_offset as u32).to_le_bytes());
+        zip.extend_from_slice(&[0, 0]); // comment len
+
+        let temp_dir = tempfile::tempdir().unwrap();
+        extract_crx_or_zip(&zip, temp_dir.path()).unwrap();
+
+        let extracted_file = temp_dir.path().join("LICENSE.md");
+        assert!(extracted_file.exists());
+        let read_content = fs::read_to_string(&extracted_file).unwrap();
+        assert_eq!(read_content, "# MIT License\nCopyright (c) 2026 Test\n");
     }
 }
