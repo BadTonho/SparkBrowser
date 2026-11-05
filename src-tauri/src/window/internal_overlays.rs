@@ -248,6 +248,17 @@ pub(super) fn spawn_workspace_switcher_webview(
         )
         .map_err(|error| format!("Failed to create workspace switcher WebView: {error}"))?;
 
+    #[cfg(target_os = "linux")]
+    super::linux_layout::update_bounds(
+        app,
+        WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+        bounds.x as i32,
+        bounds.y as i32,
+        bounds.width.max(100.0) as i32,
+        bounds.height.max(100.0) as i32,
+        false,
+    )?;
+
     if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
         crate::security::harden(app, &webview, true)?;
         let _ = webview.hide();
@@ -294,6 +305,17 @@ pub(super) fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(),
             LogicalSize::new(1200.0, 800.0),
         )
         .map_err(|error| format!("Failed to create bookmark context menu WebView: {error}"))?;
+
+    #[cfg(target_os = "linux")]
+    super::linux_layout::update_bounds(
+        app,
+        BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
+        0,
+        0,
+        1200,
+        800,
+        false,
+    )?;
 
     if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
         crate::security::harden(app, &webview, true)?;

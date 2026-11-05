@@ -4,6 +4,7 @@ use super::{volume::FrameMedia, MediaService};
 use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, Manager};
 
+#[cfg_attr(not(windows), allow(dead_code))]
 pub(super) fn receive(app: &AppHandle, id: &str, context: &str, value: &Signal) {
     let document = value.document.as_str();
     app.state::<MediaService>().update(app, id, |t| {

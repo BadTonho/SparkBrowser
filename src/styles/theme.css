@@ -48,6 +48,17 @@ body,
   background: transparent;
 }
 
+:root[data-platform="linux"] {
+  --bg-glass-primary: #121316;
+  --bg-glass-elevated: #1a1b20;
+}
+
+:root[data-platform="linux"] body:has(.browser-root),
+:root[data-platform="linux"] #app:has(.browser-root),
+:root[data-platform="linux"] .browser-root {
+  background: #0f1013 !important;
+}
+
 button,
 input {
   font-family: inherit;

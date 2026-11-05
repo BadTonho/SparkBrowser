@@ -37,6 +37,8 @@ pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String
     })
     .map_err(|e| e.to_string())?;
     if let Some(webview) = app.get_webview(label) {
+        #[cfg(target_os = "linux")]
+        super::linux_layout::remove_child(app, label);
         webview.close().map_err(|e| e.to_string())?;
     }
     super::new_tab::revoke(app, label);

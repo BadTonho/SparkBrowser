@@ -16,6 +16,7 @@ pub struct Release {
     pub draft: bool,
     pub prerelease: bool,
     pub published_at: Option<String>,
+    #[cfg_attr(not(windows), allow(dead_code))]
     pub body: Option<String>,
     pub assets: Vec<Asset>,
 }
@@ -121,6 +122,7 @@ pub fn validate_manifest(release: &Release, manifest: &serde_json::Value) -> Res
     }
     Ok(true)
 }
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn info(release: &Release) -> UpdateInfo {
     UpdateInfo {
         version: tag_version(&release.tag_name)

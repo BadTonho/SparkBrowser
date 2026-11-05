@@ -29,6 +29,7 @@ pub struct GitHub {
 }
 #[cfg(any(windows, test))]
 impl GitHub {
+    #[cfg_attr(not(windows), allow(dead_code))]
     pub fn new(version: &str) -> Result<Self, CheckError> {
         Ok(Self {
             client: reqwest::Client::builder()

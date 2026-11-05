@@ -2,7 +2,7 @@
 
 > 🌍 **Idioma:** [English (Main)](../../en/contributing/rules-and-standards.md) | **Português (pt-BR)**
 
-Para manter um projeto open-source seguro, escalável e impecável, todos os contribuidores e agentes devem seguir estas cinco regras fundamentais:
+Para manter um projeto open-source seguro, escalável e impecável, todos os contribuidores e agentes devem seguir estas seis regras fundamentais:
 
 ---
 
@@ -25,3 +25,8 @@ Para manter um projeto open-source seguro, escalável e impecável, todos os con
 ## Regra 5: Autorização Estrita do Usuário (Nunca Fazer Nada Sem Pedido Explícito)
 - **Nunca comece a programar, modificar arquivos ou executar ações sem que o usuário peça explicitamente.**
 - Quando o usuário fizer uma pergunta, tirar uma dúvida ou discutir uma ideia, **apenas responda ou discuta**. Jamais edite o código antecipadamente sem que o usuário ordene explicitamente a execução da mudança.
+
+## Regra 6: Suporte Multiplataforma (Windows e Linux)
+- O aplicativo deve funcionar perfeitamente tanto no **Windows** quanto no **Linux**.
+- Implementações de funcionalidades e decisões de arquitetura devem preservar a compatibilidade multiplataforma em ambos os sistemas operacionais (usando compilação condicional `#[cfg(...)]` ou abstrações de plataforma quando necessário).
+- **Flexibilidade nos Testes:** Não é obrigatório executar os testes automatizados/nativos em ambos os sistemas operacionais simultaneamente em cada ciclo de desenvolvimento ou ambiente.

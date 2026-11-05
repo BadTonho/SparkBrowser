@@ -244,6 +244,7 @@ pub async fn measure_webview_memory(
     None
 }
 
+#[cfg(any(windows, test))]
 fn associated_resident_tab_count(
     target: &str,
     resident_sources: &[String],

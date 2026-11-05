@@ -1,6 +1,13 @@
 import { mount } from "svelte";
 import "./styles/theme.css";
 
+if (
+  typeof navigator !== "undefined" &&
+  (navigator.userAgent.includes("Linux") || navigator.platform.includes("Linux"))
+) {
+  document.documentElement.dataset.platform = "linux";
+}
+
 const component = new URLSearchParams(location.search).get("surface") === "tools"
   ? import("./lib/components/tools/ToolsSurface.svelte")
   : new URLSearchParams(location.search).get("surface") === "downloads"

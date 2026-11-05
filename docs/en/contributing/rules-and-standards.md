@@ -2,7 +2,7 @@
 
 > 🌍 **Language:** **English** | [Português (pt-BR)](../../pt-BR/contributing/rules-and-standards.md)
 
-To maintain a high-quality, secure, and scalable open-source project, all contributors and automated agents must follow these five core rules:
+To maintain a high-quality, secure, and scalable open-source project, all contributors and automated agents must follow these six core rules:
 
 ---
 
@@ -25,3 +25,8 @@ To maintain a high-quality, secure, and scalable open-source project, all contri
 ## Rule 5: Strict User Authorization (No Unprompted Actions)
 - **Never start coding, modifying files, or taking actions without an explicit request from the user.**
 - When the user asks a question, clarify or answer directly. Never preemptively edit codebase files unless explicitly requested.
+
+## Rule 6: Dual Platform Support (Windows & Linux)
+- The application must support and run seamlessly on both **Windows** and **Linux**.
+- Architecture choices and implementations must preserve cross-platform compatibility across both operating systems (using conditional compilation `#[cfg(...)]` or platform abstractions where appropriate).
+- **Testing Flexibility:** Executing automated/native tests on both operating systems simultaneously is **not mandatory** for each development run or environment.

@@ -24,3 +24,8 @@ These rules are mandatory for all development, file operations, documentation, a
 ## 5. Strict User Authorization (No Unprompted Actions)
 - **Never start coding, modifying files, or executing actions without explicit user request.**
 - If the user asks a question, seeks clarification, or discusses an idea, **only answer the question or discuss**. Never preemptively edit code or execute changes unless the user explicitly tells you to proceed or make the change.
+
+## 6. Dual Platform Support (Windows & Linux)
+- The application must support and run seamlessly on both **Windows** and **Linux**.
+- Architecture choices and implementations must preserve cross-platform compatibility across both operating systems (using conditional compilation `#[cfg(...)]` or platform abstractions where appropriate).
+- **Testing Flexibility:** Executing automated/native tests on both operating systems simultaneously is **not mandatory** for each development run or environment.

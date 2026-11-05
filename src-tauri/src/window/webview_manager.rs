@@ -364,6 +364,17 @@ pub(super) fn ensure_tab_webview(
         )
         .map_err(|e| format!("Failed to create content WebView: {}", e))?;
 
+    #[cfg(target_os = "linux")]
+    super::linux_layout::update_bounds(
+        app,
+        &label,
+        bounds.x as i32,
+        bounds.y as i32,
+        bounds.width.max(100.0) as i32,
+        bounds.height.max(100.0) as i32,
+        focused,
+    )?;
+
     #[cfg(windows)]
     install_workspace_shortcut_accelerator(
         app,

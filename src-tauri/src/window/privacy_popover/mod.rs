@@ -4,6 +4,7 @@ use super::webview_manager::create_internal_bridge_token;
 use crate::state::browser_state::BrowserState;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
+#[cfg_attr(target_os = "linux", allow(unused_imports))]
 use tauri::{webview::WebviewBuilder, AppHandle, LogicalPosition, Manager, Rect, WebviewUrl};
 
 pub const LABEL: &str = "privacy-popover-webview";
@@ -142,16 +143,28 @@ fn ensure_webview(app: &AppHandle) -> Result<(), String> {
 }
 
 pub fn resize(app: &AppHandle) -> Result<(), String> {
-    if let (Some(view), Some(window)) = (app.get_webview(LABEL), app.get_window("main")) {
+    if let (Some(_view), Some(window)) = (app.get_webview(LABEL), app.get_window("main")) {
         let size = window
             .inner_size()
             .map_err(|e| e.to_string())?
             .to_logical::<f64>(window.scale_factor().map_err(|e| e.to_string())?);
-        view.set_bounds(Rect {
-            position: LogicalPosition::new(0.0, 0.0).into(),
-            size: size.into(),
-        })
-        .map_err(|e| e.to_string())?;
+        #[cfg(target_os = "linux")]
+        super::linux_layout::update_bounds(
+            app,
+            LABEL,
+            0,
+            0,
+            size.width as i32,
+            size.height as i32,
+            is_open(app),
+        )?;
+        #[cfg(not(target_os = "linux"))]
+        _view
+            .set_bounds(Rect {
+                position: LogicalPosition::new(0.0, 0.0).into(),
+                size: size.into(),
+            })
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

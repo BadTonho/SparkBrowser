@@ -1,4 +1,6 @@
-use super::{MediaService, MediaSnapshot};
+#[cfg(windows)]
+use super::MediaService;
+use super::MediaSnapshot;
 use serde::{Deserialize, Serialize};
 #[cfg(windows)]
 use serde_json::json;

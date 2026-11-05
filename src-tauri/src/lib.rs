@@ -160,6 +160,8 @@ pub fn run() {
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
             if let Some(main_webview_window) = app.get_webview_window("main") {
                 apply_native_vibrancy(&main_webview_window);
+                #[cfg(target_os = "linux")]
+                window::linux_layout::setup(&main_webview_window).map_err(std::io::Error::other)?;
             }
 
             if let Some(view) = app.get_webview("main") {
