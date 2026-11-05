@@ -176,7 +176,8 @@ pub fn initialize(app: &AppHandle) {
                 match read {
                     Ok(Some(raw)) => {
                         if let Ok(credential) = serde_json::from_str::<oauth::Credential>(&raw) {
-                            if oauth::config(&app).is_ok_and(|c| c.client_id == credential.client_id)
+                            if oauth::config(&app)
+                                .is_ok_and(|c| c.client_id == credential.client_id)
                             {
                                 state.gmail.email = Some(credential.email.clone());
                                 state.credential = Some(credential);

@@ -1,16 +1,62 @@
-# Releases Windows assinadas localmente
+# Releases assinadas e GitHub Actions automatizado
 
-As releases são geradas localmente, sem GitHub Actions, servidor próprio de atualização ou push automático. As releases públicas ficam em `BadTonho/navegador`. O formato inicial é NSIS para Windows x64, instalado para o usuário atual. Os dois canais mantêm o identificador `org.veloce.browser` e compartilham o perfil/banco existente.
+As releases são publicadas automaticamente pelo **GitHub Actions** ao enviar tags de versão (por exemplo `v1.0.0` ou `v1.1.0-beta.1`), ou geradas localmente. As releases públicas ficam em `BadTonho/navegador`. Há suporte tanto para pacotes Windows (instalador NSIS) quanto para uma ampla variedade de distribuições Linux (.AppImage, .deb, .rpm e .tar.gz portátil). Os dois canais mantêm o identificador `org.veloce.browser` e compartilham o perfil/banco existente.
 
-## Identidade de assinatura
+## 1. Releases Automatizadas (GitHub Actions)
 
-Execute `npm run release:setup-signing` uma vez para uma nova identidade de assinatura. O comando cria `%USERPROFILE%\.veloce-signing\updater.key` e seu `.pub`; depois incorpora a chave pública de verificação. Este checkout já possui chave pública: em outra máquina, restaure o backup da chave privada correspondente; a preparação recusa gerar uma substituta. Faça backup seguro desse diretório: perder a chave privada impede assinar atualizações aceitas pelas instalações existentes. Nunca inclua a chave privada/senha em commits, uploads, mensagens no chat ou logs. A chave pública de verificação pode ser distribuída.
+Quando você envia uma tag iniciada em `v*`, o workflow `.github/workflows/release.yml` é acionado automaticamente:
+1. **Build Windows x64:** Compila o aplicativo, assina o instalador utilizando a chave privada `TAURI_SIGNING_PRIVATE_KEY` salva nos segredos do repositório e gera `VeloceBrowser_<version>_x64-setup.exe`, sua assinatura `.sig` e o manifesto `updater.json`.
+2. **Build Linux x64:** Compila o aplicativo com WebKitGTK e gera pacotes para múltiplas distribuições:
+   - **`.AppImage` (Universal):** Roda em praticamente todas as distribuições Linux (Fedora, Arch Linux, Manjaro, openSUSE, Pop!_OS, Linux Mint, Debian, Ubuntu, Void, etc.) sem necessitar de root ou instalação.
+   - **`.deb` (Debian / Ubuntu):** Pacote nativo para Debian, Ubuntu, Pop!_OS, Linux Mint, Elementary OS e Zorin OS.
+   - **`.rpm` (Red Hat / SUSE):** Pacote nativo para Fedora, openSUSE, RHEL, CentOS Stream, AlmaLinux e Rocky Linux.
+   - **`portable.tar.gz` (Arquivo Portátil):** Tarball contendo o binário compilado portátil, ideal para empacotadores do Arch Linux (AUR) e ambientes customizados.
+3. **Publicação (Modo Rascunho / Draft):** Cria a Release no GitHub como **Draft (Rascunho)**, anexa todos os instaladores compilados, assinaturas e manifestos, e marca automaticamente tags `-beta.*` como **Pre-release**. O modo rascunho permite revisar as notas da versão geradas e inspecionar todos os arquivos anexados privadamente antes de liberar a release para o público.
 
-Defina `VELOCE_SIGNING_KEY_PATH` para uma chave existente fora do checkout, mantendo seu `.pub` ao lado dela. A preparação recusa substituir uma chave pública diferente já configurada; a rotação exige migração dos clientes instalados. A chave padrão gerada não possui senha e depende da proteção de acesso do sistema de arquivos. Para uma chave com senha, forneça `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` de forma segura no ambiente do build, nunca em arquivos versionados nem em argumentos de comandos. A ferramenta informa o caminho da chave sem imprimir seu conteúdo.
+### Comandos de Instalação no Linux
 
-As assinaturas do atualizador são diferentes dos certificados Windows Authenticode. Esta configuração não fornece certificado de editor Windows nem remove avisos de reputação. A opção `requireSignedVersion` está habilitada: as assinaturas precisam vincular a versão do aplicativo.
+- **AppImage Universal:**
+  ```bash
+  chmod +x veloce-browser_*.AppImage
+  ./veloce-browser_*.AppImage
+  ```
+- **Debian / Ubuntu / Pop!_OS / Mint (`.deb`):**
+  ```bash
+  sudo apt install ./veloce-browser_*_amd64.deb
+  ```
+- **Fedora / RHEL (`.rpm`):**
+  ```bash
+  sudo dnf install ./veloce-browser-*.rpm
+  ```
+- **openSUSE (`.rpm`):**
+  ```bash
+  sudo zypper install ./veloce-browser-*.rpm
+  ```
 
-## Publicação
+### Passo a passo para lançar uma atualização:
+
+```bash
+# 1. Atualizar a versão dos arquivos (package.json, Cargo.toml e tauri.conf.json)
+npm run release:version -- v0.2.0
+
+# 2. Revisar e commitar as alterações
+git add .
+git commit -m "chore: release v0.2.0"
+
+# 3. Criar a tag e enviar ao GitHub
+git tag v0.2.0
+git push origin main --tags
+```
+
+O GitHub Actions compilará, assinará e publicará a atualização de forma totalmente automatizada.
+
+## 2. Identidade de assinatura
+
+As assinaturas do atualizador utilizam chaves Minisign Ed25519 pelo plugin oficial do Tauri.
+- A **Chave Pública** fica incorporada em `src-tauri/tauri.conf.json` no campo `plugins.updater.pubkey`.
+- A **Chave Privada** deve ser guardada estritamente nos Secrets do GitHub como `TAURI_SIGNING_PRIVATE_KEY` (e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` se tiver senha). Nunca inclua a chave privada em commits no git!
+
+## 3. Builds manuais locais (Alternativa)
 
 1. Execute `npm run release:version -- v1.1.0-beta.1` ou `npm run release:version -- v1.1.0`. Isso sincroniza metadados npm, configuração Tauri, versão do pacote Cargo e lockfile; não cria uma tag.
 2. Execute a [validação](validation.md), revise status/diffs/regras de ignore procurando conteúdo sensível e faça o commit. Crie a tag local correspondente nesse commit, por exemplo `git tag v1.1.0-beta.1`.

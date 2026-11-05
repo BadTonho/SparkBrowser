@@ -18,6 +18,7 @@
     "release:setup-signing": "node tools/release/setup-signing.mjs",
     "release:version": "node tools/release/version.mjs",
     "release:build": "node tools/release/build.mjs",
+    "release:manifest": "node tools/release/generate-manifest.mjs",
     "test:updater:build": "node tools/testing/build-update-fixtures.mjs",
     "test:native:auto-skip:youtube": "node tools/testing/auto-skip-youtube.mjs"
   },

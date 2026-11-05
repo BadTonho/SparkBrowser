@@ -32,6 +32,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -43,12 +44,15 @@
       "webviewInstallMode": {
         "type": "downloadBootstrapper",
         "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser"
       }
     }
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYyRDJEOUUyOEY4Q0UzNzQKUldSMDQ0eVA0dG5TOHM3UFRSb2wyYlVtZTNCWk5GNXVocVBYczNpQkpodE1OUmV1YXVLbHFsM04K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEzNkNFODRDMTc5REVDQkEKUldTNjdKMFhUT2hzRTVGVytreUxYTHEwQzArZmFheElVUXZYNnhUREZpMStjS29tS2JnWjROdnYK",
       "requireSignedVersion": true,
       "windows": {
         "installMode": "passive"
