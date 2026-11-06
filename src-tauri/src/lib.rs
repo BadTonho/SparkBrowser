@@ -2,6 +2,7 @@ use commands::backup::{
     choose_backup_file, commit_backup_import, discard_backup_import, export_backup,
     finish_backup_preferences, get_backup_pending_preferences, preview_backup_import,
 };
+use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::new_tab::set_new_tab_preferences;
@@ -261,6 +262,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            full_page_capture_probe,
             get_webview_runtime_status,
             restart_webview_runtime,
             focus_address_bar,

@@ -60,6 +60,28 @@ export async function createFixture() {
       response.setHeader('Content-Type','text/javascript; charset=utf-8');
       response.end(readFileSync(new URL('./fixtures/pip-video.js',import.meta.url),'utf8'));return;
     }
+    if (url.pathname === '/capture-probe') {
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.end(`<!doctype html><meta charset="utf-8"><title>Full page capture probe</title>
+        <style>
+          *{box-sizing:border-box}body{margin:0;font:20px system-ui;background:#f4f4f4;color:#17202a}
+          header{position:fixed;z-index:2;inset:0 0 auto;height:58px;padding:16px;background:#173f5f;color:white}
+          main{padding-top:58px}.section{height:900px;padding:32px;border-bottom:4px solid #222}
+          .section:nth-child(even){background:#b9e5d2}.section:nth-child(odd){background:#f6d186}
+          .sticky{position:sticky;top:58px;padding:10px;background:#b33;color:white}
+          img{display:block;width:120px;height:80px;margin:18px 0;background:#fff}
+          iframe{display:block;width:90%;height:360px;border:5px solid #324}
+          footer{position:fixed;z-index:2;inset:auto 0 0;padding:14px;background:#173f5f;color:white}
+          #bottom-marker{height:180px;background:#28a745;color:#fff;padding:28px}
+        </style>
+        <header id="fixed-header">Fixed header</header><main id="capture-main">
+        <section class="section"><div class="sticky">Sticky marker</div><h1>Capture fixture: top</h1><p>Scrollable document test</p><img id="lazy-image" loading="lazy" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%230078d4'/%3E%3C/svg%3E"></section>
+        <section class="section"><h2>Middle section A</h2></section><section class="section"><h2>Middle section B</h2><iframe title="Long iframe" srcdoc="&lt;style&gt;body{margin:0;background:%23d8c4f1}div{height:700px;padding:20px;font:18px sans-serif}&lt;/style&gt;&lt;div&gt;iframe top&lt;/div&gt;&lt;div&gt;iframe bottom&lt;/div&gt;"></iframe></section>
+        <section class="section"><h2>Near bottom</h2><p id="dynamic-marker">Dynamic text: initial</p><div style="height:500px"></div></section>
+        <div id="bottom-marker">BOTTOM MARKER — expected near the end of the captured image</div></main><footer id="fixed-footer">Fixed footer</footer>
+        <script>window.captureProbeReady=true;setTimeout(()=>scrollTo(0,720),100);setInterval(()=>{const n=document.querySelector('#dynamic-marker');if(n)n.textContent='Dynamic text: '+Date.now()},500);</script>`);
+      return;
+    }
     if (url.pathname.startsWith('/page/')) {
       loads.set(id, (loads.get(id) ?? 0) + 1);
       response.setHeader('Content-Type', 'text/html; charset=utf-8');

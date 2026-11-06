@@ -20,6 +20,7 @@ pub mod extensions;
 pub mod overlays;
 
 pub mod backup;
+pub mod capture_probe;
 
 pub mod closed_tabs;
 pub mod recovery;

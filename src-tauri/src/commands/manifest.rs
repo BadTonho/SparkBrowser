@@ -1,5 +1,6 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "full_page_capture_probe",
     "get_webview_runtime_status",
     "restart_webview_runtime",
     "set_pip_window_shadow",

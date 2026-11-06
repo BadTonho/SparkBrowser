@@ -36,8 +36,10 @@ import { checkPermissions } from './permissions.mjs';
 import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 import { checkQuickSettings } from './quick-settings.mjs';
+import { checkFullPageCaptureProbe } from './capture-probe.mjs';
 
 export const scenarios = {
+  'capture-probe': checkFullPageCaptureProbe,
   'security-boundaries': checkSecurityBoundaries,
   'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,

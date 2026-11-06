@@ -3,6 +3,7 @@
   "identifier": "default",
   "description": "Default capabilities for the main browser shell window",
   "permissions": [
+    "allow-full-page-capture-probe",
     "allow-get-webview-runtime-status",
     "allow-restart-webview-runtime",
     "allow-focus-address-bar",

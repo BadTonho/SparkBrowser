@@ -375,6 +375,12 @@
           "markdownDescription": "Enables the focus_address_bar command without any pre-configured scope."
         },
         {
+          "description": "Enables the full_page_capture_probe command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-full-page-capture-probe",
+          "markdownDescription": "Enables the full_page_capture_probe command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_active_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-active-workspace",
@@ -1159,6 +1165,12 @@
           "type": "string",
           "const": "deny-focus-address-bar",
           "markdownDescription": "Denies the focus_address_bar command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the full_page_capture_probe command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-full-page-capture-probe",
+          "markdownDescription": "Denies the full_page_capture_probe command without any pre-configured scope."
         },
         {
           "description": "Denies the get_active_workspace command without any pre-configured scope.",
