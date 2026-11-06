@@ -34,7 +34,11 @@
     isZenMode,
     tabLayout,
     workspaceSwitcherDisplay,
+    wideAddressBar,
+    showFullUrls,
+    compactToolbar,
   } from "../../stores/settingsStore";
+  import { formatAddressForDisplay } from "../../services/visual-preferences.js";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { defaultSearchEngine } from "../../stores/searchEngineStore";
@@ -45,8 +49,9 @@
 
   let narrow = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 1000px)").matches);
   const splitHorizontal = $derived($tabLayout === "horizontal" && Boolean($splitLayout));
-  const compact = $derived(splitHorizontal && narrow);
+  const responsiveCompact = $derived(splitHorizontal && narrow);
   const internalPage = $derived(isNewTab($currentUrl));
+  const displayedAddress = $derived(formatAddressForDisplay($addressInput, $showFullUrls || $isAddressEditing));
   onMount(() => {
     const media = window.matchMedia("(max-width: 1000px)");
     const update = () => { narrow = media.matches; };
@@ -56,7 +61,7 @@
   });
   onDestroy(() => { void closeTitlebarMenu(); });
   $effect(() => {
-    const enabled = compact && !$isZenMode;
+    const enabled = responsiveCompact && !$isZenMode;
     const workspaceId = $activeWorkspaceId;
     untrack(() => {
       if (!enabled || get(titlebarMenu)?.workspaceId !== workspaceId) void closeTitlebarMenu();
@@ -82,6 +87,7 @@
   function handleFocus(event: FocusEvent) {
     isAddressEditing.set(true);
     const target = event.currentTarget as HTMLInputElement;
+    target.value = get(addressInput);
     target?.select();
   }
 
@@ -93,7 +99,7 @@
 </script>
 
 {#if !$isZenMode}
-  <header class="titlebar" class:split-horizontal={splitHorizontal} class:compact data-tauri-drag-region={$tabLayout === "vertical" || splitHorizontal ? "" : undefined}>
+  <header class="titlebar" class:split-horizontal={splitHorizontal} class:responsive-compact={responsiveCompact} class:density-compact={$compactToolbar} class:wide-address-bar={$wideAddressBar} data-tauri-drag-region={$tabLayout === "vertical" || splitHorizontal ? "" : undefined}>
     <div class="titlebar-left">
       {#if $tabLayout === "vertical"}
         <button
@@ -171,7 +177,8 @@
         <input
           class="omnibox-input"
           type="text"
-          bind:value={$addressInput}
+          value={displayedAddress}
+          oninput={(event) => addressInput.set((event.currentTarget as HTMLInputElement).value)}
           onkeydown={(event) => { if (event.key === "Escape") { addressInput.set(internalPage ? "" : $currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
           onfocus={handleFocus}
           onblur={() => isAddressEditing.set(false)}
@@ -206,7 +213,7 @@
 
     <!-- Top-Right Controls: Quick Tools, Settings & Window Controls -->
     <div class="titlebar-controls">
-      {#if compact}
+      {#if responsiveCompact}
         <button class="icon-btn" data-testid="open-titlebar-menu" aria-label={$t("titlebar.more")} aria-describedby="more-download-progress" title={$t("titlebar.more") + ($downloadProgressText ? " · " + $downloadProgressText : "")} aria-haspopup="menu" aria-expanded={Boolean($titlebarMenu)} onclick={event => openTitlebarMenu(event.currentTarget)} onkeydown={event => { if (event.key === "ArrowDown") { event.preventDefault(); void openTitlebarMenu(event.currentTarget); } }}>⋯<DownloadProgressIndicator /></button>
         <span id="more-download-progress" class="sr-only">{$downloadProgressText}</span>
       {:else}
@@ -222,8 +229,17 @@
 
 <style>
   .titlebar {
-    height: 40px;
-    flex: 0 0 40px;
+    --titlebar-height: 44px;
+    --titlebar-control-width: 31px;
+    --titlebar-control-height: 30px;
+    --titlebar-window-control-width: 38px;
+    --titlebar-actions-height: 36px;
+    --titlebar-control-gap: 4px;
+    --titlebar-control-font-size: 13px;
+    --titlebar-input-font-size: 13px;
+    --omnibox-height: 32px;
+    height: var(--titlebar-height);
+    flex: 0 0 var(--titlebar-height);
     width: 100%;
     display: flex;
     align-items: center;
@@ -246,8 +262,19 @@
   .split-horizontal .titlebar-left { flex:0 1 auto; min-width:0; max-width:min(24vw,300px); }
   .split-horizontal .titlebar-center { min-width:380px; }
   .split-horizontal .omnibox-input { min-width:64px; }
-  .compact .titlebar-left { max-width:96px; }
-  .compact { gap:6px; }
+  .responsive-compact .titlebar-left { max-width:96px; }
+  .responsive-compact { gap:6px; }
+  .density-compact {
+    --titlebar-height: 40px;
+    --titlebar-control-width: 27px;
+    --titlebar-control-height: 26px;
+    --titlebar-window-control-width: 34px;
+    --titlebar-actions-height: 32px;
+    --titlebar-control-gap: 3px;
+    --titlebar-control-font-size: 12px;
+    --titlebar-input-font-size: 12px;
+    --omnibox-height: 28px;
+  }
 
   .brand {
     display: flex;
@@ -286,6 +313,8 @@
     gap: 6px;
   }
 
+  .titlebar.wide-address-bar .titlebar-center { max-width: none; }
+
   .nav-controls {
     display: flex;
     align-items: center;
@@ -294,8 +323,8 @@
   }
 
   .nav-btn {
-    width: 27px;
-    height: 27px;
+    width: var(--titlebar-control-width);
+    height: var(--titlebar-control-height);
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -303,7 +332,7 @@
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid transparent;
-    font-size: 12px;
+    font-size: var(--titlebar-control-font-size);
     transition:
       background 0.18s ease,
       color 0.18s ease,
@@ -339,7 +368,7 @@
     flex: 1;
     width: 100%;
     min-width: 0;
-    height: 28px;
+    height: var(--omnibox-height);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -382,7 +411,7 @@
     flex: 1;
     width: 100%;
     height: 100%;
-    font-size: 12px;
+    font-size: var(--titlebar-input-font-size);
     color: var(--text-primary);
   }
 
@@ -436,19 +465,19 @@
   .titlebar-controls {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: var(--titlebar-control-gap);
     flex-shrink: 0;
   }
 
   .icon-btn {
     position: relative;
-    width: 27px;
-    height: 26px;
+    width: var(--titlebar-control-width);
+    height: var(--titlebar-control-height);
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: var(--titlebar-control-font-size);
     color: var(--text-secondary);
     border: 1px solid transparent;
     flex-shrink: 0;

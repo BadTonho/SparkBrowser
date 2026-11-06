@@ -4,6 +4,10 @@ import {
   THEME_MODES,
 } from "../services/theme-preference.js";
 import { safeStorage } from "../services/storage.js";
+import {
+  readVisualPreferences,
+  writeVisualPreference,
+} from "../services/visual-preferences.js";
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility, setResidentLimit } from "../services/tauri-bridge";
 import { closeSettingsQuickMenu } from "./settingsQuickPopoverStore";
@@ -18,6 +22,33 @@ import {
 
 export const isSettingsModalOpen = writable<boolean>(false);
 export const isZenMode = writable<boolean>(false);
+
+const initialVisualPreferences = readVisualPreferences(safeStorage);
+export const wideAddressBar = writable(initialVisualPreferences.wideAddressBar);
+export const showFullUrls = writable(initialVisualPreferences.showFullUrls);
+export const compactToolbar = writable(initialVisualPreferences.compactToolbar);
+export const roundedContentFrame = writable(initialVisualPreferences.roundedContentFrame);
+
+export function setWideAddressBar(enabled: boolean): void {
+  wideAddressBar.set(enabled);
+  writeVisualPreference(safeStorage, "wideAddressBar", enabled);
+}
+
+export function setShowFullUrls(enabled: boolean): void {
+  showFullUrls.set(enabled);
+  writeVisualPreference(safeStorage, "showFullUrls", enabled);
+}
+
+export function setCompactToolbar(enabled: boolean): void {
+  compactToolbar.set(enabled);
+  writeVisualPreference(safeStorage, "compactToolbar", enabled);
+}
+
+export function setRoundedContentFrame(enabled: boolean): void {
+  roundedContentFrame.set(enabled);
+  writeVisualPreference(safeStorage, "roundedContentFrame", enabled);
+}
+
 export type AutoHibernateMode = 5 | 10 | 30 | "auto" | "off";
 
 const AUTO_HIBERNATE_STORAGE_KEY = "veloce_auto_hibernate_mode";

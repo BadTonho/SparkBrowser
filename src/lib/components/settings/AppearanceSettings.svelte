@@ -21,6 +21,14 @@ import {
   setWindowSurfaceOpacity,
   windowSurfaceBlurPx,
   setWindowSurfaceBlurPx,
+  wideAddressBar,
+  setWideAddressBar,
+  showFullUrls,
+  setShowFullUrls,
+  compactToolbar,
+  setCompactToolbar,
+  roundedContentFrame,
+  setRoundedContentFrame,
   MIN_WINDOW_SURFACE_OPACITY,
   MAX_WINDOW_SURFACE_OPACITY,
   MAX_WINDOW_SURFACE_BLUR_PX,
@@ -83,6 +91,52 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
       </button>
     </div>
   </div>
+
+  <h3 class="group-title visual-settings-heading">{$t("settings.toolbar_appearance")}</h3>
+
+  <label class="visual-toggle-row" id="setting-wide-address-bar" tabindex="-1">
+    <span class="row-text">
+      <span class="row-label">{$t("settings.wide_address_bar")}</span>
+      <span class="row-desc">{$t("settings.wide_address_bar_description")}</span>
+    </span>
+    <span class="visual-switch">
+      <input type="checkbox" role="switch" checked={$wideAddressBar} onchange={event => setWideAddressBar((event.currentTarget as HTMLInputElement).checked)} />
+      <span class="visual-switch-track" aria-hidden="true"></span>
+    </span>
+  </label>
+
+  <label class="visual-toggle-row" id="setting-full-urls" tabindex="-1">
+    <span class="row-text">
+      <span class="row-label">{$t("settings.show_full_urls")}</span>
+      <span class="row-desc">{$t("settings.show_full_urls_description")}</span>
+    </span>
+    <span class="visual-switch">
+      <input type="checkbox" role="switch" checked={$showFullUrls} onchange={event => setShowFullUrls((event.currentTarget as HTMLInputElement).checked)} />
+      <span class="visual-switch-track" aria-hidden="true"></span>
+    </span>
+  </label>
+
+  <label class="visual-toggle-row" id="setting-compact-toolbar" tabindex="-1">
+    <span class="row-text">
+      <span class="row-label">{$t("settings.compact_toolbar")}</span>
+      <span class="row-desc">{$t("settings.compact_toolbar_description")}</span>
+    </span>
+    <span class="visual-switch">
+      <input type="checkbox" role="switch" checked={$compactToolbar} onchange={event => setCompactToolbar((event.currentTarget as HTMLInputElement).checked)} />
+      <span class="visual-switch-track" aria-hidden="true"></span>
+    </span>
+  </label>
+
+  <label class="visual-toggle-row" id="setting-rounded-content-frame" tabindex="-1">
+    <span class="row-text">
+      <span class="row-label">{$t("settings.rounded_content_frame")}</span>
+      <span class="row-desc">{$t("settings.rounded_content_frame_description")}</span>
+    </span>
+    <span class="visual-switch">
+      <input type="checkbox" role="switch" checked={$roundedContentFrame} onchange={event => setRoundedContentFrame((event.currentTarget as HTMLInputElement).checked)} />
+      <span class="visual-switch-track" aria-hidden="true"></span>
+    </span>
+  </label>
 
   <div class="setting-row" id="setting-window-surface-style" tabindex="-1">
     <div class="row-text">
@@ -225,3 +279,29 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
     </button>
   </div>
 </section>
+
+<style>
+  .visual-settings-heading { margin: 10px 0 0; }
+  .visual-toggle-row {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+  }
+  .visual-toggle-row:first-of-type { border-top: 1px solid var(--border-subtle); }
+  .visual-toggle-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: var(--radius-sm); }
+  .visual-toggle-row .row-text { gap: 4px; }
+  .visual-switch { position: relative; flex: 0 0 auto; width: 40px; height: 22px; }
+  .visual-switch input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .visual-switch-track { position: absolute; inset: 0; border-radius: 99px; background: rgba(255,255,255,.2); transition: background .16s ease; }
+  .visual-switch-track::before { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .16s ease; }
+  .visual-switch input:checked + .visual-switch-track { background: var(--accent-primary); }
+  .visual-switch input:checked + .visual-switch-track::before { transform: translateX(18px); }
+  .visual-switch input:focus-visible + .visual-switch-track { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
+  @media (max-width: 720px) { .visual-toggle-row { padding-inline: 4px; } }
+  @media (prefers-reduced-motion: reduce) { .visual-switch-track, .visual-switch-track::before { transition: none; } }
+</style>

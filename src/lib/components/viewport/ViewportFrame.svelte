@@ -12,7 +12,7 @@
   import { isCommandBarOpen } from "../../stores/commandBarStore";
   import { isHistoryDrawerOpen } from "../../stores/persistenceStore";
   import { isDownloadsDrawerOpen } from "../../stores/downloadsStore";
-  import { isSettingsModalOpen, isZenMode } from "../../stores/settingsStore";
+  import { isSettingsModalOpen, isZenMode, roundedContentFrame } from "../../stores/settingsStore";
   import { isWorkspaceSwitcherOverlayOpen } from "../../stores/workspaceSwitcherStore";
   import { titlebarMenu } from "../../stores/titlebarMenuStore";
   import { syncViewportBounds, isTauriRuntime } from "../../services/tauri-bridge";
@@ -77,7 +77,7 @@
 </script>
 
 <main class="viewport-shell" class:zen={$isZenMode}>
-  <div class="viewport-frame" bind:this={viewportEl}>
+  <div class="viewport-frame" class:framed={$roundedContentFrame} bind:this={viewportEl}>
     {#if inTauri && !anyOverlayOpen && viewportEl && $splitLayout}<SplitDivider frame={viewportEl} flush={viewportSync.flush} />{/if}
     {#if !inTauri || blockingOverlayOpen}
       {#if (!inTauri || !$isWorkspaceSwitcherOverlayOpen) && !$titlebarMenu}
@@ -117,17 +117,24 @@
     flex: 1;
     width: 100%;
     height: 100%;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-subtle);
+    border-radius: 0;
+    border: none;
     background: var(--bg-viewport-frame, #101010);
-    box-shadow: var(--shadow-soft);
+    box-shadow: none;
     overflow: hidden;
     position: relative;
+  }
+
+  .viewport-frame.framed {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-soft);
   }
 
   .viewport-shell.zen .viewport-frame {
     border-radius: 0;
     border: none;
+    box-shadow: none;
   }
 
   .browser-preview-fallback {

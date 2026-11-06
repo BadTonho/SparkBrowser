@@ -229,7 +229,7 @@
 </div>
 
 <style>
-  .titlebar-actions { position: relative; display: flex; align-items: center; gap: 3px; height: 32px; touch-action: none; user-select: none; }
+  .titlebar-actions { position: relative; display: flex; align-items: center; gap: var(--titlebar-control-gap, 3px); height: var(--titlebar-actions-height, 32px); touch-action: none; user-select: none; }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .insertion-marker { position: absolute; top: 2px; bottom: 2px; width: 2px; border-radius: 2px; background: var(--accent-primary); pointer-events: none; }
   .reordering .icon-btn { cursor: grabbing; }
@@ -237,13 +237,13 @@
   .icon-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
   .icon-btn {
     position: relative;
-    width: 27px;
-    height: 26px;
+    width: var(--titlebar-control-width, 27px);
+    height: var(--titlebar-control-height, 26px);
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: var(--titlebar-control-font-size, 12px);
     color: var(--text-secondary);
     border: 1px solid transparent;
     flex-shrink: 0;

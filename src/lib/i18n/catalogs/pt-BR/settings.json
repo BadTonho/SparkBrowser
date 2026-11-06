@@ -251,5 +251,14 @@
   "settings.smart_screen_unavailable": "O controle do SmartScreen não está disponível nesta versão do WebView2.",
   "settings.smart_screen_platform_unavailable": "A verificação de reputação do sistema não está disponível nesta plataforma.",
   "settings.site_protection": "Permissões de sites e escudos",
-  "settings.protection_reload_note": "Alterar a proteção contra rastreadores pode recarregar abas e redefinir o estado das páginas."
+  "settings.protection_reload_note": "Alterar a proteção contra rastreadores pode recarregar abas e redefinir o estado das páginas.",
+  "settings.toolbar_appearance": "Barra e conteúdo",
+  "settings.wide_address_bar": "Usar barra de endereços larga",
+  "settings.wide_address_bar_description": "Deixa a barra de endereços ocupar o espaço disponível entre os controles.",
+  "settings.show_full_urls": "Sempre mostrar URLs completos",
+  "settings.show_full_urls_description": "Mantém o protocolo e o www. visíveis quando a barra não está em edição.",
+  "settings.compact_toolbar": "Usar modo compacto",
+  "settings.compact_toolbar_description": "Usa o tamanho menor atual para a barra superior e seus controles.",
+  "settings.rounded_content_frame": "Mostrar cantos arredondados no conteúdo",
+  "settings.rounded_content_frame_description": "Mostra a borda, os cantos arredondados e a sombra ao redor da área principal da WebView."
 }

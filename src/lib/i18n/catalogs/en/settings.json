@@ -251,5 +251,14 @@
   "settings.smart_screen_unavailable": "SmartScreen controls are unavailable in this WebView2 runtime.",
   "settings.smart_screen_platform_unavailable": "System reputation checking is unavailable on this platform.",
   "settings.site_protection": "Site permissions and shields",
-  "settings.protection_reload_note": "Changing tracker protection may reload tabs and reset page state."
+  "settings.protection_reload_note": "Changing tracker protection may reload tabs and reset page state.",
+  "settings.toolbar_appearance": "Toolbar and content",
+  "settings.wide_address_bar": "Use a wide address bar",
+  "settings.wide_address_bar_description": "Let the address bar use the available space between toolbar controls.",
+  "settings.show_full_urls": "Always show full URLs",
+  "settings.show_full_urls_description": "Keep the protocol and www. visible when the address bar is not being edited.",
+  "settings.compact_toolbar": "Use compact mode",
+  "settings.compact_toolbar_description": "Use the current smaller size for the top toolbar and its controls.",
+  "settings.rounded_content_frame": "Show rounded content corners",
+  "settings.rounded_content_frame_description": "Show the border, rounded corners and shadow around the main WebView area."
 }

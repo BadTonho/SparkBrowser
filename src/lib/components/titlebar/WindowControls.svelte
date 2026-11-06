@@ -17,7 +17,7 @@
 
 <style>
   .window-controls { display:flex; align-items:center; gap:2px; flex-shrink:0; }
-  .win-btn { width:34px; height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); transition:background .15s ease,color .15s ease; }
+  .win-btn { width:var(--titlebar-window-control-width, 34px); height:var(--titlebar-control-height, 26px); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); transition:background .15s ease,color .15s ease; }
   .win-btn:hover { background:var(--bg-glass-hover); color:var(--text-primary); }
   .close-btn:hover { background:#e81123; color:#fff; }
   .win-btn:focus-visible { outline:2px solid var(--accent-primary); outline-offset:-2px; }
