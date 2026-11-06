@@ -49,11 +49,15 @@
   const categories = ['weather', 'gmail', 'wallpaper', 'clock'];
   let currentCategory = null;
 
-  function showCategory(cat) {
+  function showCategory(cat, direction = null) {
+    const changed = currentCategory !== cat;
     currentCategory = cat;
+    const content = $('settings-content');
     const mainView = $('settings-main-view');
     const backBtn = $('settings-back');
     const heading = $('settings-heading');
+    if (changed && content) content.scrollTop = 0;
+    if (panel) panel.setAttribute('data-panel-motion', direction ?? '');
 
     if (cat && categories.includes(cat)) {
       if (mainView) mainView.hidden = true;
@@ -76,13 +80,13 @@
 
   $('settings-back')?.addEventListener('click', () => {
     const prev = currentCategory;
-    showCategory(null);
+    showCategory(null, 'back');
     if (prev) $(`menu-item-${prev}`)?.focus();
     else $('settings-close')?.focus();
   });
 
   for (const c of categories) {
-    $(`menu-item-${c}`)?.addEventListener('click', () => showCategory(c));
+    $(`menu-item-${c}`)?.addEventListener('click', () => showCategory(c, 'forward'));
     $(`${c}-section`)?.addEventListener('focusin', () => showCategory(c));
   }
 

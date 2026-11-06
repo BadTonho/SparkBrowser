@@ -34,9 +34,31 @@ test('widget settings use a focus-trapped dialog, close outside/Escape and prese
   f.nodes.get('search').value='unfinished';gear.click();
   assert.equal(panel.open,true);assert.equal(f.document.activeElement,f.nodes.get('settings-close'));
   assert.equal(f.actions.at(-1).operation,'panel');
+  f.nodes.get('settings-close').click();assert.equal(panel.open,false);
+  gear.click();
   panel.listeners.cancel({preventDefault(){}});assert.equal(panel.open,false);assert.equal(f.document.activeElement,gear);
   gear.click();panel.listeners.click({target:panel,clientX:10,clientY:20});assert.equal(panel.open,false);
   assert.equal(f.nodes.get('search').value,'unfinished');
+});
+test('settings categories slide in, return to the menu and keep the panel layout fixed',()=>{
+  const f=fixture(),panel=f.nodes.get('settings-panel'),main=f.nodes.get('settings-main-view');
+  const clock=f.nodes.get('menu-item-clock'),section=f.nodes.get('clock-section'),back=f.nodes.get('settings-back');
+  clock.click();
+  assert.equal(main.hidden,true);assert.equal(section.hidden,false);
+  assert.equal(panel.attributes['data-panel-motion'],'forward');
+  back.click();
+  assert.equal(main.hidden,false);assert.equal(section.hidden,true);
+  assert.equal(panel.attributes['data-panel-motion'],'back');
+  assert.equal(f.document.activeElement,clock);
+
+  const html=readFileSync('public/new-tab.html','utf8'),css=readFileSync('public/new-tab/widgets.css','utf8');
+  const menu=html.match(/<nav class="settings-menu-list"[\s\S]*?<\/nav>/)?.[0]??'';
+  assert.equal([...menu.matchAll(/class="menu-item-icon"[^>]*><svg/g)].length,4);
+  assert.match(html,/id="settings-content"/);
+  assert.match(css,/#settings-panel\s*\{[^}]*height:min\(420px, calc\(100vh - 90px\)\)/);
+  assert.match(css,/#settings-panel:not\(\[open\]\)\s*\{\s*display:none/);
+  assert.match(css,/#settings-content\s*\{[^}]*overflow-y:auto/);
+  assert.match(css,/@media \(prefers-reduced-motion:reduce\)/);
 });
 test('rapid settings edits serialize and retain the last requested value, failures restore confirmed state',()=>{
   const f=fixture();change(f.nodes.get('weather-enabled'),'checked',true);change(f.nodes.get('temperature-unit'),'value','fahrenheit');

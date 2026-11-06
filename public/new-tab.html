@@ -72,36 +72,37 @@
   <footer id="customization"><button id="widget-settings" class="icon-button" type="button" aria-controls="settings-panel" aria-expanded="false" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 3-.7 2.3-2 .9L4 5.7 2.5 8.3 4 10v2l-1.5 1.7L4 16.3l2.3-.5 2 .9L9 19h3l.7-2.3 2-.9 2.3.5 1.5-2.6L17 12v-2l1.5-1.7L17 5.7l-2.3.5-2-.9L12 3Z" transform="translate(1.5 1)"/><circle cx="12" cy="12" r="3"/></svg></button></footer>
   <dialog id="settings-panel" aria-labelledby="settings-heading">
     <div class="widget-heading">
-      <button id="settings-back" type="button" class="icon-button" aria-label="Voltar" data-label="back" hidden>‹</button>
+      <button id="settings-back" type="button" class="icon-button" aria-label="Voltar" data-label="back" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/><path d="M9 12h12"/></svg></button>
       <h2 id="settings-heading" data-label="settings"></h2>
-      <button id="settings-close" type="button" class="icon-button" data-label="close">×</button>
+      <button id="settings-close" type="button" class="icon-button" data-label="close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     </div>
-    <p id="settings-status" role="status"></p>
-    <div id="settings-main-view">
+    <div id="settings-content">
+      <p id="settings-status" role="status"></p>
+      <div id="settings-main-view" class="settings-view">
       <nav class="settings-menu-list" role="menu">
         <button id="menu-item-weather" type="button" class="settings-menu-item" data-category="weather" role="menuitem">
-          <span class="menu-item-icon" aria-hidden="true">☁️</span>
+          <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18h9.8a3.7 3.7 0 0 0 .5-7.36A5.8 5.8 0 0 0 6.7 9.2 4.45 4.45 0 0 0 7.5 18Z"/></svg></span>
           <span class="menu-item-label" data-label="weather"></span>
-          <span class="menu-item-chevron" aria-hidden="true">›</span>
+          <span class="menu-item-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
         </button>
         <button id="menu-item-gmail" type="button" class="settings-menu-item" data-category="gmail" role="menuitem">
-          <span class="menu-item-icon" aria-hidden="true">✉️</span>
+          <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span>
           <span class="menu-item-label">Gmail</span>
-          <span class="menu-item-chevron" aria-hidden="true">›</span>
+          <span class="menu-item-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
         </button>
         <button id="menu-item-wallpaper" type="button" class="settings-menu-item" data-category="wallpaper" role="menuitem">
-          <span class="menu-item-icon" aria-hidden="true">🖼️</span>
+          <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg></span>
           <span class="menu-item-label" data-label="wallpaper"></span>
-          <span class="menu-item-chevron" aria-hidden="true">›</span>
+          <span class="menu-item-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
         </button>
         <button id="menu-item-clock" type="button" class="settings-menu-item" data-category="clock" role="menuitem">
-          <span class="menu-item-icon" aria-hidden="true">⏰</span>
+          <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
           <span class="menu-item-label" data-label="clock"></span>
-          <span class="menu-item-chevron" aria-hidden="true">›</span>
+          <span class="menu-item-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
         </button>
       </nav>
-    </div>
-    <section id="weather-section" aria-labelledby="weather-settings-heading" hidden>
+      </div>
+    <section id="weather-section" class="settings-view" aria-labelledby="weather-settings-heading" hidden>
       <h3 id="weather-settings-heading" data-label="weather"></h3>
       <label class="toggle"><span data-label="showWeather"></span><input id="weather-enabled" type="checkbox"></label>
       <div id="weather-options" hidden>
@@ -116,7 +117,7 @@
         <select id="temperature-unit"><option value="celsius">°C</option><option value="fahrenheit">°F</option></select>
       </div>
     </section>
-    <section id="gmail-section" aria-labelledby="gmail-settings-heading" hidden>
+    <section id="gmail-section" class="settings-view" aria-labelledby="gmail-settings-heading" hidden>
       <h3 id="gmail-settings-heading">Gmail</h3>
       <label class="toggle"><span data-label="showGmail"></span><input id="gmail-enabled" type="checkbox"></label>
       <div id="gmail-options" hidden>
@@ -126,7 +127,7 @@
         <button id="gmail-disconnect" type="button" data-label="disconnect" hidden></button>
       </div>
     </section>
-    <section id="wallpaper-section" aria-labelledby="wallpaper-settings-heading" hidden>
+    <section id="wallpaper-section" class="settings-view" aria-labelledby="wallpaper-settings-heading" hidden>
       <h3 id="wallpaper-settings-heading" data-label="wallpaper"></h3>
       <label class="toggle"><span data-label="showWallpaper"></span><input id="wallpaper-enabled" type="checkbox"></label>
       <div id="wallpaper-options" hidden>
@@ -149,7 +150,7 @@
         </div>
       </div>
     </section>
-    <section id="clock-section" aria-labelledby="clock-settings-heading" hidden>
+    <section id="clock-section" class="settings-view" aria-labelledby="clock-settings-heading" hidden>
       <h3 id="clock-settings-heading" data-label="clock"></h3>
       <label class="toggle"><span data-label="showClock"></span><input id="clock-enabled" type="checkbox"></label>
       <div id="clock-options" hidden>
@@ -177,6 +178,7 @@
         <label class="toggle"><span data-label="clockShowGreeting"></span><input id="clock-greeting" type="checkbox"></label>
       </div>
     </section>
+    </div>
   </dialog>
 </body>
 </html>
