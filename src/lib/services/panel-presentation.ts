@@ -13,6 +13,8 @@ export type PanelViewAction =
   | { kind: "click" | "submit"; target: number }
   | { kind: "input" | "change"; target: number; value: string; checked: boolean }
   | { kind: "key"; target: number; key: "ArrowLeft" | "ArrowRight" | "Home" | "End" }
+  | { kind: "keyboard"; target: number; key: string; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean }
+  | { kind: "mouse"; target: number; button: number; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean }
   | { kind: "dismiss"; reason: "escape" | "outside" | "trigger" | "blur" };
 export interface PanelPresentation {
   anchor: { left: number; top: number; width: number; height: number };
@@ -25,8 +27,8 @@ export interface PanelPresentation {
 export function isPanelTrigger(anchor: PanelPresentation["anchor"], x: number, y: number): boolean {
   return x >= anchor.left && x <= anchor.left + anchor.width && y >= anchor.top && y <= anchor.top + anchor.height;
 }
-const tags = new Set(["div", "header", "h2", "h3", "nav", "button", "span", "p", "form", "input", "textarea", "select", "option", "article", "strong", "small", "label", "ul", "li", "details", "summary", "pre", "progress", "svg", "path", "circle", "img"]);
-const attributes = new Set(["class", "id", "role", "title", "type", "name", "placeholder", "maxlength", "min", "max", "rows", "required", "disabled", "open", "tabindex", "value", "width", "height", "viewBox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "d", "cx", "cy", "r", "focusable"]);
+const tags = new Set(["div", "header", "h1", "h2", "h3", "h4", "section", "main", "aside", "nav", "button", "span", "p", "form", "input", "textarea", "select", "option", "article", "strong", "small", "label", "ul", "li", "ol", "dl", "dt", "dd", "table", "thead", "tbody", "tr", "th", "td", "details", "summary", "pre", "code", "kbd", "progress", "svg", "path", "circle", "img"]);
+const attributes = new Set(["class", "id", "role", "title", "type", "name", "placeholder", "maxlength", "min", "max", "step", "rows", "required", "disabled", "open", "tabindex", "value", "width", "height", "viewBox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "d", "cx", "cy", "r", "focusable"]);
 
 /** Keeps existing Svelte controllers (including the single note writer) in the shell.
  * Only their safe presentation and opaque control handles are projected into the native surface. */
@@ -70,6 +72,10 @@ export function createPanelProjection(root: HTMLElement) {
         target.value = action.value;
         if (target instanceof HTMLInputElement) target.checked = action.checked;
         target.dispatchEvent(new Event(action.kind, { bubbles: true }));
+      } else if (action.kind === "keyboard") {
+        target.dispatchEvent(new KeyboardEvent("keydown", { key: action.key, ctrlKey: action.ctrl, altKey: action.alt, shiftKey: action.shift, metaKey: action.meta, bubbles: true, cancelable: true }));
+      } else if (action.kind === "mouse") {
+        target.dispatchEvent(new MouseEvent("mousedown", { button: action.button, ctrlKey: action.ctrl, altKey: action.alt, shiftKey: action.shift, metaKey: action.meta, bubbles: true, cancelable: true }));
       } else if (action.kind === "key" && target.getAttribute("role") === "tab")
         target.dispatchEvent(new KeyboardEvent("keydown", { key: action.key, bubbles: true }));
     },

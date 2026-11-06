@@ -825,6 +825,12 @@
           "markdownDescription": "Enables the set_resident_limit command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_settings_overlay command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-settings-overlay",
+          "markdownDescription": "Enables the set_settings_overlay command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_site_permission command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-site-permission",
@@ -1585,6 +1591,12 @@
           "type": "string",
           "const": "deny-set-resident-limit",
           "markdownDescription": "Denies the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_settings_overlay command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-settings-overlay",
+          "markdownDescription": "Denies the set_settings_overlay command without any pre-configured scope."
         },
         {
           "description": "Denies the set_site_permission command without any pre-configured scope.",

@@ -14,5 +14,7 @@ const component = new URLSearchParams(location.search).get("surface") === "tools
     ? import("./lib/components/downloads/DownloadsSurface.svelte")
     : new URLSearchParams(location.search).get("surface") === "settings-quick"
       ? import("./lib/components/settings/SettingsQuickSurface.svelte")
-      : import("./App.svelte");
+      : new URLSearchParams(location.search).get("surface") === "settings"
+        ? import("./lib/components/settings/SettingsSurface.svelte")
+        : import("./App.svelte");
 void component.then(({ default: view }) => mount(view, { target: document.getElementById("app")! }));

@@ -196,6 +196,7 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
     super::tools_popover::sync(app, state)?;
     super::downloads_popover::sync(app, state)?;
     super::quick_settings_popover::sync(app, state)?;
+    super::settings_overlay::sync(app, state)?;
     super::privacy_popover::sync(app, state)?;
     super::permission_popover::sync(app, state)?;
     super::history_overlay::sync(app, state)?;

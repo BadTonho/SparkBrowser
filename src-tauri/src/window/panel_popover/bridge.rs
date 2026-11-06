@@ -41,6 +41,8 @@ pub(super) enum UiAction {
         target: u32,
         key: TabKey,
     },
+    Keyboard { target: u32, key: String, ctrl: bool, alt: bool, shift: bool, meta: bool },
+    Mouse { target: u32, button: u8, ctrl: bool, alt: bool, shift: bool, meta: bool },
     Dismiss {
         reason: DismissReason,
     },
@@ -51,6 +53,8 @@ impl UiAction {
             Self::Click { target } | Self::Submit { target } | Self::Key { target, .. } => {
                 *target > 0
             }
+            Self::Keyboard { target, key, .. } => *target > 0 && key.len() <= 64,
+            Self::Mouse { target, button, .. } => *target > 0 && (*button == 3 || *button == 4),
             Self::Input { target, value, .. } | Self::Change { target, value, .. } => {
                 *target > 0 && value.len() <= 1_000_000
             }

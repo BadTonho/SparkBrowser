@@ -11,6 +11,9 @@ import {
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility, setResidentLimit } from "../services/tauri-bridge";
 import { closeSettingsQuickMenu } from "./settingsQuickPopoverStore";
+import { setSettingsOverlay } from "../services/bridge/settings-overlay";
+import { isTauriRuntime } from "../services/bridge/runtime";
+import type { PanelSession } from "../components/panels/panel-host";
 import { fetchWorkspaceIsolation, setWorkspaceIsolation } from "../services/bridge/workspaces";
 import {
   isSidebarOpen,
@@ -21,6 +24,8 @@ import {
 } from "./browserStore";
 
 export const isSettingsModalOpen = writable<boolean>(false);
+export const settingsOverlaySession = writable<PanelSession | null>(null);
+let settingsSessionId = 0;
 export const isZenMode = writable<boolean>(false);
 
 const initialVisualPreferences = readVisualPreferences(safeStorage);
@@ -413,12 +418,16 @@ export function setTabLayout(layout: TabLayout): void {
 
 export async function openSettingsModal(): Promise<void> {
   await closeSettingsQuickMenu(false);
+  if (isTauriRuntime() && !get(settingsOverlaySession)) settingsOverlaySession.set({ id: ++settingsSessionId, anchor: document.body as unknown as HTMLButtonElement });
   isSettingsModalOpen.set(true);
   await setOverlayVisibility(true, "settings");
 }
 
 export async function closeSettingsModal(): Promise<void> {
+  const session = get(settingsOverlaySession);
+  settingsOverlaySession.set(null);
   isSettingsModalOpen.set(false);
+  if (session) await setSettingsOverlay(false, session.id, undefined, true);
   await setOverlayVisibility(false, "settings");
 }
 

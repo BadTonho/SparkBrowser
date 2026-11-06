@@ -70,6 +70,12 @@ pub async fn set_zoom_popover(
 const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
 
 #[tauri::command]
+pub async fn set_settings_overlay(app: AppHandle, state: State<'_, BrowserState>, visible: bool, session_id: u64, presentation: Option<crate::window::settings_overlay::Presentation>, restore_focus: bool) -> Result<(), String> {
+    let _operation = state.tab_operations.lock().await;
+    crate::window::settings_overlay::set(&app, visible, session_id, presentation, restore_focus)
+}
+
+#[tauri::command]
 pub async fn set_privacy_popover(
     app: AppHandle,
     state: State<'_, BrowserState>,

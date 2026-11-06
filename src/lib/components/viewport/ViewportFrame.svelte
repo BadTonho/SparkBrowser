@@ -30,7 +30,7 @@
   );
   let blockingOverlayOpen = $derived(
     $isCommandBarOpen || $isDownloadsDrawerOpen ||
-      $isSettingsModalOpen || $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
+      $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
   );
 
   const viewportSync = createViewportSync(() => {

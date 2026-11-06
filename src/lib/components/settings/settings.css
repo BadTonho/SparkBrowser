@@ -10,6 +10,8 @@
     padding: 24px;
   }
 
+  .settings-controller { left: -200vw; right: auto; width: 100vw; visibility: hidden; pointer-events: none; }
+
   .settings-modal {
     width: 80vw;
     height: 80dvh;

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 export async function checkQuickSettings(context) {
   const { invoke, fixture, until, script, click, withWebview, wait } = context;
   const inside = action => withWebview('/index.html?surface=settings-quick', action);
+  const settings = action => withWebview('/index.html?surface=settings', action);
   await invoke('navigate_to', { input: fixture.origin + '/page/quick-settings' });
   await until(() => fixture.reports.has('quick-settings'), 'settings test page');
   await context.focusWindow();
@@ -44,8 +45,18 @@ export async function checkQuickSettings(context) {
   await click('[data-testid="open-settings"]');
   await until(() => inside(() => script('return !!document.querySelector("[data-testid=settings-quick-menu]")')), 'quick settings reopens');
   await inside(() => click('[data-testid="settings-quick-all"]'));
-  await until(() => script('return !!document.querySelector("#settings-search-input")'), 'all settings opens existing dialog');
-  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+  await until(() => settings(() => script('return !!document.querySelector("#settings-search-input")')), 'all settings opens native dialog');
+  assert.equal(await script('return document.querySelector(".browser-preview-fallback") === null'), true, 'full settings keep the page visible');
+  assert.equal(await withWebview('/page/quick-settings', () => script('return document.visibilityState')), 'visible', 'the content WebView stays visible behind settings');
+  await settings(() => context.screenshot('settings-over-page'));
+  await settings(() => click('[data-testid="settings-appearance_layout"]'));
+  await settings(() => click('[data-testid="settings-shortcuts"]'));
+  await until(() => settings(() => script('return !!document.querySelector(".sc-keys")')), 'shortcut controls projected');
+  await settings(() => click('.sc-keys'));
+  await until(() => settings(() => script('return !!document.querySelector(".sc-keys.recording")')), 'shortcut recording begins');
+  await settings(() => script('document.querySelector(".sc-keys.recording").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))'));
+  await until(() => settings(() => script('return !document.querySelector(".sc-keys.recording") && !!document.querySelector("#settings-search-input")')), 'Escape cancels recording without closing settings');
+  await settings(() => script('document.querySelector("#settings-search-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))'));
   await until(() => script('return !document.querySelector("#settings-search-input")'), 'Escape closes full settings');
   await until(() => script('return document.querySelector(".browser-preview-fallback") === null'), 'page preview returns after closing settings');
 

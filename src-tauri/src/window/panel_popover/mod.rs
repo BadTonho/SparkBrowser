@@ -21,6 +21,15 @@ pub struct Tools;
 pub struct Downloads;
 #[derive(Default)]
 pub struct QuickSettings;
+#[derive(Default)]
+pub struct Settings;
+impl Panel for Settings {
+    const LABEL: &'static str = "settings-overlay-webview";
+    const SURFACE: &'static str = "/index.html?surface=settings";
+    const HOST: &'static str = "settings-popover";
+    const SETTER: &'static str = "__veloceSetSettingsPopover";
+    const EVENT: &'static str = "settings-popover-action";
+}
 impl Panel for Tools {
     const LABEL: &'static str = "tools-popover-webview";
     const SURFACE: &'static str = "/index.html?surface=tools";

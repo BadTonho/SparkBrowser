@@ -73,6 +73,7 @@
     "allow-set-overlay-visibility",
     "allow-set-tools-popover",
     "allow-set-quick-settings-popover",
+    "allow-set-settings-overlay",
     "allow-set-downloads-popover",
     "allow-set-media-popover",
     "allow-set-zoom-popover",

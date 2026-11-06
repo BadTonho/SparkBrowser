@@ -45,7 +45,7 @@ export async function runScenario(name, scenario) {
   async function script(code, ...args) { return request('POST', `/session/${session}/execute/sync`, { script: code, args }); }
   async function click(selector) {
     await until(() => script('return Boolean(document.querySelector(arguments[0]))', selector), `control available: ${selector}`);
-    const projected = await script('const node=document.querySelector(arguments[0]);return node?.closest(".tools-controller")?"tools":node?.closest(".downloads-controller")?"downloads":null', selector);
+    const projected = await script('const node=document.querySelector(arguments[0]);return node?.closest(".tools-controller")?"tools":node?.closest(".downloads-controller")?"downloads":node?.closest(".settings-controller")?"settings":null', selector);
     if (projected) return withWebview(`/index.html?surface=${projected}`, async () => {
       await until(() => script('return Boolean(document.querySelector(arguments[0]))', selector), 'projected panel control');
       const element = await request('POST', `/session/${session}/element`, { using: 'css selector', value: selector });

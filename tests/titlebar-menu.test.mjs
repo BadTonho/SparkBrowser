@@ -51,14 +51,14 @@ test('dismissing a pending menu prevents a delayed native response from reopenin
   assert.deepEqual(f.calls, [true, false]);
 });
 
-test('menu-to-dialog handoff never restores native pages between overlays', async () => {
+test('menu-to-settings handoff restores pages for the native settings surface', async () => {
   const f = fixture();
   f.overlays.onOverlayOpening(id => { if (id !== 'titlebar-menu') void f.closeTitlebarMenu(); });
   await f.openTitlebarMenu(f.anchor);
   assert.ok(f.current());
   await f.overlays.setOverlayVisibility(true, 'settings');
   assert.equal(f.current(), null);
-  assert.ok(f.calls.every(Boolean));
+  assert.equal(f.calls.at(-1), false);
   await f.overlays.setOverlayVisibility(false, 'settings');
   assert.equal(f.calls.at(-1), false);
 });

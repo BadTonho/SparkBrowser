@@ -45,7 +45,7 @@
 
 ## 4. Ciclo de vida e persistência
 
-A seleção normal mostra a WebView existente da aba sem navegar novamente. Hibernar ou fechar destrói somente a instância afetada. Abas restauradas em segundo plano são criadas sob demanda. Diálogos da interface ocultam temporariamente as páginas para evitar conflitos de sobreposição nativa. O seletor nativo transparente de workspaces mantém a página atual, ou os dois painéis da divisão, visível por trás durante as animações de abertura e fechamento, sem recarregar os documentos.
+A seleção normal mostra a WebView existente da aba sem navegar novamente. Hibernar ou fechar destrói somente a instância afetada. Abas restauradas em segundo plano são criadas sob demanda. Alguns diálogos ocultam temporariamente as páginas para evitar conflitos de sobreposição nativa. As configurações usam uma camada nativa transparente que projeta os controles da interface e encaminha ações autenticadas aos controladores existentes; a página, incluindo os dois painéis da divisão, permanece visível. O seletor nativo transparente de workspaces também mantém o conteúdo visível durante as animações de abertura e fechamento sem recarregar os documentos.
 
 Somente o callback de carregamento concluído confirma URLs e histórico, usando o ID da aba de origem mesmo quando outra aba já está ativa. Navegações rejeitadas não substituem o endereço confirmado. A gravação da sessão é atômica e participa da transação de exclusão de workspace; falhas do banco são informadas.
 

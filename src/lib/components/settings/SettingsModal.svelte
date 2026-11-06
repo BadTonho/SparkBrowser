@@ -12,6 +12,16 @@ import PrivacySecuritySettings from "./PrivacySecuritySettings.svelte";
 import ShortcutSettings from "./ShortcutSettings.svelte";
   import DiagnosticsSettings from "./DiagnosticsSettings.svelte";
 import { focusDialog } from "../../actions/focusDialog";
+import { isTauriRuntime } from "../../services/bridge/runtime";
+import { mountPanelHost } from "../panels/panel-host";
+import { settingsOverlaySession } from "../../stores/settingsStore";
+import { setSettingsOverlay, onSettingsOverlayAction } from "../../services/bridge/settings-overlay";
+const native = isTauriRuntime();
+function host(node: HTMLElement) {
+  if (!native) return focusDialog(node, { onEscape: closeSettingsModal, ignoreEscape: () => Boolean($recordingShortcutId) });
+  const stop = mountPanelHost(node, true, { id: "settings", sessionStore: settingsOverlaySession, close: closeSettingsModal, set: setSettingsOverlay, listen: onSettingsOverlayAction });
+  return { destroy: stop };
+}
 import { onDestroy, tick } from "svelte";
 import { fade, fly } from "svelte/transition";
 import { cubicOut } from "svelte/easing";
@@ -72,7 +82,7 @@ function selectCategory(category: SettingsCategory): void {
 
 function clearSearch(): void {
   searchQuery = "";
-  document.getElementById("settings-search-input")?.focus();
+  if (!native) document.getElementById("settings-search-input")?.focus();
 }
 
 function handleSearchKeydown(event: KeyboardEvent): void {
@@ -98,7 +108,7 @@ async function selectSearchResult(entry: SearchEntry): Promise<void> {
     target.querySelector<HTMLElement>("button, input, select, [tabindex='0']") ?? target;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-  focusTarget.focus({ preventScroll: true });
+  if (!native) focusTarget.focus({ preventScroll: true });
   highlightedTarget?.classList.remove("search-target-highlight");
   target.classList.add("search-target-highlight");
   highlightedTarget = target;
@@ -152,6 +162,7 @@ function handleWindowMousedown(event: MouseEvent): void {
 {#if $isSettingsModalOpen}
   <div
     class="settings-backdrop"
+    class:settings-controller={native}
     transition:fade={{ duration: 150 }}
     onclick={() => closeSettingsModal()}
     role="presentation"
@@ -162,7 +173,7 @@ function handleWindowMousedown(event: MouseEvent): void {
       out:fade={{ duration: 130 }}
       onclick={(event) => event.stopPropagation()}
       onkeydown={handleDialogKeydown}
-      use:focusDialog={{ onEscape: closeSettingsModal, ignoreEscape: () => Boolean($recordingShortcutId) }}
+      use:host
       role="dialog"
       aria-modal="true"
       aria-label={$t("settings.browser_settings_6c1e")}

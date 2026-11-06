@@ -29,6 +29,7 @@ pub mod ephemeral;
 pub mod linux_layout;
 mod panel_popover;
 pub mod quick_settings_popover;
+pub mod settings_overlay;
 
 pub fn create_webview_builder(
     label: &str,
