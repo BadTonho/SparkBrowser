@@ -17,6 +17,9 @@
   import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
+  import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
+
+  let listEl = $state<HTMLDivElement>();
 
   let workspaceTabs = $derived(
     $tabs.filter(
@@ -67,10 +70,29 @@
 
   onDestroy(cancelTabDrag);
   function handleKeydown(event: KeyboardEvent, tabId: string) {
-    if (event.key === "Enter") {
+    if (event.target instanceof Element && event.target.closest("button,input,a")) return;
+    if ((event.key === "Enter" || event.key === " ") && handleTabSelectionInput(event, tabId, workspaceTabs.map((tab) => tab.id))) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      clearTabSelection();
       selectTab(tabId);
     }
   }
+
+  function handlePointerDown(event: PointerEvent, tabId: string) {
+    if (event.target instanceof Element && event.target.closest("button,input,a")) return;
+    if (handleTabSelectionInput(event, tabId, workspaceTabs.map((tab) => tab.id))) return;
+    startTabDrag(event, tabId);
+  }
+
+  $effect(() => {
+    const activeTab = workspaceTabs.find((tab) => tab.is_active);
+    if (!activeTab || !listEl) return;
+    requestAnimationFrame(() => {
+      const row = [...(listEl?.querySelectorAll<HTMLElement>("[data-tab-id]") ?? [])].find((element) => element.dataset.tabId === activeTab.id);
+      row?.scrollIntoView({ block: "nearest" });
+    });
+  });
 
 </script>
 
@@ -98,19 +120,21 @@
     </div>
   </div>
 
-  <div class="tabs-list">
+  <div class="tabs-list" bind:this={listEl}>
     {#each workspaceTabs as tab (tab.id)}
       <div
         class="tab-row"
         data-tab-id={tab.id}
         class:active={tab.is_active}
+        class:multi-selected={$selectedTabIds.includes(tab.id)}
         class:hibernated={tab.is_hibernated}
         class:ephemeral={tab.is_ephemeral}
         class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
-        onpointerdown={(e) => startTabDrag(e, tab.id)}
+        onpointerdown={(e) => handlePointerDown(e, tab.id)}
         onkeydown={(e) => handleKeydown(e, tab.id)}
         role="button"
         tabindex="0"
+        aria-pressed={$selectedTabIds.includes(tab.id)}
         onpointerenter={() => refreshTabsMemory()}
         title={getTabTooltip(tab, $tabsMemory[tab.id])}
         transition:slide={{ duration: 220, easing: cubicOut }}
@@ -308,6 +332,8 @@
   .tab-row.ephemeral {
     border-color: rgba(168, 85, 247, 0.25);
   }
+
+  .tab-row.multi-selected { outline:1px solid var(--accent-primary); background:color-mix(in srgb,var(--accent-primary) 12%,var(--bg-glass-hover)); }
 
   .tab-row.ephemeral.active {
     background: linear-gradient(

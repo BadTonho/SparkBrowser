@@ -47,5 +47,6 @@
   "commandbar.collapse_or_expand_the_vertical_tab_bar_p0_b3fc": "Collapse or expand the vertical tab bar ({p0})",
   "commandbar.command_7131": "Command",
   "commandbar.reload_active_tab_89d3": "Reload Active Tab",
-  "commandbar.refresh_the_current_web_page_p0_9ea5": "Refresh the current web page ({p0})"
+  "commandbar.refresh_the_current_web_page_p0_9ea5": "Refresh the current web page ({p0})",
+  "commandbar.tab_in_workspace": "Workspace: {p0}"
 }

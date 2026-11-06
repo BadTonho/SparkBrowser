@@ -47,5 +47,6 @@
   "commandbar.collapse_or_expand_the_vertical_tab_bar_p0_b3fc": "Recolher ou expandir a barra vertical de abas ({p0})",
   "commandbar.command_7131": "Comando",
   "commandbar.reload_active_tab_89d3": "Recarregar aba ativa",
-  "commandbar.refresh_the_current_web_page_p0_9ea5": "Recarregar a página atual ({p0})"
+  "commandbar.refresh_the_current_web_page_p0_9ea5": "Recarregar a página atual ({p0})",
+  "commandbar.tab_in_workspace": "Workspace: {p0}"
 }

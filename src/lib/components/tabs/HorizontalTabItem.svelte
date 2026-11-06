@@ -6,6 +6,9 @@
   import { t } from "../../i18n";
   import TabMuteButton from "../media/TabMuteButton.svelte";
   import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
+  import { tabs } from "../../stores/browserStore";
+  import { activeWorkspaceId } from "../../stores/workspaceSelectionStore";
+  import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
   let { tab, selected = false }: { tab: TabItem; selected?: boolean } = $props();
   let element: HTMLDivElement | undefined = $state();
   $effect(() => { if (selected) element?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
@@ -33,6 +36,25 @@
     removeTab(tabId);
   }
 
+  function handlePointerDown(event: PointerEvent) {
+    if (event.target instanceof Element && event.target.closest("button,input,a")) return;
+    const orderedIds = $tabs.filter(item => !item.workspace_id || item.workspace_id === $activeWorkspaceId).map(item => item.id);
+    if (handleTabSelectionInput(event, tab.id, orderedIds)) return;
+    clearTabSelection();
+    startTabDrag(event, tab.id);
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.target instanceof Element && event.target.closest("button,input,a")) return;
+    const orderedIds = $tabs.filter(item => !item.workspace_id || item.workspace_id === $activeWorkspaceId).map(item => item.id);
+    if ((event.key === "Enter" || event.key === " ") && handleTabSelectionInput(event, tab.id, orderedIds)) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      clearTabSelection();
+      void selectTab(tab.id);
+    }
+  }
+
   function getTabTooltip(tabItem: TabItem, memoryBytes?: number): string {
     const host = getTabHost(tabItem.url);
     if (tabItem.is_hibernated) {
@@ -49,14 +71,16 @@
         bind:this={element}
         data-tab-id={tab.id}
         class:active={selected}
+        class:multi-selected={$selectedTabIds.includes(tab.id)}
         class:hibernated={tab.is_hibernated}
         class:ephemeral={tab.is_ephemeral}
         class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
-        onpointerdown={(e) => startTabDrag(e, tab.id)}
+        onpointerdown={handlePointerDown}
         onmouseup={(e) => e.button === 1 && removeTab(tab.id)}
-        onkeydown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void selectTab(tab.id); } }}
+        onkeydown={handleKeydown}
         role="button"
         tabindex="0"
+        aria-pressed={$selectedTabIds.includes(tab.id)}
         onpointerenter={() => refreshTabsMemory()}
         title={getTabTooltip(tab, $tabsMemory[tab.id])}
       >
@@ -129,6 +153,8 @@
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   }
+
+  .h-tab.multi-selected { outline:1px solid var(--accent-primary); outline-offset:1px; }
 
   .h-tab.ephemeral {
     border-color: rgba(168, 85, 247, 0.35);

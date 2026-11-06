@@ -2,6 +2,8 @@
 
 Typing searches saved notes by title, URL and text and sessions by name and page titles/URLs after 180 ms without typing. Matching ignores case and accents and treats special characters literally. Results show short text previews and counts, with explicit note and session badges. No full note or session document travels in search results.
 
+Open tabs are searched across all workspaces. Each tab result includes its workspace, and selecting it by keyboard activates both the tab and its workspace. The existing configurable Command Bar shortcut opens this search.
+
 Each category returns at most two matches. Its count describes the displayed matches; `2+` means more results exist, without computing an exact total. Transactional trigram indexes serve queries of three or more characters. Shorter queries and queries containing NUL scan normalized fields and keep the same literal substring behavior.
 
 The list contains at most twelve items: at most three tabs and two of each other category. A nonempty query reserves two navigation actions. New query replies cannot replace newer results. Keyboard or pointer selection remains associated with its item while asynchronous results arrive.

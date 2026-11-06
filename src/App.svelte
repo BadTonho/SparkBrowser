@@ -36,6 +36,7 @@
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
   import ViewportFrame from "./lib/components/viewport/ViewportFrame.svelte";
   import CommandBar from "./lib/components/commandbar/CommandBar.svelte";
+  import TabSelectionActions from "./lib/components/tabs/TabSelectionActions.svelte";
   import { refreshExtensions, isExtensionsModalOpen, activeExtensionPopup } from "./lib/stores/extensionsStore";
   import { isHistoryDrawerOpen, bookmarkEditorState } from "./lib/stores/persistenceStore";
   import { isDownloadsDrawerOpen } from "./lib/stores/downloadsStore";
@@ -421,6 +422,7 @@
   <ShutdownDialog />
   <TitlebarMenu />
   <CommandBar />
+  <TabSelectionActions />
   {#if Lazy.HistoryDrawer}<Lazy.HistoryDrawer />{/if}
   {#if Lazy.DownloadsDrawer}<Lazy.DownloadsDrawer />{/if}
   {#if Lazy.SettingsModal}<Lazy.SettingsModal />{/if}

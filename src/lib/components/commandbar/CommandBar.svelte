@@ -124,10 +124,11 @@
         normalizeSearch(tab.title).includes(q) ||
         normalizeSearch(tab.url).includes(q)
       ) {
+        const workspaceName = $workspaces.find((workspace) => workspace.id === tab.workspace_id)?.name ?? tab.workspace_id;
         items.push({
           id: `switch-${tab.id}`,
           title: tab.title,
-          subtitle: tab.url,
+          subtitle: `${tab.url} · ${$t("commandbar.tab_in_workspace", { p0: workspaceName })}`,
           icon: tab.is_hibernated ? "💤" : tab.is_active ? "🟢" : "🗂️",
           badge: tab.is_active
             ? $t("common.active_tab")
