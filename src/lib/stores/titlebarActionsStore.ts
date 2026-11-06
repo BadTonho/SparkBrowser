@@ -1,7 +1,7 @@
 import { get, writable } from "svelte/store";
 import { safeStorage } from "../services/storage.js";
 
-export const DEFAULT_TITLEBAR_ACTIONS = ["tools", "bookmarks", "commands", "history", "downloads", "privacy", "extensions", "settings", "zen"] as const;
+export const DEFAULT_TITLEBAR_ACTIONS = ["tools", "bookmarks", "commands", "history", "downloads", "privacy", "extensions", "settings", "zen", "qr"] as const;
 export type TitlebarAction = typeof DEFAULT_TITLEBAR_ACTIONS[number];
 const STORAGE_KEY = "veloce_titlebar_action_order";
 

@@ -16,7 +16,7 @@ function load(path, imports = {}, globals = {}) {
   return exports;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
-const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'zen'];
+const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'zen', 'qr'];
 
 function storeFixture(saved = null, failWrite = false) {
   const storage = new Map(saved == null ? [] : [['veloce_titlebar_action_order', saved]]);

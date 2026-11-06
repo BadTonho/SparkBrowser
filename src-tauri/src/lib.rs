@@ -46,8 +46,8 @@ use commands::notes::{delete_page_note, get_page_note, save_page_note, search_pa
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_downloads_popover, set_history_overlay,
     set_media_popover, set_overlay_visibility, set_permission_popover, set_privacy_popover,
-    set_quick_settings_popover, set_settings_overlay, set_tools_popover, set_workspace_switcher_overlay,
-    set_zoom_popover,
+    set_quick_settings_popover, set_settings_overlay, set_tools_popover,
+    set_workspace_switcher_overlay, set_zoom_popover,
 };
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
@@ -57,6 +57,7 @@ use commands::privacy::{get_privacy_stats, set_auto_skip_ads, toggle_adblock_shi
 use commands::privacy_settings::{
     get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
 };
+use commands::qr_code::save_qr_code_png;
 use commands::reader::get_reader_article;
 use commands::recovery::get_recovery_status;
 use commands::saved_sessions::{
@@ -386,7 +387,8 @@ pub fn run() {
             remove_extension,
             get_extension_action,
             install_extension_from_url,
-            install_extension_from_archive
+            install_extension_from_archive,
+            save_qr_code_png
         ]))
         .build(context)
         .expect("error while building Veloce Browser")

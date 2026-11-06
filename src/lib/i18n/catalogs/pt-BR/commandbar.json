@@ -48,5 +48,15 @@
   "commandbar.command_7131": "Comando",
   "commandbar.reload_active_tab_89d3": "Recarregar aba ativa",
   "commandbar.refresh_the_current_web_page_p0_9ea5": "Recarregar a página atual ({p0})",
-  "commandbar.tab_in_workspace": "Workspace: {p0}"
+  "commandbar.tab_in_workspace": "Workspace: {p0}",
+  "calculator.calculator": "Calculadora",
+  "calculator.result": "Resultado: {value}",
+  "calculator.copy_result": "Pressione Enter ou clique para copiar o resultado",
+  "calculator.error_title": "Não foi possível calcular esta entrada",
+  "calculator.copy_failed": "Não foi possível copiar o resultado.",
+  "calculator.division_by_zero": "A divisão por zero não está definida.",
+  "calculator.invalid_expression": "A expressão está incompleta ou é inválida.",
+  "calculator.unknown_unit": "Uma destas unidades não é compatível.",
+  "calculator.incompatible_units": "Estas unidades não podem ser convertidas entre si.",
+  "calculator.out_of_range": "O resultado está fora do intervalo numérico aceito."
 }

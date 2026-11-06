@@ -15,6 +15,7 @@
   import { toggleExtensionsModal, isExtensionsModalOpen } from "../../stores/extensionsStore";
   import { titlebarActionOrder, moveTitlebarAction, type TitlebarAction } from "../../stores/titlebarActionsStore";
   import { createActionDrag, type ActionDragPreview } from "../../services/titlebar-action-drag";
+  import { isQrCodeOpen, openQrCode } from "../../stores/qrCodeStore";
 
   let root = $state<HTMLDivElement>(null!);
   let preview = $state<ActionDragPreview | null>(null);
@@ -217,6 +218,21 @@
         onclick={toggleZenMode}
         title={($t("titlebar.enter_zen_focus_mode_p0_d689", { p0: $keyboardShortcuts && shortcutLabel("zen") })) + " · " + $t("titlebar.reorder_hint")}
         aria-label={$t("titlebar.zen_mode_826b")}
+      >
+        <TitlebarActionIcon action={id} />
+      </button>
+    {/if}
+    {#if id === "qr"}
+      <button
+        data-action="qr"
+        aria-describedby="titlebar-reorder-hint"
+        class:dragging={preview?.id === "qr"}
+        style:translate={preview?.id === "qr" ? `${preview.offset}px 0` : undefined}
+        class="icon-btn"
+        onclick={openQrCode}
+        title={$t("qr_code.title") + " · " + $t("titlebar.reorder_hint")}
+        aria-label={$t("qr_code.title")}
+        aria-haspopup="dialog" aria-expanded={$isQrCodeOpen}
       >
         <TitlebarActionIcon action={id} />
       </button>

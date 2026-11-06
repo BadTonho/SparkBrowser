@@ -24,7 +24,8 @@
     "test:native:auto-skip:youtube": "node tools/testing/auto-skip-youtube.mjs"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.2.0"
+    "@tauri-apps/api": "^2.2.0",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",

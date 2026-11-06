@@ -36,6 +36,8 @@
     <circle cx="12" cy="12" r="3" />
   {:else if action === "zen"}
     <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+  {:else if action === "qr"}
+    <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM19 14v2m2 2v3h-3m-4 0v-2" />
   {/if}
 </svg>
 

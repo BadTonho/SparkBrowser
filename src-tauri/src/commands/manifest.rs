@@ -128,4 +128,5 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_extension_action",
     "install_extension_from_url",
     "install_extension_from_archive",
+    "save_qr_code_png",
 ];

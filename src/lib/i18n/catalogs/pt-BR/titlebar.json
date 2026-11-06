@@ -37,5 +37,19 @@
   "titlebar.close_7d9e": "Fechar",
   "titlebar.reorder_hint": "Segure por meio segundo e arraste para reorganizar. Esc cancela.",
   "titlebar.quick_actions": "Atalhos rápidos",
-  "titlebar.reordering": "Arraste para escolher a posição. Solte para salvar ou pressione Esc para cancelar."
+  "titlebar.reordering": "Arraste para escolher a posição. Solte para salvar ou pressione Esc para cancelar.",
+  "qr_code.title": "QR Code",
+  "qr_code.close": "Fechar QR Code",
+  "qr_code.image_alt": "QR Code do endereço da página ativa",
+  "qr_code.generating": "Gerando QR Code…",
+  "qr_code.http_only": "O QR Code está disponível apenas para páginas HTTP e HTTPS.",
+  "qr_code.too_long": "Este endereço é longo demais para caber em um QR Code.",
+  "qr_code.copy_image": "Copiar imagem",
+  "qr_code.save_png": "Salvar PNG",
+  "qr_code.copy_failed": "Não foi possível copiar a imagem. Você ainda pode salvá-la como PNG.",
+  "qr_code.save_failed": "Não foi possível salvar a imagem do QR Code.",
+  "qr_code.copied": "Imagem do QR Code copiada.",
+  "qr_code.saved": "Imagem do QR Code salva.",
+  "qr_code.invalid_png": "A imagem gerada para o QR Code é inválida.",
+  "qr_code.invalid_extension": "Escolha um nome de arquivo PNG."
 }

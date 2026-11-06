@@ -10,6 +10,11 @@ A preferência é salva localmente neste dispositivo e não faz parte das export
 
 ## Aparência dos ícones
 
-Os oito atalhos usam SVGs decorativos de contorno, com tamanho de 16 × 16 pixels e traço uniforme de 1,8 unidade. Ferramentas usa uma lista, favoritos uma barra, comandos um raio, histórico um relógio, downloads uma seta para baixo, privacidade um escudo, configurações uma engrenagem e foco quatro cantos de enquadramento.
+Os dez atalhos usam SVGs decorativos de contorno, com tamanho de 16 × 16 pixels e traço uniforme de 1,8 unidade. Ferramentas usa uma lista, favoritos uma barra, comandos um raio, histórico um relógio, downloads uma seta para baixo, privacidade um escudo, configurações uma engrenagem e foco quatro cantos de enquadramento.
 
 Os ícones herdam a propriedade CSS `color` do botão por meio de `stroke="currentColor"`. Altere o `color` do botão ou as variáveis existentes do tema (`--text-secondary`, `--text-primary` ao passar o mouse e `--accent-primary` para favoritos ativos) para recolori-los. O indicador verde de privacidade permanece separado. As cores dos ícones não possuem um seletor nas configurações.
+
+
+## QR Code
+
+A ação QR Code abre um painel local para a página HTTP(S) ativa. Ela gera um PNG sem serviço de rede e permite copiar a imagem ou salvá-la pelo diálogo nativo. Se a cópia falhar, o painel informa o erro e mantém a opção de salvar. Páginas internas e endereços acima da capacidade do formato exibem uma explicação. A ação pode ser reordenada e sua posição é salva junto à faixa da barra de título.

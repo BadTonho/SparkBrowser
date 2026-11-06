@@ -711,6 +711,12 @@
           "markdownDescription": "Enables the save_page_note command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_qr_code_png command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-qr-code-png",
+          "markdownDescription": "Enables the save_qr_code_png command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_site_search_shortcut command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-site-search-shortcut",
@@ -1477,6 +1483,12 @@
           "type": "string",
           "const": "deny-save-page-note",
           "markdownDescription": "Denies the save_page_note command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_qr_code_png command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-qr-code-png",
+          "markdownDescription": "Denies the save_qr_code_png command without any pre-configured scope."
         },
         {
           "description": "Denies the save_site_search_shortcut command without any pre-configured scope.",

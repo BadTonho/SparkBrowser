@@ -33,6 +33,7 @@
   import { get } from "svelte/store";
   import Titlebar from "./lib/components/titlebar/Titlebar.svelte";
   import TitlebarMenu from "./lib/components/titlebar/TitlebarMenu.svelte";
+  import QrCodePanel from "./lib/components/titlebar/QrCodePanel.svelte";
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
   import ViewportFrame from "./lib/components/viewport/ViewportFrame.svelte";
   import CommandBar from "./lib/components/commandbar/CommandBar.svelte";
@@ -421,6 +422,7 @@
   </div>
   <ShutdownDialog />
   <TitlebarMenu />
+  <QrCodePanel />
   <CommandBar />
   <TabSelectionActions />
   {#if Lazy.HistoryDrawer}<Lazy.HistoryDrawer />{/if}

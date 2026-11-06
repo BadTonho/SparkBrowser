@@ -23,7 +23,7 @@ export async function checkTitlebarActions(context) {
     if(cancel === 'blur') await script('setTimeout(()=>window.dispatchEvent(new Event("blur")),900)');
     await request('POST', `/session/${sessionId()}/actions`, {actions:inputs});
   }
-  const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'settings', 'zen'];
+  const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'zen', 'qr'];
   assert.deepEqual(await order(), defaults);
   await script(`window.toolbarMarkerSeen=false;window.toolbarHoldSeen=false;new MutationObserver(()=>{window.toolbarMarkerSeen ||= !!document.querySelector('.insertion-marker');window.toolbarHoldSeen ||= !!document.querySelector('.dragging')}).observe(document.querySelector('.titlebar-actions'),{subtree:true,attributes:true,childList:true});`);
   const initialRect = await request('GET', `/session/${sessionId()}/window/rect`);
@@ -33,6 +33,11 @@ export async function checkTitlebarActions(context) {
   assert.deepEqual(await request('GET', `/session/${sessionId()}/window/rect`), initialRect, 'drag does not move the native window');
   assert.equal(await script('return !!document.querySelector("[data-testid=tools-dialog]")'), false, 'drag must not activate tools');
   await gesture('tools','left');
+  assert.deepEqual(await order(), defaults);
+  await gesture('qr','left');
+  await until(async () => (await order())[0] === 'qr', 'move QR Code action to the start');
+  await gesture('qr','right');
+  await until(async () => (await order()).at(-1) === 'qr', 'restore QR Code action to the end');
   assert.deepEqual(await order(), defaults);
 
   for (const mode of ['escape', 'outside', 'blur']) {
@@ -76,20 +81,26 @@ export async function checkTitlebarActions(context) {
   // Switch through the real settings UI, keeping the hidden bookmark slot intact.
   await click('[data-action="settings"]'); await click('[data-testid="settings-appearance_layout"]');
   await click('#setting-browser-layout .mini-pill:nth-child(2)'); await escape();
-  await until(async () => (await order()).length === 7, 'vertical layout hides bookmark action');
+  await until(async () => (await order()).length === 9, 'vertical layout hides bookmark action');
   const verticalRect = await request('GET', `/session/${sessionId()}/window/rect`);
   await gesture('zen','left');
-  const expected = ['zen', 'bookmarks', 'tools', 'commands', 'history', 'downloads', 'privacy', 'settings'];
+  const expected = ['zen', 'bookmarks', 'tools', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'qr'];
   assert.deepEqual(JSON.parse(await saved()), expected);
   assert.deepEqual(await request('GET', `/session/${sessionId()}/window/rect`), verticalRect, 'vertical drag region does not move the window');
   await click('[data-action="settings"]');
   await click('#setting-browser-layout .mini-pill:first-child'); await escape();
-  await until(async () => (await order()).length === 8, 'horizontal restores bookmark action');
+  await until(async () => (await order()).length === 10, 'horizontal restores bookmark action');
   assert.deepEqual(await order(), expected);
   await restart(); assert.deepEqual(await order(), expected, 'order survives native app restart');
 
   await invoke('navigate_to', { input: fixture.origin + '/page/toolbar-a' });
   const a = (await invoke('get_tabs')).tabs.find(tab => tab.is_active);
+  await click('[data-action="qr"]');
+  await until(() => script('return !!document.querySelector(".panel img[alt]")'), 'QR image generates for active HTTP page');
+  assert.equal(await script('return document.querySelector(".panel .url").textContent'), a.url, 'QR panel displays the active tab URL');
+  assert.equal(await script('return document.querySelector(".panel img").src.startsWith("data:image/png;base64,")'), true, 'QR output is a PNG data URL');
+  assert.deepEqual(await script('return [...document.querySelectorAll(".panel footer button")].map(button => button.disabled)'), [false, false], 'copy and save are available after generation');
+  await escape();
   const b = (await invoke('create_tab', { url: fixture.origin + '/page/toolbar-b' })).tabs.find(tab => tab.is_active);
   await invoke('set_split_view', { leftTabId: a.id, rightTabId: b.id });
   await resizeWindow(900, 700);
@@ -99,7 +110,7 @@ export async function checkTitlebarActions(context) {
   await until(() => script('return !!document.querySelector("[data-testid=titlebar-menu]")'), 'compact menu opens');
   await escape();
   await resizeWindow(1280, 820);
-  await until(async () => (await order()).length === 8, 'expanding restores actions');
+  await until(async () => (await order()).length === 10, 'expanding restores actions');
   assert.deepEqual(await order(), expected);
   await screenshot('titlebar-reorder-saved');
 }

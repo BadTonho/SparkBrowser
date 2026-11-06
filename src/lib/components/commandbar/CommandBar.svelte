@@ -40,18 +40,21 @@
     tabLayout,
   } from "../../stores/settingsStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
+  import { locale } from "../../i18n";
+  import { calculateQuery } from "../../services/calculator.js";
 
   let inputEl: HTMLInputElement | undefined = $state();
   let selectedId = $state<string | null>(null);
   let searchResults = $state<CommandSearchResult>(emptyCommandSearch);
   let searchError = $state("");
+  let actionError = $state("");
   let executing = $state(false);
   const queryRunner = createCommandQuery({ search: searchCommandItems,
     result: (result: CommandSearchResult) => searchResults = result,
     error: (error: unknown) => searchError = describeError(error) });
   $effect(() => {
     const query = $commandQuery; const open = $isCommandBarOpen;
-    selectedId = null; searchResults = emptyCommandSearch; searchError = "";
+    selectedId = null; searchResults = emptyCommandSearch; searchError = ""; actionError = "";
     queryRunner.set(open ? query : "");
     return () => queryRunner.stop();
   });
@@ -77,6 +80,29 @@
     const shortcuts = $keyboardShortcuts;
     const q = normalizeSearch(query.trim());
     const items: CommandItem[] = [];
+
+    const calculation = calculateQuery(query, $locale);
+    if (calculation) {
+      const item: CommandItem = calculation.error
+        ? {
+            id: "calculator-result", title: $t("calculator.error_title"),
+            subtitle: $t(calculation.error), icon: "=", badge: $t("calculator.calculator"),
+            action: async () => {},
+          }
+        : {
+            id: "calculator-result", title: $t("calculator.result", { value: calculation.text }),
+            subtitle: $t("calculator.copy_result"), icon: "=", badge: $t("calculator.calculator"),
+            action: async () => {
+              try {
+                await navigator.clipboard.writeText(calculation.text);
+                await closeCommandBar();
+              } catch {
+                actionError = $t("calculator.copy_failed");
+              }
+            },
+          };
+      return [item];
+    }
 
     if (query.trim().length > 0) {
       items.push({
@@ -350,6 +376,7 @@
       </div>
 
       <ErrorMessage error={searchError} />
+      {#if actionError}<p class="action-error" role="alert">{actionError}</p>{/if}
       {#if searchResults.notes_count || searchResults.sessions_count}<p class="search-counts" role="status">{$t("search.counts", { notes: `${searchResults.notes_count}${searchResults.notes_has_more ? "+" : ""}`, sessions: `${searchResults.sessions_count}${searchResults.sessions_has_more ? "+" : ""}` })}</p>{/if}
       <div class="command-results">
         {#each suggestions as item, idx (item.id)}
@@ -441,6 +468,7 @@
   }
 
   .search-counts { padding: 8px 18px; color: var(--text-secondary); font-size: 12px; }
+  .action-error { padding: 0 18px 8px; color: #ef9a9a; font-size: 12px; }
   .command-results {
     display: flex;
     flex-direction: column;

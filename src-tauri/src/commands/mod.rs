@@ -33,4 +33,5 @@ pub mod media;
 pub mod new_tab;
 pub mod reader;
 
+pub mod qr_code;
 pub mod webview_runtime;

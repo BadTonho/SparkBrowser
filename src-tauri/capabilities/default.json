@@ -138,7 +138,8 @@
     "allow-remove-extension",
     "allow-get-extension-action",
     "allow-install-extension-from-url",
-    "allow-install-extension-from-archive"
+    "allow-install-extension-from-archive",
+    "allow-save-qr-code-png"
   ],
   "webviews": [
     "main"
