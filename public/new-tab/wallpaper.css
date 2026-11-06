@@ -66,13 +66,13 @@
 
 .wallpaper-slider-row input[type="range"] {
   flex: 1;
-  accent-color: #bcb6df;
+  accent-color: #e5e5e5;
   cursor: pointer;
 }
 
 #wallpaper-dim-val {
   font-size: 12px;
-  color: #bcb6cd;
+  color: #a3a3a3;
   min-width: 34px;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -80,7 +80,7 @@
 
 #wallpaper-status {
   font-size: 12px;
-  color: #bcb6cd;
+  color: #a3a3a3;
   margin: 6px 0;
 }
 
@@ -125,7 +125,7 @@ html[data-theme="light"] #wallpaper-status {
 }
 
 html[data-theme="light"] .wallpaper-slider-row input[type="range"] {
-  accent-color: #6366f1;
+  accent-color: #171717;
 }
 
 html[data-theme="light"] body.has-wallpaper .widget {

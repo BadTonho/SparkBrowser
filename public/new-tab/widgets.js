@@ -203,6 +203,7 @@
     gear.title = text('settings'); gear.setAttribute('aria-label', text('settings'));
     $('city-query').placeholder = text('cityPlaceholder'); $('city-query').setAttribute('aria-label', text('cityPlaceholder'));
     $('weather-heading').textContent = text('weather'); render();
+    showCategory(currentCategory);
   });
   window.addEventListener('veloce-new-tab-widgets', event => {
     snapshot = event.detail;
