@@ -12,6 +12,7 @@
     "tauri": "tauri",
     "test": "node --test tests/*.test.mjs",
     "test:native:build": "node tools/testing/build-native.mjs",
+    "test:native:build:fast": "node tools/testing/build-native.mjs --fast",
     "test:native": "node tools/testing/native-smoke.mjs",
     "test:native:youtube": "node tools/testing/pip-youtube.mjs",
     "security:check": "node tools/security/check-repo.mjs",

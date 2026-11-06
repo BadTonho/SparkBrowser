@@ -175,4 +175,35 @@ mod tests {
         }
         assert_eq!(load_session_tabs(&conn).unwrap()[0].id, "original");
     }
+
+    #[test]
+    #[ignore = "explicit synthetic session scaling measurement"]
+    fn measure_session_snapshot_scaling() {
+        for count in [10, 100, 1000] {
+            let conn = database();
+            let tabs: Vec<_> = (0..count)
+                .map(|id| {
+                    TabInfo::new_default(
+                        format!("tab-{id}"),
+                        "https://example.test/".into(),
+                        id == 0,
+                    )
+                })
+                .collect();
+            save_session_tabs(&conn, &tabs).unwrap();
+            let before = conn.total_changes();
+            let mut times = Vec::new();
+            for _ in 0..10 {
+                let start = std::time::Instant::now();
+                save_session_tabs(&conn, &tabs).unwrap();
+                times.push(start.elapsed());
+            }
+            times.sort();
+            assert_eq!(conn.total_changes(), before);
+            eprintln!(
+                "{count} tabs: unchanged snapshot median {:?}",
+                times[times.len() / 2]
+            );
+        }
+    }
 }

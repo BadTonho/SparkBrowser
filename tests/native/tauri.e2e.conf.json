@@ -11,7 +11,8 @@
       "minHeight": 480,
       "decorations": false,
       "transparent": true,
-      "center": true
+      "center": true,
+      "browserExtensionsEnabled": true
     }]
   },
   "bundle": { "active": false }

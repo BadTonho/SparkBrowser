@@ -26,6 +26,13 @@ test('internal browser events have an explicit WebView recipient and Windows use
   assert.deepEqual(JSON.parse(read('src-tauri/tauri.conf.json')).bundle.windows.webviewInstallMode, { type: 'downloadBootstrapper', silent: true });
 });
 
+test('isolated native shell uses the same WebView2 extension environment as content views', () => {
+  const production = JSON.parse(read('src-tauri/tauri.conf.json'));
+  const native = JSON.parse(read('tests/native/tauri.e2e.conf.json'));
+  assert.equal(production.app.windows[0].browserExtensionsEnabled, true);
+  assert.equal(native.app.windows[0].browserExtensionsEnabled, true);
+});
+
 test('local assets use CSP without inline scripts or remote script sources', () => {
   const security = JSON.parse(read('src-tauri/tauri.conf.json')).app.security;
   for (const policy of [security.csp, security.devCsp]) {

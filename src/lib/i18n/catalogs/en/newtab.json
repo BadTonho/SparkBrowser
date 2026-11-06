@@ -22,6 +22,7 @@
   "newtab.widgets.wallpaperSaved": "Background updated.",
   "newtab.widgets.wallpaperError": "Could not load media.",
   "newtab.widgets.wallpaperVideoTooLarge": "Video is too large (max 50 MB).",
+  "newtab.widgets.wallpaperImageTooLarge": "Image is too large (max 20 MB).",
   "newtab.widgets.showGmail": "Show Gmail",
   "newtab.widgets.clock": "Clock",
   "newtab.widgets.showClock": "Show clock",

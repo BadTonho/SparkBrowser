@@ -8,6 +8,10 @@
   let labels = {};
   let currentMedia = null; // { mediaType: 'image' | 'video', url: string }
   let activeBlobUrl = null;
+  let databasePromise = null;
+  let recordPromise = null;
+  let recordVersion = 0;
+  let renderedRecord = undefined;
   const text = key => labels[`newtab.widgets.${key}`] ?? key;
 
   const getStorage = key => {
@@ -38,7 +42,8 @@
   }
 
   function openDB() {
-    return new Promise((resolve, reject) => {
+    if (databasePromise) return databasePromise;
+    databasePromise = new Promise((resolve, reject) => {
       if (typeof indexedDB === 'undefined') {
         reject(new Error('IndexedDB unavailable'));
         return;
@@ -51,26 +56,36 @@
             db.createObjectStore(STORE_NAME);
           }
         };
-        req.onsuccess = () => resolve(req.result);
+        req.onsuccess = () => {
+          const db = req.result;
+          db.onversionchange = () => { db.close?.(); databasePromise = null; };
+          resolve(db);
+        };
         req.onerror = () => reject(req.error);
       } catch (e) {
         reject(e);
       }
-    });
+    }).catch(error => { databasePromise = null; throw error; });
+    return databasePromise;
   }
 
+  function invalidateRecord() { recordVersion++; recordPromise = null; }
+
   async function getStoredWallpaper() {
-    try {
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const req = tx.objectStore(STORE_NAME).get(KEY);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => reject(req.error);
-      });
-    } catch {
-      return null;
-    }
+    if (recordPromise) return recordPromise;
+    const pending = readStoredWallpaper().catch(() => { if (recordPromise === pending) recordPromise = null; return null; });
+    recordPromise = pending;
+    return pending;
+  }
+
+  async function readStoredWallpaper() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
   }
 
   async function saveStoredWallpaper(media) {
@@ -79,7 +94,7 @@
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const req = tx.objectStore(STORE_NAME).put(media, KEY);
-        req.onsuccess = () => resolve();
+        req.onsuccess = () => { invalidateRecord(); resolve(); };
         req.onerror = () => reject(req.error);
       });
     } catch (e) {
@@ -94,7 +109,7 @@
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const req = tx.objectStore(STORE_NAME).delete(KEY);
-        req.onsuccess = () => resolve();
+        req.onsuccess = () => { invalidateRecord(); resolve(); };
         req.onerror = () => reject(req.error);
       });
     } catch {}
@@ -110,7 +125,11 @@
   }
 
   async function loadMediaRecord() {
+    const version = recordVersion;
     const record = await getStoredWallpaper();
+    if (version !== recordVersion) return loadMediaRecord();
+    if (record === renderedRecord) return;
+    renderedRecord = record;
     cleanupUrls();
 
     if (!record) {
@@ -334,17 +353,18 @@
           return;
         }
 
-        setStatus(text('wallpaperLoading'));
+        if (file.size > 20 * 1024 * 1024) {
+          setStatus(text('wallpaperImageTooLarge'));
+          return;
+        }
 
-        const reader = new FileReader();
-        reader.onload = () => {
-          const rawData = reader.result;
+        setStatus(text('wallpaperLoading'));
+        const loadImage = (source, release) => {
           if (typeof Image === 'undefined') {
             saveStoredWallpaper({
               mediaType: 'image',
               mime: file.type || 'image/png',
-              blob: file,
-              dataUrl: rawData
+              blob: file
             })
               .then(async () => {
                 setStorage('veloce_wallpaper_enabled', 'true');
@@ -352,7 +372,8 @@
                 await applyWallpaper();
                 setStatus(text('wallpaperSaved'));
               })
-              .catch(() => setStatus(text('wallpaperError')));
+              .catch(() => setStatus(text('wallpaperError')))
+              .finally(release);
             return;
           }
 
@@ -361,7 +382,6 @@
             let w = img.naturalWidth || img.width;
             let h = img.naturalHeight || img.height;
             const maxDim = 2560;
-            let finalData = rawData;
             let finalBlob = file;
 
             if (typeof document !== 'undefined' && (w > maxDim || h > maxDim)) {
@@ -379,22 +399,18 @@
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                   ctx.drawImage(img, 0, 0, w, h);
-                  finalData = canvas.toDataURL('image/jpeg', 0.9);
                   if (typeof canvas.toBlob === 'function') {
-                    finalBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+                    finalBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9)) || file;
                   }
                 }
-              } catch {
-                finalData = rawData;
-              }
+              } catch { finalBlob = file; }
             }
 
             try {
               await saveStoredWallpaper({
                 mediaType: 'image',
-                mime: file.type || 'image/jpeg',
-                blob: finalBlob,
-                dataUrl: finalData
+                mime: finalBlob.type || file.type || 'image/jpeg',
+                blob: finalBlob
               });
               setStorage('veloce_wallpaper_enabled', 'true');
               notifyUpdated();
@@ -402,13 +418,22 @@
               setStatus(text('wallpaperSaved'));
             } catch {
               setStatus(text('wallpaperError'));
+            } finally {
+              release();
             }
           };
-          img.onerror = () => setStatus(text('wallpaperError'));
-          img.src = rawData;
+          img.onerror = () => { release(); setStatus(text('wallpaperError')); };
+          img.src = source;
         };
-        reader.onerror = () => setStatus(text('wallpaperError'));
-        reader.readAsDataURL(file);
+        if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+          const source = URL.createObjectURL(file);
+          loadImage(source, () => URL.revokeObjectURL(source));
+        } else {
+          const reader = new FileReader();
+          reader.onload = () => loadImage(reader.result, () => {});
+          reader.onerror = () => setStatus(text('wallpaperError'));
+          reader.readAsDataURL(file);
+        }
       });
     }
 
@@ -431,6 +456,7 @@
         event.key === 'veloce_wallpaper_enabled' ||
         event.key === 'veloce_wallpaper_dim'
       ) {
+        if (event.key === 'veloce_wallpaper_updated') invalidateRecord();
         applyWallpaper();
       }
     });

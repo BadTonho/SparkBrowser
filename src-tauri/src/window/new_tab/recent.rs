@@ -15,6 +15,29 @@ pub struct RecentSite {
     pub icon: Option<String>,
 }
 
+/// Reuse results only while the shared connection and external writers are unchanged.
+#[derive(Default)]
+pub struct Cache {
+    entry: Option<((u64, u64, u64), Vec<RecentSite>)>,
+}
+
+impl Cache {
+    pub fn list(&mut self, conn: &Connection, revision: u64) -> Result<Vec<RecentSite>, String> {
+        let data_version: u64 = conn
+            .query_row("PRAGMA data_version", [], |row| row.get(0))
+            .map_err(|error| error.to_string())?;
+        let key = (revision, conn.total_changes(), data_version);
+        if let Some((cached_key, sites)) = &self.entry {
+            if *cached_key == key {
+                return Ok(sites.clone());
+            }
+        }
+        let sites = list(conn)?;
+        self.entry = Some((key, sites.clone()));
+        Ok(sites)
+    }
+}
+
 pub fn from_url(raw: &str, title: &str) -> Option<RecentSite> {
     let key = site_icons_repo::site_key(raw)?;
     if search(raw).is_some() {
@@ -147,5 +170,35 @@ mod tests {
         assert!(sites.iter().all(|s| s.icon.is_none()));
         db.execute("DELETE FROM history", []).unwrap();
         assert!(list(&db).unwrap().is_empty());
+    }
+
+    #[test]
+    fn cache_refreshes_after_database_changes_and_revision_changes() {
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT,url TEXT,visited_at INTEGER); INSERT INTO history VALUES(1,'One','https://one.test/',1);").unwrap();
+        let mut cache = Cache::default();
+        assert_eq!(cache.list(&db, 0).unwrap()[0].domain, "one.test");
+        assert_eq!(cache.list(&db, 0).unwrap()[0].domain, "one.test");
+        db.execute("DELETE FROM history", []).unwrap();
+        assert!(cache.list(&db, 0).unwrap().is_empty());
+        db.execute(
+            "INSERT INTO history VALUES(2,'Two','https://two.test/',2)",
+            [],
+        )
+        .unwrap();
+        assert_eq!(cache.list(&db, 1).unwrap()[0].domain, "two.test");
+    }
+
+    #[test]
+    fn cache_invalidates_after_writes_from_another_connection() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("history.db");
+        let db = Connection::open(&path).unwrap();
+        db.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT,url TEXT,visited_at INTEGER); INSERT INTO history VALUES(1,'One','https://one.test/',1);").unwrap();
+        let other = Connection::open(&path).unwrap();
+        let mut cache = Cache::default();
+        assert_eq!(cache.list(&db, 0).unwrap()[0].domain, "one.test");
+        other.execute("DELETE FROM history", []).unwrap();
+        assert!(cache.list(&db, 0).unwrap().is_empty());
     }
 }

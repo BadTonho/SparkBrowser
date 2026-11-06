@@ -72,9 +72,9 @@
     } catch (e) {stream.getTracks().forEach(t=>t.stop());throw e;}
   }
   async function apply(user = false) {
-    const elements = media();
     for (const [el,route] of routes) if (!el.isConnected || target === 100) restore(el,route);
     if (target === 100) {if(context){void context.close();context=undefined;}applied=100;status='ready';return;}
+    const elements = media();
     let failure = false, pending = false;
     for (const el of elements) {
       if (el.readyState < 1) {pending=true;continue;}
@@ -94,7 +94,7 @@
   }
   let scheduled=false;
   function schedule() { if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;busy=busy.catch(()=>{}).then(()=>apply(Boolean(navigator.userActivation?.isActive)));},60); }
-  new MutationObserver(schedule).observe(document, {childList:true,subtree:true,attributes:true,attributeFilter:['controls']});
+  new MutationObserver(() => { if (target !== 100) schedule(); }).observe(document, {childList:true,subtree:true,attributes:true,attributeFilter:['controls']});
   document.addEventListener('volumechange',event=> {
     const el=event.target,route=routes.get(el);
     if(!route?.wrapped)return;
@@ -104,10 +104,10 @@
     if(actualMuted!==route.physicalMuted){route.muted=actualMuted;changed=true;}
     if(changed)update(el,route);
   },true);
-  for (const event of ['loadedmetadata','playing','emptied','durationchange']) document.addEventListener(event,schedule,true);
+  for (const event of ['loadedmetadata','playing','emptied','durationchange']) document.addEventListener(event,()=>{if(target!==100)schedule();},true);
   for (const event of ['play','pause','ended','enterpictureinpicture','leavepictureinpicture']) document.addEventListener(event,signal,true);
-  document.addEventListener('pointerdown',()=>schedule(),true);
-  document.addEventListener('keydown',()=>schedule(),true);
+  document.addEventListener('pointerdown',()=>{if(target!==100)schedule();},true);
+  document.addEventListener('keydown',()=>{if(target!==100)schedule();},true);
   window.addEventListener('pagehide',()=> {floating?.popup.close();floating?.cleanup();for(const [el,route] of routes)restore(el,route);void context?.close();});
   Object.defineProperty(window,'__veloceMedia',{value:async (key,action)=> {
     if (key!==token || (action.document && action.document!==documentId)) return {error:'media.stale'};

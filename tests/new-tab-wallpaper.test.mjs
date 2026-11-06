@@ -77,14 +77,17 @@ function createWallpaperFixture(initialStorage = {}) {
 
   // Mock IndexedDB
   const idbStore = new Map();
+  const stats = { opens: 0, reads: 0 };
   const indexedDB = {
     open: () => {
+      stats.opens++;
       const req = {
         result: {
           objectStoreNames: { contains: () => true },
           transaction: () => ({
             objectStore: () => ({
               get: key => {
+                stats.reads++;
                 const getReq = {};
                 setTimeout(() => {
                   getReq.result = idbStore.get(key);
@@ -135,8 +138,43 @@ function createWallpaperFixture(initialStorage = {}) {
     }
   });
 
-  return { nodes, storage, idbStore, window, document, listeners };
+  return { nodes, storage, idbStore, window, document, listeners, stats };
 }
+
+test('wallpaper reads are shared until another tab changes the stored record', async () => {
+  const f = createWallpaperFixture({ veloce_wallpaper_enabled: 'true' });
+  f.idbStore.set('current', 'data:image/png;base64,one');
+  await new Promise(r => setTimeout(r, 20));
+  const labels = {};
+  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels } });
+  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels } });
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(f.stats.opens, 1);
+  assert.equal(f.stats.reads, 1);
+  f.idbStore.set('current', 'data:image/png;base64,two');
+  f.window.dispatchEvent({ type: 'storage', key: 'veloce_wallpaper_updated' });
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(f.stats.reads, 2);
+  assert.equal(f.nodes.get('wallpaper-image').src, 'data:image/png;base64,two');
+});
+
+test('images are size-limited and stored as one blob', async () => {
+  const f = createWallpaperFixture();
+  await new Promise(r => setTimeout(r, 20));
+  const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json', 'utf8'));
+  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels } });
+  const input = f.nodes.get('wallpaper-file');
+  input.files = [{ name: 'large.png', type: 'image/png', size: 21 * 1024 * 1024 }];
+  input.listeners.change();
+  assert.match(f.nodes.get('wallpaper-status').textContent, /20 MB/);
+  assert.equal(f.idbStore.has('current'), false);
+  const image = { name: 'small.png', type: 'image/png', size: 100 };
+  input.files = [image];
+  input.listeners.change();
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(f.idbStore.get('current').blob, image);
+  assert.equal('dataUrl' in f.idbStore.get('current'), false);
+});
 
 test('wallpaper starts hidden when no custom image is saved', async () => {
   const f = createWallpaperFixture();

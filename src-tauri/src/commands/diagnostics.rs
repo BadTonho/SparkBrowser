@@ -42,11 +42,11 @@ pub async fn get_diagnostics(
     app: AppHandle,
     state: State<'_, BrowserState>,
 ) -> Result<BrowserDiagnostics, String> {
-    let _operation = state.tab_operations.lock().await;
     #[cfg(windows)]
     let context_counts = crate::media::contexts::resource_counts(&app).await.ok();
     #[cfg(not(windows))]
     let context_counts: Option<(usize, usize)> = None;
+    let _operation = state.tab_operations.lock().await;
     // Release each guard before snapshot() takes the tab locks.
     let bridge_tokens = state
         .keyboard_bridge_tokens

@@ -12,18 +12,23 @@
   import ErrorMessage from "../status/ErrorMessage.svelte";
   let diagnostics = $state<NativeDiagnostics | null>(null);
   let all = $state(false); let query = $state(""); let error = $state(""); let busy = $state(false);
-  let revision = 0; let disposed = false;
+  let revision = 0; let disposed = false; let pending: Promise<void> | undefined;
   const scoped = $derived(diagnostics?.tab_details.filter(t => all || t.workspace_id === $activeWorkspaceId) ?? []);
   const visible = $derived(scoped.filter(t => normalizeSearch(`${t.title} ${t.url}`).includes(normalizeSearch(query))));
-  async function refresh() {
+  function refresh(afterPending = false): Promise<void> {
+    if (pending) return afterPending ? pending.then(() => refresh()) : pending;
     const request = ++revision;
-    try { const result = await fetchDiagnostics(); if (!disposed && request === revision) diagnostics = result; }
-    catch (e) { if (!disposed && request === revision) error = describeError(e); }
+    pending = (async () => {
+      try { const result = await fetchDiagnostics(); if (!disposed && request === revision) diagnostics = result; }
+      catch (e) { if (!disposed && request === revision) error = describeError(e); }
+      finally { pending = undefined; }
+    })();
+    return pending;
   }
   async function hibernate(id: string) {
     busy = true; error = "";
-    try { applyTabsSnapshot(await invoke<TabSnapshot>("hibernate_tab", { tabId: id })); await refresh(); }
-    catch (e) { error = describeError(e); await refresh(); }
+    try { applyTabsSnapshot(await invoke<TabSnapshot>("hibernate_tab", { tabId: id })); await refresh(true); }
+    catch (e) { error = describeError(e); await refresh(true); }
     finally { busy = false; }
   }
   onMount(() => { void refresh(); const timer = setInterval(() => { void refresh(); }, 2000); return () => { disposed = true; ++revision; clearInterval(timer); }; });

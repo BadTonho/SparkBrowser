@@ -25,13 +25,15 @@ test('local history retention and pop-up choices persist through shell-only nati
   assert.match(state, /allow_popups: AtomicBool[\s\S]*AtomicBool::new\(false\)/);
 });
 
-test('history cleanup deletes only history and expiry runs on visit and preference changes', () => {
+test('history cleanup deletes history, derived icons and closed tabs, and expiry runs on visit and preference changes', () => {
   const history = read('src-tauri/src/database/history_repo.rs');
   const persistence = read('src-tauri/src/commands/persistence.rs');
   const settings = read('src-tauri/src/commands/privacy_settings.rs');
   assert.match(history, /DELETE FROM history WHERE visited_at < \?1/);
   assert.match(history, /prune_expired\(conn, retention, now\)/);
-  assert.match(persistence, /history_repo::clear_all_history\(&tx\)/);
+  assert.match(persistence, /history_repo::clear_history_data\(&tx\)/);
+  assert.match(history, /site_icons_repo::clear\(conn\)/);
+  assert.match(history, /closed_tabs_repo::clear\(conn\)/);
   assert.doesNotMatch(persistence, /DELETE FROM (?:site|download|cache|closed_tabs)/i);
   assert.match(settings, /history_repo::prune_expired\(conn, retention, now\)/);
 });

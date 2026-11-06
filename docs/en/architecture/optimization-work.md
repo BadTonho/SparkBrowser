@@ -61,7 +61,13 @@ Settings categories, shortcut recording, the search catalog and shared scoped CS
 
 ## Local and native validation
 
-Checks run locally on demand; the GitHub Actions workflow was removed to avoid consuming hosted runner minutes. The local Windows release suite passed resident tab/form/scroll preservation, SPA history, shield updates, protected memory, address drafts, dialog focus, resize and session restoration. See [native tests](../contributing/native-tests.md) for setup and scope. Other platform builds and runtimes have not been validated in the implementation environment. Multi-monitor DPI, interactive latency and aggregate RAM comparisons remain measurement work; no savings are inferred from compilation or view counts.
+Checks run locally and in the pull-request/main CI workflow; the separate release workflow builds signed artifacts. Native WebDriver scenarios remain separate. See [native tests](../contributing/native-tests.md) for setup and scope. Native behavior must be validated on each target platform. Multi-monitor DPI, interactive latency and aggregate RAM comparisons remain measurement work; no savings are inferred from compilation or view counts.
+
+## Idle and storage work
+
+The permission popover follows its anchor only while needed and only publishes changed geometry. Default-volume pages do not schedule volume work for unrelated DOM changes, while non-default volume keeps observing dynamic players and the active-tab report loop remains in place. Diagnostic context collection no longer holds the tab-operation lock while awaiting the UI thread, and concurrent panel refreshes share a request.
+
+Recent-site reads share a cache keyed by the new-tab revision, SQLite connection changes and `data_version`; history changes, icon updates and external writes cause recomputation. The same bounded result is used to revalidate card destinations. Windows extension synchronization uses the initialized connection, and archive/directory work runs in a bounded blocking executor. Hidden interface surfaces load independently on first use. Wallpaper records and the IndexedDB connection are reused; new images are stored as a single blob and older data URLs remain readable. Synthetic results and the native fast-build tradeoff are documented in [performance validation](../contributing/performance.md).
 
 ## Local diagnostics
 

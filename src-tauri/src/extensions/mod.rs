@@ -1,4 +1,5 @@
 pub mod crx;
+mod io;
 pub mod manifest;
 pub mod storage;
 pub mod types;
@@ -16,6 +17,7 @@ pub use linux as platform;
 use crate::database::extensions_repo::{self, ExtensionRecord};
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
+use tauri::Manager;
 use types::{ExtensionAction, ExtensionDetails, ExtensionManifest};
 
 fn ensure_supported() -> Result<(), String> {
@@ -24,6 +26,15 @@ fn ensure_supported() -> Result<(), String> {
     } else {
         Ok(())
     }
+}
+
+fn with_database<T>(
+    app: &AppHandle,
+    op: impl FnOnce(&rusqlite::Connection) -> Result<T, String>,
+) -> Result<T, String> {
+    let state = app.state::<crate::state::browser_state::BrowserState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    op(db.as_ref().ok_or("Database is not ready")?)
 }
 
 fn generate_extension_id() -> String {
@@ -42,31 +53,37 @@ pub async fn load_unpacked_extension(
     source_dir: &Path,
 ) -> Result<ExtensionDetails, String> {
     ensure_supported()?;
-    if !source_dir.exists() || !source_dir.is_dir() {
-        return Err(format!(
-            "Directory does not exist: {}",
-            source_dir.display()
-        ));
-    }
-
-    let (manifest, manifest_raw) = manifest::read_manifest_from_directory(source_dir)?;
-
-    let extensions_base = storage::extensions_dir(app)?;
-
-    // Store a persistent copy in app_data_dir/extensions/<id> BEFORE registering with the browser engine,
-    // so WebView2 never points to a temporary directory that will be deleted.
-    let installed_path = if source_dir.starts_with(&extensions_base) {
-        source_dir.to_path_buf()
-    } else {
-        let temp_id = generate_extension_id();
-        let target = extensions_base.join(&temp_id);
-        if target.exists() {
-            let _ = std::fs::remove_dir_all(&target);
+    let source_dir = source_dir.to_path_buf();
+    let worker_app = app.clone();
+    let (manifest, manifest_raw, installed_path) = io::run(move || {
+        if !source_dir.exists() || !source_dir.is_dir() {
+            return Err(format!(
+                "Directory does not exist: {}",
+                source_dir.display()
+            ));
         }
-        storage::copy_dir_all(source_dir, &target)
-            .map_err(|e| format!("Could not create persistent copy of extension: {}", e))?;
-        target
-    };
+
+        let (manifest, manifest_raw) = manifest::read_manifest_from_directory(&source_dir)?;
+
+        let extensions_base = storage::extensions_dir(&worker_app)?;
+
+        // Store a persistent copy in app_data_dir/extensions/<id> BEFORE registering with the browser engine,
+        // so WebView2 never points to a temporary directory that will be deleted.
+        let installed_path = if source_dir.starts_with(&extensions_base) {
+            source_dir.to_path_buf()
+        } else {
+            let temp_id = generate_extension_id();
+            let target = extensions_base.join(&temp_id);
+            if target.exists() {
+                let _ = std::fs::remove_dir_all(&target);
+            }
+            storage::copy_dir_all(&source_dir, &target)
+                .map_err(|e| format!("Could not create persistent copy of extension: {}", e))?;
+            target
+        };
+        Ok((manifest, manifest_raw, installed_path))
+    })
+    .await?;
 
     // Register persistent directory with browser engine (WebView2 on Windows, stub/bridge on Linux)
     let engine_id = platform::add_browser_extension(app, &installed_path.to_string_lossy()).await?;
@@ -96,8 +113,7 @@ pub async fn load_unpacked_extension(
         installed_at: now,
     };
 
-    let conn = crate::database::connection::init_database(app)?;
-    extensions_repo::save(&conn, &record)?;
+    with_database(app, |conn| extensions_repo::save(conn, &record))?;
 
     to_extension_details(&installed_path, &record, &manifest)
 }
@@ -112,19 +128,21 @@ pub async fn install_from_webstore(
         .ok_or_else(|| "Invalid Chrome Web Store URL or Extension ID".to_string())?;
 
     let download_id = id.clone();
-    let bytes =
-        tauri::async_runtime::spawn_blocking(move || crx::download_webstore_crx(&download_id))
-            .await
-            .map_err(|e| e.to_string())??;
+    let bytes = io::run(move || crx::download_webstore_crx(&download_id)).await?;
 
     // Extract directly into the permanent extension directory: app_data_dir/extensions/<id>
-    let dest_dir = storage::extensions_dir(app)?.join(&id);
-    if dest_dir.exists() {
-        let _ = std::fs::remove_dir_all(&dest_dir);
-    }
-    std::fs::create_dir_all(&dest_dir)
-        .map_err(|e| format!("Failed to create extension directory: {}", e))?;
-    crx::extract_crx_or_zip(&bytes, &dest_dir)?;
+    let worker_app = app.clone();
+    let dest_dir = io::run(move || {
+        let dest_dir = storage::extensions_dir(&worker_app)?.join(&id);
+        if dest_dir.exists() {
+            let _ = std::fs::remove_dir_all(&dest_dir);
+        }
+        std::fs::create_dir_all(&dest_dir)
+            .map_err(|e| format!("Failed to create extension directory: {}", e))?;
+        crx::extract_crx_or_zip(&bytes, &dest_dir)?;
+        Ok(dest_dir)
+    })
+    .await?;
 
     load_unpacked_extension(app, &dest_dir).await
 }
@@ -135,9 +153,14 @@ pub async fn install_from_archive(
     archive_path: &Path,
 ) -> Result<ExtensionDetails, String> {
     ensure_supported()?;
-    let bytes = crx::read_archive(archive_path)?;
-    let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
-    crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
+    let archive_path = archive_path.to_path_buf();
+    let temp_dir = io::run(move || {
+        let bytes = crx::read_archive(&archive_path)?;
+        let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
+        crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
+        Ok(temp_dir)
+    })
+    .await?;
 
     load_unpacked_extension(app, temp_dir.path()).await
 }
@@ -145,8 +168,7 @@ pub async fn install_from_archive(
 /// Retrieves all installed extensions from the database and constructs full details.
 pub fn get_installed_extensions(app: &AppHandle) -> Result<Vec<ExtensionDetails>, String> {
     ensure_supported()?;
-    let conn = crate::database::connection::init_database(app)?;
-    let records = extensions_repo::get_all(&conn)?;
+    let records = with_database(app, extensions_repo::get_all)?;
 
     let mut details = Vec::new();
     for rec in records {
@@ -174,10 +196,10 @@ pub fn get_installed_extensions(app: &AppHandle) -> Result<Vec<ExtensionDetails>
 /// Toggles extension enabled/disabled state.
 pub async fn toggle_extension(app: &AppHandle, id: &str, enabled: bool) -> Result<(), String> {
     ensure_supported()?;
-    let conn = crate::database::connection::init_database(app)?;
-    let record = extensions_repo::get(&conn, id)?.ok_or("Extension not found")?;
+    let record =
+        with_database(app, |conn| extensions_repo::get(conn, id))?.ok_or("Extension not found")?;
     platform::set_browser_extension_enabled(app, id.to_string(), enabled).await?;
-    if let Err(error) = extensions_repo::set_enabled(&conn, id, enabled) {
+    if let Err(error) = with_database(app, |conn| extensions_repo::set_enabled(conn, id, enabled)) {
         let _ = platform::set_browser_extension_enabled(app, id.to_string(), record.enabled).await;
         return Err(error);
     }
@@ -187,18 +209,18 @@ pub async fn toggle_extension(app: &AppHandle, id: &str, enabled: bool) -> Resul
 /// Removes an extension from database, engine runtime, and disk.
 pub async fn remove_extension(app: &AppHandle, id: &str) -> Result<(), String> {
     ensure_supported()?;
-    let conn = crate::database::connection::init_database(app)?;
-    let record = extensions_repo::get(&conn, id)?.ok_or("Extension not found")?;
+    let record =
+        with_database(app, |conn| extensions_repo::get(conn, id))?.ok_or("Extension not found")?;
     platform::remove_browser_extension(app, id.to_string()).await?;
-    storage::remove_extension_dir(app, Path::new(&record.path))?;
-    extensions_repo::delete(&conn, id)
+    let worker_app = app.clone();
+    io::run(move || storage::remove_extension_dir(&worker_app, Path::new(&record.path))).await?;
+    with_database(app, |conn| extensions_repo::delete(conn, id))
 }
 
 /// Retrieves action/popup info for an installed extension.
 pub fn get_extension_action(app: &AppHandle, id: &str) -> Result<Option<ExtensionAction>, String> {
-    let conn = crate::database::connection::init_database(app)?;
-    let rec =
-        extensions_repo::get(&conn, id)?.ok_or_else(|| format!("Extension {} not found", id))?;
+    let rec = with_database(app, |conn| extensions_repo::get(conn, id))?
+        .ok_or_else(|| format!("Extension {} not found", id))?;
 
     let manifest = manifest::parse_manifest(&rec.manifest_json)?;
     Ok(manifest.action)

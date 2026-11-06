@@ -47,6 +47,7 @@ pub const SHORTCUT_IDS: &[&str] = &[
     "settings",
     "close-tab",
     "reload-tab",
+    "toggle-pip",
 ];
 
 pub fn preferences(p: &BackupPreferences) -> Result<(), String> {

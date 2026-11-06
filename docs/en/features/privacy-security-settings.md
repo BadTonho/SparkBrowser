@@ -4,7 +4,7 @@ The browser's **Privacy & Security** category brings together local browsing dat
 
 ## Local browsing history
 
-**Clear local browsing history** removes the Veloce profile's navigation history. It does not remove cookies, website storage, browser cache, or downloads.
+**Clear local browsing history** removes the Veloce profile's navigation history and the derived recent-site icon cache. It does not remove cookies, website storage, browser cache, or downloads.
 
 Automatic history retention defaults to **3 months**. Choose 1, 3, 6, or 12 months, or **Always** to keep history without automatic expiration. Expired entries are removed when a visit is recorded, when the retention preference changes, and when the browser starts.
 

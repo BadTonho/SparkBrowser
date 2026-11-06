@@ -36,7 +36,14 @@
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
   import ViewportFrame from "./lib/components/viewport/ViewportFrame.svelte";
   import CommandBar from "./lib/components/commandbar/CommandBar.svelte";
-  import { refreshExtensions } from "./lib/stores/extensionsStore";
+  import { refreshExtensions, isExtensionsModalOpen, activeExtensionPopup } from "./lib/stores/extensionsStore";
+  import { isHistoryDrawerOpen, bookmarkEditorState } from "./lib/stores/persistenceStore";
+  import { isDownloadsDrawerOpen } from "./lib/stores/downloadsStore";
+  import { isSettingsModalOpen } from "./lib/stores/settingsStore";
+  import { isSettingsQuickOpen } from "./lib/stores/settingsQuickPopoverStore";
+  import { isToolsOpen } from "./lib/stores/toolsStore";
+  import { isSitePermissionsOpen } from "./lib/stores/sitePermissionsStore";
+  import { isReaderOpen } from "./lib/stores/readerStore";
   import HorizontalTabBar from "./lib/components/tabs/HorizontalTabBar.svelte";
   import BookmarkBar from "./lib/components/bookmarks/BookmarkBar.svelte";
   import BookmarkContextMenu from "./lib/components/bookmarks/BookmarkContextMenu.svelte";
@@ -114,11 +121,9 @@
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
-  // Surfaces that start hidden load after first paint so they do not delay startup.
+  // Load hidden surfaces independently on their first opening.
   let Lazy = $state.raw<Record<string, any>>({});
-  async function loadDeferredSurfaces() {
-    const entries = await Promise.all(
-      Object.entries({
+  const surfaceLoaders: Record<string, () => Promise<{default: any}>> = {
         HistoryDrawer: () => import("./lib/components/history/HistoryDrawer.svelte"),
         DownloadsDrawer: () => import("./lib/components/downloads/DownloadsDrawer.svelte"),
         SettingsModal: () => import("./lib/components/settings/SettingsModal.svelte"),
@@ -129,13 +134,34 @@
         ExtensionsModal: () => import("./lib/components/extensions/ExtensionsModal.svelte"),
         ExtensionActionPopover: () => import("./lib/components/extensions/ExtensionActionPopover.svelte"),
         ReaderOverlay: () => import("./lib/components/reader/ReaderOverlay.svelte"),
-      }).map(async ([name, load]) => [name, (await load()).default] as const)
-    );
-    Lazy = Object.fromEntries(entries);
+  };
+  const pendingSurfaces = new Set<string>();
+  async function loadSurface(name: string) {
+    if (Lazy[name] || pendingSurfaces.has(name)) return;
+    pendingSurfaces.add(name);
+    try {
+      const component = (await surfaceLoaders[name]()).default;
+      Lazy = { ...Lazy, [name]: component };
+    } catch (error) {
+      console.error(`Could not load ${name}`, error);
+    } finally {
+      pendingSurfaces.delete(name);
+    }
   }
+  $effect(() => {
+    if ($isHistoryDrawerOpen) void loadSurface("HistoryDrawer");
+    if ($isDownloadsDrawerOpen) void loadSurface("DownloadsDrawer");
+    if ($isSettingsModalOpen) void loadSurface("SettingsModal");
+    if ($isSettingsQuickOpen) void loadSurface("SettingsQuickMenu");
+    if ($isToolsOpen) void loadSurface("ToolsPanel");
+    if ($isSitePermissionsOpen) void loadSurface("SitePermissionsPanel");
+    if ($bookmarkEditorState) void loadSurface("BookmarkEditor");
+    if ($isExtensionsModalOpen) void loadSurface("ExtensionsModal");
+    if ($activeExtensionPopup) void loadSurface("ExtensionActionPopover");
+    if ($isReaderOpen) void loadSurface("ReaderOverlay");
+  });
 
   onMount(() => {
-    requestAnimationFrame(() => setTimeout(() => void loadDeferredSurfaces(), 0));
     const stopTabDrag = initializeTabDrag();
     const stopMedia = initializeMedia();
     const stopZoom = initializeZoom();

@@ -78,7 +78,7 @@ export async function checkVolumePopover(context, id) {
   await resizeWindow(1280,820);
 
   for (const layout of [1,0]) {
-    await click('[data-testid=open-settings]');await click('[data-testid=settings-appearance_layout]');
+    await click('[data-testid=open-settings]');await withWebview('/index.html?surface=settings-quick',()=>click('[data-testid=settings-quick-all]'));await click('[data-testid=settings-appearance_layout]');
     await script('document.querySelectorAll("#setting-browser-layout button")[arguments[0]].click();',layout);
     await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
     await open();

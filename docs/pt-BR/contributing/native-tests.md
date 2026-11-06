@@ -19,6 +19,8 @@ npm run test:native
 
 O instalador do driver Edge acompanha o runtime WebView2 instalado. As builds usam `.cache/native-target` e o identificador `org.veloce.browser.native-tests`. Cada cenário recebe um diretório novo em `.cache/native-runs/`, com pastas separadas `data`, `profile`, `config`, `cache`, `logs` e `artifacts`. Reinícios dentro do cenário reutilizam esses caminhos. Somente o identificador de testes aceita `VELOCE_NATIVE_TEST_RUN_DIR`, restrito a essa raiz; a versão de produção o ignora. O executor verifica identidade e diretório de dados antes de alterar estado.
 
+Para iteração local, `npm run test:native:build:fast` usa um build isolado menos otimizado; execute novamente `npm run test:native:build` para validação com o perfil de release. Os metadados do build registram o perfil utilizado.
+
 Use `npm run test:native -- --list` para listar os cenários ou `npm run test:native -- --case notes` para executar um. Sem argumentos, todos são executados de forma independente, continuando após falhas. Seletores estáveis `data-testid` independem do idioma da interface. As portas padrão são 4444/4445; use `VELOCE_DRIVER_PORT` para outro par livre.
 
 A limpeza executa em `finally`, encerra somente a árvore do processo de driver do cenário e remove data/profile/config/cache/logs mesmo após falha. Relatórios e capturas de falha permanecem em `artifacts`. Erros de limpeza são registrados sem substituir a falha original. Defina `$env:VELOCE_NATIVE_FAIL_CASE = 'notes'` para provocar uma falha após o cenário e verificar a limpeza; remova a variável depois. `VELOCE_NATIVE_SCREENSHOTS=1` também preserva uma captura das atualizações no cenário de diálogos.

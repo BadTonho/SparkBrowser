@@ -120,8 +120,16 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
             worker_app.state::<NavigationWriter>().flush()
         })
         .await;
+        let cache_app = app.clone();
         let rows = match result {
-            Ok(Ok(())) => executor::run(app.clone(), recent::list).await,
+            Ok(Ok(())) => {
+                executor::run(app.clone(), move |conn| {
+                    let service = cache_app.state::<NewTabService>();
+                    let mut cache = service.recent_cache.lock().map_err(|e| e.to_string())?;
+                    cache.list(conn, revision)
+                })
+                .await
+            }
             _ => Err("History unavailable".into()),
         };
         if !valid(&app, &id, &label, &token)
@@ -242,8 +250,12 @@ pub(super) fn navigate(
                 .unwrap_or_else(|_| "google".into())
         };
         let target = if let Some(key) = visit {
+            let cache_app = app.clone();
             let read = crate::database::executor::run(app.clone(), move |conn| {
-                recent::list(conn).map(|sites| {
+                let service = cache_app.state::<NewTabService>();
+                let revision = service.revision.load(Ordering::SeqCst);
+                let mut cache = service.recent_cache.lock().map_err(|e| e.to_string())?;
+                cache.list(conn, revision).map(|sites| {
                     sites
                         .into_iter()
                         .find(|s| s.site_key == key && s.url == input)

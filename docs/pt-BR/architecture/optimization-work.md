@@ -60,7 +60,13 @@ Categorias de configurações, gravação de atalhos, catálogo de busca e CSS c
 
 ## Validação local e nativa
 
-As verificações são executadas localmente sob demanda; o workflow do GitHub Actions foi removido para evitar o consumo de minutos dos runners hospedados. A suíte local de release no Windows passou na preservação de abas/formulário/rolagem, histórico SPA, atualização do shield, proteção de memória, rascunhos de endereço, foco de diálogos, resize e restauração de sessão. Veja [testes nativos](../contributing/native-tests.md) para configuração e escopo. Builds e runtimes de outras plataformas não foram validados no ambiente de implementação. DPI entre monitores, latência interativa e comparações de RAM agregada continuam como trabalho de medição; compilação ou contagens de views não comprovam ganhos.
+As verificações são executadas localmente e no fluxo de CI de pull requests e da branch principal; o fluxo de release separado compila artefatos assinados. Os cenários nativos WebDriver continuam separados. Veja [testes nativos](../contributing/native-tests.md) para configuração e escopo. O comportamento nativo deve ser validado em cada plataforma. DPI entre monitores, latência interativa e comparações de RAM agregada continuam como trabalho de medição; compilação ou contagens de views não comprovam ganhos.
+
+## Trabalho em repouso e armazenamento
+
+O pop-up de permissões acompanha a posição somente quando necessário e publica mudanças de geometria. Páginas no volume padrão não agendam trabalho de volume por alterações irrelevantes do DOM; com volume diferente do padrão, a observação de players dinâmicos continua, assim como a consulta periódica da aba ativa. A coleta de contextos dos diagnósticos não mantém o bloqueio de abas enquanto espera pela interface, e atualizações simultâneas do painel compartilham uma solicitação.
+
+As leituras de sites recentes compartilham um cache por revisão da nova guia, mudanças na conexão SQLite e `data_version`; mudanças no histórico, ícones e gravações externas provocam recálculo. O mesmo resultado limitado revalida os destinos dos cartões. A sincronização de extensões no Windows usa a conexão inicializada, e arquivos e diretórios são processados em um executor bloqueante limitado. Painéis ocultos carregam independentemente no primeiro uso. Os registros do papel de parede e a conexão IndexedDB são reutilizados; novas imagens são salvas como um único blob e URLs de dados antigas continuam legíveis. Resultados sintéticos e a opção de compilação nativa rápida estão em [validação de desempenho](../contributing/performance.md).
 
 ## Diagnósticos locais
 

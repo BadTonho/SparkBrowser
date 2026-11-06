@@ -31,7 +31,7 @@ pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
     let clear_app = app.clone();
     executor::run(app.clone(), move |conn| {
         let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-        history_repo::clear_all_history(&tx)?;
+        history_repo::clear_history_data(&tx)?;
         tx.commit().map_err(|e| e.to_string())?;
         clear_app
             .state::<crate::window::new_tab::NewTabService>()
@@ -40,6 +40,7 @@ pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
         Ok(())
     })
     .await?;
+    crate::commands::closed_tabs::notify(&app, &state);
     crate::window::new_tab::invalidate(&app);
     Ok(())
 }

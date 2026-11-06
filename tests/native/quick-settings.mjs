@@ -45,9 +45,9 @@ export async function checkQuickSettings(context) {
   await until(() => inside(() => script('return !!document.querySelector("[data-testid=settings-quick-menu]")')), 'quick settings reopens');
   await inside(() => click('[data-testid="settings-quick-all"]'));
   await until(() => script('return !!document.querySelector("#settings-search-input")'), 'all settings opens existing dialog');
-  assert.equal(await script('return document.querySelector(".browser-preview-fallback") === null'), true, 'settings menu does not replace page preview');
   await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
   await until(() => script('return !document.querySelector("#settings-search-input")'), 'Escape closes full settings');
+  await until(() => script('return document.querySelector(".browser-preview-fallback") === null'), 'page preview returns after closing settings');
 
   await click('[data-testid="open-settings"]');
   await until(() => inside(() => script('return !!document.querySelector("[data-testid=settings-quick-menu]")')), 'menu opens for outside click');

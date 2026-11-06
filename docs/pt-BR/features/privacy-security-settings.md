@@ -4,7 +4,7 @@ A categoria **Privacidade e segurança** reúne o histórico de navegação loca
 
 ## Histórico de navegação local
 
-A ação **Apagar histórico de navegação local** remove o histórico de navegação do perfil do Veloce. Ela não apaga cookies, armazenamento dos sites, cache do navegador nem downloads.
+A ação **Apagar histórico de navegação local** remove o histórico de navegação do perfil do Veloce e o cache de ícones dos sites recentes. Ela não apaga cookies, armazenamento dos sites, cache do navegador nem downloads.
 
 A retenção automática do histórico começa em **3 meses**. Escolha 1, 3, 6 ou 12 meses, ou **Sempre** para manter o histórico sem expiração automática. Os registros vencidos são removidos ao registrar uma visita, quando a preferência de retenção muda e ao iniciar o navegador.
 

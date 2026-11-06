@@ -73,6 +73,7 @@ export async function checkNewTab(context) {
     await script('document.querySelector(".recent-site").click()');
   });
   await until(()=>fixture.loads.get('new-tab-first')>=2,'card opens exact last visited page');
+  await until(async()=>{const tab=await active();return tab.url===fixture.origin+'/page/new-tab-first'&&!tab.navigation.loading;},'card navigation settles');
   await invoke('go_back');await ready();
   await invoke('go_forward');await until(async()=>{const tab=await active();return tab.url===fixture.origin+'/page/new-tab-first'&&!tab.navigation.loading;},'forward returns to page');
   await invoke('go_back');await ready();
@@ -105,13 +106,16 @@ export async function checkNewTab(context) {
   const rightLoads=fixture.loads.get('new-tab-right');
   const rightDocument=fixture.reports.get('new-tab-right');
   assert.equal((await invoke('get_tabs')).tabs.find(t=>t.id===first.id).url,'veloce://newtab');
+  await until(()=>context.focusWindow().then(()=>true,()=>false),'isolated new-tab test receives foreground focus');
   for(const layout of ['vertical','horizontal']) {
     await click('[data-testid=open-settings]');
-    await click('[data-testid=settings-appearance_layout]');
-    await script('document.querySelectorAll("#setting-browser-layout button")[arguments[0]==="horizontal"?0:1].click()',layout);
-    await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+    await context.withWebview('/index.html?surface=settings-quick',async()=>{
+      await click(`[data-testid=settings-quick-layout-${layout}]`);
+      await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+      await until(()=>script('return !document.querySelector("[data-testid=settings-quick-menu]")'),'quick settings closes');
+    });
+    await until(()=>script('return localStorage.getItem("veloce_tab_layout")===arguments[0]',layout),'layout changes');
   }
-  await until(()=>context.focusWindow().then(()=>true,()=>false),'isolated new-tab test receives foreground focus');
   await invoke('switch_tab',{tabId:first.id});
   await invoke('reload_page');await ready();
   await resizeWindow(680,600);

@@ -158,6 +158,13 @@ pub fn clear_all_history(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+/// Caller owns the transaction so all local browsing history clears together.
+pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
+    clear_all_history(conn)?;
+    crate::database::site_icons_repo::clear(conn)?;
+    crate::database::closed_tabs_repo::clear(conn)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -249,5 +256,49 @@ mod tests {
             .unwrap();
         assert_eq!(history_count, 0);
         assert_eq!(site_data, "keep");
+    }
+
+    #[test]
+    fn clearing_history_data_rolls_back_together_on_failure() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT,url TEXT,visited_at INTEGER); CREATE TABLE site_icons(site_key TEXT PRIMARY KEY); CREATE TABLE closed_tabs(id INTEGER PRIMARY KEY); INSERT INTO history VALUES(1,'Page','https://example.test/',1); INSERT INTO site_icons VALUES('example.test'); INSERT INTO closed_tabs VALUES(1); CREATE TRIGGER fail_icon_delete BEFORE DELETE ON site_icons BEGIN SELECT RAISE(ABORT,'fixture failure'); END;").unwrap();
+        {
+            let tx = conn.unchecked_transaction().unwrap();
+            assert!(clear_history_data(&tx).is_err());
+        }
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM history", [], |row| row
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM site_icons", [], |row| row
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        conn.execute_batch("DROP TRIGGER fail_icon_delete").unwrap();
+        let tx = conn.unchecked_transaction().unwrap();
+        clear_history_data(&tx).unwrap();
+        tx.commit().unwrap();
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM history", [], |row| row
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM site_icons", [], |row| row
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM closed_tabs", [], |row| row
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
     }
 }

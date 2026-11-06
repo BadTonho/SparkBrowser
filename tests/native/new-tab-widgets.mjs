@@ -81,6 +81,7 @@ export async function checkNewTabWidgets(context,{inside,ready,active}){
       assert.equal(await script('return document.documentElement.scrollWidth<=innerWidth'),true,'narrow widgets do not overflow');
       assert.equal(await script('const a=document.querySelector("#weather-widget").getBoundingClientRect(),b=document.querySelector("#gmail-widget").getBoundingClientRect();return a.bottom<=b.top'),true,'narrow widgets stack');
     },id);
+    await resizeWindow(1440,1000);
     await open();await checked('weather-enabled',false);
     await inside(()=>until(()=>script('return document.querySelector("#weather-widget").hidden'),'disabled weather'));
     await inside(()=>until(()=>script('return document.querySelector("#weather-widget").hidden'),'settings synchronize across panes'),source);
@@ -91,6 +92,8 @@ export async function checkNewTabWidgets(context,{inside,ready,active}){
         await inside(()=>until(()=>script('return !document.querySelector("#weather-enabled").checked&&document.querySelector("#settings-status").textContent.length>0'),'failed settings save restores confirmed state'));
       }finally{db.exec('ALTER TABLE unavailable_widget_settings RENAME TO new_tab_settings');}
     });
+    await inside(()=>click('#settings-back'));
+    await inside(()=>click('#menu-item-gmail'));
     await inside(()=>click('#gmail-disconnect'));
     await inside(()=>until(()=>script('return document.querySelectorAll(".gmail-message").length===0'),'disconnect clears metadata'));
     provider.holdAuthorization=true;

@@ -38,6 +38,7 @@ pub struct NewTabService {
     pub(crate) history_epoch: AtomicU64,
     preferences: Mutex<Preferences>,
     revision: AtomicU64,
+    recent_cache: Mutex<recent::Cache>,
     sessions: Mutex<std::collections::HashMap<String, Session>>,
 }
 struct Session {

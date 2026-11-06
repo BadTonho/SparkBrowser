@@ -24,7 +24,8 @@
 
   function measure() {
     const rect = document.querySelector<HTMLElement>(".omnibox-icon")?.getBoundingClientRect();
-    if (rect) anchor = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    if (rect && (rect.left !== anchor.left || rect.top !== anchor.top || rect.width !== anchor.width || rect.height !== anchor.height))
+      anchor = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
   }
   function text(key: MessageKey, params?: Record<string, string | number>) { return get(t)(key, params); }
   function host(value: string) { try { return new URL(value).hostname; } catch { return value; } }
@@ -142,13 +143,18 @@
     if (request && $isSitePermissionsOpen) untrack(() => { void closeSitePermissions(); });
     if (!request && !$isSitePermissionsOpen) { confirmingReload = false; error = ""; }
   });
+  $effect(() => {
+    if (!$isSitePermissionsOpen && !$permissionRequests.length) return;
+    untrack(measure);
+    let raf = 0;
+    const frame = () => { measure(); raf = requestAnimationFrame(frame); };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  });
   onMount(() => {
     let disposed = false, stop: (() => void) | undefined;
-    let raf = 0;
-    const frame = () => { measure(); if (!disposed) raf = requestAnimationFrame(frame); };
-    raf = requestAnimationFrame(frame);
     void onPermissionPopoverAction(action => { void handleAction(action); }).then(unlisten => { if (disposed) unlisten(); else stop = unlisten; });
     void refresh();
-    return () => { disposed = true; cancelAnimationFrame(raf); stop?.(); if (sessionKey) void setPermissionPopover(false, sessionId); };
+    return () => { disposed = true; stop?.(); if (sessionKey) void setPermissionPopover(false, sessionId); };
   });
 </script>
