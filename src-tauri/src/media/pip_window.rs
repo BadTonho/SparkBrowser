@@ -95,29 +95,29 @@ pub fn new_window(
     }
     let window = window_builder
         .window_features(features)
-    .title("Floating video")
-    .decorations(false)
-    .shadow(
-        app.state::<MediaService>()
-            .pip_window_shadow
-            .load(std::sync::atomic::Ordering::Relaxed),
-    )
-    .maximizable(false)
-    .inner_size(400.0, 225.0)
-    .min_inner_size(280.0, 158.0)
-    .always_on_top(true)
-    .skip_taskbar(true)
-    .visible(false)
-    .resizable(true)
-    .on_new_window(|_, _| NewWindowResponse::Deny)
-    .on_navigation(move |url| {
-        if url.scheme() == "veloce-internal" {
-            navigation(&a, &id, url);
-            return false;
-        }
-        url.as_str() == format!("about:blank#veloce-pip-{id}") || url.as_str() == "about:blank"
-    })
-    .build();
+        .title("Floating video")
+        .decorations(false)
+        .shadow(
+            app.state::<MediaService>()
+                .pip_window_shadow
+                .load(std::sync::atomic::Ordering::Relaxed),
+        )
+        .maximizable(false)
+        .inner_size(400.0, 225.0)
+        .min_inner_size(280.0, 158.0)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .visible(false)
+        .resizable(true)
+        .on_new_window(|_, _| NewWindowResponse::Deny)
+        .on_navigation(move |url| {
+            if url.scheme() == "veloce-internal" {
+                navigation(&a, &id, url);
+                return false;
+            }
+            url.as_str() == format!("about:blank#veloce-pip-{id}") || url.as_str() == "about:blank"
+        })
+        .build();
     match window {
         Ok(window) => {
             if let Some(view) = app.get_webview(window.label()) {

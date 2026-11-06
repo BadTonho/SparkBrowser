@@ -117,6 +117,17 @@ pub(super) fn close_one(
         before.restore(state)?;
         return Err(error);
     }
+    if before
+        .tabs
+        .iter()
+        .any(|tab| tab.id == id && tab.is_ephemeral)
+    {
+        if let Err(error) = crate::window::webview_manager::close_tab_webview(app, id) {
+            let _ = crate::security::emit_shell(app, "browser-error", error);
+        } else {
+            crate::window::ephemeral::purge_ephemeral_tab_data(app, id);
+        }
+    }
     Ok(publish(app, state))
 }
 

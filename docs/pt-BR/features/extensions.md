@@ -1,6 +1,6 @@
 # Extensões (Suporte a WebExtensions do Chrome)
 
-O Veloce Browser suporta o carregamento e execução de extensões padrão do Chrome (`manifest.json` v2/v3).
+No Windows, o Veloce Browser pode carregar extensões do Chrome pelo WebView2; a compatibilidade depende do mecanismo e da extensão. No Linux, a instalação e o gerenciamento ainda não estão disponíveis e retornam um erro.
 
 ---
 
@@ -14,7 +14,7 @@ O Veloce Browser suporta o carregamento e execução de extensões padrão do Ch
 * **Instalação Persistente:** Extensões instaladas são salvas na pasta de dados do navegador e registradas no banco SQLite local, mantendo-se ativas após reinicializações.
 * **Ações na Barra de Ferramentas:** Extensões que declaram ações (`action` ou `browser_action`) exibem seu ícone na barra de ferramentas e abrem seus popups ao serem clicadas.
 * **Ativar / Desativar / Remover:** Controle total do ciclo de vida para ligar/desligar extensões ou desinstalá-las completamente.
-* **Prontidão Multiplataforma:** Integração nativa com o WebView2 no Windows e arquitetura desacoplada e extensível para Linux (WebKitGTK).
+* **Disponibilidade por plataforma:** A integração nativa usa WebView2 no Windows. O suporte a Linux ainda está planejado.
 
 ---
 
@@ -45,5 +45,7 @@ O Veloce Browser suporta o carregamento e execução de extensões padrão do Ch
 ## Arquitetura Técnica Multiplataforma
 
 * **Windows:** Utiliza a interface nativa `ICoreWebView2Profile7` (`AddBrowserExtension`) do Microsoft Edge WebView2, que executa background workers, injeção de content scripts e suporte a APIs de WebExtensions do Chromium.
-* **Linux:** Utiliza um modelo abstraído de driver com documentação arquitetural completa para WebKitGTK em [linux-extensions-guide.md](../architecture/linux-extensions-guide.md).
+* **Linux:** A instalação e o gerenciamento de extensões não estão disponíveis. A proposta para WebKitGTK está descrita em [linux-extensions-guide.md](../architecture/linux-extensions-guide.md).
 
+
+Importações de arquivo são limitadas a 64 MiB compactados, 32 MiB por entrada, 128 MiB extraídos no total e 2.048 entradas.

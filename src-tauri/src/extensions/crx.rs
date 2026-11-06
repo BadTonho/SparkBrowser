@@ -2,6 +2,51 @@ use flate2::read::DeflateDecoder;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
+
+const MAX_ARCHIVE_BYTES: u64 = 64 * 1024 * 1024;
+const MAX_ENTRY_BYTES: u64 = 32 * 1024 * 1024;
+const MAX_EXTRACTED_BYTES: u64 = 128 * 1024 * 1024;
+const MAX_ENTRIES: usize = 2048;
+
+fn read_bounded(reader: impl Read, limit: u64) -> Result<Vec<u8>, String> {
+    let mut bytes = Vec::new();
+    reader
+        .take(limit + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|e| e.to_string())?;
+    if bytes.len() as u64 > limit {
+        return Err("Extension archive exceeds the size limit".into());
+    }
+    Ok(bytes)
+}
+
+pub fn read_archive(path: &Path) -> Result<Vec<u8>, String> {
+    let file = fs::File::open(path).map_err(|e| format!("Failed to read archive: {e}"))?;
+    read_bounded(file, MAX_ARCHIVE_BYTES)
+}
+
+fn decompress_entry(
+    data: &[u8],
+    method: u16,
+    declared: usize,
+    total: &mut u64,
+) -> Result<Vec<u8>, String> {
+    if declared as u64 > MAX_ENTRY_BYTES {
+        return Err("Extension entry exceeds the size limit".into());
+    }
+    let limit = MAX_ENTRY_BYTES.min(MAX_EXTRACTED_BYTES.saturating_sub(*total));
+    let result = match method {
+        0 => read_bounded(data, limit)?,
+        8 => read_bounded(DeflateDecoder::new(data), limit)?,
+        _ => return Err(format!("Unsupported compression method in ZIP: {method}")),
+    };
+    if result.len() != declared {
+        return Err("Extension entry size does not match its header".into());
+    }
+    *total += result.len() as u64;
+    Ok(result)
+}
 
 fn percent_decode(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
@@ -60,6 +105,8 @@ pub fn download_webstore_crx(extension_id: &str) -> Result<Vec<u8>, String> {
     );
 
     let client = reqwest::blocking::Client::builder()
+        .connect_timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(60))
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
@@ -76,14 +123,14 @@ pub fn download_webstore_crx(extension_id: &str) -> Result<Vec<u8>, String> {
         ));
     }
 
-    response
-        .bytes()
-        .map(|b| b.to_vec())
-        .map_err(|e| format!("Failed to read response body: {}", e))
+    read_bounded(response, MAX_ARCHIVE_BYTES)
 }
 
 /// Extracts a `.crx` or standard `.zip` archive into target_dir.
 pub fn extract_crx_or_zip(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
+    if bytes.len() as u64 > MAX_ARCHIVE_BYTES {
+        return Err("Extension archive exceeds the size limit".into());
+    }
     if !target_dir.exists() {
         fs::create_dir_all(target_dir).map_err(|e| e.to_string())?;
     }
@@ -171,8 +218,14 @@ fn extract_from_central_directory(
 ) -> Result<(), String> {
     let mut cursor = cd_offset;
     let cd_end = cd_offset + cd_size;
+    let mut total = 0;
+    let mut entries = 0;
 
     while cursor + 46 <= cd_end {
+        entries += 1;
+        if entries > MAX_ENTRIES {
+            return Err("Extension archive has too many entries".into());
+        }
         if &bytes[cursor..cursor + 4] != b"PK\x01\x02" {
             break;
         }
@@ -230,7 +283,7 @@ fn extract_from_central_directory(
         let entry_data = &bytes[data_start..data_end];
         let safe_name = raw_name.replace('\\', "/");
         if !safe_name.contains("..") {
-            let out_path = safe_path(target_dir, &safe_name);
+            let out_path = safe_path(target_dir, &safe_name)?;
             if safe_name.ends_with('/') {
                 fs::create_dir_all(&out_path).map_err(|e| e.to_string())?;
             } else {
@@ -238,18 +291,12 @@ fn extract_from_central_directory(
                     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
                 }
 
-                let decompressed = match compression_method {
-                    0 => entry_data.to_vec(),
-                    8 => {
-                        let mut decoder = DeflateDecoder::new(entry_data);
-                        let mut buf = Vec::with_capacity(uncompressed_size);
-                        decoder
-                            .read_to_end(&mut buf)
-                            .map_err(|e| format!("Failed to decompress {}: {}", safe_name, e))?;
-                        buf
-                    }
-                    m => return Err(format!("Unsupported compression method in ZIP: {}", m)),
-                };
+                let decompressed = decompress_entry(
+                    entry_data,
+                    compression_method,
+                    uncompressed_size,
+                    &mut total,
+                )?;
 
                 fs::write(&out_path, decompressed).map_err(|e| e.to_string())?;
             }
@@ -261,11 +308,17 @@ fn extract_from_central_directory(
 
 fn extract_local_headers_fallback(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
     let mut cursor = 0;
+    let mut total = 0;
+    let mut entries = 0;
     while cursor + 30 <= bytes.len() {
         // Local file header signature 0x04034b50
         if &bytes[cursor..cursor + 4] != b"PK\x03\x04" {
             // Reached Central Directory or end of entries
             break;
+        }
+        entries += 1;
+        if entries > MAX_ENTRIES {
+            return Err("Extension archive has too many entries".into());
         }
 
         let compression_method = u16::from_le_bytes([bytes[cursor + 8], bytes[cursor + 9]]);
@@ -303,7 +356,7 @@ fn extract_local_headers_fallback(bytes: &[u8], target_dir: &Path) -> Result<(),
         // Sanitize path against directory traversal
         let safe_name = raw_name.replace('\\', "/");
         if !safe_name.contains("..") {
-            let out_path = safe_path(target_dir, &safe_name);
+            let out_path = safe_path(target_dir, &safe_name)?;
 
             if safe_name.ends_with('/') {
                 fs::create_dir_all(&out_path).map_err(|e| e.to_string())?;
@@ -312,18 +365,12 @@ fn extract_local_headers_fallback(bytes: &[u8], target_dir: &Path) -> Result<(),
                     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
                 }
 
-                let decompressed = match compression_method {
-                    0 => entry_data.to_vec(),
-                    8 => {
-                        let mut decoder = DeflateDecoder::new(entry_data);
-                        let mut buf = Vec::with_capacity(uncompressed_size);
-                        decoder
-                            .read_to_end(&mut buf)
-                            .map_err(|e| format!("Failed to decompress {}: {}", safe_name, e))?;
-                        buf
-                    }
-                    m => return Err(format!("Unsupported compression method in ZIP: {}", m)),
-                };
+                let decompressed = decompress_entry(
+                    entry_data,
+                    compression_method,
+                    uncompressed_size,
+                    &mut total,
+                )?;
 
                 fs::write(&out_path, decompressed).map_err(|e| e.to_string())?;
             }
@@ -335,7 +382,10 @@ fn extract_local_headers_fallback(bytes: &[u8], target_dir: &Path) -> Result<(),
     Ok(())
 }
 
-fn safe_path(base: &Path, rel: &str) -> PathBuf {
+fn safe_path(base: &Path, rel: &str) -> Result<PathBuf, String> {
+    if rel.starts_with('/') || rel.contains(':') {
+        return Err("Invalid extension archive path".into());
+    }
     let mut path = base.to_path_buf();
     for part in rel.split('/') {
         if part.is_empty() || part == "." || part == ".." {
@@ -343,12 +393,27 @@ fn safe_path(base: &Path, rel: &str) -> PathBuf {
         }
         path.push(part);
     }
-    path
+    Ok(path)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rejects_oversized_and_misrepresented_entries() {
+        use flate2::{write::DeflateEncoder, Compression};
+        use std::io::Write;
+        let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(&vec![b'a'; 1024 * 1024]).unwrap();
+        let compressed = encoder.finish().unwrap();
+        let mut total = MAX_EXTRACTED_BYTES - 1024;
+        assert!(decompress_entry(&compressed, 8, 1024 * 1024, &mut total).is_err());
+        assert!(decompress_entry(&compressed, 8, 1, &mut 0).is_err());
+        assert!(decompress_entry(&[], 0, MAX_ENTRY_BYTES as usize + 1, &mut 0).is_err());
+        assert!(safe_path(Path::new("base"), "C:/escape").is_err());
+        assert!(safe_path(Path::new("base"), "/escape").is_err());
+    }
 
     #[test]
     fn parses_webstore_ids_correctly() {

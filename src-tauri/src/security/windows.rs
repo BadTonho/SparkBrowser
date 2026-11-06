@@ -1,9 +1,9 @@
 use tauri::{AppHandle, Manager, Webview};
-use windows_core::Interface;
 use webview2_com::{
-    CoTaskMemPWSTR, NavigationStartingEventHandler, NewWindowRequestedEventHandler,
-    Microsoft::Web::WebView2::Win32::ICoreWebView2Settings8,
+    CoTaskMemPWSTR, Microsoft::Web::WebView2::Win32::ICoreWebView2Settings8,
+    NavigationStartingEventHandler, NewWindowRequestedEventHandler,
 };
+use windows_core::Interface;
 
 pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result<(), String> {
     let app = app.clone();
@@ -21,7 +21,11 @@ pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result
             if !internal && !shell {
                 let enabled = app
                     .try_state::<crate::state::browser_state::BrowserState>()
-                    .map(|state| state.smart_screen_enabled.load(std::sync::atomic::Ordering::Acquire))
+                    .map(|state| {
+                        state
+                            .smart_screen_enabled
+                            .load(std::sync::atomic::Ordering::Acquire)
+                    })
                     .unwrap_or(true);
                 let supported = unsafe {
                     core.Settings()
@@ -30,7 +34,9 @@ pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result
                 }
                 .is_ok();
                 if let Some(state) = app.try_state::<crate::state::browser_state::BrowserState>() {
-                    state.smart_screen_supported.store(supported, std::sync::atomic::Ordering::Release);
+                    state
+                        .smart_screen_supported
+                        .store(supported, std::sync::atomic::Ordering::Release);
                 }
             }
             let mut registration = 0;

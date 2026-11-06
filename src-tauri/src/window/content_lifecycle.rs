@@ -64,13 +64,11 @@ pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String
 /// current workspace. No document keeps writing into a previous data directory.
 pub fn close_tab_webview(app: &AppHandle, tab_id: &str) -> Result<(), String> {
     let label = webview_label_for_tab(tab_id);
-    let result = if app.get_webview(&label).is_some() {
+    if app.get_webview(&label).is_some() {
         close_and_clean(app, &label)
     } else {
         Ok(())
-    };
-    super::ephemeral::purge_ephemeral_tab_data(app, tab_id);
-    result
+    }
 }
 
 /// Rebuild views only after their fallback metadata has been committed.

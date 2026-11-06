@@ -1,8 +1,8 @@
 //! Ephemeral / Disposable Containers for private, throwaway tab sessions.
 //!
 //! Ephemeral tabs have isolated cookies, cache, local storage, and session data
-//! stored inside a dedicated temporary directory. Upon closing the tab, all its
-//! persistent data is wiped from disk and never written to the SQLite session database.
+//! stored inside a dedicated temporary directory. Closed data is removed on a
+//! best-effort basis and any leftovers are removed before the next session starts.
 
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
@@ -44,16 +44,38 @@ pub fn purge_ephemeral_tab_data(app: &AppHandle, tab_id: &str) {
 
 /// Purges all leftover ephemeral data on browser startup.
 ///
-/// Deletion runs on a background thread so a large leftover tree never delays
-/// the first window. Ephemeral tabs are never restored, so nothing reads this
-/// directory before it is removed.
-pub fn purge_all_ephemeral_data(app: &AppHandle) {
-    if let Ok(data_dir) = app.path().app_local_data_dir() {
-        let root = data_dir.join(EPHEMERAL_DATA_DIR);
-        if root.is_dir() {
-            std::thread::spawn(move || {
-                let _ = std::fs::remove_dir_all(&root);
-            });
-        }
+/// Called synchronously only after acquiring the exclusive profile lock.
+pub fn purge_all_ephemeral_data(app: &AppHandle) -> Result<(), String> {
+    let root = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|e| e.to_string())?
+        .join(EPHEMERAL_DATA_DIR);
+    purge_root(&root)
+}
+
+fn purge_root(root: &std::path::Path) -> Result<(), String> {
+    match std::fs::remove_dir_all(root) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(format!("Could not remove temporary browsing data: {error}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn startup_cleanup_removes_only_the_temporary_root() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join(EPHEMERAL_DATA_DIR);
+        std::fs::create_dir_all(root.join("tab-1")).unwrap();
+        std::fs::write(root.join("tab-1/cookie"), b"fixture").unwrap();
+        std::fs::write(directory.path().join("keep"), b"fixture").unwrap();
+        purge_root(&root).unwrap();
+        purge_root(&root).unwrap();
+        assert!(!root.exists());
+        assert!(directory.path().join("keep").exists());
     }
 }

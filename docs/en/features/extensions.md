@@ -1,6 +1,6 @@
 # Extensions (Chrome WebExtensions Support)
 
-Veloce Browser supports loading and running standard Chrome WebExtensions (`manifest.json` v2/v3).
+On Windows, Veloce Browser can load Chrome WebExtensions through WebView2; compatibility depends on the runtime and extension. Extension installation and management are not yet supported on Linux and return an error.
 
 ---
 
@@ -14,7 +14,7 @@ Veloce Browser supports loading and running standard Chrome WebExtensions (`mani
 * **Persistent Installation:** Installed extensions are preserved in your browser's application data folder and registered in the local SQLite database across restarts.
 * **Toolbar Actions:** Extensions declaring `action` or `browser_action` display their icon in the quick actions toolbar and open their popup interfaces upon clicking.
 * **Enable / Disable / Remove:** Full lifecycle control to toggle extensions on or off without losing your data, or uninstalling them completely.
-* **Cross-Platform Readiness:** Native integration with WebView2 on Windows and an extensible decoupled architecture for Linux (WebKitGTK).
+* **Platform availability:** Native integration uses WebView2 on Windows. Linux support remains planned.
 
 ---
 
@@ -45,5 +45,7 @@ Veloce Browser supports loading and running standard Chrome WebExtensions (`mani
 ## Cross-Platform Technical Architecture
 
 * **Windows:** Uses Microsoft Edge WebView2's native `ICoreWebView2Profile7` interface (`AddBrowserExtension`), which executes background workers, handles content script injection, and supports Chromium WebExtension APIs.
-* **Linux:** Uses an abstracted driver model with full documentation for WebKitGTK in [linux-extensions-guide.md](../architecture/linux-extensions-guide.md).
+* **Linux:** Extension installation and management are unavailable. The proposed WebKitGTK integration is described in [linux-extensions-guide.md](../architecture/linux-extensions-guide.md).
 
+
+Archive imports are limited to 64 MiB compressed, 32 MiB per entry, 128 MiB extracted in total, and 2,048 entries.

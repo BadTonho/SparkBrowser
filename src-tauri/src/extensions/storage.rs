@@ -33,10 +33,39 @@ pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn remove_extension_dir(app: &AppHandle, id: &str) -> Result<(), String> {
-    let target = extensions_dir(app)?.join(id);
-    if target.exists() {
-        fs::remove_dir_all(target).map_err(|e| e.to_string())?;
+pub fn remove_extension_dir(app: &AppHandle, target: &Path) -> Result<(), String> {
+    remove_managed_directory(&extensions_dir(app)?, target)
+}
+
+fn remove_managed_directory(base: &Path, target: &Path) -> Result<(), String> {
+    let base = base.canonicalize().map_err(|e| e.to_string())?;
+    if !target.exists() {
+        return Ok(());
     }
-    Ok(())
+    let resolved = target.canonicalize().map_err(|e| e.to_string())?;
+    if resolved.parent() != Some(base.as_path()) {
+        return Err("Extension directory is outside managed storage".into());
+    }
+    fs::remove_dir_all(resolved).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn removes_the_recorded_directory_but_refuses_paths_outside_storage() {
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path().join("extensions");
+        let installed = base.join("copied-folder");
+        let outside = root.path().join("outside");
+        fs::create_dir_all(&installed).unwrap();
+        fs::create_dir_all(&outside).unwrap();
+        fs::write(installed.join("manifest.json"), b"{}").unwrap();
+        assert!(remove_managed_directory(&base, &outside).is_err());
+        assert!(outside.exists());
+        remove_managed_directory(&base, &installed).unwrap();
+        assert!(!installed.exists());
+        assert!(base.exists());
+    }
 }

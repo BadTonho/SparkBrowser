@@ -26,6 +26,7 @@ import { checkShutdown } from "./shutdown.mjs";
 import { checkBackup } from "./backup.mjs";
 import { checkDownloads } from './downloads.mjs';
 import { checkClosedTabs } from './closed-tabs.mjs';
+import { checkEphemeralCleanup } from './ephemeral-cleanup.mjs';
 import { checkRecovery, checkRecoveryFailure } from './recovery.mjs';
 import { checkLocalization } from "./localization.mjs";
 import assert from 'node:assert/strict';
@@ -68,6 +69,7 @@ export const scenarios = {
   recovery: checkRecovery,
   'recovery-failure': checkRecoveryFailure,
   'closed-tabs': checkClosedTabs,
+  'ephemeral-cleanup': checkEphemeralCleanup,
   backup: async context => { await prepareTabs(context); await checkBackup(context); },
   localization: async context => { await prepareTabs(context); await checkLocalization(context); },
   navigation: async context => {

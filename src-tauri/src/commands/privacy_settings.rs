@@ -1,4 +1,10 @@
-use crate::{database::{executor, history_repo::{self, HistoryRetention}}, state::browser_state::BrowserState};
+use crate::{
+    database::{
+        executor,
+        history_repo::{self, HistoryRetention},
+    },
+    state::browser_state::BrowserState,
+};
 use serde::Serialize;
 use tauri::{AppHandle, State};
 
@@ -14,11 +20,19 @@ pub struct PrivacySettings {
 pub fn get_privacy_settings(state: State<'_, BrowserState>) -> PrivacySettings {
     PrivacySettings {
         history_retention: HistoryRetention::from_months(
-            state.history_retention_months.load(std::sync::atomic::Ordering::Acquire),
+            state
+                .history_retention_months
+                .load(std::sync::atomic::Ordering::Acquire),
         ),
-        allow_popups: state.allow_popups.load(std::sync::atomic::Ordering::Acquire),
-        smart_screen_supported: state.smart_screen_supported.load(std::sync::atomic::Ordering::Acquire),
-        smart_screen_enabled: state.smart_screen_enabled.load(std::sync::atomic::Ordering::Acquire),
+        allow_popups: state
+            .allow_popups
+            .load(std::sync::atomic::Ordering::Acquire),
+        smart_screen_supported: state
+            .smart_screen_supported
+            .load(std::sync::atomic::Ordering::Acquire),
+        smart_screen_enabled: state
+            .smart_screen_enabled
+            .load(std::sync::atomic::Ordering::Acquire),
     }
 }
 
@@ -67,7 +81,9 @@ pub async fn set_popup_setting(
         )
     })
     .await?;
-    state.allow_popups.store(enabled, std::sync::atomic::Ordering::Release);
+    state
+        .allow_popups
+        .store(enabled, std::sync::atomic::Ordering::Release);
     Ok(())
 }
 
@@ -78,7 +94,9 @@ pub async fn set_smart_screen(
     enabled: bool,
 ) -> Result<(), String> {
     let _operation = state.tab_operations.lock().await;
-    let previous = state.smart_screen_enabled.load(std::sync::atomic::Ordering::Acquire);
+    let previous = state
+        .smart_screen_enabled
+        .load(std::sync::atomic::Ordering::Acquire);
     crate::security::set_smart_screen(&app, enabled).await?;
     let persisted = executor::run(app.clone(), move |conn| {
         crate::database::preferences_repo::store(
@@ -89,11 +107,20 @@ pub async fn set_smart_screen(
     })
     .await;
     if let Err(error) = persisted {
-        if crate::security::set_smart_screen(&app, previous).await.is_err() {
-            let _ = crate::security::emit_shell(&app, "browser-error", "Could not restore SmartScreen settings");
+        if crate::security::set_smart_screen(&app, previous)
+            .await
+            .is_err()
+        {
+            let _ = crate::security::emit_shell(
+                &app,
+                "browser-error",
+                "Could not restore SmartScreen settings",
+            );
         }
         return Err(error);
     }
-    state.smart_screen_enabled.store(enabled, std::sync::atomic::Ordering::Release);
+    state
+        .smart_screen_enabled
+        .store(enabled, std::sync::atomic::Ordering::Release);
     Ok(())
 }

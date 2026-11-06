@@ -1,7 +1,4 @@
-use tauri::{
-    AppHandle, LogicalPosition, LogicalSize, Manager, Rect, WebviewUrl,
-    WindowBuilder,
-};
+use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect, WebviewUrl, WindowBuilder};
 
 const LABEL: &str = "tab-drag-preview";
 
@@ -96,12 +93,13 @@ pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String>
             .build()
             .map_err(|e| e.to_string())?;
         if let Err(error) = window.add_child(
-            crate::window::create_webview_builder(LABEL, WebviewUrl::App("tab-drag-preview.html".into()))
-                .transparent(true)
-                .focused(false)
-                .on_navigation(move |url| {
-                    crate::security::documents::same_document(url, &document)
-                }),
+            crate::window::create_webview_builder(
+                LABEL,
+                WebviewUrl::App("tab-drag-preview.html".into()),
+            )
+            .transparent(true)
+            .focused(false)
+            .on_navigation(move |url| crate::security::documents::same_document(url, &document)),
             LogicalPosition::new(0.0, 0.0),
             logical,
         ) {

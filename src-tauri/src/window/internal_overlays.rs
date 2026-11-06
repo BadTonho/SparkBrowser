@@ -4,9 +4,7 @@ use super::webview_manager::{
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::workspace_model::WorkspaceItem;
 use serde::{Deserialize, Serialize};
-use tauri::{
-    AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl,
-};
+use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverlayLanguage {

@@ -14,14 +14,18 @@ pub fn resolve_input_to_url_with_search_engine(
         return Url::parse(DEFAULT_HOME_URL).map_err(|e| e.to_string());
     }
 
-    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
-        if let Ok(parsed) = Url::parse(trimmed) {
+    if let Ok(parsed) = Url::parse(trimmed) {
+        if matches!(parsed.scheme(), "http" | "https") && parsed.host_str().is_some() {
             return Ok(parsed);
         }
     }
 
-    if !trimmed.contains(' ') && trimmed.contains('.') {
-        let with_https = format!("https://{}", trimmed);
+    let host = trimmed.split(['/', '?', '#']).next().unwrap_or("");
+    let local = host.eq_ignore_ascii_case("localhost")
+        || host.to_ascii_lowercase().starts_with("localhost:")
+        || host.starts_with('[');
+    if !trimmed.contains(char::is_whitespace) && (host.contains('.') || local) {
+        let with_https = format!("{}://{}", if local { "http" } else { "https" }, trimmed);
         if let Ok(parsed) = Url::parse(&with_https) {
             return Ok(parsed);
         }
@@ -95,5 +99,18 @@ mod tests {
                 .as_str(),
             "https://example.test/path"
         );
+        for (input, expected) in [
+            ("localhost:3000/path", "http://localhost:3000/path"),
+            ("localhost", "http://localhost/"),
+            ("[::1]:8080/", "http://[::1]:8080/"),
+            ("HTTP://example.test/", "http://example.test/"),
+        ] {
+            assert_eq!(
+                resolve_input_to_url_with_search_engine(input, "google")
+                    .unwrap()
+                    .as_str(),
+                expected
+            );
+        }
     }
 }

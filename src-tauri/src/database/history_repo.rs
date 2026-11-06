@@ -203,14 +203,26 @@ mod tests {
     fn retention_prunes_only_history_older_than_the_selected_period() {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("CREATE TABLE history (id INTEGER PRIMARY KEY, title TEXT, url TEXT, visited_at INTEGER);").unwrap();
-        conn.execute("INSERT INTO history VALUES (1, 'old', 'https://old.test', 1)", []).unwrap();
-        conn.execute("INSERT INTO history VALUES (2, 'recent', 'https://recent.test', 100)", []).unwrap();
+        conn.execute(
+            "INSERT INTO history VALUES (1, 'old', 'https://old.test', 1)",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO history VALUES (2, 'recent', 'https://recent.test', 100)",
+            [],
+        )
+        .unwrap();
         let now = 30 * 24 * 60 * 60 + 100;
         prune_expired(&conn, HistoryRetention::OneMonth, now).unwrap();
-        let remaining: i64 = conn.query_row("SELECT count(*) FROM history", [], |row| row.get(0)).unwrap();
+        let remaining: i64 = conn
+            .query_row("SELECT count(*) FROM history", [], |row| row.get(0))
+            .unwrap();
         assert_eq!(remaining, 1);
         prune_expired(&conn, HistoryRetention::Always, now).unwrap();
-        let retained: i64 = conn.query_row("SELECT count(*) FROM history", [], |row| row.get(0)).unwrap();
+        let retained: i64 = conn
+            .query_row("SELECT count(*) FROM history", [], |row| row.get(0))
+            .unwrap();
         assert_eq!(retained, 1);
     }
 
@@ -231,7 +243,9 @@ mod tests {
             .query_row("SELECT count(*) FROM history", [], |row| row.get(0))
             .unwrap();
         let site_data: String = conn
-            .query_row("SELECT value FROM site_data WHERE id = 1", [], |row| row.get(0))
+            .query_row("SELECT value FROM site_data WHERE id = 1", [], |row| {
+                row.get(0)
+            })
             .unwrap();
         assert_eq!(history_count, 0);
         assert_eq!(site_data, "keep");

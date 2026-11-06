@@ -180,11 +180,12 @@ pub fn run() {
             let state = app.state::<BrowserState>();
 
             let data_directory = app.path().app_data_dir()?;
-            window::ephemeral::purge_all_ephemeral_data(app.handle());
             app.manage(
                 recovery::profile_lock::ProfileLock::acquire(&data_directory)
                     .map_err(std::io::Error::other)?,
             );
+            window::ephemeral::purge_all_ephemeral_data(app.handle())
+                .map_err(std::io::Error::other)?;
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
@@ -196,14 +197,15 @@ pub fn run() {
                 .unwrap_or(false),
                 std::sync::atomic::Ordering::Release,
             );
-            let history_retention = crate::database::history_repo::HistoryRetention::from_preference(
-                crate::database::preferences_repo::load(
-                    &conn,
-                    crate::database::preferences_repo::HISTORY_RETENTION_KEY,
-                )
-                .ok()
-                .flatten(),
-            );
+            let history_retention =
+                crate::database::history_repo::HistoryRetention::from_preference(
+                    crate::database::preferences_repo::load(
+                        &conn,
+                        crate::database::preferences_repo::HISTORY_RETENTION_KEY,
+                    )
+                    .ok()
+                    .flatten(),
+                );
             state.history_retention_months.store(
                 u64::from(history_retention.months().unwrap_or(0)),
                 std::sync::atomic::Ordering::Release,
@@ -217,10 +219,13 @@ pub fn run() {
                 std::sync::atomic::Ordering::Release,
             );
             state.smart_screen_enabled.store(
-                crate::database::preferences_repo::load(&conn, crate::database::preferences_repo::SMART_SCREEN_KEY)
-                    .ok()
-                    .flatten()
-                    .as_deref()
+                crate::database::preferences_repo::load(
+                    &conn,
+                    crate::database::preferences_repo::SMART_SCREEN_KEY,
+                )
+                .ok()
+                .flatten()
+                .as_deref()
                     != Some("false"),
                 std::sync::atomic::Ordering::Release,
             );

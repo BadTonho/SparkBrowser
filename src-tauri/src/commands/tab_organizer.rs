@@ -65,6 +65,17 @@ pub async fn close_tabs_reviewed(
             return Err(error);
         }
     }
+    for tab in before
+        .tabs
+        .iter()
+        .filter(|tab| tab.is_ephemeral && closed.contains(&tab.id))
+    {
+        if let Err(error) = crate::window::webview_manager::close_tab_webview(&app, &tab.id) {
+            let _ = crate::security::emit_shell(&app, "browser-error", error);
+        } else {
+            crate::window::ephemeral::purge_ephemeral_tab_data(&app, &tab.id);
+        }
+    }
     let snapshot = super::closed_tabs::publish(&app, &state);
     Ok(BulkCloseResult {
         snapshot,

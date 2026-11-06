@@ -173,8 +173,10 @@ pub async fn set_browser_extension_enabled(
                 let ext = match found_ext {
                     Some(e) => e,
                     None => {
-                        // Extension might not be loaded in WebView2 memory yet; consider success
-                        reply(&send_clone, Ok(()));
+                        reply(
+                            &send_clone,
+                            Err("Extension not found in the active profile".into()),
+                        );
                         return Ok(());
                     }
                 };

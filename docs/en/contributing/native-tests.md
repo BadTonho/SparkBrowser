@@ -2,7 +2,7 @@
 
 The `new-tab` widget checks use loopback weather, city-search and Gmail/OAuth fixtures. They verify PKCE, rejection of an incorrect OAuth state, cancellation, late inbox responses after disconnect, shared requests across split panes, unit conversion without refetching, minimum-width stacking, safe message text, draft/focus preservation, settings-write rollback and persistence after restart. Fixture endpoints are accepted only by the isolated test application and never access the production credential vault. Real Windows location consent, secure credential persistence and Google test-account authorization require manual checks; follow [widget setup](../features/new-tab-widgets.md). Widget preferences, locations and account data stay outside version-4 backups.
 
-Validation runs locally on demand using the commands in [validation](validation.md). The repository has no GitHub Actions workflow. The Windows native suite exercises the release application through [Tauri WebDriver](https://v2.tauri.app/develop/tests/webdriver/).
+Validation runs locally on demand using the commands in [validation](validation.md). The release workflow runs automated checks, but the Windows native suite is separate and exercises the release application through [Tauri WebDriver](https://v2.tauri.app/develop/tests/webdriver/).
 
 ## Isolated Windows run
 
@@ -30,6 +30,8 @@ Workspace picker regression checks record native page visibility transitions: op
 The direct runner also accepts a Linux `tauri-driver`/WebKitWebDriver installation through `VELOCE_TAURI_DRIVER` and `VELOCE_NATIVE_DRIVER`; that path has not been validated locally. macOS needs a separate embedded WebDriver service. Multi-monitor DPI transitions, drag gestures outside tab docking, rendering latency and aggregate process memory still require dedicated validation.
 
 The `recovery` scenario force-stops its own test process, verifies all tabs and split focus, then checks a clean restart. `recovery-failure` injects a SQLite trigger only in the stopped, identity-verified scenario database, proves initialization failure keeps the previous snapshot, removes the trigger and retries. The `closed-tabs` and `backup` scenarios cover restoration and reviewed import with persistent preference retries.
+
+The `ephemeral-cleanup` scenario checks removal after closing individual and hibernated tabs, preservation while hibernated, and startup cleanup of an isolated leftover directory.
 
 The suite also includes `downloads` (durable checkpoints, HTTP ranges, integrity and native controls), `shutdown` (note flushing, changed-risk review, cancellation and SQLite failure), `tab-diagnostics` (real residency and revalidated protection), `zoom` (resident page scale, origins, navigation, shortcuts, restart and backup preferences), and `command-search` (bounded Unicode results, stable selection, original note URLs and reviewed session details). Download fixtures write exclusively under each scenario's `data/downloads`, never the personal Downloads folder. The complete suite has thirty-nine independent scenarios. On Windows, `keyboard` sends real input only to the foreground isolated executable and verifies closing/reopening consecutive tabs while modifiers remain pressed; keep the test desktop available. It does not execute installers or use a VM.
 

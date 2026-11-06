@@ -234,6 +234,11 @@ pub async fn delete_workspace(
         .map_err(|e| e.to_string())?
         .clone();
     let mut next_tabs = state.tabs.lock().map_err(|e| e.to_string())?.clone();
+    let removed_ephemeral: Vec<String> = next_tabs
+        .iter()
+        .filter(|tab| action == "close" && tab.workspace_id == workspace_id && tab.is_ephemeral)
+        .map(|tab| tab.id.clone())
+        .collect();
     if action == "move" {
         for tab in next_tabs
             .iter_mut()
@@ -374,6 +379,13 @@ pub async fn delete_workspace(
 
     if was_active {
         let _ = crate::security::emit_shell(&app, "content-url-changed", &active_url);
+    }
+    for id in removed_ephemeral {
+        if let Err(error) = crate::window::webview_manager::close_tab_webview(&app, &id) {
+            let _ = crate::security::emit_shell(&app, "browser-error", error);
+        } else {
+            crate::window::ephemeral::purge_ephemeral_tab_data(&app, &id);
+        }
     }
     reconcile_committed(&app, &state);
     // The workspace no longer exists; reclaim its isolated data folder when

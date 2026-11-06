@@ -42,4 +42,3 @@ pub fn create_webview_builder(
     }
     builder
 }
-

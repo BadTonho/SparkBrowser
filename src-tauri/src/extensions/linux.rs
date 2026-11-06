@@ -9,12 +9,7 @@ pub async fn add_browser_extension(
     _app: &AppHandle,
     _extension_folder_path: &str,
 ) -> Result<String, String> {
-    let mut bytes = [0u8; 16];
-    let _ = getrandom::fill(&mut bytes);
-    Ok(format!(
-        "linux-ext-{}",
-        bytes.iter().map(|b| format!("{b:02x}")).collect::<String>()
-    ))
+    Err("Browser extensions are not supported on Linux yet".into())
 }
 
 /// Toggles extension status on Linux.
@@ -23,7 +18,7 @@ pub async fn set_browser_extension_enabled(
     _extension_id: String,
     _enabled: bool,
 ) -> Result<(), String> {
-    Ok(())
+    Err("Browser extensions are not supported on Linux yet".into())
 }
 
 /// Removes extension on Linux.
@@ -31,7 +26,7 @@ pub async fn remove_browser_extension(
     _app: &AppHandle,
     _extension_id: String,
 ) -> Result<(), String> {
-    Ok(())
+    Err("Browser extensions are not supported on Linux yet".into())
 }
 
 /// Synchronizes extensions for newly spawned Linux webviews.

@@ -18,6 +18,14 @@ use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 use types::{ExtensionAction, ExtensionDetails, ExtensionManifest};
 
+fn ensure_supported() -> Result<(), String> {
+    if cfg!(target_os = "linux") {
+        Err("Browser extensions are not supported on Linux yet".into())
+    } else {
+        Ok(())
+    }
+}
+
 fn generate_extension_id() -> String {
     let mut bytes = [0u8; 16];
     let _ = getrandom::fill(&mut bytes);
@@ -33,6 +41,7 @@ pub async fn load_unpacked_extension(
     app: &AppHandle,
     source_dir: &Path,
 ) -> Result<ExtensionDetails, String> {
+    ensure_supported()?;
     if !source_dir.exists() || !source_dir.is_dir() {
         return Err(format!(
             "Directory does not exist: {}",
@@ -98,13 +107,15 @@ pub async fn install_from_webstore(
     app: &AppHandle,
     url_or_id: &str,
 ) -> Result<ExtensionDetails, String> {
+    ensure_supported()?;
     let id = crx::parse_webstore_id(url_or_id)
         .ok_or_else(|| "Invalid Chrome Web Store URL or Extension ID".to_string())?;
 
     let download_id = id.clone();
-    let bytes = tauri::async_runtime::spawn_blocking(move || crx::download_webstore_crx(&download_id))
-        .await
-        .map_err(|e| e.to_string())??;
+    let bytes =
+        tauri::async_runtime::spawn_blocking(move || crx::download_webstore_crx(&download_id))
+            .await
+            .map_err(|e| e.to_string())??;
 
     // Extract directly into the permanent extension directory: app_data_dir/extensions/<id>
     let dest_dir = storage::extensions_dir(app)?.join(&id);
@@ -123,8 +134,8 @@ pub async fn install_from_archive(
     app: &AppHandle,
     archive_path: &Path,
 ) -> Result<ExtensionDetails, String> {
-    let bytes =
-        std::fs::read(archive_path).map_err(|e| format!("Failed to read archive: {}", e))?;
+    ensure_supported()?;
+    let bytes = crx::read_archive(archive_path)?;
     let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
     crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
 
@@ -133,6 +144,7 @@ pub async fn install_from_archive(
 
 /// Retrieves all installed extensions from the database and constructs full details.
 pub fn get_installed_extensions(app: &AppHandle) -> Result<Vec<ExtensionDetails>, String> {
+    ensure_supported()?;
     let conn = crate::database::connection::init_database(app)?;
     let records = extensions_repo::get_all(&conn)?;
 
@@ -161,18 +173,25 @@ pub fn get_installed_extensions(app: &AppHandle) -> Result<Vec<ExtensionDetails>
 
 /// Toggles extension enabled/disabled state.
 pub async fn toggle_extension(app: &AppHandle, id: &str, enabled: bool) -> Result<(), String> {
+    ensure_supported()?;
     let conn = crate::database::connection::init_database(app)?;
-    extensions_repo::set_enabled(&conn, id, enabled)?;
-    platform::set_browser_extension_enabled(app, id.to_string(), enabled).await
+    let record = extensions_repo::get(&conn, id)?.ok_or("Extension not found")?;
+    platform::set_browser_extension_enabled(app, id.to_string(), enabled).await?;
+    if let Err(error) = extensions_repo::set_enabled(&conn, id, enabled) {
+        let _ = platform::set_browser_extension_enabled(app, id.to_string(), record.enabled).await;
+        return Err(error);
+    }
+    Ok(())
 }
 
 /// Removes an extension from database, engine runtime, and disk.
 pub async fn remove_extension(app: &AppHandle, id: &str) -> Result<(), String> {
+    ensure_supported()?;
     let conn = crate::database::connection::init_database(app)?;
-    extensions_repo::delete(&conn, id)?;
-    let _ = platform::remove_browser_extension(app, id.to_string()).await;
-    let _ = storage::remove_extension_dir(app, id);
-    Ok(())
+    let record = extensions_repo::get(&conn, id)?.ok_or("Extension not found")?;
+    platform::remove_browser_extension(app, id.to_string()).await?;
+    storage::remove_extension_dir(app, Path::new(&record.path))?;
+    extensions_repo::delete(&conn, id)
 }
 
 /// Retrieves action/popup info for an installed extension.

@@ -160,16 +160,19 @@ fn ensure_webview(app: &AppHandle) -> Result<(), String> {
     let callback_app = app.clone();
     let view = main
         .add_child(
-            crate::window::create_webview_builder(LABEL, WebviewUrl::App("permission-popover.html".into()))
-                .transparent(true)
-                .focused(false)
-                .on_navigation(move |url| {
-                    if url.scheme() == "veloce-internal" {
-                        bridge::navigation(&callback_app, url);
-                        return false;
-                    }
-                    crate::security::documents::same_document(url, &document)
-                }),
+            crate::window::create_webview_builder(
+                LABEL,
+                WebviewUrl::App("permission-popover.html".into()),
+            )
+            .transparent(true)
+            .focused(false)
+            .on_navigation(move |url| {
+                if url.scheme() == "veloce-internal" {
+                    bridge::navigation(&callback_app, url);
+                    return false;
+                }
+                crate::security::documents::same_document(url, &document)
+            }),
             LogicalPosition::new(0.0, 0.0),
             main.inner_size()
                 .map_err(|e| e.to_string())?

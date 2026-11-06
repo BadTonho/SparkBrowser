@@ -40,6 +40,9 @@ jobs:
         run: |
           npm run check
           npm run test
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+          cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: Build and Sign NSIS Package
         env:
@@ -89,6 +92,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run Linux Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: Build Linux packages (deb, AppImage & rpm)
         env:

@@ -16,7 +16,9 @@ pub fn popup_target_allowed(enabled: bool, url: &tauri::Url) -> bool {
 /// Web pop-ups open as normal browser tabs; internal PiP windows are handled separately.
 pub fn open_popup_url(app: AppHandle, url: tauri::Url) {
     if !popup_target_allowed(
-        app.state::<BrowserState>().allow_popups.load(std::sync::atomic::Ordering::Acquire),
+        app.state::<BrowserState>()
+            .allow_popups
+            .load(std::sync::atomic::Ordering::Acquire),
         &url,
     ) {
         return;
@@ -25,7 +27,9 @@ pub fn open_popup_url(app: AppHandle, url: tauri::Url) {
         let state = app.state::<BrowserState>();
         let _operation = state.tab_operations.lock().await;
         if !popup_target_allowed(
-            state.allow_popups.load(std::sync::atomic::Ordering::Acquire),
+            state
+                .allow_popups
+                .load(std::sync::atomic::Ordering::Acquire),
             &url,
         ) {
             return;
@@ -556,22 +560,6 @@ pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
     }
 }
 
-#[cfg(test)]
-mod popup_tests {
-    use super::*;
-
-    #[test]
-    fn popup_policy_allows_only_credential_free_web_urls_when_enabled() {
-        for value in ["https://example.test/path", "http://example.test/"] {
-            assert!(popup_target_allowed(true, &value.parse().unwrap()));
-        }
-        for value in ["about:blank", "javascript:alert(1)", "file:///tmp/file", "https://user:pass@example.test/"] {
-            assert!(!popup_target_allowed(true, &value.parse().unwrap()));
-        }
-        assert!(!popup_target_allowed(false, &"https://example.test/".parse().unwrap()));
-    }
-}
-
 fn finish_change(
     app: &AppHandle,
     state: &BrowserState,
@@ -592,4 +580,28 @@ fn finish_change(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod popup_tests {
+    use super::*;
+
+    #[test]
+    fn popup_policy_allows_only_credential_free_web_urls_when_enabled() {
+        for value in ["https://example.test/path", "http://example.test/"] {
+            assert!(popup_target_allowed(true, &value.parse().unwrap()));
+        }
+        for value in [
+            "about:blank",
+            "javascript:alert(1)",
+            "file:///tmp/file",
+            "https://user:pass@example.test/",
+        ] {
+            assert!(!popup_target_allowed(true, &value.parse().unwrap()));
+        }
+        assert!(!popup_target_allowed(
+            false,
+            &"https://example.test/".parse().unwrap()
+        ));
+    }
 }
