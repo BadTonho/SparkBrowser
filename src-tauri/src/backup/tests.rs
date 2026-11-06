@@ -46,6 +46,8 @@ fn preferences() -> BackupPreferences {
         default_search_engine: "google".into(),
         auto_hibernate_mode: serde_json::json!(10),
         resident_limit: 8,
+        hibernation_exemptions: vec![],
+        ask_download_destination: true,
         language: "system".into(),
         keyboard_shortcuts: shortcuts,
         site_zoom: vec![],
@@ -382,7 +384,7 @@ fn v1_defaults_zoom_and_v2_preserves_zoom_preferences() {
 }
 
 #[test]
-fn old_backups_default_shadow_off_and_v3_roundtrips_the_boolean() {
+fn old_backups_default_new_settings_and_v3_roundtrips_them() {
     let (_, mut doc) = setup();
     for version in [1, 2] {
         let mut legacy = serde_json::to_value(&doc).unwrap();
@@ -391,16 +393,30 @@ fn old_backups_default_shadow_off_and_v3_roundtrips_the_boolean() {
             .as_object_mut()
             .unwrap()
             .remove("pip_window_shadow");
+        legacy["preferences"]
+            .as_object_mut()
+            .unwrap()
+            .remove("hibernation_exemptions");
+        legacy["preferences"]
+            .as_object_mut()
+            .unwrap()
+            .remove("ask_download_destination");
         let decoded = files::decode(&serde_json::to_vec(&legacy).unwrap()).unwrap();
         assert!(!decoded.preferences.pip_window_shadow);
+        assert!(decoded.preferences.hibernation_exemptions.is_empty());
+        assert!(decoded.preferences.ask_download_destination);
     }
     doc.version = 3;
     doc.preferences.pip_window_shadow = true;
+    doc.preferences.hibernation_exemptions = vec!["example.com".into()];
+    doc.preferences.ask_download_destination = false;
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("v3.veloce-backup.json");
     files::write(&path, &doc).unwrap();
     let decoded = files::read(&path).unwrap();
     assert!(decoded.preferences.pip_window_shadow);
+    assert_eq!(decoded.preferences.hibernation_exemptions, ["example.com"]);
+    assert!(!decoded.preferences.ask_download_destination);
     let mut invalid = serde_json::to_value(&doc).unwrap();
     invalid["preferences"]["pip_window_shadow"] = serde_json::json!("true");
     assert!(files::decode(&serde_json::to_vec(&invalid).unwrap()).is_err());

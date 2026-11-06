@@ -27,11 +27,18 @@ pub struct BackupPreferences {
     pub default_search_engine: String,
     pub auto_hibernate_mode: serde_json::Value,
     pub resident_limit: usize,
+    #[serde(default)]
+    pub hibernation_exemptions: Vec<String>,
+    #[serde(default = "default_ask_download_destination")]
+    pub ask_download_destination: bool,
     pub language: String,
     pub keyboard_shortcuts: BTreeMap<String, Vec<ShortcutBinding>>,
     #[serde(default)]
     pub site_zoom: Vec<crate::database::site_zoom_repo::SiteZoom>,
     pub update_channel: crate::updates::model::UpdateChannel,
+}
+fn default_ask_download_destination() -> bool {
+    true
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

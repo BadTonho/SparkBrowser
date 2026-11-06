@@ -82,6 +82,10 @@ impl TabCheckpoint {
                 state
                     .resident_limit
                     .load(std::sync::atomic::Ordering::Relaxed),
+                &state
+                    .hibernation_exemptions
+                    .lock()
+                    .map_err(|e| e.to_string())?,
             );
             state.persist_activated_session(activation)?;
             Ok(value)

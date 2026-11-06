@@ -87,6 +87,10 @@
     autoHibernateMode,
     residentTabLimit,
     setResidentTabLimit,
+    hibernationExemptions,
+    setHibernationExemptions,
+    askDownloadDestination,
+    setAskDownloadDestination,
     toggleZenMode,
     isZenMode,
     tabLayout,
@@ -218,6 +222,8 @@
       // Independent backend reads: fetch concurrently.
       await Promise.all([initializeWorkspaces(), initializeTabs()]);
       if (disposed) return;
+      await setHibernationExemptions(get(hibernationExemptions));
+      await setAskDownloadDestination(get(askDownloadDestination));
       await Promise.all([setResidentTabLimit(get(residentTabLimit)), loadBookmarks(), initializePrivacyStats(), initializeKeyboardShortcuts()]);
     });
 

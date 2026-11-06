@@ -61,6 +61,8 @@
     "allow-get-tabs",
     "allow-get-tabs-memory",
     "allow-set-resident-limit",
+    "allow-set-hibernation-exemptions",
+    "allow-set-ask-download-destination",
     "allow-set-tab-pinned",
     "allow-create-tab",
     "allow-create-ephemeral-tab",

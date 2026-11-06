@@ -260,5 +260,13 @@
   "settings.compact_toolbar": "Usar modo compacto",
   "settings.compact_toolbar_description": "Usa o tamanho menor atual para a barra superior e seus controles.",
   "settings.rounded_content_frame": "Mostrar cantos arredondados no conteúdo",
-  "settings.rounded_content_frame_description": "Mostra a borda, os cantos arredondados e a sombra ao redor da área principal da WebView."
+  "settings.rounded_content_frame_description": "Mostra a borda, os cantos arredondados e a sombra ao redor da área principal da WebView.",
+  "settings.hibernate_exceptions": "Exceções de hibernação",
+  "settings.hibernate_exceptions_description": "Mantém estes domínios e seus subdomínios fora da hibernação automática.",
+  "settings.domain_placeholder": "exemplo.com",
+  "settings.add_domain": "Adicionar domínio",
+  "settings.invalid_domain": "Informe um nome de host válido que ainda não esteja na lista.",
+  "settings.remove_domain": "Remover {domain}",
+  "settings.ask_download_destination": "Perguntar onde salvar cada download",
+  "settings.ask_download_destination_description": "Escolha o local do arquivo antes de iniciar o download."
 }

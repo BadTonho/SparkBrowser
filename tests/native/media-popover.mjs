@@ -9,10 +9,10 @@ export async function checkVolumePopover(context, id) {
   await withWebview('/media-popover.html', async()=>{
     await until(()=>script('return !document.querySelector("#media-popover").hidden && document.querySelector("[data-testid=media-volume]")?.value==="100"'),'native slider ready');
     const ui=await script('const p=document.querySelector("#media-popover"),r=p.getBoundingClientRect(),s=document.querySelector("input"),v=document.querySelector("#volume-percentage"),sr=s.getBoundingClientRect(),vr=v.getBoundingClientRect();return {width:r.width,height:r.height,left:r.left,top:r.top,text:p.textContent.trim(),inputs:p.querySelectorAll("input").length,buttons:p.querySelectorAll("button").length,dialog:!!document.querySelector("[role=dialog]"),focused:document.activeElement===s,label:s.getAttribute("aria-label"),min:s.min,max:s.max,step:s.step,percentageBelow:vr.top>=sr.bottom,percentageCentered:Math.abs(vr.left+vr.width/2-sr.left-sr.width/2)<1,percentageFont:getComputedStyle(v).fontSize};');
-    assert.equal(ui.width,200);assert.equal(ui.height,64);
+    assert.equal(ui.width,320);assert.ok(ui.height>=64 && ui.height<=440);
     assert.ok(Math.abs(ui.top-(button.top+button.height+6))<=1,`six pixel gap below trigger: ${JSON.stringify({ui,button})}`);
-    assert.ok(Math.abs(ui.left-(button.left+button.width/2-100))<=1,`centered beneath trigger: ${JSON.stringify({ui,button})}`);
-    assert.equal(ui.text,'100%');assert.equal(ui.inputs,1);assert.equal(ui.buttons,0);assert.equal(ui.dialog,false);assert.equal(ui.focused,true);assert.ok(ui.label);
+    assert.ok(Math.abs(ui.left-(button.left+button.width/2-160))<=1,`centered beneath trigger: ${JSON.stringify({ui,button})}`);
+    assert.ok(ui.text.includes('100%'));assert.equal(ui.inputs,1);assert.equal(ui.dialog,false);assert.equal(ui.focused,true);assert.ok(ui.label);
     assert.equal(ui.percentageBelow,true);assert.equal(ui.percentageCentered,true);assert.equal(ui.percentageFont,'12px');
     assert.deepEqual([ui.min,ui.max,ui.step],['0','200','1']);
     await screenshot('volume-popover');
@@ -71,7 +71,7 @@ export async function checkVolumePopover(context, id) {
   await resizeWindow(900,700);
   const resized=await until(()=>script('const r=document.querySelector("[data-testid=open-media]").getBoundingClientRect();return innerWidth===900?{left:r.left,top:r.top,width:r.width,height:r.height}:null;'),'resized button');
   await withWebview('/media-popover.html',async()=>{
-    await until(()=>script('const r=document.querySelector("#media-popover").getBoundingClientRect(),a=arguments[0];return innerWidth===900 && Math.abs(r.top-a.top-a.height-6)<=1 && r.left>=8 && r.right<=innerWidth-8 && Math.abs(r.left-Math.max(8,Math.min(a.left+a.width/2-100,innerWidth-208)))<=1;',resized),'popover follows resize');
+    await until(()=>script('const r=document.querySelector("#media-popover").getBoundingClientRect(),a=arguments[0];return innerWidth===900 && Math.abs(r.top-a.top-a.height-6)<=1 && r.left>=8 && r.right<=innerWidth-8 && Math.abs(r.left-Math.max(8,Math.min(a.left+a.width/2-160,innerWidth-328)))<=1;',resized),'popover follows resize');
   });
   await script('window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
   await expanded(false);
@@ -82,7 +82,7 @@ export async function checkVolumePopover(context, id) {
     await script('document.querySelectorAll("#setting-browser-layout button")[arguments[0]].click();',layout);
     await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
     await open();
-    await withWebview('/media-popover.html',()=>until(()=>script('const p=document.querySelector("#media-popover");return !p.hidden && p.getBoundingClientRect().height===64 && document.querySelector("#volume-percentage").textContent===document.querySelector("input").value+"%";'),'popover in both tab layouts'));
+    await withWebview('/media-popover.html',()=>until(()=>script('const p=document.querySelector("#media-popover"),r=p.getBoundingClientRect();return !p.hidden && r.height>=64 && r.height<=440 && document.querySelector("#volume-percentage").textContent===document.querySelector("input").value+"%";'),'popover in both tab layouts'));
     // Opening a shell overlay dismisses the volume control before hiding content.
     await script('document.querySelector("[data-testid=open-settings]").click();');
     await expanded(false);

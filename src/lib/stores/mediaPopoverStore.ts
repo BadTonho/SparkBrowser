@@ -27,7 +27,8 @@ export async function openMedia(anchor: HTMLButtonElement) {
   const workspaceId = get(activeWorkspaceId);
   if (!active) return;
   mediaError.set("");
-  await refreshMedia(active.id);
+  const residentMediaTabs = get(tabs).filter(tab => !tab.is_hibernated);
+  await Promise.all(residentMediaTabs.map(tab => refreshMedia(tab.id, true)));
   const current = get(tabs).find(tab => tab.is_active);
   if (request !== revision || !anchor.isConnected || current?.id !== active.id || current.url !== active.url || workspaceId !== get(activeWorkspaceId)) return;
   mediaPopover.set({ id: request, tabId: active.id, documentKey: get(mediaState).tabs.find(tab => tab.tab_id === active.id)?.document_key ?? "", url: active.url, workspaceId, anchor });

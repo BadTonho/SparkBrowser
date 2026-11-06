@@ -10,6 +10,9 @@ import {
 } from "../services/visual-preferences.js";
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility, setResidentLimit } from "../services/tauri-bridge";
+import { setHibernationExemptions as setNativeHibernationExemptions } from "../services/bridge/navigation";
+import { setAskDownloadDestination as setNativeAskDownloadDestination } from "../services/bridge/navigation";
+import { normalizeHibernationDomain } from "../services/hibernation-domains.js";
 import { closeSettingsQuickMenu } from "./settingsQuickPopoverStore";
 import { setSettingsOverlay } from "../services/bridge/settings-overlay";
 import { isTauriRuntime } from "../services/bridge/runtime";
@@ -85,6 +88,45 @@ export function setAutoHibernateMode(mode: AutoHibernateMode): void {
   } catch {
     // Keep the current setting when storage is unavailable.
   }
+}
+
+const HIBERNATION_EXEMPTIONS_KEY = "veloce_hibernation_exemptions";
+function loadHibernationExemptions(): string[] {
+  try {
+    const parsed = JSON.parse(safeStorage.getItem(HIBERNATION_EXEMPTIONS_KEY) ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    return [...new Set(parsed.filter((item): item is string => typeof item === "string")
+      .map(item => normalizeHibernationDomain(item)).filter((item): item is string => !!item))].sort();
+  } catch { return []; }
+}
+export const hibernationExemptions = writable<string[]>(loadHibernationExemptions());
+export async function setHibernationExemptions(domains: string[]): Promise<void> {
+  const normalized = [...new Set(domains.map(normalizeHibernationDomain).filter((item): item is string => !!item))].sort();
+  const previous = get(hibernationExemptions);
+  if (!safeStorage.setItem(HIBERNATION_EXEMPTIONS_KEY, JSON.stringify(normalized))) throw new Error("Could not save hibernation exceptions");
+  hibernationExemptions.set(normalized);
+  try {
+    const snapshot = await setNativeHibernationExemptions(normalized);
+    applyTabsSnapshot(snapshot);
+  } catch (error) {
+    safeStorage.setItem(HIBERNATION_EXEMPTIONS_KEY, JSON.stringify(previous));
+    hibernationExemptions.set(previous);
+    throw error;
+  }
+}
+
+const ASK_DOWNLOAD_DESTINATION_KEY = "veloce_ask_download_destination";
+function getInitialAskDownloadDestination(): boolean {
+  const saved = safeStorage.getItem(ASK_DOWNLOAD_DESTINATION_KEY);
+  return saved === null ? true : saved === "true";
+}
+export const askDownloadDestination = writable(getInitialAskDownloadDestination());
+export async function setAskDownloadDestination(enabled: boolean): Promise<void> {
+  const previous = get(askDownloadDestination);
+  askDownloadDestination.set(enabled);
+  if (!safeStorage.setItem(ASK_DOWNLOAD_DESTINATION_KEY, String(enabled))) throw new Error("Could not save download preference");
+  try { await setNativeAskDownloadDestination(enabled); }
+  catch (error) { askDownloadDestination.set(previous); safeStorage.setItem(ASK_DOWNLOAD_DESTINATION_KEY, String(previous)); throw error; }
 }
 export {
   defaultSearchEngine,

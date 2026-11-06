@@ -49,6 +49,7 @@ impl Default for TabMediaState {
 pub struct MediaSnapshot {
     pub revision: u64,
     pub tabs: Vec<TabMediaState>,
+    pub frame_tracking_supported: bool,
 }
 impl MediaSnapshot {
     fn update(
@@ -109,7 +110,9 @@ impl MediaService {
             inner.tabs.retain(|t| ids.contains(&t.tab_id));
             inner.revision += 1;
         }
-        Ok(inner.clone())
+        let mut snapshot = inner.clone();
+        snapshot.frame_tracking_supported = cfg!(windows);
+        Ok(snapshot)
     }
     pub fn tab(&self, id: &str) -> TabMediaState {
         self.inner
@@ -124,6 +127,7 @@ impl MediaService {
     pub fn update(&self, app: &AppHandle, id: &str, change: impl FnOnce(&mut TabMediaState)) {
         let live = app.state::<BrowserState>().snapshot_tabs();
         if let Ok(mut inner) = self.inner.lock() {
+            inner.frame_tracking_supported = cfg!(windows);
             if !inner.update(id, &live, change) {
                 return;
             }

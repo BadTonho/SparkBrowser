@@ -3,13 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Volume</title>
+    <title>Media</title>
     <link rel="stylesheet" href="./overlays/media-popover.css" />
   </head>
   <body>
     <div id="media-popover" role="group" tabindex="-1" hidden>
+      <h2 id="media-title"></h2>
       <input id="page-volume" data-testid="media-volume" aria-label="Volume" type="range" min="0" max="200" step="1" />
       <span id="volume-percentage" data-testid="media-volume-percentage" aria-hidden="true">100%</span>
+      <p id="media-frame-note" hidden></p>
+      <div id="media-items" role="list"></div>
+      <p id="media-empty" hidden></p>
     </div>
     <script src="./overlays/media-popover.js" defer></script>
   </body>

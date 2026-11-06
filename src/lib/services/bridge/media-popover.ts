@@ -10,15 +10,19 @@ export interface MediaPopoverPresentation {
   label: string;
   locale: string;
   theme: { background: string; border: string; accent: string };
+  items: Array<{ tabId: string; tabTitle: string; workspaceName: string; frameLabel: string; playing: boolean; audible: boolean; muted: boolean; muteAvailable: boolean }>;
+  frameTrackingSupported: boolean;
+  labels: { title: string; playing: string; audible: string; mute: string; unmute: string; noMedia: string; frameLimit: string };
 }
 
 export interface MediaPopoverAction {
   sessionId: number;
   tabId: string;
   documentKey: string;
-  action: "volume" | "dismiss";
+  action: "volume" | "dismiss" | "select" | "mute";
   value: number | null;
   reason: string;
+  targetTabId: string | null;
 }
 
 let syncQueue: Promise<void> = Promise.resolve();

@@ -3,10 +3,29 @@
 import {
   autoHibernateMode,
   residentTabLimit,
+  hibernationExemptions,
+  askDownloadDestination,
   setResidentTabLimit,
   setAutoHibernateMode,
+  setHibernationExemptions,
+  setAskDownloadDestination,
 } from "../../stores/settingsStore";
+import { addHibernationDomain } from "../../services/hibernation-domains.js";
 const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
+let domainInput = $state("");
+let domainError = $state(false);
+
+async function addDomain() {
+  const next = addHibernationDomain(domainInput, $hibernationExemptions);
+  if (!next) { domainError = true; return; }
+  domainError = false;
+  try { await setHibernationExemptions(next); domainInput = ""; }
+  catch { domainError = true; }
+}
+
+async function removeDomain(domain: string) {
+  await setHibernationExemptions($hibernationExemptions.filter(item => item !== domain));
+}
 </script>
 
 <section class="setting-group" aria-labelledby="performance-heading">
@@ -43,4 +62,38 @@ const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
       {/each}
     </div>
   </div>
+
+  <div class="setting-row" id="setting-hibernation-exceptions" tabindex="-1">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.hibernate_exceptions")}</span>
+      <span class="row-desc">{$t("settings.hibernate_exceptions_description")}</span>
+    </div>
+    <div class="domain-editor">
+      <form onsubmit={event => { event.preventDefault(); void addDomain(); }}>
+        <input bind:value={domainInput} type="text" autocomplete="off" spellcheck="false" placeholder={$t("settings.domain_placeholder")} aria-label={$t("settings.domain_placeholder")} />
+        <button type="submit" disabled={!domainInput.trim()}>{$t("settings.add_domain")}</button>
+      </form>
+      {#if domainError}<span class="domain-error" role="alert">{$t("settings.invalid_domain")}</span>{/if}
+      {#if $hibernationExemptions.length}
+        <ul>{#each $hibernationExemptions as domain (domain)}<li><span>{domain}</span><button type="button" aria-label={$t("settings.remove_domain", { domain })} onclick={() => void removeDomain(domain)}>×</button></li>{/each}</ul>
+      {/if}
+    </div>
+  </div>
+
+  <div class="setting-row" id="setting-download-destination" tabindex="-1">
+    <div class="row-text"><span class="row-label">{$t("settings.ask_download_destination")}</span><span class="row-desc">{$t("settings.ask_download_destination_description")}</span></div>
+    <input type="checkbox" checked={$askDownloadDestination} aria-label={$t("settings.ask_download_destination")} onchange={event => void setAskDownloadDestination(event.currentTarget.checked).catch(() => {})} />
+  </div>
 </section>
+
+<style>
+  .domain-editor { display: grid; gap: 6px; min-width: min(320px, 48%); }
+  .domain-editor form { display: flex; gap: 6px; }
+  .domain-editor input { min-width: 0; width: 100%; }
+  .domain-editor button, .domain-editor li button { flex: 0 0 auto; }
+  .domain-editor ul { display: flex; flex-wrap: wrap; gap: 5px; list-style: none; padding: 0; margin: 0; }
+  .domain-editor li { display: flex; align-items: center; gap: 5px; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 2px 5px 2px 8px; }
+  .domain-editor li button { border: 0; background: transparent; color: inherit; }
+  .domain-error { color: var(--status-danger, #e55); }
+  @media (max-width: 700px) { .domain-editor { width: 100%; min-width: 0; } }
+</style>

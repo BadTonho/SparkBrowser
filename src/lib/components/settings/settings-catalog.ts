@@ -115,6 +115,8 @@ export const searchableSettings: SearchEntry[] = [
     targetId: "setting-auto-hibernate",
     keywords: "performance memory ram 5m 10m 30m auto frequent frequently used 7 days 5 hours disabled off",
   },
+  { id: "hibernate-exceptions", title: "Hibernation exceptions", description: "Keep selected domains and subdomains out of automatic hibernation.", category: "performance_privacy", targetId: "setting-hibernation-exceptions", keywords: "performance memory ram domain exclude exception" },
+  { id: "ask-download-destination", title: "Ask download location", description: "Choose a destination before each download starts.", category: "performance_privacy", targetId: "setting-download-destination", keywords: "download save folder path location" },
   { id: "site-zoom", title: "Page zoom", description: "Reset page zoom", category: "search_navigation", targetId: "zoom-heading", keywords: "zoom origin site scale" },
   ...SHORTCUT_DEFINITIONS.map((shortcut) => ({
     id: `setting-${shortcut.id}`,

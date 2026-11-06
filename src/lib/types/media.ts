@@ -13,4 +13,4 @@ export interface TabMediaState {
   frames: FrameMedia[];
   capabilities: MediaCapabilities;
 }
-export interface MediaSnapshot { revision: number; tabs: TabMediaState[] }
+export interface MediaSnapshot { revision: number; tabs: TabMediaState[]; frame_tracking_supported?: boolean }

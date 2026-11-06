@@ -2,6 +2,7 @@ use super::{files, manager::DownloadManager};
 use crate::state::browser_state::BrowserState;
 use std::{path::PathBuf, sync::Mutex};
 use tauri::{webview::DownloadEvent, AppHandle, Manager};
+use tauri_plugin_dialog::DialogExt;
 struct Pending {
     id: String,
     url: String,
@@ -44,6 +45,23 @@ pub fn handler(
                     {
                         return Err("downloads.blocked".into());
                     }
+                    let selected_target = if app
+                        .state::<BrowserState>()
+                        .ask_download_destination
+                        .load(std::sync::atomic::Ordering::Acquire)
+                    {
+                        let selected = app
+                            .dialog()
+                            .file()
+                            .set_file_name(super::transfer::file_name(&url))
+                            .blocking_save_file();
+                        let Some(path) = selected else {
+                            return Err("downloads.cancelled".into());
+                        };
+                        Some(path.into_path().map_err(|_| "downloads.invalid_target")?)
+                    } else {
+                        None
+                    };
                     let permit = manager
                         .slots
                         .clone()
@@ -55,6 +73,7 @@ pub fn handler(
                         url.to_string(),
                         super::transfer::file_name(&url),
                         true,
+                        selected_target,
                         None,
                     )?;
                     let path = files::owned_partial(&manager.record(&task.id)?)?;
@@ -72,6 +91,9 @@ pub fn handler(
                     Ok(())
                 })();
                 if let Err(error) = result {
+                    if error == "downloads.cancelled" {
+                        return false;
+                    }
                     let _ = crate::security::emit_shell(&app, "browser-error", error);
                     return false;
                 }

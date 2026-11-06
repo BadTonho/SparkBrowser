@@ -85,7 +85,8 @@ export async function startDownloadFromUrl(url: string, expectedSha256: string |
 
   if (!isTauriRuntime()) throw new Error("Downloads require the desktop application.");
 
-  applyTask(await enqueueDownloadUrl(trimmed, expectedSha256));
+  const task = await enqueueDownloadUrl(trimmed, expectedSha256);
+  if (task) applyTask(task);
 }
 
 export async function wipeDownloads(): Promise<void> {

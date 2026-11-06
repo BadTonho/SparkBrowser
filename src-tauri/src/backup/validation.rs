@@ -62,6 +62,17 @@ pub fn preferences(p: &BackupPreferences) -> Result<(), String> {
         }
     }
     let mut bindings = HashSet::new();
+    let mut hibernation_domains = HashSet::new();
+    if p.hibernation_exemptions.len() > 256 {
+        return Err("backup.invalid_preferences".into());
+    }
+    for domain in &p.hibernation_exemptions {
+        let normalized = crate::state::tab_model::normalize_hibernation_domain(domain)
+            .map_err(|_| "backup.invalid_preferences")?;
+        if normalized != *domain || !hibernation_domains.insert(domain) {
+            return Err("backup.invalid_preferences".into());
+        }
+    }
     if !["horizontal", "vertical"].contains(&p.tab_layout.as_str())
         || p.overlay_blur_px > 24
         || !["toolbar", "popup"].contains(&p.workspace_switcher_display.as_str())

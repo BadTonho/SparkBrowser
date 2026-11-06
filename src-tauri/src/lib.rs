@@ -78,7 +78,8 @@ use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_ephemeral_tab, create_tab, get_tabs,
     get_tabs_memory, hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace, reorder_tabs,
-    set_resident_limit, set_tab_pinned, switch_tab,
+    set_ask_download_destination, set_hibernation_exemptions, set_resident_limit, set_tab_pinned,
+    switch_tab,
 };
 use commands::updates::{
     check_for_updates, download_update, get_update_state, install_update, set_update_channel,
@@ -328,6 +329,8 @@ pub fn run() {
             get_tabs,
             get_tabs_memory,
             set_resident_limit,
+            set_hibernation_exemptions,
+            set_ask_download_destination,
             set_tab_pinned,
             create_tab,
             create_ephemeral_tab,

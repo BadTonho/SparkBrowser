@@ -26,6 +26,31 @@ pub struct Theme {
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct MediaItem {
+    tab_id: String,
+    tab_title: String,
+    workspace_name: String,
+    frame_label: String,
+    playing: bool,
+    audible: bool,
+    muted: bool,
+    mute_available: bool,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MediaLabels {
+    title: String,
+    playing: String,
+    audible: String,
+    mute: String,
+    unmute: String,
+    no_media: String,
+    frame_limit: String,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Presentation {
     tab_id: String,
     document_key: String,
@@ -35,6 +60,9 @@ pub struct Presentation {
     label: String,
     locale: String,
     theme: Theme,
+    items: Vec<MediaItem>,
+    frame_tracking_supported: bool,
+    labels: MediaLabels,
 }
 
 struct Session {
@@ -64,6 +92,7 @@ struct Action {
     action: String,
     value: Option<u16>,
     reason: String,
+    target_tab_id: Option<String>,
 }
 
 fn blocked(state: &BrowserState) -> bool {
@@ -97,6 +126,7 @@ fn action(session: &Session, name: &str, value: Option<u16>, reason: &str) -> Ac
         action: name.into(),
         value,
         reason: reason.into(),
+        target_tab_id: None,
     }
 }
 
@@ -257,6 +287,13 @@ pub fn set(
         || anchor.width <= 0.0
         || anchor.height <= 0.0
         || presentation.volume > 200
+        || presentation.items.len() > 128
+        || presentation.items.iter().any(|item| {
+            item.tab_id.len() > 128
+                || item.tab_title.len() > 500
+                || item.workspace_name.len() > 120
+                || item.frame_label.len() > 120
+        })
     {
         return Err("Invalid media popover presentation".into());
     }

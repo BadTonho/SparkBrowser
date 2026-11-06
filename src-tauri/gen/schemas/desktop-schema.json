@@ -735,6 +735,12 @@
           "markdownDescription": "Enables the search_page_notes command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_ask_download_destination command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-ask-download-destination",
+          "markdownDescription": "Enables the set_ask_download_destination command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_auto_skip_ads command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-auto-skip-ads",
@@ -757,6 +763,12 @@
           "type": "string",
           "const": "allow-set-downloads-popover",
           "markdownDescription": "Enables the set_downloads_popover command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_hibernation_exemptions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-hibernation-exemptions",
+          "markdownDescription": "Enables the set_hibernation_exemptions command without any pre-configured scope."
         },
         {
           "description": "Enables the set_history_overlay command without any pre-configured scope.",
@@ -1509,6 +1521,12 @@
           "markdownDescription": "Denies the search_page_notes command without any pre-configured scope."
         },
         {
+          "description": "Denies the set_ask_download_destination command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-ask-download-destination",
+          "markdownDescription": "Denies the set_ask_download_destination command without any pre-configured scope."
+        },
+        {
           "description": "Denies the set_auto_skip_ads command without any pre-configured scope.",
           "type": "string",
           "const": "deny-set-auto-skip-ads",
@@ -1531,6 +1549,12 @@
           "type": "string",
           "const": "deny-set-downloads-popover",
           "markdownDescription": "Denies the set_downloads_popover command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_hibernation_exemptions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-hibernation-exemptions",
+          "markdownDescription": "Denies the set_hibernation_exemptions command without any pre-configured scope."
         },
         {
           "description": "Denies the set_history_overlay command without any pre-configured scope.",

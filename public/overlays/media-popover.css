@@ -6,9 +6,9 @@
 #media-popover {
   position: fixed;
   box-sizing: border-box;
-  width: 200px;
+  width: 320px;
   max-width: calc(100vw - 16px);
-  height: 64px;
+  max-height: min(440px, calc(100vh - 16px));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -28,6 +28,16 @@ input {
 }
 input:disabled { opacity: .45; cursor: default; }
 input:focus-visible { outline: 2px solid var(--popover-accent, #e5e5e5); outline-offset: 2px; border-radius: 4px; }
+#media-title { align-self: flex-start; margin: 0 0 2px; color: #f5f5f5; font: 600 13px/18px system-ui, sans-serif; }
+#media-frame-note, #media-empty { margin: 4px 0; color: #aaa; font: 11px/15px system-ui, sans-serif; }
+#media-items { display: grid; gap: 4px; width: 100%; min-height: 0; overflow-y: auto; }
+.media-item { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--popover-border, #ffffff20); padding-top: 5px; }
+.media-select { display: grid; gap: 2px; min-width: 0; flex: 1; padding: 3px; border: 0; background: transparent; color: #eee; text-align: left; cursor: pointer; }
+.media-select strong, .media-select span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.media-select strong { font: 600 11px/14px system-ui, sans-serif; }
+.media-select span { color: #aaa; font: 10px/13px system-ui, sans-serif; }
+.media-mute { padding: 4px 6px; border: 1px solid var(--popover-border, #ffffff20); border-radius: 5px; background: transparent; color: #ddd; font: 10px system-ui, sans-serif; cursor: pointer; }
+#media-popover button:focus-visible { outline: 2px solid var(--popover-accent, #e5e5e5); outline-offset: 1px; }
 #volume-percentage {
   color: #c9c9ce;
   font: 12px/16px system-ui, sans-serif;

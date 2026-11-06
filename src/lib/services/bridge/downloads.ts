@@ -10,8 +10,8 @@ export async function fetchDownloads(): Promise<DownloadItem[]> {
   return await invoke<DownloadItem[]>("get_downloads");
 }
 
-export async function enqueueDownloadUrl(url: string, expectedSha256: string | null = null): Promise<DownloadTask> {
-  return await invoke<DownloadTask>("enqueue_download", { url, expectedSha256 });
+export async function enqueueDownloadUrl(url: string, expectedSha256: string | null = null): Promise<DownloadTask | null> {
+  return await invoke<DownloadTask | null>("enqueue_download", { url, expectedSha256 });
 }
 
 export async function fetchDownloadTasks(): Promise<DownloadTask[]> {

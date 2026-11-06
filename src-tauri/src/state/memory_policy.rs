@@ -1,11 +1,15 @@
 use super::tab_model::TabInfo;
 
 /// A soft cap: protected tabs are never discarded to satisfy the target.
-pub fn enforce_resident_limit(tabs: &mut [TabInfo], limit: usize) -> usize {
+pub fn enforce_resident_limit(tabs: &mut [TabInfo], limit: usize, exemptions: &[String]) -> usize {
     let mut resident = tabs.iter().filter(|tab| !tab.is_hibernated).count();
     let mut candidates: Vec<_> = tabs
         .iter_mut()
-        .filter(|tab| !tab.is_hibernated && !tab.protected_from_hibernation())
+        .filter(|tab| {
+            !tab.is_hibernated
+                && !tab.protected_from_hibernation()
+                && !super::tab_model::hibernation_domain_matches(&tab.url, exemptions)
+        })
         .collect();
     candidates.sort_by(|a, b| {
         a.last_active_epoch
@@ -44,10 +48,10 @@ mod tests {
         tabs[2].activity.playing_media = true;
         tabs[3].is_pinned = true;
         tabs[4].activity.downloading = true;
-        assert_eq!(enforce_resident_limit(&mut tabs, 6), 1);
+        assert_eq!(enforce_resident_limit(&mut tabs, 6, &[]), 1);
         assert!(tabs[5].is_hibernated);
         assert!(!tabs[6].is_hibernated);
-        assert_eq!(enforce_resident_limit(&mut tabs, 1), 1);
+        assert_eq!(enforce_resident_limit(&mut tabs, 1, &[]), 1);
         assert!(tabs[..5].iter().all(|tab| !tab.is_hibernated));
     }
 }

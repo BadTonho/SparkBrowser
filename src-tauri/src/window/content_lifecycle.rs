@@ -125,6 +125,10 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
         state
             .resident_limit
             .load(std::sync::atomic::Ordering::Relaxed),
+        &state
+            .hibernation_exemptions
+            .lock()
+            .map_err(|e| e.to_string())?,
     );
     let bounds = state.bounds.lock().map(|b| *b).unwrap_or_default();
     let workspace_switcher_open = state

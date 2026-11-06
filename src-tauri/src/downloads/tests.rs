@@ -71,15 +71,26 @@ fn publishing_preserves_existing_files_and_recovers_after_rename() {
     record.task.actual_sha256 = Some(hash);
     let target = std::path::Path::new(record.task.save_path.as_ref().unwrap());
     std::fs::write(target, b"existing user file").unwrap();
-    assert!(files::publish(&record).is_err());
+    let published = files::publish(&record).unwrap();
     assert_eq!(std::fs::read(target).unwrap(), b"existing user file");
-    assert!(partial.exists());
-    std::fs::remove_file(target).unwrap();
-    files::publish(&record).unwrap();
     assert!(!partial.exists());
-    files::publish(&record).unwrap();
-    std::fs::write(target, b"changed").unwrap();
+    assert_eq!(std::fs::read(&published).unwrap(), b"fixture payload");
+    record.task.save_path = Some(published.to_string_lossy().into());
+    assert_eq!(files::publish(&record).unwrap(), published);
+    std::fs::write(&published, b"changed").unwrap();
     assert!(files::publish(&record).is_err());
+}
+
+#[test]
+fn selected_paths_are_renamed_without_overwriting() {
+    let root = tempfile::tempdir().unwrap();
+    let root = std::fs::canonicalize(root.path()).unwrap();
+    let selected = root.join("report.txt");
+    std::fs::write(&selected, b"keep").unwrap();
+    assert_eq!(
+        files::available_target(&selected).unwrap(),
+        root.join("report (1).txt")
+    );
 }
 #[test]
 fn capabilities_require_valid_identity_and_checksum_input() {

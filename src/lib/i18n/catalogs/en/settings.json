@@ -260,5 +260,13 @@
   "settings.compact_toolbar": "Use compact mode",
   "settings.compact_toolbar_description": "Use the current smaller size for the top toolbar and its controls.",
   "settings.rounded_content_frame": "Show rounded content corners",
-  "settings.rounded_content_frame_description": "Show the border, rounded corners and shadow around the main WebView area."
+  "settings.rounded_content_frame_description": "Show the border, rounded corners and shadow around the main WebView area.",
+  "settings.hibernate_exceptions": "Hibernation exceptions",
+  "settings.hibernate_exceptions_description": "Keep these domains and their subdomains out of automatic hibernation.",
+  "settings.domain_placeholder": "example.com",
+  "settings.add_domain": "Add domain",
+  "settings.invalid_domain": "Enter a valid hostname that is not already listed.",
+  "settings.remove_domain": "Remove {domain}",
+  "settings.ask_download_destination": "Ask where to save each download",
+  "settings.ask_download_destination_description": "Choose a file location before a download starts."
 }

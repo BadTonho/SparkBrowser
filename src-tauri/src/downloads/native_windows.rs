@@ -6,6 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, Manager};
+use tauri_plugin_dialog::DialogExt;
 use webview2_com::{
     BytesReceivedChangedEventHandler, CoTaskMemPWSTR, DownloadStartingEventHandler,
     Microsoft::Web::WebView2::Win32::*, StateChangedEventHandler,
@@ -82,6 +83,119 @@ fn state_changed(
             t.error = None;
         });
     }
+    Ok(())
+}
+
+fn start_native_download(
+    app: &AppHandle,
+    label: &str,
+    tab_id: &str,
+    token: &str,
+    args: &ICoreWebView2DownloadStartingEventArgs,
+    operation: ICoreWebView2DownloadOperation,
+    url: String,
+    parsed: tauri::Url,
+    target: Option<std::path::PathBuf>,
+) -> Result<(), String> {
+    if !matches!(parsed.scheme(), "http" | "https" | "blob")
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || crate::privacy::adblock_engine::should_block_url(
+            &url,
+            *app.state::<BrowserState>()
+                .shield_enabled
+                .lock()
+                .map_err(|e| e.to_string())?,
+        )
+    {
+        return Err("downloads.blocked".into());
+    }
+    let manager = app.state::<DownloadManager>();
+    let permit = manager
+        .slots
+        .clone()
+        .try_acquire_owned()
+        .map_err(|_| "downloads.slots_busy")?;
+    let task = manager.register(
+        app,
+        tab_id.to_owned(),
+        url,
+        super::transfer::file_name(&parsed),
+        true,
+        target,
+        None,
+    )?;
+    let path = files::owned_partial(&manager.record(&task.id)?)?;
+    let raw = path.to_string_lossy();
+    let native_path = if let Some(unc) = raw.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{unc}")
+    } else {
+        raw.strip_prefix(r"\\?\").unwrap_or(&raw).to_string()
+    };
+    unsafe {
+        args.SetResultFilePath(&windows_core::HSTRING::from(native_path.as_str()))
+            .map_err(|e| e.to_string())?;
+        args.SetHandled(true).map_err(|e| e.to_string())?;
+    }
+    OPERATIONS.with(|map| {
+        map.borrow_mut().insert(
+            task.id.clone(),
+            Operation {
+                core: operation.clone(),
+                label: label.to_owned(),
+                token: token.to_owned(),
+                permit: Some(permit),
+                last: Instant::now() - Duration::from_secs(1),
+            },
+        );
+    });
+    let (a1, id1) = (app.clone(), task.id.clone());
+    let progress = BytesReceivedChangedEventHandler::create(Box::new(move |sender, _| {
+        if !valid(&a1, &id1) {
+            return Ok(());
+        }
+        let emit = OPERATIONS.with(|map| {
+            map.borrow_mut().get_mut(&id1).is_some_and(|v| {
+                if v.last.elapsed() < Duration::from_millis(100) {
+                    false
+                } else {
+                    v.last = Instant::now();
+                    true
+                }
+            })
+        });
+        if emit {
+            if let Some(core) = sender {
+                let (mut received, mut total) = (0, 0);
+                unsafe {
+                    core.BytesReceived(&mut received)?;
+                    core.TotalBytesToReceive(&mut total)?;
+                }
+                a1.state::<DownloadManager>().update(&a1, &id1, |t| {
+                    t.received = received.max(0) as u64;
+                    t.total = (total >= 0).then_some(total as u64);
+                });
+            }
+        }
+        Ok(())
+    }));
+    let (a2, id2) = (app.clone(), task.id.clone());
+    let changed = StateChangedEventHandler::create(Box::new(move |sender, _| {
+        if let Some(core) = sender {
+            state_changed(&a2, &id2, &core)?;
+        }
+        Ok(())
+    }));
+    unsafe {
+        operation
+            .add_BytesReceivedChanged(&progress, &mut 0)
+            .map_err(|e| e.to_string())?;
+        operation
+            .add_StateChanged(&changed, &mut 0)
+            .map_err(|e| e.to_string())?;
+    }
+    manager.native_capability(app, &task.id, true, false);
+    manager.refresh_protection(app, tab_id);
     Ok(())
 }
 pub fn install(
@@ -168,6 +282,35 @@ pub fn install(
                     {
                         return Err("downloads.blocked".into());
                     }
+                    if a.state::<BrowserState>()
+                        .ask_download_destination
+                        .load(std::sync::atomic::Ordering::Acquire)
+                    {
+                        let selected = a
+                            .dialog()
+                            .file()
+                            .set_file_name(super::transfer::file_name(&parsed))
+                            .blocking_save_file();
+                        let Some(path) = selected else {
+                            unsafe {
+                                let _ = args.SetCancel(true);
+                            }
+                            return Ok(());
+                        };
+                        let target = path.into_path().map_err(|_| "downloads.invalid_target")?;
+                        start_native_download(
+                            &a,
+                            &label,
+                            &tab_id,
+                            &token,
+                            &args,
+                            operation,
+                            url,
+                            parsed,
+                            Some(target),
+                        )?;
+                        return Ok(());
+                    }
                     let manager = a.state::<DownloadManager>();
                     let permit = manager
                         .slots
@@ -180,6 +323,7 @@ pub fn install(
                         url,
                         super::transfer::file_name(&parsed),
                         true,
+                        None,
                         None,
                     )?;
                     registered = Some(task.id.clone());

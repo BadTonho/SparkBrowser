@@ -7,16 +7,20 @@ const source = readFileSync(new URL('../public/overlays/media-popover.js', impor
 
 function fixture() {
   const listeners = new Map();
+  let elementSequence = 0;
   const makeElement = id => ({
-    id, style: { setProperty(name, value) { this[name] = value; } }, attributes: {},
-    offsetWidth: 200, offsetHeight: 64, hidden: true, value: '100', disabled: false,
+    key: id, id: `${id}-${++elementSequence}`, style: { setProperty(name, value) { this[name] = value; } }, attributes: {}, listeners: new Map(),
+    offsetWidth: 320, offsetHeight: 150, hidden: true, value: '100', disabled: false, children: [],
     setAttribute(name, value) { this.attributes[name] = value; },
-    addEventListener(type, handler) { listeners.set(`${id}:${type}`, handler); },
-    contains(target) { return target === this || target === slider || target === percentage; },
+    addEventListener(type, handler) { this.listeners.set(type, handler); listeners.set(`${id}:${type}`, handler); },
+    contains(target) { return target === this || target === slider || target === percentage || target === items; },
+    replaceChildren(...children) { this.children = children; },
+    append(...children) { this.children.push(...children); },
     focus() { document.activeElement = this; },
   });
   const popover = makeElement('media-popover'), slider = makeElement('page-volume'), percentage = makeElement('volume-percentage');
-  const document = { documentElement: {}, getElementById: id => [popover, slider, percentage].find(element => element.id === id),
+  const title = makeElement('media-title'), items = makeElement('media-items'), empty = makeElement('media-empty'), frameNote = makeElement('media-frame-note');
+  const document = { documentElement: {}, createElement: id => makeElement(id), getElementById: id => [popover, slider, percentage, title, items, empty, frameNote].find(element => element.key === id),
     addEventListener: (type, handler) => listeners.set(`document:${type}`, handler) };
   const sent = [], frames = new Map();
   let nextFrame = 0;
@@ -29,28 +33,50 @@ function fixture() {
   context.window = context;
   runInNewContext(source, context);
   const payload = { visible: true, token: 'artificial-session', anchor: { left: 400, top: 30, width: 25, height: 25 },
-    volume: 100, disabled: false, locale: 'pt-BR', label: 'Volume', theme: { accent: '#eee' } };
+    volume: 100, disabled: false, locale: 'pt-BR', label: 'Media', theme: { accent: '#eee' },
+    labels: { title: 'Media controls', playing: 'Playing', audible: 'Audible', mute: 'Mute', unmute: 'Unmute', noMedia: 'No media', frameLimit: 'Frames unavailable' },
+    items: [], frameTrackingSupported: true };
   const update = patch => context.__veloceSetMediaPopover({ ...payload, ...patch });
   const fire = (target, type, event = {}) => listeners.get(`${target}:${type}`)?.(event);
   const frame = () => { const callbacks = [...frames.values()]; frames.clear(); for (const callback of callbacks) callback(); };
-  return { popover, slider, percentage, document, sent, update, fire, frame, context };
+  return { popover, slider, percentage, title, items, empty, frameNote, document, sent, update, fire, frame, context };
 }
 
 test('popover anchors six pixels below the button and clamps to the window', () => {
   const f = fixture(); f.update();
   assert.equal(f.popover.style.top, '61px');
-  assert.equal(f.popover.style.left, '312.5px');
+  assert.equal(f.popover.style.left, '252.5px');
   assert.equal(f.document.activeElement, f.slider);
   assert.equal(f.document.documentElement.lang, 'pt-BR');
-  assert.equal(f.slider.attributes['aria-label'], 'Volume');
+  assert.equal(f.slider.attributes['aria-label'], 'Media');
   assert.equal(f.slider.attributes['aria-valuetext'], '100%');
   assert.equal(f.percentage.textContent, '100%');
   f.update({ anchor: { left: 790, top: 590, width: 25, height: 25 } });
-  assert.equal(f.popover.style.left, '592px');
-  assert.equal(f.popover.style.top, '528px');
+  assert.equal(f.popover.style.left, '472px');
+  assert.equal(f.popover.style.top, '442px');
   f.update({ anchor: { left: -50, top: -90, width: 25, height: 25 } });
   assert.equal(f.popover.style.left, '8px');
   assert.equal(f.popover.style.top, '8px');
+});
+
+test('global media rows are rendered as text and emit authenticated tab actions', () => {
+  const f = fixture();
+  f.update({ items: [{ tabId: 'tab-2', tabTitle: '<Video>', workspaceName: 'Work', frameLabel: 'Frame 1', playing: true, audible: true, muted: false, muteAvailable: true }] });
+  assert.equal(f.title.textContent, 'Media controls');
+  assert.equal(f.items.children.length, 1);
+  const row = f.items.children[0];
+  const select = row.children[0];
+  select.listeners.get('click')();
+  assert.equal(f.sent[0].pathname, '/select');
+  assert.equal(f.sent[0].searchParams.get('targetTabId'), 'tab-2');
+  const mute = row.children[1];
+  mute.listeners.get('click')();
+  assert.equal(f.sent[1].pathname, '/mute');
+  assert.equal(f.sent[1].searchParams.get('targetTabId'), 'tab-2');
+  assert.equal(f.empty.hidden, true);
+  f.update({ items: [], frameTrackingSupported: false });
+  assert.equal(f.empty.hidden, false);
+  assert.equal(f.frameNote.hidden, false);
 });
 
 test('rapid input coalesces and dismissal carries the final value before the next frame', () => {

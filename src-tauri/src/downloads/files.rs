@@ -43,6 +43,36 @@ pub fn owned_partial(record: &DownloadRecord) -> Result<PathBuf, String> {
     }
     Ok(file)
 }
+
+pub fn available_target(selected: &Path) -> Result<PathBuf, String> {
+    if !selected.is_absolute() || selected.file_name().is_none() {
+        return Err("downloads.invalid_target".into());
+    }
+    let parent = selected.parent().ok_or("downloads.invalid_target")?;
+    let parent = std::fs::canonicalize(parent).map_err(|_| "downloads.invalid_target")?;
+    let name = selected
+        .file_name()
+        .ok_or("downloads.invalid_target")?
+        .to_string_lossy();
+    for index in 0..10_000u32 {
+        let candidate_name = if index == 0 {
+            name.to_string()
+        } else {
+            let path = Path::new(name.as_ref());
+            let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+            let extension = path
+                .extension()
+                .map(|value| format!(".{}", value.to_string_lossy()))
+                .unwrap_or_default();
+            format!("{stem} ({index}){extension}")
+        };
+        let candidate = parent.join(candidate_name);
+        if !candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+    Err("downloads.too_many_collisions".into())
+}
 pub fn hash(path: &Path, limit: Option<u64>) -> Result<(u64, String), String> {
     let file = std::fs::File::open(path).map_err(|_| "downloads.file_missing")?;
     let mut reader = file.take(limit.unwrap_or(u64::MAX));
@@ -59,7 +89,7 @@ pub fn hash(path: &Path, limit: Option<u64>) -> Result<(u64, String), String> {
     }
     Ok((count, format!("{:x}", hash.finalize())))
 }
-pub fn publish(record: &DownloadRecord) -> Result<(), String> {
+pub fn publish(record: &DownloadRecord) -> Result<PathBuf, String> {
     let partial = owned_partial(record)?;
     let target = PathBuf::from(
         record
@@ -74,15 +104,26 @@ pub fn publish(record: &DownloadRecord) -> Result<(), String> {
     if !partial.exists() {
         let (size, actual) = hash(&target, None)?;
         if size == record.confirmed && Some(&actual) == record.task.actual_sha256.as_ref() {
-            return Ok(());
+            return Ok(target);
         }
         return Err("downloads.file_changed".into());
     }
     let path = tempfile::TempPath::try_from_path(partial).map_err(|e| e.to_string())?;
-    if let Err(error) = path.persist_noclobber(target) {
-        let message = error.error.to_string();
-        let _ = error.path.keep();
-        return Err(format!("downloads.publish_failed: {message}"));
+    let mut path = path;
+    for _ in 0..10_000 {
+        let candidate = available_target(&target)?;
+        match path.persist_noclobber(&candidate) {
+            Ok(_) => return Ok(candidate),
+            Err(error) if error.error.kind() == std::io::ErrorKind::AlreadyExists => {
+                path = error.path;
+            }
+            Err(error) => {
+                let message = error.error.to_string();
+                let _ = error.path.keep();
+                return Err(format!("downloads.publish_failed: {message}"));
+            }
+        }
     }
-    Ok(())
+    let _ = path.keep();
+    Err("downloads.too_many_collisions".into())
 }

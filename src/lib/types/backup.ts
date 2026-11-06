@@ -10,6 +10,7 @@ export interface BackupPreferences {
   tab_layout: TabLayout; show_bookmarks_bar: boolean; overlay_blur_px: number;
   workspace_switcher_display: WorkspaceSwitcherDisplay; default_search_engine: "google" | "duckduckgo";
   auto_hibernate_mode: AutoHibernateMode; resident_limit: number; language: LanguagePreference;
+  hibernation_exemptions?: string[]; ask_download_destination?: boolean;
   site_zoom?: import("./zoom").SiteZoom[];
   keyboard_shortcuts: ShortcutMap; update_channel: UpdateChannel;
 }

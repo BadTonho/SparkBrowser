@@ -46,6 +46,12 @@ export async function syncViewportBounds(bounds: ViewportBounds): Promise<void> 
 export async function setResidentLimit(limit: number): Promise<TabSnapshot> {
   return isTauriRuntime() ? invoke<TabSnapshot>("set_resident_limit", { limit }) : [];
 }
+export async function setHibernationExemptions(domains: string[]): Promise<TabSnapshot> {
+  return isTauriRuntime() ? invoke<TabSnapshot>("set_hibernation_exemptions", { domains }) : [];
+}
+export async function setAskDownloadDestination(enabled: boolean): Promise<void> {
+  if (isTauriRuntime()) await invoke<void>("set_ask_download_destination", { enabled });
+}
 export async function setTabPinned(tabId: string, pinned: boolean): Promise<TabSnapshot> {
   return invoke<TabSnapshot>("set_tab_pinned", { tabId, pinned });
 }

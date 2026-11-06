@@ -64,7 +64,13 @@ impl DownloadManager {
         for mut record in records {
             if record.task.status == "Finalizing" {
                 match files::publish(&record) {
-                    Ok(()) => {
+                    Ok(path) => {
+                        record.task.file_name = path
+                            .file_name()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .to_string();
+                        record.task.save_path = Some(path.to_string_lossy().into());
                         record.published = true;
                         record.task.status = "Completed".into();
                         self.commit_completed(app, &record)?;
@@ -131,6 +137,7 @@ impl DownloadManager {
         url: String,
         name: String,
         native: bool,
+        selected_target: Option<std::path::PathBuf>,
         expected: Option<String>,
     ) -> Result<DownloadTask, String> {
         if app
@@ -156,7 +163,23 @@ impl DownloadManager {
             "download-{}",
             crate::window::webview_manager::create_internal_bridge_token()
         );
-        let directory = files::directory(app)?;
+        let (directory, save_path, file_name) = if let Some(target) = selected_target {
+            let target = files::available_target(&target)?;
+            let parent = target.parent().ok_or("downloads.invalid_target")?;
+            let directory =
+                std::fs::canonicalize(parent).map_err(|_| "downloads.invalid_target")?;
+            let target = directory.join(target.file_name().ok_or("downloads.invalid_target")?);
+            let file_name = target
+                .file_name()
+                .ok_or("downloads.invalid_target")?
+                .to_string_lossy()
+                .to_string();
+            (directory, target, file_name)
+        } else {
+            let directory = files::directory(app)?;
+            let target = directory.join(format!("{id}-{name}"));
+            (directory, target, name)
+        };
         let page = app
             .state::<BrowserState>()
             .snapshot_tabs()
@@ -166,7 +189,7 @@ impl DownloadManager {
         let task = DownloadTask {
             id: id.clone(),
             revision: 1,
-            file_name: name.clone(),
+            file_name: file_name.clone(),
             url,
             source: if native { "native" } else { "url" }.into(),
             source_page_url: page,
@@ -179,12 +202,7 @@ impl DownloadManager {
             can_resume: false,
             can_restart: false,
             can_verify: false,
-            save_path: Some(
-                directory
-                    .join(format!("{id}-{name}"))
-                    .to_string_lossy()
-                    .into(),
-            ),
+            save_path: Some(save_path.to_string_lossy().into()),
             expected_sha256: expected,
             actual_sha256: None,
             verification_received: 0,
@@ -297,6 +315,7 @@ impl DownloadManager {
         app: &AppHandle,
         url: &str,
         expected: Option<String>,
+        target: Option<std::path::PathBuf>,
     ) -> Result<DownloadTask, String> {
         let url = super::transfer::validate_download_url(url)?;
         self.check_policy(app, url.as_str())?;
@@ -312,6 +331,7 @@ impl DownloadManager {
             url.to_string(),
             super::transfer::file_name(&url),
             false,
+            target,
             expected,
         )?;
         self.start(app, &task.id, false)?;
@@ -337,7 +357,13 @@ impl DownloadManager {
     }
     pub fn complete(&self, app: &AppHandle, id: &str) -> Result<(), String> {
         let mut record = self.record(id)?;
-        files::publish(&record)?;
+        let published_path = files::publish(&record)?;
+        record.task.file_name = published_path
+            .file_name()
+            .ok_or("downloads.invalid_target")?
+            .to_string_lossy()
+            .to_string();
+        record.task.save_path = Some(published_path.to_string_lossy().into());
         record.published = true;
         record.task.status = "Completed".into();
         record.task.error = None;

@@ -75,7 +75,7 @@ export async function checkMediaVolume(context) {
   await click('[data-testid=open-media]');
   await until(()=>script('return document.querySelector("[data-testid=open-media]")?.getAttribute("aria-expanded")==="true"'),'popover follows focused pane');
   await withWebview('/media-popover.html',async()=>{
-    await until(()=>script('return !document.querySelector("#media-popover").hidden && document.querySelector("input").disabled'),'unavailable focused pane shows only disabled slider');
+    await until(()=>script('return !document.querySelector("#media-popover").hidden && document.querySelector("input").disabled'),'unavailable focused pane keeps the volume slider disabled');
     await script('window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
   });
   assert.equal((await invoke('get_tab_media')).tabs.find(t=>t.tab_id===other)?.volume,100);

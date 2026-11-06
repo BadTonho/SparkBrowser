@@ -349,6 +349,10 @@ pub async fn hibernate_inactive_tabs(
             state
                 .resident_limit
                 .load(std::sync::atomic::Ordering::Relaxed),
+            &state
+                .hibernation_exemptions
+                .lock()
+                .map_err(|e| e.to_string())?,
         ) > 0;
         Ok(changed)
     })();
@@ -386,11 +390,20 @@ pub async fn auto_hibernate_inactive_tabs(
                 state
                     .resident_limit
                     .load(std::sync::atomic::Ordering::Relaxed),
+                &state
+                    .hibernation_exemptions
+                    .lock()
+                    .map_err(|e| e.to_string())?,
             );
             return Ok(changed > 0);
         };
 
         let now = TabInfo::current_epoch_secs();
+        let exemptions = state
+            .hibernation_exemptions
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
         let active_id = state
             .active_tab_id
             .lock()
@@ -410,7 +423,11 @@ pub async fn auto_hibernate_inactive_tabs(
         let mut changed = false;
         if let Ok(mut tabs) = state.tabs.lock() {
             for tab in tabs.iter_mut() {
-                if tab.id == active_id || tab.is_hibernated || tab.protected_from_hibernation() {
+                if tab.id == active_id
+                    || tab.is_hibernated
+                    || tab.protected_from_hibernation()
+                    || crate::state::tab_model::hibernation_domain_matches(&tab.url, &exemptions)
+                {
                     continue;
                 }
                 let threshold = if adaptive && frequent_tabs.contains(&tab.id) {
@@ -430,6 +447,7 @@ pub async fn auto_hibernate_inactive_tabs(
             state
                 .resident_limit
                 .load(std::sync::atomic::Ordering::Relaxed),
+            &exemptions,
         ) > 0;
         Ok(changed)
     })();
@@ -522,6 +540,54 @@ pub async fn set_resident_limit(
     let snapshot = state.snapshot_packet();
     let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
     Ok(snapshot)
+}
+
+#[tauri::command]
+pub async fn set_hibernation_exemptions(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    domains: Vec<String>,
+) -> Result<TabSnapshot, String> {
+    if domains.len() > 256 {
+        return Err("settings.invalid_hibernation_domain".into());
+    }
+    let mut normalized = Vec::with_capacity(domains.len());
+    for domain in domains {
+        let domain = crate::state::tab_model::normalize_hibernation_domain(&domain)?;
+        if !normalized.contains(&domain) {
+            normalized.push(domain);
+        }
+    }
+    normalized.sort();
+
+    let _operation = state.tab_operations.lock().await;
+    let previous = state
+        .hibernation_exemptions
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
+    *state
+        .hibernation_exemptions
+        .lock()
+        .map_err(|e| e.to_string())? = normalized;
+    if let Err(error) = TabCheckpoint::commit(&state, || Ok(())) {
+        *state
+            .hibernation_exemptions
+            .lock()
+            .map_err(|e| e.to_string())? = previous;
+        return Err(error);
+    }
+    reconcile_committed(&app, &state);
+    let snapshot = state.snapshot_packet();
+    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    Ok(snapshot)
+}
+
+#[tauri::command]
+pub fn set_ask_download_destination(state: State<'_, BrowserState>, enabled: bool) {
+    state
+        .ask_download_destination
+        .store(enabled, std::sync::atomic::Ordering::Release);
 }
 
 #[tauri::command]

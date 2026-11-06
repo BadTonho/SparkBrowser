@@ -66,6 +66,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_tabs",
     "get_tabs_memory",
     "set_resident_limit",
+    "set_hibernation_exemptions",
+    "set_ask_download_destination",
     "set_tab_pinned",
     "create_tab",
     "create_ephemeral_tab",

@@ -3,6 +3,39 @@ use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Url;
 
+pub fn normalize_hibernation_domain(raw: &str) -> Result<String, String> {
+    let input = raw.trim().trim_end_matches('.');
+    if input.is_empty() || input.contains('/') || input.contains('@') || input.contains(':') {
+        return Err("settings.invalid_hibernation_domain".into());
+    }
+    let parsed = Url::parse(&format!("http://{input}/"))
+        .map_err(|_| "settings.invalid_hibernation_domain")?;
+    let host = parsed
+        .host_str()
+        .ok_or("settings.invalid_hibernation_domain")?
+        .trim_end_matches('.')
+        .to_ascii_lowercase();
+    if host.is_empty() || host.contains('/') || host.contains('@') {
+        return Err("settings.invalid_hibernation_domain".into());
+    }
+    Ok(host)
+}
+
+pub fn hibernation_domain_matches(url: &str, exceptions: &[String]) -> bool {
+    let Ok(parsed) = Url::parse(url) else {
+        return false;
+    };
+    let Some(host) = parsed.host_str().map(str::to_ascii_lowercase) else {
+        return false;
+    };
+    exceptions.iter().any(|domain| {
+        host == *domain
+            || host
+                .strip_suffix(domain)
+                .is_some_and(|prefix| prefix.ends_with('.'))
+    })
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TabInfo {
     pub id: String,
@@ -124,4 +157,38 @@ pub fn derive_title_from_url(raw_url: &str) -> String {
 /// Returns the internal Tauri WebView label for a given tab ID.
 pub fn webview_label_for_tab(tab_id: &str) -> String {
     format!("content-webview-{}", tab_id)
+}
+
+#[cfg(test)]
+mod hibernation_domain_tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_domain_and_matches_only_label_boundaries() {
+        let domain = normalize_hibernation_domain(" Example.COM. ").unwrap();
+        assert_eq!(domain, "example.com");
+        assert!(hibernation_domain_matches(
+            "https://example.com/path",
+            &[domain.clone()]
+        ));
+        assert!(hibernation_domain_matches(
+            "https://shop.example.com",
+            &[domain.clone()]
+        ));
+        assert!(!hibernation_domain_matches(
+            "https://notexample.com",
+            &[domain.clone()]
+        ));
+        assert!(!hibernation_domain_matches(
+            "https://example.com.evil",
+            &[domain]
+        ));
+    }
+
+    #[test]
+    fn rejects_non_host_entries() {
+        assert!(normalize_hibernation_domain("").is_err());
+        assert!(normalize_hibernation_domain("https://example.com/path").is_err());
+        assert!(normalize_hibernation_domain("example.com:8080").is_err());
+    }
 }
