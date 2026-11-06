@@ -13,7 +13,7 @@
   onMount(() => { void refresh(); });
 </script>
 <section class="permission-settings" aria-labelledby="site-permissions-heading">
-  <h2 id="site-permissions-heading">{$t("permissions.site_permissions_a688")}</h2>
+  <h2 id="site-permissions-heading" class="group-title">{$t("permissions.site_permissions_a688")}</h2>
   {#if error}<ErrorMessage error={error} />{/if}
   {#if !snapshot}<p>{$t("permissions.loading_native_permissions_cf31")}</p>
   {:else if !snapshot.supported}<p role="status">{$t("common.permissions_unavailable")}</p>
@@ -35,7 +35,7 @@
 </section>
 <style>
   .permission-settings { display: flex; flex-direction: column; gap: 8px; }
-  .permission-settings h2 { display:none; }
+  .permission-settings h2 { display:block; margin:12px 0 2px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--text-muted); }
   .permission-settings > p { margin:0; font-size:11px; }
   .permission-settings label { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height:30px; overflow-wrap: anywhere; font-size:12px; }
   .permission-settings select, .permission-settings button { max-width: 150px; padding: 5px 7px; background: #ffffff10; color: var(--text-primary, #eee); border: 1px solid var(--border-subtle, #555); border-radius: 6px; font:inherit; }

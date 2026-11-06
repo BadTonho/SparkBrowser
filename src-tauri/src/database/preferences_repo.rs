@@ -2,6 +2,9 @@ use rusqlite::{params, Connection, OptionalExtension};
 
 /// Named durable preferences are stored as strings; callers own their validation.
 pub const WORKSPACE_ISOLATION_KEY: &str = "workspace_isolation";
+pub const HISTORY_RETENTION_KEY: &str = "history_retention";
+pub const ALLOW_POPUPS_KEY: &str = "allow_popups";
+pub const SMART_SCREEN_KEY: &str = "smart_screen_enabled";
 
 pub fn initialize_preferences_table(conn: &Connection) -> Result<(), String> {
     crate::database::migrations::apply(conn, "app-preferences-v1", |tx| {
@@ -16,7 +19,7 @@ pub fn initialize_preferences_table(conn: &Connection) -> Result<(), String> {
     })
 }
 
-fn load(conn: &Connection, key: &str) -> Result<Option<String>, String> {
+pub fn load(conn: &Connection, key: &str) -> Result<Option<String>, String> {
     conn.query_row(
         "SELECT value FROM app_preferences WHERE key = ?1",
         [key],

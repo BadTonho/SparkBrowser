@@ -5,6 +5,35 @@ use crate::state::{tab_checkpoint::TabCheckpoint, tab_model::TabInfo};
 use crate::window::webview_manager::sync_all_webviews;
 use tauri::{AppHandle, Manager, State};
 
+pub fn popup_target_allowed(enabled: bool, url: &tauri::Url) -> bool {
+    enabled
+        && matches!(url.scheme(), "http" | "https")
+        && url.host_str().is_some()
+        && url.username().is_empty()
+        && url.password().is_none()
+}
+
+/// Web pop-ups open as normal browser tabs; internal PiP windows are handled separately.
+pub fn open_popup_url(app: AppHandle, url: tauri::Url) {
+    if !popup_target_allowed(
+        app.state::<BrowserState>().allow_popups.load(std::sync::atomic::Ordering::Acquire),
+        &url,
+    ) {
+        return;
+    }
+    tauri::async_runtime::spawn(async move {
+        let state = app.state::<BrowserState>();
+        let _operation = state.tab_operations.lock().await;
+        if !popup_target_allowed(
+            state.allow_popups.load(std::sync::atomic::Ordering::Acquire),
+            &url,
+        ) {
+            return;
+        }
+        let _ = create_tab_inner(&app, &state, Some(url.to_string()), None, None);
+    });
+}
+
 #[tauri::command]
 pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<TabSnapshot, String> {
     let _operation = state.tab_operations.lock().await;
@@ -524,6 +553,22 @@ pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
             "browser-error",
             format!("The session was saved, but a page could not be displayed: {error}"),
         );
+    }
+}
+
+#[cfg(test)]
+mod popup_tests {
+    use super::*;
+
+    #[test]
+    fn popup_policy_allows_only_credential_free_web_urls_when_enabled() {
+        for value in ["https://example.test/path", "http://example.test/"] {
+            assert!(popup_target_allowed(true, &value.parse().unwrap()));
+        }
+        for value in ["about:blank", "javascript:alert(1)", "file:///tmp/file", "https://user:pass@example.test/"] {
+            assert!(!popup_target_allowed(true, &value.parse().unwrap()));
+        }
+        assert!(!popup_target_allowed(false, &"https://example.test/".parse().unwrap()));
     }
 }
 

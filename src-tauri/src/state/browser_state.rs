@@ -64,6 +64,10 @@ pub struct BrowserState {
     pub bookmark_context_menu_actions: Mutex<Vec<String>>,
     pub shield_script_ids: Mutex<std::collections::HashMap<String, String>>,
     pub shield_enabled: Mutex<bool>,
+    pub history_retention_months: std::sync::atomic::AtomicU64,
+    pub allow_popups: AtomicBool,
+    pub smart_screen_enabled: AtomicBool,
+    pub smart_screen_supported: AtomicBool,
     pub auto_skip_ads_enabled: AtomicBool,
     /// Opt-in per-workspace content isolation (own WebView2 data folder each).
     pub workspace_isolation: AtomicBool,
@@ -105,6 +109,10 @@ impl Default for BrowserState {
             bookmark_context_menu_actions: Mutex::new(Vec::new()),
             shield_script_ids: Mutex::new(std::collections::HashMap::new()),
             shield_enabled: Mutex::new(true),
+            history_retention_months: std::sync::atomic::AtomicU64::new(3),
+            allow_popups: AtomicBool::new(false),
+            smart_screen_enabled: AtomicBool::new(true),
+            smart_screen_supported: AtomicBool::new(false),
             auto_skip_ads_enabled: AtomicBool::new(false),
             workspace_isolation: AtomicBool::new(false),
             blocked_count: Mutex::new(0),
@@ -304,10 +312,15 @@ impl BrowserState {
     /// Records a visited URL into the SQLite browsing history table.
     pub fn record_history_visit(&self, title: &str, url: &str) -> Result<(), String> {
         let db = self.db.lock().map_err(|e| e.to_string())?;
+        let retention = crate::database::history_repo::HistoryRetention::from_months(
+            self.history_retention_months
+                .load(std::sync::atomic::Ordering::Acquire),
+        );
         record_visit(
             db.as_ref().ok_or("History database is not ready")?,
             title,
             url,
+            retention,
         )
     }
 

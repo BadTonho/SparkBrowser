@@ -283,6 +283,7 @@ export type SettingsCategory =
   | "search_navigation"
   | "workspaces"
   | "performance_privacy"
+  | "privacy_security"
   | "shortcuts"
   | "diagnostics";
 
@@ -293,6 +294,7 @@ const settingsCategories: SettingsCategory[] = [
   "search_navigation",
   "workspaces",
   "performance_privacy",
+  "privacy_security",
   "shortcuts",
   "diagnostics",
 ];

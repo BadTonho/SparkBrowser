@@ -1,13 +1,11 @@
 <script lang="ts">
   import { t } from "../../i18n";
-import PermissionSettings from "../permissions/PermissionSettings.svelte";
 import {
   autoHibernateMode,
   residentTabLimit,
   setResidentTabLimit,
   setAutoHibernateMode,
 } from "../../stores/settingsStore";
-import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
 const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
 </script>
 
@@ -17,20 +15,6 @@ const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
   <div class="setting-row" id="setting-resident-limit" tabindex="-1">
     <div class="row-text"><span class="row-label">{$t("settings.resident_tab_limit_9a94")}</span><span class="row-desc">{$t("settings.keep_up_to_this_many_webviews_awake_active_pinned_loading_media_download_9f92")}</span></div>
     <input type="number" min="1" max="100" step="1" value={$residentTabLimit} aria-label={$t("settings.resident_tab_limit_e214")} onchange={event => setResidentTabLimit(Number(event.currentTarget.value))} />
-  </div>
-
-  <div class="setting-row" id="setting-adblock-shield" tabindex="-1">
-    <div class="row-text">
-      <span class="row-label">{$t("settings.privacy_shield_10ca")}</span>
-      <span class="row-desc">{$t("settings.filters_known_tracker_hosts_ba80")} {$privacyStats.supports_live_policy_updates ? "Changing protection preserves page state." : "Changing protection reloads tabs and resets page state."}</span>
-    </div>
-    <button
-      class="pill-action"
-      class:active={$privacyStats.shield_enabled}
-      onclick={flipAdblockShield}
-    >
-      {$privacyStats.shield_enabled ? $t("settings.enabled_92c1") : $t("settings.paused_e159")}
-    </button>
   </div>
 
   <div class="setting-row" id="setting-auto-hibernate" tabindex="-1">
@@ -60,5 +44,3 @@ const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
     </div>
   </div>
 </section>
-
-<PermissionSettings />

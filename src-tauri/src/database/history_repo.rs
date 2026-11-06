@@ -2,6 +2,48 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HistoryRetention {
+    OneMonth,
+    ThreeMonths,
+    SixMonths,
+    TwelveMonths,
+    Always,
+}
+
+impl HistoryRetention {
+    pub fn from_preference(value: Option<String>) -> Self {
+        match value.as_deref() {
+            Some("one_month") => Self::OneMonth,
+            Some("six_months") => Self::SixMonths,
+            Some("twelve_months") => Self::TwelveMonths,
+            Some("always") => Self::Always,
+            _ => Self::ThreeMonths,
+        }
+    }
+
+    pub fn months(self) -> Option<u32> {
+        match self {
+            Self::OneMonth => Some(1),
+            Self::ThreeMonths => Some(3),
+            Self::SixMonths => Some(6),
+            Self::TwelveMonths => Some(12),
+            Self::Always => None,
+        }
+    }
+
+    pub fn from_months(months: u64) -> Self {
+        match months {
+            1 => Self::OneMonth,
+            6 => Self::SixMonths,
+            12 => Self::TwelveMonths,
+            0 => Self::Always,
+            _ => Self::ThreeMonths,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistoryEntry {
     pub id: i64,
@@ -16,25 +58,45 @@ pub struct HistoryCursor {
     pub id: i64,
 }
 
-fn current_unix_timestamp() -> i64 {
+pub fn current_unix_timestamp() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0)
 }
 
-pub fn record_visit(conn: &Connection, title: &str, url: &str) -> Result<(), String> {
+pub fn record_visit(
+    conn: &Connection,
+    title: &str,
+    url: &str,
+    retention: HistoryRetention,
+) -> Result<(), String> {
     if url.trim().is_empty() || url.starts_with("about:") {
         return Ok(());
     }
 
     let now = current_unix_timestamp();
+    prune_expired(conn, retention, now)?;
     conn.execute(
         "INSERT INTO history (title, url, visited_at) VALUES (?1, ?2, ?3)",
         params![title, url, now],
     )
     .map_err(|e| format!("Failed to record history visit: {}", e))?;
 
+    Ok(())
+}
+
+pub fn prune_expired(
+    conn: &Connection,
+    retention: HistoryRetention,
+    now: i64,
+) -> Result<(), String> {
+    let Some(months) = retention.months() else {
+        return Ok(());
+    };
+    let cutoff = now.saturating_sub(i64::from(months) * 30 * 24 * 60 * 60);
+    conn.execute("DELETE FROM history WHERE visited_at < ?1", [cutoff])
+        .map_err(|e| format!("Failed to prune browsing history: {e}"))?;
     Ok(())
 }
 
@@ -135,5 +197,43 @@ mod tests {
         let plan: String = conn.query_row("EXPLAIN QUERY PLAN SELECT * FROM history ORDER BY visited_at DESC, id DESC LIMIT 60", [], |row| row.get(3)).unwrap();
         assert!(plan.contains("idx_history_recent"));
         assert!(!plan.contains("TEMP B-TREE"));
+    }
+
+    #[test]
+    fn retention_prunes_only_history_older_than_the_selected_period() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE history (id INTEGER PRIMARY KEY, title TEXT, url TEXT, visited_at INTEGER);").unwrap();
+        conn.execute("INSERT INTO history VALUES (1, 'old', 'https://old.test', 1)", []).unwrap();
+        conn.execute("INSERT INTO history VALUES (2, 'recent', 'https://recent.test', 100)", []).unwrap();
+        let now = 30 * 24 * 60 * 60 + 100;
+        prune_expired(&conn, HistoryRetention::OneMonth, now).unwrap();
+        let remaining: i64 = conn.query_row("SELECT count(*) FROM history", [], |row| row.get(0)).unwrap();
+        assert_eq!(remaining, 1);
+        prune_expired(&conn, HistoryRetention::Always, now).unwrap();
+        let retained: i64 = conn.query_row("SELECT count(*) FROM history", [], |row| row.get(0)).unwrap();
+        assert_eq!(retained, 1);
+    }
+
+    #[test]
+    fn clearing_history_does_not_touch_other_profile_data() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE history (id INTEGER PRIMARY KEY, title TEXT, url TEXT, visited_at INTEGER);
+             CREATE TABLE site_data (id INTEGER PRIMARY KEY, value TEXT);
+             INSERT INTO history VALUES (1, 'visited', 'https://example.test', 100);
+             INSERT INTO site_data VALUES (1, 'keep');",
+        )
+        .unwrap();
+
+        clear_all_history(&conn).unwrap();
+
+        let history_count: i64 = conn
+            .query_row("SELECT count(*) FROM history", [], |row| row.get(0))
+            .unwrap();
+        let site_data: String = conn
+            .query_row("SELECT value FROM site_data WHERE id = 1", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(history_count, 0);
+        assert_eq!(site_data, "keep");
     }
 }

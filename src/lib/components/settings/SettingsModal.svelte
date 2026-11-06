@@ -8,6 +8,7 @@ import BackupSettings from "./BackupSettings.svelte";
 import UpdateSettings from "./UpdateSettings.svelte";
 import NavigationSettings from "./NavigationSettings.svelte";
 import PerformanceSettings from "./PerformanceSettings.svelte";
+import PrivacySecuritySettings from "./PrivacySecuritySettings.svelte";
 import ShortcutSettings from "./ShortcutSettings.svelte";
   import DiagnosticsSettings from "./DiagnosticsSettings.svelte";
 import { focusDialog } from "../../actions/focusDialog";
@@ -256,6 +257,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             <WorkspaceSettings />
           {:else if $activeSettingsCategory === "performance_privacy"}
             <PerformanceSettings />
+          {:else if $activeSettingsCategory === "privacy_security"}
+            <PrivacySecuritySettings />
           {:else if $activeSettingsCategory === "shortcuts"}
             <ShortcutSettings error={recorder.error} onStart={recorder.start} />
           {:else if $activeSettingsCategory === "diagnostics"}

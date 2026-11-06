@@ -32,8 +32,6 @@ pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
     executor::run(app.clone(), move |conn| {
         let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
         history_repo::clear_all_history(&tx)?;
-        crate::database::site_icons_repo::clear(&tx)?;
-        crate::database::closed_tabs_repo::clear(&tx)?;
         tx.commit().map_err(|e| e.to_string())?;
         clear_app
             .state::<crate::window::new_tab::NewTabService>()
@@ -43,11 +41,6 @@ pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
     })
     .await?;
     crate::window::new_tab::invalidate(&app);
-    let _ = crate::security::emit_shell(
-        &app,
-        "closed-tabs-updated",
-        Vec::<crate::database::closed_tabs_repo::ClosedTab>::new(),
-    );
     Ok(())
 }
 #[tauri::command]
@@ -108,7 +101,7 @@ pub async fn delete_bookmark_folder(
     .await
 }
 
-async fn flush_navigation(app: AppHandle) -> Result<(), String> {
+pub(crate) async fn flush_navigation(app: AppHandle) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         app.state::<crate::database::navigation_writer::NavigationWriter>()
             .flush()

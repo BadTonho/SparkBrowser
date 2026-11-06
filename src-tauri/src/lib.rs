@@ -54,6 +54,9 @@ use commands::persistence::{
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
 use commands::privacy::{get_privacy_stats, set_auto_skip_ads, toggle_adblock_shield};
+use commands::privacy_settings::{
+    get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
+};
 use commands::reader::get_reader_article;
 use commands::recovery::get_recovery_status;
 use commands::saved_sessions::{
@@ -193,6 +196,40 @@ pub fn run() {
                 .unwrap_or(false),
                 std::sync::atomic::Ordering::Release,
             );
+            let history_retention = crate::database::history_repo::HistoryRetention::from_preference(
+                crate::database::preferences_repo::load(
+                    &conn,
+                    crate::database::preferences_repo::HISTORY_RETENTION_KEY,
+                )
+                .ok()
+                .flatten(),
+            );
+            state.history_retention_months.store(
+                u64::from(history_retention.months().unwrap_or(0)),
+                std::sync::atomic::Ordering::Release,
+            );
+            state.allow_popups.store(
+                crate::database::preferences_repo::load_bool(
+                    &conn,
+                    crate::database::preferences_repo::ALLOW_POPUPS_KEY,
+                )
+                .unwrap_or(false),
+                std::sync::atomic::Ordering::Release,
+            );
+            state.smart_screen_enabled.store(
+                crate::database::preferences_repo::load(&conn, crate::database::preferences_repo::SMART_SCREEN_KEY)
+                    .ok()
+                    .flatten()
+                    .as_deref()
+                    != Some("false"),
+                std::sync::atomic::Ordering::Release,
+            );
+            crate::database::history_repo::prune_expired(
+                &conn,
+                history_retention,
+                crate::database::history_repo::current_unix_timestamp(),
+            )
+            .map_err(std::io::Error::other)?;
             let recovery_status =
                 recovery::startup::restore(&state, conn).map_err(std::io::Error::other)?;
             app.manage(recovery::RecoveryService::new(recovery_status));
@@ -301,6 +338,10 @@ pub fn run() {
             set_keyboard_shortcuts,
             get_history,
             clear_browsing_history,
+            get_privacy_settings,
+            set_history_retention,
+            set_popup_setting,
+            set_smart_screen,
             get_bookmark_data,
             save_bookmark,
             remove_bookmark,

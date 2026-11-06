@@ -447,6 +447,12 @@
           "markdownDescription": "Enables the get_page_note command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_privacy_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-privacy-settings",
+          "markdownDescription": "Enables the get_privacy_settings command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_privacy_stats command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-privacy-stats",
@@ -753,6 +759,12 @@
           "markdownDescription": "Enables the set_history_overlay command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_history_retention command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-history-retention",
+          "markdownDescription": "Enables the set_history_retention command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_keyboard_shortcuts command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-keyboard-shortcuts",
@@ -789,6 +801,12 @@
           "markdownDescription": "Enables the set_pip_window_shadow command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_popup_setting command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-popup-setting",
+          "markdownDescription": "Enables the set_popup_setting command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_privacy_popover command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-privacy-popover",
@@ -817,6 +835,12 @@
           "type": "string",
           "const": "allow-set-site-zoom",
           "markdownDescription": "Enables the set_site_zoom command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_smart_screen command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-smart-screen",
+          "markdownDescription": "Enables the set_smart_screen command without any pre-configured scope."
         },
         {
           "description": "Enables the set_split_view command without any pre-configured scope.",
@@ -1185,6 +1209,12 @@
           "markdownDescription": "Denies the get_page_note command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_privacy_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-privacy-settings",
+          "markdownDescription": "Denies the get_privacy_settings command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_privacy_stats command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-privacy-stats",
@@ -1491,6 +1521,12 @@
           "markdownDescription": "Denies the set_history_overlay command without any pre-configured scope."
         },
         {
+          "description": "Denies the set_history_retention command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-history-retention",
+          "markdownDescription": "Denies the set_history_retention command without any pre-configured scope."
+        },
+        {
           "description": "Denies the set_keyboard_shortcuts command without any pre-configured scope.",
           "type": "string",
           "const": "deny-set-keyboard-shortcuts",
@@ -1527,6 +1563,12 @@
           "markdownDescription": "Denies the set_pip_window_shadow command without any pre-configured scope."
         },
         {
+          "description": "Denies the set_popup_setting command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-popup-setting",
+          "markdownDescription": "Denies the set_popup_setting command without any pre-configured scope."
+        },
+        {
           "description": "Denies the set_privacy_popover command without any pre-configured scope.",
           "type": "string",
           "const": "deny-set-privacy-popover",
@@ -1555,6 +1597,12 @@
           "type": "string",
           "const": "deny-set-site-zoom",
           "markdownDescription": "Denies the set_site_zoom command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_smart_screen command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-smart-screen",
+          "markdownDescription": "Denies the set_smart_screen command without any pre-configured scope."
         },
         {
           "description": "Denies the set_split_view command without any pre-configured scope.",
