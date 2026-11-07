@@ -1,5 +1,13 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_feeds",
+    "get_experimental_flags",
+    "set_experimental_flag",
+    "reset_experimental_flags",
+    "get_feed_entries",
+    "save_feed",
+    "delete_feed",
+    "refresh_feed",
     "get_tracking_cleaning",
     "set_tracking_cleaning",
     "get_gpc",

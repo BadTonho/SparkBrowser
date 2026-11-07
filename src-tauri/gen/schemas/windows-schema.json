@@ -315,6 +315,12 @@
           "markdownDescription": "Enables the delete_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Enables the delete_feed command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-feed",
+          "markdownDescription": "Enables the delete_feed command without any pre-configured scope."
+        },
+        {
           "description": "Enables the delete_named_session command without any pre-configured scope.",
           "type": "string",
           "const": "allow-delete-named-session",
@@ -453,10 +459,28 @@
           "markdownDescription": "Enables the get_downloads command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_experimental_flags command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-experimental-flags",
+          "markdownDescription": "Enables the get_experimental_flags command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_extension_action command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-extension-action",
           "markdownDescription": "Enables the get_extension_action command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_feed_entries command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-feed-entries",
+          "markdownDescription": "Enables the get_feed_entries command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_feeds command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-feeds",
+          "markdownDescription": "Enables the get_feeds command without any pre-configured scope."
         },
         {
           "description": "Enables the get_gpc command without any pre-configured scope.",
@@ -675,6 +699,12 @@
           "markdownDescription": "Enables the preview_backup_import command without any pre-configured scope."
         },
         {
+          "description": "Enables the refresh_feed command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-refresh-feed",
+          "markdownDescription": "Enables the refresh_feed command without any pre-configured scope."
+        },
+        {
           "description": "Enables the refresh_tab_media command without any pre-configured scope.",
           "type": "string",
           "const": "allow-refresh-tab-media",
@@ -729,6 +759,12 @@
           "markdownDescription": "Enables the reorder_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the reset_experimental_flags command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-reset-experimental-flags",
+          "markdownDescription": "Enables the reset_experimental_flags command without any pre-configured scope."
+        },
+        {
           "description": "Enables the respond_site_permission command without any pre-configured scope.",
           "type": "string",
           "const": "allow-respond-site-permission",
@@ -751,6 +787,12 @@
           "type": "string",
           "const": "allow-save-bookmark",
           "markdownDescription": "Enables the save_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_feed command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-feed",
+          "markdownDescription": "Enables the save_feed command without any pre-configured scope."
         },
         {
           "description": "Enables the save_named_session command without any pre-configured scope.",
@@ -823,6 +865,12 @@
           "type": "string",
           "const": "allow-set-downloads-popover",
           "markdownDescription": "Enables the set_downloads_popover command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_experimental_flag command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-experimental-flag",
+          "markdownDescription": "Enables the set_experimental_flag command without any pre-configured scope."
         },
         {
           "description": "Enables the set_gpc command without any pre-configured scope.",
@@ -1191,6 +1239,12 @@
           "markdownDescription": "Denies the delete_bookmark_folder command without any pre-configured scope."
         },
         {
+          "description": "Denies the delete_feed command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-feed",
+          "markdownDescription": "Denies the delete_feed command without any pre-configured scope."
+        },
+        {
           "description": "Denies the delete_named_session command without any pre-configured scope.",
           "type": "string",
           "const": "deny-delete-named-session",
@@ -1329,10 +1383,28 @@
           "markdownDescription": "Denies the get_downloads command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_experimental_flags command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-experimental-flags",
+          "markdownDescription": "Denies the get_experimental_flags command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_extension_action command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-extension-action",
           "markdownDescription": "Denies the get_extension_action command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_feed_entries command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-feed-entries",
+          "markdownDescription": "Denies the get_feed_entries command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_feeds command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-feeds",
+          "markdownDescription": "Denies the get_feeds command without any pre-configured scope."
         },
         {
           "description": "Denies the get_gpc command without any pre-configured scope.",
@@ -1551,6 +1623,12 @@
           "markdownDescription": "Denies the preview_backup_import command without any pre-configured scope."
         },
         {
+          "description": "Denies the refresh_feed command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-refresh-feed",
+          "markdownDescription": "Denies the refresh_feed command without any pre-configured scope."
+        },
+        {
           "description": "Denies the refresh_tab_media command without any pre-configured scope.",
           "type": "string",
           "const": "deny-refresh-tab-media",
@@ -1605,6 +1683,12 @@
           "markdownDescription": "Denies the reorder_tabs command without any pre-configured scope."
         },
         {
+          "description": "Denies the reset_experimental_flags command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-reset-experimental-flags",
+          "markdownDescription": "Denies the reset_experimental_flags command without any pre-configured scope."
+        },
+        {
           "description": "Denies the respond_site_permission command without any pre-configured scope.",
           "type": "string",
           "const": "deny-respond-site-permission",
@@ -1627,6 +1711,12 @@
           "type": "string",
           "const": "deny-save-bookmark",
           "markdownDescription": "Denies the save_bookmark command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_feed command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-feed",
+          "markdownDescription": "Denies the save_feed command without any pre-configured scope."
         },
         {
           "description": "Denies the save_named_session command without any pre-configured scope.",
@@ -1699,6 +1789,12 @@
           "type": "string",
           "const": "deny-set-downloads-popover",
           "markdownDescription": "Denies the set_downloads_popover command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_experimental_flag command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-experimental-flag",
+          "markdownDescription": "Denies the set_experimental_flag command without any pre-configured scope."
         },
         {
           "description": "Denies the set_gpc command without any pre-configured scope.",

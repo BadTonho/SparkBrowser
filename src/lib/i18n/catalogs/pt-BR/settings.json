@@ -1,4 +1,9 @@
 {
+  "settings.experiments_heading": "Recursos experimentais",
+  "settings.experiments_description": "Recursos experimentais podem mudar. Começam desligados e não podem desativar proteções obrigatórias. As alterações valem ao reabrir o painel de feeds.",
+  "settings.experiments_compact_feeds": "Cartões compactos: ocultar prévias dos artigos",
+  "settings.experiments_reset": "Restaurar experimentos",
+  "settings.experiments_error": "Não foi possível atualizar os recursos experimentais.",
   "settings.next_tab": "Próxima aba",
   "settings.previous_tab": "Aba anterior",
   "settings.next_tab_focused_pane": "Próxima aba no painel focado",

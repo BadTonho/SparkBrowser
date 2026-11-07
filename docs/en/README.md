@@ -28,6 +28,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Named sessions and Tools](./features/named-sessions.md)
 - [Site search shortcuts](./features/site-search.md)
 - [Page notes](./features/page-notes.md)
+- [Feed reader](./features/feed-reader.md)
 - [Tab organizer](./features/tab-organizer.md)
 - [Split view](./features/split-view.md)
 - [Site permissions](./features/site-permissions.md)

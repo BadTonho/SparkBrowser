@@ -1,4 +1,9 @@
 {
+  "settings.experiments_heading": "Experimental features",
+  "settings.experiments_description": "Experimental features may change. They are off by default and cannot disable required security protections. Changes apply when reopening the feeds panel.",
+  "settings.experiments_compact_feeds": "Compact feed cards: hide article previews",
+  "settings.experiments_reset": "Reset experiments",
+  "settings.experiments_error": "Could not update experimental features.",
   "settings.next_tab": "Next tab",
   "settings.previous_tab": "Previous tab",
   "settings.next_tab_focused_pane": "Next tab in the focused pane",

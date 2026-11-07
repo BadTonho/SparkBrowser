@@ -10,10 +10,15 @@ export async function createFixture() {
   const gpcRequests = [];
   const shieldRequests = [];
   const trackingRequests = [];
+  const feed = { invalid: false, requests: 0 };
   const commands = new Map();
   const download = { version: 1, mode: 'normal', requests: [], images: new Map() };
   const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
+    if (request.url === '/fixture-feed.xml') {
+      feed.requests++;
+      response.writeHead(200, { 'Content-Type': 'application/rss+xml', 'Cache-Control': 'no-store' }).end(feed.invalid ? '<rss><channel>' : '<rss><channel><item><title>Fixture article</title><link>/page/feed-article</link><description>&lt;script&gt;not executed&lt;/script&gt;</description></item></channel></rss>'); return;
+    }
     if (request.url === '/page/tracking-redirect') {
       response.writeHead(302, { Location: '/page/link-target?utm_source=redirect&keep=redirect', 'Cache-Control': 'no-store' }).end(); return;
     }
@@ -264,6 +269,6 @@ export async function createFixture() {
     response.writeHead(404).end();
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands, download, payload,icons, gpcRequests, shieldRequests, trackingRequests,
+  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands, download, payload,icons, gpcRequests, shieldRequests, trackingRequests, feed,
     close: () => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }) };
 }

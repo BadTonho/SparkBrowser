@@ -47,6 +47,7 @@ import { checkGpc } from './gpc.mjs';
 import { checkGpcContexts } from './gpc-contexts.mjs';
 import { checkFilterLists } from './filter-lists.mjs';
 import { checkTrackingClicks } from './tracking-clicks.mjs';
+import { checkFeeds } from './feeds.mjs';
 
 export const scenarios = {
   'network-privacy-baseline': checkNetworkPrivacyBaseline,
@@ -55,6 +56,7 @@ export const scenarios = {
   'gpc-contexts': checkGpcContexts,
   'filter-lists': checkFilterLists,
   'tracking-clicks': checkTrackingClicks,
+  'feeds': checkFeeds,
   'capture-probe': checkFullPageCaptureProbe,
   'dark-mode-probe': checkDarkModeProbe,
   'caret-browsing': checkCaretBrowsing,

@@ -19,6 +19,7 @@ pub mod extensions;
 pub mod media;
 mod native_tests;
 pub mod privacy;
+pub mod feeds;
 pub mod recovery;
 pub mod security;
 pub mod shutdown;
@@ -47,6 +48,8 @@ use commands::navigation::{
     focus_address_bar, go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds,
 };
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
+use commands::feeds::{get_feeds, get_feed_entries, save_feed, delete_feed, refresh_feed};
+use commands::experiments::{get_experimental_flags, set_experimental_flag, reset_experimental_flags};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_downloads_popover, set_history_overlay,
     set_media_popover, set_overlay_visibility, set_permission_popover, set_privacy_popover,
@@ -281,10 +284,19 @@ pub fn run() {
             state
                 .startup_ready
                 .store(true, std::sync::atomic::Ordering::Release);
+            feeds::start(app.handle().clone());
 
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_feeds,
+            get_experimental_flags,
+            set_experimental_flag,
+            reset_experimental_flags,
+            get_feed_entries,
+            save_feed,
+            delete_feed,
+            refresh_feed,
             get_tracking_cleaning,
             set_tracking_cleaning,
             get_gpc,

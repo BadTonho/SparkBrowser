@@ -12,8 +12,9 @@
   import SessionDetails from "./SessionDetails.svelte";
   import SessionsPanel from "./SessionsPanel.svelte";
   import NotesPanel from "./NotesPanel.svelte";
+  import FeedsPanel from "./FeedsPanel.svelte";
   import "./tools.css";
-  const sections: { id: ToolsSection; label: string }[] = $derived([{ id: "diagnostics", label: $t("diagnostics.heading") }, { id: "sessions", label: $t("tools.sessions_6fa3") }, { id: "tabs", label: $t("tools.tabs_8e5e") }, { id: "notes", label: $t("tools.notes_8a75") }, { id: "closed", label: $t("closed.heading") }]);
+  const sections: { id: ToolsSection; label: string }[] = $derived([{ id: "diagnostics", label: $t("diagnostics.heading") }, { id: "sessions", label: $t("tools.sessions_6fa3") }, { id: "tabs", label: $t("tools.tabs_8e5e") }, { id: "notes", label: $t("tools.notes_8a75") }, { id: "feeds", label: $t("tools.feeds") }, { id: "closed", label: $t("closed.heading") }]);
   const native = isTauriRuntime();
   let viewport = $state({ width: innerWidth, height: innerHeight });
   let anchor = $state({ left: 0, top: 0, width: 0, height: 0 });
@@ -58,6 +59,7 @@
         {#if $toolsSection === "diagnostics"}<TabDiagnosticsPanel />
         {:else if $toolsSection === "sessions"}{#if $selectedSession}<SessionDetails />{:else}<SessionsPanel />{/if}
         {:else if $toolsSection === "notes"}<NotesPanel />
+        {:else if $toolsSection === "feeds"}<FeedsPanel />
         {:else if $toolsSection === "closed"}<ClosedTabsPanel />
         {:else}<TabsPanel />{/if}
       </div>

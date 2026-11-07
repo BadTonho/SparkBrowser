@@ -3,7 +3,7 @@ import { tick } from "svelte";
 import { notifyOpening } from "../services/bridge/overlays";
 import { setToolsPopover } from "../services/bridge/tools-popover";
 import { isZenMode } from "./settingsStore";
-export type ToolsSection = "sessions" | "tabs" | "notes" | "closed" | "diagnostics";
+export type ToolsSection = "sessions" | "tabs" | "notes" | "closed" | "diagnostics" | "feeds";
 export const isToolsOpen = writable(false);
 export const toolsSection = writable<ToolsSection>("sessions");
 export const toolsSession = writable<{ id: number; anchor: HTMLButtonElement } | null>(null);

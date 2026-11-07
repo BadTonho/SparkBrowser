@@ -4,11 +4,22 @@
   import { onMount } from "svelte";
   import { ipcDiagnostics } from "../../services/diagnostics.js";
   import { fetchDiagnostics, type NativeDiagnostics } from "../../services/bridge/diagnostics";
+  import { invoke, isTauriRuntime } from "../../services/bridge/runtime";
 
   let ipc = $state(ipcDiagnostics.snapshot());
   let native = $state<NativeDiagnostics | null>(null);
   let error = $state("");
   let disposed = false;
+  let compactFeeds = $state(false);
+  let experimentError = $state("");
+  async function setCompact(enabled: boolean) {
+    try { await invoke("set_experimental_flag", { name: "compact_feed_cards", enabled }); compactFeeds = enabled; experimentError = ""; }
+    catch { experimentError = $t("settings.experiments_error"); }
+  }
+  async function resetExperiments() {
+    try { await invoke("reset_experimental_flags"); compactFeeds = false; experimentError = ""; }
+    catch { experimentError = $t("settings.experiments_error"); }
+  }
   async function refresh() {
     try {
       const result = await fetchDiagnostics();
@@ -20,10 +31,15 @@
       if (!disposed) error = "Could not read local diagnostics";
     }
   }
-  onMount(() => { void refresh(); return () => { disposed = true; }; });
+  onMount(() => { void refresh(); if (isTauriRuntime()) void invoke<{compact_feed_cards:boolean}>("get_experimental_flags").then(flags => compactFeeds = flags.compact_feed_cards).catch(() => experimentError = $t("settings.experiments_error")); return () => { disposed = true; }; });
 </script>
 
 <section class="setting-group" aria-labelledby="diagnostics-heading">
+  <h2 class="group-title">{$t("settings.experiments_heading")}</h2>
+  <p>{$t("settings.experiments_description")}</p>
+  <label><input type="checkbox" checked={compactFeeds} disabled={!isTauriRuntime()} onchange={(event) => { const input = event.currentTarget as HTMLInputElement; const value = input.checked; input.checked = compactFeeds; void setCompact(value); }} /> {$t("settings.experiments_compact_feeds")}</label>
+  <button class="pill-action" disabled={!isTauriRuntime()} onclick={resetExperiments}>{$t("settings.experiments_reset")}</button>
+  {#if experimentError}<p role="alert">{experimentError}</p>{/if}
   <h2 id="diagnostics-heading" class="group-title">{$t("settings.local_diagnostics_271b")}</h2>
   <p>{$t("settings.session_counters_stay_in_memory_they_contain_operation_names_and_timings_fb73")}</p>
   <button class="pill-action" onclick={refresh}>{$t("settings.refresh_0e91")}</button>
