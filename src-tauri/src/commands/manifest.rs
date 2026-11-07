@@ -2,6 +2,7 @@
 pub const APP_COMMANDS: &[&str] = &[
     "full_page_capture_probe",
     "set_dark_mode_probe_scheme",
+    "set_minimum_font_probe_size",
     "get_webview_runtime_status",
     "restart_webview_runtime",
     "set_pip_window_shadow",

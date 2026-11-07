@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "native-test-minimum-font-probe",
+  "description": "Allows only the isolated native test build to control the WebKitGTK minimum-font probe.",
+  "windows": ["main"],
+  "permissions": ["allow-set-minimum-font-probe-size"]
+}

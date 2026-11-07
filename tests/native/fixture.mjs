@@ -82,6 +82,24 @@ export async function createFixture() {
         <script>window.captureProbeReady=true;setTimeout(()=>scrollTo(0,720),100);setInterval(()=>{const n=document.querySelector('#dynamic-marker');if(n)n.textContent='Dynamic text: '+Date.now()},500);</script>`);
       return;
     }
+    if (url.pathname === '/minimum-font-probe') {
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.end(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Minimum font probe</title>
+        <style>
+          *{box-sizing:border-box}body{margin:0;padding:24px;font:16px Arial,sans-serif;color:#15202b;background:#fff}
+          .sample{margin:12px 0;padding:12px;border:1px solid #678}
+          #px8{font-size:8px}#px12{font-size:12px}#px16{font-size:16px}#px24{font-size:24px}
+          #relative{font-size:.5em}a,button,input{font-size:10px}iframe{width:100%;height:100px;border:1px solid #333}
+          @media(max-width:500px){body{background:#e9f4ff}}
+        </style>
+        <h1>Minimum font probe</h1><div id="px8" class="sample">8px text sample</div><div id="px12" class="sample">12px text sample</div>
+        <div id="px16" class="sample">16px text sample</div><div id="px24" class="sample">24px text sample</div>
+        <div id="relative" class="sample">Relative .5em text sample</div>
+        <div class="sample"><a href="#">10px link sample</a> <button>10px button sample</button> <input value="10px input sample" aria-label="10px input"></div>
+        <iframe title="10px iframe sample" srcdoc="&lt;style&gt;body{font:10px Arial}&lt;/style&gt;&lt;p&gt;10px text inside iframe&lt;/p&gt;"></iframe>
+        <script>window.minimumFontProbeReady=true;</script>`);
+      return;
+    }
     if (url.pathname === '/dark-mode-image.svg') {
       response.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
       response.end('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="120"><rect width="120" height="120" fill="#ffd400"/><rect x="120" width="120" height="120" fill="#e40046"/><circle cx="120" cy="60" r="34" fill="#00a6a6"/></svg>');

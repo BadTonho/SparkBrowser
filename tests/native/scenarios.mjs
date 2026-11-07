@@ -39,11 +39,13 @@ import { checkQuickSettings } from './quick-settings.mjs';
 import { checkFullPageCaptureProbe } from './capture-probe.mjs';
 import { checkDarkModeProbe } from './dark-mode-probe.mjs';
 import { checkCaretBrowsing } from './caret-browsing.mjs';
+import { checkMinimumFontProbe } from './minimum-font-probe.mjs';
 
 export const scenarios = {
   'capture-probe': checkFullPageCaptureProbe,
   'dark-mode-probe': checkDarkModeProbe,
   'caret-browsing': checkCaretBrowsing,
+  'minimum-font-probe': checkMinimumFontProbe,
   'security-boundaries': checkSecurityBoundaries,
   'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,

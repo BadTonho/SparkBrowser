@@ -31,6 +31,7 @@ use commands::media::{
     enter_video_pip, exit_video_pip, get_tab_media, refresh_tab_media, set_pip_window_shadow,
     set_tab_muted, set_tab_volume,
 };
+use commands::minimum_font_probe::set_minimum_font_probe_size;
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
@@ -265,6 +266,7 @@ pub fn run() {
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
             full_page_capture_probe,
             set_dark_mode_probe_scheme,
+            set_minimum_font_probe_size,
             get_webview_runtime_status,
             restart_webview_runtime,
             focus_address_bar,

@@ -3,7 +3,7 @@
   "productName": "Veloce Native Tests",
   "app": {
     "security": {
-      "capabilities": ["default", "native-test-dark-mode-probe"]
+      "capabilities": ["default", "native-test-dark-mode-probe", "native-test-minimum-font-probe"]
     },
     "windows": [{
       "label": "main",
