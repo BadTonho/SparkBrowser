@@ -39,6 +39,7 @@
     compactToolbar,
   } from "../../stores/settingsStore";
   import { formatAddressForDisplay } from "../../services/visual-preferences.js";
+  import { suspiciousHost } from "../../services/suspicious-host.js";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { defaultSearchEngine } from "../../stores/searchEngineStore";
@@ -52,6 +53,7 @@
   const responsiveCompact = $derived(splitHorizontal && narrow);
   const internalPage = $derived(isNewTab($currentUrl));
   const displayedAddress = $derived(formatAddressForDisplay($addressInput, $showFullUrls || $isAddressEditing));
+  const suspicious = $derived(suspiciousHost($currentUrl, $bookmarks.map(item => item.url)));
   onMount(() => {
     const media = window.matchMedia("(max-width: 1000px)");
     const update = () => { narrow = media.matches; };
@@ -173,6 +175,7 @@
       </div>
 
       <div class="omnibox-wrapper" class:loading={$isLoading} title={$activeNavigation?.error ?? undefined}>
+        {#if suspicious}<span class="suspicious-address" role="status" title={$t("titlebar.suspicious_address", { host: suspicious.host })} aria-label={$t("titlebar.suspicious_address", { host: suspicious.host })}>⚠</span>{/if}
         <button class="omnibox-icon" disabled={internalPage} onclick={openSitePermissions} aria-label={internalPage ? $t("newtab.internal") : $t("titlebar.site_permissions_a688")} title={internalPage ? $t("newtab.internal") : $currentUrl.startsWith("https:") ? $t("titlebar.https_connection_site_permissions_9979") : $t("titlebar.unencrypted_connection_site_permissions_7add")}>{internalPage ? "\u25C7" : $currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</button>
         <input
           class="omnibox-input"

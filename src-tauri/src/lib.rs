@@ -57,7 +57,7 @@ use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
-use commands::privacy::{get_privacy_stats, set_auto_skip_ads, toggle_adblock_shield};
+use commands::privacy::{get_privacy_stats, set_auto_skip_ads, toggle_adblock_shield, get_tracking_cleaning, set_tracking_cleaning, get_gpc, set_gpc, get_shield_exceptions, set_shield_exceptions};
 use commands::privacy_settings::{
     get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
 };
@@ -187,6 +187,11 @@ pub fn run() {
             let state = app.state::<BrowserState>();
 
             let data_directory = app.path().app_data_dir()?;
+            let lists = privacy::filter_lists::FilterLists::start(
+                &data_directory.join("filter-lists").join("last-valid.json"),
+                !cfg!(test) && app.config().identifier != "org.veloce.browser.native-tests",
+            );
+            app.manage(lists);
             app.manage(
                 recovery::profile_lock::ProfileLock::acquire(&data_directory)
                     .map_err(std::io::Error::other)?,
@@ -196,6 +201,21 @@ pub fn run() {
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
+            if let Some(settings) = database::preferences_repo::load(&conn, database::preferences_repo::TRACKING_CLEANING_KEY)
+                .ok().flatten().and_then(|value| serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok())
+                .and_then(|settings| settings.validate().ok()) {
+                *state.tracking_settings.lock().map_err(|_| std::io::Error::other("Tracking settings unavailable"))? = settings;
+            }
+            if let Some(settings) = database::preferences_repo::load(&conn, database::preferences_repo::GPC_KEY)
+                .ok().flatten().and_then(|value| serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok())
+                .and_then(|settings| settings.validate().ok()) {
+                *state.gpc_settings.lock().map_err(|_| std::io::Error::other("GPC settings unavailable"))? = settings;
+            }
+            if let Some(settings) = database::preferences_repo::load(&conn, database::preferences_repo::SHIELD_EXCEPTIONS_KEY)
+                .ok().flatten().and_then(|value| serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok())
+                .and_then(|settings| settings.validate().ok()) {
+                *state.shield_settings.lock().map_err(|_| std::io::Error::other("Shield settings unavailable"))? = settings;
+            }
             state.workspace_isolation.store(
                 database::preferences_repo::load_bool(
                     &conn,
@@ -265,6 +285,12 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_tracking_cleaning,
+            set_tracking_cleaning,
+            get_gpc,
+            set_gpc,
+            get_shield_exceptions,
+            set_shield_exceptions,
             get_account_containers,
             create_account_container,
             rename_account_container,

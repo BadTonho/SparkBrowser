@@ -13,6 +13,7 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
+    let exceptions = state.shield_settings.lock().map_err(|e| e.to_string())?.exceptions.clone();
     for (label, token) in tokens {
         let Some(view) = app.get_webview(&label) else {
             continue;
@@ -31,7 +32,7 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
         let send = std::sync::Arc::new(std::sync::Mutex::new(Some(send)));
         let initial_send = send.clone();
         let initial_script =
-            crate::privacy::adblock_engine::build_replacement_shield_script(enabled, &token);
+            crate::privacy::adblock_engine::build_replacement_shield_script_with_exceptions(enabled, &token, &exceptions);
         view.with_webview(move |platform| {
             let result = (|| {
                 let core = unsafe { platform.controller().CoreWebView2()? };

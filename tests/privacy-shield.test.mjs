@@ -16,8 +16,8 @@ function page(enabled, replacementEnabled) {
   const window = { fetch: async () => { fetches++; return { status: 200 }; } };
   const navigator = { sendBeacon: () => { beacons++; return true; } };
   const document = { baseURI: "https://example.test/", readyState: "loading", addEventListener() {} };
-  const source = value => template.replace("__SHIELD_TOKEN__", JSON.stringify("test-policy")).replace("__SHIELD_ENABLED__", String(value)).replace("__BLOCKED_DOMAINS__", JSON.stringify(domains));
-  const context = vm.createContext({ window, navigator, document, XMLHttpRequest, URL, DOMException });
+  const source = value => template.replace("__SHIELD_TOKEN__", JSON.stringify("test-policy")).replace("__SHIELD_ENABLED__", String(value)).replace("__BLOCKED_DOMAINS__", JSON.stringify(domains)).replace("__SHIELD_EXCEPTIONS__", "[]");
+  const context = vm.createContext({ window, navigator, document, location: new URL(document.baseURI), XMLHttpRequest, URL, DOMException });
   const replacement = value => `if (typeof window.__veloceSetShieldPolicy === 'function') { window.__veloceSetShieldPolicy("test-policy", ${value}); } else { ${source(value)} }`;
   if (replacementEnabled !== undefined) vm.runInContext(replacement(replacementEnabled), context);
   vm.runInContext(source(enabled), context);

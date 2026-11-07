@@ -5,6 +5,171 @@ use crate::window::webview_manager::{reset_content_webviews, sync_all_webviews};
 use tauri::{AppHandle, State};
 
 #[tauri::command]
+pub fn get_shield_exceptions(state: State<'_, BrowserState>) -> Result<Vec<String>, String> {
+    state
+        .shield_settings
+        .lock()
+        .map(|value| value.exceptions.clone())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn set_shield_exceptions(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    exceptions: Vec<String>,
+) -> Result<Vec<String>, String> {
+    let settings = crate::privacy::tracking_parameters::TrackingSettings {
+        enabled: true,
+        exceptions,
+    }
+    .validate()?;
+    let _operation = state.tab_operations.lock().await;
+    if state
+        .tabs
+        .lock()
+        .map_err(|e| e.to_string())?
+        .iter()
+        .any(|tab| {
+            tab.activity.dirty_form
+                || tab.activity.playing_media
+                || tab.activity.picture_in_picture
+                || tab.activity.downloading
+        })
+    {
+        return Err(
+            "Save edited forms and finish media/downloads before changing shield exceptions".into(),
+        );
+    }
+    let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
+    crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
+        crate::window::webview_manager::prepare_content_reset(&state, shield)
+    })?;
+    let encoded = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
+    {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        crate::database::preferences_repo::store(
+            db.as_ref().ok_or("Database unavailable")?,
+            crate::database::preferences_repo::SHIELD_EXCEPTIONS_KEY,
+            &encoded,
+        )?;
+    }
+    *state.shield_settings.lock().map_err(|e| e.to_string())? = settings.clone();
+    crate::window::webview_manager::reset_content_webviews(&app, &state)?;
+    crate::window::webview_manager::sync_all_webviews(&app, &state)?;
+    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    Ok(settings.exceptions)
+}
+
+#[tauri::command]
+pub fn get_gpc(
+    state: State<'_, BrowserState>,
+) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
+    state
+        .gpc_settings
+        .lock()
+        .map(|value| value.clone())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn set_gpc(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    settings: crate::privacy::tracking_parameters::TrackingSettings,
+) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
+    let settings = settings.validate()?;
+    let _operation = state.tab_operations.lock().await;
+    if state
+        .tabs
+        .lock()
+        .map_err(|e| e.to_string())?
+        .iter()
+        .any(|tab| {
+            tab.activity.dirty_form
+                || tab.activity.playing_media
+                || tab.activity.picture_in_picture
+                || tab.activity.downloading
+        })
+    {
+        return Err("Save edited forms and finish media/downloads before changing GPC".into());
+    }
+    let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
+    crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
+        crate::window::webview_manager::prepare_content_reset(&state, shield)
+    })?;
+    let encoded = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
+    {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        crate::database::preferences_repo::store(
+            db.as_ref().ok_or("Database unavailable")?,
+            crate::database::preferences_repo::GPC_KEY,
+            &encoded,
+        )?;
+    }
+    *state.gpc_settings.lock().map_err(|e| e.to_string())? = settings.clone();
+    crate::window::webview_manager::reset_content_webviews(&app, &state)?;
+    crate::window::webview_manager::sync_all_webviews(&app, &state)?;
+    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    Ok(settings)
+}
+
+#[tauri::command]
+pub fn get_tracking_cleaning(
+    state: State<'_, BrowserState>,
+) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
+    state
+        .tracking_settings
+        .lock()
+        .map(|value| value.clone())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn set_tracking_cleaning(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    settings: crate::privacy::tracking_parameters::TrackingSettings,
+) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
+    let settings = settings.validate()?;
+    let _operation = state.tab_operations.lock().await;
+    if state
+        .tabs
+        .lock()
+        .map_err(|e| e.to_string())?
+        .iter()
+        .any(|tab| {
+            tab.activity.dirty_form
+                || tab.activity.playing_media
+                || tab.activity.picture_in_picture
+                || tab.activity.downloading
+        })
+    {
+        return Err(
+            "Save edited forms and finish media/downloads before changing link cleaning".into(),
+        );
+    }
+    let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
+    crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
+        crate::window::webview_manager::prepare_content_reset(&state, shield)
+    })?;
+    let encoded = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
+    {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        crate::database::preferences_repo::store(
+            db.as_ref().ok_or("Database unavailable")?,
+            crate::database::preferences_repo::TRACKING_CLEANING_KEY,
+            &encoded,
+        )?;
+    }
+    *state.tracking_settings.lock().map_err(|e| e.to_string())? = settings.clone();
+    crate::window::webview_manager::reset_content_webviews(&app, &state)?;
+    crate::window::webview_manager::sync_all_webviews(&app, &state)?;
+    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    Ok(settings)
+}
+
+#[tauri::command]
 pub fn get_privacy_stats(state: State<'_, BrowserState>) -> PrivacyStats {
     state.snapshot_privacy_stats()
 }

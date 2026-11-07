@@ -1,0 +1,27 @@
+# Tracking protections
+
+## Shield and filter lists
+
+The shield combines its earlier small host list and best-effort page script with the `adblock-rust` network-rule engine. Windows content WebViews register a WebView2 resource-request handler for HTTP and HTTPS, including available request source kinds on newer runtimes. It maps available resource contexts to rule types and uses the current top-level WebView URL as the source. This attribution can be inaccurate for navigation, cross-origin frames and workers. Installation and coverage still require native validation; WebSockets, service workers and downloads must not be assumed covered. Linux applies the list engine to navigation events in addition to the earlier host and page-script shield; it is not yet integrated with WebKitGTK subresource interception. JavaScript filtering is not network-wide protection.
+
+Bundled snapshots are [EasyList and EasyPrivacy](https://github.com/easylist/easylist) (7 November 2026) and [NoCoin](https://github.com/hoshsadiq/adblock-nocoin-list) (20 May 2026) for browser miners. The EasyList project [declares](https://github.com/easylist/easylist/blob/master/package.json) GPL-3.0-or-later AND CC-BY-SA-3.0; NoCoin declares MIT. Original notices remain in the snapshots. `adblock-rust` is MPL-2.0. Only parseable network rules are used: cosmetic rules, scriptlets, redirects and unsupported rule syntax are not implemented by this integration. Existing fixed cosmetic rules remain separate.
+
+The app attempts HTTPS updates at startup and every 24 hours, downloading only the three list URLs. A candidate must have valid headers, bounded size and a minimum number of parseable network rules. All three must pass before an atomic local cache replacement; a failure keeps the previous version, and a corrupt cache falls back to bundled snapshots. Updates do not send browsing URLs. Shield exceptions are saved by domain and subdomain; changing them recreates WebViews after confirmation. Legacy fixed-host checks in the separate download manager do not yet use these site exceptions.
+
+## Link cleaning
+
+Settings → Privacy & Security → Remove tracking parameters is off by default. It removes a small fixed set of UTM and click identifiers from address-bar destinations and trusted clicks on ordinary links in the main document. It never replays form submissions or rewrites POST requests. Domains and subdomains can be excluded locally. URLs with common authentication or signature markers are left unchanged; this heuristic cannot recognize every signed link.
+
+Redirects, links inside frames, downloads, recent-site cards and other navigation paths are not covered. Page scripts can change a link after the click handler, and browser-generated or synthetic clicks are not cleaned. Changing the setting recreates WebViews after confirmation; edited forms, active media and downloads must be resolved first. Live page state and history are lost. The setting and its exceptions are local and excluded from the current backup format.
+
+## Global Privacy Control
+
+GPC is off by default and has persistent per-domain exceptions. When enabled, a page initialization script exposes `navigator.globalPrivacyControl` for HTTP(S) documents unless a host exception applies. Cross-origin frames where the top host cannot be checked are skipped; workers are not covered. On Windows the WebView2 handler also attempts `Sec-GPC: 1` on intercepted requests when the destination and current source are not excluded. Attribution during navigation and cross-origin requests is limited, and not every network channel is intercepted. Linux does not add the HTTP header. Changing settings recreates WebViews after the user confirms and refuses to proceed while edited forms, media or downloads are active; live page state and history are lost. GPC preferences are not in the backup format.
+
+## Address warning
+
+The address bar displays an advisory warning for an internationalized hostname represented as punycode or a hostname one edit away from a small built-in set or a bookmarked host. Exact bookmarked hosts and their subdomains are exempt. This local heuristic does not block navigation, perform online reputation checks, or identify every homograph; it can warn on legitimate internationalized sites. The accessible label and tooltip expose the ASCII hostname.
+
+## Validation status
+
+On 7 November 2026, Windows native loopback scenarios passed with WebView2 Runtime 157.0.4341.42 for address-bar cleaning and persistence; real link clicks and unchanged POST; an EasyList script request, shield exception and restart persistence; and GPC header, property, exception and restart persistence. Rust tests exercise bundled lists, mining, update recovery and rejection of invalid lists; JavaScript tests exercise clicked links and advisory host warnings. Native validation of frames, workers, redirects and warning accessibility remains pending. Linux native validation remains pending. Stage 8 is not complete while the missing paths remain outstanding.

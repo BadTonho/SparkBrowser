@@ -4,9 +4,14 @@
   let enabled = __SHIELD_ENABLED__;
   const token = __SHIELD_TOKEN__;
   const domains = __BLOCKED_DOMAINS__;
+  const exceptions = __SHIELD_EXCEPTIONS__;
+  const siteExcluded = () => {
+    const host = location.hostname.toLowerCase().replace(/\.$/, '');
+    return exceptions.some(domain => host === domain || host.endsWith('.' + domain));
+  };
   const NativeURL = URL;
   const blocked = (input) => {
-    if (!enabled) return false;
+    if (!enabled || siteExcluded()) return false;
     try {
       const raw = input && typeof input === "object" && "url" in input ? input.url : input;
       const host = new NativeURL(String(raw), document.baseURI).hostname.toLowerCase().replace(/\.$/, "");
@@ -47,7 +52,7 @@
   }
 
   const injectStyle = () => {
-    if (!enabled) { document.getElementById("veloce-adblock-style")?.remove(); return; }
+    if (!enabled || siteExcluded()) { document.getElementById("veloce-adblock-style")?.remove(); return; }
     if (document.getElementById("veloce-adblock-style")) return;
     const style = document.createElement("style");
     style.id = "veloce-adblock-style";

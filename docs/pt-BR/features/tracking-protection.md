@@ -1,0 +1,27 @@
+# Proteções contra rastreamento
+
+## Escudo e listas de filtros
+
+O escudo combina a pequena lista anterior de domínios e o script de melhor esforço com o motor de regras de rede `adblock-rust`. No Windows, as WebViews de conteúdo registram um interceptador de requisições HTTP e HTTPS do WebView2, incluindo os tipos de origem disponíveis nas versões mais recentes. Ele associa os contextos disponíveis a tipos de regras e usa a URL principal atual como origem. Essa atribuição pode estar incorreta em navegações, quadros de outra origem e workers. A instalação e cobertura ainda exigem validação nativa; não se deve presumir cobertura de WebSockets, service workers e downloads. No Linux, o motor de listas é aplicado a eventos de navegação além do escudo anterior de domínios e script de página; ele ainda não está integrado à interceptação de sub-recursos do WebKitGTK. Filtragem JavaScript não protege toda a rede.
+
+Os snapshots incorporados são [EasyList e EasyPrivacy](https://github.com/easylist/easylist) (7 de novembro de 2026) e [NoCoin](https://github.com/hoshsadiq/adblock-nocoin-list) (20 de maio de 2026), para mineradores no navegador. O projeto EasyList [declara](https://github.com/easylist/easylist/blob/master/package.json) GPL-3.0-or-later AND CC-BY-SA-3.0; NoCoin declara MIT. Os avisos originais permanecem nos snapshots. `adblock-rust` usa MPL-2.0. São usadas somente regras de rede analisáveis: regras cosméticas, scriptlets, redirecionamentos e sintaxe sem suporte não são implementados nessa integração. As regras cosméticas fixas anteriores permanecem separadas.
+
+O aplicativo tenta atualizar por HTTPS ao iniciar e a cada 24 horas, baixando apenas as três URLs das listas. O candidato deve ter cabeçalhos válidos, tamanho limitado e uma quantidade mínima de regras de rede analisáveis. As três listas devem passar antes da substituição atômica do cache local; uma falha mantém a versão anterior, e cache corrompido usa os snapshots incorporados. As atualizações não enviam URLs de navegação. As exceções do escudo são salvas por domínio e subdomínio; alterá-las recria as WebViews após confirmação. As verificações fixas anteriores no gerenciador de downloads separado ainda não usam essas exceções.
+
+## Limpeza de links
+
+Configurações → Privacidade e segurança → Remover parâmetros de rastreamento começa desligado. O recurso remove um conjunto pequeno de parâmetros UTM e identificadores de clique de endereços digitados e cliques confiáveis em links comuns no documento principal. Ele nunca reenvia formulários nem transforma POST em GET. Domínios e subdomínios podem ser excluídos localmente. URLs com marcadores comuns de autenticação ou assinatura são preservadas; essa heurística não reconhece todos os links assinados.
+
+Redirecionamentos, links dentro de quadros, downloads, cartões de sites recentes e outras fontes de navegação não são cobertos. Scripts da página podem alterar o link depois do interceptador de clique, e cliques sintéticos ou gerados pelo navegador não são limpos. Alterar a configuração recria as WebViews após confirmação; formulários editados, mídia e downloads ativos precisam ser resolvidos antes. O estado vivo e o histórico são perdidos. A configuração e suas exceções são locais e não fazem parte do formato atual de backup.
+
+## Global Privacy Control
+
+O GPC começa desligado e possui exceções persistentes por domínio. Quando ativado, um script de inicialização expõe `navigator.globalPrivacyControl` em documentos HTTP(S), exceto nos domínios excluídos. Quadros de outra origem nos quais não é possível verificar o domínio principal são ignorados; workers não são cobertos. No Windows, o interceptador do WebView2 também tenta adicionar `Sec-GPC: 1` às requisições interceptadas quando destino e origem atual não estão excluídos. A atribuição durante navegação e requisições entre origens é limitada, e nem todos os canais são interceptados. No Linux, o cabeçalho HTTP não é adicionado. Alterar a configuração recria as WebViews após confirmação e recusa a operação enquanto houver formulários editados, mídia ou downloads ativos; o estado vivo e o histórico são perdidos. As preferências GPC não fazem parte do backup.
+
+## Aviso de endereço
+
+A barra de endereços exibe um aviso informativo para um domínio internacionalizado representado em punycode ou um domínio que difere por uma edição de um pequeno conjunto incorporado ou de um favorito. Favoritos exatos e seus subdomínios são isentos. A heurística local não bloqueia a navegação, não consulta reputação online e não identifica todos os homógrafos; ela pode avisar em sites internacionalizados legítimos. O rótulo acessível e a dica de ferramenta mostram o domínio ASCII.
+
+## Estado da validação
+
+Em 7 de novembro de 2026, cenários nativos locais passaram no Windows com WebView2 Runtime 157.0.4341.42 para limpeza da barra de endereços e persistência; cliques reais em links e POST preservado; requisição de script da EasyList, exceção do escudo e persistência após reinício; e cabeçalho, propriedade, exceção e persistência do GPC. Testes Rust exercitam listas incorporadas, mineração, recuperação de atualização e rejeição de listas inválidas; testes JavaScript exercitam links clicados e avisos informativos. A validação nativa de quadros, workers, redirecionamentos e acessibilidade do aviso permanece pendente. A validação nativa no Linux permanece pendente. A etapa 8 não está concluída enquanto faltarem os caminhos restantes.

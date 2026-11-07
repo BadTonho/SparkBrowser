@@ -172,7 +172,7 @@ pub(super) fn create_tab_inner_ext(
     )?
     .to_string();
     let shield_enabled = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
-    if crate::privacy::adblock_engine::should_block_url(&resolved_url, shield_enabled) {
+    if crate::privacy::adblock_engine::site_is_protected(state, &resolved_url) && crate::privacy::adblock_engine::should_block_url(&resolved_url, shield_enabled) {
         return Err("Navigation blocked by the privacy shield".to_string());
     }
 

@@ -1,5 +1,11 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_tracking_cleaning",
+    "set_tracking_cleaning",
+    "get_gpc",
+    "set_gpc",
+    "get_shield_exceptions",
+    "set_shield_exceptions",
     "get_account_containers",
     "create_account_container",
     "rename_account_container",

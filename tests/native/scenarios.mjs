@@ -42,9 +42,17 @@ import { checkDarkModeProbe } from './dark-mode-probe.mjs';
 import { checkCaretBrowsing } from './caret-browsing.mjs';
 import { checkMinimumFontProbe } from './minimum-font-probe.mjs';
 import { checkNetworkPrivacyBaseline } from './network-privacy.mjs';
+import { checkTrackingCleaning } from './tracking-cleaning.mjs';
+import { checkGpc } from './gpc.mjs';
+import { checkFilterLists } from './filter-lists.mjs';
+import { checkTrackingClicks } from './tracking-clicks.mjs';
 
 export const scenarios = {
   'network-privacy-baseline': checkNetworkPrivacyBaseline,
+  'tracking-cleaning': checkTrackingCleaning,
+  'gpc': checkGpc,
+  'filter-lists': checkFilterLists,
+  'tracking-clicks': checkTrackingClicks,
   'capture-probe': checkFullPageCaptureProbe,
   'dark-mode-probe': checkDarkModeProbe,
   'caret-browsing': checkCaretBrowsing,

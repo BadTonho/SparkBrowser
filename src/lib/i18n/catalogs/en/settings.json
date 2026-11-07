@@ -275,5 +275,18 @@
   "settings.network_doh": "DNS over HTTPS",
   "settings.network_doh_unavailable": "Unavailable: secure DNS coverage and failure behavior have not been verified for the WebView.",
   "settings.network_https": "HTTPS-only mode",
-  "settings.network_https_unavailable": "Unavailable: navigation and one-time HTTP exceptions have not been verified for the WebView."
+  "settings.network_https_unavailable": "Unavailable: navigation and one-time HTTP exceptions have not been verified for the WebView.",
+  "settings.tracking_cleaning": "Remove tracking parameters",
+  "settings.tracking_cleaning_description": "Remove selected tracking parameters from addresses entered in the browser. Links and redirects inside pages are not yet covered. Common authentication and signing markers are preserved, but some links may need an exception.",
+  "settings.tracking_cleaning_exceptions": "Excluded domains and their subdomains",
+  "settings.tracking_cleaning_add": "Add exception",
+  "settings.tracking_cleaning_remove": "Remove exception for {domain}",
+  "settings.tracking_cleaning_placeholder": "example.com",
+  "settings.advanced_protection": "Advanced rule lists and mining protection",
+  "settings.advanced_protection_unavailable": "WebView2 applies network rules from EasyList, EasyPrivacy and NoCoin to intercepted requests. Linux applies them to navigations only; not all requests and filter syntax are covered.",
+  "settings.gpc": "Global Privacy Control",
+  "settings.shield_exceptions": "Shield exceptions (domain and subdomains)",
+  "settings.gpc_coverage": "Optional signal. WebView2 adds the header to intercepted requests; Linux currently exposes only the page property. Frame and worker coverage is not fully validated. Exceptions apply to hostnames and subdomains.",
+  "settings.gpc_reload_confirm": "Changing this setting recreates open pages and loses their live state and navigation history. Continue?",
+  "settings.gpc_unavailable": "Not yet available: sending the signal in network requests and pages requires additional platform integration."
 }

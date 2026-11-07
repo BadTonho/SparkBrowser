@@ -275,5 +275,18 @@
   "settings.network_doh": "DNS sobre HTTPS",
   "settings.network_doh_unavailable": "Indisponível: a cobertura de DNS seguro e o comportamento em falhas ainda não foram verificados na WebView.",
   "settings.network_https": "Modo somente HTTPS",
-  "settings.network_https_unavailable": "Indisponível: a navegação e as exceções HTTP de uso único ainda não foram verificadas na WebView."
+  "settings.network_https_unavailable": "Indisponível: a navegação e as exceções HTTP de uso único ainda não foram verificadas na WebView.",
+  "settings.tracking_cleaning": "Remover parâmetros de rastreamento",
+  "settings.tracking_cleaning_description": "Remove parâmetros selecionados dos endereços inseridos no navegador. Links e redirecionamentos dentro das páginas ainda não são cobertos. Marcadores comuns de autenticação e assinatura são preservados, mas alguns links podem precisar de exceção.",
+  "settings.tracking_cleaning_exceptions": "Domínios excluídos e seus subdomínios",
+  "settings.tracking_cleaning_add": "Adicionar exceção",
+  "settings.tracking_cleaning_remove": "Remover exceção para {domain}",
+  "settings.tracking_cleaning_placeholder": "exemplo.com",
+  "settings.advanced_protection": "Listas avançadas e proteção contra mineração",
+  "settings.advanced_protection_unavailable": "No WebView2, regras de rede do EasyList, EasyPrivacy e NoCoin são aplicadas às requisições interceptadas. No Linux, elas são aplicadas apenas a navegações; nem todas as requisições e regras são cobertas.",
+  "settings.gpc": "Global Privacy Control",
+  "settings.shield_exceptions": "Exceções do escudo (domínio e subdomínios)",
+  "settings.gpc_coverage": "Sinal opcional. O WebView2 adiciona o cabeçalho às requisições interceptadas; no Linux, somente a propriedade da página está disponível. A cobertura de quadros e workers ainda não foi totalmente validada. Exceções abrangem domínios e subdomínios.",
+  "settings.gpc_reload_confirm": "Alterar esta configuração recria as páginas abertas e perde o estado vivo e o histórico de navegação. Continuar?",
+  "settings.gpc_unavailable": "Ainda não disponível: o envio do sinal nas requisições de rede e páginas exige integração adicional com a plataforma."
 }

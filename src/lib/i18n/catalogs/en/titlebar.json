@@ -28,6 +28,7 @@
   "titlebar.rust_adblock_active_p0_blocked_click_to_pause_91a8": "Rust AdBlock Active ({p0} blocked) — Click to pause",
   "titlebar.rust_adblock_paused_click_to_enable_5fe1": "Rust AdBlock Paused — Click to enable",
   "titlebar.toggle_adblock_shield_6c4c": "Toggle AdBlock Shield",
+  "titlebar.suspicious_address": "Check this address: {host}. It may be similar to another site.",
   "titlebar.settings_shortcuts_p0_82b9": "Settings & Shortcuts ({p0})",
   "titlebar.settings_74a8": "Settings",
   "titlebar.enter_zen_focus_mode_p0_d689": "Enter Zen Focus Mode ({p0})",

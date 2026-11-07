@@ -59,11 +59,15 @@ pub fn resolve_browser_input(
         let db = state.db.lock().map_err(|e| e.to_string())?;
         if let Some(conn) = db.as_ref() {
             if let Some(url) = crate::database::site_search_repo::resolve(conn, input)? {
-                return Ok(url);
+                let settings = state.tracking_settings.lock().map_err(|e| e.to_string())?;
+                return Ok(crate::privacy::tracking_parameters::clean(&url, &settings));
             }
         }
     }
-    resolve_input_to_url_with_search_engine(input, engine)
+    let url = resolve_input_to_url_with_search_engine(input, engine)?;
+    let state = app.state::<crate::state::browser_state::BrowserState>();
+    let settings = state.tracking_settings.lock().map_err(|e| e.to_string())?;
+    Ok(crate::privacy::tracking_parameters::clean(&url, &settings))
 }
 
 #[cfg(test)]

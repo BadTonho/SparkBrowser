@@ -5,6 +5,9 @@ pub const WORKSPACE_ISOLATION_KEY: &str = "workspace_isolation";
 pub const HISTORY_RETENTION_KEY: &str = "history_retention";
 pub const ALLOW_POPUPS_KEY: &str = "allow_popups";
 pub const SMART_SCREEN_KEY: &str = "smart_screen_enabled";
+pub const TRACKING_CLEANING_KEY: &str = "tracking_cleaning_v1";
+pub const GPC_KEY: &str = "global_privacy_control_v1";
+pub const SHIELD_EXCEPTIONS_KEY: &str = "shield_exceptions_v1";
 
 pub fn initialize_preferences_table(conn: &Connection) -> Result<(), String> {
     crate::database::migrations::apply(conn, "app-preferences-v1", |tx| {

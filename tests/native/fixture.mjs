@@ -7,10 +7,28 @@ export async function createFixture() {
   const loads = new Map();
   const icons=iconFixture();
   const reports = new Map();
+  const gpcRequests = [];
+  const shieldRequests = [];
+  const trackingRequests = [];
   const commands = new Map();
   const download = { version: 1, mode: 'normal', requests: [], images: new Map() };
   const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
+    if (request.url === '/page/link-source') {
+      response.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' }).end('<!doctype html><title>Tracking fixture</title><a id="tracking-link" href="/page/link-target?utm_source=fixture&amp;keep=1">Link</a><form method="post" action="/page/post-target?utm_source=fixture"><button id="post-button">Send</button></form>'); return;
+    }
+    if (request.url?.startsWith('/page/link-target') || request.url?.startsWith('/page/post-target')) {
+      trackingRequests.push({ url: request.url, method: request.method });
+      response.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' }).end('<!doctype html><title>Destination</title>'); return;
+    }
+    if (request.url === '/page/filter-test') {
+      response.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' }).end('<!doctype html><title>Filter fixture</title><script src="/ads-native.js"></script><script src="/ordinary-script.js"></script>'); return;
+    }
+    if (request.url === '/ads-native.js' || request.url === '/ordinary-script.js') {
+      shieldRequests.push(request.url);
+      response.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' }).end('window.fixtureLoaded = true'); return;
+    }
+    if (request.url?.startsWith('/page/gpc')) gpcRequests.push({ url: request.url, header: request.headers['sec-gpc'] });
     const url = new URL(request.url, 'http://127.0.0.1');
     if(icons.handle(url,response))return;
     if (url.pathname === '/tone.wav') {
@@ -227,6 +245,6 @@ export async function createFixture() {
     response.writeHead(404).end();
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands, download, payload,icons,
+  return { origin: `http://127.0.0.1:${server.address().port}`, loads, reports, commands, download, payload,icons, gpcRequests, shieldRequests, trackingRequests,
     close: () => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }) };
 }

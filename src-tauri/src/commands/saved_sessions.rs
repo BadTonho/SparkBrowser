@@ -116,7 +116,7 @@ pub async fn restore_named_session(
             tab.title = page.title;
             tab.is_pinned = page.is_pinned;
             tab.is_hibernated = true;
-            if crate::privacy::adblock_engine::should_block_url(&tab.url, shield) {
+            if crate::privacy::adblock_engine::site_is_protected(&state, &tab.url) && crate::privacy::adblock_engine::should_block_url(&tab.url, shield) {
                 warnings.push(format!("Privacy shield blocked: {}", tab.title));
             } else {
                 if first_allowed.is_none() {

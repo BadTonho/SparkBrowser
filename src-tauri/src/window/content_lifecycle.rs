@@ -15,7 +15,7 @@ pub fn prepare_content_reset(state: &BrowserState, enabled: bool) -> Result<(), 
         .clone();
     for tab in state.tabs.lock().map_err(|e| e.to_string())?.iter_mut() {
         tab.is_hibernated = tab.id != active;
-        if tab.id == active && crate::privacy::adblock_engine::should_block_url(&tab.url, enabled) {
+        if tab.id == active && crate::privacy::adblock_engine::site_is_protected(state, &tab.url) && crate::privacy::adblock_engine::should_block_url(&tab.url, enabled) {
             tab.url = crate::state::browser_state::DEFAULT_HOME_URL.to_string();
         }
     }

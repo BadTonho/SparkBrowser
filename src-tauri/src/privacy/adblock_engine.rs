@@ -60,7 +60,19 @@ pub fn should_block_url(raw_url: &str, shield_enabled: bool) -> bool {
 /// Best-effort page-level request filtering and cosmetic rules. The host list
 /// is shared with Rust navigation checks; this is not a full network filter.
 pub fn build_content_shield_script(shield_enabled: bool, token: &str) -> String {
+    build_content_shield_script_with_exceptions(shield_enabled, token, &[])
+}
+
+pub fn build_content_shield_script_with_exceptions(
+    shield_enabled: bool,
+    token: &str,
+    exceptions: &[String],
+) -> String {
     include_str!("content_shield.js")
+        .replace(
+            "__SHIELD_EXCEPTIONS__",
+            &serde_json::to_string(exceptions).expect("domains serializable"),
+        )
         .replace(
             "__SHIELD_TOKEN__",
             &serde_json::to_string(token).expect("token serializable"),
@@ -75,10 +87,29 @@ pub fn build_content_shield_script(shield_enabled: bool, token: &str) -> String 
         )
 }
 
+pub fn site_is_protected(state: &crate::state::browser_state::BrowserState, raw: &str) -> bool {
+    let Ok(url) = Url::parse(raw) else {
+        return true;
+    };
+    state
+        .shield_settings
+        .lock()
+        .map(|settings| settings.applies_to(&url))
+        .unwrap_or(true)
+}
+
 /// Both possible document-created ordering sequences converge to the new policy.
 pub fn build_replacement_shield_script(enabled: bool, token: &str) -> String {
+    build_replacement_shield_script_with_exceptions(enabled, token, &[])
+}
+
+pub fn build_replacement_shield_script_with_exceptions(
+    enabled: bool,
+    token: &str,
+    exceptions: &[String],
+) -> String {
     let encoded = serde_json::to_string(token).expect("token serializable");
-    let initialize = build_content_shield_script(enabled, token);
+    let initialize = build_content_shield_script_with_exceptions(enabled, token, exceptions);
     format!("if (typeof window.__veloceSetShieldPolicy === 'function') {{ window.__veloceSetShieldPolicy({encoded}, {enabled}); }} else {{ {initialize} }}")
 }
 

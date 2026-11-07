@@ -3,6 +3,12 @@
   "identifier": "default",
   "description": "Default capabilities for the main browser shell window",
   "permissions": [
+    "allow-get-tracking-cleaning",
+    "allow-set-tracking-cleaning",
+    "allow-get-gpc",
+    "allow-set-gpc",
+    "allow-get-shield-exceptions",
+    "allow-set-shield-exceptions",
     "allow-get-account-containers",
     "allow-create-account-container",
     "allow-rename-account-container",

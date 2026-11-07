@@ -13,7 +13,9 @@ test('every application command is ACL covered and only the local shell receives
   assert.equal(capability.remote, undefined);
   assert.equal(capability.local, true);
   assert.deepEqual(capability.webviews, ['main']);
-  assert.deepEqual(capability.permissions.filter(p => p.startsWith('allow-')).sort(), commands.map(c => `allow-${c.replaceAll('_', '-')}`).sort());
+  const testOnly = ['set_dark_mode_probe_scheme', 'set_minimum_font_probe_size'];
+  assert.deepEqual(capability.permissions.filter(p => p.startsWith('allow-')).sort(), commands.filter(c => !testOnly.includes(c)).map(c => `allow-${c.replaceAll('_', '-')}`).sort());
+  for (const command of testOnly) assert.ok(!capability.permissions.includes(`allow-${command.replaceAll('_', '-')}`));
   assert.match(lib, /commands::access::shell_only/);
 });
 

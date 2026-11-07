@@ -84,7 +84,7 @@ Revisar os 36 itens para registrar o estado atual, os pontos de entrada existent
 - Global Privacy Control (GPC): definir ativação padrão, exceções por site e comportamento em plataformas com cobertura limitada.
 - Bloqueio de criptomineração: definir fontes e atualização das listas, cobertura e exceções; não presumir que o bloqueio por hosts cubra todos os scripts.
 
-**Verificação da etapa:** documentar cobertura e limitações, testar exceções e evitar bloqueios ou avisos inesperados em fluxos legítimos.
+**Verificação da etapa:** documentar cobertura e limitações, testar exceções e evitar bloqueios ou avisos inesperados em fluxos legítimos. Ver [proteções contra rastreamento](../features/tracking-protection.md) para a implementação e pendências.
 
 ## Etapa 9 — Recursos de WebView, extensões e idiomas
 

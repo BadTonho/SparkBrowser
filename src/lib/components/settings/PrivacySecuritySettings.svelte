@@ -2,6 +2,9 @@
   import { onMount } from "svelte";
   import { t } from "../../i18n";
   import PermissionSettings from "../permissions/PermissionSettings.svelte";
+  import TrackingCleaningSettings from "./TrackingCleaningSettings.svelte";
+  import GpcSettings from "./GpcSettings.svelte";
+  import ShieldExceptions from "./ShieldExceptions.svelte";
   import { privacyBusy, privacyError, privacyStats, flipAdblockShield } from "../../stores/privacyStore";
   import { clearAllHistory } from "../../services/bridge/persistence";
   import { isTauriRuntime } from "../../services/bridge/runtime";
@@ -132,6 +135,9 @@
   </label>
 
   <h3 class="group-title privacy-subheading">{$t("settings.site_protection")}</h3>
+  <div class="setting-row"><div class="row-text"><span class="row-label">{$t("settings.advanced_protection")}</span><span class="row-desc">{$t("settings.advanced_protection_unavailable")}</span></div></div>
+  <GpcSettings />
+  <TrackingCleaningSettings />
   <label class="privacy-switch-row" id="setting-popup-policy" tabindex="-1">
     <span class="row-text">
       <span class="row-label">{$t("settings.popup_policy")}</span>
@@ -153,6 +159,7 @@
     </span>
   </label>
 
+  <ShieldExceptions />
   {#if error}<p class="settings-message" role="alert">{error}</p>{/if}
   {#if $privacyError}<p class="settings-message" role="alert">{$privacyError}</p>{/if}
   {#if notice}<p class="settings-message" role="status">{notice}</p>{/if}

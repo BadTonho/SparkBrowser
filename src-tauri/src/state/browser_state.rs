@@ -74,6 +74,9 @@ pub struct BrowserState {
     pub auto_skip_ads_enabled: AtomicBool,
     /// Opt-in per-workspace content isolation (own WebView2 data folder each).
     pub workspace_isolation: AtomicBool,
+    pub tracking_settings: Mutex<crate::privacy::tracking_parameters::TrackingSettings>,
+    pub gpc_settings: Mutex<crate::privacy::tracking_parameters::TrackingSettings>,
+    pub shield_settings: Mutex<crate::privacy::tracking_parameters::TrackingSettings>,
     pub blocked_count: Mutex<u64>,
     pub db: Mutex<Option<Connection>>,
 }
@@ -121,6 +124,9 @@ impl Default for BrowserState {
             smart_screen_supported: AtomicBool::new(false),
             auto_skip_ads_enabled: AtomicBool::new(false),
             workspace_isolation: AtomicBool::new(false),
+            tracking_settings: Mutex::new(Default::default()),
+            gpc_settings: Mutex::new(Default::default()),
+            shield_settings: Mutex::new(crate::privacy::tracking_parameters::TrackingSettings { enabled: true, exceptions: Vec::new() }),
             blocked_count: Mutex::new(0),
             db: Mutex::new(None),
         }
