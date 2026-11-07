@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ContainerBadge from "./ContainerBadge.svelte";
   import type { TabItem } from "../../types/browser";
   import { startTabDrag, tabDrag } from "../../stores/tabDragStore";
   import { removeTab, toggleTabPin, selectTab } from "../../stores/browserStore";
@@ -86,6 +87,7 @@
       >
         <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
+        {#if tab.container_id}<ContainerBadge id={tab.container_id} />{/if}
         {#if tab.is_ephemeral}
           <span class="ephemeral-badge" title={$t("tabs.ephemeral_tooltip")}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">

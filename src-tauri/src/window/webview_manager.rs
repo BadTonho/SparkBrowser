@@ -166,7 +166,7 @@ pub(super) fn ensure_tab_webview(
         webview_builder.on_new_window(move |url, features| {
             let response = crate::media::pip_window::new_window(&app, &id, &token, &url, features);
             if matches!(&response, tauri::webview::NewWindowResponse::Deny) {
-                crate::commands::tabs::open_popup_url(app.clone(), url);
+                crate::commands::tabs::open_popup_url(app.clone(), id.clone(), token.clone(), url);
             }
             response
         })
@@ -175,8 +175,10 @@ pub(super) fn ensure_tab_webview(
     #[cfg(not(windows))]
     let webview_builder = {
         let app = app.clone();
+        let id = tab_id.to_string();
+        let token = keyboard_bridge_token.clone();
         webview_builder.on_new_window(move |url, _features| {
-            crate::commands::tabs::open_popup_url(app.clone(), url);
+            crate::commands::tabs::open_popup_url(app.clone(), id.clone(), token.clone(), url);
             tauri::webview::NewWindowResponse::Deny
         })
     };

@@ -2,6 +2,7 @@ use commands::backup::{
     choose_backup_file, commit_backup_import, discard_backup_import, export_backup,
     finish_backup_preferences, get_backup_pending_preferences, preview_backup_import,
 };
+use commands::account_containers::{get_account_containers, create_account_container, rename_account_container, delete_account_container, set_tab_account_container, create_container_tab};
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
@@ -264,6 +265,12 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
+            get_account_containers,
+            create_account_container,
+            rename_account_container,
+            delete_account_container,
+            set_tab_account_container,
+            create_container_tab,
             full_page_capture_probe,
             set_dark_mode_probe_scheme,
             set_minimum_font_probe_size,

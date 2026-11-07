@@ -267,10 +267,22 @@
           "markdownDescription": "Enables the control_download command without any pre-configured scope."
         },
         {
+          "description": "Enables the create_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-account-container",
+          "markdownDescription": "Enables the create_account_container command without any pre-configured scope."
+        },
+        {
           "description": "Enables the create_bookmark_folder command without any pre-configured scope.",
           "type": "string",
           "const": "allow-create-bookmark-folder",
           "markdownDescription": "Enables the create_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the create_container_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-container-tab",
+          "markdownDescription": "Enables the create_container_tab command without any pre-configured scope."
         },
         {
           "description": "Enables the create_ephemeral_tab command without any pre-configured scope.",
@@ -289,6 +301,12 @@
           "type": "string",
           "const": "allow-create-workspace",
           "markdownDescription": "Enables the create_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-account-container",
+          "markdownDescription": "Enables the delete_account_container command without any pre-configured scope."
         },
         {
           "description": "Enables the delete_bookmark_folder command without any pre-configured scope.",
@@ -379,6 +397,12 @@
           "type": "string",
           "const": "allow-full-page-capture-probe",
           "markdownDescription": "Enables the full_page_capture_probe command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_account_containers command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-account-containers",
+          "markdownDescription": "Enables the get_account_containers command without any pre-configured scope."
         },
         {
           "description": "Enables the get_active_workspace command without any pre-configured scope.",
@@ -657,6 +681,12 @@
           "markdownDescription": "Enables the remove_extension command without any pre-configured scope."
         },
         {
+          "description": "Enables the rename_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-rename-account-container",
+          "markdownDescription": "Enables the rename_account_container command without any pre-configured scope."
+        },
+        {
           "description": "Enables the rename_bookmark_folder command without any pre-configured scope.",
           "type": "string",
           "const": "allow-rename-bookmark-folder",
@@ -891,6 +921,12 @@
           "markdownDescription": "Enables the set_split_view command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_tab_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-account-container",
+          "markdownDescription": "Enables the set_tab_account_container command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_tab_drag_preview command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-tab-drag-preview",
@@ -1071,10 +1107,22 @@
           "markdownDescription": "Denies the control_download command without any pre-configured scope."
         },
         {
+          "description": "Denies the create_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-account-container",
+          "markdownDescription": "Denies the create_account_container command without any pre-configured scope."
+        },
+        {
           "description": "Denies the create_bookmark_folder command without any pre-configured scope.",
           "type": "string",
           "const": "deny-create-bookmark-folder",
           "markdownDescription": "Denies the create_bookmark_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the create_container_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-container-tab",
+          "markdownDescription": "Denies the create_container_tab command without any pre-configured scope."
         },
         {
           "description": "Denies the create_ephemeral_tab command without any pre-configured scope.",
@@ -1093,6 +1141,12 @@
           "type": "string",
           "const": "deny-create-workspace",
           "markdownDescription": "Denies the create_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-account-container",
+          "markdownDescription": "Denies the delete_account_container command without any pre-configured scope."
         },
         {
           "description": "Denies the delete_bookmark_folder command without any pre-configured scope.",
@@ -1183,6 +1237,12 @@
           "type": "string",
           "const": "deny-full-page-capture-probe",
           "markdownDescription": "Denies the full_page_capture_probe command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_account_containers command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-account-containers",
+          "markdownDescription": "Denies the get_account_containers command without any pre-configured scope."
         },
         {
           "description": "Denies the get_active_workspace command without any pre-configured scope.",
@@ -1461,6 +1521,12 @@
           "markdownDescription": "Denies the remove_extension command without any pre-configured scope."
         },
         {
+          "description": "Denies the rename_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-rename-account-container",
+          "markdownDescription": "Denies the rename_account_container command without any pre-configured scope."
+        },
+        {
           "description": "Denies the rename_bookmark_folder command without any pre-configured scope.",
           "type": "string",
           "const": "deny-rename-bookmark-folder",
@@ -1693,6 +1759,12 @@
           "type": "string",
           "const": "deny-set-split-view",
           "markdownDescription": "Denies the set_split_view command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_account_container command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-account-container",
+          "markdownDescription": "Denies the set_tab_account_container command without any pre-configured scope."
         },
         {
           "description": "Denies the set_tab_drag_preview command without any pre-configured scope.",

@@ -42,6 +42,8 @@ pub struct TabInfo {
     pub title: String,
     pub url: String,
     pub workspace_id: String,
+    #[serde(default)]
+    pub container_id: Option<String>,
     pub is_active: bool,
     #[serde(default)]
     pub is_visible: bool,
@@ -108,6 +110,7 @@ impl TabInfo {
             title,
             url,
             workspace_id,
+            container_id: None,
             is_active,
             is_visible: false,
             is_hibernated: false,

@@ -47,6 +47,7 @@ export interface TabItem {
   url: string;
   workspace_id: string;
   is_active: boolean;
+  container_id?: string | null;
   is_visible?: boolean;
   is_hibernated: boolean;
   last_active_epoch?: number;

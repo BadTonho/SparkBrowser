@@ -14,7 +14,7 @@ pub fn popup_target_allowed(enabled: bool, url: &tauri::Url) -> bool {
 }
 
 /// Web pop-ups open as normal browser tabs; internal PiP windows are handled separately.
-pub fn open_popup_url(app: AppHandle, url: tauri::Url) {
+pub fn open_popup_url(app: AppHandle, source_tab: String, generation: String, url: tauri::Url) {
     if !popup_target_allowed(
         app.state::<BrowserState>()
             .allow_popups
@@ -26,6 +26,10 @@ pub fn open_popup_url(app: AppHandle, url: tauri::Url) {
     tauri::async_runtime::spawn(async move {
         let state = app.state::<BrowserState>();
         let _operation = state.tab_operations.lock().await;
+        let label = crate::state::tab_model::webview_label_for_tab(&source_tab);
+        if !crate::window::navigation_state::is_current_generation(&app, &label, &generation) {
+            return;
+        }
         if !popup_target_allowed(
             state
                 .allow_popups
@@ -34,7 +38,10 @@ pub fn open_popup_url(app: AppHandle, url: tauri::Url) {
         ) {
             return;
         }
-        let _ = create_tab_inner(&app, &state, Some(url.to_string()), None, None);
+        let source = state.tabs.lock().ok().and_then(|tabs| tabs.iter().find(|tab| tab.id == source_tab).cloned());
+        if let Some(source) = source {
+            let _ = create_tab_inner_ext(&app, &state, Some(url.to_string()), None, None, source.is_ephemeral, source.container_id, Some(source.workspace_id));
+        }
     });
 }
 
@@ -132,7 +139,7 @@ pub async fn create_ephemeral_tab(
 ) -> Result<TabSnapshot, String> {
     let mut span = state.diagnostics.span("tabs.create_ephemeral");
     let _operation = state.tab_operations.lock().await;
-    let result = create_tab_inner_ext(&app, &state, url, search_engine, None, true);
+    let result = create_tab_inner_ext(&app, &state, url, search_engine, None, true, None, None);
     span.finish(result.is_ok(), 0);
     result
 }
@@ -144,7 +151,7 @@ pub(super) fn create_tab_inner(
     search_engine: Option<String>,
     side: Option<crate::state::split_docking::DockSide>,
 ) -> Result<TabSnapshot, String> {
-    create_tab_inner_ext(app, state, url, search_engine, side, false)
+    create_tab_inner_ext(app, state, url, search_engine, side, false, None, None)
 }
 
 pub(super) fn create_tab_inner_ext(
@@ -154,6 +161,8 @@ pub(super) fn create_tab_inner_ext(
     search_engine: Option<String>,
     side: Option<crate::state::split_docking::DockSide>,
     is_ephemeral: bool,
+    container_id: Option<String>,
+    workspace_id: Option<String>,
 ) -> Result<TabSnapshot, String> {
     let raw_target = url.unwrap_or_else(|| DEFAULT_HOME_URL.to_string());
     let resolved_url = crate::window::url_input::resolve_browser_input(
@@ -174,18 +183,19 @@ pub(super) fn create_tab_inner_ext(
         id
     };
 
-    let active_ws_id = state
+    let active_ws_id = workspace_id.unwrap_or_else(|| state
         .active_workspace_id
         .lock()
         .map(|ws| ws.clone())
-        .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string());
+        .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string()));
 
     TabCheckpoint::commit_with_activation(state, Some((&new_tab_id, true)), || {
-        let tab_info = if is_ephemeral {
+        let mut tab_info = if is_ephemeral {
             TabInfo::new_ephemeral(new_tab_id.clone(), resolved_url.clone(), active_ws_id, true)
         } else {
             TabInfo::new(new_tab_id.clone(), resolved_url.clone(), active_ws_id, true)
         };
+        if !is_ephemeral { tab_info.container_id = container_id; }
         state.tabs.lock().map_err(|e| e.to_string())?.push(tab_info);
         if let Some(side) = side {
             if let Some(layout) = state

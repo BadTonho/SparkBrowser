@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ContainerBadge from "./ContainerBadge.svelte";
   import { startTabDrag, cancelTabDrag, tabDrag } from "../../stores/tabDragStore";
   import TabMuteButton from "../media/TabMuteButton.svelte";
   import { t } from "../../i18n";
@@ -152,6 +153,7 @@
         <div class="tab-active-bar"></div>
         <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
+        {#if tab.container_id}<ContainerBadge id={tab.container_id} />{/if}
         <div class="tab-meta">
           <span class="tab-title" class:is-hibernated={tab.is_hibernated}>{tab.title}</span>
           <span class="tab-host">

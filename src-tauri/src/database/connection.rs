@@ -98,6 +98,7 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
         Ok(())
     })?;
     crate::database::migrations::upgrade_session(conn)?;
+    crate::database::account_containers_repo::migrate(conn)?;
     crate::database::migrations::apply(conn, "chronological-indexes-v1", |conn| {
         conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_history_recent ON history(visited_at DESC, id DESC);

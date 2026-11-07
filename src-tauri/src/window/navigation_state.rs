@@ -1,7 +1,7 @@
 use crate::state::{browser_state::BrowserState, tab_model::TabInfo};
 use tauri::{AppHandle, Manager};
 
-pub(super) fn is_current_generation(app: &AppHandle, label: &str, token: &str) -> bool {
+pub(crate) fn is_current_generation(app: &AppHandle, label: &str, token: &str) -> bool {
     app.state::<BrowserState>()
         .keyboard_bridge_tokens
         .lock()

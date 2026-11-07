@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AccountContainerSettings from "./AccountContainerSettings.svelte";
   import { onMount } from "svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { describeError } from "../../services/user-errors.js";
@@ -130,6 +131,8 @@
     }
   }
 </script>
+
+<AccountContainerSettings />
 
 <section class="setting-group" aria-labelledby="workspaces-heading">
   <div class="section-heading">

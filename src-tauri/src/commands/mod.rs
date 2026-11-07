@@ -1,4 +1,5 @@
 pub mod downloads;
+pub mod account_containers;
 pub mod navigation;
 pub mod notes;
 pub mod persistence;

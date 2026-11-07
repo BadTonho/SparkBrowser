@@ -52,7 +52,7 @@ Revisar os 36 itens para registrar o estado atual, os pontos de entrada existent
 
 **Gate de viabilidade:** fazer a investigação em Windows e Linux antes de implementar ou reduzir cobertura. Se o escopo proposto não for viável, apresentar as limitações e alternativas para decisão antes de prosseguir.
 
-## Etapa 5 — Experiência offline e personalização local
+## Etapa 5 — Experiência offline e personalização local ( deixar pra depois )
 
 - Mini-jogo offline: mostrar um jogo local simples após identificar falha de conexão, sem rede ou coleta de dados, preservando ações de recuperação.
 - CSS da interface do usuário: permitir um arquivo local opcional e definir um mecanismo de recuperação caso o estilo torne a interface inutilizável.

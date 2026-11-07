@@ -1,5 +1,11 @@
 // Commands covered by the application ACL. Keep synchronized with generate_handler!.
 pub const APP_COMMANDS: &[&str] = &[
+    "get_account_containers",
+    "create_account_container",
+    "rename_account_container",
+    "delete_account_container",
+    "set_tab_account_container",
+    "create_container_tab",
     "full_page_capture_probe",
     "set_dark_mode_probe_scheme",
     "set_minimum_font_probe_size",

@@ -61,10 +61,24 @@ pub fn directory(app: &AppHandle, workspace_id: &str) -> Result<Option<PathBuf>,
 /// active workspace so creation can still proceed inside a scoped folder.
 pub fn content_directory(app: &AppHandle, tab_id: &str) -> Result<Option<PathBuf>, String> {
     let state = app.state::<crate::state::browser_state::BrowserState>();
-    if let Ok(tabs) = state.tabs.lock() {
+    {
+        let tabs = state.tabs.lock().map_err(|_| "Tab state unavailable")?;
         if let Some(tab) = tabs.iter().find(|tab| tab.id == tab_id) {
             if tab.is_ephemeral {
                 return crate::window::ephemeral::ephemeral_directory(app, tab_id).map(Some);
+            }
+            if let Some(id) = &tab.container_id {
+                if !crate::database::account_containers_repo::valid_id(id) {
+                    return Err("Invalid account container ID".into());
+                }
+                let db = state.db.lock().map_err(|e| e.to_string())?;
+                let conn = db.as_ref().ok_or("Database unavailable")?;
+                let available: bool = conn.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM account_containers WHERE id=?1 AND deleting=0)",
+                    [id], |row| row.get(0),
+                ).map_err(|e| e.to_string())?;
+                if !available { return Err("Account container unavailable".into()); }
+                return Ok(Some(app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("webview-accounts").join(id)));
             }
         }
     }
