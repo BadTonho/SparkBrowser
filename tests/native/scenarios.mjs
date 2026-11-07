@@ -37,9 +37,11 @@ import { checkFeatures } from './features.mjs';
 import { checkWorkspaceSwitcher } from './workspace-switcher.mjs';
 import { checkQuickSettings } from './quick-settings.mjs';
 import { checkFullPageCaptureProbe } from './capture-probe.mjs';
+import { checkDarkModeProbe } from './dark-mode-probe.mjs';
 
 export const scenarios = {
   'capture-probe': checkFullPageCaptureProbe,
+  'dark-mode-probe': checkDarkModeProbe,
   'security-boundaries': checkSecurityBoundaries,
   'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,

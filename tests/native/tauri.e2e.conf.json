@@ -2,6 +2,9 @@
   "identifier": "org.veloce.browser.native-tests",
   "productName": "Veloce Native Tests",
   "app": {
+    "security": {
+      "capabilities": ["default", "native-test-dark-mode-probe"]
+    },
     "windows": [{
       "label": "main",
       "title": "Veloce Native Tests",

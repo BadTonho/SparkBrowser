@@ -82,6 +82,48 @@ export async function createFixture() {
         <script>window.captureProbeReady=true;setTimeout(()=>scrollTo(0,720),100);setInterval(()=>{const n=document.querySelector('#dynamic-marker');if(n)n.textContent='Dynamic text: '+Date.now()},500);</script>`);
       return;
     }
+    if (url.pathname === '/dark-mode-image.svg') {
+      response.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      response.end('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="120"><rect width="120" height="120" fill="#ffd400"/><rect x="120" width="120" height="120" fill="#e40046"/><circle cx="120" cy="60" r="34" fill="#00a6a6"/></svg>');
+      return;
+    }
+    if (url.pathname === '/dark-mode-probe') {
+      const kind = ['supported', 'light-only', 'already-dark'].includes(url.searchParams.get('kind'))
+        ? url.searchParams.get('kind') : 'supported';
+      const transformed = url.searchParams.get('transform') === '1';
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.end(`<!doctype html><html class="${transformed ? 'probe-transform' : ''}" data-kind="${kind}"><head>
+        <meta charset="utf-8">${kind === 'supported' ? '<meta name="color-scheme" content="light dark">' : ''}<title>Dark mode probe: ${kind}</title>
+        <style>
+          *{box-sizing:border-box}html,body{margin:0;min-height:100%;font:18px system-ui,sans-serif}
+          body{background:#fff;color:#171717;transition:background-color .15s,color .15s}
+          header{position:sticky;top:0;padding:16px;background:#d9e8ff;color:#10243a;border-bottom:3px solid #3478c8}
+          main{max-width:760px;margin:0 auto;padding:24px}.card{padding:18px;margin:16px 0;background:#f2f2f2;color:#222;border:2px solid #555;border-radius:8px}
+          .swatches{display:flex;gap:8px}.swatches i{width:72px;height:48px;border:1px solid #222;background:#ffe11a}.swatches i:nth-child(2){background:#d51b65}.swatches i:nth-child(3){background:#087f8c}
+          img,video{display:block;width:240px;height:120px;object-fit:contain;background:#fafafa;border:1px solid #333}
+          footer{height:100px;padding:20px;background:#ddd;color:#111}
+          html[data-kind="supported"]{color-scheme:light dark}
+          @media(prefers-color-scheme:dark){html[data-kind="supported"] body{background:#171b22;color:#f2f4f8}html[data-kind="supported"] header{background:#22344c;color:#f5f8fc}html[data-kind="supported"] .card{background:#292f38;color:#f2f4f8;border-color:#aab5c5}}
+          html[data-kind="already-dark"] body{background:#111820;color:#f2f4f8}html[data-kind="already-dark"] header{background:#1d2936;color:#f5f8fc}html[data-kind="already-dark"] .card{background:#252e38;color:#f2f4f8;border-color:#8995a5}
+          html.probe-transform{filter:invert(1) hue-rotate(180deg)}html.probe-transform img,html.probe-transform video{filter:invert(1) hue-rotate(180deg)}
+        </style></head><body><header><strong>Forced dark mode probe · ${kind}</strong></header>
+        <main><h1>Page color test</h1><p id="scheme-state">Waiting for color scheme</p>
+        <section class="card"><h2>Authored surface</h2><p>Background and text authored by the page.</p><div class="swatches"><i></i><i></i><i></i></div></section>
+        <section class="card"><h2>Image</h2><img id="probe-image" src="/dark-mode-image.svg" alt="Three color swatches"></section>
+        <section class="card"><h2>Live video</h2><canvas id="video-source" width="240" height="120" hidden></canvas><video id="probe-video" muted autoplay playsinline></video></section>
+        <section class="card"><h2>Dynamic content</h2><p id="dynamic-content">Initial dynamic content</p><input aria-label="Probe input" value="Input contrast sample"></section>
+        <footer>Bottom of the test page</footer></main>
+        <script>
+          const media=matchMedia('(prefers-color-scheme: dark)');
+          function report(){document.querySelector('#scheme-state').textContent='prefers-color-scheme: '+(media.matches?'dark':'light');}
+          report();media.addEventListener('change',report);
+          let tick=0;setInterval(()=>{tick++;document.querySelector('#dynamic-content').textContent='Dynamic update '+tick+' · '+Date.now()},700);
+          const canvas=document.querySelector('#video-source'),ctx=canvas.getContext('2d'),video=document.querySelector('#probe-video');
+          ctx.fillStyle='#ffcc00';ctx.fillRect(0,0,120,120);ctx.fillStyle='#e40046';ctx.fillRect(120,0,120,120);ctx.fillStyle='#00a6a6';ctx.fillRect(0,60,240,60);
+          video.srcObject=canvas.captureStream(5);video.play().catch(()=>{});setInterval(()=>{ctx.fillStyle='#00a6a6';ctx.fillRect((Date.now()/40)%240,0,5,120)},100);window.darkModeProbeReady=true;
+        </script></body></html>`);
+      return;
+    }
     if (url.pathname.startsWith('/page/')) {
       loads.set(id, (loads.get(id) ?? 0) + 1);
       response.setHeader('Content-Type', 'text/html; charset=utf-8');

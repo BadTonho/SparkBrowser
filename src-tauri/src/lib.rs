@@ -5,6 +5,7 @@ use commands::backup::{
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
+use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::new_tab::set_new_tab_preferences;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
@@ -263,6 +264,7 @@ pub fn run() {
         })
         .invoke_handler(commands::access::shell_only(tauri::generate_handler![
             full_page_capture_probe,
+            set_dark_mode_probe_scheme,
             get_webview_runtime_status,
             restart_webview_runtime,
             focus_address_bar,

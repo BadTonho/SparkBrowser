@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "native-test-dark-mode-probe",
+  "description": "Allows only the isolated native test build to control its WebView color-scheme probe.",
+  "windows": ["main"],
+  "permissions": ["allow-set-dark-mode-probe-scheme"]
+}

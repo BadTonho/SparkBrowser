@@ -21,6 +21,7 @@ pub mod overlays;
 
 pub mod backup;
 pub mod capture_probe;
+pub mod dark_mode_probe;
 
 pub mod closed_tabs;
 pub mod recovery;

@@ -759,6 +759,12 @@
           "markdownDescription": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_dark_mode_probe_scheme command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-dark-mode-probe-scheme",
+          "markdownDescription": "Enables the set_dark_mode_probe_scheme command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_download_checksum command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-download-checksum",
@@ -1549,6 +1555,12 @@
           "type": "string",
           "const": "deny-set-bookmark-context-menu-overlay",
           "markdownDescription": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_dark_mode_probe_scheme command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-dark-mode-probe-scheme",
+          "markdownDescription": "Denies the set_dark_mode_probe_scheme command without any pre-configured scope."
         },
         {
           "description": "Denies the set_download_checksum command without any pre-configured scope.",
