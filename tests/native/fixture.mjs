@@ -14,8 +14,17 @@ export async function createFixture() {
   const download = { version: 1, mode: 'normal', requests: [], images: new Map() };
   const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
+    if (request.url === '/page/tracking-redirect') {
+      response.writeHead(302, { Location: '/page/link-target?utm_source=redirect&keep=redirect', 'Cache-Control': 'no-store' }).end(); return;
+    }
+    if (request.url === '/page/signed-redirect') {
+      response.writeHead(302, { Location: '/page/link-target?utm_source=signed&state=opaque', 'Cache-Control': 'no-store' }).end(); return;
+    }
+    if (request.url === '/page/post-redirect') {
+      response.writeHead(307, { Location: '/page/post-target?utm_source=post-redirect', 'Cache-Control': 'no-store' }).end(); return;
+    }
     if (request.url === '/page/link-source') {
-      response.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' }).end('<!doctype html><title>Tracking fixture</title><a id="tracking-link" href="/page/link-target?utm_source=fixture&amp;keep=1">Link</a><form method="post" action="/page/post-target?utm_source=fixture"><button id="post-button">Send</button></form>'); return;
+      response.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' }).end('<!doctype html><title>Tracking fixture</title><a id="tracking-link" href="/page/link-target?utm_source=fixture&amp;keep=1">Link</a><form method="post" action="/page/post-target?utm_source=fixture"><button id="post-button">Send</button></form><form method="post" action="/page/post-redirect"><button id="post-redirect-button">Redirect POST</button></form>'); return;
     }
     if (request.url?.startsWith('/page/link-target') || request.url?.startsWith('/page/post-target')) {
       trackingRequests.push({ url: request.url, method: request.method });
@@ -28,7 +37,17 @@ export async function createFixture() {
       shieldRequests.push(request.url);
       response.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' }).end('window.fixtureLoaded = true'); return;
     }
-    if (request.url?.startsWith('/page/gpc')) gpcRequests.push({ url: request.url, header: request.headers['sec-gpc'] });
+    if (request.url?.startsWith('/page/gpc') || request.url?.startsWith('/gpc-resource/')) gpcRequests.push({ url: request.url, header: request.headers['sec-gpc'] });
+    if (request.url === '/page/gpc-contexts') {
+      response.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' }).end('<!doctype html><title>GPC contexts</title><iframe src="/gpc-resource/frame"></iframe><script>fetch("/gpc-resource/main-fetch"); new Worker("/gpc-resource/worker.js");</script>'); return;
+    }
+    if (request.url === '/gpc-resource/frame') {
+      response.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' }).end('<!doctype html><script>fetch("/gpc-resource/frame-fetch")</script>'); return;
+    }
+    if (request.url === '/gpc-resource/worker.js') {
+      response.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' }).end('fetch("/gpc-resource/worker-fetch")'); return;
+    }
+    if (request.url?.startsWith('/gpc-resource/')) { response.writeHead(200, { 'Cache-Control': 'no-store' }).end('ok'); return; }
     const url = new URL(request.url, 'http://127.0.0.1');
     if(icons.handle(url,response))return;
     if (url.pathname === '/tone.wav') {

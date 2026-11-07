@@ -183,11 +183,17 @@ pub async fn run(app: &AppHandle, id: &str, control: &Control, verify: bool) -> 
         hash = prefix;
     }
     stopped(control)?;
-    let shield = *app
-        .state::<crate::state::browser_state::BrowserState>()
-        .shield_enabled
-        .lock()
-        .map_err(|e| e.to_string())?;
+    let state = app.state::<crate::state::browser_state::BrowserState>();
+    let shield = match record.task.source_page_url.as_deref() {
+        Some(source) => {
+            *state.shield_enabled.lock().map_err(|e| e.to_string())?
+                && crate::privacy::adblock_engine::site_is_protected(&state, source)
+                && crate::privacy::adblock_engine::site_is_protected(&state, &record.task.url)
+        }
+        None => {
+            crate::privacy::adblock_engine::download_shield_enabled(&state, None, &record.task.url)
+        }
+    };
     if crate::privacy::adblock_engine::should_block_url(&record.task.url, shield) {
         return Err("downloads.blocked".into());
     }

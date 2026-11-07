@@ -102,10 +102,11 @@ fn start_native_download(
         || parsed.password().is_some()
         || crate::privacy::adblock_engine::should_block_url(
             &url,
-            *app.state::<BrowserState>()
-                .shield_enabled
-                .lock()
-                .map_err(|e| e.to_string())?,
+            crate::privacy::adblock_engine::download_shield_enabled(
+                &app.state::<BrowserState>(),
+                Some(tab_id),
+                &url,
+            ),
         )
     {
         return Err("downloads.blocked".into());
@@ -274,10 +275,11 @@ pub fn install(
                         || parsed.password().is_some()
                         || crate::privacy::adblock_engine::should_block_url(
                             &url,
-                            *a.state::<BrowserState>()
-                                .shield_enabled
-                                .lock()
-                                .map_err(|e| e.to_string())?,
+                            crate::privacy::adblock_engine::download_shield_enabled(
+                                &a.state::<BrowserState>(),
+                                Some(&tab_id),
+                                &url,
+                            ),
                         )
                     {
                         return Err("downloads.blocked".into());

@@ -318,13 +318,13 @@ impl DownloadManager {
         target: Option<std::path::PathBuf>,
     ) -> Result<DownloadTask, String> {
         let url = super::transfer::validate_download_url(url)?;
-        self.check_policy(app, url.as_str())?;
         let id = app
             .state::<BrowserState>()
             .active_tab_id
             .lock()
             .map_err(|e| e.to_string())?
             .clone();
+        self.check_policy(app, url.as_str(), Some(&id))?;
         let task = self.register(
             app,
             id,
@@ -337,14 +337,15 @@ impl DownloadManager {
         self.start(app, &task.id, false)?;
         Ok(self.record(&task.id)?.task)
     }
-    fn check_policy(&self, app: &AppHandle, url: &str) -> Result<(), String> {
+    fn check_policy(&self, app: &AppHandle, url: &str, tab_id: Option<&str>) -> Result<(), String> {
         super::transfer::validate_download_url(url)?;
         if crate::privacy::adblock_engine::should_block_url(
             url,
-            *app.state::<BrowserState>()
-                .shield_enabled
-                .lock()
-                .map_err(|e| e.to_string())?,
+            crate::privacy::adblock_engine::download_shield_enabled(
+                &app.state::<BrowserState>(),
+                tab_id,
+                url,
+            ),
         ) {
             return Err("downloads.blocked".into());
         }

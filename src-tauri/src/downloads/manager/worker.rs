@@ -3,7 +3,20 @@ impl DownloadManager {
     pub fn start(&self, app: &AppHandle, id: &str, verify: bool) -> Result<(), String> {
         let record = self.record(id)?;
         if !verify {
-            self.check_policy(app, &record.task.url)?;
+            super::super::transfer::validate_download_url(&record.task.url)?;
+            let state = app.state::<BrowserState>();
+            let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?
+                && crate::privacy::adblock_engine::site_is_protected(&state, &record.task.url)
+                && record
+                    .task
+                    .source_page_url
+                    .as_deref()
+                    .map_or(true, |source| {
+                        crate::privacy::adblock_engine::site_is_protected(&state, source)
+                    });
+            if crate::privacy::adblock_engine::should_block_url(&record.task.url, shield) {
+                return Err("downloads.blocked".into());
+            }
         }
         let (control, generation) = {
             let mut tasks = self.tasks.lock().map_err(|e| e.to_string())?;

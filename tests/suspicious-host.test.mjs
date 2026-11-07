@@ -8,4 +8,8 @@ test('warns on close local targets and punycode without blocking exact sites', (
   assert.equal(suspiciousHost('https://accounts.google.com/', []), null);
   assert.equal(suspiciousHost('https://gooogle.com/', ['https://gooogle.com/']), null);
   assert.equal(suspiciousHost('veloce://newtab', []), null);
+  assert.equal(suspiciousHost('https://ordinary.example/', []), null);
+  assert.equal(suspiciousHost('https://mybookmarks.test/', ['https://mybookmarks.test/']), null);
+  assert.equal(suspiciousHost('https://notmybookmarks.test/', ['https://mybookmarks.test/']), null);
+  assert.equal(suspiciousHost('https://gooogle.example/', []), null);
 });

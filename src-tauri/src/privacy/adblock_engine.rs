@@ -91,11 +91,41 @@ pub fn site_is_protected(state: &crate::state::browser_state::BrowserState, raw:
     let Ok(url) = Url::parse(raw) else {
         return true;
     };
+    if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none() {
+        return true;
+    }
     state
         .shield_settings
         .lock()
         .map(|settings| settings.applies_to(&url))
         .unwrap_or(true)
+}
+
+/// Apply a site exception when the originating tab still exists. When it does
+/// not, retain the normal shield policy and only consider the destination.
+pub fn download_shield_enabled(
+    state: &crate::state::browser_state::BrowserState,
+    tab_id: Option<&str>,
+    destination: &str,
+) -> bool {
+    let enabled = state
+        .shield_enabled
+        .lock()
+        .map(|value| *value)
+        .unwrap_or(true);
+    if !enabled || !site_is_protected(state, destination) {
+        return false;
+    }
+    let source = tab_id.and_then(|id| {
+        state.tabs.lock().ok().and_then(|tabs| {
+            tabs.iter()
+                .find(|tab| tab.id == id)
+                .map(|tab| tab.url.clone())
+        })
+    });
+    source
+        .as_deref()
+        .map_or(true, |url| site_is_protected(state, url))
 }
 
 /// Both possible document-created ordering sequences converge to the new policy.
@@ -130,5 +160,25 @@ mod tests {
             assert!(!should_block_url(url, true));
         }
         assert!(!should_block_url("https://google-analytics.com/", false));
+    }
+    #[test]
+    fn download_exceptions_require_an_actual_excluded_site() {
+        let state = crate::state::browser_state::BrowserState::default();
+        state.shield_settings.lock().unwrap().exceptions = vec!["example.test".into()];
+        assert!(!download_shield_enabled(
+            &state,
+            None,
+            "https://example.test/file"
+        ));
+        assert!(download_shield_enabled(
+            &state,
+            None,
+            "https://doubleclick.net/file"
+        ));
+        assert!(site_is_protected(&state, "about:blank"));
+        assert!(!site_is_protected(&state, "https://sub.example.test/"));
+        state.tabs.lock().unwrap()[0].url = "https://sub.example.test/".into();
+        assert!(!download_shield_enabled(&state, Some("tab-1"), "https://doubleclick.net/file"));
+        assert!(download_shield_enabled(&state, Some("missing-tab"), "https://doubleclick.net/file"));
     }
 }

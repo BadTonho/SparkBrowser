@@ -44,6 +44,7 @@ import { checkMinimumFontProbe } from './minimum-font-probe.mjs';
 import { checkNetworkPrivacyBaseline } from './network-privacy.mjs';
 import { checkTrackingCleaning } from './tracking-cleaning.mjs';
 import { checkGpc } from './gpc.mjs';
+import { checkGpcContexts } from './gpc-contexts.mjs';
 import { checkFilterLists } from './filter-lists.mjs';
 import { checkTrackingClicks } from './tracking-clicks.mjs';
 
@@ -51,6 +52,7 @@ export const scenarios = {
   'network-privacy-baseline': checkNetworkPrivacyBaseline,
   'tracking-cleaning': checkTrackingCleaning,
   'gpc': checkGpc,
+  'gpc-contexts': checkGpcContexts,
   'filter-lists': checkFilterLists,
   'tracking-clicks': checkTrackingClicks,
   'capture-probe': checkFullPageCaptureProbe,
