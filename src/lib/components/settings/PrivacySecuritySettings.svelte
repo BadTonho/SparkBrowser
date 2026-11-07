@@ -24,6 +24,7 @@
     { value: "six_months", label: "6 months" },
     { value: "twelve_months", label: "12 months" },
     { value: "always", label: "Always" },
+    { value: "never", label: "Never" },
   ];
   let settings = $state<PrivacySettings | null>(null);
   let busy = $state(false);

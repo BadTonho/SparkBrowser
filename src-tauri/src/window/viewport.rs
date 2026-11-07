@@ -93,6 +93,21 @@ pub fn content_bounds(
 
 /// Presentation changes reuse resident documents and never change tab lifecycle metadata.
 pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
+    if let Some(owner) = super::fullscreen::active(app) {
+        let window = app.get_window("main").ok_or("Main window unavailable")?;
+        let size = window.inner_size().map_err(|e| e.to_string())?.to_logical::<f64>(window.scale_factor().map_err(|e| e.to_string())?);
+        for (label, view) in app.webviews() {
+            if !label.starts_with(CONTENT_WEBVIEW_PREFIX) { continue; }
+            #[cfg(target_os = "linux")]
+            if label == owner { super::linux_layout::update_bounds(app, &label, 0, 0, size.width as i32, size.height as i32, true)?; } else { super::linux_layout::set_visible(app, &label, false)?; }
+            #[cfg(not(target_os = "linux"))]
+            if label == owner {
+                view.set_bounds(Rect { position: LogicalPosition::new(0.0, 0.0).into(), size: LogicalSize::new(size.width, size.height).into() }).map_err(|e| e.to_string())?;
+                view.show().map_err(|e| e.to_string())?;
+            } else { view.hide().map_err(|e| e.to_string())?; }
+        }
+        return Ok(());
+    }
     let panes = content_bounds(app, state)?;
     let hidden = *state.is_overlay_open.lock().map_err(|e| e.to_string())?
         || *state

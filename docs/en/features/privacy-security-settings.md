@@ -8,6 +8,8 @@ The browser's **Privacy & Security** category brings together local browsing dat
 
 Automatic history retention defaults to **3 months**. Choose 1, 3, 6, or 12 months, or **Always** to keep history without automatic expiration. Expired entries are removed when a visit is recorded, when the retention preference changes, and when the browser starts.
 
+**Never save** stops recording new visits, including pending visits when the setting changes. Existing history remains available until it is cleared manually or another retention period expires it. The preference persists across restarts.
+
 ## Safe browsing
 
 On Windows, the setting for Microsoft Defender SmartScreen controls WebView2 reputation checking and is enabled by default when the runtime supports it. WebView2 may send URLs and related information to Microsoft to check a page's reputation. Windows or organization policies can override the browser setting. See Microsoft's [WebView2 data privacy documentation](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/data-privacy?tabs=dotnetcsharp).

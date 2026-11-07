@@ -3,6 +3,8 @@ mod caret_browsing;
 mod content_focus;
 mod content_lifecycle;
 pub mod favicon;
+pub mod fullscreen;
+mod link_context_menu;
 pub mod history_overlay;
 mod internal_overlays;
 mod keyboard_bridge;

@@ -49,7 +49,7 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
     { id: "edit-url", label: "Edit Current URL in Address Bar", description: "Focus the current URL in the address bar", defaults: [combo("L", { ctrl: true })] },
   { id: "focus-address", label: "Focus Address and Search Bar", description: "Focus and select the current address or search text", defaults: [combo("E", { ctrl: true })] },
   { id: "sidebar", label: "Toggle Sidebar (Vertical Layout)", description: "Show or hide the sidebar", defaults: [combo("B", { ctrl: true })] },
-  { id: "zen", label: "Toggle Fullscreen Zen / Focus Mode", description: "Toggle Zen mode", defaults: [combo("Z", { alt: true })] },
+  { id: "zen", label: "Toggle Fullscreen Zen / Focus Mode", description: "Toggle Zen mode", defaults: [combo("Z", { ctrl: true, shift: true })] },
   { id: "history", label: "Open SQLite Browsing History", description: "Open browsing history", defaults: [combo("H", { ctrl: true })] },
   { id: "downloads", label: "Open Download Manager", description: "Open downloads", defaults: [combo("J", { ctrl: true })] },
   { id: "settings", label: "Open Settings & Shortcuts Panel", description: "Open browser settings", defaults: [combo(",", { ctrl: true })] },
@@ -88,6 +88,19 @@ function loadInitialShortcuts(): ShortcutMap {
       if (Array.isArray(candidate) && candidate.length === 1 && candidate.every(isCombo) && validKey(candidate[0])) {
         fallback[definition.id] = candidate.map((item) => ({ ...item }));
       }
+    }
+    const oldZen = combo("Z", { alt: true });
+    const newZen = combo("Z", { ctrl: true, shift: true });
+    const newZenTaken = Object.entries(fallback).some(([id, bindings]) => id !== "zen" && bindings.some(binding => sameCombo(binding, newZen)));
+    if (!Array.isArray(source.zen) && newZenTaken) {
+      // A newly added default must not erase another saved customization.
+      const oldZenTaken = Object.entries(fallback).some(([id, bindings]) => id !== "zen" && bindings.some(binding => sameCombo(binding, oldZen)));
+      fallback.zen = oldZenTaken ? [] : [oldZen];
+    }
+    if (fallback.zen?.[0] && sameCombo(fallback.zen[0], oldZen) &&
+        !newZenTaken) {
+      fallback.zen = [newZen];
+      try { safeStorage.setItem(STORAGE_KEY, JSON.stringify(fallback)); } catch { /* Keep the migrated shortcut for this session. */ }
     }
     const assigned: ShortcutCombo[] = [];
     for (const definition of SHORTCUT_DEFINITIONS) {

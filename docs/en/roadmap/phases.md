@@ -21,4 +21,4 @@
 ## Phase 4: Polish & Advanced Capabilities — ✅ Completed
 - [x] Add **Workspaces** (*Personal*, *Work*, *Study*, *Gaming*) and customizable dynamic themes.
 - [x] Build a modern animated **Download Manager (`Ctrl + J`)** backed by SQLite.
-- [x] Add **Zen Focus Mode (`Alt + Z`)**, customizable keyboard shortcuts, and **Settings Panel (`Ctrl + ,`)**.
+- [x] Add **Zen Focus Mode (`Ctrl + Shift + Z`)**, customizable keyboard shortcuts, and **Settings Panel (`Ctrl + ,`)**.

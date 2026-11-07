@@ -10,6 +10,7 @@ pub enum HistoryRetention {
     SixMonths,
     TwelveMonths,
     Always,
+    Never,
 }
 
 impl HistoryRetention {
@@ -19,6 +20,7 @@ impl HistoryRetention {
             Some("six_months") => Self::SixMonths,
             Some("twelve_months") => Self::TwelveMonths,
             Some("always") => Self::Always,
+            Some("never") => Self::Never,
             _ => Self::ThreeMonths,
         }
     }
@@ -29,7 +31,7 @@ impl HistoryRetention {
             Self::ThreeMonths => Some(3),
             Self::SixMonths => Some(6),
             Self::TwelveMonths => Some(12),
-            Self::Always => None,
+            Self::Always | Self::Never => None,
         }
     }
 
@@ -39,8 +41,13 @@ impl HistoryRetention {
             6 => Self::SixMonths,
             12 => Self::TwelveMonths,
             0 => Self::Always,
+            u64::MAX => Self::Never,
             _ => Self::ThreeMonths,
         }
+    }
+
+    pub fn state_value(self) -> u64 {
+        if self == Self::Never { u64::MAX } else { u64::from(self.months().unwrap_or(0)) }
     }
 }
 
@@ -71,7 +78,7 @@ pub fn record_visit(
     url: &str,
     retention: HistoryRetention,
 ) -> Result<(), String> {
-    if url.trim().is_empty() || url.starts_with("about:") {
+    if retention == HistoryRetention::Never || url.trim().is_empty() || url.starts_with("about:") {
         return Ok(());
     }
 
@@ -168,6 +175,16 @@ pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn never_preserves_existing_visits_and_does_not_record_new_ones() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,visited_at INTEGER NOT NULL); INSERT INTO history(title,url,visited_at) VALUES('old','https://example.test/',1);").unwrap();
+        prune_expired(&conn, HistoryRetention::Never, current_unix_timestamp()).unwrap();
+        record_visit(&conn, "new", "https://new.example/", HistoryRetention::Never).unwrap();
+        assert_eq!(get_recent_history(&conn, 10).unwrap().len(), 1);
+        assert_eq!(HistoryRetention::from_months(HistoryRetention::Never.state_value()), HistoryRetention::Never);
+        assert_eq!(HistoryRetention::from_preference(Some("never".into())), HistoryRetention::Never);
+    }
     #[test]
     fn searches_older_visits_and_paginates_equal_timestamps_without_duplicates() {
         let conn = Connection::open_in_memory().unwrap();

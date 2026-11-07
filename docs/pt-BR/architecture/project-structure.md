@@ -24,7 +24,7 @@ src/
     │   ├── commandBarStore.ts         # Estado da Command Bar flutuante e animação spring de escala
     │   ├── workspaceStore.ts          # Estado de Workspaces e injeção de temas dinâmicos CSS
     │   ├── downloadsStore.ts          # Estado do Gerenciador de Downloads e painel (Ctrl+J)
-    │   ├── settingsStore.ts           # Modal de Configurações (Ctrl+,), Modo Zen (Alt+Z) e timer de RAM
+    │   ├── settingsStore.ts           # Modal de Configurações (Ctrl+,), Modo Zen (Ctrl+Shift+Z) e timer de RAM
     │   ├── persistenceStore.ts        # Estado reativo de Favoritos e Histórico em SQLite (Ctrl+H)
     │   └── privacyStore.ts            # Métricas do AdBlock Shield nativo e otimização de RAM
     └── components/

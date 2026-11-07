@@ -8,6 +8,8 @@ A ação **Apagar histórico de navegação local** remove o histórico de naveg
 
 A retenção automática do histórico começa em **3 meses**. Escolha 1, 3, 6 ou 12 meses, ou **Sempre** para manter o histórico sem expiração automática. Os registros vencidos são removidos ao registrar uma visita, quando a preferência de retenção muda e ao iniciar o navegador.
 
+**Nunca salvar** impede o registro de novas visitas, inclusive as pendentes quando a configuração muda. O histórico anterior permanece disponível até ser apagado manualmente ou expirar por outra opção de retenção. A preferência é mantida após reiniciar.
+
 ## Navegação segura
 
 No Windows, a configuração do Microsoft Defender SmartScreen controla a verificação de reputação do WebView2 e fica ativada por padrão quando o runtime oferece suporte. O WebView2 pode enviar URLs e informações relacionadas à Microsoft para verificar a reputação de uma página. As políticas do Windows ou da organização podem prevalecer sobre a configuração do navegador. Consulte a [documentação de privacidade de dados do WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/data-privacy?tabs=dotnetcsharp), da Microsoft.

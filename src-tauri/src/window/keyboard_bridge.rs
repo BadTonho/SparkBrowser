@@ -28,7 +28,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
               sequence: String(request.sequence)
             }});
             if (request.action) query.set("action", request.action);
-            if (request.key) query.set("key", request.key);
+            if (request.key) query.set(request.type === "link" ? "input" : "key", request.key);
             window.location.href = `veloce-internal://keyboard-shortcut/${{request.type}}?${{query.toString()}}`;
           }}
 
@@ -77,6 +77,12 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
 
           window.addEventListener("keydown", (event) => {{
             if (!event.isTrusted) return;
+
+            if (event.key === "Escape" && document.fullscreenElement) {{
+              event.preventDefault();
+              void document.exitFullscreen();
+              return;
+            }}
 
             if (nativeCaretBrowsingToggle && event.key === "F7" && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {{
               event.preventDefault();
@@ -148,10 +154,23 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
           }}, true);
 
           window.addEventListener("auxclick", (event) => {{
+            if (event.isTrusted && event.button === 1 && !event.defaultPrevented) {{
+              const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+              if (anchor && anchor.href.length <= 1500 && !anchor.hasAttribute("download") && /^https?:$/.test(anchor.protocol)) {{
+                const href = anchor.href;
+                event.preventDefault(); setTimeout(() => notifyBrowser("link", undefined, href), 0); return;
+              }}
+            }}
             if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
             event.preventDefault();
             event.stopImmediatePropagation();
           }}, true);
+
+          window.addEventListener("click", (event) => {{
+            if (!event.isTrusted || event.defaultPrevented || event.button !== 0 || !(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) return;
+            const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+            if (anchor && anchor.href.length <= 1500 && !anchor.hasAttribute("download") && /^https?:$/.test(anchor.protocol)) {{ const href = anchor.href; event.preventDefault(); setTimeout(() => notifyBrowser("link", undefined, href), 0); }}
+          }});
 
           window.addEventListener("focus", () => {{
             if (!nativeAltCapture) window.location.href = "veloce-internal://pane-focus?token=" + encodeURIComponent(bridgeToken);
@@ -278,6 +297,14 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                     payload,
                                 );
                             }
+                            return Ok(());
+                        }
+                    }
+
+                    if is_key_down && virtual_key == 0x1B {
+                        if let Some(owner) = super::fullscreen::active(&app_for_handler) {
+                            unsafe { args.SetHandled(true)?; }
+                            super::fullscreen::exit(&app_for_handler, &owner, true);
                             return Ok(());
                         }
                     }
@@ -511,7 +538,7 @@ pub(super) fn handle_keyboard_navigation(
     label_for_nav: &str,
     keyboard_bridge_token: &str,
 ) {
-    if crate::security::bridge::query(nav_url, &["token", "sequence", "document", "action", "key"])
+    if crate::security::bridge::query(nav_url, &["token", "sequence", "document", "action", "key", "input"])
         .is_none()
     {
         return;
@@ -524,10 +551,11 @@ pub(super) fn handle_keyboard_navigation(
         .map(|(_, value)| value.as_ref());
     let key = params
         .iter()
-        .find(|(key, _)| key == "key")
+        .find(|(key, _)| key == if event_type == "link" { "input" } else { "key" })
         .map(|(_, value)| value.as_ref());
     match event_type {
         "action" if action.is_some_and(valid_action) => {}
+        "link" if action.is_none() && key.is_some() => {}
         "alt-down" | "alt-up" | "alt-cancel" if action.is_none() && key.is_none() => {}
         _ => return,
     }
@@ -566,7 +594,10 @@ pub(super) fn handle_keyboard_navigation(
     if !token_matches {
         return;
     }
-    if focused {
+    // Link messages additionally require a trusted link gesture in the injected
+    // document script. WebView2 may report the child focused while its host
+    // window is not the foreground WebviewWindow.
+    if focused || event_type == "link" {
         let Some(sequence) = sequence else {
             return;
         };
@@ -585,6 +616,11 @@ pub(super) fn handle_keyboard_navigation(
         }
 
         match event_type {
+            "link" => {
+                if let Some(url) = key.and_then(|raw| tauri::Url::parse(raw).ok()) {
+                    crate::commands::tabs::open_user_link(app_handle_for_nav.clone(), tab_for_nav.to_string(), keyboard_bridge_token.to_string(), url);
+                }
+            }
             "alt-down" | "alt-up" | "alt-cancel" => {
                 let _ = crate::security::emit_shell(
                     app_handle_for_nav,

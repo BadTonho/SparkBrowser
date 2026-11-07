@@ -112,6 +112,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(BrowserState::default())
+        .manage(window::fullscreen::FullscreenState::default())
         .manage(webview_runtime::RuntimeService::default())
         .manage(window::new_tab::NewTabService::default())
         .manage(window::new_tab::widgets::Widgets::default())
@@ -132,6 +133,10 @@ pub fn run() {
         .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, WindowEvent::Resized(_)) && window::fullscreen::active(window.app_handle()).is_some() {
+                let app = window.app_handle();
+                if let Some(state) = app.try_state::<BrowserState>() { let _ = window::viewport::sync_content_geometry(app, &state); }
+            }
             if window.label() == "main" {
                 if let WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
@@ -237,7 +242,7 @@ pub fn run() {
                     .flatten(),
                 );
             state.history_retention_months.store(
-                u64::from(history_retention.months().unwrap_or(0)),
+                history_retention.state_value(),
                 std::sync::atomic::Ordering::Release,
             );
             state.allow_popups.store(

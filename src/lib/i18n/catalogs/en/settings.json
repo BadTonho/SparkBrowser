@@ -1,4 +1,5 @@
 {
+  "settings.retention_never": "Never save",
   "settings.experiments_heading": "Experimental features",
   "settings.experiments_description": "Experimental features may change. They are off by default and cannot disable required security protections. Changes apply when reopening the feeds panel.",
   "settings.experiments_compact_feeds": "Compact feed cards: hide article previews",

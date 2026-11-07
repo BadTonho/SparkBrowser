@@ -1,6 +1,6 @@
 import { invoke, isTauriRuntime } from "./runtime";
 
-export type HistoryRetention = "one_month" | "three_months" | "six_months" | "twelve_months" | "always";
+export type HistoryRetention = "one_month" | "three_months" | "six_months" | "twelve_months" | "always" | "never";
 export interface PrivacySettings {
   history_retention: HistoryRetention;
   allow_popups: boolean;

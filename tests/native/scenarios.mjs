@@ -48,8 +48,11 @@ import { checkGpcContexts } from './gpc-contexts.mjs';
 import { checkFilterLists } from './filter-lists.mjs';
 import { checkTrackingClicks } from './tracking-clicks.mjs';
 import { checkFeeds } from './feeds.mjs';
+import { checkFullscreenCorrection, checkNavigationCorrections } from './navigation-corrections.mjs';
 
 export const scenarios = {
+  'navigation-corrections': checkNavigationCorrections,
+  'fullscreen-corrections': checkFullscreenCorrection,
   'network-privacy-baseline': checkNetworkPrivacyBaseline,
   'tracking-cleaning': checkTrackingCleaning,
   'gpc': checkGpc,

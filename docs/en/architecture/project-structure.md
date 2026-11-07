@@ -24,7 +24,7 @@ src/
     │   ├── commandBarStore.ts         # Floating Command Bar state & spring-physics scale animation
     │   ├── workspaceStore.ts          # Workspaces state & dynamic CSS accent theme injection
     │   ├── downloadsStore.ts          # Download Manager state & drawer controls (Ctrl+J)
-    │   ├── settingsStore.ts           # Settings modal (Ctrl+,), Zen Mode (Alt+Z) & hibernation timer
+    │   ├── settingsStore.ts           # Settings modal (Ctrl+,), Zen Mode (Ctrl+Shift+Z) & hibernation timer
     │   ├── persistenceStore.ts        # SQLite Bookmarks & Browsing History reactive state (Ctrl+H)
     │   └── privacyStore.ts            # Native Rust AdBlock Shield & RAM optimization metrics
     └── components/

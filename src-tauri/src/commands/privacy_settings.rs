@@ -42,10 +42,19 @@ pub async fn set_history_retention(
     state: State<'_, BrowserState>,
     retention: HistoryRetention,
 ) -> Result<(), String> {
-    crate::commands::persistence::flush_navigation(app.clone()).await?;
+    let _preference = state.history_retention_operation.lock().await;
+    // Stop the writer before draining its queue, including visits already queued.
+    let old = state.history_retention_months.load(std::sync::atomic::Ordering::Acquire);
+    if retention == HistoryRetention::Never {
+        state.history_retention_months.store(retention.state_value(), std::sync::atomic::Ordering::Release);
+    }
+    if let Err(error) = crate::commands::persistence::flush_navigation(app.clone()).await {
+        state.history_retention_months.store(old, std::sync::atomic::Ordering::Release);
+        return Err(error);
+    }
     let _operation = state.tab_operations.lock().await;
     let now = history_repo::current_unix_timestamp();
-    executor::run(app, move |conn| {
+    let result = executor::run(app, move |conn| {
         crate::database::preferences_repo::store(
             conn,
             crate::database::preferences_repo::HISTORY_RETENTION_KEY,
@@ -55,13 +64,18 @@ pub async fn set_history_retention(
                 HistoryRetention::SixMonths => "six_months",
                 HistoryRetention::TwelveMonths => "twelve_months",
                 HistoryRetention::Always => "always",
+                HistoryRetention::Never => "never",
             },
         )?;
         history_repo::prune_expired(conn, retention, now)
     })
-    .await?;
+    .await;
+    if let Err(error) = result {
+        state.history_retention_months.store(old, std::sync::atomic::Ordering::Release);
+        return Err(error);
+    }
     state.history_retention_months.store(
-        u64::from(retention.months().unwrap_or(0)),
+        retention.state_value(),
         std::sync::atomic::Ordering::Release,
     );
     Ok(())

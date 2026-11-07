@@ -81,7 +81,7 @@ export const searchableSettings: SearchEntry[] = [
     description: "Hide browser controls so websites use the full viewport.",
     category: "appearance_layout",
     targetId: "setting-zen-mode",
-    keywords: "fullscreen focus alt z",
+    keywords: "fullscreen focus ctrl shift z",
   },
   {
     id: "default-search-engine",

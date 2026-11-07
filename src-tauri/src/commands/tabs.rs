@@ -13,6 +13,31 @@ pub fn popup_target_allowed(enabled: bool, url: &tauri::Url) -> bool {
         && url.password().is_none()
 }
 
+/// Opens an authenticated user-selected link without activating the new tab.
+pub fn open_user_link(app: AppHandle, source_tab: String, generation: String, url: tauri::Url) {
+    if !popup_target_allowed(true, &url) { return; }
+    tauri::async_runtime::spawn(async move {
+        let state = app.state::<BrowserState>();
+        let _operation = state.tab_operations.lock().await;
+        let label = crate::state::tab_model::webview_label_for_tab(&source_tab);
+        if !crate::window::navigation_state::is_current_generation(&app, &label, &generation) { return; }
+        let source = state.tabs.lock().ok().and_then(|tabs| tabs.iter().find(|tab| tab.id == source_tab).cloned());
+        let Some(source) = source else { return; };
+        let shield = state.shield_enabled.lock().map(|v| *v).unwrap_or(true);
+        if crate::privacy::adblock_engine::site_is_protected(&state, url.as_str()) && crate::privacy::adblock_engine::should_block_url(url.as_str(), shield) { return; }
+        let id = match state.next_tab_counter.lock() { Ok(mut next) => { let id = format!("tab-{}", *next); *next += 1; id }, Err(_) => return };
+        let result = TabCheckpoint::commit(&state, || {
+            let mut tab = if source.is_ephemeral { TabInfo::new_ephemeral(id.clone(), url.to_string(), source.workspace_id.clone(), false) }
+                else { TabInfo::new(id.clone(), url.to_string(), source.workspace_id.clone(), false) };
+            if !source.is_ephemeral { tab.container_id = source.container_id.clone(); }
+            tab.is_hibernated = true;
+            state.tabs.lock().map_err(|e| e.to_string())?.push(tab);
+            Ok(())
+        });
+        if result.is_ok() { reconcile_committed(&app, &state); let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet()); }
+    });
+}
+
 /// Web pop-ups open as normal browser tabs; internal PiP windows are handled separately.
 pub fn open_popup_url(app: AppHandle, source_tab: String, generation: String, url: tauri::Url) {
     if !popup_target_allowed(
@@ -247,6 +272,9 @@ pub(super) fn switch_tab_inner(
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
+    if previous_active_id != tab_id {
+        if let Some(label) = crate::window::fullscreen::active(app) { crate::window::fullscreen::exit(app, &label, true); }
+    }
     let activation = (previous_active_id != tab_id).then_some((tab_id.as_str(), false));
     let active_url = TabCheckpoint::commit_with_activation(state, activation, || {
         let selected = state.select_tab(&tab_id)?;
@@ -627,6 +655,12 @@ pub async fn set_tab_pinned(
 
 /// A committed session remains authoritative if native reconciliation fails.
 pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
+    if let Some(owner) = crate::window::fullscreen::active(app) {
+        let selected = state.active_tab_id.lock().ok().map(|id| crate::state::tab_model::webview_label_for_tab(&id));
+        if selected.as_deref() != Some(owner.as_str()) {
+            crate::window::fullscreen::exit(app, &owner, true);
+        }
+    }
     if let Err(error) = sync_all_webviews(app, state) {
         let _ = crate::security::emit_shell(
             app,

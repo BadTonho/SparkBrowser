@@ -1,4 +1,5 @@
 {
+  "settings.retention_never": "Nunca salvar",
   "settings.experiments_heading": "Recursos experimentais",
   "settings.experiments_description": "Recursos experimentais podem mudar. Começam desligados e não podem desativar proteções obrigatórias. As alterações valem ao reabrir o painel de feeds.",
   "settings.experiments_compact_feeds": "Cartões compactos: ocultar prévias dos artigos",

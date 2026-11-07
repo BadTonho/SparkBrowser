@@ -24,6 +24,7 @@ pub fn prepare_content_reset(state: &BrowserState, enabled: bool) -> Result<(), 
 
 /// Closes a content WebView and retires every stateful session bound to it.
 pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String> {
+    super::fullscreen::exit(app, label, true);
     let state = app.state::<BrowserState>();
     crate::site_permissions::cancel_view(app, label);
     crate::downloads::native::cancel_view(app, label);

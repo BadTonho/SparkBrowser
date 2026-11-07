@@ -204,7 +204,6 @@ pub(super) fn ensure_tab_webview(
         &keyboard_bridge_token,
     );
 
-    #[cfg(windows)]
     let navigation_registration_token = keyboard_bridge_token.clone();
     let tab_for_nav = tab_id.to_string();
     let label_for_nav = label.clone();
@@ -423,6 +422,9 @@ pub(super) fn ensure_tab_webview(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
     )?;
+
+    super::fullscreen::install(app, &app.get_webview(&label).ok_or("New WebView was not found")?)?;
+    super::link_context_menu::install(app, &app.get_webview(&label).ok_or("New WebView was not found")?, tab_id, &navigation_registration_token)?;
 
     #[cfg(windows)]
     super::split_focus::install(

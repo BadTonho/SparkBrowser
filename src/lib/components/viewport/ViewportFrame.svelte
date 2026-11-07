@@ -36,14 +36,18 @@
   const viewportSync = createViewportSync(() => {
     if (!viewportEl) return;
     const rect = viewportEl.getBoundingClientRect();
-    viewportBounds.set({ x: Math.round(rect.left), y: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) });
+    const x = Math.round(rect.left + viewportEl.clientLeft);
+    const y = Math.round(rect.top + viewportEl.clientTop);
+    const width = Math.round(viewportEl.clientWidth);
+    const height = Math.round(viewportEl.clientHeight);
+    viewportBounds.set({ x, y, width, height });
     return {
       split_ratio: $splitLayout ? $splitDragRatio ?? $splitLayout.ratio : undefined,
       split_key: $splitLayout ? splitKey($splitLayout) : undefined,
-      x: Math.round(rect.left),
-      y: Math.round(rect.top),
-      width: Math.max(100, Math.round(rect.width)),
-      height: Math.max(100, Math.round(rect.height)),
+      x,
+      y,
+      width: Math.max(100, width),
+      height: Math.max(100, height),
     };
   }, syncViewportBounds, (error) => console.error("Viewport resize failed", error));
   const measureAndSync = () => viewportSync.schedule();

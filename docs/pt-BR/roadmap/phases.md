@@ -21,4 +21,4 @@
 ## Fase 4: Polimento e Recursos Avançados — ✅ Concluída
 - [x] Adicionar **Workspaces** (*Personal*, *Work*, *Study*, *Gaming*) e temas dinâmicos customizáveis.
 - [x] Construir um **Gerenciador de Downloads (`Ctrl + J`)** moderno e animado persistido em SQLite.
-- [x] Adicionar **Modo Foco / Zen (`Alt + Z`)**, referência de atalhos de teclado e **Painel de Configurações (`Ctrl + ,`)**.
+- [x] Adicionar **Modo Foco / Zen (`Ctrl + Shift + Z`)**, referência de atalhos de teclado e **Painel de Configurações (`Ctrl + ,`)**.
