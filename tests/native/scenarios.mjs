@@ -41,8 +41,10 @@ import { checkFullPageCaptureProbe } from './capture-probe.mjs';
 import { checkDarkModeProbe } from './dark-mode-probe.mjs';
 import { checkCaretBrowsing } from './caret-browsing.mjs';
 import { checkMinimumFontProbe } from './minimum-font-probe.mjs';
+import { checkNetworkPrivacyBaseline } from './network-privacy.mjs';
 
 export const scenarios = {
+  'network-privacy-baseline': checkNetworkPrivacyBaseline,
   'capture-probe': checkFullPageCaptureProbe,
   'dark-mode-probe': checkDarkModeProbe,
   'caret-browsing': checkCaretBrowsing,

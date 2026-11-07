@@ -88,6 +88,17 @@
 <section class="setting-group privacy-security-settings" aria-labelledby="privacy-security-heading">
   <h2 class="group-title" id="privacy-security-heading">{$t("settings.privacy_security")}</h2>
 
+  <h3 class="group-title privacy-subheading">{$t("settings.network_privacy")}</h3>
+  <div class="setting-row" id="setting-network-tor">
+    <div class="row-text"><span class="row-label">{$t("settings.network_tor")}</span><span class="row-desc">{$t("settings.network_tor_unavailable")}</span></div>
+  </div>
+  <div class="setting-row" id="setting-network-doh">
+    <div class="row-text"><span class="row-label">{$t("settings.network_doh")}</span><span class="row-desc">{$t("settings.network_doh_unavailable")}</span></div>
+  </div>
+  <div class="setting-row" id="setting-network-https">
+    <div class="row-text"><span class="row-label">{$t("settings.network_https")}</span><span class="row-desc">{$t("settings.network_https_unavailable")}</span></div>
+  </div>
+
   <h3 class="group-title">{$t("settings.clear_local_history")}</h3>
   <div class="setting-row" id="clear-local-history" tabindex="-1">
     <div class="row-text">

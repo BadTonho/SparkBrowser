@@ -268,5 +268,12 @@
   "settings.invalid_domain": "Enter a valid hostname that is not already listed.",
   "settings.remove_domain": "Remove {domain}",
   "settings.ask_download_destination": "Ask where to save each download",
-  "settings.ask_download_destination_description": "Choose a file location before a download starts."
+  "settings.ask_download_destination_description": "Choose a file location before a download starts.",
+  "settings.network_privacy": "Network privacy",
+  "settings.network_tor": "Tor session",
+  "settings.network_tor_unavailable": "Unavailable: full traffic isolation and leak prevention have not been verified.",
+  "settings.network_doh": "DNS over HTTPS",
+  "settings.network_doh_unavailable": "Unavailable: secure DNS coverage and failure behavior have not been verified for the WebView.",
+  "settings.network_https": "HTTPS-only mode",
+  "settings.network_https_unavailable": "Unavailable: navigation and one-time HTTP exceptions have not been verified for the WebView."
 }
