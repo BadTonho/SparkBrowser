@@ -63,8 +63,8 @@ Revisar os 36 itens para registrar o estado atual, os pontos de entrada existent
 
 - Contêineres persistentes de contas: definir o isolamento entre identidades e o comportamento entre abas, workspaces e reinicializações; comprovar viabilidade por plataforma.
 - Gerenciador de senhas: projetar o cofre, o desbloqueio, o preenchimento e a recuperação; submeter o modelo de segurança a auditoria antes de armazenar credenciais reais.
-- Sincronização multidispositivo: escolher arquitetura e serviço, dados sincronizados, custos e requisitos de criptografia.
-- Assistente de IA: definir processamento local ou externo, provedores, custos, chaves e consentimento para envio de conteúdo.
+- Sincronização multidispositivo: escolher arquitetura e serviço, dados sincronizados, custos e requisitos de criptografia. ( nao fazer )
+- Assistente de IA: definir processamento local ou externo, provedores, custos, chaves e consentimento para envio de conteúdo. ( nao fazer )
 
 **Gate de decisão:** fechar escopo de identidade, dados e segurança antes de escolher formatos persistentes, sincronização ou integrações externas. A implementação do cofre depende do desenho e da auditoria de segurança.
 
