@@ -52,7 +52,7 @@ The defaults below define an initial version; they are not promises of complete 
 | Offline mini-game | Show a simple local game when a connection failure is identified, with no network access or data collection; preserve access to recovery actions. |
 | User interface CSS | Allow an optional local interface stylesheet, with a recovery mechanism if styling makes the interface unusable. |
 | Forced dark mode for pages | Offer an option disabled by default and site exceptions; test images, videos, and already dark pages. Report limitations if results are insufficient. |
-| Caret browsing | Investigate native support on Windows and Linux and validate selection and accessibility. Do not assume a script reproduces the native feature; present options if it is infeasible. |
+| Caret browsing | Implemented with native WebView2/WebKitGTK support and F7; session-only, shared across content tabs, and off at startup. Native validation can be run with the documented `caret-browsing` scenario. |
 | Minimum font size | Investigate engine support and alternatives with accessibility and layout tests. `min-font-size` is not a standard CSS property; do not use the originally proposed rule. |
 
 ## Project references

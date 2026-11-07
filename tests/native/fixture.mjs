@@ -124,6 +124,17 @@ export async function createFixture() {
         </script></body></html>`);
       return;
     }
+    if (url.pathname === '/caret-browsing') {
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.end(`<!doctype html><meta charset="utf-8"><title>Caret browsing fixture</title>
+        <style>body{font:20px sans-serif;margin:32px}p{max-width:700px;line-height:1.6}iframe{display:block;width:700px;height:180px;border:1px solid #888}input{font:inherit}</style>
+        <h1>Caret browsing fixture</h1><p id="text">Keyboard navigation can move a text caret through this paragraph and select its words.</p>
+        <p><a id="link" href="#link-target">A link that can be selected without opening it</a></p>
+        <p><label>Editable field <input id="field" value="Editable input remains usable"></label></p>
+        <iframe id="frame" title="Caret browsing frame" srcdoc="&lt;!doctype html&gt;&lt;meta charset='utf-8'&gt;&lt;p id='frame-text' style='font:20px sans-serif'&gt;Text inside the embedded frame is available for keyboard navigation.&lt;/p&gt;"></iframe>
+        <p id="link-target">End of fixture.</p>`);
+      return;
+    }
     if (url.pathname.startsWith('/page/')) {
       loads.set(id, (loads.get(id) ?? 0) + 1);
       response.setHeader('Content-Type', 'text/html; charset=utf-8');

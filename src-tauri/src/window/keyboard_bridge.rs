@@ -10,6 +10,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
           const nonce = new Uint32Array(4); crypto.getRandomValues(nonce);
           const documentId = Array.from(nonce, n => n.toString(16).padStart(8, "0")).join("");
           const nativeAltCapture = {native_alt_capture};
+          const nativeCaretBrowsingToggle = {native_caret_browsing_toggle};
           window.__veloceWorkspaceSwitcherOpen = false;
           let shortcuts = {{}};
           let holdPressed = false;
@@ -76,6 +77,13 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
 
           window.addEventListener("keydown", (event) => {{
             if (!event.isTrusted) return;
+
+            if (nativeCaretBrowsingToggle && event.key === "F7" && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {{
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              if (!event.repeat) notifyBrowser("action", "toggle-caret-browsing");
+              return;
+            }}
 
             if (event.key === "Escape" && window.__veloceWorkspaceSwitcherOpen) {{
               event.preventDefault();
@@ -156,7 +164,8 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
         }})();
         "#,
         token = token,
-        native_alt_capture = native_alt_capture
+        native_alt_capture = native_alt_capture,
+        native_caret_browsing_toggle = cfg!(target_os = "linux")
     )
 }
 
@@ -593,11 +602,20 @@ pub(super) fn handle_keyboard_navigation(
                     .find(|(key, _)| key == "key")
                     .map(|(_, value)| value.as_ref());
                 if let Some(action) = action {
-                    let _ = crate::security::emit_shell(
-                        app_handle_for_nav,
-                        "browser-shortcut-action",
-                        serde_json::json!({ "action": action, "key": key }),
-                    );
+                    if action == "toggle-caret-browsing" {
+                        #[cfg(target_os = "linux")]
+                        if let Err(error) =
+                            crate::window::caret_browsing::toggle(app_handle_for_nav)
+                        {
+                            eprintln!("Unable to toggle native caret browsing: {error}");
+                        }
+                    } else {
+                        let _ = crate::security::emit_shell(
+                            app_handle_for_nav,
+                            "browser-shortcut-action",
+                            serde_json::json!({ "action": action, "key": key }),
+                        );
+                    }
                 }
             }
             _ => {}
@@ -641,6 +659,7 @@ fn valid_action(action: &str) -> bool {
             | "reopen-tab"
             | "close-tab"
             | "reload-tab"
+            | "toggle-caret-browsing"
     )
 }
 

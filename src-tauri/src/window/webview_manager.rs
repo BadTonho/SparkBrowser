@@ -375,6 +375,15 @@ pub(super) fn ensure_tab_webview(
         .map_err(|e| format!("Failed to create content WebView: {}", e))?;
 
     #[cfg(target_os = "linux")]
+    super::caret_browsing::apply_to_webview(
+        app,
+        &label,
+        app.state::<BrowserState>()
+            .caret_browsing_enabled
+            .load(std::sync::atomic::Ordering::Acquire),
+    )?;
+
+    #[cfg(target_os = "linux")]
     super::linux_layout::update_bounds(
         app,
         &label,

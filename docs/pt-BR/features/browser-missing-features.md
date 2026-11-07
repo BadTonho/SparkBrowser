@@ -52,7 +52,7 @@ Os padrões abaixo delimitam uma primeira versão; não são promessas de cobert
 | Mini-jogo offline | Exibir jogo local simples quando uma falha de conexão for identificada, sem rede ou coleta de dados; preservar acesso às ações de recuperação. |
 | CSS da interface do usuário | Permitir arquivo local opcional para a interface, com mecanismo de recuperação caso o estilo torne a interface inutilizável. |
 | Modo escuro forçado em páginas | Oferecer opção desligada por padrão e exceção por site; testar imagens, vídeos e páginas já escuras. Se os resultados forem insuficientes, relatar a limitação. |
-| Navegação por cursor de texto | Investigar suporte nativo no Windows e Linux e validar seleção e acessibilidade. Não presumir que um script reproduza o recurso nativo; se não for viável, apresentar opções. |
+| Navegação por cursor de texto | Implementada com suporte nativo do WebView2/WebKitGTK e F7; temporária, compartilhada entre abas de conteúdo e desligada ao iniciar. A validação nativa pode ser feita pelo cenário documentado `caret-browsing`. |
 | Tamanho mínimo de fonte | Investigar suporte dos motores e alternativas com testes de acessibilidade e layout. `min-font-size` não é uma propriedade CSS padrão; não usar a regra originalmente proposta. |
 
 ## Referências no projeto

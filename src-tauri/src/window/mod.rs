@@ -1,3 +1,5 @@
+#[cfg(target_os = "linux")]
+mod caret_browsing;
 mod content_focus;
 mod content_lifecycle;
 pub mod favicon;
