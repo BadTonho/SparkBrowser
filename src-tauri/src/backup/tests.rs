@@ -742,6 +742,22 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
         extracted_keys,
         vec!["AIzaSyD12345678901234567890123456789012".to_string()]
     );
+    assert_eq!(
+        super::gdrive_webview::SYNC_FOLDER_NAME,
+        "Veloce Browser Backup"
+    );
+    assert_eq!(
+        super::gdrive_webview::build_folder_metadata_json(true)["title"],
+        "Veloce Browser Backup"
+    );
+    assert_eq!(
+        super::gdrive_webview::build_folder_metadata_json(true)["mimeType"],
+        "application/vnd.google-apps.folder"
+    );
+    assert_eq!(
+        super::gdrive_webview::build_folder_metadata_json(false)["name"],
+        "Veloce Browser Backup"
+    );
 
     let req_id = super::gdrive_webview::next_request_id();
     assert!(req_id.len() <= 24);

@@ -21,6 +21,8 @@ use tauri::{LogicalPosition, LogicalSize, WebviewUrl};
 use tauri::{AppHandle, Manager, Url};
 
 pub const GDRIVE_SYNC_WEBVIEW_LABEL: &str = "google-drive-sync-webview";
+pub const SYNC_FOLDER_NAME: &str = "Veloce Browser Backup";
+pub const FOLDER_MIME_TYPE: &str = "application/vnd.google-apps.folder";
 const SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
@@ -42,6 +44,7 @@ pub struct GDriveWebRuntime {
     pub connected_email: Mutex<Option<String>>,
     pub active_authuser: Mutex<Option<String>>,
     pub cached_api_key: Mutex<Option<String>>,
+    pub cached_folder_id: Mutex<Option<String>>,
     pub pending: Mutex<HashMap<String, PendingGDriveRequest>>,
 }
 
@@ -653,56 +656,84 @@ struct FoundGDriveFile {
     download_url: Option<String>,
     api_version: String,
     api_key: String,
+    folder_id: Option<String>,
+}
+
+pub fn build_folder_metadata_json(is_v2: bool) -> serde_json::Value {
+    if is_v2 {
+        serde_json::json!({
+            "title": SYNC_FOLDER_NAME,
+            "mimeType": FOLDER_MIME_TYPE,
+            "parents": [{ "id": "root" }]
+        })
+    } else {
+        serde_json::json!({
+            "name": SYNC_FOLDER_NAME,
+            "mimeType": FOLDER_MIME_TYPE,
+            "parents": ["root"]
+        })
+    }
 }
 
 #[cfg(windows)]
-fn find_backup_file_blocking(
+fn ensure_backup_folder_blocking(
     client: &reqwest::blocking::Client,
     cookie_header: &str,
     auth_header: &str,
     authuser: &str,
     api_keys: &[String],
-) -> Result<FoundGDriveFile, String> {
+    create_if_missing: bool,
+) -> Result<(Option<String>, String, String), String> {
     if api_keys.is_empty() {
         return Err("backup.sync_gdrive_login_required".into());
     }
 
     let mut last_status = 0u16;
     let mut last_detail = String::new();
+    let mut working_ver_and_key: Option<(String, String)> = None;
 
     for key in api_keys {
         for v2_ver in ["v2beta", "v2internal", "v2"] {
-            let url = format!(
-                "https://clients6.google.com/drive/{v2_ver}/files?q=title%20%3D%20'{SYNC_FILE_NAME}'%20and%20trashed%20%3D%20false&maxResults=1&key={key}"
-            );
-            let resp = client
-                .get(&url)
+            let mut list_url = Url::parse(&format!(
+                "https://clients6.google.com/drive/{v2_ver}/files"
+            ))
+            .map_err(|e| e.to_string())?;
+            list_url.query_pairs_mut()
+                .append_pair(
+                    "q",
+                    &format!(
+                        "title = '{SYNC_FOLDER_NAME}' and mimeType = '{FOLDER_MIME_TYPE}' and 'root' in parents and trashed = false"
+                    ),
+                )
+                .append_pair("maxResults", "1")
+                .append_pair("key", key);
+
+            if let Ok(r) = client
+                .get(list_url.as_str())
                 .header(reqwest::header::COOKIE, cookie_header)
                 .header(reqwest::header::AUTHORIZATION, auth_header)
                 .header(reqwest::header::ORIGIN, "https://drive.google.com")
                 .header(reqwest::header::REFERER, "https://drive.google.com/")
                 .header(reqwest::header::USER_AGENT, USER_AGENT)
                 .header("X-Goog-AuthUser", authuser)
-                .send();
-
-            if let Ok(r) = resp {
+                .send()
+            {
                 last_status = r.status().as_u16();
                 if r.status().is_success() {
                     if let Ok(txt) = r.text() {
                         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&txt) {
-                            let first = json["items"].as_array().and_then(|arr| arr.first());
-                            let id = first
+                            let id = json["items"]
+                                .as_array()
+                                .and_then(|arr| arr.first())
                                 .and_then(|item| item["id"].as_str())
                                 .map(str::to_string);
-                            let download_url = first
-                                .and_then(|item| item["downloadUrl"].as_str())
-                                .map(str::to_string);
-                            return Ok(FoundGDriveFile {
-                                id,
-                                download_url,
-                                api_version: v2_ver.to_string(),
-                                api_key: key.clone(),
-                            });
+                            if id.is_some() {
+                                return Ok((id, v2_ver.to_string(), key.clone()));
+                            }
+                            if working_ver_and_key.is_none() {
+                                working_ver_and_key = Some((v2_ver.to_string(), key.clone()));
+                            }
+                            break;
                         }
                     }
                 } else if last_status == 401 {
@@ -717,51 +748,248 @@ fn find_backup_file_blocking(
             }
         }
 
-        let url_v3 = format!(
-            "https://clients6.google.com/drive/v3/files?q=name%20%3D%20'{SYNC_FILE_NAME}'%20and%20trashed%20%3D%20false&pageSize=1&key={key}"
+        if working_ver_and_key.is_none() {
+            let mut list_v3 = Url::parse("https://clients6.google.com/drive/v3/files")
+                .map_err(|e| e.to_string())?;
+            list_v3
+                .query_pairs_mut()
+                .append_pair(
+                    "q",
+                    &format!(
+                        "name = '{SYNC_FOLDER_NAME}' and mimeType = '{FOLDER_MIME_TYPE}' and 'root' in parents and trashed = false"
+                    ),
+                )
+                .append_pair("pageSize", "1")
+                .append_pair("key", key);
+
+            if let Ok(r) = client
+                .get(list_v3.as_str())
+                .header(reqwest::header::COOKIE, cookie_header)
+                .header(reqwest::header::AUTHORIZATION, auth_header)
+                .header(reqwest::header::ORIGIN, "https://drive.google.com")
+                .header(reqwest::header::REFERER, "https://drive.google.com/")
+                .header(reqwest::header::USER_AGENT, USER_AGENT)
+                .header("X-Goog-AuthUser", authuser)
+                .send()
+            {
+                last_status = r.status().as_u16();
+                if r.status().is_success() {
+                    if let Ok(txt) = r.text() {
+                        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&txt) {
+                            let id = json["files"]
+                                .as_array()
+                                .and_then(|arr| arr.first())
+                                .and_then(|item| item["id"].as_str())
+                                .map(str::to_string);
+                            if id.is_some() {
+                                return Ok((id, "v3".to_string(), key.clone()));
+                            }
+                            working_ver_and_key = Some(("v3".to_string(), key.clone()));
+                        }
+                    }
+                } else if last_status == 401 {
+                    return Err("backup.sync_gdrive_login_required".into());
+                } else if let Ok(txt) = r.text() {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                        if let Some(m) = v["error"]["message"].as_str() {
+                            last_detail = m.to_string();
+                        }
+                    }
+                }
+            }
+        }
+
+        if working_ver_and_key.is_some() {
+            break;
+        }
+    }
+
+    let Some((ver, key)) = working_ver_and_key else {
+        return Err(format!(
+            "backup.sync_network_failed: Drive query HTTP {last_status} {last_detail}"
+        ));
+    };
+
+    if !create_if_missing {
+        return Ok((None, ver, key));
+    }
+
+    for candidate_ver in [ver.as_str(), "v2beta", "v2internal", "v2", "v3"] {
+        let is_v2 = candidate_ver != "v3";
+        let create_url = format!(
+            "https://clients6.google.com/drive/{candidate_ver}/files?key={key}"
         );
+        let body = build_folder_metadata_json(is_v2).to_string();
+
         if let Ok(r) = client
-            .get(&url_v3)
+            .post(&create_url)
             .header(reqwest::header::COOKIE, cookie_header)
             .header(reqwest::header::AUTHORIZATION, auth_header)
             .header(reqwest::header::ORIGIN, "https://drive.google.com")
             .header(reqwest::header::REFERER, "https://drive.google.com/")
             .header(reqwest::header::USER_AGENT, USER_AGENT)
             .header("X-Goog-AuthUser", authuser)
+            .header(reqwest::header::CONTENT_TYPE, "application/json; charset=UTF-8")
+            .body(body)
             .send()
         {
-            last_status = r.status().as_u16();
             if r.status().is_success() {
                 if let Ok(txt) = r.text() {
                     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&txt) {
-                        let id = json["files"]
-                            .as_array()
-                            .and_then(|arr| arr.first())
-                            .and_then(|item| item["id"].as_str())
-                            .map(str::to_string);
-                        return Ok(FoundGDriveFile {
-                            id,
-                            download_url: None,
-                            api_version: "v3".to_string(),
-                            api_key: key.clone(),
-                        });
-                    }
-                }
-            } else if last_status == 401 {
-                return Err("backup.sync_gdrive_login_required".into());
-            } else if let Ok(txt) = r.text() {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
-                    if let Some(m) = v["error"]["message"].as_str() {
-                        last_detail = m.to_string();
+                        if let Some(folder_id) = json["id"].as_str() {
+                            return Ok((
+                                Some(folder_id.to_string()),
+                                candidate_ver.to_string(),
+                                key,
+                            ));
+                        }
                     }
                 }
             }
         }
     }
 
-    Err(format!(
-        "backup.sync_network_failed: Drive query HTTP {last_status} {last_detail}"
+    Ok((None, ver, key))
+}
+
+#[cfg(windows)]
+fn query_backup_file_in_parent_blocking(
+    client: &reqwest::blocking::Client,
+    cookie_header: &str,
+    auth_header: &str,
+    authuser: &str,
+    api_version: &str,
+    api_key: &str,
+    parent_id: Option<&str>,
+) -> Result<Option<(String, Option<String>)>, String> {
+    let is_v2 = api_version != "v3";
+    let mut url = Url::parse(&format!(
+        "https://clients6.google.com/drive/{api_version}/files"
     ))
+    .map_err(|e| e.to_string())?;
+
+    let query = match (is_v2, parent_id) {
+        (true, Some(pid)) => {
+            format!("title = '{SYNC_FILE_NAME}' and '{pid}' in parents and trashed = false")
+        }
+        (true, None) => format!("title = '{SYNC_FILE_NAME}' and trashed = false"),
+        (false, Some(pid)) => {
+            format!("name = '{SYNC_FILE_NAME}' and '{pid}' in parents and trashed = false")
+        }
+        (false, None) => format!("name = '{SYNC_FILE_NAME}' and trashed = false"),
+    };
+
+    {
+        let mut qp = url.query_pairs_mut();
+        qp.append_pair("q", &query);
+        if is_v2 {
+            qp.append_pair("maxResults", "1");
+        } else {
+            qp.append_pair("pageSize", "1");
+        }
+        qp.append_pair("key", api_key);
+    }
+
+    let resp = client
+        .get(url.as_str())
+        .header(reqwest::header::COOKIE, cookie_header)
+        .header(reqwest::header::AUTHORIZATION, auth_header)
+        .header(reqwest::header::ORIGIN, "https://drive.google.com")
+        .header(reqwest::header::REFERER, "https://drive.google.com/")
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .header("X-Goog-AuthUser", authuser)
+        .send()
+        .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+
+    if resp.status().as_u16() == 401 {
+        return Err("backup.sync_gdrive_login_required".into());
+    }
+    if !resp.status().is_success() {
+        return Ok(None);
+    }
+
+    let txt = resp
+        .text()
+        .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+    let json = serde_json::from_str::<serde_json::Value>(&txt)
+        .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+    let arr_key = if is_v2 { "items" } else { "files" };
+    let first = json[arr_key].as_array().and_then(|arr| arr.first());
+    let Some(id) = first.and_then(|item| item["id"].as_str()) else {
+        return Ok(None);
+    };
+    let dl = first
+        .and_then(|item| item["downloadUrl"].as_str())
+        .map(str::to_string);
+    Ok(Some((id.to_string(), dl)))
+}
+
+#[cfg(windows)]
+fn find_backup_file_blocking(
+    client: &reqwest::blocking::Client,
+    cookie_header: &str,
+    auth_header: &str,
+    authuser: &str,
+    api_keys: &[String],
+    create_folder_if_missing: bool,
+) -> Result<FoundGDriveFile, String> {
+    let (folder_id, api_version, api_key) = ensure_backup_folder_blocking(
+        client,
+        cookie_header,
+        auth_header,
+        authuser,
+        api_keys,
+        create_folder_if_missing,
+    )?;
+
+    if let Some(ref fid) = folder_id {
+        if let Some((file_id, dl_url)) = query_backup_file_in_parent_blocking(
+            client,
+            cookie_header,
+            auth_header,
+            authuser,
+            &api_version,
+            &api_key,
+            Some(fid),
+        )? {
+            return Ok(FoundGDriveFile {
+                id: Some(file_id),
+                download_url: dl_url,
+                api_version,
+                api_key,
+                folder_id,
+            });
+        }
+    }
+
+    // Legacy fallback during pull: if not yet inside the folder, check anywhere in My Drive
+    if !create_folder_if_missing {
+        if let Some((file_id, dl_url)) = query_backup_file_in_parent_blocking(
+            client,
+            cookie_header,
+            auth_header,
+            authuser,
+            &api_version,
+            &api_key,
+            None,
+        )? {
+            return Ok(FoundGDriveFile {
+                id: Some(file_id),
+                download_url: dl_url,
+                api_version,
+                api_key,
+                folder_id,
+            });
+        }
+    }
+
+    Ok(FoundGDriveFile {
+        id: None,
+        download_url: None,
+        api_version,
+        api_key,
+        folder_id,
+    })
 }
 
 #[cfg(windows)]
@@ -786,6 +1014,7 @@ fn upload_multipart_blocking(
     );
     let mut last_status = 0u16;
     let mut last_detail = String::new();
+    let parent_id = found.folder_id.as_deref().unwrap_or("root");
 
     for ver in versions {
         let is_v2 = ver == "v2beta" || ver == "v2internal" || ver == "v2";
@@ -796,7 +1025,7 @@ fn upload_multipart_blocking(
                 serde_json::json!({
                     "title": SYNC_FILE_NAME,
                     "mimeType": "application/json",
-                    "parents": [{ "id": "root" }]
+                    "parents": [{ "id": parent_id }]
                 })
             }
         } else if found.id.is_some() {
@@ -805,7 +1034,7 @@ fn upload_multipart_blocking(
             serde_json::json!({
                 "name": SYNC_FILE_NAME,
                 "mimeType": "application/json",
-                "parents": ["root"]
+                "parents": [parent_id]
             })
         };
 
@@ -895,12 +1124,18 @@ pub async fn push_document_via_webview(
         .and_then(|g| g.clone());
 
     let authuser_clone = authuser.clone();
-    let (verified_key, detected_email) = tauri::async_runtime::spawn_blocking(move || {
+    let (verified_key, detected_email, folder_id) = tauri::async_runtime::spawn_blocking(move || {
         let client = build_gdrive_http_client()?;
         let (keys, email) =
             discover_gdrive_session_blocking(&client, &cookie_header, &authuser_clone, cached_key)?;
-        let found =
-            find_backup_file_blocking(&client, &cookie_header, &auth_header, &authuser_clone, &keys)?;
+        let found = find_backup_file_blocking(
+            &client,
+            &cookie_header,
+            &auth_header,
+            &authuser_clone,
+            &keys,
+            true,
+        )?;
         upload_multipart_blocking(
             &client,
             &cookie_header,
@@ -909,7 +1144,11 @@ pub async fn push_document_via_webview(
             &found,
             &json_text,
         )?;
-        Ok::<(String, Option<String>), String>((found.api_key, email))
+        Ok::<(String, Option<String>, Option<String>), String>((
+            found.api_key,
+            email,
+            found.folder_id,
+        ))
     })
     .await
     .map_err(|e| e.to_string())??;
@@ -917,6 +1156,11 @@ pub async fn push_document_via_webview(
     let service = app.state::<BackupService>();
     if let Ok(mut guard) = service.sync.gdrive.cached_api_key.lock() {
         *guard = Some(verified_key);
+    }
+    if let Some(fid) = folder_id {
+        if let Ok(mut guard) = service.sync.gdrive.cached_folder_id.lock() {
+            *guard = Some(fid);
+        }
     }
     if let Some(email) = detected_email {
         if let Ok(mut guard) = service.sync.gdrive.connected_email.lock() {
@@ -950,8 +1194,14 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
         let client = build_gdrive_http_client()?;
         let (keys, email) =
             discover_gdrive_session_blocking(&client, &cookie_header, &authuser_clone, cached_key)?;
-        let found =
-            find_backup_file_blocking(&client, &cookie_header, &auth_header, &authuser_clone, &keys)?;
+        let found = find_backup_file_blocking(
+            &client,
+            &cookie_header,
+            &auth_header,
+            &authuser_clone,
+            &keys,
+            false,
+        )?;
         let Some(file_id) = found.id.as_deref() else {
             return Err("backup.sync_file_not_found".to_string());
         };

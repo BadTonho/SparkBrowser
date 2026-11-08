@@ -2,6 +2,8 @@
   if (location.protocol !== "https:") return;
 
   const BRIDGE_TOKEN = __GDRIVE_BRIDGE_TOKEN__;
+  const FOLDER_NAME = "Veloce Browser Backup";
+  const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
   const FILE_NAME = "browser.veloce-backup.json";
   const CHUNK_SIZE = 400000;
   const nativeFetch = window.fetch.bind(window);
@@ -493,34 +495,35 @@
     return detectedEmail;
   }
 
-  async function findBackupFileId(headers, apiKeys) {
+  async function ensureBackupFolderId(headers, apiKeys, createIfMissing) {
     const candidates = apiKeys && apiKeys.length > 0 ? apiKeys : [null];
     let lastStatus = 0;
     let lastErrDetail = "";
+    let workingVerAndKey = null;
 
     for (const candidateKey of candidates) {
       for (const v2Ver of ["v2beta", "v2internal", "v2"]) {
         try {
-          const qV2 = encodeURIComponent(`title = '${FILE_NAME}' and trashed = false`);
+          const qV2 = encodeURIComponent(
+            `title = '${FOLDER_NAME}' and mimeType = '${FOLDER_MIME_TYPE}' and 'root' in parents and trashed = false`
+          );
           const urlV2 = withKey(
             `https://clients6.google.com/drive/${v2Ver}/files?q=${qV2}&maxResults=1`,
             candidateKey
           );
-          const respV2 = await smartFetch(urlV2, {
-            method: "GET",
-            headers,
-          });
+          const respV2 = await smartFetch(urlV2, { method: "GET", headers });
           if (respV2.ok) {
             if (candidateKey) verifiedApiKey = candidateKey;
             const data = await respV2.json();
             const items = Array.isArray(data?.items) ? data.items : [];
             await maybeFetchAccountEmail(headers, v2Ver, candidateKey);
-            return {
-              id: items.length > 0 ? items[0].id : null,
-              downloadUrl: items.length > 0 ? items[0].downloadUrl || null : null,
-              apiVersion: v2Ver,
-              apiKey: candidateKey,
-            };
+            if (items.length > 0 && items[0].id) {
+              return { folderId: items[0].id, apiVersion: v2Ver, apiKey: candidateKey };
+            }
+            if (!workingVerAndKey) {
+              workingVerAndKey = { apiVersion: v2Ver, apiKey: candidateKey };
+            }
+            break;
           }
           lastStatus = respV2.status;
           if (respV2.status === 401) {
@@ -539,51 +542,162 @@
         }
       }
 
-      try {
-        const qV3 = encodeURIComponent(`name = '${FILE_NAME}' and trashed = false`);
-        const urlV3 = withKey(
-          `https://clients6.google.com/drive/v3/files?q=${qV3}&pageSize=1`,
-          candidateKey
-        );
-        const respV3 = await smartFetch(urlV3, {
-          method: "GET",
-          headers,
-        });
-        if (respV3.ok) {
-          if (candidateKey) verifiedApiKey = candidateKey;
-          const dataV3 = await respV3.json();
-          const files = Array.isArray(dataV3?.files) ? dataV3.files : [];
-          await maybeFetchAccountEmail(headers, "v3", candidateKey);
-          return {
-            id: files.length > 0 ? files[0].id : null,
-            downloadUrl: null,
-            apiVersion: "v3",
-            apiKey: candidateKey,
-          };
-        }
-        lastStatus = respV3.status;
-        if (respV3.status === 401) {
-          throw new Error("backup.sync_gdrive_login_required");
-        }
+      if (!workingVerAndKey) {
         try {
-          const errTxt = await respV3.text();
-          const errObj = JSON.parse(errTxt);
-          if (errObj?.error?.message) lastErrDetail = errObj.error.message;
-        } catch {}
-      } catch (err) {
-        if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
-          throw err;
+          const qV3 = encodeURIComponent(
+            `name = '${FOLDER_NAME}' and mimeType = '${FOLDER_MIME_TYPE}' and 'root' in parents and trashed = false`
+          );
+          const urlV3 = withKey(
+            `https://clients6.google.com/drive/v3/files?q=${qV3}&pageSize=1`,
+            candidateKey
+          );
+          const respV3 = await smartFetch(urlV3, { method: "GET", headers });
+          if (respV3.ok) {
+            if (candidateKey) verifiedApiKey = candidateKey;
+            const dataV3 = await respV3.json();
+            const files = Array.isArray(dataV3?.files) ? dataV3.files : [];
+            await maybeFetchAccountEmail(headers, "v3", candidateKey);
+            if (files.length > 0 && files[0].id) {
+              return { folderId: files[0].id, apiVersion: "v3", apiKey: candidateKey };
+            }
+            workingVerAndKey = { apiVersion: "v3", apiKey: candidateKey };
+          } else {
+            lastStatus = respV3.status;
+            if (respV3.status === 401) {
+              throw new Error("backup.sync_gdrive_login_required");
+            }
+            try {
+              const errTxt = await respV3.text();
+              const errObj = JSON.parse(errTxt);
+              if (errObj?.error?.message) lastErrDetail = errObj.error.message;
+            } catch {}
+          }
+        } catch (err) {
+          if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
+            throw err;
+          }
+          lastErrDetail = err instanceof Error ? err.message : String(err);
         }
-        lastErrDetail = err instanceof Error ? err.message : String(err);
+      }
+
+      if (workingVerAndKey) break;
+    }
+
+    if (!workingVerAndKey) {
+      if (lastStatus === 401) {
+        throw new Error("backup.sync_gdrive_login_required");
+      }
+      throw new Error(
+        `backup.sync_network_failed: Drive query failed (HTTP ${lastStatus}${lastErrDetail ? " " + lastErrDetail : ""})`
+      );
+    }
+
+    const { apiVersion, apiKey } = workingVerAndKey;
+    if (!createIfMissing) {
+      return { folderId: null, apiVersion, apiKey };
+    }
+
+    const versionsToTry = [
+      apiVersion,
+      ...["v2beta", "v2internal", "v2", "v3"].filter((v) => v !== apiVersion),
+    ];
+    for (const ver of versionsToTry) {
+      try {
+        const isV2 = ver !== "v3";
+        const createUrl = withKey(
+          `https://clients6.google.com/drive/${ver}/files`,
+          apiKey
+        );
+        const metadata = isV2
+          ? { title: FOLDER_NAME, mimeType: FOLDER_MIME_TYPE, parents: [{ id: "root" }] }
+          : { name: FOLDER_NAME, mimeType: FOLDER_MIME_TYPE, parents: ["root"] };
+        const resp = await smartFetch(createUrl, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json; charset=UTF-8" },
+          body: JSON.stringify(metadata),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.id) {
+            return { folderId: data.id, apiVersion: ver, apiKey };
+          }
+        }
+      } catch {}
+    }
+
+    return { folderId: null, apiVersion, apiKey };
+  }
+
+  async function queryBackupFileInParent(headers, apiVersion, apiKey, parentId) {
+    const isV2 = apiVersion !== "v3";
+    const queryStr = isV2
+      ? parentId
+        ? `title = '${FILE_NAME}' and '${parentId}' in parents and trashed = false`
+        : `title = '${FILE_NAME}' and trashed = false`
+      : parentId
+        ? `name = '${FILE_NAME}' and '${parentId}' in parents and trashed = false`
+        : `name = '${FILE_NAME}' and trashed = false`;
+    const limitParam = isV2 ? "maxResults=1" : "pageSize=1";
+    const url = withKey(
+      `https://clients6.google.com/drive/${apiVersion}/files?q=${encodeURIComponent(queryStr)}&${limitParam}`,
+      apiKey
+    );
+    const resp = await smartFetch(url, { method: "GET", headers });
+    if (resp.status === 401) {
+      throw new Error("backup.sync_gdrive_login_required");
+    }
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const list = isV2 ? data?.items : data?.files;
+    if (Array.isArray(list) && list.length > 0 && list[0].id) {
+      return {
+        id: list[0].id,
+        downloadUrl: list[0].downloadUrl || null,
+      };
+    }
+    return null;
+  }
+
+  async function findBackupFileId(headers, apiKeys, createFolderIfMissing) {
+    const { folderId, apiVersion, apiKey } = await ensureBackupFolderId(
+      headers,
+      apiKeys,
+      createFolderIfMissing
+    );
+
+    if (folderId) {
+      const inFolder = await queryBackupFileInParent(headers, apiVersion, apiKey, folderId);
+      if (inFolder) {
+        return {
+          id: inFolder.id,
+          downloadUrl: inFolder.downloadUrl,
+          apiVersion,
+          apiKey,
+          folderId,
+        };
       }
     }
 
-    if (lastStatus === 401) {
-      throw new Error("backup.sync_gdrive_login_required");
+    if (!createFolderIfMissing) {
+      const inAny = await queryBackupFileInParent(headers, apiVersion, apiKey, null);
+      if (inAny) {
+        return {
+          id: inAny.id,
+          downloadUrl: inAny.downloadUrl,
+          apiVersion,
+          apiKey,
+          folderId,
+        };
+      }
     }
-    throw new Error(
-      `backup.sync_network_failed: Drive query failed (HTTP ${lastStatus}${lastErrDetail ? " " + lastErrDetail : ""})`
-    );
+
+    return {
+      id: null,
+      downloadUrl: null,
+      apiVersion,
+      apiKey,
+      folderId,
+    };
   }
 
   function decodeBase64Utf8(b64) {
@@ -605,16 +719,17 @@
     return btoa(binary);
   }
 
-  async function tryMultipartUpload(headers, apiKey, apiVersion, existingId, jsonText) {
+  async function tryMultipartUpload(headers, apiKey, apiVersion, existingId, folderId, jsonText) {
     const boundary = "veloce_gdrive_boundary_" + Date.now();
     const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal" || apiVersion === "v2";
+    const parentId = folderId || "root";
     const metadata = isV2
       ? existingId
         ? { title: FILE_NAME, mimeType: "application/json" }
-        : { title: FILE_NAME, mimeType: "application/json", parents: [{ id: "root" }] }
+        : { title: FILE_NAME, mimeType: "application/json", parents: [{ id: parentId }] }
       : existingId
         ? { mimeType: "application/json" }
-        : { name: FILE_NAME, mimeType: "application/json", parents: ["root"] };
+        : { name: FILE_NAME, mimeType: "application/json", parents: [parentId] };
 
     const multipartBody =
       `--${boundary}\r\n` +
@@ -644,7 +759,11 @@
 
   async function uploadBackupJson(jsonText) {
     const { headers, apiKeys } = await waitForDriveSession();
-    const { id: existingId, apiVersion, apiKey } = await findBackupFileId(headers, apiKeys);
+    const { id: existingId, apiVersion, apiKey, folderId } = await findBackupFileId(
+      headers,
+      apiKeys,
+      true
+    );
 
     const versionsToTry = [
       apiVersion,
@@ -655,7 +774,14 @@
 
     for (const ver of versionsToTry) {
       try {
-        const resp = await tryMultipartUpload(headers, apiKey, ver, existingId, jsonText);
+        const resp = await tryMultipartUpload(
+          headers,
+          apiKey,
+          ver,
+          existingId,
+          folderId,
+          jsonText
+        );
         if (resp.ok) {
           return;
         }
@@ -680,7 +806,8 @@
     const { headers, apiKeys } = await waitForDriveSession();
     const { id: existingId, downloadUrl, apiVersion, apiKey } = await findBackupFileId(
       headers,
-      apiKeys
+      apiKeys,
+      false
     );
     if (!existingId) {
       throw new Error("backup.sync_file_not_found");
