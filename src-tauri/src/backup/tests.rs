@@ -712,13 +712,25 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
     super::gdrive_webview::apply_bridge_navigation(
         &gdrive_rt,
         &url::Url::parse(&format!(
-            "veloce-internal://google-drive-sync/status?token={token}&reason=ready"
+            "veloce-internal://google-drive-sync/status?token={token}&reason=ready&data=user%40gmail.com"
         ))
         .unwrap(),
     );
     assert_eq!(
         gdrive_rt.page_status.lock().unwrap().as_deref(),
         Some("ready")
+    );
+    assert_eq!(
+        gdrive_rt.connected_email.lock().unwrap().as_deref(),
+        Some("user@gmail.com")
+    );
+    assert_eq!(
+        super::gdrive_webview::extract_authuser_from_url("https://drive.google.com/drive/u/2/my-drive"),
+        Some("2".to_string())
+    );
+    assert_eq!(
+        super::gdrive_webview::extract_authuser_from_url("https://drive.google.com/drive/my-drive"),
+        Some("0".to_string())
     );
 
     let req_id = super::gdrive_webview::next_request_id();

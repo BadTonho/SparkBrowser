@@ -35,6 +35,7 @@ export type SyncTargetConfig =
 export interface SyncStateSnapshot {
   config: SyncTargetConfig;
   has_secret: boolean;
+  connected_account?: string | null;
   last_synced_at: number | null;
   last_error: string | null;
 }

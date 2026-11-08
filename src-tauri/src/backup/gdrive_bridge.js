@@ -1,15 +1,115 @@
 (() => {
-  if (window.top !== window) return;
   if (location.protocol !== "https:") return;
 
   const BRIDGE_TOKEN = __GDRIVE_BRIDGE_TOKEN__;
   const FILE_NAME = "browser.veloce-backup.json";
   const CHUNK_SIZE = 400000;
+  const nativeFetch = window.fetch.bind(window);
+
+  // Child frame helper on clients6.google.com: captures Google Drive's own API keys
+  // and acts as a same-origin fetch proxy when needed.
+  if (window.top !== window) {
+    if (location.hostname.toLowerCase() !== "clients6.google.com") return;
+
+    function notifyTopKey(rawUrl, explicitKey) {
+      try {
+        if (explicitKey && /^AIza[0-9A-Za-z_-]{35}$/.test(explicitKey)) {
+          window.top.postMessage(
+            {
+              __veloceGDriveBridge: BRIDGE_TOKEN,
+              type: "captured_key",
+              key: explicitKey,
+              isDrive: true,
+            },
+            "https://drive.google.com"
+          );
+        }
+        if (typeof rawUrl === "string") {
+          const u = new URL(rawUrl, location.origin);
+          const k = u.searchParams.get("key");
+          if (k && /^AIza[0-9A-Za-z_-]{35}$/.test(k)) {
+            window.top.postMessage(
+              {
+                __veloceGDriveBridge: BRIDGE_TOKEN,
+                type: "captured_key",
+                key: k,
+                isDrive: u.pathname.includes("/drive/"),
+              },
+              "https://drive.google.com"
+            );
+          }
+        }
+      } catch {}
+    }
+
+    const origChildOpen = XMLHttpRequest.prototype.open;
+    const origChildSetHeader = XMLHttpRequest.prototype.setRequestHeader;
+    XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+      notifyTopKey(url, null);
+      return origChildOpen.call(this, method, url, ...rest);
+    };
+    XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
+      if (typeof name === "string" && name.toLowerCase() === "x-goog-api-key" && typeof value === "string") {
+        notifyTopKey(null, value.trim());
+      }
+      return origChildSetHeader.call(this, name, value);
+    };
+
+    window.addEventListener("message", async (event) => {
+      if (event.origin !== "https://drive.google.com") return;
+      const msg = event.data;
+      if (!msg || msg.__veloceGDriveBridge !== BRIDGE_TOKEN || msg.type !== "proxy_fetch") return;
+      try {
+        const resp = await nativeFetch(msg.url, {
+          method: msg.method || "GET",
+          credentials: "include",
+          headers: msg.headers || {},
+          body: msg.body ?? undefined,
+        });
+        const bodyText = await resp.text();
+        window.top.postMessage(
+          {
+            __veloceGDriveBridge: BRIDGE_TOKEN,
+            type: "proxy_fetch_result",
+            id: msg.id,
+            ok: resp.ok,
+            status: resp.status,
+            bodyText,
+          },
+          "https://drive.google.com"
+        );
+      } catch (err) {
+        window.top.postMessage(
+          {
+            __veloceGDriveBridge: BRIDGE_TOKEN,
+            type: "proxy_fetch_result",
+            id: msg.id,
+            ok: false,
+            status: 0,
+            error: err instanceof Error ? err.message : String(err),
+          },
+          "https://drive.google.com"
+        );
+      }
+    });
+
+    try {
+      window.top.postMessage(
+        { __veloceGDriveBridge: BRIDGE_TOKEN, type: "proxy_ready" },
+        "https://drive.google.com"
+      );
+    } catch {}
+    return;
+  }
 
   const capturedApiKeys = [];
   let verifiedApiKey = null;
   let capturedBearer = null;
   let capturedAuthUser = null;
+  let detectedEmail = null;
+  let proxyFrameWindow = null;
+  let nextProxyMsgId = 1;
+  const pendingProxyFetches = new Map();
 
   function addApiKeyCandidate(key, prioritize = false) {
     if (typeof key !== "string" || !/^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
@@ -30,9 +130,32 @@
     }
   }
 
+  window.addEventListener("message", (event) => {
+    if (event.origin !== "https://clients6.google.com") return;
+    const msg = event.data;
+    if (!msg || msg.__veloceGDriveBridge !== BRIDGE_TOKEN) return;
+    if (event.source) {
+      proxyFrameWindow = event.source;
+    }
+    if (msg.type === "captured_key" && msg.key) {
+      addApiKeyCandidate(msg.key, Boolean(msg.isDrive));
+    } else if (msg.type === "proxy_fetch_result" && msg.id) {
+      const resolver = pendingProxyFetches.get(msg.id);
+      if (resolver) {
+        pendingProxyFetches.delete(msg.id);
+        resolver(msg);
+      }
+    }
+  });
+
   function detectAuthUserFromPath() {
     const m = location.pathname.match(/\/u\/(\d+)(?:\/|$)/);
-    return m ? m[1] : "0";
+    if (m) return m[1];
+    try {
+      const au = new URLSearchParams(location.search).get("authuser");
+      if (au && /^\d+$/.test(au)) return au;
+    } catch {}
+    return "0";
   }
 
   function inspectUrlForKey(rawUrl) {
@@ -50,7 +173,6 @@
     } catch {}
   }
 
-  // Observe page XHR and fetch calls to capture Google Drive Web's own API key and headers
   const origOpen = XMLHttpRequest.prototype.open;
   const origSetHeader = XMLHttpRequest.prototype.setRequestHeader;
   XMLHttpRequest.prototype.open = function (method, url, ...rest) {
@@ -71,7 +193,6 @@
     return origSetHeader.call(this, name, value);
   };
 
-  const nativeFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
     try {
       const url = typeof input === "string" ? input : input?.url;
@@ -102,8 +223,47 @@
       host === "accounts.google.com" ||
       path.startsWith("/ServiceLogin") ||
       path.startsWith("/v3/signin") ||
-      path.startsWith("/AccountChooser")
+      path.startsWith("/AccountChooser") ||
+      path.startsWith("/InteractiveLogin")
     );
+  }
+
+  function extractAccountEmail() {
+    if (detectedEmail) return detectedEmail;
+    try {
+      const wizEmail = window.WIZ_global_data?.oPEP7c;
+      if (typeof wizEmail === "string" && wizEmail.includes("@")) {
+        detectedEmail = wizEmail.trim();
+        return detectedEmail;
+      }
+    } catch {}
+    try {
+      const nodes = document.querySelectorAll("[aria-label*='@']");
+      for (const node of nodes) {
+        const label = node.getAttribute("aria-label") || "";
+        const m = label.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (m) {
+          detectedEmail = m[1];
+          return detectedEmail;
+        }
+      }
+    } catch {}
+    try {
+      const titleMatch = (document.title || "").match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (titleMatch) {
+        detectedEmail = titleMatch[1];
+        return detectedEmail;
+      }
+    } catch {}
+    try {
+      const html = document.documentElement?.innerHTML || "";
+      const wizMatch = html.match(/"oPEP7c"\s*:\s*"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"/);
+      if (wizMatch) {
+        detectedEmail = wizMatch[1];
+        return detectedEmail;
+      }
+    } catch {}
+    return null;
   }
 
   function collectApiKeyCandidates() {
@@ -118,7 +278,16 @@
       }
     } catch {}
     try {
-      for (const globalObj of [window._drive_flag_initialData, window.WIZ_global_data, window.IJ_values]) {
+      if (window._drive_flag_initialData) {
+        const driveText = JSON.stringify(window._drive_flag_initialData);
+        const driveMatches = driveText.matchAll(/AIza[0-9A-Za-z_-]{35}/g);
+        for (const m of driveMatches) {
+          addApiKeyCandidate(m[0], true);
+        }
+      }
+    } catch {}
+    try {
+      for (const globalObj of [window.WIZ_global_data, window.IJ_values]) {
         if (globalObj) {
           const text = JSON.stringify(globalObj);
           const matches = text.matchAll(/AIza[0-9A-Za-z_-]{35}/g);
@@ -130,8 +299,14 @@
     } catch {}
     try {
       const html = document.documentElement?.innerHTML || "";
-      const matches = html.matchAll(/AIza[0-9A-Za-z_-]{35}/g);
-      for (const m of matches) {
+      const driveSpecific = html.matchAll(
+        /clients6\.google\.com\/drive\/[^"']*?["'][^A]{0,120}?(AIza[0-9A-Za-z_-]{35})/g
+      );
+      for (const m of driveSpecific) {
+        addApiKeyCandidate(m[1], true);
+      }
+      const allMatches = html.matchAll(/AIza[0-9A-Za-z_-]{35}/g);
+      for (const m of allMatches) {
         addApiKeyCandidate(m[0], false);
       }
     } catch {}
@@ -201,11 +376,70 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  async function smartFetch(url, options) {
+    try {
+      const resp = await nativeFetch(url, {
+        method: options.method || "GET",
+        credentials: "include",
+        headers: options.headers || {},
+        body: options.body ?? undefined,
+      });
+      return {
+        ok: resp.ok,
+        status: resp.status,
+        text: () => resp.text(),
+        json: async () => JSON.parse(await resp.text()),
+      };
+    } catch (directErr) {
+      if (proxyFrameWindow) {
+        const id = `pf-${nextProxyMsgId++}`;
+        const proxyResult = await new Promise((resolve) => {
+          const timer = setTimeout(() => {
+            pendingProxyFetches.delete(id);
+            resolve(null);
+          }, 10000);
+          pendingProxyFetches.set(id, (res) => {
+            clearTimeout(timer);
+            resolve(res);
+          });
+          try {
+            proxyFrameWindow.postMessage(
+              {
+                __veloceGDriveBridge: BRIDGE_TOKEN,
+                type: "proxy_fetch",
+                id,
+                url,
+                method: options.method || "GET",
+                headers: options.headers || {},
+                body: options.body ?? null,
+              },
+              "https://clients6.google.com"
+            );
+          } catch {
+            clearTimeout(timer);
+            pendingProxyFetches.delete(id);
+            resolve(null);
+          }
+        });
+        if (proxyResult && proxyResult.status > 0) {
+          return {
+            ok: Boolean(proxyResult.ok),
+            status: proxyResult.status,
+            text: async () => proxyResult.bodyText || "",
+            json: async () => JSON.parse(proxyResult.bodyText || "{}"),
+          };
+        }
+      }
+      throw directErr;
+    }
+  }
+
   async function waitForDriveSession() {
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 45; i++) {
       if (isLoginScreen()) {
         throw new Error("backup.sync_gdrive_login_required");
       }
+      extractAccountEmail();
       const headers = await buildAuthHeaders();
       const apiKeys = collectApiKeyCandidates();
       if (headers && (apiKeys.length > 0 || capturedBearer)) {
@@ -230,72 +464,109 @@
     return `${baseUrl}${sep}key=${encodeURIComponent(apiKey)}`;
   }
 
+  async function maybeFetchAccountEmail(headers, apiVersion, apiKey) {
+    if (extractAccountEmail()) return detectedEmail;
+    try {
+      const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal";
+      const url = withKey(
+        isV2
+          ? `https://clients6.google.com/drive/${apiVersion}/about?fields=user(emailAddress)`
+          : `https://clients6.google.com/drive/v3/about?fields=user(emailAddress)`,
+        apiKey
+      );
+      const resp = await smartFetch(url, { method: "GET", headers });
+      if (resp.ok) {
+        const data = await resp.json();
+        const email = data?.user?.emailAddress;
+        if (typeof email === "string" && email.includes("@")) {
+          detectedEmail = email.trim();
+        }
+      }
+    } catch {}
+    return detectedEmail;
+  }
+
   async function findBackupFileId(headers, apiKeys) {
     const candidates = apiKeys && apiKeys.length > 0 ? apiKeys : [null];
     let lastStatus = 0;
+    let lastErrDetail = "";
 
     for (const candidateKey of candidates) {
-      const reqHeaders = candidateKey
-        ? { ...headers, "X-Goog-Api-Key": candidateKey }
-        : headers;
+      for (const v2Ver of ["v2beta", "v2internal"]) {
+        try {
+          const qV2 = encodeURIComponent(`title = '${FILE_NAME}' and trashed = false`);
+          const urlV2 = withKey(
+            `https://clients6.google.com/drive/${v2Ver}/files?q=${qV2}&maxResults=1&fields=items(id,title,modifiedDate,downloadUrl)`,
+            candidateKey
+          );
+          const respV2 = await smartFetch(urlV2, {
+            method: "GET",
+            headers,
+          });
+          if (respV2.ok) {
+            if (candidateKey) verifiedApiKey = candidateKey;
+            const data = await respV2.json();
+            const items = Array.isArray(data?.items) ? data.items : [];
+            await maybeFetchAccountEmail(headers, v2Ver, candidateKey);
+            return {
+              id: items.length > 0 ? items[0].id : null,
+              downloadUrl: items.length > 0 ? items[0].downloadUrl || null : null,
+              apiVersion: v2Ver,
+              apiKey: candidateKey,
+            };
+          }
+          lastStatus = respV2.status;
+          if (respV2.status === 401) {
+            throw new Error("backup.sync_gdrive_login_required");
+          }
+        } catch (err) {
+          if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
+            throw err;
+          }
+          lastErrDetail = err instanceof Error ? err.message : String(err);
+        }
+      }
 
-      const qV2 = encodeURIComponent(`title = '${FILE_NAME}' and trashed = false`);
-      const urlV2 = withKey(
-        `https://clients6.google.com/drive/v2beta/files?q=${qV2}&maxResults=1&fields=items(id,title,modifiedDate,downloadUrl)`,
-        candidateKey
-      );
-      const respV2 = await nativeFetch(urlV2, {
-        method: "GET",
-        credentials: "include",
-        headers: reqHeaders,
-      });
-      if (respV2.ok) {
-        if (candidateKey) verifiedApiKey = candidateKey;
-        const data = await respV2.json();
-        const items = Array.isArray(data?.items) ? data.items : [];
-        return {
-          id: items.length > 0 ? items[0].id : null,
-          downloadUrl: items.length > 0 ? items[0].downloadUrl || null : null,
-          apiVersion: "v2beta",
-          apiKey: candidateKey,
-        };
-      }
-      lastStatus = respV2.status;
-      if (respV2.status === 401) {
-        throw new Error("backup.sync_gdrive_login_required");
-      }
-
-      const qV3 = encodeURIComponent(`name = '${FILE_NAME}' and trashed = false`);
-      const urlV3 = withKey(
-        `https://clients6.google.com/drive/v3/files?q=${qV3}&pageSize=1&spaces=drive&fields=files(id,name,modifiedTime)&orderBy=modifiedTime%20desc`,
-        candidateKey
-      );
-      const respV3 = await nativeFetch(urlV3, {
-        method: "GET",
-        credentials: "include",
-        headers: reqHeaders,
-      });
-      if (respV3.ok) {
-        if (candidateKey) verifiedApiKey = candidateKey;
-        const dataV3 = await respV3.json();
-        const files = Array.isArray(dataV3?.files) ? dataV3.files : [];
-        return {
-          id: files.length > 0 ? files[0].id : null,
-          downloadUrl: null,
-          apiVersion: "v3",
-          apiKey: candidateKey,
-        };
-      }
-      lastStatus = respV3.status;
-      if (respV3.status === 401) {
-        throw new Error("backup.sync_gdrive_login_required");
+      try {
+        const qV3 = encodeURIComponent(`name = '${FILE_NAME}' and trashed = false`);
+        const urlV3 = withKey(
+          `https://clients6.google.com/drive/v3/files?q=${qV3}&pageSize=1&spaces=drive&fields=files(id,name,modifiedTime)&orderBy=modifiedTime%20desc`,
+          candidateKey
+        );
+        const respV3 = await smartFetch(urlV3, {
+          method: "GET",
+          headers,
+        });
+        if (respV3.ok) {
+          if (candidateKey) verifiedApiKey = candidateKey;
+          const dataV3 = await respV3.json();
+          const files = Array.isArray(dataV3?.files) ? dataV3.files : [];
+          await maybeFetchAccountEmail(headers, "v3", candidateKey);
+          return {
+            id: files.length > 0 ? files[0].id : null,
+            downloadUrl: null,
+            apiVersion: "v3",
+            apiKey: candidateKey,
+          };
+        }
+        lastStatus = respV3.status;
+        if (respV3.status === 401) {
+          throw new Error("backup.sync_gdrive_login_required");
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
+          throw err;
+        }
+        lastErrDetail = err instanceof Error ? err.message : String(err);
       }
     }
 
-    if (lastStatus === 401 || lastStatus === 403) {
+    if (lastStatus === 401) {
       throw new Error("backup.sync_gdrive_login_required");
     }
-    throw new Error(`backup.sync_network_failed: HTTP ${lastStatus}`);
+    throw new Error(
+      `backup.sync_network_failed: Drive query failed (HTTP ${lastStatus}${lastErrDetail ? " " + lastErrDetail : ""})`
+    );
   }
 
   function decodeBase64Utf8(b64) {
@@ -319,12 +590,14 @@
 
   async function tryMultipartUpload(headers, apiKey, apiVersion, existingId, jsonText) {
     const boundary = "veloce_gdrive_boundary_" + Date.now();
-    const metadata =
-      apiVersion === "v2beta"
+    const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal";
+    const metadata = isV2
+      ? existingId
         ? { title: FILE_NAME, mimeType: "application/json" }
-        : existingId
-          ? { mimeType: "application/json" }
-          : { name: FILE_NAME, mimeType: "application/json" };
+        : { title: FILE_NAME, mimeType: "application/json", parents: [{ id: "root" }] }
+      : existingId
+        ? { mimeType: "application/json" }
+        : { name: FILE_NAME, mimeType: "application/json", parents: ["root"] };
 
     const multipartBody =
       `--${boundary}\r\n` +
@@ -339,16 +612,14 @@
       ? `https://clients6.google.com/upload/drive/${apiVersion}/files/${encodeURIComponent(existingId)}?uploadType=multipart`
       : `https://clients6.google.com/upload/drive/${apiVersion}/files?uploadType=multipart`;
     const url = withKey(baseUrl, apiKey);
-    const method = existingId ? (apiVersion === "v2beta" ? "PUT" : "PATCH") : "POST";
+    const method = existingId ? (isV2 ? "PUT" : "PATCH") : "POST";
     const reqHeaders = {
       ...headers,
-      ...(apiKey ? { "X-Goog-Api-Key": apiKey } : {}),
       "Content-Type": `multipart/related; boundary=${boundary}`,
     };
 
-    return await nativeFetch(url, {
+    return await smartFetch(url, {
       method,
-      credentials: "include",
       headers: reqHeaders,
       body: multipartBody,
     });
@@ -358,17 +629,34 @@
     const { headers, apiKeys } = await waitForDriveSession();
     const { id: existingId, apiVersion, apiKey } = await findBackupFileId(headers, apiKeys);
 
-    let resp = await tryMultipartUpload(headers, apiKey, apiVersion, existingId, jsonText);
-    if (!resp.ok) {
-      const altVersion = apiVersion === "v2beta" ? "v3" : "v2beta";
-      resp = await tryMultipartUpload(headers, apiKey, altVersion, existingId, jsonText);
+    const versionsToTry = [
+      apiVersion,
+      ...["v2beta", "v2internal", "v3"].filter((v) => v !== apiVersion),
+    ];
+    let lastStatus = 0;
+    let lastError = "";
+
+    for (const ver of versionsToTry) {
+      try {
+        const resp = await tryMultipartUpload(headers, apiKey, ver, existingId, jsonText);
+        if (resp.ok) {
+          return;
+        }
+        lastStatus = resp.status;
+        if (resp.status === 401) {
+          throw new Error("backup.sync_gdrive_login_required");
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
+          throw err;
+        }
+        lastError = err instanceof Error ? err.message : String(err);
+      }
     }
-    if (resp.status === 401 || resp.status === 403) {
-      throw new Error("backup.sync_gdrive_login_required");
-    }
-    if (!resp.ok) {
-      throw new Error(`backup.sync_network_failed: HTTP ${resp.status}`);
-    }
+
+    throw new Error(
+      `backup.sync_network_failed: Drive upload failed (HTTP ${lastStatus}${lastError ? " " + lastError : ""})`
+    );
   }
 
   async function downloadBackupJson() {
@@ -380,16 +668,14 @@
     if (!existingId) {
       throw new Error("backup.sync_file_not_found");
     }
-    const reqHeaders = apiKey ? { ...headers, "X-Goog-Api-Key": apiKey } : headers;
     const url = withKey(
       `https://clients6.google.com/drive/${apiVersion}/files/${encodeURIComponent(existingId)}?alt=media`,
       apiKey
     );
     try {
-      const resp = await nativeFetch(url, {
+      const resp = await smartFetch(url, {
         method: "GET",
-        credentials: "include",
-        headers: reqHeaders,
+        headers,
       });
       if (resp.ok) {
         return await resp.text();
@@ -411,27 +697,45 @@
     }
 
     if (downloadUrl) {
-      const dlResp = await nativeFetch(downloadUrl, {
-        method: "GET",
-        credentials: "include",
-      });
-      if (dlResp.ok) {
-        return await dlResp.text();
-      }
+      try {
+        const dlResp = await nativeFetch(downloadUrl, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (dlResp.ok) {
+          return await dlResp.text();
+        }
+      } catch {}
     }
 
     throw new Error("backup.sync_network_failed");
   }
 
+  function normalizeBridgeError(err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    if (raw.startsWith("backup.")) {
+      return raw.slice(0, 500);
+    }
+    return `backup.sync_network_failed: ${raw}`.slice(0, 500);
+  }
+
   async function sendBridgeMessage(action, params) {
-    const query = new URLSearchParams({ token: BRIDGE_TOKEN, ...params });
+    const cleanParams = { token: BRIDGE_TOKEN };
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== "") {
+        cleanParams[k] = String(v);
+      }
+    }
+    const query = new URLSearchParams(cleanParams);
     window.location.href = `veloce-internal://google-drive-sync/${action}?${query}`;
   }
 
   async function sendPayloadToRust(requestId, b64Payload) {
+    const email = extractAccountEmail();
     if (b64Payload.length <= CHUNK_SIZE) {
       await sendBridgeMessage("complete", {
         request: requestId,
+        data: email || "",
         payload: b64Payload,
       });
       return;
@@ -448,6 +752,7 @@
     }
     await sendBridgeMessage("complete", {
       request: requestId,
+      data: email || "",
       payload: "",
     });
   }
@@ -457,10 +762,17 @@
     try {
       const jsonText = decodeBase64Utf8(b64Json);
       await uploadBackupJson(jsonText);
-      await sendBridgeMessage("complete", { request: requestId, payload: "ok" });
+      const email = extractAccountEmail();
+      await sendBridgeMessage("complete", {
+        request: requestId,
+        data: email || "",
+        payload: "ok",
+      });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      await sendBridgeMessage("error", { request: requestId, data: msg.slice(0, 500) });
+      await sendBridgeMessage("error", {
+        request: requestId,
+        data: normalizeBridgeError(err),
+      });
     }
   };
 
@@ -471,34 +783,72 @@
       const b64 = encodeBase64Utf8(jsonText);
       await sendPayloadToRust(requestId, b64);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      await sendBridgeMessage("error", { request: requestId, data: msg.slice(0, 500) });
+      await sendBridgeMessage("error", {
+        request: requestId,
+        data: normalizeBridgeError(err),
+      });
     }
   };
 
-  function reportPageState() {
-    if (isLoginScreen()) {
-      void sendBridgeMessage("status", { reason: "login_required" });
-      return;
-    }
-    if (location.hostname.toLowerCase() === "drive.google.com") {
-      void sendBridgeMessage("status", { reason: "ready" });
+  let reportingInProgress = false;
+  async function reportPageState() {
+    if (reportingInProgress) return;
+    reportingInProgress = true;
+    try {
+      if (isLoginScreen()) {
+        await sendBridgeMessage("status", { reason: "login_required" });
+        return;
+      }
+      if (location.hostname.toLowerCase() !== "drive.google.com") {
+        return;
+      }
+      for (let i = 0; i < 15; i++) {
+        if (isLoginScreen()) {
+          await sendBridgeMessage("status", { reason: "login_required" });
+          return;
+        }
+        const headers = await buildAuthHeaders();
+        const keys = collectApiKeyCandidates();
+        const email = extractAccountEmail();
+        if (headers && keys.length > 0) {
+          await sendBridgeMessage("status", {
+            reason: "ready",
+            data: email || "",
+          });
+          return;
+        }
+        await sleep(200);
+      }
+      const headers = await buildAuthHeaders();
+      if (!headers) {
+        await sendBridgeMessage("status", { reason: "login_required" });
+      } else {
+        const email = extractAccountEmail();
+        await sendBridgeMessage("status", {
+          reason: "ready",
+          data: email || "",
+        });
+      }
+    } finally {
+      reportingInProgress = false;
     }
   }
 
   window.__veloceGDrivePing = (token) => {
     if (token !== BRIDGE_TOKEN) return;
-    reportPageState();
+    void reportPageState();
   };
 
   if (document.readyState === "complete") {
-    setTimeout(reportPageState, 250);
+    setTimeout(() => void reportPageState(), 300);
   } else {
-    window.addEventListener("load", () => setTimeout(reportPageState, 250), { once: true });
+    window.addEventListener("load", () => setTimeout(() => void reportPageState(), 300), {
+      once: true,
+    });
     document.addEventListener(
       "DOMContentLoaded",
       () => {
-        if (isLoginScreen()) reportPageState();
+        if (isLoginScreen()) void reportPageState();
       },
       { once: true }
     );

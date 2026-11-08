@@ -46,6 +46,7 @@ pub enum SyncTargetConfig {
 pub struct SyncStateSnapshot {
     pub config: SyncTargetConfig,
     pub has_secret: bool,
+    pub connected_account: Option<String>,
     pub last_synced_at: Option<i64>,
     pub last_error: Option<String>,
 }
@@ -162,6 +163,21 @@ pub fn snapshot(conn: &Connection, runtime: &SyncRuntime) -> Result<SyncStateSna
         SyncTargetConfig::DirectWebdav { .. } => resolve_secret(conn, runtime)?.is_some(),
         _ => false,
     };
+    let connected_account = match &config {
+        SyncTargetConfig::GoogleDriveWeb { .. } => runtime
+            .gdrive
+            .connected_email
+            .lock()
+            .ok()
+            .and_then(|g| g.clone())
+            .or_else(|| {
+                preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY)
+                    .ok()
+                    .flatten()
+            })
+            .filter(|s| !s.is_empty()),
+        _ => None,
+    };
     let last_synced_at = preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_LAST_AT_KEY)?
         .and_then(|v| v.parse::<i64>().ok());
     let last_error = runtime
@@ -172,6 +188,7 @@ pub fn snapshot(conn: &Connection, runtime: &SyncRuntime) -> Result<SyncStateSna
     Ok(SyncStateSnapshot {
         config,
         has_secret,
+        connected_account,
         last_synced_at,
         last_error,
     })
@@ -184,7 +201,17 @@ pub fn save_config(
     secret: Option<String>,
 ) -> Result<SyncStateSnapshot, String> {
     match &config {
-        SyncTargetConfig::Disabled | SyncTargetConfig::GoogleDriveWeb { .. } => {
+        SyncTargetConfig::Disabled => {
+            *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
+            if let Ok(mut email) = runtime.gdrive.connected_email.lock() {
+                *email = None;
+            }
+            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
+            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
+            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY)?;
+            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_GDRIVE_AUTHUSER_KEY)?;
+        }
+        SyncTargetConfig::GoogleDriveWeb { .. } => {
             *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;

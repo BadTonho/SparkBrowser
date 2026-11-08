@@ -3,9 +3,11 @@ use super::{
     model::{BackupDocument, MAX_BYTES},
     service::BackupService,
 };
+use crate::{database::preferences_repo, state::browser_state::BrowserState};
 use base64::Engine;
 use std::{
     collections::HashMap,
+    path::PathBuf,
     sync::{
         atomic::{AtomicU64, Ordering},
         Mutex,
@@ -15,7 +17,6 @@ use std::{
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl};
 
 pub const GDRIVE_SYNC_WEBVIEW_LABEL: &str = "google-drive-sync-webview";
-const GDRIVE_ENTRY_URL: &str = "https://drive.google.com/drive/my-drive";
 
 static NEXT_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -32,6 +33,8 @@ pub struct PendingGDriveRequest {
 pub struct GDriveWebRuntime {
     pub bridge_token: Mutex<Option<String>>,
     pub page_status: Mutex<Option<String>>,
+    pub connected_email: Mutex<Option<String>>,
+    pub active_authuser: Mutex<Option<String>>,
     pub pending: Mutex<HashMap<String, PendingGDriveRequest>>,
 }
 
@@ -59,6 +62,44 @@ pub fn is_allowed_gdrive_host(url: &Url) -> bool {
         || lower.ends_with(".googleusercontent.com")
 }
 
+pub fn extract_authuser_from_url(raw_url: &str) -> Option<String> {
+    let parsed = Url::parse(raw_url).ok()?;
+    let host = parsed.host_str()?.to_lowercase();
+    if host != "drive.google.com" {
+        return None;
+    }
+    for (k, v) in parsed.query_pairs() {
+        if k == "authuser" && !v.is_empty() && v.len() <= 4 && v.bytes().all(|b| b.is_ascii_digit())
+        {
+            return Some(v.into_owned());
+        }
+    }
+    let segments: Vec<&str> = parsed.path().split('/').filter(|s| !s.is_empty()).collect();
+    for window in segments.windows(2) {
+        if window[0] == "u"
+            && !window[1].is_empty()
+            && window[1].len() <= 4
+            && window[1].bytes().all(|b| b.is_ascii_digit())
+        {
+            return Some(window[1].to_string());
+        }
+    }
+    if segments.first().copied() == Some("drive") {
+        return Some("0".to_string());
+    }
+    None
+}
+
+fn sanitize_email(raw: Option<&String>) -> Option<String> {
+    let trimmed = raw?.trim();
+    if trimmed.len() >= 3 && trimmed.len() <= 254 && trimmed.contains('@') && !trimmed.contains(' ')
+    {
+        Some(trimmed.to_string())
+    } else {
+        None
+    }
+}
+
 pub fn apply_bridge_navigation(runtime: &GDriveWebRuntime, nav_url: &Url) {
     if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("google-drive-sync") {
         return;
@@ -77,6 +118,12 @@ pub fn apply_bridge_navigation(runtime: &GDriveWebRuntime, nav_url: &Url) {
         .is_some_and(|expected| params.get("token") == Some(&expected));
     if !token_valid {
         return;
+    }
+
+    if let Some(email) = sanitize_email(params.get("data")) {
+        if let Ok(mut guard) = runtime.connected_email.lock() {
+            *guard = Some(email);
+        }
     }
 
     let action = nav_url.path().trim_matches('/');
@@ -141,11 +188,51 @@ pub fn apply_bridge_navigation(runtime: &GDriveWebRuntime, nav_url: &Url) {
     }
 }
 
+pub fn persist_detected_gdrive_email(app: &AppHandle) {
+    let Some(service) = app.try_state::<BackupService>() else {
+        return;
+    };
+    let email = service
+        .sync
+        .gdrive
+        .connected_email
+        .lock()
+        .ok()
+        .and_then(|g| g.clone());
+    let Some(email) = email else {
+        return;
+    };
+    let Some(state) = app.try_state::<BrowserState>() else {
+        return;
+    };
+    let Ok(db) = state.db.lock() else {
+        return;
+    };
+    if let Some(conn) = db.as_ref() {
+        let _ = preferences_repo::store(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY, &email);
+    }
+}
+
 pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
     let Some(service) = app.try_state::<BackupService>() else {
         return;
     };
     apply_bridge_navigation(&service.sync.gdrive, nav_url);
+    persist_detected_gdrive_email(app);
+}
+
+pub fn close_gdrive_sync_webview(app: &AppHandle) {
+    if let Some(service) = app.try_state::<BackupService>() {
+        if let Ok(mut status) = service.sync.gdrive.page_status.lock() {
+            *status = None;
+        }
+        if let Ok(mut token) = service.sync.gdrive.bridge_token.lock() {
+            *token = None;
+        }
+    }
+    if let Some(webview) = app.get_webview(GDRIVE_SYNC_WEBVIEW_LABEL) {
+        let _ = webview.close();
+    }
 }
 
 fn reset_gdrive_webview(app: &AppHandle, webview: &tauri::Webview) {
@@ -160,8 +247,75 @@ fn reset_gdrive_webview(app: &AppHandle, webview: &tauri::Webview) {
     let _ = webview.close();
 }
 
+fn resolve_gdrive_session_context(app: &AppHandle) -> (Option<PathBuf>, String) {
+    let mut detected_tab_id: Option<String> = None;
+    let mut detected_authuser: Option<String> = None;
+
+    if let Some(state) = app.try_state::<BrowserState>() {
+        let active_id = state.active_tab_id.lock().ok().map(|g| g.clone());
+        if let Ok(tabs) = state.tabs.lock() {
+            if let Some(active) = active_id.as_deref() {
+                if let Some(tab) = tabs.iter().find(|t| t.id == active && !t.is_ephemeral) {
+                    if let Some(au) = extract_authuser_from_url(&tab.url) {
+                        detected_tab_id = Some(tab.id.clone());
+                        detected_authuser = Some(au);
+                    }
+                }
+            }
+            if detected_authuser.is_none() {
+                for tab in tabs.iter().rev() {
+                    if !tab.is_ephemeral {
+                        if let Some(au) = extract_authuser_from_url(&tab.url) {
+                            detected_tab_id = Some(tab.id.clone());
+                            detected_authuser = Some(au);
+                            break;
+                        }
+                    }
+                }
+            }
+            if detected_tab_id.is_none() {
+                detected_tab_id = active_id.or_else(|| {
+                    tabs.iter()
+                        .find(|t| !t.is_ephemeral)
+                        .map(|t| t.id.clone())
+                });
+            }
+        }
+
+        if let Ok(db) = state.db.lock() {
+            if let Some(conn) = db.as_ref() {
+                if let Some(ref au) = detected_authuser {
+                    let _ = preferences_repo::store(
+                        conn,
+                        preferences_repo::BACKUP_SYNC_GDRIVE_AUTHUSER_KEY,
+                        au,
+                    );
+                } else if let Ok(Some(saved_au)) =
+                    preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_GDRIVE_AUTHUSER_KEY)
+                {
+                    if !saved_au.is_empty()
+                        && saved_au.len() <= 4
+                        && saved_au.bytes().all(|b| b.is_ascii_digit())
+                    {
+                        detected_authuser = Some(saved_au);
+                    }
+                }
+            }
+        }
+    }
+
+    let data_dir = detected_tab_id
+        .as_deref()
+        .and_then(|tab_id| crate::window::workspace_data::content_directory(app, tab_id).ok())
+        .flatten();
+    let authuser = detected_authuser.unwrap_or_else(|| "0".to_string());
+    (data_dir, authuser)
+}
+
 fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, String), String> {
     let service = app.state::<BackupService>();
+    let (data_dir, authuser) = resolve_gdrive_session_context(app);
+
     if let Some(existing) = app.get_webview(GDRIVE_SYNC_WEBVIEW_LABEL) {
         let token = service
             .sync
@@ -171,7 +325,15 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
             .map_err(|e| e.to_string())?
             .clone()
             .unwrap_or_default();
-        if !token.is_empty() {
+        let prev_authuser = service
+            .sync
+            .gdrive
+            .active_authuser
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
+        if !token.is_empty() && prev_authuser.as_deref() == Some(authuser.as_str()) {
+            crate::window::send_webview_to_back(&existing);
             return Ok((existing, token));
         }
         let _ = existing.close();
@@ -193,8 +355,15 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
         .page_status
         .lock()
         .map_err(|e| e.to_string())? = None;
+    *service
+        .sync
+        .gdrive
+        .active_authuser
+        .lock()
+        .map_err(|e| e.to_string())? = Some(authuser.clone());
 
-    let target_url: Url = GDRIVE_ENTRY_URL
+    let entry_url = format!("https://drive.google.com/drive/u/{authuser}/my-drive");
+    let target_url: Url = entry_url
         .parse()
         .map_err(|e: url::ParseError| e.to_string())?;
     let app_for_nav = app.clone();
@@ -203,7 +372,7 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
         WebviewUrl::External(target_url),
     )
     .focused(false)
-    .initialization_script(initializer_script(&token))
+    .initialization_script_for_all_frames(initializer_script(&token))
     .on_navigation(move |nav_url| {
         if nav_url.scheme() == "veloce-internal" {
             handle_bridge_navigation(&app_for_nav, nav_url);
@@ -212,12 +381,18 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
         is_allowed_gdrive_host(nav_url)
     });
 
-    // Position offscreen instead of calling hide() so WebView2 does not throttle background load
+    let builder = match data_dir {
+        Some(dir) => builder.data_directory(dir),
+        None => builder,
+    };
+
+    // Place within parent client bounds behind the opaque shell WebView (HWND_BOTTOM)
+    // so WebView2 never treats the surface as offscreen/occluded.
     let webview = main_window
         .add_child(
             builder,
-            LogicalPosition::new(-10000.0, -10000.0),
-            LogicalSize::new(200.0, 200.0),
+            LogicalPosition::new(0.0, 0.0),
+            LogicalSize::new(360.0, 240.0),
         )
         .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
     let _ = crate::security::harden(app, &webview, false);
@@ -238,7 +413,10 @@ async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, St
             .map_err(|e| e.to_string())?
             .clone();
         match status.as_deref() {
-            Some("ready") => return Ok((webview, token)),
+            Some("ready") => {
+                persist_detected_gdrive_email(app);
+                return Ok((webview, token));
+            }
             Some("login_required") => {
                 reset_gdrive_webview(app, &webview);
                 return Err("backup.sync_gdrive_login_required".into());
@@ -246,7 +424,8 @@ async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, St
             _ => {
                 if attempt > 0 && attempt % 10 == 0 {
                     if let Ok(encoded_token) = serde_json::to_string(&token) {
-                        let _ = webview.eval(&format!("window.__veloceGDrivePing?.({encoded_token});"));
+                        let _ =
+                            webview.eval(&format!("window.__veloceGDrivePing?.({encoded_token});"));
                     }
                 }
                 tokio::time::sleep(Duration::from_millis(200)).await;
@@ -311,10 +490,11 @@ pub async fn push_document_via_webview(
         })?
         .map_err(|_| "backup.sync_network_failed".to_string())?;
 
-    reset_gdrive_webview(app, &webview);
     if let Err(err) = response {
+        reset_gdrive_webview(app, &webview);
         return Err(err);
     }
+    persist_detected_gdrive_email(app);
     Ok(())
 }
 
@@ -362,14 +542,15 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
         })?
         .map_err(|_| "backup.sync_network_failed".to_string())?;
 
-    reset_gdrive_webview(app, &webview);
     let b64_payload = match response {
         Ok(payload) => payload,
         Err(err) => {
+            reset_gdrive_webview(app, &webview);
             return Err(err);
         }
     };
 
+    persist_detected_gdrive_email(app);
     let decoded_bytes = base64::engine::general_purpose::STANDARD
         .decode(b64_payload.as_bytes())
         .map_err(|e| format!("backup.invalid_document: {e}"))?;

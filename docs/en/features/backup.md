@@ -25,7 +25,8 @@ Rust tests cover file roundtrip, invalid versions/references/size, atomic replac
 Settings → Data & Backup also includes **Isolated Automatic Sync**, allowing users to keep `browser.veloce-backup.json` synchronized using their own storage with zero Veloce servers or developer cloud console accounts:
 
 1. **Google Drive in the cloud mode (uses browser Gmail login):**
-   - Uses a hidden child WebView sharing the browser's default Google/Gmail login cookies (`drive.google.com`) to upload and download `browser.veloce-backup.json` directly in the user's Google Drive cloud without requiring a local folder on the PC or a Google Cloud Console developer project.
+   - Uses a hidden child WebView sharing the browser's Google/Gmail login cookies (`drive.google.com`) to upload and download `browser.veloce-backup.json` directly in the user's Google Drive cloud (`My Drive` root) without requiring a local folder on the PC or a Google Cloud Console developer project.
+   - Displays the currently connected Google account email (`connected_account`) and provides a **Choose / Switch Google account (Gmail)** button that opens Google's `AccountChooser` (`accounts.google.com/AccountChooser`) and automatically syncs as soon as the chosen account's Google Drive tab loads.
    - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads to Google Drive **only when changes occurred**, in addition to syncing on browser shutdown and via **Sync now (Save)**.
 2. **Synced folder mode (OneDrive, Mega, Dropbox, USB drive):**
    - The user chooses a local directory via the native folder selector (`choose_backup_sync_folder`).

@@ -181,37 +181,70 @@
 
       {#if selectedMode === "google_drive_web"}
         <div class="sync-mode-box">
-          <p>{$t("backup.sync_gdrive_hint")}</p>
-          <div class="actions">
-            <button
-              class="pill-action"
-              data-testid="backup-sync-open-google-login"
-              disabled={$backupBusy}
-              onclick={openGoogleLoginTab}
-            >
-              {$t("backup.sync_open_google_login")}
-            </button>
+          <div
+            class="gdrive-account-card"
+            class:connected={Boolean($backupSyncState.connected_account)}
+            data-testid="backup-sync-gdrive-account-card"
+          >
+            <div class="gdrive-avatar" aria-hidden="true">
+              {#if $backupSyncState.connected_account}
+                {$backupSyncState.connected_account.slice(0, 1).toUpperCase()}
+              {:else}
+                G
+              {/if}
+              <span
+                class="gdrive-status-dot"
+                class:online={Boolean($backupSyncState.connected_account)}
+              ></span>
+            </div>
+            <div class="gdrive-account-info">
+              {#if $backupSyncState.connected_account}
+                <span class="gdrive-account-label">{$t("backup.sync_gdrive_account_connected")}</span>
+                <strong class="gdrive-account-email" data-testid="backup-sync-gdrive-email">
+                  {$backupSyncState.connected_account}
+                </strong>
+                <span class="gdrive-account-sub">{$t("backup.sync_gdrive_target_file")}</span>
+              {:else}
+                <span class="gdrive-account-label">{$t("backup.sync_gdrive_account_pending")}</span>
+                <span class="gdrive-account-sub">{$t("backup.sync_gdrive_account_sub")}</span>
+              {/if}
+            </div>
+            <div class="gdrive-account-actions">
+              <button
+                class="pill-action primary-pill"
+                data-testid="backup-sync-open-google-login"
+                disabled={$backupBusy}
+                onclick={openGoogleLoginTab}
+              >
+                {$t("backup.sync_open_google_login")}
+              </button>
+            </div>
           </div>
-          <label class="preference-choice">
-            <input
-              type="checkbox"
-              data-testid="backup-sync-auto-save"
-              bind:checked={autoSave}
-              disabled={$backupBusy}
-              onchange={handleGDriveOptionsChange}
-            />
-            {$t("backup.sync_auto_gdrive")}
-          </label>
-          <label class="preference-choice">
-            <input
-              type="checkbox"
-              data-testid="backup-sync-direct-prefs"
-              bind:checked={directApplyPrefs}
-              disabled={$backupBusy}
-              onchange={handleGDriveOptionsChange}
-            />
-            {$t("backup.sync_direct_apply_prefs")}
-          </label>
+
+          <p class="sync-hint">{$t("backup.sync_gdrive_hint")}</p>
+
+          <div class="sync-options-group">
+            <label class="preference-choice">
+              <input
+                type="checkbox"
+                data-testid="backup-sync-auto-save"
+                bind:checked={autoSave}
+                disabled={$backupBusy}
+                onchange={handleGDriveOptionsChange}
+              />
+              <span>{$t("backup.sync_auto_gdrive")}</span>
+            </label>
+            <label class="preference-choice">
+              <input
+                type="checkbox"
+                data-testid="backup-sync-direct-prefs"
+                bind:checked={directApplyPrefs}
+                disabled={$backupBusy}
+                onchange={handleGDriveOptionsChange}
+              />
+              <span>{$t("backup.sync_direct_apply_prefs")}</span>
+            </label>
+          </div>
         </div>
       {:else if selectedMode === "folder"}
         <div class="sync-mode-box">
@@ -326,9 +359,9 @@
       {/if}
 
       {#if $backupSyncState.config.mode !== "disabled"}
-        <div class="actions">
+        <div class="actions sync-actions-bar">
           <button
-            class="pill-action"
+            class="pill-action primary-pill"
             data-testid="backup-sync-push"
             disabled={$backupBusy}
             onclick={syncPushNow}
@@ -354,23 +387,28 @@
         </div>
       {/if}
 
-      {#if $backupSyncState.last_synced_at}
-        <p role="status" data-testid="backup-sync-last-time">
-          {$t("backup.sync_last_synced", {
-            time: $formatDate($backupSyncState.last_synced_at * 1000, {
-              dateStyle: "short",
-              timeStyle: "medium",
-            }),
-          })}
-        </p>
-      {/if}
-      {#if $backupSyncNotice === "pushed"}
-        <p role="status" data-testid="backup-sync-notice">{$t("backup.sync_pushed")}</p>
-      {:else if $backupSyncNotice === "unchanged"}
-        <p role="status" data-testid="backup-sync-notice">{$t("backup.sync_unchanged")}</p>
-      {:else if $backupSyncNotice === "config_saved"}
-        <p role="status" data-testid="backup-sync-notice">{$t("backup.sync_config_saved")}</p>
-      {/if}
+      <div class="sync-status-footer">
+        {#if $backupBusy}
+          <p class="sync-badge busy" role="status">{$t("backup.sync_busy")}</p>
+        {/if}
+        {#if $backupSyncState.last_synced_at}
+          <p class="sync-badge synced" role="status" data-testid="backup-sync-last-time">
+            {$t("backup.sync_last_synced", {
+              time: $formatDate($backupSyncState.last_synced_at * 1000, {
+                dateStyle: "short",
+                timeStyle: "medium",
+              }),
+            })}
+          </p>
+        {/if}
+        {#if $backupSyncNotice === "pushed"}
+          <p class="sync-badge success" role="status" data-testid="backup-sync-notice">{$t("backup.sync_pushed")}</p>
+        {:else if $backupSyncNotice === "unchanged"}
+          <p class="sync-badge neutral" role="status" data-testid="backup-sync-notice">{$t("backup.sync_unchanged")}</p>
+        {:else if $backupSyncNotice === "config_saved"}
+          <p class="sync-badge neutral" role="status" data-testid="backup-sync-notice">{$t("backup.sync_config_saved")}</p>
+        {/if}
+      </div>
       <ErrorMessage error={$backupSyncState.last_error} />
     </article>
 
@@ -407,12 +445,132 @@
   p, li, dt, dd { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
   p { color: var(--text-secondary); }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
-  article, aside { border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px; margin-top: 12px; }
+  article, aside { border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px; margin-top: 14px; background: rgba(255, 255, 255, 0.015); }
   table { width: 100%; font-size: 12px; border-collapse: collapse; } th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-subtle); }
   dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 14px; } dd { margin: 0; }
   details ul { max-height: 220px; overflow: auto; }
-  .preference-choice { display: block; margin: 12px 0; font-size: 13px; }
-  .sync-field { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; font-size: 12px; }
-  .sync-field input, .sync-field select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 12px; }
-  .sync-path { font-family: monospace; color: var(--text-primary); }
+  .preference-choice { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 12.5px; color: var(--text-primary); cursor: pointer; }
+  .sync-field { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: 12px; font-weight: 500; color: var(--text-primary); }
+  .sync-field input, .sync-field select { padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 12.5px; }
+  .sync-path { font-family: monospace; color: var(--text-primary); padding: 8px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); }
+  .sync-mode-box { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .gdrive-account-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: linear-gradient(135deg, rgba(66, 133, 244, 0.08), rgba(52, 168, 83, 0.05));
+  }
+  .gdrive-account-card.connected {
+    border-color: rgba(52, 168, 83, 0.35);
+    background: linear-gradient(135deg, rgba(52, 168, 83, 0.12), rgba(66, 133, 244, 0.06));
+  }
+  .gdrive-avatar {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(66, 133, 244, 0.22);
+    border: 1px solid rgba(66, 133, 244, 0.45);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .gdrive-status-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #f59e0b;
+    border: 2px solid #141418;
+  }
+  .gdrive-status-dot.online {
+    background: #22c55e;
+  }
+  .gdrive-account-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 200px;
+  }
+  .gdrive-account-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+  .gdrive-account-email {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .gdrive-account-sub {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+  }
+  .gdrive-account-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sync-hint {
+    margin: 2px 0;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+  }
+  .sync-options-group {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-subtle);
+  }
+  .primary-pill {
+    background: rgba(66, 133, 244, 0.18);
+    border-color: rgba(66, 133, 244, 0.42);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .primary-pill:hover:not(:disabled) {
+    background: rgba(66, 133, 244, 0.28);
+  }
+  .sync-actions-bar {
+    padding-top: 6px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .sync-status-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .sync-badge {
+    margin: 0;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+  }
+  .sync-badge.synced, .sync-badge.success {
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.1);
+    color: #86efac;
+  }
+  .sync-badge.busy {
+    border-color: rgba(66, 133, 244, 0.4);
+    background: rgba(66, 133, 244, 0.12);
+    color: #93c5fd;
+  }
 </style>
