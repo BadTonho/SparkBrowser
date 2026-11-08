@@ -63,7 +63,7 @@
         const resp = await nativeFetch(msg.url, {
           method: msg.method || "GET",
           credentials: "include",
-          headers: msg.headers || {},
+          headers: { ...(msg.headers || {}), "X-Origin": "https://drive.google.com" },
           body: msg.body ?? undefined,
         });
         const bodyText = await resp.text();
@@ -262,6 +262,11 @@
         detectedEmail = wizMatch[1];
         return detectedEmail;
       }
+      const gmailMatch = html.match(/"([a-zA-Z0-9._%+-]+@(?:gmail|googlemail)\.com)"/);
+      if (gmailMatch) {
+        detectedEmail = gmailMatch[1];
+        return detectedEmail;
+      }
     } catch {}
     return null;
   }
@@ -280,9 +285,9 @@
     try {
       if (window._drive_flag_initialData) {
         const driveText = JSON.stringify(window._drive_flag_initialData);
-        const driveMatches = driveText.matchAll(/AIza[0-9A-Za-z_-]{35}/g);
+        const driveMatches = driveText.matchAll(/"(AIza[0-9A-Za-z_-]{35})"/g);
         for (const m of driveMatches) {
-          addApiKeyCandidate(m[0], true);
+          addApiKeyCandidate(m[1], true);
         }
       }
     } catch {}
@@ -290,9 +295,9 @@
       for (const globalObj of [window.WIZ_global_data, window.IJ_values]) {
         if (globalObj) {
           const text = JSON.stringify(globalObj);
-          const matches = text.matchAll(/AIza[0-9A-Za-z_-]{35}/g);
+          const matches = text.matchAll(/"(AIza[0-9A-Za-z_-]{35})"/g);
           for (const m of matches) {
-            addApiKeyCandidate(m[0], false);
+            addApiKeyCandidate(m[1], false);
           }
         }
       }
@@ -305,9 +310,9 @@
       for (const m of driveSpecific) {
         addApiKeyCandidate(m[1], true);
       }
-      const allMatches = html.matchAll(/AIza[0-9A-Za-z_-]{35}/g);
+      const allMatches = html.matchAll(/(?:["'=,\s])(AIza[0-9A-Za-z_-]{35})(?:["'&,\s\]}])/g);
       for (const m of allMatches) {
-        addApiKeyCandidate(m[0], false);
+        addApiKeyCandidate(m[1], false);
       }
     } catch {}
     return [...capturedApiKeys];
@@ -341,8 +346,10 @@
 
   async function buildAuthHeaders() {
     const authUser = capturedAuthUser || detectAuthUserFromPath();
+    // Do NOT include X-Origin on direct CORS requests from https://drive.google.com;
+    // the browser sends Origin: https://drive.google.com automatically, and sending
+    // X-Origin causes Google ESF to reject with HTTP 400 ("Origin doesn't match Host for XD3").
     const headers = {
-      "X-Origin": "https://drive.google.com",
       "X-Goog-AuthUser": authUser,
     };
     if (capturedBearer) {
@@ -467,17 +474,17 @@
   async function maybeFetchAccountEmail(headers, apiVersion, apiKey) {
     if (extractAccountEmail()) return detectedEmail;
     try {
-      const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal";
+      const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal" || apiVersion === "v2";
       const url = withKey(
         isV2
-          ? `https://clients6.google.com/drive/${apiVersion}/about?fields=user(emailAddress)`
+          ? `https://clients6.google.com/drive/${apiVersion}/about`
           : `https://clients6.google.com/drive/v3/about?fields=user(emailAddress)`,
         apiKey
       );
       const resp = await smartFetch(url, { method: "GET", headers });
       if (resp.ok) {
         const data = await resp.json();
-        const email = data?.user?.emailAddress;
+        const email = data?.user?.emailAddress || data?.name;
         if (typeof email === "string" && email.includes("@")) {
           detectedEmail = email.trim();
         }
@@ -492,11 +499,11 @@
     let lastErrDetail = "";
 
     for (const candidateKey of candidates) {
-      for (const v2Ver of ["v2beta", "v2internal"]) {
+      for (const v2Ver of ["v2beta", "v2internal", "v2"]) {
         try {
           const qV2 = encodeURIComponent(`title = '${FILE_NAME}' and trashed = false`);
           const urlV2 = withKey(
-            `https://clients6.google.com/drive/${v2Ver}/files?q=${qV2}&maxResults=1&fields=items(id,title,modifiedDate,downloadUrl)`,
+            `https://clients6.google.com/drive/${v2Ver}/files?q=${qV2}&maxResults=1`,
             candidateKey
           );
           const respV2 = await smartFetch(urlV2, {
@@ -519,6 +526,11 @@
           if (respV2.status === 401) {
             throw new Error("backup.sync_gdrive_login_required");
           }
+          try {
+            const errTxt = await respV2.text();
+            const errObj = JSON.parse(errTxt);
+            if (errObj?.error?.message) lastErrDetail = errObj.error.message;
+          } catch {}
         } catch (err) {
           if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
             throw err;
@@ -530,7 +542,7 @@
       try {
         const qV3 = encodeURIComponent(`name = '${FILE_NAME}' and trashed = false`);
         const urlV3 = withKey(
-          `https://clients6.google.com/drive/v3/files?q=${qV3}&pageSize=1&spaces=drive&fields=files(id,name,modifiedTime)&orderBy=modifiedTime%20desc`,
+          `https://clients6.google.com/drive/v3/files?q=${qV3}&pageSize=1`,
           candidateKey
         );
         const respV3 = await smartFetch(urlV3, {
@@ -553,6 +565,11 @@
         if (respV3.status === 401) {
           throw new Error("backup.sync_gdrive_login_required");
         }
+        try {
+          const errTxt = await respV3.text();
+          const errObj = JSON.parse(errTxt);
+          if (errObj?.error?.message) lastErrDetail = errObj.error.message;
+        } catch {}
       } catch (err) {
         if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
           throw err;
@@ -590,7 +607,7 @@
 
   async function tryMultipartUpload(headers, apiKey, apiVersion, existingId, jsonText) {
     const boundary = "veloce_gdrive_boundary_" + Date.now();
-    const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal";
+    const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal" || apiVersion === "v2";
     const metadata = isV2
       ? existingId
         ? { title: FILE_NAME, mimeType: "application/json" }
@@ -631,7 +648,7 @@
 
     const versionsToTry = [
       apiVersion,
-      ...["v2beta", "v2internal", "v3"].filter((v) => v !== apiVersion),
+      ...["v2beta", "v2internal", "v2", "v3"].filter((v) => v !== apiVersion),
     ];
     let lastStatus = 0;
     let lastError = "";

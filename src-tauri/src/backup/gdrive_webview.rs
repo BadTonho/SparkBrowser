@@ -39,6 +39,7 @@ pub struct GDriveWebRuntime {
 }
 
 pub fn initializer_script(token: &str) -> String {
+    // Embedded bridge script for Google Drive Web synchronization (CORS + XD3 proxy safe)
     let encoded_token = serde_json::to_string(token).expect("token serializable");
     include_str!("gdrive_bridge.js").replace("__GDRIVE_BRIDGE_TOKEN__", &encoded_token)
 }
