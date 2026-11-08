@@ -732,6 +732,16 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
         super::gdrive_webview::extract_authuser_from_url("https://drive.google.com/drive/my-drive"),
         Some("0".to_string())
     );
+    assert_eq!(
+        super::gdrive_webview::sha1_hex(b"abc"),
+        "a9993e364706816aba3e25717850c26c9cd0d89d"
+    );
+    let sample_html = r#"["https://clients6.google.com/drive/v2internal/","AIzaSyD12345678901234567890123456789012"]"#;
+    let extracted_keys = super::gdrive_webview::extract_api_keys_from_html(sample_html);
+    assert_eq!(
+        extracted_keys,
+        vec!["AIzaSyD12345678901234567890123456789012".to_string()]
+    );
 
     let req_id = super::gdrive_webview::next_request_id();
     assert!(req_id.len() <= 24);

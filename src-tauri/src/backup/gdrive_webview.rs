@@ -4,9 +4,11 @@ use super::{
     service::BackupService,
 };
 use crate::{database::preferences_repo, state::browser_state::BrowserState};
+#[cfg(not(windows))]
 use base64::Engine;
 use std::{
     collections::HashMap,
+    io::Read,
     path::PathBuf,
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -14,9 +16,13 @@ use std::{
     },
     time::Duration,
 };
-use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl};
+#[cfg(not(windows))]
+use tauri::{LogicalPosition, LogicalSize, WebviewUrl};
+use tauri::{AppHandle, Manager, Url};
 
 pub const GDRIVE_SYNC_WEBVIEW_LABEL: &str = "google-drive-sync-webview";
+const SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 static NEXT_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -35,11 +41,67 @@ pub struct GDriveWebRuntime {
     pub page_status: Mutex<Option<String>>,
     pub connected_email: Mutex<Option<String>>,
     pub active_authuser: Mutex<Option<String>>,
+    pub cached_api_key: Mutex<Option<String>>,
     pub pending: Mutex<HashMap<String, PendingGDriveRequest>>,
 }
 
+/// FIPS 180-4 SHA-1 implementation used for Google SAPISIDHASH header generation.
+pub fn sha1_hex(data: &[u8]) -> String {
+    let mut h0: u32 = 0x67452301;
+    let mut h1: u32 = 0xEFCDAB89;
+    let mut h2: u32 = 0x98BADCFE;
+    let mut h3: u32 = 0x10325476;
+    let mut h4: u32 = 0xC3D2E1F0;
+
+    let bit_len = (data.len() as u64).wrapping_mul(8);
+    let mut msg = data.to_vec();
+    msg.push(0x80);
+    while (msg.len() % 64) != 56 {
+        msg.push(0);
+    }
+    msg.extend_from_slice(&bit_len.to_be_bytes());
+
+    for chunk in msg.chunks_exact(64) {
+        let mut w = [0u32; 80];
+        for (i, word) in chunk.chunks_exact(4).enumerate() {
+            w[i] = u32::from_be_bytes([word[0], word[1], word[2], word[3]]);
+        }
+        for i in 16..80 {
+            w[i] = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]).rotate_left(1);
+        }
+
+        let (mut a, mut b, mut c, mut d, mut e) = (h0, h1, h2, h3, h4);
+        for (i, &wi) in w.iter().enumerate() {
+            let (f, k) = match i {
+                0..=19 => ((b & c) | ((!b) & d), 0x5A827999u32),
+                20..=39 => (b ^ c ^ d, 0x6ED9EBA1u32),
+                40..=59 => ((b & c) | (b & d) | (c & d), 0x8F1BBCDCu32),
+                _ => (b ^ c ^ d, 0xCA62C1D6u32),
+            };
+            let temp = a
+                .rotate_left(5)
+                .wrapping_add(f)
+                .wrapping_add(e)
+                .wrapping_add(k)
+                .wrapping_add(wi);
+            e = d;
+            d = c;
+            c = b.rotate_left(30);
+            b = a;
+            a = temp;
+        }
+
+        h0 = h0.wrapping_add(a);
+        h1 = h1.wrapping_add(b);
+        h2 = h2.wrapping_add(c);
+        h3 = h3.wrapping_add(d);
+        h4 = h4.wrapping_add(e);
+    }
+
+    format!("{h0:08x}{h1:08x}{h2:08x}{h3:08x}{h4:08x}")
+}
+
 pub fn initializer_script(token: &str) -> String {
-    // Embedded bridge script for Google Drive Web synchronization (CORS + XD3 proxy safe)
     let encoded_token = serde_json::to_string(token).expect("token serializable");
     include_str!("gdrive_bridge.js").replace("__GDRIVE_BRIDGE_TOKEN__", &encoded_token)
 }
@@ -210,7 +272,8 @@ pub fn persist_detected_gdrive_email(app: &AppHandle) {
         return;
     };
     if let Some(conn) = db.as_ref() {
-        let _ = preferences_repo::store(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY, &email);
+        let _ =
+            preferences_repo::store(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY, &email);
     }
 }
 
@@ -236,19 +299,7 @@ pub fn close_gdrive_sync_webview(app: &AppHandle) {
     }
 }
 
-fn reset_gdrive_webview(app: &AppHandle, webview: &tauri::Webview) {
-    if let Some(service) = app.try_state::<BackupService>() {
-        if let Ok(mut status) = service.sync.gdrive.page_status.lock() {
-            *status = None;
-        }
-        if let Ok(mut token) = service.sync.gdrive.bridge_token.lock() {
-            *token = None;
-        }
-    }
-    let _ = webview.close();
-}
-
-fn resolve_gdrive_session_context(app: &AppHandle) -> (Option<PathBuf>, String) {
+fn resolve_gdrive_session_context(app: &AppHandle) -> (Option<PathBuf>, String, Option<String>) {
     let mut detected_tab_id: Option<String> = None;
     let mut detected_authuser: Option<String> = None;
 
@@ -310,33 +361,681 @@ fn resolve_gdrive_session_context(app: &AppHandle) -> (Option<PathBuf>, String) 
         .and_then(|tab_id| crate::window::workspace_data::content_directory(app, tab_id).ok())
         .flatten();
     let authuser = detected_authuser.unwrap_or_else(|| "0".to_string());
-    (data_dir, authuser)
+    (data_dir, authuser, detected_tab_id)
 }
 
+#[cfg(windows)]
+async fn get_webview_cookies_for_url(
+    app: &AppHandle,
+    preferred_tab_id: Option<&str>,
+    url: &str,
+) -> Result<Vec<(String, String)>, String> {
+    use std::sync::Arc;
+    use webview2_com::{
+        CoTaskMemPWSTR, GetCookiesCompletedHandler, Microsoft::Web::WebView2::Win32::*,
+    };
+    use windows_core::{Interface, PCWSTR};
+
+    let view = preferred_tab_id
+        .and_then(|id| app.get_webview(&crate::state::tab_model::webview_label_for_tab(id)))
+        .or_else(|| crate::window::webview_manager::active_content_webview(app))
+        .or_else(|| {
+            app.state::<BrowserState>()
+                .snapshot_tabs()
+                .first()
+                .and_then(|t| {
+                    app.get_webview(&crate::state::tab_model::webview_label_for_tab(&t.id))
+                })
+        })
+        .or_else(|| app.get_webview("main"))
+        .ok_or_else(|| "backup.sync_gdrive_login_required".to_string())?;
+
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    let sender = Arc::new(Mutex::new(Some(sender)));
+    let uri: Vec<u16> = url.encode_utf16().chain(Some(0)).collect();
+
+    let sender_for_webview = sender.clone();
+    view.with_webview(move |platform| {
+        let op = (|| -> windows_core::Result<()> {
+            let core = unsafe { platform.controller().CoreWebView2()? };
+            let core2 = core.cast::<ICoreWebView2_2>()?;
+            let cm = unsafe { core2.CookieManager()? };
+            let callback_sender = sender_for_webview.clone();
+
+            let handler = GetCookiesCompletedHandler::create(Box::new(move |hr, list| {
+                let parse_result = (|| -> windows_core::Result<Vec<(String, String)>> {
+                    hr?;
+                    let mut pairs = Vec::new();
+                    if let Some(list) = list {
+                        let mut count = 0;
+                        unsafe {
+                            list.Count(&mut count)?;
+                            for i in 0..count {
+                                let c = list.GetValueAtIndex(i)?;
+                                let mut name = Default::default();
+                                let mut value = Default::default();
+                                c.Name(&mut name)?;
+                                c.Value(&mut value)?;
+                                let n = CoTaskMemPWSTR::from(name).to_string();
+                                let v = CoTaskMemPWSTR::from(value).to_string();
+                                if !n.is_empty() {
+                                    pairs.push((n, v));
+                                }
+                            }
+                        }
+                    }
+                    Ok(pairs)
+                })();
+
+                if let Ok(mut lock) = callback_sender.lock() {
+                    if let Some(tx) = lock.take() {
+                        let _ = tx.send(parse_result.map_err(|e| e.to_string()));
+                    }
+                }
+                Ok(())
+            }));
+
+            unsafe {
+                cm.GetCookies(PCWSTR(uri.as_ptr()), &handler)?;
+            }
+            Ok(())
+        })();
+
+        if let Err(e) = op {
+            if let Ok(mut lock) = sender_for_webview.lock() {
+                if let Some(tx) = lock.take() {
+                    let _ = tx.send(Err(e.to_string()));
+                }
+            }
+        }
+    })
+    .map_err(|e| e.to_string())?;
+
+    match tokio::time::timeout(Duration::from_secs(5), receiver).await {
+        Ok(Ok(Ok(pairs))) => Ok(pairs),
+        Ok(Ok(Err(e))) => Err(format!("backup.sync_network_failed: {e}")),
+        _ => Err("backup.sync_network_failed: Cookie manager timeout".into()),
+    }
+}
+
+#[cfg(windows)]
+async fn collect_google_cookies(
+    app: &AppHandle,
+    preferred_tab_id: Option<&str>,
+) -> Result<(String, HashMap<String, String>), String> {
+    let mut map = HashMap::new();
+    let mut ordered = Vec::new();
+    for domain_url in [
+        "https://drive.google.com",
+        "https://clients6.google.com",
+        "https://mail.google.com",
+    ] {
+        if let Ok(pairs) = get_webview_cookies_for_url(app, preferred_tab_id, domain_url).await {
+            for (k, v) in pairs {
+                if !map.contains_key(&k) {
+                    ordered.push(format!("{k}={v}"));
+                }
+                map.insert(k, v);
+            }
+        }
+    }
+    let has_sapisid = map.contains_key("SAPISID")
+        || map.contains_key("__Secure-3PAPISID")
+        || map.contains_key("__Secure-1PAPISID");
+    let has_sid = map.contains_key("SID")
+        || map.contains_key("__Secure-1PSID")
+        || map.contains_key("__Secure-3PSID");
+    if !has_sapisid || !has_sid {
+        return Err("backup.sync_gdrive_login_required".into());
+    }
+    Ok((ordered.join("; "), map))
+}
+
+pub fn build_sapisidhash_authorization(cookies: &HashMap<String, String>, timestamp: u64) -> Result<String, String> {
+    let origin = "https://drive.google.com";
+    let mut tokens = Vec::new();
+    if let Some(s) = cookies
+        .get("SAPISID")
+        .or_else(|| cookies.get("__Secure-3PAPISID"))
+    {
+        let hash = sha1_hex(format!("{timestamp} {s} {origin}").as_bytes());
+        tokens.push(format!("SAPISIDHASH {timestamp}_{hash}"));
+    }
+    if let Some(s1) = cookies.get("__Secure-1PAPISID") {
+        let hash = sha1_hex(format!("{timestamp} {s1} {origin}").as_bytes());
+        tokens.push(format!("SAPISID1PHASH {timestamp}_{hash}"));
+    }
+    if let Some(s3) = cookies.get("__Secure-3PAPISID") {
+        let hash = sha1_hex(format!("{timestamp} {s3} {origin}").as_bytes());
+        tokens.push(format!("SAPISID3PHASH {timestamp}_{hash}"));
+    }
+    if tokens.is_empty() {
+        return Err("backup.sync_gdrive_login_required".into());
+    }
+    Ok(tokens.join(" "))
+}
+
+pub fn extract_api_keys_from_html(html: &str) -> Vec<String> {
+    let mut keys = Vec::new();
+    let bytes = html.as_bytes();
+    if bytes.len() < 40 {
+        return keys;
+    }
+    for i in 0..=(bytes.len() - 39) {
+        if &bytes[i..i + 4] == b"AIza" {
+            let prev_ok = i == 0 || matches!(bytes[i - 1], b'"' | b'\'' | b'=' | b',' | b' ' | b'[');
+            let next_ok = i + 39 == bytes.len()
+                || matches!(
+                    bytes[i + 39],
+                    b'"' | b'\'' | b'&' | b',' | b' ' | b']' | b'}' | b'\\'
+                );
+            if prev_ok
+                && next_ok
+                && bytes[i + 4..i + 39]
+                    .iter()
+                    .all(|b| b.is_ascii_alphanumeric() || *b == b'_' || *b == b'-')
+            {
+                let candidate = String::from_utf8_lossy(&bytes[i..i + 39]).to_string();
+                let ctx_start = i.saturating_sub(140);
+                let ctx_end = (i + 180).min(bytes.len());
+                let ctx = String::from_utf8_lossy(&bytes[ctx_start..ctx_end]);
+                let is_drive = ctx.contains("clients6.google.com") || ctx.contains("/drive/");
+                if let Some(pos) = keys.iter().position(|k| k == &candidate) {
+                    if is_drive && pos > 0 {
+                        keys.remove(pos);
+                        keys.insert(0, candidate);
+                    }
+                } else if is_drive {
+                    keys.insert(0, candidate);
+                } else {
+                    keys.push(candidate);
+                }
+            }
+        }
+    }
+    keys
+}
+
+fn extract_email_from_text(text: &str) -> Option<String> {
+    for suffix in ["@gmail.com", "@googlemail.com"] {
+        if let Some(at_pos) = text.find(suffix) {
+            let prefix = &text[..at_pos];
+            let user_part: String = prefix
+                .chars()
+                .rev()
+                .take_while(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '%' | '+' | '-'))
+                .collect::<String>()
+                .chars()
+                .rev()
+                .collect();
+            if !user_part.is_empty() && user_part.len() <= 64 {
+                return Some(format!("{user_part}{suffix}"));
+            }
+        }
+    }
+    None
+}
+
+#[cfg(windows)]
+fn build_gdrive_http_client() -> Result<reqwest::blocking::Client, String> {
+    reqwest::blocking::Client::builder()
+        .redirect(reqwest::redirect::Policy::limited(5))
+        .timeout(Duration::from_secs(20))
+        .connect_timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("backup.sync_network_failed: {e}"))
+}
+
+#[cfg(windows)]
+fn discover_gdrive_session_blocking(
+    client: &reqwest::blocking::Client,
+    cookie_header: &str,
+    authuser: &str,
+    cached_key: Option<String>,
+) -> Result<(Vec<String>, Option<String>), String> {
+    let mut detected_email: Option<String> = None;
+
+    // 1. Fast check on Gmail Atom feed for exact connected email (same as New Tab Gmail widget)
+    let feed_url = format!("https://mail.google.com/mail/u/{authuser}/feed/atom");
+    if let Ok(resp) = client
+        .get(&feed_url)
+        .header(reqwest::header::COOKIE, cookie_header)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .send()
+    {
+        if resp.status().is_success() {
+            if let Ok(xml) = resp.text() {
+                detected_email = extract_email_from_text(&xml);
+            }
+        }
+    }
+
+    let mut keys = Vec::new();
+    if let Some(k) = cached_key {
+        keys.push(k);
+    }
+
+    // 2. Fetch Google Drive page HTML to extract Drive's first-party API key (and email fallback)
+    let drive_url = format!("https://drive.google.com/drive/u/{authuser}/my-drive");
+    let resp = client
+        .get(&drive_url)
+        .header(reqwest::header::COOKIE, cookie_header)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .send()
+        .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+
+    let final_url = resp.url().as_str().to_string();
+    if final_url.contains("accounts.google.com") || final_url.contains("/ServiceLogin") {
+        return Err("backup.sync_gdrive_login_required".into());
+    }
+    if resp.status().as_u16() == 401 || resp.status().as_u16() == 403 {
+        return Err("backup.sync_gdrive_login_required".into());
+    }
+
+    let html = resp
+        .text()
+        .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+    if detected_email.is_none() {
+        detected_email = extract_email_from_text(&html);
+    }
+    for k in extract_api_keys_from_html(&html) {
+        if !keys.contains(&k) {
+            keys.push(k);
+        }
+    }
+
+    Ok((keys, detected_email))
+}
+
+#[cfg(windows)]
+struct FoundGDriveFile {
+    id: Option<String>,
+    download_url: Option<String>,
+    api_version: String,
+    api_key: String,
+}
+
+#[cfg(windows)]
+fn find_backup_file_blocking(
+    client: &reqwest::blocking::Client,
+    cookie_header: &str,
+    auth_header: &str,
+    authuser: &str,
+    api_keys: &[String],
+) -> Result<FoundGDriveFile, String> {
+    if api_keys.is_empty() {
+        return Err("backup.sync_gdrive_login_required".into());
+    }
+
+    let mut last_status = 0u16;
+    let mut last_detail = String::new();
+
+    for key in api_keys {
+        for v2_ver in ["v2beta", "v2internal", "v2"] {
+            let url = format!(
+                "https://clients6.google.com/drive/{v2_ver}/files?q=title%20%3D%20'{SYNC_FILE_NAME}'%20and%20trashed%20%3D%20false&maxResults=1&key={key}"
+            );
+            let resp = client
+                .get(&url)
+                .header(reqwest::header::COOKIE, cookie_header)
+                .header(reqwest::header::AUTHORIZATION, auth_header)
+                .header(reqwest::header::ORIGIN, "https://drive.google.com")
+                .header(reqwest::header::REFERER, "https://drive.google.com/")
+                .header(reqwest::header::USER_AGENT, USER_AGENT)
+                .header("X-Goog-AuthUser", authuser)
+                .send();
+
+            if let Ok(r) = resp {
+                last_status = r.status().as_u16();
+                if r.status().is_success() {
+                    if let Ok(txt) = r.text() {
+                        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&txt) {
+                            let first = json["items"].as_array().and_then(|arr| arr.first());
+                            let id = first
+                                .and_then(|item| item["id"].as_str())
+                                .map(str::to_string);
+                            let download_url = first
+                                .and_then(|item| item["downloadUrl"].as_str())
+                                .map(str::to_string);
+                            return Ok(FoundGDriveFile {
+                                id,
+                                download_url,
+                                api_version: v2_ver.to_string(),
+                                api_key: key.clone(),
+                            });
+                        }
+                    }
+                } else if last_status == 401 {
+                    return Err("backup.sync_gdrive_login_required".into());
+                } else if let Ok(txt) = r.text() {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                        if let Some(m) = v["error"]["message"].as_str() {
+                            last_detail = m.to_string();
+                        }
+                    }
+                }
+            }
+        }
+
+        let url_v3 = format!(
+            "https://clients6.google.com/drive/v3/files?q=name%20%3D%20'{SYNC_FILE_NAME}'%20and%20trashed%20%3D%20false&pageSize=1&key={key}"
+        );
+        if let Ok(r) = client
+            .get(&url_v3)
+            .header(reqwest::header::COOKIE, cookie_header)
+            .header(reqwest::header::AUTHORIZATION, auth_header)
+            .header(reqwest::header::ORIGIN, "https://drive.google.com")
+            .header(reqwest::header::REFERER, "https://drive.google.com/")
+            .header(reqwest::header::USER_AGENT, USER_AGENT)
+            .header("X-Goog-AuthUser", authuser)
+            .send()
+        {
+            last_status = r.status().as_u16();
+            if r.status().is_success() {
+                if let Ok(txt) = r.text() {
+                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&txt) {
+                        let id = json["files"]
+                            .as_array()
+                            .and_then(|arr| arr.first())
+                            .and_then(|item| item["id"].as_str())
+                            .map(str::to_string);
+                        return Ok(FoundGDriveFile {
+                            id,
+                            download_url: None,
+                            api_version: "v3".to_string(),
+                            api_key: key.clone(),
+                        });
+                    }
+                }
+            } else if last_status == 401 {
+                return Err("backup.sync_gdrive_login_required".into());
+            } else if let Ok(txt) = r.text() {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                    if let Some(m) = v["error"]["message"].as_str() {
+                        last_detail = m.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    Err(format!(
+        "backup.sync_network_failed: Drive query HTTP {last_status} {last_detail}"
+    ))
+}
+
+#[cfg(windows)]
+fn upload_multipart_blocking(
+    client: &reqwest::blocking::Client,
+    cookie_header: &str,
+    auth_header: &str,
+    authuser: &str,
+    found: &FoundGDriveFile,
+    json_text: &str,
+) -> Result<(), String> {
+    let mut versions = vec![found.api_version.as_str()];
+    for v in ["v2beta", "v2internal", "v2", "v3"] {
+        if !versions.contains(&v) {
+            versions.push(v);
+        }
+    }
+
+    let boundary = format!(
+        "veloce_gdrive_boundary_{}",
+        crate::state::tab_model::TabInfo::current_epoch_secs()
+    );
+    let mut last_status = 0u16;
+    let mut last_detail = String::new();
+
+    for ver in versions {
+        let is_v2 = ver == "v2beta" || ver == "v2internal" || ver == "v2";
+        let metadata = if is_v2 {
+            if found.id.is_some() {
+                serde_json::json!({ "title": SYNC_FILE_NAME, "mimeType": "application/json" })
+            } else {
+                serde_json::json!({
+                    "title": SYNC_FILE_NAME,
+                    "mimeType": "application/json",
+                    "parents": [{ "id": "root" }]
+                })
+            }
+        } else if found.id.is_some() {
+            serde_json::json!({ "mimeType": "application/json" })
+        } else {
+            serde_json::json!({
+                "name": SYNC_FILE_NAME,
+                "mimeType": "application/json",
+                "parents": ["root"]
+            })
+        };
+
+        let body = format!(
+            "--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json_text}\r\n--{boundary}--",
+            metadata
+        );
+
+        let url = match &found.id {
+            Some(existing_id) => format!(
+                "https://clients6.google.com/upload/drive/{ver}/files/{existing_id}?uploadType=multipart&key={}",
+                found.api_key
+            ),
+            None => format!(
+                "https://clients6.google.com/upload/drive/{ver}/files?uploadType=multipart&key={}",
+                found.api_key
+            ),
+        };
+
+        let builder = match (&found.id, is_v2) {
+            (Some(_), true) => client.put(&url),
+            (Some(_), false) => client.patch(&url),
+            (None, _) => client.post(&url),
+        };
+
+        if let Ok(resp) = builder
+            .header(reqwest::header::COOKIE, cookie_header)
+            .header(reqwest::header::AUTHORIZATION, auth_header)
+            .header(reqwest::header::ORIGIN, "https://drive.google.com")
+            .header(reqwest::header::REFERER, "https://drive.google.com/")
+            .header(reqwest::header::USER_AGENT, USER_AGENT)
+            .header("X-Goog-AuthUser", authuser)
+            .header(
+                reqwest::header::CONTENT_TYPE,
+                format!("multipart/related; boundary={boundary}"),
+            )
+            .body(body)
+            .send()
+        {
+            last_status = resp.status().as_u16();
+            if resp.status().is_success() {
+                return Ok(());
+            }
+            if last_status == 401 {
+                return Err("backup.sync_gdrive_login_required".into());
+            }
+            if let Ok(txt) = resp.text() {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                    if let Some(m) = v["error"]["message"].as_str() {
+                        last_detail = m.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    Err(format!(
+        "backup.sync_network_failed: Drive upload HTTP {last_status} {last_detail}"
+    ))
+}
+
+#[cfg(windows)]
+pub async fn push_document_via_webview(
+    app: &AppHandle,
+    document: &BackupDocument,
+) -> Result<(), String> {
+    close_gdrive_sync_webview(app);
+    super::validation::document(document)?;
+    let json_text = serde_json::to_string_pretty(document).map_err(|e| e.to_string())?;
+    if json_text.len() as u64 > MAX_BYTES {
+        return Err("backup.file_too_large".into());
+    }
+
+    let (_data_dir, authuser, preferred_tab_id) = resolve_gdrive_session_context(app);
+    let (cookie_header, cookie_map) =
+        collect_google_cookies(app, preferred_tab_id.as_deref()).await?;
+    let now_ts = crate::state::tab_model::TabInfo::current_epoch_secs();
+    let auth_header = build_sapisidhash_authorization(&cookie_map, now_ts)?;
+
+    let cached_key = app
+        .state::<BackupService>()
+        .sync
+        .gdrive
+        .cached_api_key
+        .lock()
+        .ok()
+        .and_then(|g| g.clone());
+
+    let authuser_clone = authuser.clone();
+    let (verified_key, detected_email) = tauri::async_runtime::spawn_blocking(move || {
+        let client = build_gdrive_http_client()?;
+        let (keys, email) =
+            discover_gdrive_session_blocking(&client, &cookie_header, &authuser_clone, cached_key)?;
+        let found =
+            find_backup_file_blocking(&client, &cookie_header, &auth_header, &authuser_clone, &keys)?;
+        upload_multipart_blocking(
+            &client,
+            &cookie_header,
+            &auth_header,
+            &authuser_clone,
+            &found,
+            &json_text,
+        )?;
+        Ok::<(String, Option<String>), String>((found.api_key, email))
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let service = app.state::<BackupService>();
+    if let Ok(mut guard) = service.sync.gdrive.cached_api_key.lock() {
+        *guard = Some(verified_key);
+    }
+    if let Some(email) = detected_email {
+        if let Ok(mut guard) = service.sync.gdrive.connected_email.lock() {
+            *guard = Some(email);
+        }
+        persist_detected_gdrive_email(app);
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument, String> {
+    close_gdrive_sync_webview(app);
+    let (_data_dir, authuser, preferred_tab_id) = resolve_gdrive_session_context(app);
+    let (cookie_header, cookie_map) =
+        collect_google_cookies(app, preferred_tab_id.as_deref()).await?;
+    let now_ts = crate::state::tab_model::TabInfo::current_epoch_secs();
+    let auth_header = build_sapisidhash_authorization(&cookie_map, now_ts)?;
+
+    let cached_key = app
+        .state::<BackupService>()
+        .sync
+        .gdrive
+        .cached_api_key
+        .lock()
+        .ok()
+        .and_then(|g| g.clone());
+
+    let authuser_clone = authuser.clone();
+    let (bytes, verified_key, detected_email) = tauri::async_runtime::spawn_blocking(move || {
+        let client = build_gdrive_http_client()?;
+        let (keys, email) =
+            discover_gdrive_session_blocking(&client, &cookie_header, &authuser_clone, cached_key)?;
+        let found =
+            find_backup_file_blocking(&client, &cookie_header, &auth_header, &authuser_clone, &keys)?;
+        let Some(file_id) = found.id.as_deref() else {
+            return Err("backup.sync_file_not_found".to_string());
+        };
+
+        let media_url = format!(
+            "https://clients6.google.com/drive/{}/files/{file_id}?alt=media&key={}",
+            found.api_version, found.api_key
+        );
+        let resp = client
+            .get(&media_url)
+            .header(reqwest::header::COOKIE, &cookie_header)
+            .header(reqwest::header::AUTHORIZATION, &auth_header)
+            .header(reqwest::header::ORIGIN, "https://drive.google.com")
+            .header(reqwest::header::REFERER, "https://drive.google.com/")
+            .header(reqwest::header::USER_AGENT, USER_AGENT)
+            .header("X-Goog-AuthUser", &authuser_clone)
+            .send()
+            .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+
+        if resp.status().as_u16() == 404 {
+            return Err("backup.sync_file_not_found".into());
+        }
+        if resp.status().is_success() {
+            let mut buf = Vec::new();
+            resp.take(MAX_BYTES + 1)
+                .read_to_end(&mut buf)
+                .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+            return Ok((buf, found.api_key, email));
+        }
+
+        if let Some(dl_url) = found.download_url.as_deref() {
+            let dl_resp = client
+                .get(dl_url)
+                .header(reqwest::header::COOKIE, &cookie_header)
+                .header(reqwest::header::USER_AGENT, USER_AGENT)
+                .send()
+                .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+            if dl_resp.status().is_success() {
+                let mut buf = Vec::new();
+                dl_resp
+                    .take(MAX_BYTES + 1)
+                    .read_to_end(&mut buf)
+                    .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+                return Ok((buf, found.api_key, email));
+            }
+        }
+
+        Err("backup.sync_network_failed".into())
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let service = app.state::<BackupService>();
+    if let Ok(mut guard) = service.sync.gdrive.cached_api_key.lock() {
+        *guard = Some(verified_key);
+    }
+    if let Some(email) = detected_email {
+        if let Ok(mut guard) = service.sync.gdrive.connected_email.lock() {
+            *guard = Some(email);
+        }
+        persist_detected_gdrive_email(app);
+    }
+    files::decode(&bytes)
+}
+
+#[cfg(not(windows))]
+fn reset_gdrive_webview(app: &AppHandle, webview: &tauri::Webview) {
+    if let Some(service) = app.try_state::<BackupService>() {
+        if let Ok(mut status) = service.sync.gdrive.page_status.lock() {
+            *status = None;
+        }
+        if let Ok(mut token) = service.sync.gdrive.bridge_token.lock() {
+            *token = None;
+        }
+    }
+    let _ = webview.close();
+}
+
+#[cfg(not(windows))]
 fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, String), String> {
     let service = app.state::<BackupService>();
-    let (data_dir, authuser) = resolve_gdrive_session_context(app);
+    let (data_dir, authuser, _) = resolve_gdrive_session_context(app);
 
     if let Some(existing) = app.get_webview(GDRIVE_SYNC_WEBVIEW_LABEL) {
-        let token = service
-            .sync
-            .gdrive
-            .bridge_token
-            .lock()
-            .map_err(|e| e.to_string())?
-            .clone()
-            .unwrap_or_default();
-        let prev_authuser = service
-            .sync
-            .gdrive
-            .active_authuser
-            .lock()
-            .map_err(|e| e.to_string())?
-            .clone();
-        if !token.is_empty() && prev_authuser.as_deref() == Some(authuser.as_str()) {
-            crate::window::send_webview_to_back(&existing);
-            return Ok((existing, token));
-        }
         let _ = existing.close();
     }
 
@@ -387,20 +1086,18 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
         None => builder,
     };
 
-    // Place within parent client bounds behind the opaque shell WebView (HWND_BOTTOM)
-    // so WebView2 never treats the surface as offscreen/occluded.
     let webview = main_window
         .add_child(
             builder,
-            LogicalPosition::new(0.0, 0.0),
-            LogicalSize::new(360.0, 240.0),
+            LogicalPosition::new(-10000.0, -10000.0),
+            LogicalSize::new(1.0, 1.0),
         )
         .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
     let _ = crate::security::harden(app, &webview, false);
-    crate::window::send_webview_to_back(&webview);
     Ok((webview, token))
 }
 
+#[cfg(not(windows))]
 async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, String), String> {
     let (webview, token) = ensure_hidden_gdrive_webview(app)?;
     let service = app.state::<BackupService>();
@@ -437,6 +1134,7 @@ async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, St
     Err("backup.sync_network_failed: Google Drive page did not finish loading".into())
 }
 
+#[cfg(not(windows))]
 pub async fn push_document_via_webview(
     app: &AppHandle,
     document: &BackupDocument,
@@ -491,14 +1189,15 @@ pub async fn push_document_via_webview(
         })?
         .map_err(|_| "backup.sync_network_failed".to_string())?;
 
+    reset_gdrive_webview(app, &webview);
     if let Err(err) = response {
-        reset_gdrive_webview(app, &webview);
         return Err(err);
     }
     persist_detected_gdrive_email(app);
     Ok(())
 }
 
+#[cfg(not(windows))]
 pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument, String> {
     let (webview, token) = wait_until_webview_ready(app).await?;
 
@@ -543,10 +1242,10 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
         })?
         .map_err(|_| "backup.sync_network_failed".to_string())?;
 
+    reset_gdrive_webview(app, &webview);
     let b64_payload = match response {
         Ok(payload) => payload,
         Err(err) => {
-            reset_gdrive_webview(app, &webview);
             return Err(err);
         }
     };
