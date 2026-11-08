@@ -2,7 +2,7 @@
   if (location.protocol !== "https:") return;
 
   const BRIDGE_TOKEN = __GDRIVE_BRIDGE_TOKEN__;
-  const FOLDER_NAME = "Veloce Browser Backup";
+  const FOLDER_NAME = "Spark Backup";
   const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
   const FILE_NAME = "browser.veloce-backup.json";
   const CHUNK_SIZE = 400000;

@@ -21,7 +21,8 @@ use tauri::{LogicalPosition, LogicalSize, WebviewUrl};
 use tauri::{AppHandle, Manager, Url};
 
 pub const GDRIVE_SYNC_WEBVIEW_LABEL: &str = "google-drive-sync-webview";
-pub const SYNC_FOLDER_NAME: &str = "Veloce Browser Backup";
+pub const SYNC_FOLDER_NAME: &str = "Spark Backup";
+pub const LEGACY_SYNC_FOLDER_NAME: &str = "Veloce Browser Backup";
 pub const FOLDER_MIME_TYPE: &str = "application/vnd.google-apps.folder";
 const SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";

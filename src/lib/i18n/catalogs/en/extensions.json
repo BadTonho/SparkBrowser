@@ -23,8 +23,8 @@
   "extensions.installed_at": "Installed on",
   "extensions.search_placeholder": "Search extensions...",
   "extensions.error_loading": "Failed to load extension",
-  "extensions.install_in_veloce": "Install in Veloce",
-  "extensions.installed_badge": "Installed in Veloce",
+  "extensions.install_in_veloce": "Install in Spark",
+  "extensions.installed_badge": "Installed in Spark",
   "extensions.install_success": "Extension {name} installed successfully!"
 }
 

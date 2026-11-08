@@ -122,7 +122,7 @@
       {#if $tabLayout === "vertical"}
         <div class="brand" data-tauri-drag-region>
           <span class="brand-dot"></span>
-          <span class="brand-name" data-tauri-drag-region>Veloce</span>
+          <span class="brand-name" data-tauri-drag-region>Spark</span>
           {#if activeWs}
             <span class="ws-badge">{activeWs.icon} {activeWs.name}</span>
           {/if}

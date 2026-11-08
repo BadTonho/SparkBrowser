@@ -16,7 +16,7 @@ pub async fn export_backup(app: AppHandle, preferences: BackupPreferences) -> Re
         let Some(path) = dialog_app
             .dialog()
             .file()
-            .add_filter("Veloce backup", &["json"])
+            .add_filter("Spark backup", &["json"])
             .set_file_name("browser.veloce-backup.json")
             .blocking_save_file()
         else {
@@ -46,7 +46,7 @@ pub async fn choose_backup_file(app: AppHandle) -> Result<Option<String>, String
         let Some(path) = dialog_app
             .dialog()
             .file()
-            .add_filter("Veloce backup", &["json"])
+            .add_filter("Spark backup", &["json"])
             .blocking_pick_file()
         else {
             return Ok(None);

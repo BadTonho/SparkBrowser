@@ -1,6 +1,6 @@
-# Veloce Browser
+# Spark
 
-**A desktop browser built with Rust, Tauri, and Svelte.** Veloce combines native web views with a customizable browser interface and local tools for managing tabs, workspaces, and browsing data.
+**A desktop browser built with Rust, Tauri, and Svelte.** Spark combines native web views with a customizable browser interface and local tools for managing tabs, workspaces, and browsing data.
 
 [Documentation](./docs/en/README.md) · [Português (Brasil)](./docs/pt-BR/README.md) · [Architecture](./docs/en/architecture/overview.md) · [Contributing](./docs/en/contributing/validation.md)
 
@@ -72,4 +72,4 @@ Bug reports, usability feedback, and code contributions are welcome. Before open
 
 ## Platform notes
 
-Veloce uses the web view runtime provided by the operating system, so rendering behavior and some native capabilities can differ between Windows and Linux. Feature documentation calls out platform-specific behavior where it matters.
+Spark uses the web view runtime provided by the operating system, so rendering behavior and some native capabilities can differ between Windows and Linux. Feature documentation calls out platform-specific behavior where it matters.

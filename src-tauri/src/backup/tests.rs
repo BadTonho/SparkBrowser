@@ -744,11 +744,11 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
     );
     assert_eq!(
         super::gdrive_webview::SYNC_FOLDER_NAME,
-        "Veloce Browser Backup"
+        "Spark Backup"
     );
     assert_eq!(
         super::gdrive_webview::build_folder_metadata_json(true)["title"],
-        "Veloce Browser Backup"
+        "Spark Backup"
     );
     assert_eq!(
         super::gdrive_webview::build_folder_metadata_json(true)["mimeType"],
@@ -756,7 +756,7 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
     );
     assert_eq!(
         super::gdrive_webview::build_folder_metadata_json(false)["name"],
-        "Veloce Browser Backup"
+        "Spark Backup"
     );
 
     let req_id = super::gdrive_webview::next_request_id();

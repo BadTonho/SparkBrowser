@@ -150,7 +150,7 @@ pub fn connect(
                     continue;
                 }
                 let body =
-                    b"Authorization complete. You can close this window and return to Veloce.";
+                    b"Authorization complete. You can close this window and return to Spark.";
                 let _=write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nContent-Security-Policy: default-src 'none'\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",body.len());
                 let _ = stream.write_all(body);
                 let code = result.map_err(str::to_owned)?;

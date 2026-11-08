@@ -14,7 +14,7 @@
   "common.shortcut_number": "This shortcut requires a number key.",
   "common.shortcut_conflict": "This key combination is already assigned to another action.",
   "common.shortcut_invalid": "This shortcut is not valid.",
-  "common.install_confirm": "Install version {version} and restart Veloce Browser?",
+  "common.install_confirm": "Install version {version} and restart Spark?",
   "common.activity_confirm": "Some pages have edited forms or playing media. This page state will be lost on restart. Continue?",
   "common.delete_folder": "Delete folder “{name}”? Its bookmarks will be moved to the root.",
   "common.hold_shortcut": "Hold {key} (0.4 sec)",

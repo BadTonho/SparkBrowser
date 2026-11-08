@@ -63,17 +63,17 @@
   "backup.pref_site_zoom": "Site zoom (local values win on conflicts)",
   "backup.pref_auto_skip_ads_enabled": "Auto skip ads",
   "backup.sync_heading": "Isolated Automatic Sync",
-  "backup.sync_description": "Synchronize your data and settings using your own synced folder (Google Drive, OneDrive, Mega, USB drive) or a direct WebDAV connection, with zero Veloce servers or developer accounts.",
+  "backup.sync_description": "Synchronize your data and settings using your own synced folder (Google Drive, OneDrive, Mega, USB drive) or a direct WebDAV connection, with zero Spark servers or developer accounts.",
   "backup.sync_mode_label": "Sync mode",
   "backup.sync_mode_disabled": "Disabled (manual only)",
   "backup.sync_mode_gdrive": "Google Drive in the cloud (uses browser Gmail login)",
   "backup.sync_mode_folder": "Local folder / USB drive (OneDrive / Mega / USB)",
   "backup.sync_mode_webdav": "Direct connection (WebDAV / Personal cloud)",
-  "backup.sync_gdrive_hint": "Automatically creates the 'Veloce Browser Backup' folder in your Google Drive and saves browser.veloce-backup.json inside it using the Google / Gmail account signed into Veloce Browser — no folder on your PC and no developer cloud console.",
+  "backup.sync_gdrive_hint": "Automatically creates the 'Spark Backup' folder in your Google Drive and saves browser.veloce-backup.json inside it using the Google / Gmail account signed into Spark — no folder on your PC and no developer cloud console.",
   "backup.sync_gdrive_account_connected": "Connected Google account",
   "backup.sync_gdrive_account_pending": "No Google account verified yet",
   "backup.sync_gdrive_account_sub": "Choose which Gmail account to use or click Sync now to detect your signed-in Google Drive session.",
-  "backup.sync_gdrive_target_file": "Cloud folder: Veloce Browser Backup / browser.veloce-backup.json",
+  "backup.sync_gdrive_target_file": "Cloud folder: Spark Backup / browser.veloce-backup.json",
   "backup.sync_open_google_login": "Choose / Switch Google account (Gmail)",
   "backup.sync_busy": "Synchronizing with destination…",
   "backup.sync_auto_gdrive": "Send to Google Drive every 1 minute (only if changed) and when closing the browser",
@@ -105,5 +105,5 @@
   "backup.error_sync_auth_failed": "Authentication with the direct connection server was rejected.",
   "backup.error_sync_network_failed": "Could not reach the direct sync server.",
   "backup.error_sync_invalid_config": "The sync configuration is invalid.",
-  "backup.error_sync_gdrive_login_required": "Sign in to your Google / Gmail account in a browser tab first so Veloce can access your Google Drive session."
+  "backup.error_sync_gdrive_login_required": "Sign in to your Google / Gmail account in a browser tab first so Spark can access your Google Drive session."
 }

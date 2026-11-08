@@ -23,7 +23,7 @@ export async function openReaderMode(tabId?: string): Promise<void> {
     if (!isTauriRuntime()) {
       readerArticle.set({
         title: "Exemplo de Artigo para Modo Leitura",
-        byline: "Veloce Browser",
+        byline: "Spark",
         site_name: "veloce.internal",
         content_html: "<p>Este é um exemplo de artigo renderizado no modo leitura imersivo. O conteúdo é limpo de distrações, anúncios e barras laterais para uma experiência de leitura focada e confortável.</p><p>Você pode personalizar a tipografia, o tamanho da fonte, a largura da coluna e o tema visual nas opções acima.</p>",
         text_content: "Este é um exemplo de artigo renderizado no modo leitura imersivo.",

@@ -7,7 +7,7 @@
 </script>
 {#if $updateState.update && ["available", "ready"].includes($updateState.status) && dismissed !== $updateState.update.version}
   <aside aria-label={$t("status.browser_update_d514")} role="status">
-    <span>Veloce Browser {$updateState.update.version} {$t("status.is_fa51")} {$updateState.status === "ready" ? $t("status.ready_to_install_519c") : "available"}.</span>
+    <span>Spark {$updateState.update.version} {$t("status.is_fa51")} {$updateState.status === "ready" ? $t("status.ready_to_install_519c") : "available"}.</span>
     <button onclick={open}>{$t("status.view_update_9785")}</button>
     <button onclick={() => { dismissed = $updateState.update?.version ?? ""; }}>{$t("status.later_73b6")}</button>
   </aside>

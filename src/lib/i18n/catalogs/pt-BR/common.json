@@ -14,7 +14,7 @@
   "common.shortcut_number": "Este atalho exige uma tecla numérica.",
   "common.shortcut_conflict": "Esta combinação de teclas já está atribuída a outra ação.",
   "common.shortcut_invalid": "Este atalho não é válido.",
-  "common.install_confirm": "Instalar a versão {version} e reiniciar o Veloce Browser?",
+  "common.install_confirm": "Instalar a versão {version} e reiniciar o Spark?",
   "common.activity_confirm": "Algumas páginas têm formulários editados ou mídia em reprodução. Esse estado será perdido ao reiniciar. Continuar?",
   "common.delete_folder": "Excluir a pasta “{name}”? Seus favoritos serão movidos para a raiz.",
   "common.hold_shortcut": "Segure {key} (0,4 s)",

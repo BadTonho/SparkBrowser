@@ -457,7 +457,7 @@ pub fn run() {
             save_qr_code_png
         ]))
         .build(context)
-        .expect("error while building Veloce Browser")
+        .expect("error while building Spark")
         .run(|app, event| {
             if let tauri::RunEvent::ExitRequested {
                 code: None, api, ..

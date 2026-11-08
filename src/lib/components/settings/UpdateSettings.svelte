@@ -23,7 +23,7 @@
 
 <section class="setting-group" aria-labelledby="updates-heading">
   <h2 id="updates-heading" class="group-title">{$t("settings.about_updates_a1d4")}</h2>
-  <p class="version">Veloce Browser {$updateState.current_version}</p>
+  <p class="version">Spark {$updateState.current_version}</p>
   <div class="setting-row">
     <div class="row-text">
       <label for="update-channel" class="row-label">{$t("settings.release_channel_d89b")}</label>
