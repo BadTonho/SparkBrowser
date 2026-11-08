@@ -79,6 +79,7 @@ const messages: Record<string, MessageKey> = {
   "backup.sync_auth_failed": "backup.error_sync_auth_failed",
   "backup.sync_network_failed": "backup.error_sync_network_failed",
   "backup.sync_invalid_config": "backup.error_sync_invalid_config",
+  "backup.sync_gdrive_login_required": "backup.error_sync_gdrive_login_required",
 
   "storage.failed": "common.storage_failed",
   "desktop.required": "common.desktop_required",

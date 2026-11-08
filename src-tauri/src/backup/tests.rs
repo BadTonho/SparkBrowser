@@ -667,3 +667,41 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
     assert_eq!(pulled.data.tabs.len(), doc.data.tabs.len());
     server.join().unwrap();
 }
+
+#[test]
+fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
+    let (conn, _doc) = setup();
+    crate::database::preferences_repo::initialize_preferences_table(&conn).unwrap();
+    let runtime = super::sync::SyncRuntime::default();
+
+    let state = super::sync::save_config(
+        &conn,
+        &runtime,
+        super::sync::SyncTargetConfig::GoogleDriveWeb {
+            auto_save: true,
+            apply_preferences_on_direct_pull: true,
+        },
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        state.config,
+        super::sync::SyncTargetConfig::GoogleDriveWeb {
+            auto_save: true,
+            apply_preferences_on_direct_pull: true,
+        }
+    );
+
+    assert!(super::gdrive_webview::is_allowed_gdrive_host(
+        &url::Url::parse("https://drive.google.com/drive/my-drive").unwrap()
+    ));
+    assert!(super::gdrive_webview::is_allowed_gdrive_host(
+        &url::Url::parse("https://clients6.google.com/drive/v3/files").unwrap()
+    ));
+    assert!(!super::gdrive_webview::is_allowed_gdrive_host(
+        &url::Url::parse("http://drive.google.com/drive/my-drive").unwrap()
+    ));
+    assert!(!super::gdrive_webview::is_allowed_gdrive_host(
+        &url::Url::parse("https://evil.example.com/drive.google.com").unwrap()
+    ));
+}

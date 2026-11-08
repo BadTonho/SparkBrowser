@@ -66,8 +66,12 @@
   "backup.sync_description": "Sincronize seus dados e configurações usando uma pasta própria (Google Drive, OneDrive, Mega, Pendrive) ou conexão direta WebDAV, sem servidores do Veloce nem contas de desenvolvedor.",
   "backup.sync_mode_label": "Modo de sincronização",
   "backup.sync_mode_disabled": "Desativado (apenas manual)",
-  "backup.sync_mode_folder": "Pasta sincronizada (Google Drive / OneDrive / Mega / Pendrive)",
+  "backup.sync_mode_gdrive": "Google Drive na nuvem (usa o login do Gmail no navegador)",
+  "backup.sync_mode_folder": "Pasta local / Pendrive (OneDrive / Mega / Pendrive)",
   "backup.sync_mode_webdav": "Conexão direta (WebDAV / Nuvem própria)",
+  "backup.sync_gdrive_hint": "Salva e carrega o arquivo browser.veloce-backup.json direto na nuvem do seu Google Drive usando a conta Google / Gmail logada no Veloce Browser — sem pasta no PC e sem Google Cloud Console.",
+  "backup.sync_open_google_login": "Abrir login do Google / Gmail em nova aba",
+  "backup.sync_auto_gdrive": "Enviar para o Google Drive a cada 1 minuto (apenas se houver alterações) e ao fechar o navegador",
   "backup.sync_choose_folder": "Escolher pasta de sincronização…",
   "backup.sync_folder_current": "Pasta ativa: {path}",
   "backup.sync_folder_none": "Nenhuma pasta de sincronização selecionada.",
@@ -95,5 +99,6 @@
   "backup.error_sync_https_required": "Conexões diretas com a nuvem exigem uma URL com https://.",
   "backup.error_sync_auth_failed": "A autenticação na conexão direta foi recusada pelo servidor.",
   "backup.error_sync_network_failed": "Não foi possível comunicar com o servidor de sincronização direta.",
-  "backup.error_sync_invalid_config": "A configuração de sincronização é inválida."
+  "backup.error_sync_invalid_config": "A configuração de sincronização é inválida.",
+  "backup.error_sync_gdrive_login_required": "Faça login na sua conta Google / Gmail em uma aba do navegador primeiro para usar a sincronização com o Google Drive."
 }

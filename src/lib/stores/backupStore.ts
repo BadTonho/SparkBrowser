@@ -18,13 +18,14 @@ import {
 import { applyBackupPreferences, capturePreferences } from "../services/backup/preferences";
 import { describeError } from "../services/user-errors.js";
 import { noteWriter } from "./notesStore";
-import { applyTabsSnapshot, tabs } from "./browserStore";
+import { addTab, applyTabsSnapshot, tabs } from "./browserStore";
 import { workspaces } from "./workspaceStore";
 import { bookmarkFolders, bookmarks, loadBookmarks } from "./persistenceStore";
 import { splitLayout } from "./splitViewStore";
 import {
   askDownloadDestination,
   autoHibernateMode,
+  closeSettingsModal,
   defaultSearchEngine,
   hibernationExemptions,
   overlayBlurPx,
@@ -181,6 +182,11 @@ export const saveBackupSyncSettings = (
     }
   });
 
+export function openGoogleLoginTab(): void {
+  void closeSettingsModal();
+  addTab("https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fdrive.google.com%2Fdrive%2Fmy-drive");
+}
+
 export const syncPushNow = () =>
   action(async () => {
     await noteWriter.flushAll();
@@ -311,7 +317,11 @@ export function initializeBackupStatus(): void {
   if (cloudMinuteInterval) clearInterval(cloudMinuteInterval);
   cloudMinuteInterval = setInterval(() => {
     const cfg = get(backupSyncState).config;
-    if (cfg.mode === "direct_webdav" && cfg.auto_save && hasPendingChangesForCloud) {
+    if (
+      (cfg.mode === "direct_webdav" || cfg.mode === "google_drive_web") &&
+      cfg.auto_save &&
+      hasPendingChangesForCloud
+    ) {
       void runBackgroundAutoSync();
     }
   }, 60_000);

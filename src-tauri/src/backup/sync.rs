@@ -1,5 +1,5 @@
 use super::{
-    files,
+    files, gdrive_webview,
     model::{BackupDocument, BackupImportResult, BackupPreferences, BackupPreview, MAX_BYTES},
     service,
 };
@@ -21,6 +21,11 @@ pub const SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
 pub enum SyncTargetConfig {
     #[default]
     Disabled,
+    GoogleDriveWeb {
+        auto_save: bool,
+        #[serde(default)]
+        apply_preferences_on_direct_pull: bool,
+    },
     Folder {
         directory_path: String,
         auto_save: bool,
@@ -71,6 +76,7 @@ pub enum SyncPullResponse {
 pub struct SyncRuntime {
     pub session_secret: Mutex<Option<String>>,
     pub last_error: Mutex<Option<String>>,
+    pub gdrive: gdrive_webview::GDriveWebRuntime,
 }
 
 pub fn fingerprint_hex(doc: &BackupDocument) -> Result<String, String> {
@@ -178,7 +184,7 @@ pub fn save_config(
     secret: Option<String>,
 ) -> Result<SyncStateSnapshot, String> {
     match &config {
-        SyncTargetConfig::Disabled => {
+        SyncTargetConfig::Disabled | SyncTargetConfig::GoogleDriveWeb { .. } => {
             *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
@@ -277,7 +283,7 @@ pub fn push_document_to_target(
         SyncTargetConfig::Folder { directory_path, .. } => resolve_folder_file_path(directory_path)
             .map(|p| p.is_file())
             .unwrap_or(false),
-        SyncTargetConfig::DirectWebdav { .. } => true,
+        SyncTargetConfig::DirectWebdav { .. } | SyncTargetConfig::GoogleDriveWeb { .. } => true,
         SyncTargetConfig::Disabled => false,
     };
 
@@ -292,7 +298,9 @@ pub fn push_document_to_target(
     }
 
     let write_result = match &config {
-        SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
+        SyncTargetConfig::Disabled | SyncTargetConfig::GoogleDriveWeb { .. } => {
+            Err("backup.sync_not_configured".to_string())
+        }
         SyncTargetConfig::Folder { directory_path, .. } => {
             resolve_folder_file_path(directory_path)
                 .and_then(|file_path| files::write(&file_path, document))
@@ -329,7 +337,9 @@ pub fn pull_document_from_target(
 ) -> Result<BackupDocument, String> {
     let config = load_config(conn)?;
     let read_result = match &config {
-        SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
+        SyncTargetConfig::Disabled | SyncTargetConfig::GoogleDriveWeb { .. } => {
+            Err("backup.sync_not_configured".to_string())
+        }
         SyncTargetConfig::Folder { directory_path, .. } => {
             let file_path = resolve_folder_file_path(directory_path)?;
             if !file_path.is_file() {
@@ -464,83 +474,94 @@ pub async fn push_sync(
     let service = app.state::<service::BackupService>();
     let _serial = service.operation.lock().await;
     let document = service::capture(app, preferences).await?;
-    let app_clone = app.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        let state = app_clone.state::<BrowserState>();
-        let service = app_clone.state::<service::BackupService>();
-        let config = {
-            let db = state.db.lock().map_err(|e| e.to_string())?;
-            let conn = db.as_ref().ok_or("backup.database_unavailable")?;
-            load_config(conn)?
-        };
-        if config == SyncTargetConfig::Disabled {
-            return Err("backup.sync_not_configured".into());
-        }
-        // Check fingerprint before doing network/disk I/O
-        let current_fp = fingerprint_hex(&document)?;
-        {
-            let db = state.db.lock().map_err(|e| e.to_string())?;
-            let conn = db.as_ref().ok_or("backup.database_unavailable")?;
-            let previous_fp =
-                preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
-            let target_exists = match &config {
-                SyncTargetConfig::Folder { directory_path, .. } => {
-                    resolve_folder_file_path(directory_path)
-                        .map(|p| p.is_file())
-                        .unwrap_or(false)
-                }
-                SyncTargetConfig::DirectWebdav { .. } => true,
-                SyncTargetConfig::Disabled => false,
-            };
-            if only_if_changed && target_exists && previous_fp.as_deref() == Some(current_fp.as_str())
-            {
-                let snap = snapshot(conn, &service.sync)?;
-                return Ok(SyncPushResult {
-                    synced: false,
-                    skipped_unchanged: true,
-                    last_synced_at: snap.last_synced_at,
-                    state: snap,
-                });
-            }
-        }
-        // Perform I/O without holding the SQLite mutex
-        let io_result = match &config {
-            SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
-            SyncTargetConfig::Folder { directory_path, .. } => {
-                resolve_folder_file_path(directory_path)
-                    .and_then(|file_path| files::write(&file_path, &document))
-            }
-            SyncTargetConfig::DirectWebdav {
-                endpoint_url,
-                username,
-                ..
-            } => {
-                let secret = {
-                    let db = state.db.lock().map_err(|e| e.to_string())?;
-                    let conn = db.as_ref().ok_or("backup.database_unavailable")?;
-                    resolve_secret(conn, &service.sync)?
-                };
-                webdav_put(endpoint_url, username, secret.as_deref(), &document)
-            }
-        };
+    let current_fp = fingerprint_hex(&document)?;
+
+    let (config, previous_fp) = {
+        let state = app.state::<BrowserState>();
         let db = state.db.lock().map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("backup.database_unavailable")?;
-        if let Err(err) = io_result {
-            record_error(&service.sync, &err);
-            return Err(err);
-        }
-        let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
-        clear_error_and_record_sync(conn, &service.sync, &current_fp, now)?;
+        let cfg = load_config(conn)?;
+        let prev = preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
+        (cfg, prev)
+    };
+
+    if config == SyncTargetConfig::Disabled {
+        return Err("backup.sync_not_configured".into());
+    }
+
+    let target_exists = match &config {
+        SyncTargetConfig::Folder { directory_path, .. } => resolve_folder_file_path(directory_path)
+            .map(|p| p.is_file())
+            .unwrap_or(false),
+        SyncTargetConfig::DirectWebdav { .. } | SyncTargetConfig::GoogleDriveWeb { .. } => true,
+        SyncTargetConfig::Disabled => false,
+    };
+
+    if only_if_changed && target_exists && previous_fp.as_deref() == Some(current_fp.as_str()) {
+        let state = app.state::<BrowserState>();
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("backup.database_unavailable")?;
         let snap = snapshot(conn, &service.sync)?;
-        Ok(SyncPushResult {
-            synced: true,
-            skipped_unchanged: false,
-            last_synced_at: Some(now),
+        return Ok(SyncPushResult {
+            synced: false,
+            skipped_unchanged: true,
+            last_synced_at: snap.last_synced_at,
             state: snap,
-        })
+        });
+    }
+
+    let io_result = match &config {
+        SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
+        SyncTargetConfig::GoogleDriveWeb { .. } => {
+            gdrive_webview::push_document_via_webview(app, &document).await
+        }
+        SyncTargetConfig::Folder { directory_path, .. } => {
+            let dir = directory_path.clone();
+            let doc = document.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                resolve_folder_file_path(&dir).and_then(|file_path| files::write(&file_path, &doc))
+            })
+            .await
+            .map_err(|e| e.to_string())?
+        }
+        SyncTargetConfig::DirectWebdav {
+            endpoint_url,
+            username,
+            ..
+        } => {
+            let secret = {
+                let state = app.state::<BrowserState>();
+                let db = state.db.lock().map_err(|e| e.to_string())?;
+                let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+                resolve_secret(conn, &service.sync)?
+            };
+            let url = endpoint_url.clone();
+            let user = username.clone();
+            let doc = document.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                webdav_put(&url, &user, secret.as_deref(), &doc)
+            })
+            .await
+            .map_err(|e| e.to_string())?
+        }
+    };
+
+    let state = app.state::<BrowserState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+    if let Err(err) = io_result {
+        record_error(&service.sync, &err);
+        return Err(err);
+    }
+    let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
+    clear_error_and_record_sync(conn, &service.sync, &current_fp, now)?;
+    let snap = snapshot(conn, &service.sync)?;
+    Ok(SyncPushResult {
+        synced: true,
+        skipped_unchanged: false,
+        last_synced_at: Some(now),
+        state: snap,
     })
-    .await
-    .map_err(|e| e.to_string())?
 }
 
 pub async fn pull_sync(
@@ -549,61 +570,76 @@ pub async fn pull_sync(
     direct_apply: bool,
     apply_preferences_override: Option<bool>,
 ) -> Result<SyncPullResponse, String> {
-    let app_clone = app.clone();
-    let (doc, config_apply_prefs) = tauri::async_runtime::spawn_blocking(move || {
-        let state = app_clone.state::<BrowserState>();
-        let service = app_clone.state::<service::BackupService>();
-        let (config, secret) = {
-            let db = state.db.lock().map_err(|e| e.to_string())?;
-            let conn = db.as_ref().ok_or("backup.database_unavailable")?;
-            let cfg = load_config(conn)?;
-            let sec = resolve_secret(conn, &service.sync)?;
-            (cfg, sec)
-        };
-        let apply_prefs = match &config {
-            SyncTargetConfig::Folder {
-                apply_preferences_on_direct_pull,
-                ..
-            } => *apply_preferences_on_direct_pull,
-            SyncTargetConfig::DirectWebdav {
-                apply_preferences_on_direct_pull,
-                ..
-            } => *apply_preferences_on_direct_pull,
-            SyncTargetConfig::Disabled => false,
-        };
-        let read_res = match &config {
-            SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
-            SyncTargetConfig::Folder { directory_path, .. } => {
-                let file_path = resolve_folder_file_path(directory_path)?;
+    let backup_service = app.state::<service::BackupService>();
+    let (config, secret) = {
+        let state = app.state::<BrowserState>();
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+        let cfg = load_config(conn)?;
+        let sec = resolve_secret(conn, &backup_service.sync)?;
+        (cfg, sec)
+    };
+
+    let config_apply_prefs = match &config {
+        SyncTargetConfig::GoogleDriveWeb {
+            apply_preferences_on_direct_pull,
+            ..
+        }
+        | SyncTargetConfig::Folder {
+            apply_preferences_on_direct_pull,
+            ..
+        }
+        | SyncTargetConfig::DirectWebdav {
+            apply_preferences_on_direct_pull,
+            ..
+        } => *apply_preferences_on_direct_pull,
+        SyncTargetConfig::Disabled => false,
+    };
+
+    let read_res = match &config {
+        SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
+        SyncTargetConfig::GoogleDriveWeb { .. } => {
+            gdrive_webview::pull_document_via_webview(app).await
+        }
+        SyncTargetConfig::Folder { directory_path, .. } => {
+            let dir = directory_path.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let file_path = resolve_folder_file_path(&dir)?;
                 if !file_path.is_file() {
                     Err("backup.sync_file_not_found".to_string())
                 } else {
                     files::read(&file_path)
                 }
-            }
-            SyncTargetConfig::DirectWebdav {
-                endpoint_url,
-                username,
-                ..
-            } => webdav_get(endpoint_url, username, secret.as_deref()),
-        };
-        match read_res {
-            Ok(doc) => {
-                if let Ok(mut guard) = service.sync.last_error.lock() {
-                    *guard = None;
-                }
-                Ok((doc, apply_prefs))
-            }
-            Err(err) => {
-                record_error(&service.sync, &err);
-                Err(err)
-            }
+            })
+            .await
+            .map_err(|e| e.to_string())?
         }
-    })
-    .await
-    .map_err(|e| e.to_string())??;
+        SyncTargetConfig::DirectWebdav {
+            endpoint_url,
+            username,
+            ..
+        } => {
+            let url = endpoint_url.clone();
+            let user = username.clone();
+            tauri::async_runtime::spawn_blocking(move || webdav_get(&url, &user, secret.as_deref()))
+                .await
+                .map_err(|e| e.to_string())?
+        }
+    };
 
-    let backup_service = app.state::<service::BackupService>();
+    let doc = match read_res {
+        Ok(doc) => {
+            if let Ok(mut guard) = backup_service.sync.last_error.lock() {
+                *guard = None;
+            }
+            doc
+        }
+        Err(err) => {
+            record_error(&backup_service.sync, &err);
+            return Err(err);
+        }
+    };
+
     let source_token = backup_service.select(doc)?;
     let preview = service::preview(
         app,

@@ -11,6 +11,7 @@
     backupSyncState,
     dismissBackupPreview,
     importBackup,
+    openGoogleLoginTab,
     pendingBackupPreferences,
     pickBackupSyncFolder,
     refreshBackupPreview,
@@ -30,7 +31,7 @@
   let applyPreferences = $state(false);
   let skippedLimit = $state(100);
 
-  let selectedMode = $state<"disabled" | "folder" | "direct_webdav">("disabled");
+  let selectedMode = $state<"disabled" | "google_drive_web" | "folder" | "direct_webdav">("disabled");
   let folderPath = $state("");
   let webdavUrl = $state("");
   let webdavUsername = $state("");
@@ -48,7 +49,10 @@
   $effect(() => {
     const cfg = $backupSyncState.config;
     selectedMode = cfg.mode;
-    if (cfg.mode === "folder") {
+    if (cfg.mode === "google_drive_web") {
+      autoSave = cfg.auto_save;
+      directApplyPrefs = cfg.apply_preferences_on_direct_pull;
+    } else if (cfg.mode === "folder") {
       folderPath = cfg.directory_path;
       autoSave = cfg.auto_save;
       directApplyPrefs = cfg.apply_preferences_on_direct_pull;
@@ -62,11 +66,35 @@
   });
 
   function handleModeChange(event: Event): void {
-    const next = (event.currentTarget as HTMLSelectElement).value as "disabled" | "folder" | "direct_webdav";
+    const next = (event.currentTarget as HTMLSelectElement).value as
+      | "disabled"
+      | "google_drive_web"
+      | "folder"
+      | "direct_webdav";
     selectedMode = next;
     if (next === "disabled") {
       void saveBackupSyncSettings({ mode: "disabled" }, null);
+    } else if (next === "google_drive_web") {
+      void saveBackupSyncSettings(
+        {
+          mode: "google_drive_web",
+          auto_save: autoSave,
+          apply_preferences_on_direct_pull: directApplyPrefs,
+        },
+        null
+      );
     }
+  }
+
+  function handleGDriveOptionsChange(): void {
+    void saveBackupSyncSettings(
+      {
+        mode: "google_drive_web",
+        auto_save: autoSave,
+        apply_preferences_on_direct_pull: directApplyPrefs,
+      },
+      null
+    );
   }
 
   function handleFolderOptionsChange(): void {
@@ -145,12 +173,47 @@
           onchange={handleModeChange}
         >
           <option value="disabled">{$t("backup.sync_mode_disabled")}</option>
-          <option value="folder">{$t("backup.sync_mode_folder")}</option>
+          <option value="google_drive_web">{$t("backup.sync_mode_gdrive")}</option>
           <option value="direct_webdav">{$t("backup.sync_mode_webdav")}</option>
+          <option value="folder">{$t("backup.sync_mode_folder")}</option>
         </select>
       </label>
 
-      {#if selectedMode === "folder"}
+      {#if selectedMode === "google_drive_web"}
+        <div class="sync-mode-box">
+          <p>{$t("backup.sync_gdrive_hint")}</p>
+          <div class="actions">
+            <button
+              class="pill-action"
+              data-testid="backup-sync-open-google-login"
+              disabled={$backupBusy}
+              onclick={openGoogleLoginTab}
+            >
+              {$t("backup.sync_open_google_login")}
+            </button>
+          </div>
+          <label class="preference-choice">
+            <input
+              type="checkbox"
+              data-testid="backup-sync-auto-save"
+              bind:checked={autoSave}
+              disabled={$backupBusy}
+              onchange={handleGDriveOptionsChange}
+            />
+            {$t("backup.sync_auto_gdrive")}
+          </label>
+          <label class="preference-choice">
+            <input
+              type="checkbox"
+              data-testid="backup-sync-direct-prefs"
+              bind:checked={directApplyPrefs}
+              disabled={$backupBusy}
+              onchange={handleGDriveOptionsChange}
+            />
+            {$t("backup.sync_direct_apply_prefs")}
+          </label>
+        </div>
+      {:else if selectedMode === "folder"}
         <div class="sync-mode-box">
           <p class="sync-path" data-testid="backup-sync-folder-path">
             {folderPath ? $t("backup.sync_folder_current", { path: folderPath }) : $t("backup.sync_folder_none")}

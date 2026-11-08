@@ -28,6 +28,7 @@ export interface BackupImportResult { added: Record<BackupKind, number>; skipped
 
 export type SyncTargetConfig =
   | { mode: "disabled" }
+  | { mode: "google_drive_web"; auto_save: boolean; apply_preferences_on_direct_pull: boolean }
   | { mode: "folder"; directory_path: string; auto_save: boolean; apply_preferences_on_direct_pull: boolean }
   | { mode: "direct_webdav"; endpoint_url: string; username: string; remember_secret: boolean; auto_save: boolean; apply_preferences_on_direct_pull: boolean };
 
