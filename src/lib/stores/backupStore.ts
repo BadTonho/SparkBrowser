@@ -38,8 +38,6 @@ import {
 import { languagePreference } from "../i18n";
 import { keyboardShortcuts } from "./shortcutsStore";
 import { pipWindowShadow } from "./pipAppearanceStore";
-import { privacyStats } from "./privacyStore";
-import { updateState } from "./updatesStore";
 import type {
   BackupImportResult,
   BackupPreferenceTask,
@@ -68,6 +66,8 @@ let cloudMinuteInterval: ReturnType<typeof setInterval> | undefined;
 let autoSyncUnsubscribes: (() => void)[] = [];
 let hasPendingChangesForCloud = false;
 let autoSyncReady = false;
+let gdriveLoginRequiredPause = false;
+let lastTabsSignature = "";
 
 async function action(work: () => Promise<void>): Promise<void> {
   if (get(backupBusy) || !isTauriRuntime()) return;
@@ -182,13 +182,17 @@ export const saveBackupSyncSettings = (
     }
   });
 
-export function openGoogleLoginTab(): void {
-  void closeSettingsModal();
-  addTab("https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fdrive.google.com%2Fdrive%2Fmy-drive");
+export async function openGoogleLoginTab(): Promise<void> {
+  gdriveLoginRequiredPause = false;
+  await closeSettingsModal();
+  await addTab(
+    "https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fdrive.google.com%2Fdrive%2Fmy-drive"
+  );
 }
 
 export const syncPushNow = () =>
   action(async () => {
+    gdriveLoginRequiredPause = false;
     await noteWriter.flushAll();
     const res = await pushBackupSync(capturePreferences(), false);
     backupSyncState.set(res.state);
@@ -230,12 +234,18 @@ async function runBackgroundAutoSync(): Promise<void> {
   if (!isTauriRuntime() || get(backupBusy)) return;
   const current = get(backupSyncState).config;
   if (current.mode === "disabled" || !current.auto_save) return;
+  if (current.mode === "google_drive_web" && gdriveLoginRequiredPause) return;
   try {
     await noteWriter.flushAll();
     const res = await pushBackupSync(capturePreferences(), true);
     backupSyncState.set(res.state);
     hasPendingChangesForCloud = false;
+    gdriveLoginRequiredPause = false;
   } catch (error) {
+    const raw = String(error);
+    if (raw.includes("backup.sync_gdrive_login_required")) {
+      gdriveLoginRequiredPause = true;
+    }
     backupSyncState.update((s) => ({ ...s, last_error: describeError(error) }));
   }
 }
@@ -295,7 +305,18 @@ export function initializeBackupStatus(): void {
     bookmarks.subscribe(notifyPersistentDataChanged),
     bookmarkFolders.subscribe(notifyPersistentDataChanged),
     workspaces.subscribe(notifyPersistentDataChanged),
-    tabs.subscribe(notifyPersistentDataChanged),
+    tabs.subscribe((items) => {
+      const sig = items
+        .filter((t) => !t.is_ephemeral)
+        .map((t) => `${t.id}|${t.url}|${t.workspace_id}|${t.is_pinned ? 1 : 0}|${t.container_id ?? ""}`)
+        .join("\n");
+      if (sig === lastTabsSignature) return;
+      lastTabsSignature = sig;
+      if (items.some((t) => t.url.includes("drive.google.com") || t.url.includes("mail.google.com"))) {
+        gdriveLoginRequiredPause = false;
+      }
+      notifyPersistentDataChanged();
+    }),
     splitLayout.subscribe(notifyPersistentDataChanged),
     tabLayout.subscribe(notifyPersistentDataChanged),
     showBookmarksBar.subscribe(notifyPersistentDataChanged),
@@ -309,8 +330,6 @@ export function initializeBackupStatus(): void {
     languagePreference.subscribe(notifyPersistentDataChanged),
     keyboardShortcuts.subscribe(notifyPersistentDataChanged),
     pipWindowShadow.subscribe(notifyPersistentDataChanged),
-    privacyStats.subscribe(notifyPersistentDataChanged),
-    updateState.subscribe(notifyPersistentDataChanged),
     workspaceIsolation.subscribe(notifyPersistentDataChanged),
   ];
 

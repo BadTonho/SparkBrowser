@@ -310,8 +310,7 @@ pub async fn set_bookmark_context_menu_overlay(
             })
             .map_err(|error| format!("Failed to size bookmark menu overlay: {error}"))?;
     }
-    webview
-        .show()
+    crate::window::show_overlay_webview(&webview)
         .map_err(|error| format!("Failed to show bookmark menu overlay: {error}"))?;
     webview
         .eval(&script)

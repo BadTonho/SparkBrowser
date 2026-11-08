@@ -226,7 +226,7 @@ pub fn sync<P: Panel>(app: &AppHandle, state: &BrowserState) -> Result<(), Strin
     if !valid {
         dismiss::<P>(app);
     } else if let Some(view) = app.get_webview(P::LABEL) {
-        view.show().map_err(|e| e.to_string())?;
+        crate::window::show_overlay_webview(&view)?;
     }
     Ok(())
 }
@@ -343,7 +343,7 @@ pub fn set<P: Panel>(
         resize::<P>(app)?;
         let view = app.get_webview(P::LABEL).ok_or("Panel WebView not found")?;
         view.eval(format!("(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (window.{setter}) window.{setter}(payload); else if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();", setter = P::SETTER)).map_err(|e| e.to_string())?;
-        view.show().map_err(|e| e.to_string())?;
+        crate::window::show_overlay_webview(&view)?;
         if opening {
             view.set_focus().map_err(|e| e.to_string())?;
         }

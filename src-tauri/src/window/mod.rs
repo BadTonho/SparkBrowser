@@ -47,3 +47,85 @@ pub fn create_webview_builder(
     }
     builder
 }
+
+#[cfg(windows)]
+pub fn bring_webview_to_front(view: &tauri::Webview) {
+    let _ = view.with_webview(move |platform| {
+        #[link(name = "user32")]
+        unsafe extern "system" {
+            fn SetWindowPos(
+                hwnd: *mut std::ffi::c_void,
+                hwnd_insert_after: *mut std::ffi::c_void,
+                x: i32,
+                y: i32,
+                cx: i32,
+                cy: i32,
+                flags: u32,
+            ) -> i32;
+        }
+        const SWP_NOSIZE: u32 = 0x0001;
+        const SWP_NOMOVE: u32 = 0x0002;
+        const SWP_NOACTIVATE: u32 = 0x0010;
+        unsafe {
+            let mut parent = Default::default();
+            if platform.controller().ParentWindow(&mut parent).is_ok() && !parent.0.is_null() {
+                SetWindowPos(
+                    parent.0,
+                    std::ptr::null_mut(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+                );
+            }
+        }
+    });
+}
+
+#[cfg(not(windows))]
+pub fn bring_webview_to_front(_view: &tauri::Webview) {}
+
+#[cfg(windows)]
+pub fn send_webview_to_back(view: &tauri::Webview) {
+    let _ = view.with_webview(move |platform| {
+        #[link(name = "user32")]
+        unsafe extern "system" {
+            fn SetWindowPos(
+                hwnd: *mut std::ffi::c_void,
+                hwnd_insert_after: *mut std::ffi::c_void,
+                x: i32,
+                y: i32,
+                cx: i32,
+                cy: i32,
+                flags: u32,
+            ) -> i32;
+        }
+        const SWP_NOSIZE: u32 = 0x0001;
+        const SWP_NOMOVE: u32 = 0x0002;
+        const SWP_NOACTIVATE: u32 = 0x0010;
+        unsafe {
+            let mut parent = Default::default();
+            if platform.controller().ParentWindow(&mut parent).is_ok() && !parent.0.is_null() {
+                SetWindowPos(
+                    parent.0,
+                    1isize as *mut std::ffi::c_void,
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+                );
+            }
+        }
+    });
+}
+
+#[cfg(not(windows))]
+pub fn send_webview_to_back(_view: &tauri::Webview) {}
+
+pub fn show_overlay_webview(view: &tauri::Webview) -> Result<(), String> {
+    view.show().map_err(|e| e.to_string())?;
+    bring_webview_to_front(view);
+    Ok(())
+}

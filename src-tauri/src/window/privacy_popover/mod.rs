@@ -212,7 +212,7 @@ pub fn sync(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
     if !valid {
         dismiss(app);
     } else if let Some(view) = app.get_webview(LABEL) {
-        view.show().map_err(|e| e.to_string())?;
+        crate::window::show_overlay_webview(&view)?;
     }
     Ok(())
 }
@@ -316,7 +316,7 @@ pub fn set(
             .get_webview(LABEL)
             .ok_or("Privacy popover WebView not found")?;
         view.eval(format!("(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (window.__veloceSetPrivacyPopover) window.__veloceSetPrivacyPopover(payload); else if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();")).map_err(|e| e.to_string())?;
-        view.show().map_err(|e| e.to_string())?;
+        crate::window::show_overlay_webview(&view)?;
         if opening {
             view.set_focus().map_err(|e| e.to_string())?;
         }

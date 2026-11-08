@@ -221,6 +221,7 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
         )
         .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
     let _ = crate::security::harden(app, &webview, false);
+    crate::window::send_webview_to_back(&webview);
     Ok((webview, token))
 }
 
@@ -310,10 +311,8 @@ pub async fn push_document_via_webview(
         })?
         .map_err(|_| "backup.sync_network_failed".to_string())?;
 
+    reset_gdrive_webview(app, &webview);
     if let Err(err) = response {
-        if err.starts_with("backup.sync_gdrive_login_required") {
-            reset_gdrive_webview(app, &webview);
-        }
         return Err(err);
     }
     Ok(())
@@ -363,12 +362,10 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
         })?
         .map_err(|_| "backup.sync_network_failed".to_string())?;
 
+    reset_gdrive_webview(app, &webview);
     let b64_payload = match response {
         Ok(payload) => payload,
         Err(err) => {
-            if err.starts_with("backup.sync_gdrive_login_required") {
-                reset_gdrive_webview(app, &webview);
-            }
             return Err(err);
         }
     };

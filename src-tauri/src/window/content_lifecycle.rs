@@ -172,7 +172,7 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                 position: LogicalPosition::new(bounds.x, bounds.y).into(),
                 size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0)).into(),
             });
-            let _ = webview.show();
+            let _ = crate::window::show_overlay_webview(&webview);
         } else {
             let _ = webview.hide();
         }
@@ -191,7 +191,7 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
                     size: logical_size.into(),
                 });
             }
-            let _ = webview.show();
+            let _ = crate::window::show_overlay_webview(&webview);
         } else {
             let _ = webview.hide();
         }
