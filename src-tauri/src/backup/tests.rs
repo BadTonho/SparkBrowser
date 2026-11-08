@@ -468,3 +468,202 @@ fn auto_skip_backup_defaults_off_and_accepts_only_booleans() {
     value["preferences"]["auto_skip_ads_enabled"] = serde_json::json!("true");
     assert!(serde_json::from_value::<BackupDocument>(value).is_err());
 }
+
+#[test]
+fn folder_sync_pushes_skips_unchanged_and_pulls_without_leaking_sync_paths() {
+    let (conn, mut doc) = setup();
+    crate::database::preferences_repo::initialize_preferences_table(&conn).unwrap();
+    let runtime = super::sync::SyncRuntime::default();
+    let dir = tempfile::tempdir().unwrap();
+    let dir_str = dir.path().to_string_lossy().into_owned();
+
+    let state = super::sync::save_config(
+        &conn,
+        &runtime,
+        super::sync::SyncTargetConfig::Folder {
+            directory_path: dir_str.clone(),
+            auto_save: true,
+            apply_preferences_on_direct_pull: true,
+        },
+        None,
+    )
+    .unwrap();
+    assert!(matches!(
+        state.config,
+        super::sync::SyncTargetConfig::Folder { .. }
+    ));
+
+    // First push writes the file
+    let first = super::sync::push_document_to_target(&conn, &runtime, &doc, true).unwrap();
+    assert!(first.synced);
+    assert!(!first.skipped_unchanged);
+    assert!(dir.path().join(super::sync::SYNC_FILE_NAME).is_file());
+
+    // Second push with identical data/preferences and only_if_changed=true skips I/O
+    let second = super::sync::push_document_to_target(&conn, &runtime, &doc, true).unwrap();
+    assert!(!second.synced);
+    assert!(second.skipped_unchanged);
+
+    // Changing a preference triggers a write
+    doc.preferences.resident_limit += 1;
+    let third = super::sync::push_document_to_target(&conn, &runtime, &doc, true).unwrap();
+    assert!(third.synced);
+    assert!(!third.skipped_unchanged);
+
+    // Pulling reads the updated document and never leaks sync config inside the backup file
+    let pulled = super::sync::pull_document_from_target(&conn, &runtime).unwrap();
+    assert_eq!(pulled.preferences.resident_limit, doc.preferences.resident_limit);
+    let raw_file = std::fs::read_to_string(dir.path().join(super::sync::SYNC_FILE_NAME)).unwrap();
+    assert!(!raw_file.contains(&dir_str));
+}
+
+#[test]
+fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_http() {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::sync::{Arc, Mutex};
+
+    let (conn, doc) = setup();
+    crate::database::preferences_repo::initialize_preferences_table(&conn).unwrap();
+    let runtime = super::sync::SyncRuntime::default();
+
+    // Remote plain HTTP must be rejected; HTTPS and loopback HTTP are allowed
+    assert!(super::sync::validate_webdav_url("http://cloud.example.com/dav/").is_err());
+    assert!(super::sync::validate_webdav_url("https://user:pass@cloud.example.com/dav/").is_err());
+    let resolved = super::sync::resolve_webdav_file_url("https://cloud.example.com/dav/files/u")
+        .unwrap();
+    assert_eq!(
+        resolved.as_str(),
+        "https://cloud.example.com/dav/files/u/browser.veloce-backup.json"
+    );
+
+    // Test remember_secret = false (session-only) vs true (persisted in SQLite)
+    super::sync::save_config(
+        &conn,
+        &runtime,
+        super::sync::SyncTargetConfig::DirectWebdav {
+            endpoint_url: "https://cloud.example.com/dav".into(),
+            username: "alice".into(),
+            remember_secret: false,
+            auto_save: true,
+            apply_preferences_on_direct_pull: false,
+        },
+        Some("session-only-secret".into()),
+    )
+    .unwrap();
+    assert!(crate::database::preferences_repo::load(
+        &conn,
+        crate::database::preferences_repo::BACKUP_SYNC_SECRET_KEY
+    )
+    .unwrap()
+    .is_none());
+    assert_eq!(
+        super::sync::resolve_secret(&conn, &runtime).unwrap().as_deref(),
+        Some("session-only-secret")
+    );
+
+    // Enabling remember_secret persists the secret in SQLite
+    super::sync::save_config(
+        &conn,
+        &runtime,
+        super::sync::SyncTargetConfig::DirectWebdav {
+            endpoint_url: "https://cloud.example.com/dav".into(),
+            username: "alice".into(),
+            remember_secret: true,
+            auto_save: true,
+            apply_preferences_on_direct_pull: false,
+        },
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        crate::database::preferences_repo::load(
+            &conn,
+            crate::database::preferences_repo::BACKUP_SYNC_SECRET_KEY
+        )
+        .unwrap()
+        .as_deref(),
+        Some("session-only-secret")
+    );
+
+    // Local WebDAV test server for PUT + GET roundtrip
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let stored_body: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let stored_clone = stored_body.clone();
+
+    let server = std::thread::spawn(move || {
+        for _ in 0..2 {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut buf = Vec::new();
+            let mut header_end = None;
+            let mut temp = [0u8; 4096];
+            while header_end.is_none() {
+                let n = stream.read(&mut temp).unwrap();
+                if n == 0 {
+                    break;
+                }
+                buf.extend_from_slice(&temp[..n]);
+                header_end = buf.windows(4).position(|w| w == b"\r\n\r\n").map(|p| p + 4);
+            }
+            let header_end = header_end.unwrap();
+            let headers = String::from_utf8_lossy(&buf[..header_end]).to_string();
+            assert!(headers.to_lowercase().contains("authorization: basic "));
+            if headers.starts_with("PUT ") {
+                let content_len = headers
+                    .lines()
+                    .find_map(|line| {
+                        let lower = line.to_lowercase();
+                        lower
+                            .strip_prefix("content-length:")
+                            .and_then(|v| v.trim().parse::<usize>().ok())
+                    })
+                    .unwrap_or(0);
+                while buf.len() < header_end + content_len {
+                    let n = stream.read(&mut temp).unwrap();
+                    if n == 0 {
+                        break;
+                    }
+                    buf.extend_from_slice(&temp[..n]);
+                }
+                *stored_clone.lock().unwrap() = buf[header_end..header_end + content_len].to_vec();
+                stream
+                    .write_all(b"HTTP/1.1 201 Created\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    .unwrap();
+            } else if headers.starts_with("GET ") {
+                let payload = stored_clone.lock().unwrap().clone();
+                let resp = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    payload.len()
+                );
+                stream.write_all(resp.as_bytes()).unwrap();
+                stream.write_all(&payload).unwrap();
+            }
+        }
+    });
+
+    super::sync::save_config(
+        &conn,
+        &runtime,
+        super::sync::SyncTargetConfig::DirectWebdav {
+            endpoint_url: format!("http://{addr}/dav"),
+            username: "alice".into(),
+            remember_secret: false,
+            auto_save: true,
+            apply_preferences_on_direct_pull: true,
+        },
+        Some("secret-token".into()),
+    )
+    .unwrap();
+
+    let push_res = super::sync::push_document_to_target(&conn, &runtime, &doc, true).unwrap();
+    assert!(push_res.synced);
+
+    // Unchanged push is skipped without hitting network again
+    let skipped = super::sync::push_document_to_target(&conn, &runtime, &doc, true).unwrap();
+    assert!(skipped.skipped_unchanged);
+
+    let pulled = super::sync::pull_document_from_target(&conn, &runtime).unwrap();
+    assert_eq!(pulled.data.tabs.len(), doc.data.tabs.len());
+    server.join().unwrap();
+}

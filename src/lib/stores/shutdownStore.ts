@@ -2,6 +2,7 @@ import { get, writable } from "svelte/store";
 import { idleShutdown, fetchShutdown, onShutdown, prepareShutdown, confirmShutdown, cancelShutdown } from "../services/bridge/shutdown";
 import { setOverlayVisibility } from "../services/bridge/overlays";
 import { describeError, UserError } from "../services/user-errors.js";
+import { flushBackupSyncBeforeShutdown } from "./backupStore";
 import { noteWriter } from "./notesStore";
 import type { ShutdownState } from "../types/shutdown";
 
@@ -27,6 +28,7 @@ export async function retryShutdown() {
   shutdownBusy.set(true); shutdownError.set("");
   try {
     await noteWriter.flushAll();
+    await flushBackupSyncBeforeShutdown();
     const state = await prepareShutdown(attempt);
     apply(state);
     if (state.review && !state.review.tabs.length && !state.review.downloads.length && !state.review.native_downloads.length) {

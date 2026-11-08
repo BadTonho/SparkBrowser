@@ -213,6 +213,12 @@
           "markdownDescription": "Enables the choose_backup_file command without any pre-configured scope."
         },
         {
+          "description": "Enables the choose_backup_sync_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-choose-backup-sync-folder",
+          "markdownDescription": "Enables the choose_backup_sync_folder command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-all-downloads",
@@ -421,6 +427,12 @@
           "type": "string",
           "const": "allow-get-backup-pending-preferences",
           "markdownDescription": "Enables the get_backup_pending_preferences command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_backup_sync_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-backup-sync-state",
+          "markdownDescription": "Enables the get_backup_sync_state command without any pre-configured scope."
         },
         {
           "description": "Enables the get_bookmark_data command without any pre-configured scope.",
@@ -699,6 +711,18 @@
           "markdownDescription": "Enables the preview_backup_import command without any pre-configured scope."
         },
         {
+          "description": "Enables the pull_backup_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-pull-backup-sync",
+          "markdownDescription": "Enables the pull_backup_sync command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the push_backup_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-push-backup-sync",
+          "markdownDescription": "Enables the push_backup_sync command without any pre-configured scope."
+        },
+        {
           "description": "Enables the refresh_feed command without any pre-configured scope.",
           "type": "string",
           "const": "allow-refresh-feed",
@@ -841,6 +865,12 @@
           "type": "string",
           "const": "allow-set-auto-skip-ads",
           "markdownDescription": "Enables the set_auto_skip_ads command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_backup_sync_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-backup-sync-config",
+          "markdownDescription": "Enables the set_backup_sync_config command without any pre-configured scope."
         },
         {
           "description": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope.",
@@ -1137,6 +1167,12 @@
           "markdownDescription": "Denies the choose_backup_file command without any pre-configured scope."
         },
         {
+          "description": "Denies the choose_backup_sync_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-choose-backup-sync-folder",
+          "markdownDescription": "Denies the choose_backup_sync_folder command without any pre-configured scope."
+        },
+        {
           "description": "Denies the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "deny-clear-all-downloads",
@@ -1345,6 +1381,12 @@
           "type": "string",
           "const": "deny-get-backup-pending-preferences",
           "markdownDescription": "Denies the get_backup_pending_preferences command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_backup_sync_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-backup-sync-state",
+          "markdownDescription": "Denies the get_backup_sync_state command without any pre-configured scope."
         },
         {
           "description": "Denies the get_bookmark_data command without any pre-configured scope.",
@@ -1623,6 +1665,18 @@
           "markdownDescription": "Denies the preview_backup_import command without any pre-configured scope."
         },
         {
+          "description": "Denies the pull_backup_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-pull-backup-sync",
+          "markdownDescription": "Denies the pull_backup_sync command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the push_backup_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-push-backup-sync",
+          "markdownDescription": "Denies the push_backup_sync command without any pre-configured scope."
+        },
+        {
           "description": "Denies the refresh_feed command without any pre-configured scope.",
           "type": "string",
           "const": "deny-refresh-feed",
@@ -1765,6 +1819,12 @@
           "type": "string",
           "const": "deny-set-auto-skip-ads",
           "markdownDescription": "Denies the set_auto_skip_ads command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_backup_sync_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-backup-sync-config",
+          "markdownDescription": "Denies the set_backup_sync_config command without any pre-configured scope."
         },
         {
           "description": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope.",

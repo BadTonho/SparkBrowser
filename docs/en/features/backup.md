@@ -19,3 +19,19 @@ Current tabs keep their IDs, order and selection. The importer compares URL occu
 A preview is bound to the current data and preferences. If they change before confirmation, refresh the preview. Data and the optional preference task commit in one SQLite transaction. Preferences apply afterward; failures leave a persistent pending task and a retry button, including after restart. Retry applies preferences without importing data again. Complete a pending task before importing another set of preferences. Backup files and temporary exports are ignored by Git.
 
 Rust tests cover file roundtrip, invalid versions/references/size, atomic replacement, conflict rules, occurrence counts, ID/split mapping, transaction rollback and preference retry isolation. `npm run test:native -- --case backup` exercises actual commands, stale previews, hibernation, repeated import and persistence after restart. Native file selection uses the [Tauri dialog plugin](https://v2.tauri.app/plugin/dialog/) from Rust without granting its JavaScript file/dialog commands.
+
+## Isolated automatic sync (Folder & Direct WebDAV)
+
+Settings → Data & Backup also includes **Isolated Automatic Sync**, allowing users to keep `browser.veloce-backup.json` synchronized using their own storage with zero Veloce servers or developer cloud console accounts:
+
+1. **Synced folder mode (Google Drive, OneDrive, Mega, Dropbox, USB drive):**
+   - The user chooses a local directory via the native folder selector (`choose_backup_sync_folder`).
+   - When automatic saving is enabled, changes to bookmarks, workspaces, tabs, split layouts, notes, shortcuts or preferences write `browser.veloce-backup.json` atomically into the selected folder, as well as on browser shutdown and via **Sync now (Save)**.
+2. **Direct connection mode (WebDAV / Personal cloud):**
+   - The user configures an `https://` WebDAV URL (loopback `http://127.0.0.1` / `localhost` is permitted only for local testing), username and app password/token.
+   - Users can choose whether to **remember the password on this computer** (persisted locally in `app_preferences`) or keep it **only in memory for the current session**.
+   - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads (`PUT`) to the WebDAV target **only when changes occurred**, in addition to syncing on browser shutdown and via **Sync now (Save)**.
+3. **Two receive modes (`pull_backup_sync`):**
+   - **Fetch & review preview:** downloads/reads the backup and opens the standard review table before importing.
+   - **Fetch & apply directly (Auto-Merge):** validates and merges the backup immediately in a single step, optionally applying backup preferences when enabled.
+4. **Zero-leak boundary:** Sync folder paths, WebDAV endpoints and credentials are local-only settings and are never serialized into `BackupDocument`.

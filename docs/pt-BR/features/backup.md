@@ -19,3 +19,19 @@ As abas atuais mantêm IDs, ordem e seleção. O importador compara as contagens
 A prévia fica vinculada aos dados e preferências atuais. Se houver alterações antes da confirmação, atualize a prévia. Os dados e a tarefa opcional de preferências são confirmados em uma transação SQLite. Preferências são aplicadas depois; falhas deixam uma tarefa persistente e botão de nova tentativa, inclusive após reiniciar. A nova tentativa aplica preferências sem importar dados novamente. Conclua uma tarefa pendente antes de importar outro conjunto de preferências. Arquivos de backup e temporários são ignorados pelo Git.
 
 Testes Rust cobrem ida e volta do arquivo, versões/referências/tamanho inválidos, substituição atômica, conflitos, contagens de ocorrências, remapeamento de IDs/divisões, rollback e isolamento da nova tentativa de preferências. `npm run test:native -- --case backup` exercita comandos reais, prévia desatualizada, hibernação, importação repetida e persistência após reinício. A seleção nativa usa o [plugin de diálogos do Tauri](https://v2.tauri.app/plugin/dialog/) pelo Rust, sem conceder seus comandos JavaScript de arquivos/diálogos.
+
+## Sincronização automática isolada (Pasta e Conexão Direta WebDAV)
+
+Configurações → Dados e backup também inclui a **Sincronização automática isolada**, permitindo manter o arquivo `browser.veloce-backup.json` sincronizado no armazenamento do próprio usuário sem servidores do Veloce nem contas em consoles de nuvem de desenvolvedor:
+
+1. **Modo Pasta sincronizada (Google Drive, OneDrive, Mega, Dropbox, Pendrive):**
+   - O usuário escolhe um diretório local pelo seletor nativo de pastas (`choose_backup_sync_folder`).
+   - Com o salvamento automático ativo, alterações em favoritos, workspaces, abas, divisões, notas, atalhos ou preferências gravam atomicamente `browser.veloce-backup.json` na pasta escolhida a cada alteração, além de salvar ao fechar o navegador e pelo botão **Sincronizar agora (Salvar)**.
+2. **Modo Conexão direta (WebDAV / Nuvem própria):**
+   - O usuário informa uma URL WebDAV `https://` (`http://127.0.0.1` / `localhost` é aceito apenas para testes locais), usuário e senha de aplicativo ou token.
+   - O usuário pode escolher entre **lembrar a senha neste computador** (persistida localmente em `app_preferences`) ou mantê-la **apenas na memória durante a sessão atual**.
+   - Com o salvamento automático ativo, um ciclo de 1 minuto verifica o fingerprint SHA-256 em streaming dos dados e preferências atuais e envia (`PUT`) para o servidor WebDAV **apenas quando houver alterações**, além de sincronizar ao fechar o navegador e pelo botão **Sincronizar agora (Salvar)**.
+3. **Duas opções de recebimento (`pull_backup_sync`):**
+   - **Buscar e revisar prévia:** lê/baixa o backup e abre a tabela padrão de revisão antes de confirmar a importação.
+   - **Buscar e aplicar direto (Auto-Merge):** valida e mescla o backup imediatamente em um único passo, podendo aplicar também as preferências quando marcado.
+4. **Fronteira Zero-Leak:** Caminhos de pasta de sincronização, URLs WebDAV e credenciais são configurações estritamente locais e nunca são serializados dentro do `BackupDocument`.

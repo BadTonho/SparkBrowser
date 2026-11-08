@@ -15,6 +15,7 @@ pub struct PendingPreview {
 #[derive(Default)]
 pub struct BackupService {
     pub operation: tauri::async_runtime::Mutex<()>,
+    pub sync: super::sync::SyncRuntime,
     preview: Mutex<Option<PendingPreview>>,
     source: Mutex<Option<(String, Arc<BackupDocument>)>>,
 }
@@ -34,7 +35,7 @@ pub fn current_preferences(
     Ok(p)
 }
 /// Stream canonical serialization into a digest without retaining a second document.
-fn fingerprint(data: &BackupData, prefs: &BackupPreferences) -> Result<[u8; 32], String> {
+pub(crate) fn fingerprint(data: &BackupData, prefs: &BackupPreferences) -> Result<[u8; 32], String> {
     struct HashWriter(Sha256);
     impl std::io::Write for HashWriter {
         fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {

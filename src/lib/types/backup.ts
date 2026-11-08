@@ -25,3 +25,26 @@ export interface BackupConflict { kind: BackupKind; key: string; reason: "existi
 export interface BackupPreview { token: string; counts: Record<BackupKind, number>; added: Record<BackupKind, number>; skipped: BackupConflict[]; preferences: BackupPreferences; }
 export interface BackupPreferenceTask { id: string; preferences: BackupPreferences; error: string | null; }
 export interface BackupImportResult { added: Record<BackupKind, number>; skipped: BackupConflict[]; pending_preferences: BackupPreferenceTask | null; snapshot: TabSnapshot; workspaces: WorkspaceItem[]; }
+
+export type SyncTargetConfig =
+  | { mode: "disabled" }
+  | { mode: "folder"; directory_path: string; auto_save: boolean; apply_preferences_on_direct_pull: boolean }
+  | { mode: "direct_webdav"; endpoint_url: string; username: string; remember_secret: boolean; auto_save: boolean; apply_preferences_on_direct_pull: boolean };
+
+export interface SyncStateSnapshot {
+  config: SyncTargetConfig;
+  has_secret: boolean;
+  last_synced_at: number | null;
+  last_error: string | null;
+}
+
+export interface SyncPushResult {
+  synced: boolean;
+  skipped_unchanged: boolean;
+  last_synced_at: number | null;
+  state: SyncStateSnapshot;
+}
+
+export type SyncPullResponse =
+  | { kind: "preview"; source_token: string; preview: BackupPreview; state: SyncStateSnapshot }
+  | { kind: "imported"; result: BackupImportResult; state: SyncStateSnapshot };

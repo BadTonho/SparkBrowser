@@ -105,3 +105,88 @@ pub async fn discard_backup_import(app: AppHandle, source_token: String) -> Resu
     let _operation = service.operation.lock().await;
     service.discard(&source_token)
 }
+
+#[tauri::command]
+pub async fn get_backup_sync_state(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+) -> Result<backup::sync::SyncStateSnapshot, String> {
+    let service = app.state::<backup::service::BackupService>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+    backup::sync::snapshot(conn, &service.sync)
+}
+
+#[tauri::command]
+pub async fn choose_backup_sync_folder(
+    app: AppHandle,
+    auto_save: bool,
+    apply_preferences_on_direct_pull: bool,
+) -> Result<Option<backup::sync::SyncStateSnapshot>, String> {
+    let service = app.state::<backup::service::BackupService>();
+    let _operation = service.operation.lock().await;
+    let dialog_app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(folder) = dialog_app.dialog().file().blocking_pick_folder() else {
+            return Ok(None);
+        };
+        let path = folder.into_path().map_err(|e| e.to_string())?;
+        let directory_path = path.to_string_lossy().into_owned();
+        let state = dialog_app.state::<BrowserState>();
+        let service = dialog_app.state::<backup::service::BackupService>();
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+        let snap = backup::sync::save_config(
+            conn,
+            &service.sync,
+            backup::sync::SyncTargetConfig::Folder {
+                directory_path,
+                auto_save,
+                apply_preferences_on_direct_pull,
+            },
+            None,
+        )?;
+        Ok(Some(snap))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn set_backup_sync_config(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    config: backup::sync::SyncTargetConfig,
+    secret: Option<String>,
+) -> Result<backup::sync::SyncStateSnapshot, String> {
+    let service = app.state::<backup::service::BackupService>();
+    let _operation = service.operation.lock().await;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+    backup::sync::save_config(conn, &service.sync, config, secret)
+}
+
+#[tauri::command]
+pub async fn push_backup_sync(
+    app: AppHandle,
+    preferences: BackupPreferences,
+    only_if_changed: bool,
+) -> Result<backup::sync::SyncPushResult, String> {
+    backup::sync::push_sync(&app, preferences, only_if_changed).await
+}
+
+#[tauri::command]
+pub async fn pull_backup_sync(
+    app: AppHandle,
+    current_preferences: BackupPreferences,
+    direct_apply: bool,
+    apply_preferences_override: Option<bool>,
+) -> Result<backup::sync::SyncPullResponse, String> {
+    backup::sync::pull_sync(
+        &app,
+        current_preferences,
+        direct_apply,
+        apply_preferences_override,
+    )
+    .await
+}

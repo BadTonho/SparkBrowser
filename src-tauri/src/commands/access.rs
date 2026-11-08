@@ -43,6 +43,7 @@ pub fn shell_only(
                         | "confirm_shutdown"
                         | "cancel_shutdown"
                         | "save_page_note"
+                        | "push_backup_sync"
                         | "set_overlay_visibility"
                         | "set_tools_popover"
                         | "set_downloads_popover"

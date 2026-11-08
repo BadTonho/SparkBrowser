@@ -8,6 +8,10 @@ pub const SMART_SCREEN_KEY: &str = "smart_screen_enabled";
 pub const TRACKING_CLEANING_KEY: &str = "tracking_cleaning_v1";
 pub const GPC_KEY: &str = "global_privacy_control_v1";
 pub const SHIELD_EXCEPTIONS_KEY: &str = "shield_exceptions_v1";
+pub const BACKUP_SYNC_CONFIG_KEY: &str = "backup_sync_config_v1";
+pub const BACKUP_SYNC_SECRET_KEY: &str = "backup_sync_secret_v1";
+pub const BACKUP_SYNC_LAST_AT_KEY: &str = "backup_sync_last_at_v1";
+pub const BACKUP_SYNC_FINGERPRINT_KEY: &str = "backup_sync_fingerprint_v1";
 
 pub fn initialize_preferences_table(conn: &Connection) -> Result<(), String> {
     crate::database::migrations::apply(conn, "app-preferences-v1", |tx| {
@@ -39,6 +43,12 @@ pub fn store(conn: &Connection, key: &str, value: &str) -> Result<(), String> {
         params![key, value],
     )
     .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn remove(conn: &Connection, key: &str) -> Result<(), String> {
+    conn.execute("DELETE FROM app_preferences WHERE key = ?1", [key])
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 

@@ -1,14 +1,51 @@
 import { applyBackupZoom } from "../services/bridge/zoom";
 import { get, writable } from "svelte/store";
 import { isTauriRuntime } from "../services/bridge/runtime";
-import { chooseBackupFile, discardBackupImport, commitBackupImport, exportBackup, fetchPendingBackupPreferences, finishBackupPreferences, previewBackupImport } from "../services/bridge/backup";
+import {
+  chooseBackupFile,
+  chooseBackupSyncFolder,
+  commitBackupImport,
+  discardBackupImport,
+  exportBackup,
+  fetchBackupSyncState,
+  fetchPendingBackupPreferences,
+  finishBackupPreferences,
+  previewBackupImport,
+  pullBackupSync,
+  pushBackupSync,
+  saveBackupSyncConfig,
+} from "../services/bridge/backup";
 import { applyBackupPreferences, capturePreferences } from "../services/backup/preferences";
 import { describeError } from "../services/user-errors.js";
 import { noteWriter } from "./notesStore";
-import { applyTabsSnapshot } from "./browserStore";
+import { applyTabsSnapshot, tabs } from "./browserStore";
 import { workspaces } from "./workspaceStore";
-import { loadBookmarks } from "./persistenceStore";
-import type { BackupPreferenceTask, BackupPreview, BackupImportResult } from "../types/backup";
+import { bookmarkFolders, bookmarks, loadBookmarks } from "./persistenceStore";
+import { splitLayout } from "./splitViewStore";
+import {
+  askDownloadDestination,
+  autoHibernateMode,
+  defaultSearchEngine,
+  hibernationExemptions,
+  overlayBlurPx,
+  residentTabLimit,
+  showBookmarksBar,
+  tabLayout,
+  workspaceIsolation,
+  workspaceSwitcherDisplay,
+} from "./settingsStore";
+import { languagePreference } from "../i18n";
+import { keyboardShortcuts } from "./shortcutsStore";
+import { pipWindowShadow } from "./pipAppearanceStore";
+import { privacyStats } from "./privacyStore";
+import { updateState } from "./updatesStore";
+import type {
+  BackupImportResult,
+  BackupPreferenceTask,
+  BackupPreview,
+  SyncStateSnapshot,
+  SyncTargetConfig,
+} from "../types/backup";
 
 export const backupBusy = writable(false);
 export const backupError = writable("");
@@ -16,47 +53,274 @@ export const backupPreview = writable<BackupPreview | null>(null);
 export const backupResult = writable<BackupImportResult | null>(null);
 export const backupExported = writable(false);
 export const pendingBackupPreferences = writable<BackupPreferenceTask | null>(null);
+export const backupSyncState = writable<SyncStateSnapshot>({
+  config: { mode: "disabled" },
+  has_secret: false,
+  last_synced_at: null,
+  last_error: null,
+});
+export const backupSyncNotice = writable<"pushed" | "unchanged" | "config_saved" | "">("");
+
 let source: string | null = null;
+let folderAutoSaveTimer: ReturnType<typeof setTimeout> | undefined;
+let cloudMinuteInterval: ReturnType<typeof setInterval> | undefined;
+let autoSyncUnsubscribes: (() => void)[] = [];
+let hasPendingChangesForCloud = false;
+let autoSyncReady = false;
+
 async function action(work: () => Promise<void>): Promise<void> {
   if (get(backupBusy) || !isTauriRuntime()) return;
-  backupBusy.set(true); backupError.set("");
-  try { await work(); } catch (error) { backupError.set(describeError(error)); }
-  finally { backupBusy.set(false); }
-}
-export const saveBackup = () => action(async () => { await noteWriter.flushAll(); backupExported.set(await exportBackup(capturePreferences())); });
-export const selectBackup = () => action(async () => {
-  if (source) await discardBackupImport(source);
-  backupResult.set(null); backupPreview.set(null); source = null;
-  const document = await chooseBackupFile(); if (!document) return;
-  source = document; await createPreview();
-});
-async function createPreview(): Promise<void> {
-  if (!source) return;
-  await noteWriter.flushAll(); backupPreview.set(await previewBackupImport(source, capturePreferences()));
-}
-export const refreshBackupPreview = () => action(createPreview);
-async function applyPending(): Promise<void> {
-  const task = await fetchPendingBackupPreferences(); pendingBackupPreferences.set(task);
-  if (!task) return;
-  try { await applyBackupPreferences(task.preferences); await applyBackupZoom(task.id); await finishBackupPreferences(task.id, null); pendingBackupPreferences.set(null); }
-  catch (error) {
-    const detail = describeError(error); await finishBackupPreferences(task.id, detail);
-    pendingBackupPreferences.set({ ...task, error: detail }); throw error;
+  backupBusy.set(true);
+  backupError.set("");
+  backupSyncNotice.set("");
+  try {
+    await work();
+  } catch (error) {
+    backupError.set(describeError(error));
+  } finally {
+    backupBusy.set(false);
   }
 }
-export const retryBackupPreferences = () => action(applyPending);
-export const importBackup = (applyPreferences: boolean) => action(async () => {
-  const preview = get(backupPreview); if (!preview) return;
+
+export const saveBackup = () =>
+  action(async () => {
+    await noteWriter.flushAll();
+    backupExported.set(await exportBackup(capturePreferences()));
+  });
+
+export const selectBackup = () =>
+  action(async () => {
+    if (source) await discardBackupImport(source);
+    backupResult.set(null);
+    backupPreview.set(null);
+    source = null;
+    const document = await chooseBackupFile();
+    if (!document) return;
+    source = document;
+    await createPreview();
+  });
+
+async function createPreview(): Promise<void> {
+  if (!source) return;
   await noteWriter.flushAll();
-  const result = await commitBackupImport(preview.token, applyPreferences, capturePreferences());
-  // Import data is already committed, even if applying preferences or refreshing the UI fails.
-  backupResult.set(result); backupPreview.set(null); source = null;
-  workspaces.set(result.workspaces); applyTabsSnapshot(result.snapshot);
+  backupPreview.set(await previewBackupImport(source, capturePreferences()));
+}
+
+export const refreshBackupPreview = () => action(createPreview);
+
+async function applyPending(): Promise<void> {
+  const task = await fetchPendingBackupPreferences();
+  pendingBackupPreferences.set(task);
+  if (!task) return;
+  try {
+    await applyBackupPreferences(task.preferences);
+    await applyBackupZoom(task.id);
+    await finishBackupPreferences(task.id, null);
+    pendingBackupPreferences.set(null);
+  } catch (error) {
+    const detail = describeError(error);
+    await finishBackupPreferences(task.id, detail);
+    pendingBackupPreferences.set({ ...task, error: detail });
+    throw error;
+  }
+}
+
+export const retryBackupPreferences = () => action(applyPending);
+
+async function applyImportedResult(result: BackupImportResult): Promise<void> {
+  backupResult.set(result);
+  backupPreview.set(null);
+  source = null;
+  workspaces.set(result.workspaces);
+  applyTabsSnapshot(result.snapshot);
   pendingBackupPreferences.set(result.pending_preferences);
   await loadBookmarks();
   if (result.pending_preferences) await applyPending();
-});
-export function initializeBackupStatus(): void {
-  if (isTauriRuntime()) void fetchPendingBackupPreferences().then(value => pendingBackupPreferences.set(value)).catch(error => backupError.set(describeError(error)));
 }
-export function dismissBackupPreview(): void { const token = source; source = null; backupPreview.set(null); if (token) void discardBackupImport(token).catch(error => backupError.set(describeError(error))); }
+
+export const importBackup = (applyPreferences: boolean) =>
+  action(async () => {
+    const preview = get(backupPreview);
+    if (!preview) return;
+    await noteWriter.flushAll();
+    const result = await commitBackupImport(preview.token, applyPreferences, capturePreferences());
+    // Import data is already committed, even if applying preferences or refreshing the UI fails.
+    await applyImportedResult(result);
+  });
+
+export const pickBackupSyncFolder = (
+  autoSave = true,
+  applyPreferencesOnDirectPull = false
+) =>
+  action(async () => {
+    const snap = await chooseBackupSyncFolder(autoSave, applyPreferencesOnDirectPull);
+    if (!snap) return;
+    backupSyncState.set(snap);
+    backupSyncNotice.set("config_saved");
+    if (autoSave) {
+      await noteWriter.flushAll();
+      const pushed = await pushBackupSync(capturePreferences(), true);
+      backupSyncState.set(pushed.state);
+      hasPendingChangesForCloud = false;
+    }
+  });
+
+export const saveBackupSyncSettings = (
+  config: SyncTargetConfig,
+  secret: string | null = null
+) =>
+  action(async () => {
+    const snap = await saveBackupSyncConfig(config, secret);
+    backupSyncState.set(snap);
+    backupSyncNotice.set("config_saved");
+    if (config.mode !== "disabled" && config.auto_save) {
+      hasPendingChangesForCloud = true;
+      if (config.mode === "folder") {
+        scheduleFolderAutoSync();
+      }
+    }
+  });
+
+export const syncPushNow = () =>
+  action(async () => {
+    await noteWriter.flushAll();
+    const res = await pushBackupSync(capturePreferences(), false);
+    backupSyncState.set(res.state);
+    hasPendingChangesForCloud = false;
+    backupSyncNotice.set(res.skipped_unchanged ? "unchanged" : "pushed");
+  });
+
+export const syncPullPreview = () =>
+  action(async () => {
+    if (source) await discardBackupImport(source);
+    backupResult.set(null);
+    backupPreview.set(null);
+    source = null;
+    await noteWriter.flushAll();
+    const res = await pullBackupSync(capturePreferences(), false, null);
+    backupSyncState.set(res.state);
+    if (res.kind === "preview") {
+      source = res.source_token;
+      backupPreview.set(res.preview);
+    }
+  });
+
+export const syncPullDirect = (applyPreferencesOverride: boolean | null = null) =>
+  action(async () => {
+    if (source) await discardBackupImport(source);
+    backupResult.set(null);
+    backupPreview.set(null);
+    source = null;
+    await noteWriter.flushAll();
+    const res = await pullBackupSync(capturePreferences(), true, applyPreferencesOverride);
+    backupSyncState.set(res.state);
+    if (res.kind === "imported") {
+      hasPendingChangesForCloud = false;
+      await applyImportedResult(res.result);
+    }
+  });
+
+async function runBackgroundAutoSync(): Promise<void> {
+  if (!isTauriRuntime() || get(backupBusy)) return;
+  const current = get(backupSyncState).config;
+  if (current.mode === "disabled" || !current.auto_save) return;
+  try {
+    await noteWriter.flushAll();
+    const res = await pushBackupSync(capturePreferences(), true);
+    backupSyncState.set(res.state);
+    hasPendingChangesForCloud = false;
+  } catch (error) {
+    backupSyncState.update((s) => ({ ...s, last_error: describeError(error) }));
+  }
+}
+
+function scheduleFolderAutoSync(): void {
+  if (folderAutoSaveTimer) clearTimeout(folderAutoSaveTimer);
+  folderAutoSaveTimer = setTimeout(() => {
+    folderAutoSaveTimer = undefined;
+    const cfg = get(backupSyncState).config;
+    if (cfg.mode === "folder" && cfg.auto_save) {
+      void runBackgroundAutoSync();
+    }
+  }, 1000);
+}
+
+function notifyPersistentDataChanged(): void {
+  if (!autoSyncReady) return;
+  hasPendingChangesForCloud = true;
+  const cfg = get(backupSyncState).config;
+  if (cfg.mode === "folder" && cfg.auto_save) {
+    scheduleFolderAutoSync();
+  }
+}
+
+export async function flushBackupSyncBeforeShutdown(): Promise<void> {
+  if (!isTauriRuntime()) return;
+  if (folderAutoSaveTimer) {
+    clearTimeout(folderAutoSaveTimer);
+    folderAutoSaveTimer = undefined;
+  }
+  const cfg = get(backupSyncState).config;
+  if (cfg.mode === "disabled" || !cfg.auto_save) return;
+  try {
+    const res = await pushBackupSync(capturePreferences(), true);
+    backupSyncState.set(res.state);
+    hasPendingChangesForCloud = false;
+  } catch {
+    // Never block browser shutdown if the external folder or remote WebDAV server is unreachable.
+  }
+}
+
+export function initializeBackupStatus(): void {
+  if (!isTauriRuntime()) return;
+  void fetchPendingBackupPreferences()
+    .then((value) => pendingBackupPreferences.set(value))
+    .catch((error) => backupError.set(describeError(error)));
+
+  void fetchBackupSyncState()
+    .then((state) => {
+      backupSyncState.set(state);
+      autoSyncReady = true;
+    })
+    .catch((error) => backupError.set(describeError(error)));
+
+  for (const unsub of autoSyncUnsubscribes) unsub();
+  autoSyncUnsubscribes = [
+    bookmarks.subscribe(notifyPersistentDataChanged),
+    bookmarkFolders.subscribe(notifyPersistentDataChanged),
+    workspaces.subscribe(notifyPersistentDataChanged),
+    tabs.subscribe(notifyPersistentDataChanged),
+    splitLayout.subscribe(notifyPersistentDataChanged),
+    tabLayout.subscribe(notifyPersistentDataChanged),
+    showBookmarksBar.subscribe(notifyPersistentDataChanged),
+    overlayBlurPx.subscribe(notifyPersistentDataChanged),
+    workspaceSwitcherDisplay.subscribe(notifyPersistentDataChanged),
+    defaultSearchEngine.subscribe(notifyPersistentDataChanged),
+    autoHibernateMode.subscribe(notifyPersistentDataChanged),
+    residentTabLimit.subscribe(notifyPersistentDataChanged),
+    hibernationExemptions.subscribe(notifyPersistentDataChanged),
+    askDownloadDestination.subscribe(notifyPersistentDataChanged),
+    languagePreference.subscribe(notifyPersistentDataChanged),
+    keyboardShortcuts.subscribe(notifyPersistentDataChanged),
+    pipWindowShadow.subscribe(notifyPersistentDataChanged),
+    privacyStats.subscribe(notifyPersistentDataChanged),
+    updateState.subscribe(notifyPersistentDataChanged),
+    workspaceIsolation.subscribe(notifyPersistentDataChanged),
+  ];
+
+  if (cloudMinuteInterval) clearInterval(cloudMinuteInterval);
+  cloudMinuteInterval = setInterval(() => {
+    const cfg = get(backupSyncState).config;
+    if (cfg.mode === "direct_webdav" && cfg.auto_save && hasPendingChangesForCloud) {
+      void runBackgroundAutoSync();
+    }
+  }, 60_000);
+}
+
+export function dismissBackupPreview(): void {
+  const token = source;
+  source = null;
+  backupPreview.set(null);
+  if (token)
+    void discardBackupImport(token).catch((error) => backupError.set(describeError(error)));
+}

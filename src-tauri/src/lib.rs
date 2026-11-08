@@ -1,6 +1,8 @@
 use commands::backup::{
-    choose_backup_file, commit_backup_import, discard_backup_import, export_backup,
-    finish_backup_preferences, get_backup_pending_preferences, preview_backup_import,
+    choose_backup_file, choose_backup_sync_folder, commit_backup_import, discard_backup_import,
+    export_backup, finish_backup_preferences, get_backup_pending_preferences,
+    get_backup_sync_state, preview_backup_import, pull_backup_sync, push_backup_sync,
+    set_backup_sync_config,
 };
 use commands::account_containers::{get_account_containers, create_account_container, rename_account_container, delete_account_container, set_tab_account_container, create_container_tab};
 use commands::capture_probe::full_page_capture_probe;
@@ -350,6 +352,11 @@ pub fn run() {
             commit_backup_import,
             get_backup_pending_preferences,
             finish_backup_preferences,
+            get_backup_sync_state,
+            choose_backup_sync_folder,
+            set_backup_sync_config,
+            push_backup_sync,
+            pull_backup_sync,
             get_update_state,
             set_update_channel,
             check_for_updates,
