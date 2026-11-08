@@ -6,13 +6,22 @@ use super::{
 use base64::Engine;
 use std::{
     collections::HashMap,
-    sync::Mutex,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Mutex,
+    },
     time::Duration,
 };
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl};
 
 pub const GDRIVE_SYNC_WEBVIEW_LABEL: &str = "google-drive-sync-webview";
 const GDRIVE_ENTRY_URL: &str = "https://drive.google.com/drive/my-drive";
+
+static NEXT_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
+
+pub fn next_request_id() -> String {
+    format!("req-{}", NEXT_REQUEST_ID.fetch_add(1, Ordering::Relaxed))
+}
 
 pub struct PendingGDriveRequest {
     pub chunks: Vec<String>,
@@ -50,7 +59,7 @@ pub fn is_allowed_gdrive_host(url: &Url) -> bool {
         || lower.ends_with(".googleusercontent.com")
 }
 
-pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
+pub fn apply_bridge_navigation(runtime: &GDriveWebRuntime, nav_url: &Url) {
     if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("google-drive-sync") {
         return;
     }
@@ -60,12 +69,7 @@ pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
     ) else {
         return;
     };
-    let Some(service) = app.try_state::<BackupService>() else {
-        return;
-    };
-    let token_valid = service
-        .sync
-        .gdrive
+    let token_valid = runtime
         .bridge_token
         .lock()
         .ok()
@@ -79,7 +83,7 @@ pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
     match action {
         "status" => {
             if let Some(reason) = params.get("reason") {
-                if let Ok(mut status) = service.sync.gdrive.page_status.lock() {
+                if let Ok(mut status) = runtime.page_status.lock() {
                     *status = Some(reason.clone());
                 }
             }
@@ -91,7 +95,7 @@ pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
             let Some(payload) = params.get("payload") else {
                 return;
             };
-            if let Ok(mut pending) = service.sync.gdrive.pending.lock() {
+            if let Ok(mut pending) = runtime.pending.lock() {
                 if let Some(entry) = pending.get_mut(req_id) {
                     entry.chunks.push(payload.clone());
                 }
@@ -101,7 +105,7 @@ pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
             let Some(req_id) = params.get("request") else {
                 return;
             };
-            if let Ok(mut pending) = service.sync.gdrive.pending.lock() {
+            if let Ok(mut pending) = runtime.pending.lock() {
                 if let Some(mut entry) = pending.remove(req_id) {
                     let final_payload = if entry.chunks.is_empty() {
                         params.get("payload").cloned().unwrap_or_default()
@@ -125,7 +129,7 @@ pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
                 .get("data")
                 .cloned()
                 .unwrap_or_else(|| "backup.sync_network_failed".into());
-            if let Ok(mut pending) = service.sync.gdrive.pending.lock() {
+            if let Ok(mut pending) = runtime.pending.lock() {
                 if let Some(mut entry) = pending.remove(req_id) {
                     if let Some(tx) = entry.sender.take() {
                         let _ = tx.send(Err(err_msg));
@@ -135,6 +139,25 @@ pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
         }
         _ => {}
     }
+}
+
+pub fn handle_bridge_navigation(app: &AppHandle, nav_url: &Url) {
+    let Some(service) = app.try_state::<BackupService>() else {
+        return;
+    };
+    apply_bridge_navigation(&service.sync.gdrive, nav_url);
+}
+
+fn reset_gdrive_webview(app: &AppHandle, webview: &tauri::Webview) {
+    if let Some(service) = app.try_state::<BackupService>() {
+        if let Ok(mut status) = service.sync.gdrive.page_status.lock() {
+            *status = None;
+        }
+        if let Ok(mut token) = service.sync.gdrive.bridge_token.lock() {
+            *token = None;
+        }
+    }
+    let _ = webview.close();
 }
 
 fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, String), String> {
@@ -151,6 +174,7 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
         if !token.is_empty() {
             return Ok((existing, token));
         }
+        let _ = existing.close();
     }
 
     let main_window = app
@@ -185,24 +209,18 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
             handle_bridge_navigation(&app_for_nav, nav_url);
             return false;
         }
-        if nav_url.host_str() == Some("accounts.google.com") {
-            if let Some(svc) = app_for_nav.try_state::<BackupService>() {
-                if let Ok(mut status) = svc.sync.gdrive.page_status.lock() {
-                    *status = Some("login_required".into());
-                }
-            }
-        }
         is_allowed_gdrive_host(nav_url)
     });
 
+    // Position offscreen instead of calling hide() so WebView2 does not throttle background load
     let webview = main_window
         .add_child(
             builder,
-            LogicalPosition::new(0.0, 0.0),
-            LogicalSize::new(10.0, 10.0),
+            LogicalPosition::new(-10000.0, -10000.0),
+            LogicalSize::new(200.0, 200.0),
         )
         .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
-    let _ = webview.hide();
+    let _ = crate::security::harden(app, &webview, false);
     Ok((webview, token))
 }
 
@@ -210,7 +228,7 @@ async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, St
     let (webview, token) = ensure_hidden_gdrive_webview(app)?;
     let service = app.state::<BackupService>();
 
-    for _ in 0..50 {
+    for attempt in 0..75 {
         let status = service
             .sync
             .gdrive
@@ -221,14 +239,21 @@ async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, St
         match status.as_deref() {
             Some("ready") => return Ok((webview, token)),
             Some("login_required") => {
-                // Reload on next attempt in case user logs into Gmail in a tab
-                let _ = webview.close();
+                reset_gdrive_webview(app, &webview);
                 return Err("backup.sync_gdrive_login_required".into());
             }
-            _ => tokio::time::sleep(Duration::from_millis(200)).await,
+            _ => {
+                if attempt > 0 && attempt % 10 == 0 {
+                    if let Ok(encoded_token) = serde_json::to_string(&token) {
+                        let _ = webview.eval(&format!("window.__veloceGDrivePing?.({encoded_token});"));
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(200)).await;
+            }
         }
     }
-    Ok((webview, token))
+    reset_gdrive_webview(app, &webview);
+    Err("backup.sync_network_failed: Google Drive page did not finish loading".into())
 }
 
 pub async fn push_document_via_webview(
@@ -243,7 +268,7 @@ pub async fn push_document_via_webview(
     let b64_json = base64::engine::general_purpose::STANDARD.encode(&json_bytes);
     let (webview, token) = wait_until_webview_ready(app).await?;
 
-    let request_id = crate::window::webview_manager::create_internal_bridge_token();
+    let request_id = next_request_id();
     let (tx, rx) = tokio::sync::oneshot::channel();
     {
         let service = app.state::<BackupService>();
@@ -280,13 +305,14 @@ pub async fn push_document_via_webview(
                     pending.remove(&request_id);
                 }
             }
+            reset_gdrive_webview(app, &webview);
             "backup.sync_network_failed: Google Drive web session timed out".to_string()
         })?
         .map_err(|_| "backup.sync_network_failed".to_string())?;
 
     if let Err(err) = response {
         if err.starts_with("backup.sync_gdrive_login_required") {
-            let _ = webview.close();
+            reset_gdrive_webview(app, &webview);
         }
         return Err(err);
     }
@@ -296,7 +322,7 @@ pub async fn push_document_via_webview(
 pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument, String> {
     let (webview, token) = wait_until_webview_ready(app).await?;
 
-    let request_id = crate::window::webview_manager::create_internal_bridge_token();
+    let request_id = next_request_id();
     let (tx, rx) = tokio::sync::oneshot::channel();
     {
         let service = app.state::<BackupService>();
@@ -324,7 +350,7 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
         .eval(&script)
         .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
 
-    let b64_payload = tokio::time::timeout(Duration::from_secs(25), rx)
+    let response = tokio::time::timeout(Duration::from_secs(25), rx)
         .await
         .map_err(|_| {
             if let Some(service) = app.try_state::<BackupService>() {
@@ -332,9 +358,20 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
                     pending.remove(&request_id);
                 }
             }
+            reset_gdrive_webview(app, &webview);
             "backup.sync_network_failed: Google Drive web session timed out".to_string()
         })?
-        .map_err(|_| "backup.sync_network_failed".to_string())??;
+        .map_err(|_| "backup.sync_network_failed".to_string())?;
+
+    let b64_payload = match response {
+        Ok(payload) => payload,
+        Err(err) => {
+            if err.starts_with("backup.sync_gdrive_login_required") {
+                reset_gdrive_webview(app, &webview);
+            }
+            return Err(err);
+        }
+    };
 
     let decoded_bytes = base64::engine::general_purpose::STANDARD
         .decode(b64_payload.as_bytes())

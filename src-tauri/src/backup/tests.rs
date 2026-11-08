@@ -704,4 +704,47 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
     assert!(!super::gdrive_webview::is_allowed_gdrive_host(
         &url::Url::parse("https://evil.example.com/drive.google.com").unwrap()
     ));
+
+    let gdrive_rt = super::gdrive_webview::GDriveWebRuntime::default();
+    let token = crate::window::webview_manager::create_internal_bridge_token();
+    *gdrive_rt.bridge_token.lock().unwrap() = Some(token.clone());
+
+    super::gdrive_webview::apply_bridge_navigation(
+        &gdrive_rt,
+        &url::Url::parse(&format!(
+            "veloce-internal://google-drive-sync/status?token={token}&reason=ready"
+        ))
+        .unwrap(),
+    );
+    assert_eq!(
+        gdrive_rt.page_status.lock().unwrap().as_deref(),
+        Some("ready")
+    );
+
+    let req_id = super::gdrive_webview::next_request_id();
+    assert!(req_id.len() <= 24);
+    let (tx, mut rx) = tokio::sync::oneshot::channel();
+    gdrive_rt.pending.lock().unwrap().insert(
+        req_id.clone(),
+        super::gdrive_webview::PendingGDriveRequest {
+            chunks: Vec::new(),
+            sender: Some(tx),
+        },
+    );
+
+    super::gdrive_webview::apply_bridge_navigation(
+        &gdrive_rt,
+        &url::Url::parse(&format!(
+            "veloce-internal://google-drive-sync/chunk?token={token}&request={req_id}&value=0%3A2&payload=abc"
+        ))
+        .unwrap(),
+    );
+    super::gdrive_webview::apply_bridge_navigation(
+        &gdrive_rt,
+        &url::Url::parse(&format!(
+            "veloce-internal://google-drive-sync/complete?token={token}&request={req_id}&payload=def"
+        ))
+        .unwrap(),
+    );
+    assert_eq!(rx.try_recv().unwrap(), Ok("abcdef".to_string()));
 }
