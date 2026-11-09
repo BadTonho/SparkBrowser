@@ -19,7 +19,7 @@ Settings → Workspaces exposes **“Isolate workspace content”**. While it is
 
 ## Folder naming
 
-Workspace ids are never used as raw path components. Ids made of ASCII letters, digits, `-` and `_` up to 48 bytes are used verbatim in lowercase; every other id hashes to a 64-hex-digit `h-…` folder (SHA-256), so traversal sequences, separators and non-ASCII ids can neither escape the base directory nor collide with each other. Folders live under the application's local data directory in `webview-workspaces/<name>`.
+Only lowercase ASCII letters, digits, `-` and `_` up to 48 bytes, without a trailing `-` or a Windows device name, retain their legacy folder name. Every other id, including mixed-case ids, hashes in full to a 64-hex-digit `h-…` folder (SHA-256). Distinct case-sensitive database ids therefore remain distinct on both Windows and Linux. Existing lowercase workspace folders remain unchanged; unusual legacy mixed-case/device-name ids receive a separate profile and may require signing in again. Folders live under the application's local data directory in `webview-workspaces/<name>`.
 
 ## Costs and limits
 

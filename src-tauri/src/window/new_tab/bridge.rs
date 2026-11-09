@@ -292,10 +292,12 @@ pub(super) fn navigate(
             {
                 return Ok(());
             }
-            if crate::privacy::adblock_engine::site_is_protected(&state, target.as_str()) && crate::privacy::adblock_engine::should_block_url(
-                target.as_str(),
-                *state.shield_enabled.lock().map_err(|e| e.to_string())?,
-            ) {
+            if crate::privacy::adblock_engine::site_is_protected(&state, target.as_str())
+                && crate::privacy::adblock_engine::should_block_url(
+                    target.as_str(),
+                    *state.shield_enabled.lock().map_err(|e| e.to_string())?,
+                )
+            {
                 return Err("Navigation blocked".to_string());
             }
             // Select the originating pane under the same operation lock before navigation.

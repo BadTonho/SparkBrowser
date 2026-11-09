@@ -19,7 +19,7 @@ Configurações → Workspaces expõe **“Isolar conteúdo por workspace”**. 
 
 ## Nomenclatura das pastas
 
-Identificadores de workspace jamais são usados como componentes de caminho. Ids com letras ASCII, dígitos, `-` e `_` até 48 bytes são usados literalmente em minúsculas; qualquer outro id vira uma pasta `h-…` de 64 dígitos hexadecimais (SHA-256), de modo que sequências de travessia, separadores e ids não-ASCII nem escapem do diretório-base, nem colidam entre si. As pastas ficam no diretório local de dados do aplicativo, em `webview-workspaces/<nome>`.
+Somente letras ASCII minúsculas, dígitos, `-` e `_` até 48 bytes, sem `-` final ou nome de dispositivo do Windows, preservam o nome de pasta anterior. Os demais IDs, inclusive os que contêm maiúsculas, são integralmente transformados por SHA-256 em uma pasta `h-…` com 64 dígitos hexadecimais. Assim, IDs distintos por maiúsculas e minúsculas no banco permanecem separados no Windows e no Linux. Pastas existentes de workspaces com IDs minúsculos não mudam; IDs antigos incomuns com maiúsculas ou nomes de dispositivos recebem um perfil separado e podem exigir novo login. As pastas ficam no diretório local de dados do aplicativo em `webview-workspaces/<nome>`.
 
 ## Custos e limites
 

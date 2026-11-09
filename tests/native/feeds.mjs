@@ -8,6 +8,12 @@ export async function checkFeeds({ invoke, fixture, restart }) {
   assert.equal(entry.title, 'Fixture article');
   assert.equal(entry.url, `${fixture.origin}/page/feed-article`);
   assert.equal(entry.text, '<script>not executed</script>');
+  fixture.feed.body = '<feed><entry><title><![CDATA[Atom article]]></title><link rel="alternate" type="text/html" href="/page/feed-article"/><link rel="self" href="/api/article"/><link rel="enclosure" href="/audio"/><summary>CDATA <b>body</b></summary></entry></feed>';
+  await invoke('refresh_feed', { id: feed.id });
+  const [atom] = await invoke('get_feed_entries', { id: feed.id });
+  assert.equal(atom.title, 'Atom article');
+  assert.equal(atom.url, `${fixture.origin}/page/feed-article`);
+  assert.equal(atom.text, 'CDATA body');
   fixture.feed.invalid = true;
   await assert.rejects(invoke('refresh_feed', { id: feed.id }));
   assert.equal((await invoke('get_feed_entries', { id: feed.id })).length, 1);

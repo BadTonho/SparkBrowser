@@ -33,9 +33,17 @@ Configurações → Dados e backup também inclui a **Sincronização automátic
    - Com o salvamento automático ativo, alterações em favoritos, workspaces, abas, divisões, notas, atalhos ou preferências gravam atomicamente `browser.veloce-backup.json` na pasta escolhida a cada alteração, além de salvar ao fechar o navegador e pelo botão **Sincronizar agora (Salvar)**.
 3. **Modo Conexão direta (WebDAV / Nuvem própria):**
    - O usuário informa uma URL WebDAV `https://` (`http://127.0.0.1` / `localhost` é aceito apenas para testes locais), usuário e senha de aplicativo ou token.
-   - O usuário pode escolher entre **lembrar a senha neste computador** (persistida localmente em `app_preferences`) ou mantê-la **apenas na memória durante a sessão atual**.
+   - O usuário pode escolher entre **lembrar a senha neste computador** (Gerenciador de Credenciais do Windows ou Secret Service do Linux por meio de `secret-tool`) ou mantê-la **apenas na memória durante a sessão atual**.
    - Com o salvamento automático ativo, um ciclo de 1 minuto verifica o fingerprint SHA-256 em streaming dos dados e preferências atuais e envia (`PUT`) para o servidor WebDAV **apenas quando houver alterações**, além de sincronizar ao fechar o navegador e pelo botão **Sincronizar agora (Salvar)**.
 4. **Duas opções de recebimento (`pull_backup_sync`):**
    - **Buscar e revisar prévia:** lê/baixa o backup e abre a tabela padrão de revisão antes de confirmar a importação.
    - **Buscar e aplicar direto (Auto-Merge):** valida e mescla o backup imediatamente em um único passo, podendo aplicar também as preferências quando marcado.
 5. **Fronteira Zero-Leak:** Caminhos de pasta de sincronização, URLs WebDAV e credenciais são configurações estritamente locais e nunca são serializados dentro do `BackupDocument`.
+
+## Segurança da importação e das contas
+
+A importação preserva todas as abas existentes em memória, inclusive descartáveis, sua ordem, seleção ativa, participação em divisão e identidade de container de conta. As identidades existentes são preservadas na transação SQLite; abas importadas usam a identidade padrão porque backups não incluem dados de containers de conta.
+
+A sincronização com o Drive exige o fluxo explícito **Escolher / Trocar conta Google**. Ela vincula o perfil persistente e o índice de conta selecionados e verifica o e-mail detectado antes da transferência. Abas descartáveis e outros perfis ativos nunca são alternativas. Se o perfil escolhido não tiver uma aba residente no Windows, reabra uma aba nesse perfil. Instalações existentes precisam escolher a conta Google uma vez após a atualização.
+
+Senhas WebDAV lembradas não entram em novos valores de preferências SQLite. No Linux, é necessário `secret-tool` (pacote `libsecret-tools` no Debian/Ubuntu) e um provedor de Secret Service desbloqueado. Falhas são informadas sem recorrer a texto simples. Senhas antigas no SQLite são removidas com exclusão segura ativada e migradas para o cofre do sistema na inicialização; se a migração falhar, permanecem somente na memória do processo durante essa sessão. Cópias históricas do banco e backups não podem ser apagados por essa migração. Alterar o servidor WebDAV ou o usuário não reutiliza a senha do destino anterior.

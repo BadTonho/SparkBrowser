@@ -15,26 +15,65 @@ pub fn popup_target_allowed(enabled: bool, url: &tauri::Url) -> bool {
 
 /// Opens an authenticated user-selected link without activating the new tab.
 pub fn open_user_link(app: AppHandle, source_tab: String, generation: String, url: tauri::Url) {
-    if !popup_target_allowed(true, &url) { return; }
+    if !popup_target_allowed(true, &url) {
+        return;
+    }
     tauri::async_runtime::spawn(async move {
         let state = app.state::<BrowserState>();
         let _operation = state.tab_operations.lock().await;
         let label = crate::state::tab_model::webview_label_for_tab(&source_tab);
-        if !crate::window::navigation_state::is_current_generation(&app, &label, &generation) { return; }
-        let source = state.tabs.lock().ok().and_then(|tabs| tabs.iter().find(|tab| tab.id == source_tab).cloned());
-        let Some(source) = source else { return; };
+        if !crate::window::navigation_state::is_current_generation(&app, &label, &generation) {
+            return;
+        }
+        let source = state
+            .tabs
+            .lock()
+            .ok()
+            .and_then(|tabs| tabs.iter().find(|tab| tab.id == source_tab).cloned());
+        let Some(source) = source else {
+            return;
+        };
         let shield = state.shield_enabled.lock().map(|v| *v).unwrap_or(true);
-        if crate::privacy::adblock_engine::site_is_protected(&state, url.as_str()) && crate::privacy::adblock_engine::should_block_url(url.as_str(), shield) { return; }
-        let id = match state.next_tab_counter.lock() { Ok(mut next) => { let id = format!("tab-{}", *next); *next += 1; id }, Err(_) => return };
+        if crate::privacy::adblock_engine::site_is_protected(&state, url.as_str())
+            && crate::privacy::adblock_engine::should_block_url(url.as_str(), shield)
+        {
+            return;
+        }
+        let id = match state.next_tab_counter.lock() {
+            Ok(mut next) => {
+                let id = format!("tab-{}", *next);
+                *next += 1;
+                id
+            }
+            Err(_) => return,
+        };
         let result = TabCheckpoint::commit(&state, || {
-            let mut tab = if source.is_ephemeral { TabInfo::new_ephemeral(id.clone(), url.to_string(), source.workspace_id.clone(), false) }
-                else { TabInfo::new(id.clone(), url.to_string(), source.workspace_id.clone(), false) };
-            if !source.is_ephemeral { tab.container_id = source.container_id.clone(); }
+            let mut tab = if source.is_ephemeral {
+                TabInfo::new_ephemeral(
+                    id.clone(),
+                    url.to_string(),
+                    source.workspace_id.clone(),
+                    false,
+                )
+            } else {
+                TabInfo::new(
+                    id.clone(),
+                    url.to_string(),
+                    source.workspace_id.clone(),
+                    false,
+                )
+            };
+            if !source.is_ephemeral {
+                tab.container_id = source.container_id.clone();
+            }
             tab.is_hibernated = true;
             state.tabs.lock().map_err(|e| e.to_string())?.push(tab);
             Ok(())
         });
-        if result.is_ok() { reconcile_committed(&app, &state); let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet()); }
+        if result.is_ok() {
+            reconcile_committed(&app, &state);
+            let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+        }
     });
 }
 
@@ -63,9 +102,24 @@ pub fn open_popup_url(app: AppHandle, source_tab: String, generation: String, ur
         ) {
             return;
         }
-        let source = state.tabs.lock().ok().and_then(|tabs| tabs.iter().find(|tab| tab.id == source_tab).cloned());
+        let source = state
+            .tabs
+            .lock()
+            .ok()
+            .and_then(|tabs| tabs.iter().find(|tab| tab.id == source_tab).cloned());
         if let Some(source) = source {
-            let _ = create_tab_inner_ext(&app, &state, Some(url.to_string()), None, None, source.is_ephemeral, source.container_id, Some(source.workspace_id));
+            let _ = create_tab_inner_ext(
+                &app,
+                &state,
+                Some(url.to_string()),
+                None,
+                None,
+                TabProfile {
+                    is_ephemeral: source.is_ephemeral,
+                    container_id: source.container_id,
+                    workspace_id: Some(source.workspace_id),
+                },
+            );
         }
     });
 }
@@ -164,7 +218,17 @@ pub async fn create_ephemeral_tab(
 ) -> Result<TabSnapshot, String> {
     let mut span = state.diagnostics.span("tabs.create_ephemeral");
     let _operation = state.tab_operations.lock().await;
-    let result = create_tab_inner_ext(&app, &state, url, search_engine, None, true, None, None);
+    let result = create_tab_inner_ext(
+        &app,
+        &state,
+        url,
+        search_engine,
+        None,
+        TabProfile {
+            is_ephemeral: true,
+            ..Default::default()
+        },
+    );
     span.finish(result.is_ok(), 0);
     result
 }
@@ -176,7 +240,14 @@ pub(super) fn create_tab_inner(
     search_engine: Option<String>,
     side: Option<crate::state::split_docking::DockSide>,
 ) -> Result<TabSnapshot, String> {
-    create_tab_inner_ext(app, state, url, search_engine, side, false, None, None)
+    create_tab_inner_ext(app, state, url, search_engine, side, TabProfile::default())
+}
+
+#[derive(Default)]
+pub(super) struct TabProfile {
+    pub is_ephemeral: bool,
+    pub container_id: Option<String>,
+    pub workspace_id: Option<String>,
 }
 
 pub(super) fn create_tab_inner_ext(
@@ -185,10 +256,13 @@ pub(super) fn create_tab_inner_ext(
     url: Option<String>,
     search_engine: Option<String>,
     side: Option<crate::state::split_docking::DockSide>,
-    is_ephemeral: bool,
-    container_id: Option<String>,
-    workspace_id: Option<String>,
+    profile: TabProfile,
 ) -> Result<TabSnapshot, String> {
+    let TabProfile {
+        is_ephemeral,
+        container_id,
+        workspace_id,
+    } = profile;
     let raw_target = url.unwrap_or_else(|| DEFAULT_HOME_URL.to_string());
     let resolved_url = crate::window::url_input::resolve_browser_input(
         app,
@@ -197,7 +271,9 @@ pub(super) fn create_tab_inner_ext(
     )?
     .to_string();
     let shield_enabled = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
-    if crate::privacy::adblock_engine::site_is_protected(state, &resolved_url) && crate::privacy::adblock_engine::should_block_url(&resolved_url, shield_enabled) {
+    if crate::privacy::adblock_engine::site_is_protected(state, &resolved_url)
+        && crate::privacy::adblock_engine::should_block_url(&resolved_url, shield_enabled)
+    {
         return Err("Navigation blocked by the privacy shield".to_string());
     }
 
@@ -208,11 +284,13 @@ pub(super) fn create_tab_inner_ext(
         id
     };
 
-    let active_ws_id = workspace_id.unwrap_or_else(|| state
-        .active_workspace_id
-        .lock()
-        .map(|ws| ws.clone())
-        .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string()));
+    let active_ws_id = workspace_id.unwrap_or_else(|| {
+        state
+            .active_workspace_id
+            .lock()
+            .map(|ws| ws.clone())
+            .unwrap_or_else(|_| DEFAULT_WORKSPACE_ID.to_string())
+    });
 
     TabCheckpoint::commit_with_activation(state, Some((&new_tab_id, true)), || {
         let mut tab_info = if is_ephemeral {
@@ -220,7 +298,9 @@ pub(super) fn create_tab_inner_ext(
         } else {
             TabInfo::new(new_tab_id.clone(), resolved_url.clone(), active_ws_id, true)
         };
-        if !is_ephemeral { tab_info.container_id = container_id; }
+        if !is_ephemeral {
+            tab_info.container_id = container_id;
+        }
         state.tabs.lock().map_err(|e| e.to_string())?.push(tab_info);
         if let Some(side) = side {
             if let Some(layout) = state
@@ -273,7 +353,9 @@ pub(super) fn switch_tab_inner(
         .map_err(|e| e.to_string())?
         .clone();
     if previous_active_id != tab_id {
-        if let Some(label) = crate::window::fullscreen::active(app) { crate::window::fullscreen::exit(app, &label, true); }
+        if let Some(label) = crate::window::fullscreen::active(app) {
+            crate::window::fullscreen::exit(app, &label, true);
+        }
     }
     let activation = (previous_active_id != tab_id).then_some((tab_id.as_str(), false));
     let active_url = TabCheckpoint::commit_with_activation(state, activation, || {
@@ -656,7 +738,11 @@ pub async fn set_tab_pinned(
 /// A committed session remains authoritative if native reconciliation fails.
 pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
     if let Some(owner) = crate::window::fullscreen::active(app) {
-        let selected = state.active_tab_id.lock().ok().map(|id| crate::state::tab_model::webview_label_for_tab(&id));
+        let selected = state
+            .active_tab_id
+            .lock()
+            .ok()
+            .map(|id| crate::state::tab_model::webview_label_for_tab(&id));
         if selected.as_deref() != Some(owner.as_str()) {
             crate::window::fullscreen::exit(app, &owner, true);
         }

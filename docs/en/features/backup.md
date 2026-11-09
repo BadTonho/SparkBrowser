@@ -33,9 +33,17 @@ Settings → Data & Backup also includes **Isolated Automatic Sync**, allowing u
    - When automatic saving is enabled, changes to bookmarks, workspaces, tabs, split layouts, notes, shortcuts or preferences write `browser.veloce-backup.json` atomically into the selected folder, as well as on browser shutdown and via **Sync now (Save)**.
 3. **Direct connection mode (WebDAV / Personal cloud):**
    - The user configures an `https://` WebDAV URL (loopback `http://127.0.0.1` / `localhost` is permitted only for local testing), username and app password/token.
-   - Users can choose whether to **remember the password on this computer** (persisted locally in `app_preferences`) or keep it **only in memory for the current session**.
+   - Users can choose whether to **remember the password on this computer** (Windows Credential Manager or the Linux Secret Service through `secret-tool`) or keep it **only in memory for the current session**.
    - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads (`PUT`) to the WebDAV target **only when changes occurred**, in addition to syncing on browser shutdown and via **Sync now (Save)**.
 4. **Two receive modes (`pull_backup_sync`):**
    - **Fetch & review preview:** downloads/reads the backup and opens the standard review table before importing.
    - **Fetch & apply directly (Auto-Merge):** validates and merges the backup immediately in a single step, optionally applying backup preferences when enabled.
 5. **Zero-leak boundary:** Sync folder paths, WebDAV endpoints and credentials are local-only settings and are never serialized into `BackupDocument`.
+
+## Import and account safety
+
+Import preserves all existing live tabs, including disposable tabs, their order, active selection, split membership and account-container identity. Existing identities remain intact in the SQLite transaction; imported tabs use the default identity because backups exclude account-container data.
+
+Drive synchronization requires the explicit **Choose / Switch Google account** flow. It binds the selected persistent profile and account index and verifies the detected email before transfer. Disposable tabs and unrelated active profiles are never fallbacks. If the chosen profile has no resident tab on Windows, reopen a tab in that profile. Existing installations must choose their Google account once after upgrading.
+
+Remembered WebDAV passwords never enter new SQLite preference values. Linux requires `secret-tool` (the `libsecret-tools` package on Debian/Ubuntu) and an unlocked Secret Service provider. Storage errors are reported without plaintext fallback. Legacy SQLite passwords are removed with secure deletion enabled and migrated to the system store on startup; if migration fails, they remain only in process memory for that session. Historical database copies and backups cannot be erased by this migration. Changing the WebDAV server or username does not reuse the previous target's password.

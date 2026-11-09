@@ -1,5 +1,6 @@
 //! Local RSS/Atom subscriptions. Feed content is stored and rendered as text.
-use quick_xml::{events::Event, Reader};
+mod parser;
+use parser::parse;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -115,126 +116,62 @@ pub fn entries(conn: &Connection, id: i64) -> Result<Vec<Entry>, String> {
         .map_err(|e| e.to_string())?;
     rows.collect::<Result<_, _>>().map_err(|e| e.to_string())
 }
-fn parse(xml: &str, base: &str) -> Result<Vec<Entry>, String> {
-    let base = url::Url::parse(base).map_err(|_| "feeds.invalid_url")?;
-    let mut reader = Reader::from_str(xml);
-    reader.config_mut().trim_text(true);
-    let mut result = Vec::new();
-    let mut current: Option<Entry> = None;
-    let mut field = String::new();
-    let mut format = false;
-    let mut depth = 0usize;
-    loop {
-        match reader.read_event().map_err(|_| "feeds.invalid_xml")? {
-            Event::Start(e) => {
-                depth += 1;
-                if depth > 64 {
-                    return Err("feeds.invalid_xml".into());
-                }
-                let name = e.local_name().as_ref().to_ascii_lowercase();
-                if matches!(name.as_str(), "rss" | "feed" | "rdf") {
-                    format = true;
-                }
-                if matches!(name.as_str(), "item" | "entry") {
-                    current = Some(Entry::default());
-                }
-                if current.is_some() && name == "link" {
-                    for attr in e.attributes().flatten() {
-                        if attr.key.as_ref() == "href" {
-                            current.as_mut().unwrap().url = attr
-                                .normalized_value(quick_xml::XmlVersion::Implicit1_0)
-                                .map_err(|_| "feeds.invalid_xml")?
-                                .into_owned();
-                        }
-                    }
-                }
-                field = name;
-            }
-            Event::Empty(e) => {
-                if matches!(e.local_name().as_ref(), "rss" | "feed" | "RDF") {
-                    format = true;
-                }
-                if current.is_some() && e.local_name().as_ref() == "link" {
-                    for attr in e.attributes().flatten() {
-                        if attr.key.as_ref() == "href" {
-                            current.as_mut().unwrap().url = attr
-                                .normalized_value(quick_xml::XmlVersion::Implicit1_0)
-                                .map_err(|_| "feeds.invalid_xml")?
-                                .into_owned();
-                        }
-                    }
-                }
-            }
-            Event::Text(e) => {
-                if let Some(entry) = &mut current {
-                    let text =
-                        quick_xml::escape::unescape(e.as_ref()).map_err(|_| "feeds.invalid_xml")?;
-                    match field.as_str() {
-                        "title" => entry.title.push_str(&text),
-                        "link" => entry.url.push_str(&text),
-                        "description" | "summary" | "content" => entry.text.push_str(&text),
-                        _ => {}
-                    }
-                }
-            }
-            Event::GeneralRef(e) => {
-                if let Some(entry) = &mut current {
-                    let encoded = format!("&{};", e.as_ref());
-                    let text =
-                        quick_xml::escape::unescape(&encoded).map_err(|_| "feeds.invalid_xml")?;
-                    match field.as_str() {
-                        "title" => entry.title.push_str(&text),
-                        "link" => entry.url.push_str(&text),
-                        "description" | "summary" | "content" => entry.text.push_str(&text),
-                        _ => {}
-                    }
-                }
-            }
-            Event::CData(e) => {
-                if let Some(entry) = &mut current {
-                    if matches!(field.as_str(), "description" | "summary" | "content") {
-                        entry.text.push_str(e.as_ref());
-                    }
-                }
-            }
-            Event::End(e) => {
-                depth = depth.checked_sub(1).ok_or("feeds.invalid_xml")?;
-                let name = e.local_name().as_ref().to_ascii_lowercase();
-                if matches!(name.as_str(), "item" | "entry") {
-                    if let Some(mut entry) = current.take() {
-                        if let Ok(link) = base.join(entry.url.trim()) {
-                            if matches!(link.scheme(), "http" | "https")
-                                && link.username().is_empty()
-                                && link.password().is_none()
-                                && !entry.url.trim().is_empty()
-                            {
-                                entry.url = link.to_string();
-                                entry.title = entry.title.chars().take(500).collect();
-                                entry.text = entry.text.chars().take(20_000).collect();
-                                result.push(entry);
-                            }
-                        }
-                    }
-                }
-                field.clear();
-            }
-            Event::DocType(_) => return Err("feeds.unsupported_xml".into()),
-            Event::Eof => {
-                if depth != 0 {
-                    return Err("feeds.invalid_xml".into());
-                }
-                break;
-            }
-            _ => {}
+
+const REFRESH_CONCURRENCY: usize = 4;
+static REFRESHING: std::sync::Mutex<std::collections::BTreeSet<i64>> =
+    std::sync::Mutex::new(std::collections::BTreeSet::new());
+struct RefreshPermit(i64);
+impl RefreshPermit {
+    fn acquire(id: i64) -> Result<Self, String> {
+        let mut active = REFRESHING.lock().map_err(|_| "feeds.busy")?;
+        if active.len() >= REFRESH_CONCURRENCY || !active.insert(id) {
+            return Err("feeds.busy".into());
+        }
+        Ok(Self(id))
+    }
+}
+impl Drop for RefreshPermit {
+    fn drop(&mut self) {
+        if let Ok(mut active) = REFRESHING.lock() {
+            active.remove(&self.0);
         }
     }
-    if !format {
-        return Err("feeds.invalid_format".into());
-    }
-    result.truncate(200);
-    Ok(result)
 }
+fn shared_client() -> Result<&'static reqwest::blocking::Client, String> {
+    static CLIENT: std::sync::OnceLock<Result<reqwest::blocking::Client, String>> =
+        std::sync::OnceLock::new();
+    CLIENT
+        .get_or_init(|| {
+            reqwest::blocking::Client::builder()
+                .connect_timeout(Duration::from_secs(10))
+                .timeout(Duration::from_secs(25))
+                .redirect(reqwest::redirect::Policy::limited(5))
+                .build()
+                .map_err(|_| "feeds.network_error".into())
+        })
+        .as_ref()
+        .map_err(Clone::clone)
+}
+fn refresh_batch(ids: &[i64], refresh: impl Fn(i64) + Sync) {
+    // Four long-lived workers per batch; a slow feed never serializes the rest.
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        for _ in 0..REFRESH_CONCURRENCY.min(ids.len()) {
+            let refresh = &refresh;
+            let next = &next;
+            scope.spawn(move || {
+                while let Some(id) =
+                    ids.get(next.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+                {
+                    refresh(*id);
+                }
+            });
+        }
+    });
+}
+
 pub fn refresh(app: &AppHandle, id: i64) -> Result<(), String> {
+    let _permit = RefreshPermit::acquire(id)?;
     let state = app.state::<crate::state::browser_state::BrowserState>();
     let feed = {
         let db = state.db.lock().map_err(|e| e.to_string())?;
@@ -244,12 +181,7 @@ pub fn refresh(app: &AppHandle, id: i64) -> Result<(), String> {
             .ok_or("feeds.not_found")?
     };
     let result = (|| {
-        let client = reqwest::blocking::Client::builder()
-            .connect_timeout(Duration::from_secs(10))
-            .timeout(Duration::from_secs(25))
-            .redirect(reqwest::redirect::Policy::limited(5))
-            .build()
-            .map_err(|_| "feeds.network_error")?;
+        let client = shared_client()?;
         let response = client
             .get(&feed.url)
             .send()
@@ -309,9 +241,9 @@ pub fn refresh(app: &AppHandle, id: i64) -> Result<(), String> {
 pub fn start(app: AppHandle) {
     std::thread::spawn(move || loop {
         let ids = app.try_state::<crate::state::browser_state::BrowserState>().and_then(|state| state.db.lock().ok().and_then(|db| db.as_ref().and_then(|c| c.prepare("SELECT id FROM rss_feeds WHERE next_update<=?1 ORDER BY next_update LIMIT 20").ok().and_then(|mut s| s.query_map([now()], |row| row.get::<_,i64>(0)).ok().map(|rows| rows.filter_map(Result::ok).collect::<Vec<_>>()))))).unwrap_or_default();
-        for id in ids {
+        refresh_batch(&ids, |id| {
             let _ = refresh(&app, id);
-        }
+        });
         std::thread::sleep(Duration::from_secs(60));
     });
 }
@@ -319,6 +251,33 @@ pub fn start(app: AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn refresh_workers_run_concurrently_with_a_fixed_limit_and_reuse_connections() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let running = AtomicUsize::new(0);
+        let peak = AtomicUsize::new(0);
+        let total = AtomicUsize::new(0);
+        let first_wave = std::sync::Barrier::new(REFRESH_CONCURRENCY);
+        refresh_batch(&(0..12).collect::<Vec<_>>(), |id| {
+            let current = running.fetch_add(1, Ordering::SeqCst) + 1;
+            peak.fetch_max(current, Ordering::SeqCst);
+            if id < REFRESH_CONCURRENCY as i64 {
+                first_wave.wait();
+            }
+            total.fetch_add(1, Ordering::SeqCst);
+            running.fetch_sub(1, Ordering::SeqCst);
+        });
+        assert_eq!(total.load(Ordering::SeqCst), 12);
+        assert_eq!(peak.load(Ordering::SeqCst), REFRESH_CONCURRENCY);
+        assert!(std::ptr::eq(
+            shared_client().unwrap(),
+            shared_client().unwrap()
+        ));
+        let permit = RefreshPermit::acquire(-100).unwrap();
+        assert!(RefreshPermit::acquire(-100).is_err());
+        drop(permit);
+        assert!(RefreshPermit::acquire(-100).is_ok());
+    }
     #[test]
     fn parses_rss_atom_and_rejects_unsafe_xml() {
         let rss = parse("<rss><channel><item><title>News</title><link>/news</link><description>&lt;script&gt;bad&lt;/script&gt;</description></item></channel></rss>", "https://example.test/feed").unwrap();

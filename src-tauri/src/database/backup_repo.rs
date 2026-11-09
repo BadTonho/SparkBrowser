@@ -155,10 +155,24 @@ pub fn commit(
             }
         }
     }
-    super::session_repo::save_session_tabs(
-        &tx,
-        &merged.tabs.iter().map(BackupTab::tab).collect::<Vec<_>>(),
-    )?;
+    // Backup documents intentionally omit identities. Existing local tabs must
+    // keep theirs in this same transaction, including after an immediate crash.
+    let local: std::collections::HashMap<_, _> = super::session_repo::load_session_tabs(&tx)?
+        .into_iter()
+        .map(|tab| (tab.id.clone(), tab))
+        .collect();
+    let tabs: Vec<_> = merged
+        .tabs
+        .iter()
+        .map(|row| {
+            let mut tab = row.tab();
+            if let Some(existing) = local.get(&row.id) {
+                tab.container_id = existing.container_id.clone();
+            }
+            tab
+        })
+        .collect();
+    super::session_repo::save_session_tabs(&tx, &tabs)?;
     super::split_repo::save(
         &tx,
         &merged

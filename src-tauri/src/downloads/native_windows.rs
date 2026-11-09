@@ -1,4 +1,7 @@
-use super::{files, manager::DownloadManager};
+use super::{
+    files,
+    manager::{DownloadManager, Registration},
+};
 use crate::state::browser_state::BrowserState;
 use std::{
     cell::RefCell,
@@ -86,17 +89,27 @@ fn state_changed(
     Ok(())
 }
 
-fn start_native_download(
-    app: &AppHandle,
-    label: &str,
-    tab_id: &str,
-    token: &str,
-    args: &ICoreWebView2DownloadStartingEventArgs,
+struct NativeDownloadStart<'a> {
+    label: &'a str,
+    tab_id: &'a str,
+    token: &'a str,
+    args: &'a ICoreWebView2DownloadStartingEventArgs,
     operation: ICoreWebView2DownloadOperation,
     url: String,
     parsed: tauri::Url,
     target: Option<std::path::PathBuf>,
-) -> Result<(), String> {
+}
+fn start_native_download(app: &AppHandle, start: NativeDownloadStart<'_>) -> Result<(), String> {
+    let NativeDownloadStart {
+        label,
+        tab_id,
+        token,
+        args,
+        operation,
+        url,
+        parsed,
+        target,
+    } = start;
     if !matches!(parsed.scheme(), "http" | "https" | "blob")
         || !parsed.username().is_empty()
         || parsed.password().is_some()
@@ -119,12 +132,14 @@ fn start_native_download(
         .map_err(|_| "downloads.slots_busy")?;
     let task = manager.register(
         app,
-        tab_id.to_owned(),
-        url,
-        super::transfer::file_name(&parsed),
-        true,
-        target,
-        None,
+        Registration {
+            tab_id: tab_id.to_owned(),
+            url,
+            name: super::transfer::file_name(&parsed),
+            native: true,
+            selected_target: target,
+            expected: None,
+        },
     )?;
     let path = files::owned_partial(&manager.record(&task.id)?)?;
     let raw = path.to_string_lossy();
@@ -302,14 +317,16 @@ pub fn install(
                         let target = path.into_path().map_err(|_| "downloads.invalid_target")?;
                         start_native_download(
                             &a,
-                            &label,
-                            &tab_id,
-                            &token,
-                            &args,
-                            operation,
-                            url,
-                            parsed,
-                            Some(target),
+                            NativeDownloadStart {
+                                label: &label,
+                                tab_id: &tab_id,
+                                token: &token,
+                                args: &args,
+                                operation,
+                                url,
+                                parsed,
+                                target: Some(target),
+                            },
                         )?;
                         return Ok(());
                     }
@@ -321,12 +338,14 @@ pub fn install(
                         .map_err(|_| "downloads.slots_busy")?;
                     let task = manager.register(
                         &a,
-                        tab_id.clone(),
-                        url,
-                        super::transfer::file_name(&parsed),
-                        true,
-                        None,
-                        None,
+                        Registration {
+                            tab_id: tab_id.clone(),
+                            url,
+                            name: super::transfer::file_name(&parsed),
+                            native: true,
+                            selected_target: None,
+                            expected: None,
+                        },
                     )?;
                     registered = Some(task.id.clone());
                     let path = files::owned_partial(&manager.record(&task.id)?)?;

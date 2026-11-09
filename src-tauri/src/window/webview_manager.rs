@@ -5,7 +5,9 @@ use super::keyboard_bridge::build_workspace_shortcut_script;
 #[cfg(windows)]
 use super::keyboard_bridge::install_workspace_shortcut_accelerator;
 use super::navigation_state::update_navigation;
-use crate::privacy::adblock_engine::{build_content_shield_script_with_exceptions, should_block_url};
+use crate::privacy::adblock_engine::{
+    build_content_shield_script_with_exceptions, should_block_url,
+};
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::state::tab_model::webview_label_for_tab;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Webview, WebviewUrl};
@@ -82,7 +84,11 @@ pub(super) fn ensure_tab_webview(
         .try_state::<BrowserState>()
         .and_then(|s| s.shield_enabled.lock().ok().map(|v| *v))
         .unwrap_or(true);
-    if crate::privacy::adblock_engine::site_is_protected(&app.state::<BrowserState>(), initial_url.as_str()) && should_block_url(initial_url.as_str(), shield_enabled) {
+    if crate::privacy::adblock_engine::site_is_protected(
+        &app.state::<BrowserState>(),
+        initial_url.as_str(),
+    ) && should_block_url(initial_url.as_str(), shield_enabled)
+    {
         return Err("Navigation blocked by the privacy shield".to_string());
     }
     let keyboard_bridge_token = create_internal_bridge_token();
@@ -144,14 +150,26 @@ pub(super) fn ensure_tab_webview(
         .initialization_script(build_content_shield_script_with_exceptions(
             shield_enabled,
             &keyboard_bridge_token,
-            &app.state::<BrowserState>().shield_settings.lock().map_err(|e| e.to_string())?.exceptions,
+            &app.state::<BrowserState>()
+                .shield_settings
+                .lock()
+                .map_err(|e| e.to_string())?
+                .exceptions,
         ))
         .initialization_script(crate::privacy::tracking_parameters::click_script(
-            &*app.state::<BrowserState>().tracking_settings.lock().map_err(|e| e.to_string())?,
+            &*app
+                .state::<BrowserState>()
+                .tracking_settings
+                .lock()
+                .map_err(|e| e.to_string())?,
             &keyboard_bridge_token,
         ))
         .initialization_script_for_all_frames(crate::privacy::gpc::initializer(
-            &*app.state::<BrowserState>().gpc_settings.lock().map_err(|e| e.to_string())?,
+            &*app
+                .state::<BrowserState>()
+                .gpc_settings
+                .lock()
+                .map_err(|e| e.to_string())?,
         ));
 
     // Opt-in workspace isolation gives every tab's WebView its own data folder.
@@ -360,14 +378,21 @@ pub(super) fn ensure_tab_webview(
             let shield_on = state.shield_enabled.lock().map(|v| *v).unwrap_or(true);
 
             #[cfg(target_os = "linux")]
-            if shield_on && crate::privacy::adblock_engine::site_is_protected(&state, &new_url_str)
-                && app_handle_for_nav.state::<std::sync::Arc<crate::privacy::filter_lists::FilterLists>>()
-                    .blocks(&new_url_str, &new_url_str, "document", "") {
-                if let Ok(mut count) = state.blocked_count.lock() { *count += 1; }
+            if shield_on
+                && crate::privacy::adblock_engine::site_is_protected(&state, &new_url_str)
+                && app_handle_for_nav
+                    .state::<std::sync::Arc<crate::privacy::filter_lists::FilterLists>>()
+                    .blocks(&new_url_str, &new_url_str, "document", "")
+            {
+                if let Ok(mut count) = state.blocked_count.lock() {
+                    *count += 1;
+                }
                 return false;
             }
 
-            if crate::privacy::adblock_engine::site_is_protected(&state, &new_url_str) && should_block_url(&new_url_str, shield_on) {
+            if crate::privacy::adblock_engine::site_is_protected(&state, &new_url_str)
+                && should_block_url(&new_url_str, shield_on)
+            {
                 if let Ok(mut count) = state.blocked_count.lock() {
                     *count += 1;
                 }
@@ -423,8 +448,16 @@ pub(super) fn ensure_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
     )?;
 
-    super::fullscreen::install(app, &app.get_webview(&label).ok_or("New WebView was not found")?)?;
-    super::link_context_menu::install(app, &app.get_webview(&label).ok_or("New WebView was not found")?, tab_id, &navigation_registration_token)?;
+    super::fullscreen::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+    )?;
+    super::link_context_menu::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
+    )?;
 
     #[cfg(windows)]
     super::split_focus::install(
@@ -510,7 +543,9 @@ pub fn navigate_content_webview_with_search_engine(
     let resolved_str = parsed_url.to_string();
     let state = app.state::<BrowserState>();
     let enabled = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
-    if crate::privacy::adblock_engine::site_is_protected(&state, &resolved_str) && should_block_url(&resolved_str, enabled) {
+    if crate::privacy::adblock_engine::site_is_protected(&state, &resolved_str)
+        && should_block_url(&resolved_str, enabled)
+    {
         return Err("Navigation blocked by the privacy shield".to_string());
     }
 

@@ -17,6 +17,14 @@ pub struct Control {
     pub requested: AtomicU8,
     pub changed: tokio::sync::Notify,
 }
+pub struct Registration {
+    pub tab_id: String,
+    pub url: String,
+    pub name: String,
+    pub native: bool,
+    pub selected_target: Option<std::path::PathBuf>,
+    pub expected: Option<String>,
+}
 impl Default for Control {
     fn default() -> Self {
         Self {
@@ -133,13 +141,16 @@ impl DownloadManager {
     pub fn register(
         &self,
         app: &AppHandle,
-        tab_id: String,
-        url: String,
-        name: String,
-        native: bool,
-        selected_target: Option<std::path::PathBuf>,
-        expected: Option<String>,
+        registration: Registration,
     ) -> Result<DownloadTask, String> {
+        let Registration {
+            tab_id,
+            url,
+            name,
+            native,
+            selected_target,
+            expected,
+        } = registration;
         if app
             .try_state::<crate::shutdown::ShutdownService>()
             .is_some_and(|s| s.blocked())
@@ -327,12 +338,14 @@ impl DownloadManager {
         self.check_policy(app, url.as_str(), Some(&id))?;
         let task = self.register(
             app,
-            id,
-            url.to_string(),
-            super::transfer::file_name(&url),
-            false,
-            target,
-            expected,
+            Registration {
+                tab_id: id,
+                url: url.to_string(),
+                name: super::transfer::file_name(&url),
+                native: false,
+                selected_target: target,
+                expected,
+            },
         )?;
         self.start(app, &task.id, false)?;
         Ok(self.record(&task.id)?.task)

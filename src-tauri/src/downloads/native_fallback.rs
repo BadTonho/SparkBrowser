@@ -1,4 +1,7 @@
-use super::{files, manager::DownloadManager};
+use super::{
+    files,
+    manager::{DownloadManager, Registration},
+};
 use crate::state::browser_state::BrowserState;
 use std::{path::PathBuf, sync::Mutex};
 use tauri::{webview::DownloadEvent, AppHandle, Manager};
@@ -70,12 +73,14 @@ pub fn handler(
                         .map_err(|_| "downloads.slots_busy")?;
                     let task = manager.register(
                         &app,
-                        tab_id.clone(),
-                        url.to_string(),
-                        super::transfer::file_name(&url),
-                        true,
-                        selected_target,
-                        None,
+                        Registration {
+                            tab_id: tab_id.clone(),
+                            url: url.to_string(),
+                            name: super::transfer::file_name(&url),
+                            native: true,
+                            selected_target,
+                            expected: None,
+                        },
                     )?;
                     let path = files::owned_partial(&manager.record(&task.id)?)?;
                     *destination = path.clone();

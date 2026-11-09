@@ -169,11 +169,19 @@ mod tests {
         let conn = database();
         let mut tab = TabInfo::new_default("account".into(), "https://example.test/".into(), true);
         tab.container_id = Some("0123456789abcdef0123456789abcdef".into());
-        let ephemeral = TabInfo::new_ephemeral("private".into(), "https://example.test/".into(), "ws-personal".into(), false);
+        let ephemeral = TabInfo::new_ephemeral(
+            "private".into(),
+            "https://example.test/".into(),
+            "ws-personal".into(),
+            false,
+        );
         save_session_tabs(&conn, &[tab, ephemeral]).unwrap();
         let restored = load_session_tabs(&conn).unwrap();
         assert_eq!(restored.len(), 1);
-        assert_eq!(restored[0].container_id.as_deref(), Some("0123456789abcdef0123456789abcdef"));
+        assert_eq!(
+            restored[0].container_id.as_deref(),
+            Some("0123456789abcdef0123456789abcdef")
+        );
     }
 
     #[test]

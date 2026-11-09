@@ -12,8 +12,8 @@ export const discardBackupImport = (sourceToken: string) => invoke<void>("discar
 export const fetchBackupSyncState = () => invoke<SyncStateSnapshot>("get_backup_sync_state");
 export const chooseBackupSyncFolder = (autoSave: boolean, applyPreferencesOnDirectPull: boolean) =>
   invoke<SyncStateSnapshot | null>("choose_backup_sync_folder", { autoSave, applyPreferencesOnDirectPull });
-export const saveBackupSyncConfig = (config: SyncTargetConfig, secret: string | null) =>
-  invoke<SyncStateSnapshot>("set_backup_sync_config", { config, secret });
+export const saveBackupSyncConfig = (config: SyncTargetConfig, secret: string | null, googleTabId: string | null = null) =>
+  invoke<SyncStateSnapshot>("set_backup_sync_config", { config, secret, googleTabId });
 export const pushBackupSync = (preferences: BackupPreferences, onlyIfChanged: boolean) =>
   invoke<SyncPushResult>("push_backup_sync", { preferences, onlyIfChanged });
 export const pullBackupSync = (currentPreferences: BackupPreferences, directApply: boolean, applyPreferencesOverride: boolean | null = null) =>

@@ -44,12 +44,19 @@ pub async fn set_history_retention(
 ) -> Result<(), String> {
     let _preference = state.history_retention_operation.lock().await;
     // Stop the writer before draining its queue, including visits already queued.
-    let old = state.history_retention_months.load(std::sync::atomic::Ordering::Acquire);
+    let old = state
+        .history_retention_months
+        .load(std::sync::atomic::Ordering::Acquire);
     if retention == HistoryRetention::Never {
-        state.history_retention_months.store(retention.state_value(), std::sync::atomic::Ordering::Release);
+        state.history_retention_months.store(
+            retention.state_value(),
+            std::sync::atomic::Ordering::Release,
+        );
     }
     if let Err(error) = crate::commands::persistence::flush_navigation(app.clone()).await {
-        state.history_retention_months.store(old, std::sync::atomic::Ordering::Release);
+        state
+            .history_retention_months
+            .store(old, std::sync::atomic::Ordering::Release);
         return Err(error);
     }
     let _operation = state.tab_operations.lock().await;
@@ -71,7 +78,9 @@ pub async fn set_history_retention(
     })
     .await;
     if let Err(error) = result {
-        state.history_retention_months.store(old, std::sync::atomic::Ordering::Release);
+        state
+            .history_retention_months
+            .store(old, std::sync::atomic::Ordering::Release);
         return Err(error);
     }
     state.history_retention_months.store(

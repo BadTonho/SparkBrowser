@@ -24,6 +24,7 @@ import { checkWorkspaceDeletePersistence } from './persistence/workspaces.mjs';
 import { checkShieldPersistence } from './persistence/shield.mjs';
 import { checkShutdown } from "./shutdown.mjs";
 import { checkBackup } from "./backup.mjs";
+import { checkBackupIdentities } from './backup-identities.mjs';
 import { checkDownloads } from './downloads.mjs';
 import { checkClosedTabs } from './closed-tabs.mjs';
 import { checkEphemeralCleanup } from './ephemeral-cleanup.mjs';
@@ -98,6 +99,7 @@ export const scenarios = {
   'ephemeral-cleanup': checkEphemeralCleanup,
   'account-containers': checkAccountContainers,
   backup: async context => { await prepareTabs(context); await checkBackup(context); },
+  'backup-identities': checkBackupIdentities,
   localization: async context => { await prepareTabs(context); await checkLocalization(context); },
   navigation: async context => {
     const { invoke, until, fixture } = context;

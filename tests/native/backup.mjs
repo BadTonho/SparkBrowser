@@ -10,7 +10,7 @@ export function backupPreferences() {
   return { tab_layout: 'horizontal', show_bookmarks_bar: true, overlay_blur_px: 16, workspace_switcher_display: 'toolbar', default_search_engine: 'google', auto_hibernate_mode: 10, resident_limit: 8, language: 'system', keyboard_shortcuts: Object.fromEntries(definitions.map(item => [item.id, item.defaults])), update_channel: 'stable' };
 }
 export async function checkBackup(context) {
-  const { invoke, restart, fixture, script, until } = context;
+  const { invoke, restart, fixture, script, until, withWebview, click } = context;
   const before = await invoke('get_tabs');
   const resident = (await invoke('get_diagnostics')).resident_webviews;
   const prefs = backupPreferences();
@@ -54,7 +54,9 @@ export async function checkBackup(context) {
   await restart();
   const task = await invoke('get_backup_pending_preferences'); assert.equal(task.id, taskId); assert.equal(task.error, 'Artificial preference failure');
   await until(() => script(`return Boolean(document.querySelector('[data-testid="backup-pending"]'))`), 'persistent preference notice');
-  await script(`document.querySelector('[data-testid="open-settings"]').click();`);
+  await context.focusWindow();
+  await click('[data-testid="open-settings"]');
+  await withWebview('/index.html?surface=settings-quick', () => click('[data-testid="settings-quick-all"]'));
   await until(() => script(`return Boolean(document.querySelector('[data-testid="settings-data_backup"]'))`), 'backup settings category');
   await script(`document.querySelector('[data-testid="settings-data_backup"]').click();`);
   await until(() => script(`return Boolean(document.querySelector('[data-testid="backup-retry-preferences"]'))`), 'preference retry control');

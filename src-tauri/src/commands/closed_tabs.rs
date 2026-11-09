@@ -197,10 +197,12 @@ pub async fn reopen_closed_tab(
     let Some(row) = row else {
         return Ok(None);
     };
-    if crate::privacy::adblock_engine::site_is_protected(&state, &row.url) && crate::privacy::adblock_engine::should_block_url(
-        &row.url,
-        *state.shield_enabled.lock().map_err(|e| e.to_string())?,
-    ) {
+    if crate::privacy::adblock_engine::site_is_protected(&state, &row.url)
+        && crate::privacy::adblock_engine::should_block_url(
+            &row.url,
+            *state.shield_enabled.lock().map_err(|e| e.to_string())?,
+        )
+    {
         return Err("closed_tabs.blocked".into());
     }
     if !crate::window::new_tab::valid_tab_url(&row.url) {

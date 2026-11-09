@@ -10,6 +10,7 @@ pub const GPC_KEY: &str = "global_privacy_control_v1";
 pub const SHIELD_EXCEPTIONS_KEY: &str = "shield_exceptions_v1";
 pub const BACKUP_SYNC_CONFIG_KEY: &str = "backup_sync_config_v1";
 pub const BACKUP_SYNC_SECRET_KEY: &str = "backup_sync_secret_v1";
+pub const BACKUP_SYNC_CREDENTIAL_KEY: &str = "backup_sync_credential_v2";
 pub const BACKUP_SYNC_LAST_AT_KEY: &str = "backup_sync_last_at_v1";
 pub const BACKUP_SYNC_FINGERPRINT_KEY: &str = "backup_sync_fingerprint_v1";
 pub const BACKUP_SYNC_GDRIVE_EMAIL_KEY: &str = "backup_sync_gdrive_email_v1";

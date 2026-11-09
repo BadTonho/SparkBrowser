@@ -25,7 +25,7 @@ test('workspace isolation is opt-in, durable and scoped to content WebViews', ()
 
 test('isolated data folders are never derived from untrusted workspace ids', () => {
   const workspace_data = read('src-tauri/src/window/workspace_data.rs');
-  assert.match(workspace_data, /is_ascii_alphanumeric\(\)/);
+  assert.match(workspace_data, /is_ascii_lowercase\(\)/);
   assert.match(workspace_data, /sha2::\{Digest, Sha256\}|use sha2/);
   assert.match(workspace_data, /format!\("h-\{:x\}", Sha256::digest/);
   // Workspace deletion reclaims its folder on a best-effort basis.

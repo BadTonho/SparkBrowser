@@ -1,10 +1,13 @@
+use commands::account_containers::{
+    create_account_container, create_container_tab, delete_account_container,
+    get_account_containers, rename_account_container, set_tab_account_container,
+};
 use commands::backup::{
     choose_backup_file, choose_backup_sync_folder, commit_backup_import, discard_backup_import,
     export_backup, finish_backup_preferences, get_backup_pending_preferences,
     get_backup_sync_state, preview_backup_import, pull_backup_sync, push_backup_sync,
     set_backup_sync_config,
 };
-use commands::account_containers::{get_account_containers, create_account_container, rename_account_container, delete_account_container, set_tab_account_container, create_container_tab};
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
@@ -18,10 +21,10 @@ pub mod commands;
 pub mod database;
 pub mod downloads;
 pub mod extensions;
+pub mod feeds;
 pub mod media;
 mod native_tests;
 pub mod privacy;
-pub mod feeds;
 pub mod recovery;
 pub mod security;
 pub mod shutdown;
@@ -42,16 +45,18 @@ use commands::downloads::{
     cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
     get_download_visual, get_downloads, set_download_checksum,
 };
+use commands::experiments::{
+    get_experimental_flags, reset_experimental_flags, set_experimental_flag,
+};
 use commands::extensions::{
     get_extension_action, get_installed_extensions, install_extension_from_archive,
     install_extension_from_url, load_unpacked_extension, remove_extension, toggle_extension,
 };
+use commands::feeds::{delete_feed, get_feed_entries, get_feeds, refresh_feed, save_feed};
 use commands::navigation::{
     focus_address_bar, go_back, go_forward, navigate_to, reload_page, sync_viewport_bounds,
 };
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
-use commands::feeds::{get_feeds, get_feed_entries, save_feed, delete_feed, refresh_feed};
-use commands::experiments::{get_experimental_flags, set_experimental_flag, reset_experimental_flags};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_downloads_popover, set_history_overlay,
     set_media_popover, set_overlay_visibility, set_permission_popover, set_privacy_popover,
@@ -62,7 +67,10 @@ use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
-use commands::privacy::{get_privacy_stats, set_auto_skip_ads, toggle_adblock_shield, get_tracking_cleaning, set_tracking_cleaning, get_gpc, set_gpc, get_shield_exceptions, set_shield_exceptions};
+use commands::privacy::{
+    get_gpc, get_privacy_stats, get_shield_exceptions, get_tracking_cleaning, set_auto_skip_ads,
+    set_gpc, set_shield_exceptions, set_tracking_cleaning, toggle_adblock_shield,
+};
 use commands::privacy_settings::{
     get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
 };
@@ -135,9 +143,14 @@ pub fn run() {
         .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
-            if window.label() == "main" && matches!(event, WindowEvent::Resized(_)) && window::fullscreen::active(window.app_handle()).is_some() {
+            if window.label() == "main"
+                && matches!(event, WindowEvent::Resized(_))
+                && window::fullscreen::active(window.app_handle()).is_some()
+            {
                 let app = window.app_handle();
-                if let Some(state) = app.try_state::<BrowserState>() { let _ = window::viewport::sync_content_geometry(app, &state); }
+                if let Some(state) = app.try_state::<BrowserState>() {
+                    let _ = window::viewport::sync_content_geometry(app, &state);
+                }
             }
             if window.label() == "main" {
                 if let WindowEvent::CloseRequested { api, .. } = event {
@@ -211,20 +224,76 @@ pub fn run() {
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
-            if let Some(settings) = database::preferences_repo::load(&conn, database::preferences_repo::TRACKING_CLEANING_KEY)
-                .ok().flatten().and_then(|value| serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok())
-                .and_then(|settings| settings.validate().ok()) {
-                *state.tracking_settings.lock().map_err(|_| std::io::Error::other("Tracking settings unavailable"))? = settings;
+            let legacy_credential = database::preferences_repo::load(
+                &conn,
+                database::preferences_repo::BACKUP_SYNC_SECRET_KEY,
+            )
+            .map_err(std::io::Error::other)?
+            .is_some();
+            if legacy_credential
+                && backup::sync::resolve_secret(
+                    &conn,
+                    &app.state::<backup::service::BackupService>().sync,
+                )
+                .is_err()
+            {
+                let service = app.state::<backup::service::BackupService>();
+                *service
+                    .sync
+                    .last_error
+                    .lock()
+                    .map_err(|_| std::io::Error::other("Sync state unavailable"))? =
+                    Some("backup.sync_secure_storage_failed".into());
             }
-            if let Some(settings) = database::preferences_repo::load(&conn, database::preferences_repo::GPC_KEY)
-                .ok().flatten().and_then(|value| serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok())
-                .and_then(|settings| settings.validate().ok()) {
-                *state.gpc_settings.lock().map_err(|_| std::io::Error::other("GPC settings unavailable"))? = settings;
+            if let Some(settings) = database::preferences_repo::load(
+                &conn,
+                database::preferences_repo::TRACKING_CLEANING_KEY,
+            )
+            .ok()
+            .flatten()
+            .and_then(|value| {
+                serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok()
+            })
+            .and_then(|settings| settings.validate().ok())
+            {
+                *state
+                    .tracking_settings
+                    .lock()
+                    .map_err(|_| std::io::Error::other("Tracking settings unavailable"))? =
+                    settings;
             }
-            if let Some(settings) = database::preferences_repo::load(&conn, database::preferences_repo::SHIELD_EXCEPTIONS_KEY)
-                .ok().flatten().and_then(|value| serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok())
-                .and_then(|settings| settings.validate().ok()) {
-                *state.shield_settings.lock().map_err(|_| std::io::Error::other("Shield settings unavailable"))? = settings;
+            if let Some(settings) =
+                database::preferences_repo::load(&conn, database::preferences_repo::GPC_KEY)
+                    .ok()
+                    .flatten()
+                    .and_then(|value| {
+                        serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(
+                            &value,
+                        )
+                        .ok()
+                    })
+                    .and_then(|settings| settings.validate().ok())
+            {
+                *state
+                    .gpc_settings
+                    .lock()
+                    .map_err(|_| std::io::Error::other("GPC settings unavailable"))? = settings;
+            }
+            if let Some(settings) = database::preferences_repo::load(
+                &conn,
+                database::preferences_repo::SHIELD_EXCEPTIONS_KEY,
+            )
+            .ok()
+            .flatten()
+            .and_then(|value| {
+                serde_json::from_str::<privacy::tracking_parameters::TrackingSettings>(&value).ok()
+            })
+            .and_then(|settings| settings.validate().ok())
+            {
+                *state
+                    .shield_settings
+                    .lock()
+                    .map_err(|_| std::io::Error::other("Shield settings unavailable"))? = settings;
             }
             state.workspace_isolation.store(
                 database::preferences_repo::load_bool(

@@ -303,7 +303,9 @@ pub(super) fn install_workspace_shortcut_accelerator(
 
                     if is_key_down && virtual_key == 0x1B {
                         if let Some(owner) = super::fullscreen::active(&app_for_handler) {
-                            unsafe { args.SetHandled(true)?; }
+                            unsafe {
+                                args.SetHandled(true)?;
+                            }
                             super::fullscreen::exit(&app_for_handler, &owner, true);
                             return Ok(());
                         }
@@ -538,8 +540,11 @@ pub(super) fn handle_keyboard_navigation(
     label_for_nav: &str,
     keyboard_bridge_token: &str,
 ) {
-    if crate::security::bridge::query(nav_url, &["token", "sequence", "document", "action", "key", "input"])
-        .is_none()
+    if crate::security::bridge::query(
+        nav_url,
+        &["token", "sequence", "document", "action", "key", "input"],
+    )
+    .is_none()
     {
         return;
     }
@@ -618,7 +623,12 @@ pub(super) fn handle_keyboard_navigation(
         match event_type {
             "link" => {
                 if let Some(url) = key.and_then(|raw| tauri::Url::parse(raw).ok()) {
-                    crate::commands::tabs::open_user_link(app_handle_for_nav.clone(), tab_for_nav.to_string(), keyboard_bridge_token.to_string(), url);
+                    crate::commands::tabs::open_user_link(
+                        app_handle_for_nav.clone(),
+                        tab_for_nav.to_string(),
+                        keyboard_bridge_token.to_string(),
+                        url,
+                    );
                 }
             }
             "alt-down" | "alt-up" | "alt-cancel" => {

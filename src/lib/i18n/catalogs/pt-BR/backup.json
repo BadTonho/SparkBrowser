@@ -103,6 +103,7 @@
   "backup.error_sync_invalid_url": "Informe uma URL WebDAV válida e sem credenciais embutidas no endereço.",
   "backup.error_sync_https_required": "Conexões diretas com a nuvem exigem uma URL com https://.",
   "backup.error_sync_auth_failed": "A autenticação na conexão direta foi recusada pelo servidor.",
+  "backup.error_sync_secure_storage_failed": "Não foi possível acessar o armazenamento seguro de credenciais. Desbloqueie o cofre do sistema ou informe a senha e mantenha-a somente nesta sessão. No Linux, é necessário secret-tool e um provedor de Secret Service.",
   "backup.error_sync_network_failed": "Não foi possível comunicar com o servidor de sincronização direta.",
   "backup.error_sync_invalid_config": "A configuração de sincronização é inválida.",
   "backup.error_sync_gdrive_login_required": "Faça login na sua conta Google / Gmail em uma aba do navegador primeiro para usar a sincronização com o Google Drive."

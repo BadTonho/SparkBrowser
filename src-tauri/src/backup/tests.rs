@@ -512,7 +512,10 @@ fn folder_sync_pushes_skips_unchanged_and_pulls_without_leaking_sync_paths() {
 
     // Pulling reads the updated document and never leaks sync config inside the backup file
     let pulled = super::sync::pull_document_from_target(&conn, &runtime).unwrap();
-    assert_eq!(pulled.preferences.resident_limit, doc.preferences.resident_limit);
+    assert_eq!(
+        pulled.preferences.resident_limit,
+        doc.preferences.resident_limit
+    );
     let raw_file = std::fs::read_to_string(dir.path().join(super::sync::SYNC_FILE_NAME)).unwrap();
     assert!(!raw_file.contains(&dir_str));
 }
@@ -530,14 +533,14 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
     // Remote plain HTTP must be rejected; HTTPS and loopback HTTP are allowed
     assert!(super::sync::validate_webdav_url("http://cloud.example.com/dav/").is_err());
     assert!(super::sync::validate_webdav_url("https://user:pass@cloud.example.com/dav/").is_err());
-    let resolved = super::sync::resolve_webdav_file_url("https://cloud.example.com/dav/files/u")
-        .unwrap();
+    let resolved =
+        super::sync::resolve_webdav_file_url("https://cloud.example.com/dav/files/u").unwrap();
     assert_eq!(
         resolved.as_str(),
         "https://cloud.example.com/dav/files/u/browser.veloce-backup.json"
     );
 
-    // Test remember_secret = false (session-only) vs true (persisted in SQLite)
+    // Session-only vs injected secure storage; never use the real OS keyring.
     super::sync::save_config(
         &conn,
         &runtime,
@@ -558,11 +561,13 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
     .unwrap()
     .is_none());
     assert_eq!(
-        super::sync::resolve_secret(&conn, &runtime).unwrap().as_deref(),
+        super::sync::resolve_secret(&conn, &runtime)
+            .unwrap()
+            .as_deref(),
         Some("session-only-secret")
     );
 
-    // Enabling remember_secret persists the secret in SQLite
+    // Remembered credentials survive a runtime restart without entering SQLite.
     super::sync::save_config(
         &conn,
         &runtime,
@@ -576,13 +581,20 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
         None,
     )
     .unwrap();
+    assert!(crate::database::preferences_repo::load(
+        &conn,
+        crate::database::preferences_repo::BACKUP_SYNC_SECRET_KEY
+    )
+    .unwrap()
+    .is_none());
+    let reopened = super::sync::SyncRuntime {
+        credentials: runtime.credentials.clone(),
+        ..Default::default()
+    };
     assert_eq!(
-        crate::database::preferences_repo::load(
-            &conn,
-            crate::database::preferences_repo::BACKUP_SYNC_SECRET_KEY
-        )
-        .unwrap()
-        .as_deref(),
+        super::sync::resolve_secret(&conn, &reopened)
+            .unwrap()
+            .as_deref(),
         Some("session-only-secret")
     );
 
@@ -628,7 +640,9 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
                 }
                 *stored_clone.lock().unwrap() = buf[header_end..header_end + content_len].to_vec();
                 stream
-                    .write_all(b"HTTP/1.1 201 Created\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    .write_all(
+                        b"HTTP/1.1 201 Created\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                    )
                     .unwrap();
             } else if headers.starts_with("GET ") {
                 let payload = stored_clone.lock().unwrap().clone();
@@ -725,7 +739,9 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
         Some("user@gmail.com")
     );
     assert_eq!(
-        super::gdrive_webview::extract_authuser_from_url("https://drive.google.com/drive/u/2/my-drive"),
+        super::gdrive_webview::extract_authuser_from_url(
+            "https://drive.google.com/drive/u/2/my-drive"
+        ),
         Some("2".to_string())
     );
     assert_eq!(
@@ -742,10 +758,7 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
         extracted_keys,
         vec!["AIzaSyD12345678901234567890123456789012".to_string()]
     );
-    assert_eq!(
-        super::gdrive_webview::SYNC_FOLDER_NAME,
-        "Spark Backup"
-    );
+    assert_eq!(super::gdrive_webview::SYNC_FOLDER_NAME, "Spark Backup");
     assert_eq!(
         super::gdrive_webview::build_folder_metadata_json(true)["title"],
         "Spark Backup"

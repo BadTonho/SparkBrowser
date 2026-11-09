@@ -128,7 +128,10 @@ impl Default for BrowserState {
             workspace_isolation: AtomicBool::new(false),
             tracking_settings: Mutex::new(Default::default()),
             gpc_settings: Mutex::new(Default::default()),
-            shield_settings: Mutex::new(crate::privacy::tracking_parameters::TrackingSettings { enabled: true, exceptions: Vec::new() }),
+            shield_settings: Mutex::new(crate::privacy::tracking_parameters::TrackingSettings {
+                enabled: true,
+                exceptions: Vec::new(),
+            }),
             blocked_count: Mutex::new(0),
             db: Mutex::new(None),
         }

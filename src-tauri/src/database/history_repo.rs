@@ -47,7 +47,11 @@ impl HistoryRetention {
     }
 
     pub fn state_value(self) -> u64 {
-        if self == Self::Never { u64::MAX } else { u64::from(self.months().unwrap_or(0)) }
+        if self == Self::Never {
+            u64::MAX
+        } else {
+            u64::from(self.months().unwrap_or(0))
+        }
     }
 }
 
@@ -180,10 +184,22 @@ mod tests {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,visited_at INTEGER NOT NULL); INSERT INTO history(title,url,visited_at) VALUES('old','https://example.test/',1);").unwrap();
         prune_expired(&conn, HistoryRetention::Never, current_unix_timestamp()).unwrap();
-        record_visit(&conn, "new", "https://new.example/", HistoryRetention::Never).unwrap();
+        record_visit(
+            &conn,
+            "new",
+            "https://new.example/",
+            HistoryRetention::Never,
+        )
+        .unwrap();
         assert_eq!(get_recent_history(&conn, 10).unwrap().len(), 1);
-        assert_eq!(HistoryRetention::from_months(HistoryRetention::Never.state_value()), HistoryRetention::Never);
-        assert_eq!(HistoryRetention::from_preference(Some("never".into())), HistoryRetention::Never);
+        assert_eq!(
+            HistoryRetention::from_months(HistoryRetention::Never.state_value()),
+            HistoryRetention::Never
+        );
+        assert_eq!(
+            HistoryRetention::from_preference(Some("never".into())),
+            HistoryRetention::Never
+        );
     }
     #[test]
     fn searches_older_visits_and_paginates_equal_timestamps_without_duplicates() {

@@ -19,18 +19,42 @@ pub fn is_verbatim_id(workspace_id: &str) -> bool {
     let bytes = workspace_id.as_bytes();
     !workspace_id.is_empty()
         && bytes.len() <= MAX_VERBATIM_ID_BYTES
-        && bytes
-            .iter()
-            .all(|byte| byte.is_ascii_alphanumeric() || *byte == b'-' || *byte == b'_')
+        && bytes.iter().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-' || *byte == b'_'
+        })
         && !workspace_id.ends_with('-')
+        && !matches!(
+            workspace_id,
+            "con"
+                | "prn"
+                | "aux"
+                | "nul"
+                | "com1"
+                | "com2"
+                | "com3"
+                | "com4"
+                | "com5"
+                | "com6"
+                | "com7"
+                | "com8"
+                | "com9"
+                | "lpt1"
+                | "lpt2"
+                | "lpt3"
+                | "lpt4"
+                | "lpt5"
+                | "lpt6"
+                | "lpt7"
+                | "lpt8"
+                | "lpt9"
+        )
 }
 
-/// Deterministic folder name for a workspace id. Case differences collapse on
-/// case-insensitive file systems, and host-dependent ids always hash so they
-/// can never be combined into traversal sequences.
+/// Preserve legacy lowercase folders; case-sensitive or host-dependent ids
+/// hash in full so different database identities never collapse on disk.
 pub fn folder_name(workspace_id: &str) -> String {
     if is_verbatim_id(workspace_id) {
-        workspace_id.to_ascii_lowercase()
+        workspace_id.to_owned()
     } else {
         format!("h-{:x}", Sha256::digest(workspace_id.as_bytes()))
     }
@@ -77,8 +101,16 @@ pub fn content_directory(app: &AppHandle, tab_id: &str) -> Result<Option<PathBuf
                     "SELECT EXISTS(SELECT 1 FROM account_containers WHERE id=?1 AND deleting=0)",
                     [id], |row| row.get(0),
                 ).map_err(|e| e.to_string())?;
-                if !available { return Err("Account container unavailable".into()); }
-                return Ok(Some(app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("webview-accounts").join(id)));
+                if !available {
+                    return Err("Account container unavailable".into());
+                }
+                return Ok(Some(
+                    app.path()
+                        .app_local_data_dir()
+                        .map_err(|e| e.to_string())?
+                        .join("webview-accounts")
+                        .join(id),
+                ));
             }
         }
     }
@@ -121,11 +153,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn safe_ids_stay_verbatim_and_case_insensitive() {
+    fn lowercase_ids_stay_verbatim_and_case_variants_are_isolated() {
         assert_eq!(folder_name("ws-personal"), "ws-personal");
         assert_eq!(folder_name("ws-custom-123"), "ws-custom-123");
-        // Case-insensitive file systems unify both spellings into one folder.
-        assert_eq!(folder_name("WS-Custom-123"), folder_name("ws-custom-123"));
+        assert_ne!(folder_name("WS-Custom-123"), folder_name("ws-custom-123"));
+        assert_ne!(folder_name("ws-Teste"), folder_name("ws-teste"));
     }
 
     #[test]
@@ -139,6 +171,8 @@ mod tests {
             "a b",
             "é",
             "ws-a/../x",
+            "con",
+            "COM1",
         ] {
             assert!(!is_verbatim_id(id), "{id} must not be verbatim");
             let name = folder_name(id);

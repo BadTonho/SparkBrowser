@@ -172,15 +172,15 @@ mod hibernation_domain_tests {
         assert_eq!(domain, "example.com");
         assert!(hibernation_domain_matches(
             "https://example.com/path",
-            &[domain.clone()]
+            std::slice::from_ref(&domain)
         ));
         assert!(hibernation_domain_matches(
             "https://shop.example.com",
-            &[domain.clone()]
+            std::slice::from_ref(&domain)
         ));
         assert!(!hibernation_domain_matches(
             "https://notexample.com",
-            &[domain.clone()]
+            std::slice::from_ref(&domain)
         ));
         assert!(!hibernation_domain_matches(
             "https://example.com.evil",

@@ -109,12 +109,13 @@ pub async fn discard_backup_import(app: AppHandle, source_token: String) -> Resu
 #[tauri::command]
 pub async fn get_backup_sync_state(
     app: AppHandle,
-    state: State<'_, BrowserState>,
 ) -> Result<backup::sync::SyncStateSnapshot, String> {
-    let service = app.state::<backup::service::BackupService>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    let conn = db.as_ref().ok_or("backup.database_unavailable")?;
-    backup::sync::snapshot(conn, &service.sync)
+    let worker_app = app.clone();
+    crate::database::executor::run(app, move |conn| {
+        let service = worker_app.state::<backup::service::BackupService>();
+        backup::sync::snapshot(conn, &service.sync)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -158,12 +159,26 @@ pub async fn set_backup_sync_config(
     state: State<'_, BrowserState>,
     config: backup::sync::SyncTargetConfig,
     secret: Option<String>,
+    google_tab_id: Option<String>,
 ) -> Result<backup::sync::SyncStateSnapshot, String> {
     let service = app.state::<backup::service::BackupService>();
     let _operation = service.operation.lock().await;
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    let conn = db.as_ref().ok_or("backup.database_unavailable")?;
-    backup::sync::save_config(conn, &service.sync, config, secret)
+    if let Some(id) = google_tab_id {
+        if !matches!(
+            config,
+            backup::sync::SyncTargetConfig::GoogleDriveWeb { .. }
+        ) {
+            return Err("backup.sync_invalid_config".into());
+        }
+        let _tabs = state.tab_operations.lock().await;
+        backup::gdrive_webview::session::bind(&app, &id)?;
+    }
+    let worker_app = app.clone();
+    crate::database::executor::run(app.clone(), move |conn| {
+        let service = worker_app.state::<backup::service::BackupService>();
+        backup::sync::save_config(conn, &service.sync, config, secret)
+    })
+    .await
 }
 
 #[tauri::command]

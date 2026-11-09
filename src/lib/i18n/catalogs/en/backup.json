@@ -103,6 +103,7 @@
   "backup.error_sync_invalid_url": "Enter a valid WebDAV URL without embedded credentials.",
   "backup.error_sync_https_required": "Direct cloud connections require an https:// URL.",
   "backup.error_sync_auth_failed": "Authentication with the direct connection server was rejected.",
+  "backup.error_sync_secure_storage_failed": "Could not access secure credential storage. Unlock your system keyring, or enter the password and keep it only for this session. Linux requires secret-tool and a Secret Service provider.",
   "backup.error_sync_network_failed": "Could not reach the direct sync server.",
   "backup.error_sync_invalid_config": "The sync configuration is invalid.",
   "backup.error_sync_gdrive_login_required": "Sign in to your Google / Gmail account in a browser tab first so Spark can access your Google Drive session."

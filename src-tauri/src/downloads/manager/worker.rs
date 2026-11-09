@@ -7,13 +7,9 @@ impl DownloadManager {
             let state = app.state::<BrowserState>();
             let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?
                 && crate::privacy::adblock_engine::site_is_protected(&state, &record.task.url)
-                && record
-                    .task
-                    .source_page_url
-                    .as_deref()
-                    .map_or(true, |source| {
-                        crate::privacy::adblock_engine::site_is_protected(&state, source)
-                    });
+                && record.task.source_page_url.as_deref().is_none_or(|source| {
+                    crate::privacy::adblock_engine::site_is_protected(&state, source)
+                });
             if crate::privacy::adblock_engine::should_block_url(&record.task.url, shield) {
                 return Err("downloads.blocked".into());
             }

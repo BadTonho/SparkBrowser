@@ -125,7 +125,7 @@ pub fn download_shield_enabled(
     });
     source
         .as_deref()
-        .map_or(true, |url| site_is_protected(state, url))
+        .is_none_or(|url| site_is_protected(state, url))
 }
 
 /// Both possible document-created ordering sequences converge to the new policy.
@@ -178,7 +178,15 @@ mod tests {
         assert!(site_is_protected(&state, "about:blank"));
         assert!(!site_is_protected(&state, "https://sub.example.test/"));
         state.tabs.lock().unwrap()[0].url = "https://sub.example.test/".into();
-        assert!(!download_shield_enabled(&state, Some("tab-1"), "https://doubleclick.net/file"));
-        assert!(download_shield_enabled(&state, Some("missing-tab"), "https://doubleclick.net/file"));
+        assert!(!download_shield_enabled(
+            &state,
+            Some("tab-1"),
+            "https://doubleclick.net/file"
+        ));
+        assert!(download_shield_enabled(
+            &state,
+            Some("missing-tab"),
+            "https://doubleclick.net/file"
+        ));
     }
 }

@@ -35,7 +35,10 @@ pub fn current_preferences(
     Ok(p)
 }
 /// Stream canonical serialization into a digest without retaining a second document.
-pub(crate) fn fingerprint(data: &BackupData, prefs: &BackupPreferences) -> Result<[u8; 32], String> {
+pub(crate) fn fingerprint(
+    data: &BackupData,
+    prefs: &BackupPreferences,
+) -> Result<[u8; 32], String> {
     struct HashWriter(Sha256);
     impl std::io::Write for HashWriter {
         fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
@@ -147,11 +150,7 @@ pub async fn import(
         .as_ref()
         .filter(|p| p.preview.token == token)
         .ok_or("backup.preview_missing")?;
-    let original_tabs: std::collections::HashMap<_, _> = state
-        .snapshot_tabs()
-        .into_iter()
-        .map(|tab| (tab.id.clone(), tab))
-        .collect();
+    let original_tabs = state.snapshot_tabs();
     let mut db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_mut().ok_or("backup.database_unavailable")?;
     let current = backup_repo::collect(conn)?;
@@ -171,30 +170,18 @@ pub async fn import(
     } else {
         None
     };
+    let tabs = merge_live_tabs(original_tabs, &pending.plan.data.tabs)?;
     backup_repo::commit(conn, &current, &pending.plan.data, task.as_ref())?;
-    // Preserve every resident document's navigation/activity state; only imported tabs are new and asleep.
-    let tabs = pending
-        .plan
-        .data
-        .tabs
-        .iter()
-        .map(|tab| {
-            original_tabs
-                .get(&tab.id)
-                .cloned()
-                .unwrap_or_else(|| tab.tab())
-        })
-        .collect();
     *state.tabs.lock().map_err(|e| e.to_string())? = tabs;
     *state.workspaces.lock().map_err(|e| e.to_string())? = pending.plan.data.workspaces.clone();
-    *state.split_layouts.lock().map_err(|e| e.to_string())? = pending
-        .plan
-        .data
-        .split_layouts
-        .iter()
-        .cloned()
-        .map(|l| (l.workspace_id.clone(), l))
-        .collect();
+    {
+        let mut layouts = state.split_layouts.lock().map_err(|e| e.to_string())?;
+        for layout in &pending.plan.data.split_layouts {
+            layouts
+                .entry(layout.workspace_id.clone())
+                .or_insert_with(|| layout.clone());
+        }
+    }
     let mut counter = state.next_tab_counter.lock().map_err(|e| e.to_string())?;
     *counter = (*counter).max(pending.plan.next_tab_counter);
     state.refresh_visible_tabs()?;
@@ -213,9 +200,62 @@ pub async fn import(
     Ok(result)
 }
 
+/// Import adds persistent tabs without replacing live disposable documents or
+/// their position, activity, identity, selection and split membership.
+fn merge_live_tabs(
+    mut live: Vec<crate::state::tab_model::TabInfo>,
+    merged: &[BackupTab],
+) -> Result<Vec<crate::state::tab_model::TabInfo>, String> {
+    let existing: std::collections::HashMap<_, _> = live
+        .iter()
+        .map(|tab| (tab.id.clone(), tab.is_ephemeral))
+        .collect();
+    for row in merged {
+        match existing.get(&row.id) {
+            Some(true) => return Err("backup.preview_stale".into()),
+            Some(false) => {}
+            None => live.push(row.tab()),
+        }
+    }
+    Ok(live)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn live_import_keeps_disposable_tabs_order_activity_and_identity() {
+        use crate::state::tab_model::TabInfo;
+        let mut regular = TabInfo::new(
+            "tab-1".into(),
+            "https://example.test/".into(),
+            "ws-personal".into(),
+            false,
+        );
+        regular.container_id = Some("account-fixture".into());
+        let mut disposable = TabInfo::new_ephemeral(
+            "tab-2".into(),
+            "https://example.test/private".into(),
+            "ws-personal".into(),
+            true,
+        );
+        disposable.activity.dirty_form = true;
+        let mut imported = BackupTab::from(&regular);
+        imported.id = "tab-3".into();
+        let merged = vec![BackupTab::from(&regular), imported];
+        let tabs = merge_live_tabs(vec![regular, disposable], &merged).unwrap();
+        assert_eq!(
+            tabs.iter().map(|t| t.id.as_str()).collect::<Vec<_>>(),
+            ["tab-1", "tab-2", "tab-3"]
+        );
+        assert_eq!(tabs[0].container_id.as_deref(), Some("account-fixture"));
+        assert!(tabs[1].is_ephemeral && tabs[1].is_active && tabs[1].activity.dirty_form);
+        assert!(tabs[2].is_hibernated && !tabs[2].is_active);
+        let mut collision = merged[1].clone();
+        collision.id = "tab-2".into();
+        assert!(merge_live_tabs(tabs, &[collision]).is_err());
+    }
 
     #[test]
     fn streamed_fingerprint_matches_serialization_and_detects_changes() {

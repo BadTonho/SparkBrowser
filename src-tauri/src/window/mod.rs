@@ -4,10 +4,10 @@ mod content_focus;
 mod content_lifecycle;
 pub mod favicon;
 pub mod fullscreen;
-mod link_context_menu;
 pub mod history_overlay;
 mod internal_overlays;
 mod keyboard_bridge;
+mod link_context_menu;
 pub mod media_popover;
 pub(crate) mod navigation_state;
 pub mod new_tab;
@@ -109,7 +109,7 @@ pub fn send_webview_to_back(view: &tauri::Webview) {
             if platform.controller().ParentWindow(&mut parent).is_ok() && !parent.0.is_null() {
                 SetWindowPos(
                     parent.0,
-                    1isize as *mut std::ffi::c_void,
+                    std::ptr::dangling_mut::<std::ffi::c_void>(),
                     0,
                     0,
                     0,

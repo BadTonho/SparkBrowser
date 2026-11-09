@@ -1,3 +1,4 @@
+import type { TabItem } from "../types/browser";
 import { applyBackupZoom } from "../services/bridge/zoom";
 import { get, writable } from "svelte/store";
 import { isTauriRuntime } from "../services/bridge/runtime";
@@ -70,6 +71,7 @@ let hasPendingChangesForCloud = false;
 let autoSyncReady = false;
 let gdriveLoginRequiredPause = false;
 let awaitingGoogleAccountSelection = false;
+let googleLoginTabId: string | null = null;
 let lastTabsSignature = "";
 
 async function action(work: () => Promise<void>): Promise<void> {
@@ -188,13 +190,38 @@ export const saveBackupSyncSettings = (
     }
   });
 
+function finishGoogleAccountSelection(items: TabItem[]): void {
+  if (!awaitingGoogleAccountSelection) return;
+  const selected = items.find(t => {
+    if (t.id !== googleLoginTabId || t.is_ephemeral) return false;
+    try { const url = new URL(t.url); return url.origin === "https://drive.google.com" && url.pathname.startsWith("/drive/"); }
+    catch { return false; }
+  });
+  if (awaitingGoogleAccountSelection && selected) {
+    awaitingGoogleAccountSelection = false;
+    googleLoginTabId = null;
+    const config = get(backupSyncState).config;
+    if (config.mode === "google_drive_web") {
+      void saveBackupSyncConfig(config, null, selected.id).then(state => {
+        backupSyncState.set(state);
+        gdriveLoginRequiredPause = false;
+        hasPendingChangesForCloud = true;
+        setTimeout(() => void runBackgroundAutoSync(true), 1200);
+      }).catch(error => backupError.set(describeError(error)));
+    }
+  }
+}
+
 export async function openGoogleLoginTab(): Promise<void> {
   gdriveLoginRequiredPause = false;
   awaitingGoogleAccountSelection = true;
+  googleLoginTabId = null;
   await closeSettingsModal();
   await addTab(
     "https://accounts.google.com/AccountChooser?continue=https%3A%2F%2Fdrive.google.com%2Fdrive%2Fmy-drive&service=wise"
   );
+  googleLoginTabId = get(tabs).find(tab => tab.is_active && !tab.is_ephemeral)?.id ?? null;
+  finishGoogleAccountSelection(get(tabs));
 }
 
 export const syncPushNow = () =>
@@ -327,30 +354,13 @@ export function initializeBackupStatus(): void {
     bookmarkFolders.subscribe(notifyPersistentDataChanged),
     workspaces.subscribe(notifyPersistentDataChanged),
     tabs.subscribe((items) => {
+      finishGoogleAccountSelection(items);
       const sig = items
         .filter((t) => !t.is_ephemeral)
         .map((t) => `${t.id}|${t.url}|${t.workspace_id}|${t.is_pinned ? 1 : 0}|${t.container_id ?? ""}`)
         .join("\n");
       if (sig === lastTabsSignature) return;
       lastTabsSignature = sig;
-      const hasDriveTab = items.some(
-        (t) =>
-          !t.is_ephemeral &&
-          t.url.includes("drive.google.com") &&
-          !t.url.includes("accounts.google.com")
-      );
-      if (hasDriveTab) {
-        const shouldImmediateSync =
-          awaitingGoogleAccountSelection ||
-          gdriveLoginRequiredPause ||
-          (get(backupSyncState).config.mode === "google_drive_web" &&
-            !get(backupSyncState).last_synced_at);
-        gdriveLoginRequiredPause = false;
-        awaitingGoogleAccountSelection = false;
-        if (shouldImmediateSync) {
-          setTimeout(() => void runBackgroundAutoSync(true), 1200);
-        }
-      }
       notifyPersistentDataChanged();
     }),
     splitLayout.subscribe(notifyPersistentDataChanged),

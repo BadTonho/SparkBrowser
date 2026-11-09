@@ -77,6 +77,7 @@ const messages: Record<string, MessageKey> = {
   "backup.sync_invalid_url": "backup.error_sync_invalid_url",
   "backup.sync_https_required": "backup.error_sync_https_required",
   "backup.sync_auth_failed": "backup.error_sync_auth_failed",
+  "backup.sync_secure_storage_failed": "backup.error_sync_secure_storage_failed",
   "backup.sync_network_failed": "backup.error_sync_network_failed",
   "backup.sync_invalid_config": "backup.error_sync_invalid_config",
   "backup.sync_gdrive_login_required": "backup.error_sync_gdrive_login_required",

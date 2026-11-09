@@ -75,6 +75,7 @@ pub enum SyncPullResponse {
 
 #[derive(Default)]
 pub struct SyncRuntime {
+    pub credentials: std::sync::Arc<super::credentials::Credentials>,
     pub session_secret: Mutex<Option<String>>,
     pub last_error: Mutex<Option<String>>,
     pub gdrive: gdrive_webview::GDriveWebRuntime,
@@ -143,6 +144,16 @@ pub fn load_config(conn: &Connection) -> Result<SyncTargetConfig, String> {
 }
 
 pub fn resolve_secret(conn: &Connection, runtime: &SyncRuntime) -> Result<Option<String>, String> {
+    // Remove legacy plaintext even if the OS store is unavailable. Keep it only
+    // in this process so a locked keyring never causes another plaintext write.
+    if let Some(legacy) = preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)? {
+        *runtime.session_secret.lock().map_err(|e| e.to_string())? = Some(legacy.clone());
+        remove_legacy_secret(conn)?;
+        runtime
+            .credentials
+            .write(&super::credentials::key(conn), &legacy)?;
+        preferences_repo::store(conn, preferences_repo::BACKUP_SYNC_CREDENTIAL_KEY, "true")?;
+    }
     if let Some(secret) = runtime
         .session_secret
         .lock()
@@ -153,14 +164,48 @@ pub fn resolve_secret(conn: &Connection, runtime: &SyncRuntime) -> Result<Option
             return Ok(Some(secret));
         }
     }
-    let persisted = preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
-    Ok(persisted.filter(|s| !s.is_empty()))
+    if preferences_repo::load_bool(conn, preferences_repo::BACKUP_SYNC_CREDENTIAL_KEY)? {
+        runtime.credentials.read(&super::credentials::key(conn))
+    } else {
+        Ok(None)
+    }
+}
+
+fn forget_secret(conn: &Connection, runtime: &SyncRuntime) -> Result<(), String> {
+    if preferences_repo::load_bool(conn, preferences_repo::BACKUP_SYNC_CREDENTIAL_KEY)? {
+        runtime.credentials.delete(&super::credentials::key(conn))?;
+    }
+    preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_CREDENTIAL_KEY)?;
+    remove_legacy_secret(conn)
+}
+
+fn remove_legacy_secret(conn: &Connection) -> Result<(), String> {
+    if preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?.is_none() {
+        return Ok(());
+    }
+    conn.pragma_update(None, "secure_delete", true)
+        .map_err(|e| e.to_string())?;
+    preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
+    // Startup migration owns the connection: overwrite the deleted cell in the
+    // main database and discard historical WAL frames before accepting tabs.
+    if conn.is_autocommit() {
+        conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 pub fn snapshot(conn: &Connection, runtime: &SyncRuntime) -> Result<SyncStateSnapshot, String> {
     let config = load_config(conn).unwrap_or(SyncTargetConfig::Disabled);
     let has_secret = match &config {
-        SyncTargetConfig::DirectWebdav { .. } => resolve_secret(conn, runtime)?.is_some(),
+        SyncTargetConfig::DirectWebdav { .. } => {
+            runtime
+                .session_secret
+                .lock()
+                .map_err(|e| e.to_string())?
+                .is_some()
+                || preferences_repo::load_bool(conn, preferences_repo::BACKUP_SYNC_CREDENTIAL_KEY)?
+        }
         _ => false,
     };
     let connected_account = match &config {
@@ -202,24 +247,25 @@ pub fn save_config(
 ) -> Result<SyncStateSnapshot, String> {
     match &config {
         SyncTargetConfig::Disabled => {
+            gdrive_webview::session::clear(conn)?;
             *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
             if let Ok(mut email) = runtime.gdrive.connected_email.lock() {
                 *email = None;
             }
-            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
+            forget_secret(conn, runtime)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_GDRIVE_AUTHUSER_KEY)?;
         }
         SyncTargetConfig::GoogleDriveWeb { .. } => {
             *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
-            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
+            forget_secret(conn, runtime)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
         }
         SyncTargetConfig::Folder { directory_path, .. } => {
             let _ = resolve_folder_file_path(directory_path)?;
             *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
-            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
+            forget_secret(conn, runtime)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
         }
         SyncTargetConfig::DirectWebdav {
@@ -232,27 +278,32 @@ pub fn save_config(
             if username.chars().count() > 256 {
                 return Err("backup.sync_invalid_config".into());
             }
+            let same_target = matches!(load_config(conn)?, SyncTargetConfig::DirectWebdav { endpoint_url: old_url, username: old_user, .. } if old_url == *endpoint_url && old_user == *username);
             let effective_secret = match secret {
                 Some(value) if !value.is_empty() => Some(value),
-                _ => resolve_secret(conn, runtime)?,
+                _ if same_target => resolve_secret(conn, runtime)?,
+                _ => None,
             };
             if let Some(secret_value) = effective_secret {
                 if secret_value.len() > 4096 {
                     return Err("backup.sync_invalid_config".into());
                 }
-                *runtime.session_secret.lock().map_err(|e| e.to_string())? =
-                    Some(secret_value.clone());
                 if *remember_secret {
+                    runtime
+                        .credentials
+                        .write(&super::credentials::key(conn), &secret_value)?;
                     preferences_repo::store(
                         conn,
-                        preferences_repo::BACKUP_SYNC_SECRET_KEY,
-                        &secret_value,
+                        preferences_repo::BACKUP_SYNC_CREDENTIAL_KEY,
+                        "true",
                     )?;
                 } else {
-                    preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
+                    forget_secret(conn, runtime)?;
                 }
-            } else if !*remember_secret {
-                preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_SECRET_KEY)?;
+                *runtime.session_secret.lock().map_err(|e| e.to_string())? = Some(secret_value);
+            } else {
+                forget_secret(conn, runtime)?;
+                *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
             }
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
         }
@@ -328,10 +379,8 @@ pub fn push_document_to_target(
         SyncTargetConfig::Disabled | SyncTargetConfig::GoogleDriveWeb { .. } => {
             Err("backup.sync_not_configured".to_string())
         }
-        SyncTargetConfig::Folder { directory_path, .. } => {
-            resolve_folder_file_path(directory_path)
-                .and_then(|file_path| files::write(&file_path, document))
-        }
+        SyncTargetConfig::Folder { directory_path, .. } => resolve_folder_file_path(directory_path)
+            .and_then(|file_path| files::write(&file_path, document)),
         SyncTargetConfig::DirectWebdav {
             endpoint_url,
             username,
@@ -689,7 +738,8 @@ pub async fn pull_sync(
     }
 
     let apply_prefs = apply_preferences_override.unwrap_or(config_apply_prefs);
-    let result = service::import(app, preview.token, apply_prefs, current_preferences.clone()).await?;
+    let result =
+        service::import(app, preview.token, apply_prefs, current_preferences.clone()).await?;
     let synced_doc = service::capture(app, current_preferences).await?;
     let current_fp = fingerprint_hex(&synced_doc)?;
     let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;

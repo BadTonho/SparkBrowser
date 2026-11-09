@@ -11,10 +11,16 @@ pub struct TrackingSettings {
 
 impl TrackingSettings {
     pub fn applies_to(&self, url: &Url) -> bool {
-        self.enabled && url.host_str().is_some_and(|host| {
-            let host = host.trim_end_matches('.');
-            !self.exceptions.iter().any(|domain| host == domain || host.strip_suffix(domain).is_some_and(|prefix| prefix.ends_with('.')))
-        })
+        self.enabled
+            && url.host_str().is_some_and(|host| {
+                let host = host.trim_end_matches('.');
+                !self.exceptions.iter().any(|domain| {
+                    host == domain
+                        || host
+                            .strip_suffix(domain)
+                            .is_some_and(|prefix| prefix.ends_with('.'))
+                })
+            })
     }
     pub fn validate(mut self) -> Result<Self, String> {
         if self.exceptions.len() > 256 {
@@ -141,8 +147,14 @@ pub fn clean(url: &Url, settings: &TrackingSettings) -> Url {
 
 pub fn click_script(settings: &TrackingSettings, token: &str) -> String {
     include_str!("tracking_clicks.js")
-        .replace("__SETTINGS__", &serde_json::to_string(settings).expect("settings serializable"))
-        .replace("__TOKEN__", &serde_json::to_string(token).expect("token serializable"))
+        .replace(
+            "__SETTINGS__",
+            &serde_json::to_string(settings).expect("settings serializable"),
+        )
+        .replace(
+            "__TOKEN__",
+            &serde_json::to_string(token).expect("token serializable"),
+        )
 }
 
 #[cfg(test)]
@@ -194,11 +206,16 @@ mod tests {
         let settings = TrackingSettings {
             enabled: true,
             exceptions: vec![" EXAMPLE.Test. ".into(), "example.test".into()],
-        }.validate().unwrap();
+        }
+        .validate()
+        .unwrap();
         assert_eq!(settings.exceptions, ["example.test"]);
         let excluded = Url::parse("https://shop.example.test./?utm_source=x").unwrap();
         assert_eq!(clean(&excluded, &settings), excluded);
         let unrelated = Url::parse("https://notexample.test/?utm_source=x").unwrap();
-        assert_eq!(clean(&unrelated, &settings).as_str(), "https://notexample.test/");
+        assert_eq!(
+            clean(&unrelated, &settings).as_str(),
+            "https://notexample.test/"
+        );
     }
 }
