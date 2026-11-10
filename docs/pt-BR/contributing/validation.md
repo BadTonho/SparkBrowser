@@ -42,3 +42,7 @@ Estas verificações exigem uma área de trabalho interativa e são separadas do
 7. Navegue para um host bloqueado. A última URL confirmada deve permanecer. Uma navegação comum concluída deve adicionar uma entrada ao histórico.
 
 Finalize conferindo `git status`, `git diff`, `git diff --cached` e as regras de ignore para arquivos sensíveis.
+
+## Arquitetura e contratos entre funcionalidades
+
+`npm run architecture:check` faz parte da validação consolidada. Execute `npm run test:native:critical` após compilar o aplicativo nativo isolado para conferir os cenários obrigatórios entre funcionalidades. A CI executa esse conjunto em pull requests e a suíte completa diariamente e antes da publicação de releases. Consulte o [fluxo de regressões](regression-workflow.md) e a [responsabilidade pelo estado](../architecture/state-ownership.md).

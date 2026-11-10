@@ -1,5 +1,5 @@
 import { safeStorage } from "../services/storage.js";
-import { writable, get } from "svelte/store";
+import { writable, readonly, get } from "svelte/store";
 import type { WorkspaceItem } from "../types/browser";
 import {
   fetchWorkspaces,
@@ -16,12 +16,15 @@ import {
   NEW_WORKSPACE_DEFAULT_COLORS,
 } from "../constants/workspaceDefaults";
 
-export const workspaces = writable<WorkspaceItem[]>(
+const confirmedWorkspaces = writable<WorkspaceItem[]>(
   DEFAULT_WORKSPACES.map((workspace) => ({ ...workspace }))
 );
 
+export const workspaces = readonly(confirmedWorkspaces);
+export const applyWorkspaceSnapshot = confirmedWorkspaces.set;
+
 export { activeWorkspaceId } from "./workspaceSelectionStore";
-import { activeWorkspaceId } from "./workspaceSelectionStore";
+import { activeWorkspaceId, confirmWorkspaceSelection, workspaceSelectionRevision } from "./workspaceSelectionStore";
 
 activeWorkspaceId.subscribe((id) => {
   const workspace = get(workspaces).find((item) => item.id === id);
@@ -77,16 +80,20 @@ export function applyWorkspaceTheme(ws: WorkspaceItem): void {
   );
 }
 
-export async function initializeWorkspaces(): Promise<void> {
+export async function initializeWorkspaces(active = () => true): Promise<void> {
+  const revision = workspaceSelectionRevision();
   const [wsList, currentId] = await Promise.all([
     fetchWorkspaces(),
     fetchActiveWorkspace(),
   ]);
+  if (!active()) return;
   if (wsList.length > 0) {
-    workspaces.set(wsList);
+    applyWorkspaceSnapshot(wsList);
   }
-  const found = wsList.find((w) => w.id === currentId) ?? wsList[0];
-  activeWorkspaceId.set(found?.id ?? currentId);
+  const unchanged = revision === workspaceSelectionRevision();
+  const selected = unchanged ? currentId : get(activeWorkspaceId);
+  const found = wsList.find((w) => w.id === selected) ?? wsList[0];
+  if (unchanged) confirmWorkspaceSelection(found?.id ?? currentId);
   if (found) {
     applyWorkspaceTheme(found);
   }
@@ -97,7 +104,7 @@ export async function activateWorkspace(workspaceId: string): Promise<void> {
     applyTabsSnapshot(await switchWorkspace(workspaceId));
     return;
   }
-  activeWorkspaceId.set(workspaceId);
+  confirmWorkspaceSelection(workspaceId);
   if (typeof safeStorage !== "undefined") safeStorage.setItem("veloce_active_workspace", workspaceId);
 }
 
@@ -130,7 +137,7 @@ export async function saveWorkspaceProfile(
   const updated = isNew
     ? await createWorkspaceProfile(normalized)
     : await updateWorkspaceProfile(normalized);
-  workspaces.set(updated);
+  applyWorkspaceSnapshot(updated);
   if (get(activeWorkspaceId) === normalized.id) {
     const active = updated.find((item) => item.id === normalized.id);
     if (active) applyWorkspaceTheme(active);
@@ -152,7 +159,7 @@ export async function removeWorkspaceProfile(
     targetWorkspaceId,
     get(tabs)
   );
-  workspaces.set(result.workspaces);
+  applyWorkspaceSnapshot(result.workspaces);
   applyTabsSnapshot(result.tabs);
   if (typeof safeStorage !== "undefined") {
     if (!isTauriRuntime()) {

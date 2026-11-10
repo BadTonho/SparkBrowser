@@ -3,7 +3,9 @@ import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export async function checkDarkModeProbe(context) {
-  const { invoke, until, fixture, script, screenshot, directory, wait } = context;
+  const { invoke, until, fixture, screenshot, directory, wait, withWebview } = context;
+  let contentPath;
+  const script = (...args) => withWebview(contentPath, () => context.script(...args));
   const initialScheme = await invoke('set_dark_mode_probe_scheme', { mode: 'dark' });
   const results = [];
   try {
@@ -19,7 +21,9 @@ export async function checkDarkModeProbe(context) {
       const url = new URL('/dark-mode-probe', fixture.origin);
       url.searchParams.set('kind', item.kind);
       if (item.transform) url.searchParams.set('transform', '1');
+      contentPath = url.pathname + url.search;
       await invoke('create_tab', { url: url.toString(), searchEngine: 'google' });
+      await invoke('set_dark_mode_probe_scheme', { mode: 'dark' });
       await until(() => script(`return window.darkModeProbeReady===true && document.querySelector('#probe-image')?.complete && document.querySelector('#probe-image')?.naturalWidth===240 && document.querySelector('#probe-video')?.readyState>=2`), `dark mode probe ready: ${item.name}`);
       await until(() => script('return matchMedia("(prefers-color-scheme: dark)").matches'), 'native dark preference active');
       await wait(800);
@@ -43,7 +47,9 @@ export async function checkDarkModeProbe(context) {
     for (const kind of ['supported', 'light-only']) {
       const url = new URL('/dark-mode-probe', fixture.origin);
       url.searchParams.set('kind', kind);
+      contentPath = url.pathname + url.search;
       await invoke('create_tab', { url: url.toString(), searchEngine: 'google' });
+      await invoke('set_dark_mode_probe_scheme', { mode: 'light' });
       await until(() => script('return window.darkModeProbeReady===true && document.querySelector("#probe-video")?.readyState>=2'), `light preference page ready: ${kind}`);
       await until(() => script('return !matchMedia("(prefers-color-scheme: dark)").matches'), 'native light preference active');
       const metrics = await script(`return {kind:document.documentElement.dataset.kind,dark:matchMedia('(prefers-color-scheme: dark)').matches,background:getComputedStyle(document.body).backgroundColor,scrollY}`);

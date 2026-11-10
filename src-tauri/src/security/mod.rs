@@ -33,7 +33,12 @@ pub async fn set_smart_screen(app: &tauri::AppHandle, enabled: bool) -> Result<(
     use tauri::Manager;
     use windows_core::Interface;
     let state = app.state::<crate::state::browser_state::BrowserState>();
-    let tabs = state.tabs.lock().map_err(|e| e.to_string())?.clone();
+    let tabs = state
+        .session()
+        .tabs()
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     let mut changed = 0usize;
     for tab in tabs {
         let label = crate::state::tab_model::webview_label_for_tab(&tab.id);
@@ -61,9 +66,7 @@ pub async fn set_smart_screen(app: &tauri::AppHandle, enabled: bool) -> Result<(
     if changed == 0 {
         return Err("SmartScreen is unavailable in the current WebView2 runtime".into());
     }
-    state
-        .smart_screen_supported
-        .store(true, std::sync::atomic::Ordering::Release);
+    state.policies().set_smart_screen_supported(true);
     Ok(())
 }
 

@@ -53,10 +53,11 @@ test('history refresh and errors preserve draft and focus, clear cards, and allo
   f.update({autofocus:false});assert.equal(f.nodes.get('#empty').hidden,false);assert.equal(recent.children.length,0);
 });
 
-test('new tab bridge rejects delayed document and request replies and captures monotonic actions',()=>{
+for (const transport of ['navigation', 'native message']) test(`new tab bridge rejects delayed replies and captures monotonic actions over ${transport}`,()=>{
   const listeners=new Map(),received=[],sent=[];
-  const location={get href(){return 'http://tauri.localhost/new-tab.html';},set href(value){sent.push(new URL(value));}};
+  const location={get href(){return 'http://tauri.localhost/new-tab.html';},set href(value){assert.equal(transport,'navigation','native reports must not cancel a page navigation');sent.push(new URL(value));}};
   const window={addEventListener:(type,fn)=>listeners.set(type,fn),dispatchEvent:e=>received.push(e.detail)};window.top=window;
+  if (transport === 'native message') window.__velocePostContent = url => sent.push(new URL(url));
   const document={addEventListener:(type,fn)=>listeners.set(type,fn)};
   const source=readFileSync('src-tauri/src/window/new_tab/bridge.js','utf8').replaceAll('__NEW_TAB_URL__',JSON.stringify(location.href)).replaceAll('__NEW_TAB_TOKEN__',JSON.stringify('artificial-token')).replaceAll('__NEW_TAB_ID__',JSON.stringify('tab-1'));
   runInNewContext(source,{window,document,location,URLSearchParams,crypto:{randomUUID:()=> 'test-document'},CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail;}}});

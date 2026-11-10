@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export async function checkFullPageCaptureProbe(context) {
-  const { invoke, until, fixture, script, directory, screenshot } = context;
+  const { invoke, until, fixture, directory, screenshot, withWebview } = context;
+  const script = (...args) => withWebview('/capture-probe', () => context.script(...args));
   const packet = await invoke('create_tab', { url: fixture.origin + '/capture-probe', searchEngine: 'google' });
   const tab = packet.tabs.find(item => item.is_active);
   assert.ok(tab, 'capture fixture tab is active');

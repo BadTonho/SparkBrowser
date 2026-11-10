@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Executable, [Parameter(Mandatory=$true)][int]$Key, [switch]$Up)
+param([Parameter(Mandatory=$true)][string]$Executable, [Parameter(Mandatory=$true)][int]$Key, [switch]$Up, [switch]$Stroke, [switch]$Prompt, [string]$RunDirectory)
 $ErrorActionPreference = 'Stop'
 Add-Type -TypeDefinition @'
 using System;
@@ -43,8 +43,23 @@ if (-not $Up) {
     [void][NativeTestInput]::GetWindowThreadProcessId([NativeTestInput]::GetForegroundWindow(), [ref]$foregroundProcess)
     $foregroundPath = (Get-Process -Id $foregroundProcess).Path
     if (-not [string]::Equals([IO.Path]::GetFullPath($foregroundPath), [IO.Path]::GetFullPath($Executable), [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Native keyboard test requires its isolated browser in the foreground (actual process: $((Get-Process -Id $foregroundProcess).ProcessName))"
+        $verifiedPrompt = $false
+        if ($Prompt -and $Key -eq 0x0D -and $RunDirectory) {
+            $runsRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../.cache/native-runs')) + [IO.Path]::DirectorySeparatorChar
+            $scenario = [IO.Path]::GetFullPath($RunDirectory)
+            if (-not $scenario.StartsWith($runsRoot,[StringComparison]::OrdinalIgnoreCase)) { throw 'Prompt must belong to an isolated scenario' }
+            $profilePattern = [regex]::Escape((Join-Path $scenario 'profile')) + '[\\/]'
+            $browser = Get-CimInstance Win32_Process -Filter "ProcessId = $foregroundProcess"
+            $verifiedPrompt = $browser.Name -eq 'msedgewebview2.exe' -and $browser.CommandLine -match $profilePattern
+        }
+        if (-not $verifiedPrompt) { throw "Native keyboard test requires its isolated browser in the foreground (actual process: $((Get-Process -Id $foregroundProcess).ProcessName))" }
     }
 }
-if ($Key -notin @(0x11,0x10,0x57,0x54,0x4C)) { throw 'Unsupported test key' }
-[NativeTestInput]::Key([uint16]$Key, [bool]$Up)
+if ($Key -notin @(0x11,0x10,0x57,0x54,0x4C,0x76,0x0D)) { throw 'Unsupported test key' }
+if ($Stroke) {
+    if ($Up) { throw 'A complete keystroke cannot be a key release' }
+    try {
+        [NativeTestInput]::Key([uint16]$Key, $false)
+        Start-Sleep -Milliseconds 30
+    } finally { [NativeTestInput]::Key([uint16]$Key, $true) }
+} else { [NativeTestInput]::Key([uint16]$Key, [bool]$Up) }

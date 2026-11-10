@@ -18,6 +18,10 @@ impl RecoveryService {
 }
 /// If an installer returns, this process is running again, even if its pre-exit hook ran.
 pub fn resume_after_installer(state: &BrowserState) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     recovery_repo::resume_run(db.as_ref().ok_or("recovery.database_unavailable")?)
 }

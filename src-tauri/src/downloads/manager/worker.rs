@@ -5,7 +5,11 @@ impl DownloadManager {
         if !verify {
             super::super::transfer::validate_download_url(&record.task.url)?;
             let state = app.state::<BrowserState>();
-            let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?
+            let shield = *state
+                .policies()
+                .shield_enabled()
+                .lock()
+                .map_err(|e| e.to_string())?
                 && crate::privacy::adblock_engine::site_is_protected(&state, &record.task.url)
                 && record.task.source_page_url.as_deref().is_none_or(|source| {
                     crate::privacy::adblock_engine::site_is_protected(&state, source)

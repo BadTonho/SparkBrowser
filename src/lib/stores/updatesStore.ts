@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { tr } from "../i18n";
 import { describeError } from "../services/user-errors.js";
 import { get, writable } from "svelte/store";
@@ -15,7 +16,7 @@ async function action(work: () => Promise<void>) {
   try { await work(); } catch (error) { updateActionError.set(describeError(error)); }
   finally { updateBusy.set(false); }
 }
-export function initializeUpdates(): () => void {
+function startUpdates(): () => void {
   let disposed = false;
   let stop: (() => void) | undefined;
   void (async () => {
@@ -44,3 +45,5 @@ export const startUpdateInstall = () => action(async () => {
   if (!window.confirm(tr("common.install_confirm", { version }))) return;
   await installUpdate(version, false);
 });
+
+export const initializeUpdates = createSharedLifecycle(scope => scope.own(startUpdates()));

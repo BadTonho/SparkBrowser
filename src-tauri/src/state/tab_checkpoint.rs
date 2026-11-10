@@ -12,37 +12,45 @@ pub struct TabCheckpoint {
 impl TabCheckpoint {
     pub fn capture(state: &BrowserState) -> Result<Self, String> {
         Ok(Self {
-            resident_limit: state
-                .resident_limit
-                .load(std::sync::atomic::Ordering::Relaxed),
+            resident_limit: state.session().resident_limit(),
             tabs: state.snapshot_tabs(),
             layouts: state
-                .split_layouts
+                .session()
+                .edit_split_layouts()
                 .lock()
                 .map_err(|e| e.to_string())?
                 .clone(),
             active_tab: state
-                .active_tab_id
+                .session()
+                .edit_active_tab_id()
                 .lock()
                 .map_err(|e| e.to_string())?
                 .clone(),
             active_workspace: state
-                .active_workspace_id
+                .session()
+                .edit_active_workspace_id()
                 .lock()
                 .map_err(|e| e.to_string())?
                 .clone(),
         })
     }
     pub fn restore(mut self, state: &BrowserState) -> Result<(), String> {
-        state
-            .resident_limit
-            .store(self.resident_limit, std::sync::atomic::Ordering::Relaxed);
-        *state.active_tab_id.lock().map_err(|e| e.to_string())? = self.active_tab;
+        state.session().set_resident_limit(self.resident_limit);
         *state
-            .active_workspace_id
+            .session()
+            .edit_active_tab_id()
+            .lock()
+            .map_err(|e| e.to_string())? = self.active_tab;
+        *state
+            .session()
+            .edit_active_workspace_id()
             .lock()
             .map_err(|e| e.to_string())? = self.active_workspace;
-        let mut tabs = state.tabs.lock().map_err(|e| e.to_string())?;
+        let mut tabs = state
+            .session()
+            .edit_tabs()
+            .lock()
+            .map_err(|e| e.to_string())?;
         // Native navigation/media callbacks can finish while persistence is waiting.
         // Roll back organization, while retaining those document observations.
         for tab in &mut self.tabs {
@@ -57,7 +65,11 @@ impl TabCheckpoint {
         }
         *tabs = self.tabs;
         drop(tabs);
-        *state.split_layouts.lock().map_err(|e| e.to_string())? = self.layouts;
+        *state
+            .session()
+            .edit_split_layouts()
+            .lock()
+            .map_err(|e| e.to_string())? = self.layouts;
         Ok(())
     }
 
@@ -74,20 +86,32 @@ impl TabCheckpoint {
         activation: Option<(&str, bool)>,
         change: impl FnOnce() -> Result<T, String>,
     ) -> Result<T, String> {
+        Self::commit_transaction(state, activation, change, |_| Ok(()))
+    }
+
+    pub(in crate::state) fn commit_transaction<T>(
+        state: &BrowserState,
+        activation: Option<(&str, bool)>,
+        change: impl FnOnce() -> Result<T, String>,
+        extra: impl FnOnce(&rusqlite::Connection) -> Result<(), String>,
+    ) -> Result<T, String> {
         let before = Self::capture(state)?;
         let result = change().and_then(|value| {
             state.refresh_visible_tabs()?;
             crate::state::memory_policy::enforce_resident_limit(
-                &mut state.tabs.lock().map_err(|e| e.to_string())?,
-                state
-                    .resident_limit
-                    .load(std::sync::atomic::Ordering::Relaxed),
+                &mut state
+                    .session()
+                    .edit_tabs()
+                    .lock()
+                    .map_err(|e| e.to_string())?,
+                state.session().resident_limit(),
                 &state
-                    .hibernation_exemptions
+                    .session()
+                    .edit_hibernation_exemptions()
                     .lock()
                     .map_err(|e| e.to_string())?,
             );
-            state.persist_activated_session(activation)?;
+            state.persist_session_transaction(activation, extra)?;
             Ok(value)
         });
         if result.is_err() {

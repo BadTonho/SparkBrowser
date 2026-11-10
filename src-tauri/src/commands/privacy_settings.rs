@@ -20,19 +20,11 @@ pub struct PrivacySettings {
 pub fn get_privacy_settings(state: State<'_, BrowserState>) -> PrivacySettings {
     PrivacySettings {
         history_retention: HistoryRetention::from_months(
-            state
-                .history_retention_months
-                .load(std::sync::atomic::Ordering::Acquire),
+            state.policies().history_retention_months(),
         ),
-        allow_popups: state
-            .allow_popups
-            .load(std::sync::atomic::Ordering::Acquire),
-        smart_screen_supported: state
-            .smart_screen_supported
-            .load(std::sync::atomic::Ordering::Acquire),
-        smart_screen_enabled: state
-            .smart_screen_enabled
-            .load(std::sync::atomic::Ordering::Acquire),
+        allow_popups: state.policies().allow_popups(),
+        smart_screen_supported: state.policies().smart_screen_supported(),
+        smart_screen_enabled: state.policies().smart_screen_enabled(),
     }
 }
 
@@ -42,24 +34,19 @@ pub async fn set_history_retention(
     state: State<'_, BrowserState>,
     retention: HistoryRetention,
 ) -> Result<(), String> {
-    let _preference = state.history_retention_operation.lock().await;
+    let _preference = state.policies().history_retention_operation().lock().await;
     // Stop the writer before draining its queue, including visits already queued.
-    let old = state
-        .history_retention_months
-        .load(std::sync::atomic::Ordering::Acquire);
+    let old = state.policies().history_retention_months();
     if retention == HistoryRetention::Never {
-        state.history_retention_months.store(
-            retention.state_value(),
-            std::sync::atomic::Ordering::Release,
-        );
+        state
+            .policies()
+            .set_history_retention_months(retention.state_value());
     }
     if let Err(error) = crate::commands::persistence::flush_navigation(app.clone()).await {
-        state
-            .history_retention_months
-            .store(old, std::sync::atomic::Ordering::Release);
+        state.policies().set_history_retention_months(old);
         return Err(error);
     }
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     let now = history_repo::current_unix_timestamp();
     let result = executor::run(app, move |conn| {
         crate::database::preferences_repo::store(
@@ -78,15 +65,12 @@ pub async fn set_history_retention(
     })
     .await;
     if let Err(error) = result {
-        state
-            .history_retention_months
-            .store(old, std::sync::atomic::Ordering::Release);
+        state.policies().set_history_retention_months(old);
         return Err(error);
     }
-    state.history_retention_months.store(
-        retention.state_value(),
-        std::sync::atomic::Ordering::Release,
-    );
+    state
+        .policies()
+        .set_history_retention_months(retention.state_value());
     Ok(())
 }
 
@@ -104,9 +88,7 @@ pub async fn set_popup_setting(
         )
     })
     .await?;
-    state
-        .allow_popups
-        .store(enabled, std::sync::atomic::Ordering::Release);
+    state.policies().set_allow_popups(enabled);
     Ok(())
 }
 
@@ -116,10 +98,8 @@ pub async fn set_smart_screen(
     state: State<'_, BrowserState>,
     enabled: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
-    let previous = state
-        .smart_screen_enabled
-        .load(std::sync::atomic::Ordering::Acquire);
+    let _operation = state.session().operation().await;
+    let previous = state.policies().smart_screen_enabled();
     crate::security::set_smart_screen(&app, enabled).await?;
     let persisted = executor::run(app.clone(), move |conn| {
         crate::database::preferences_repo::store(
@@ -142,8 +122,6 @@ pub async fn set_smart_screen(
         }
         return Err(error);
     }
-    state
-        .smart_screen_enabled
-        .store(enabled, std::sync::atomic::Ordering::Release);
+    state.policies().set_smart_screen_enabled(enabled);
     Ok(())
 }

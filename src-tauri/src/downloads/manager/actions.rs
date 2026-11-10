@@ -9,7 +9,11 @@ impl DownloadManager {
             .map(|(id, _)| id.clone())
             .collect::<Vec<_>>();
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let tx = db
             .as_ref()
             .ok_or("downloads.database_unavailable")?

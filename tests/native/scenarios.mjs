@@ -120,7 +120,8 @@ export const scenarios = {
     const { invoke, until, fixture, script, click, wait, screenshot, request, sessionId } = context;
     const { a, b } = await prepareTabs(context);
     // Draft and focus lifecycle are checked in the shell's DOM through its real event handlers.
-    await until(() => script('return document.querySelector(".omnibox-input").value === arguments[0]', fixture.origin + '/page/a/spa'), 'frontend navigation settled');
+    await script('document.querySelector(".omnibox-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
+    await until(() => script('return document.querySelector(".omnibox-input").value.endsWith("/page/a/spa")'), 'formatted frontend navigation settled');
     await click('.omnibox-input');
     await script(`const input = document.querySelector('.omnibox-input'); input.focus(); input.value = 'draft survives'; input.dispatchEvent(new Event('input', { bubbles: true }));`);
     assert.equal(await script('return document.activeElement === document.querySelector(".omnibox-input")'), true, 'address has focus');
@@ -138,7 +139,7 @@ export const scenarios = {
         ? context.withWebview('/index.html?surface=downloads', operation)
         : label === 'open-history'
           ? context.withWebview('/history-overlay.html', operation)
-          : operation();
+          : context.withWebview('/index.html?surface=settings-quick', operation);
       await inspect(async () => {
       const dialog = label === 'open-history' ? '[role=dialog]:not([hidden])' : '[role=dialog]';
       await until(() => script(`return Boolean(document.querySelector('${dialog}'))`), `${label} dialog`);
@@ -152,15 +153,14 @@ export const scenarios = {
       });
       await until(() => script('return document.activeElement?.getAttribute("data-testid") === arguments[0]', label), 'return focus to opener');
     }
-    await script(`document.querySelector('button[data-testid="open-settings"]').click();`);
-    await script(`document.querySelector('[data-testid="settings-updates"]').click();`);
+    await context.openSettings(); await click('[data-testid="settings-updates"]');
     await until(() => script('return Boolean(document.querySelector("#updates-heading"))'), 'updates settings');
     assert.equal(await script('return document.querySelector("#update-channel").disabled'), true, 'isolated native builds cannot update the production installation');
     assert.equal((await invoke('get_update_state')).supported, false);
     if (process.env.VELOCE_NATIVE_SCREENSHOTS === '1') {
       await screenshot('updates');
     }
-    await script('document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))');
+    await context.closeSettings();
     for (const [width, height] of [[900, 700], [1400, 900]]) {
       await request('POST', `/session/${sessionId()}/window/rect`, { width, height });
       await until(() => script('const box = document.querySelector(".viewport-frame").getBoundingClientRect(); return box.width >= 100 && box.height >= 100;'), 'viewport after resize');

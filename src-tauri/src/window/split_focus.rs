@@ -13,17 +13,24 @@ pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
     );
     tauri::async_runtime::spawn(async move {
         let state = app.state::<BrowserState>();
-        let _operation = state.tab_operations.lock().await;
+        let _operation = state.session().operation().await;
         if super::tab_drag_preview::active(&app)
             || !super::navigation_state::is_current_generation(&app, &label, &token)
-            || state.is_overlay_open.lock().map(|v| *v).unwrap_or(true)
             || state
-                .workspace_switcher_open
+                .surfaces()
+                .is_overlay_open()
                 .lock()
                 .map(|v| *v)
                 .unwrap_or(true)
             || state
-                .bookmark_context_menu_open
+                .surfaces()
+                .workspace_switcher_open()
+                .lock()
+                .map(|v| *v)
+                .unwrap_or(true)
+            || state
+                .surfaces()
+                .bookmark_context_menu_open()
                 .lock()
                 .map(|v| *v)
                 .unwrap_or(true)
@@ -31,18 +38,15 @@ pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
                 .current_split()
                 .is_some_and(|layout| layout.contains(&id))
             || state
-                .active_tab_id
+                .session()
+                .active_tab_id()
                 .lock()
                 .map(|active| *active == id)
                 .unwrap_or(true)
         {
             return;
         }
-        if state
-            .select_tab(&id)
-            .and_then(|_| state.persist_session())
-            .is_err()
-        {
+        if state.select_tab_committed(&id).is_err() {
             let _ = crate::security::emit_shell(
                 &app,
                 "browser-error",

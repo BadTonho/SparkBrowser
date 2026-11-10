@@ -22,7 +22,8 @@ pub fn shell_only(
                     .message
                     .webview_ref()
                     .state::<crate::state::browser_state::BrowserState>()
-                    .startup_ready
+                    .infrastructure()
+                    .startup_ready()
                     .load(std::sync::atomic::Ordering::Acquire)
             {
                 invoke

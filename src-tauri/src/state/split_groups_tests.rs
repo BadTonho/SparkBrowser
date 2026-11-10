@@ -14,13 +14,18 @@ fn fixture() -> BrowserState {
     let state = BrowserState::default();
     let db = Connection::open_in_memory().unwrap();
     initialize_schema(&db).unwrap();
-    *state.db.lock().unwrap() = Some(db);
+    *state.infrastructure().db().lock().unwrap() = Some(db);
     for id in ["b", "c", "d"] {
-        state.tabs.lock().unwrap().push(TabInfo::new_default(
-            id.into(),
-            "https://example.test/".into(),
-            false,
-        ));
+        state
+            .session()
+            .edit_tabs()
+            .lock()
+            .unwrap()
+            .push(TabInfo::new_default(
+                id.into(),
+                "https://example.test/".into(),
+                false,
+            ));
     }
     state.persist_session().unwrap();
     split_docking::commit(&state, &context(&state), "b", DockSide::Right).unwrap();
@@ -30,7 +35,7 @@ fn context(state: &BrowserState) -> DockContext {
     let split = state.current_split();
     DockContext {
         workspace_id: "ws-personal".into(),
-        active_tab_id: state.active_tab_id.lock().unwrap().clone(),
+        active_tab_id: state.session().edit_active_tab_id().lock().unwrap().clone(),
         split_key: split.as_ref().map(SplitLayout::key),
         groups_key: split.as_ref().map(SplitLayout::groups_key),
     }
@@ -62,7 +67,16 @@ fn groups_select_independently_and_only_visible_pages_are_protected() {
         .protected_from_hibernation());
     state.persist_session().unwrap();
     assert_eq!(
-        split_repo::load(state.db.lock().unwrap().as_ref().unwrap()).unwrap()["ws-personal"],
+        split_repo::load(
+            state
+                .infrastructure()
+                .db()
+                .lock()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+        )
+        .unwrap()["ws-personal"],
         state.current_split().unwrap()
     );
 }
@@ -94,7 +108,7 @@ fn transfer_reorders_group_slots_preserves_selection_and_rejects_stale_context()
 fn transfer_failure_rolls_back_group_order_selection_and_database() {
     let state = fixture();
     let before = serde_json::to_value(state.snapshot_packet()).unwrap();
-    state.db.lock().unwrap().as_ref().unwrap().execute_batch("CREATE TRIGGER fail_groups BEFORE INSERT ON workspace_splits BEGIN SELECT RAISE(ABORT,'group write failure'); END;").unwrap();
+    state.infrastructure().db().lock().unwrap().as_ref().unwrap().execute_batch("CREATE TRIGGER fail_groups BEFORE INSERT ON workspace_splits BEGIN SELECT RAISE(ABORT,'group write failure'); END;").unwrap();
     assert!(
         split_transfer::commit(&state, &context(&state), "c", DockSide::Right, Some("b")).is_err()
     );
@@ -105,7 +119,8 @@ fn transfer_failure_rolls_back_group_order_selection_and_database() {
         before["split_layout"]
     );
     state
-        .db
+        .infrastructure()
+        .db()
         .lock()
         .unwrap()
         .as_ref()
@@ -128,7 +143,7 @@ fn removal_chooses_right_neighbor_then_left_and_empty_group_ends_split() {
     assert!(!split.remove_member("tab-1"));
     split_transfer::commit(&state, &context(&state), "b", DockSide::Left, None).unwrap();
     assert!(state.current_split().is_none());
-    assert_eq!(*state.active_tab_id.lock().unwrap(), "b");
+    assert_eq!(*state.session().edit_active_tab_id().lock().unwrap(), "b");
 }
 
 #[test]
@@ -140,7 +155,8 @@ fn workspace_transfer_repairs_source_and_assigns_destination_focused_group() {
     state.move_tab("b", "ws-work").unwrap();
     state.refresh_visible_tabs().unwrap();
     assert!(!state
-        .split_layouts
+        .session()
+        .edit_split_layouts()
         .lock()
         .unwrap()
         .contains_key("ws-personal"));

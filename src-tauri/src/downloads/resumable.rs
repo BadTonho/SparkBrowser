@@ -186,7 +186,11 @@ pub async fn run(app: &AppHandle, id: &str, control: &Control, verify: bool) -> 
     let state = app.state::<crate::state::browser_state::BrowserState>();
     let shield = match record.task.source_page_url.as_deref() {
         Some(source) => {
-            *state.shield_enabled.lock().map_err(|e| e.to_string())?
+            *state
+                .policies()
+                .shield_enabled()
+                .lock()
+                .map_err(|e| e.to_string())?
                 && crate::privacy::adblock_engine::site_is_protected(&state, source)
                 && crate::privacy::adblock_engine::site_is_protected(&state, &record.task.url)
         }

@@ -10,13 +10,14 @@ import {
   isTauriRuntime,
 } from "../services/tauri-bridge";
 
-export const privacyStats = writable<PrivacyStats>({
+const confirmedPrivacyStats = writable<PrivacyStats>({
   shield_enabled: true,
   auto_skip_ads_enabled: false,
   blocked_count: 0,
   hibernated_tabs_count: 0,
   supports_live_policy_updates: false,
 });
+export const privacyStats = { subscribe: confirmedPrivacyStats.subscribe };
 
 const autoSkipBusy = writable(false);
 const shieldBusy = writable(false);
@@ -26,11 +27,11 @@ const autoSkip = createAutoSkipPreference({
   storage: safeStorage,
   apply: async (enabled: boolean) => {
     const stats = await setNativeAutoSkipAds(enabled);
-    privacyStats.set(stats);
+    confirmedPrivacyStats.set(stats);
     return stats.auto_skip_ads_enabled;
   },
   changed: (value: boolean, busy: boolean) => {
-    privacyStats.update(stats => ({ ...stats, auto_skip_ads_enabled: value }));
+    confirmedPrivacyStats.update(stats => ({ ...stats, auto_skip_ads_enabled: value }));
     autoSkipBusy.set(busy);
   },
 });
@@ -42,8 +43,9 @@ export async function setAutoSkipAds(enabled: boolean): Promise<void> {
 }
 
 export async function initializePrivacyStats(): Promise<void> {
+  const revision = privacyRevision;
   const initial = await fetchPrivacyStats();
-  privacyStats.set(initial);
+  if (privacyRevision === revision) applyPrivacyStats(initial);
   try { await autoSkip.initialize(); }
   catch (error) { privacyError.set(describeError(error)); }
 }
@@ -53,11 +55,18 @@ export async function flipAdblockShield(): Promise<void> {
   privacyError.set("");
   try {
     if (!isTauriRuntime()) {
-      privacyStats.update((s) => ({ ...s, shield_enabled: !s.shield_enabled }));
+      confirmedPrivacyStats.update((s) => ({ ...s, shield_enabled: !s.shield_enabled }));
       return;
     }
     const updated = await toggleAdblockShield();
-    privacyStats.set(updated);
+    confirmedPrivacyStats.set(updated);
   } catch (error) { privacyError.set(describeError(error)); throw error; }
   finally { shieldBusy.set(false); }
+}
+
+
+let privacyRevision = 0;
+export function applyPrivacyStats(stats: PrivacyStats): void {
+  privacyRevision++;
+  confirmedPrivacyStats.set(stats);
 }

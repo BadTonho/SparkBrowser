@@ -21,7 +21,9 @@
     "release:build": "node tools/release/build.mjs",
     "release:manifest": "node tools/release/generate-manifest.mjs",
     "test:updater:build": "node tools/testing/build-update-fixtures.mjs",
-    "test:native:auto-skip:youtube": "node tools/testing/auto-skip-youtube.mjs"
+    "test:native:auto-skip:youtube": "node tools/testing/auto-skip-youtube.mjs",
+    "test:native:critical": "node tools/testing/native-smoke.mjs --suite critical",
+    "architecture:check": "node tools/architecture/check.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0",

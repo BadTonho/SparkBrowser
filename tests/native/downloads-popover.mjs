@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { useAutomaticDownloads } from './download-preferences.mjs';
 
 export async function checkDownloadsPopover(c) {
+  await useAutomaticDownloads(c);
   const { invoke, script, click, until, withWebview, fixture, wait, resizeWindow } = c;
   const inside = action => withWebview('/index.html?surface=downloads', action);
   const shown = async () => {
@@ -35,7 +37,7 @@ export async function checkDownloadsPopover(c) {
   const box = await inside(() => script('const r=document.querySelector("[data-testid=downloads-dialog]").getBoundingClientRect();return {right:r.right,top:r.top,width:r.width,height:r.height}'));
   assert.equal(box.width, 480); assert.ok(Math.abs(box.top - anchor.bottom - 8) < 2); assert.ok(Math.abs(box.right - anchor.right) < 2);
   assert.ok(box.height < 560, 'empty panel fits its content');
-  assert.equal(await inside(() => script('return getComputedStyle(document.querySelector("[data-testid=downloads-dialog]")).backgroundColor')), 'rgb(28, 28, 28)', 'card background is opaque');
+  assert.match(await inside(() => script('return getComputedStyle(document.querySelector("[data-testid=downloads-dialog]")).backgroundColor')), /^rgb\(\d+, \d+, \d+\)$/, 'card background is opaque in the current theme');
   assert.equal(await inside(() => script('return document.activeElement?.matches("[data-testid=download-add-toggle]")')), true);
   assert.equal(await inside(() => script('return !!document.querySelector("[data-testid=download-url]")')), false);
   await inside(() => c.screenshot('downloads-empty'));
@@ -87,13 +89,13 @@ export async function checkDownloadsPopover(c) {
     assert.ok(Math.abs(actual.left - Math.max(8, Math.min(reference.right - 480, reference.width - 488))) < 2);
     assert.ok(Math.abs(actual.top - reference.bottom - 8) < 2); await escape();
   }
-  await click('[data-testid=open-settings]'); await click('[data-testid=settings-appearance_layout]');
-  await script('document.querySelectorAll("#setting-browser-layout button")[1].click();document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+  await c.openSettings(); await click('[data-testid=settings-appearance_layout]');
+  await click('#setting-browser-layout .mini-pill:nth-child(2)'); await c.closeSettings();
   await open(); await resizeWindow(780, 620);
   await inside(() => until(() => script('const r=document.querySelector("[data-testid=downloads-dialog]").getBoundingClientRect();return r.left>=8 && r.right<=innerWidth-8 && r.bottom<=innerHeight-8'), 'vertical resize bounds'));
   await inside(() => c.screenshot('downloads-vertical')); await click('[data-testid=close-downloads]'); await closed();
-  await click('[data-testid=open-settings]'); await click('[data-testid=settings-appearance_layout]');
-  await script('document.querySelectorAll("#setting-browser-layout button")[0].click();document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+  await c.openSettings(); await click('[data-testid=settings-appearance_layout]');
+  await click('#setting-browser-layout .mini-pill:first-child'); await c.closeSettings();
   await resizeWindow(1280, 820);
   await click('[data-action=zen]');
   await until(() => script('return !document.querySelector(".titlebar")'), 'Zen before download shortcut');

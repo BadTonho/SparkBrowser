@@ -1,10 +1,9 @@
 use crate::state::browser_state::BrowserState;
-use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager};
 
 pub(super) fn toggle(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<BrowserState>();
-    let previous = state.caret_browsing_enabled.load(Ordering::Acquire);
+    let previous = state.policies().caret_browsing_enabled();
     let enabled = !previous;
     let labels = app
         .webviews()
@@ -27,9 +26,7 @@ pub(super) fn toggle(app: &AppHandle) -> Result<(), String> {
         applied.push(label);
     }
 
-    state
-        .caret_browsing_enabled
-        .store(enabled, Ordering::Release);
+    state.policies().set_caret_browsing_enabled(enabled);
     Ok(())
 }
 

@@ -29,7 +29,8 @@ fn valid(app: &AppHandle, id: &str) -> bool {
             app.get_webview(&v.label).is_some()
                 && app
                     .state::<BrowserState>()
-                    .keyboard_bridge_tokens
+                    .security()
+                    .keyboard_bridge_tokens()
                     .lock()
                     .is_ok_and(|m| m.get(&v.label) == Some(&v.token))
         })
@@ -300,8 +301,8 @@ pub fn install(
                         return Err("downloads.blocked".into());
                     }
                     if a.state::<BrowserState>()
-                        .ask_download_destination
-                        .load(std::sync::atomic::Ordering::Acquire)
+                        .policies()
+                        .ask_download_destination()
                     {
                         let selected = a
                             .dialog()

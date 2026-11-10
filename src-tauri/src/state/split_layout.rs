@@ -71,7 +71,7 @@ impl BrowserState {
     /// Live geometry only. Session snapshots and persistence always use current_split().
     pub fn display_split(&self) -> Option<SplitLayout> {
         let mut layout = self.current_split()?;
-        if let Some((key, ratio)) = self.split_preview.lock().ok()?.as_ref() {
+        if let Some((key, ratio)) = self.session().edit_split_preview().lock().ok()?.as_ref() {
             if *key == layout.key() {
                 layout.ratio = *ratio;
             }
@@ -87,13 +87,21 @@ impl BrowserState {
             .current_split()
             .filter(|l| l.key() == key)
             .ok_or("Split view changed")?;
-        *self.split_preview.lock().map_err(|e| e.to_string())? =
+        *self
+            .session()
+            .edit_split_preview()
+            .lock()
+            .map_err(|e| e.to_string())? =
             (ratio != layout.ratio).then(|| (key.to_string(), ratio));
         Ok(())
     }
 
     pub fn clear_split_preview(&self, key: &str) -> Result<(), String> {
-        let mut preview = self.split_preview.lock().map_err(|e| e.to_string())?;
+        let mut preview = self
+            .session()
+            .edit_split_preview()
+            .lock()
+            .map_err(|e| e.to_string())?;
         if preview.as_ref().is_some_and(|(current, _)| current == key) {
             *preview = None;
         }
@@ -101,17 +109,36 @@ impl BrowserState {
     }
 
     pub fn current_split(&self) -> Option<SplitLayout> {
-        let ws = self.active_workspace_id.lock().ok()?.clone();
-        self.split_layouts.lock().ok()?.get(&ws).cloned()
+        let ws = self
+            .session()
+            .edit_active_workspace_id()
+            .lock()
+            .ok()?
+            .clone();
+        self.session()
+            .edit_split_layouts()
+            .lock()
+            .ok()?
+            .get(&ws)
+            .cloned()
     }
     pub fn refresh_visible_tabs(&self) -> Result<(), String> {
         let workspace = self
-            .active_workspace_id
+            .session()
+            .edit_active_workspace_id()
             .lock()
             .map_err(|e| e.to_string())?
             .clone();
-        let mut tabs = self.tabs.lock().map_err(|e| e.to_string())?;
-        let mut layouts = self.split_layouts.lock().map_err(|e| e.to_string())?;
+        let mut tabs = self
+            .session()
+            .edit_tabs()
+            .lock()
+            .map_err(|e| e.to_string())?;
+        let mut layouts = self
+            .session()
+            .edit_split_layouts()
+            .lock()
+            .map_err(|e| e.to_string())?;
         layouts.retain(|_, layout| {
             layout.normalize(&tabs);
             layout.valid(&tabs)
@@ -145,14 +172,19 @@ mod tests {
         let state = BrowserState::default();
         let workspace = "ws-personal";
         for id in ["b", "c"] {
-            state.tabs.lock().unwrap().push(TabInfo::new(
-                id.into(),
-                "https://example.test/".into(),
-                workspace.into(),
-                false,
-            ));
+            state
+                .session()
+                .edit_tabs()
+                .lock()
+                .unwrap()
+                .push(TabInfo::new(
+                    id.into(),
+                    "https://example.test/".into(),
+                    workspace.into(),
+                    false,
+                ));
         }
-        state.split_layouts.lock().unwrap().insert(
+        state.session().edit_split_layouts().lock().unwrap().insert(
             workspace.into(),
             SplitLayout {
                 left_tab_ids: Vec::new(),

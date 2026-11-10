@@ -39,13 +39,19 @@ struct Pointer {
 }
 
 pub fn blocked(state: &BrowserState) -> bool {
-    state.is_overlay_open.lock().map_or(true, |value| *value)
+    state
+        .surfaces()
+        .is_overlay_open()
+        .lock()
+        .map_or(true, |value| *value)
         || state
-            .workspace_switcher_open
+            .surfaces()
+            .workspace_switcher_open()
             .lock()
             .map_or(true, |value| *value)
         || state
-            .bookmark_context_menu_open
+            .surfaces()
+            .bookmark_context_menu_open()
             .lock()
             .map_or(true, |value| *value)
 }
@@ -117,7 +123,11 @@ fn geometry(
         .map(|side| {
             let layout =
                 split_docking::plan(state, &presentation.context, &presentation.tab_id, side)?;
-            let bounds = *state.bounds.lock().map_err(|e| e.to_string())?;
+            let bounds = *state
+                .surfaces()
+                .bounds()
+                .lock()
+                .map_err(|e| e.to_string())?;
             Ok(geometry::DockGeometry::new(bounds, &layout, side))
         })
         .transpose()
@@ -192,7 +202,7 @@ pub async fn set_tab_drag_preview(
     revision: u64,
     presentation: Option<Presentation>,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     let service = app.state::<DragPreview>();
     {
         let mut latest = service.0.lock().map_err(|e| e.to_string())?;

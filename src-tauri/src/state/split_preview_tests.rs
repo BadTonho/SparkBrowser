@@ -9,13 +9,18 @@ fn state() -> BrowserState {
     let state = BrowserState::default();
     let conn = Connection::open_in_memory().unwrap();
     initialize_schema(&conn).unwrap();
-    *state.db.lock().unwrap() = Some(conn);
-    state.tabs.lock().unwrap().push(TabInfo::new_default(
-        "b".into(),
-        "https://example.test/b".into(),
-        false,
-    ));
-    state.split_layouts.lock().unwrap().insert(
+    *state.infrastructure().db().lock().unwrap() = Some(conn);
+    state
+        .session()
+        .edit_tabs()
+        .lock()
+        .unwrap()
+        .push(TabInfo::new_default(
+            "b".into(),
+            "https://example.test/b".into(),
+            false,
+        ));
+    state.session().edit_split_layouts().lock().unwrap().insert(
         "ws-personal".into(),
         SplitLayout {
             left_tab_ids: Vec::new(),
@@ -39,7 +44,7 @@ fn live_previews_never_enter_session_saves_and_cancel_restores_geometry() {
     assert_eq!(state.display_split().unwrap().ratio, 0.7);
     assert_eq!(state.snapshot_packet().split_layout.unwrap().ratio, 0.5);
     state.persist_session().unwrap();
-    let db = state.db.lock().unwrap();
+    let db = state.infrastructure().db().lock().unwrap();
     assert_eq!(
         split_repo::load(db.as_ref().unwrap()).unwrap()["ws-personal"].ratio,
         0.5
@@ -56,7 +61,7 @@ fn failed_commit_discards_preview_without_changing_the_saved_ratio() {
     let state = state();
     let key = state.current_split().unwrap().key();
     state.preview_split_ratio(&key, 0.7).unwrap();
-    state.db.lock().unwrap().as_ref().unwrap().execute_batch(
+    state.infrastructure().db().lock().unwrap().as_ref().unwrap().execute_batch(
         "CREATE TRIGGER fail_ratio BEFORE UPDATE ON workspace_splits BEGIN SELECT RAISE(ABORT,'injected ratio failure'); END;"
     ).unwrap();
     assert!(
@@ -68,7 +73,7 @@ fn failed_commit_discards_preview_without_changing_the_saved_ratio() {
     state.clear_split_preview(&key).unwrap();
     assert_eq!(state.current_split().unwrap().ratio, 0.5);
     assert_eq!(state.display_split().unwrap().ratio, 0.5);
-    let db = state.db.lock().unwrap();
+    let db = state.infrastructure().db().lock().unwrap();
     assert_eq!(
         split_repo::load(db.as_ref().unwrap()).unwrap()["ws-personal"].ratio,
         0.5

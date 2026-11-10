@@ -239,48 +239,51 @@ pub(super) fn install_workspace_shortcut_accelerator(
                     // injected page listener. Capture every configured keyboard shortcut here.
                     if is_key_down {
                         let matched_shortcut =
-                            state.keyboard_shortcuts.lock().ok().and_then(|shortcuts| {
-                                shortcuts.as_object().and_then(|shortcuts| {
-                                    shortcuts.iter().find_map(|(action, bindings)| {
-                                        if action == "workspace-picker" {
-                                            return None;
-                                        }
+                            state.policies().keyboard_shortcuts().lock().ok().and_then(
+                                |shortcuts| {
+                                    shortcuts.as_object().and_then(|shortcuts| {
+                                        shortcuts.iter().find_map(|(action, bindings)| {
+                                            if action == "workspace-picker" {
+                                                return None;
+                                            }
 
-                                        let binding = bindings
-                                            .as_array()
-                                            .and_then(|bindings| bindings.first())?;
-                                        let key = binding
-                                            .get("key")
-                                            .and_then(serde_json::Value::as_str)?;
-                                        let shortcut_key = if key == "Digit" {
-                                            let digit = match virtual_key {
-                                                0x31..=0x39 => virtual_key - 0x30,
-                                                0x61..=0x69 => virtual_key - 0x60,
-                                                _ => return None,
-                                            };
-                                            Some(Some(digit.to_string()))
-                                        } else if shortcut_key_to_virtual_key(key)
-                                            == Some(virtual_key)
-                                            || (key == "+" && matches!(virtual_key, 0xBB | 0x6B))
-                                            || (key == "-" && virtual_key == 0x6D)
-                                            || (key == "0" && virtual_key == 0x60)
-                                        {
-                                            Some(None)
-                                        } else {
-                                            None
-                                        }?;
+                                            let binding = bindings
+                                                .as_array()
+                                                .and_then(|bindings| bindings.first())?;
+                                            let key = binding
+                                                .get("key")
+                                                .and_then(serde_json::Value::as_str)?;
+                                            let shortcut_key = if key == "Digit" {
+                                                let digit = match virtual_key {
+                                                    0x31..=0x39 => virtual_key - 0x30,
+                                                    0x61..=0x69 => virtual_key - 0x60,
+                                                    _ => return None,
+                                                };
+                                                Some(Some(digit.to_string()))
+                                            } else if shortcut_key_to_virtual_key(key)
+                                                == Some(virtual_key)
+                                                || (key == "+"
+                                                    && matches!(virtual_key, 0xBB | 0x6B))
+                                                || (key == "-" && virtual_key == 0x6D)
+                                                || (key == "0" && virtual_key == 0x60)
+                                            {
+                                                Some(None)
+                                            } else {
+                                                None
+                                            }?;
 
-                                        if !shortcut_modifiers_match(binding)
-                                            && !(key == "+"
-                                                && shortcut_plus_modifiers_match(binding))
-                                        {
-                                            return None;
-                                        }
+                                            if !shortcut_modifiers_match(binding)
+                                                && !(key == "+"
+                                                    && shortcut_plus_modifiers_match(binding))
+                                            {
+                                                return None;
+                                            }
 
-                                        Some((action.clone(), shortcut_key))
+                                            Some((action.clone(), shortcut_key))
+                                        })
                                     })
-                                })
-                            });
+                                },
+                            );
 
                         if let Some((action, key)) = matched_shortcut {
                             unsafe {
@@ -314,7 +317,8 @@ pub(super) fn install_workspace_shortcut_accelerator(
                     if is_key_down
                         && virtual_key == 0x1B
                         && state
-                            .workspace_switcher_open
+                            .surfaces()
+                            .workspace_switcher_open()
                             .lock()
                             .map(|open| *open)
                             .unwrap_or(false)
@@ -333,12 +337,14 @@ pub(super) fn install_workspace_shortcut_accelerator(
                     // WebView2 reports the modifier as a native accelerator. Capture Alt only
                     // when it is still configured as the workspace-picker hold key.
                     let configured_hold_key = state
-                        .workspace_picker_hold_key
+                        .policies()
+                        .workspace_picker_hold_key()
                         .lock()
                         .map(|key| key.as_str() == "Alt")
                         .unwrap_or(false);
                     let workspace_shortcut_is_alt_digit = state
-                        .keyboard_shortcuts
+                        .policies()
+                        .keyboard_shortcuts()
                         .lock()
                         .ok()
                         .and_then(|shortcuts| {
@@ -366,22 +372,35 @@ pub(super) fn install_workspace_shortcut_accelerator(
                         let payload = if configured_hold_key {
                             if is_key_down {
                                 if !is_repeat
-                                    && !state.workspace_alt_pressed.swap(true, Ordering::SeqCst)
+                                    && !state
+                                        .surfaces()
+                                        .workspace_alt_pressed()
+                                        .swap(true, Ordering::SeqCst)
                                 {
                                     Some(serde_json::json!({ "type": "alt-down" }))
                                 } else {
                                     None
                                 }
-                            } else if state.workspace_alt_pressed.swap(false, Ordering::SeqCst) {
+                            } else if state
+                                .surfaces()
+                                .workspace_alt_pressed()
+                                .swap(false, Ordering::SeqCst)
+                            {
                                 Some(serde_json::json!({ "type": "alt-up" }))
                             } else {
                                 None
                             }
                         } else {
                             if is_key_down && !is_repeat {
-                                state.workspace_alt_pressed.store(true, Ordering::SeqCst);
+                                state
+                                    .surfaces()
+                                    .workspace_alt_pressed()
+                                    .store(true, Ordering::SeqCst);
                             } else if is_key_up {
-                                state.workspace_alt_pressed.store(false, Ordering::SeqCst);
+                                state
+                                    .surfaces()
+                                    .workspace_alt_pressed()
+                                    .store(false, Ordering::SeqCst);
                             }
                             None
                         };
@@ -404,7 +423,10 @@ pub(super) fn install_workspace_shortcut_accelerator(
 
                     if is_key_down
                         && workspace_shortcut_is_alt_digit
-                        && state.workspace_alt_pressed.load(Ordering::SeqCst)
+                        && state
+                            .surfaces()
+                            .workspace_alt_pressed()
+                            .load(Ordering::SeqCst)
                     {
                         let index = match virtual_key {
                             49..=57 => Some((virtual_key - 48) as u8),
@@ -580,15 +602,21 @@ pub(super) fn handle_keyboard_navigation(
         .try_state::<BrowserState>()
         .and_then(|state| {
             let is_active = state
-                .active_tab_id
+                .session()
+                .active_tab_id()
                 .lock()
                 .map(|id| *id == tab_for_nav)
                 .unwrap_or(false);
-            state.keyboard_bridge_tokens.lock().ok().map(|tokens| {
-                is_active
-                    && tokens.get(label_for_nav).map(String::as_str) == request_token
-                    && request_token == Some(keyboard_bridge_token)
-            })
+            state
+                .security()
+                .keyboard_bridge_tokens()
+                .lock()
+                .ok()
+                .map(|tokens| {
+                    is_active
+                        && tokens.get(label_for_nav).map(String::as_str) == request_token
+                        && request_token == Some(keyboard_bridge_token)
+                })
         })
         .unwrap_or(false);
     let focused = app_handle_for_nav
@@ -613,7 +641,8 @@ pub(super) fn handle_keyboard_navigation(
             .unwrap_or("");
         if !app_handle_for_nav
             .state::<BrowserState>()
-            .keyboard_bridge_sequences
+            .security()
+            .keyboard_bridge_sequences()
             .lock()
             .is_ok_and(|mut states| states.admit(label_for_nav, document, sequence))
         {

@@ -134,7 +134,11 @@ fn visible(app: &AppHandle) -> bool {
         .snapshot_tabs()
         .iter()
         .any(|t| t.is_visible && super::is_new_tab(&t.url))
-        && !browser.is_overlay_open.lock().map_or(true, |v| *v)
+        && !browser
+            .surfaces()
+            .is_overlay_open()
+            .lock()
+            .map_or(true, |v| *v)
         && app
             .get_window("main")
             .is_some_and(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(true))
@@ -145,7 +149,8 @@ pub fn initialize(app: &AppHandle) {
     if let Ok(mut state) = service.runtime.lock() {
         let browser = app.state::<BrowserState>();
         match browser
-            .db
+            .infrastructure()
+            .db()
             .lock()
             .ok()
             .and_then(|db| db.as_ref().map(new_tab_repo::load))
@@ -158,7 +163,8 @@ pub fn initialize(app: &AppHandle) {
         state.gmail.configured = true;
         // Native fixtures never read the user's Windows credential vault.
         let disconnected = browser
-            .db
+            .infrastructure()
+            .db()
             .lock()
             .ok()
             .and_then(|db| db.as_ref().map(new_tab_repo::account_disconnected))

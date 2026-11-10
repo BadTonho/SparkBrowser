@@ -18,7 +18,7 @@ pub async fn set_downloads_popover(
     presentation: Option<crate::window::downloads_popover::Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::downloads_popover::set(&app, visible, session_id, presentation, restore_focus)
 }
 
@@ -31,7 +31,7 @@ pub async fn set_tools_popover(
     presentation: Option<crate::window::tools_popover::Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::tools_popover::set(&app, visible, session_id, presentation, restore_focus)
 }
 
@@ -44,7 +44,7 @@ pub async fn set_quick_settings_popover(
     presentation: Option<crate::window::quick_settings_popover::Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::quick_settings_popover::set(
         &app,
         visible,
@@ -63,7 +63,7 @@ pub async fn set_zoom_popover(
     presentation: Option<crate::window::zoom_popover::Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::zoom_popover::set(&app, visible, session_id, presentation, restore_focus)
 }
 
@@ -78,7 +78,7 @@ pub async fn set_settings_overlay(
     presentation: Option<crate::window::settings_overlay::Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::settings_overlay::set(&app, visible, session_id, presentation, restore_focus)
 }
 
@@ -91,7 +91,7 @@ pub async fn set_privacy_popover(
     presentation: Option<crate::window::privacy_popover::Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::privacy_popover::set(&app, visible, session_id, presentation, restore_focus)
 }
 
@@ -103,7 +103,7 @@ pub async fn set_permission_popover(
     session_id: u64,
     presentation: Option<crate::window::permission_popover::Presentation>,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::permission_popover::set(&app, visible, session_id, presentation)
 }
 
@@ -115,7 +115,7 @@ pub async fn set_history_overlay(
     session_id: u64,
     presentation: Option<crate::window::history_overlay::Presentation>,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::history_overlay::set(&app, visible, session_id, presentation)
 }
 
@@ -128,7 +128,7 @@ pub async fn set_media_popover(
     presentation: Option<crate::window::media_popover::Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     crate::window::media_popover::set(&app, visible, session_id, presentation, restore_focus)
 }
 
@@ -138,8 +138,8 @@ pub async fn set_overlay_visibility(
     state: State<'_, BrowserState>,
     visible: bool,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
-    if let Ok(mut overlay) = state.is_overlay_open.lock() {
+    let _operation = state.session().operation().await;
+    if let Ok(mut overlay) = state.surfaces().is_overlay_open().lock() {
         *overlay = visible;
     }
     sync_all_webviews(&app, &state)?;
@@ -156,7 +156,7 @@ pub async fn set_workspace_switcher_overlay(
     backdrop_blur_px: u8,
     language: Option<OverlayLanguage>,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     let webview = app
         .get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL)
         .ok_or_else(|| "Workspace switcher WebView was not found".to_string())?;
@@ -173,10 +173,10 @@ pub async fn set_workspace_switcher_overlay(
         language.as_ref(),
     )?;
 
-    if let Ok(mut current_token) = state.workspace_switcher_token.lock() {
+    if let Ok(mut current_token) = state.surfaces().workspace_switcher_token().lock() {
         *current_token = Some(token.clone());
     }
-    if let Ok(mut open) = state.workspace_switcher_open.lock() {
+    if let Ok(mut open) = state.surfaces().workspace_switcher_open().lock() {
         // Keep the native WebView shown during its exit animation.
         *open = true;
     }
@@ -186,10 +186,10 @@ pub async fn set_workspace_switcher_overlay(
     }
 
     if let Err(error) = webview.eval(&script) {
-        if let Ok(mut current_token) = state.workspace_switcher_token.lock() {
+        if let Ok(mut current_token) = state.surfaces().workspace_switcher_token().lock() {
             *current_token = None;
         }
-        if let Ok(mut open) = state.workspace_switcher_open.lock() {
+        if let Ok(mut open) = state.surfaces().workspace_switcher_open().lock() {
             *open = false;
         }
         if let Some(content_webview) = active_content_webview(&app) {
@@ -208,15 +208,15 @@ pub async fn set_workspace_switcher_overlay(
                 return;
             };
 
-            let _operation = state.tab_operations.blocking_lock();
+            let _operation = state.session().blocking_operation();
             // Serialize the token check and state update with a possible reopen.
-            let Ok(mut current_token) = state.workspace_switcher_token.lock() else {
+            let Ok(mut current_token) = state.surfaces().workspace_switcher_token().lock() else {
                 return;
             };
             if current_token.as_deref() != Some(closing_token.as_str()) {
                 return;
             }
-            let Ok(mut open) = state.workspace_switcher_open.lock() else {
+            let Ok(mut open) = state.surfaces().workspace_switcher_open().lock() else {
                 return;
             };
             *current_token = None;
@@ -226,7 +226,8 @@ pub async fn set_workspace_switcher_overlay(
 
             let _ = sync_all_webviews(&app_for_hide, &state);
             let another_overlay_open = state
-                .is_overlay_open
+                .surfaces()
+                .is_overlay_open()
                 .lock()
                 .map(|overlay| *overlay)
                 .unwrap_or(true);
@@ -261,19 +262,19 @@ pub async fn set_bookmark_context_menu_overlay(
     actions: Option<Vec<BookmarkContextMenuAction>>,
     presentation: Option<OverlayPresentation>,
 ) -> Result<(), String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     let webview = app
         .get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL)
         .ok_or_else(|| "Bookmark context menu WebView was not found".to_string())?;
 
     if !visible {
-        if let Ok(mut token) = state.bookmark_context_menu_token.lock() {
+        if let Ok(mut token) = state.surfaces().bookmark_context_menu_token().lock() {
             *token = None;
         }
-        if let Ok(mut allowed_actions) = state.bookmark_context_menu_actions.lock() {
+        if let Ok(mut allowed_actions) = state.surfaces().bookmark_context_menu_actions().lock() {
             allowed_actions.clear();
         }
-        if let Ok(mut open) = state.bookmark_context_menu_open.lock() {
+        if let Ok(mut open) = state.surfaces().bookmark_context_menu_open().lock() {
             *open = false;
         }
         let _ = webview.hide();
@@ -294,13 +295,13 @@ pub async fn set_bookmark_context_menu_overlay(
         presentation.language.as_ref(),
     )?;
 
-    if let Ok(mut current_token) = state.bookmark_context_menu_token.lock() {
+    if let Ok(mut current_token) = state.surfaces().bookmark_context_menu_token().lock() {
         *current_token = Some(token);
     }
-    if let Ok(mut allowed_actions) = state.bookmark_context_menu_actions.lock() {
+    if let Ok(mut allowed_actions) = state.surfaces().bookmark_context_menu_actions().lock() {
         *allowed_actions = actions.into_iter().map(|action| action.id).collect();
     }
-    if let Ok(mut open) = state.bookmark_context_menu_open.lock() {
+    if let Ok(mut open) = state.surfaces().bookmark_context_menu_open().lock() {
         *open = true;
     }
 

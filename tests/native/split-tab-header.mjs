@@ -48,12 +48,16 @@ export async function checkSplitTabHeader(context, originalLayout) {
     const hiddenCount = fixture.reports.get('groups-a').hiddenCount;
     await click(`[data-testid=titlebar-menu] [data-testid=${item}]`);
     await closed();
-    await until(() => script('return Boolean(document.querySelector("[role=dialog]"))'), item + ' opens from More');
+    const surface = { 'open-tools': '/index.html?surface=tools', 'open-history': '/history-overlay.html',
+      'open-downloads': '/index.html?surface=downloads', 'open-settings': '/index.html?surface=settings' }[item];
+    const inspect = operation => surface ? withWebview(surface, operation) : operation();
+    const dialogVisible = () => script('return [...document.querySelectorAll("[role=dialog]")].some(node=>node.getClientRects().length&&!node.hidden)');
+    await inspect(() => until(dialogVisible, item + ' opens from More'));
     await wait(300);
-    assert.equal(fixture.reports.get('groups-a').visibility, item === 'open-tools' ? 'visible' : 'hidden');
+    assert.equal(fixture.reports.get('groups-a').visibility, item === 'open-command-bar' ? 'hidden' : 'visible');
     assert.equal(fixture.reports.get('groups-a').hiddenCount, hiddenCount, 'handoff does not expose then hide the page again');
-    await key('Escape');
-    await until(() => script('return !document.querySelector("[role=dialog]")'), item + ' closes');
+    await inspect(() => key('Escape'));
+    await inspect(() => until(async () => !await dialogVisible(), item + ' closes'));
     await until(() => script('return document.activeElement?.matches("[data-testid=open-titlebar-menu]")'), 'dialog restores its persistent opener');
     await visible('visible');
   }
@@ -80,7 +84,7 @@ export async function checkSplitTabHeader(context, originalLayout) {
   await until(() => script('return Boolean(document.querySelector("[data-testid=open-titlebar-menu]"))'), 'return to split workspace');
   await open(); await click('[data-testid=toggle-zen]'); await closed();
   await until(() => script('return !document.querySelector(".titlebar")&&!document.querySelector(".h-tabbar")'), 'Zen hides chrome');
-  await script('window.dispatchEvent(new KeyboardEvent("keydown",{key:"z",altKey:true,bubbles:true,cancelable:true}))');
+  await script('window.dispatchEvent(new KeyboardEvent("keydown",{key:"z",ctrlKey:true,shiftKey:true,bubbles:true,cancelable:true}))');
   await until(() => script('return Boolean(document.querySelector("[data-testid=split-tabs-left]"))'), 'leaving Zen restores pane tabs below address');
   await resizeWindow(1280,820);
   await visible('visible');

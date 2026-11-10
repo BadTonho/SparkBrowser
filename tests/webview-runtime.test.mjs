@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../src/lib/services/lifecycle.js";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -21,7 +22,7 @@ function fixture() {
     './shutdownStore': { applyShutdownState: state => shutdown.push(state) }, '../services/user-errors.js': { describeError: String },
   };
   const exports = {};
-  runInNewContext(ts.transpileModule(readFileSync('src/lib/stores/webviewRuntimeStore.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports, require: name => imports[name] });
+  runInNewContext(ts.transpileModule(readFileSync('src/lib/stores/webviewRuntimeStore.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports, require: name => name === "../services/lifecycle.js" ? { createSharedLifecycle } : imports[name] });
   return { ...exports, get, shutdown, emit: value => listener(value), release: value => release(value), resolveRestart: value => resolveRestart(value), calls: () => calls, stops: () => stops };
 }
 const status = revision => ({ supported: true, currentVersion: '156.0.0.1', availableVersion: '156.0.0.2', restartRequired: true, revision, error: null });

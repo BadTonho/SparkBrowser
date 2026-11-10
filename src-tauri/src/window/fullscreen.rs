@@ -17,7 +17,8 @@ pub fn active(app: &AppHandle) -> Option<String> {
 fn enter(app: &AppHandle, label: &str) -> Result<(), String> {
     let browser = app.state::<crate::state::browser_state::BrowserState>();
     let selected = browser
-        .active_tab_id
+        .session()
+        .active_tab_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();

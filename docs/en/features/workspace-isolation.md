@@ -13,8 +13,8 @@ Settings → Workspaces exposes **“Isolate workspace content”**. While it is
 ## Lifecycle
 
 - The preference is stored durably in the `app_preferences` SQLite table and is loaded before the session is restored, so the restore already runs with the correct folders.
-- Enabling or disabling the setting rebuilds content WebViews; pages lose their live state. This matches the privacy-shield contract and is announced by the shell.
-- Moving a tab to another workspace drops its WebView first, so no document keeps writing into the previous workspace's folder; the next sync recreates it inside the target folder.
+- Enabling or disabling the setting recreates content WebViews whose resolved profile changes; those pages lose their live state. Account containers and ephemeral tabs keep their own profiles and documents. The shell announces the change.
+- Moving a tab commits its workspace metadata before reconciling the WebViews. A document is recreated only when its resolved profile changes; account containers and ephemeral tabs keep their own profiles and resident documents across workspace moves. Hidden documents are checked as well.
 - Deleting a workspace removes its data folder after document teardown (best effort; locked files are skipped).
 
 ## Folder naming
@@ -24,7 +24,7 @@ Only lowercase ASCII letters, digits, `-` and `_` up to 48 bytes, without a trai
 ## Costs and limits
 
 - Each workspace with visible tabs keeps one more WebView2 browser process; measure memory on low-RAM devices before enabling.
-- Restoring a workspace session does not restore page-local history of tabs that moved between workspaces; global history, sessions and the privacy shield are unaffected.
+- When a move changes the profile, the recreated document loses its page-local history and live state; global history, sessions and the privacy shield are unaffected.
 - A renderer exploit inside one workspace can still read that workspace's cookies. Full containment of spoofed renderer capabilities is covered separately in [AppContainer isolation](../security/app-container-isolation.md).
 
 Synced with the interface texts; see `tests/security-hardening.test.mjs` for the enforced invariants.

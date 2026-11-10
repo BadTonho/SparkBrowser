@@ -38,14 +38,16 @@ fn emit(app: &AppHandle) {
 fn valid(app: &AppHandle, pending: &Pending) -> bool {
     let generation_matches = app
         .state::<BrowserState>()
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map(|tokens| tokens.get(&pending.label) == Some(&pending.token))
         .unwrap_or(false);
     generation_matches
         && app
             .state::<BrowserState>()
-            .tabs
+            .session()
+            .tabs()
             .lock()
             .map(|tabs| {
                 tabs.iter().any(|tab| {
@@ -278,7 +280,6 @@ pub fn install_and_navigate(
     view: &tauri::Webview,
     tab_id: &str,
     token: &str,
-    url: String,
 ) -> Result<(), String> {
     let (app, label, tab_id, token) = (
         app.clone(),
@@ -348,10 +349,14 @@ pub fn install_and_navigate(
                     .map_err(|e| e.to_string())?;
                 core.add_NavigationStarting(&navigation, &mut registration)
                     .map_err(|e| e.to_string())?;
-                let url = CoTaskMemPWSTR::from(url.as_str());
-                core.Navigate(*url.as_ref().as_pcwstr())
-                    .map_err(|e| e.to_string())?;
             }
+            app.state::<BrowserState>()
+                .surfaces()
+                .content_bootstrap()
+                .finish(&label, &token, |target| {
+                    let url = CoTaskMemPWSTR::from(target);
+                    unsafe { core.Navigate(*url.as_ref().as_pcwstr()) }.map_err(|e| e.to_string())
+                })?;
             Ok(())
         })();
         if result.is_err() {

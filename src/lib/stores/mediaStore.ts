@@ -7,10 +7,11 @@ import { describeError, errorDetails } from "../services/user-errors.js";
 import type { MediaSnapshot } from "../types/media";
 import { locale, tr } from "../i18n";
 import {initializePipAppearance} from "./pipAppearanceStore";
-export const mediaState = writable<MediaSnapshot>({revision: 0, tabs: []});
+const confirmedMediaState = writable<MediaSnapshot>({revision: 0, tabs: []});
+export const mediaState = { subscribe: confirmedMediaState.subscribe };
 export const mediaError = writable("");
 export const mediaBusy = writable<Set<string>>(new Set());
-export function applyMedia(s: MediaSnapshot) { if (s.revision >= get(mediaState).revision) { mediaState.set(s);for(const [id,pip] of pipVolumeEdits)if(!s.tabs.some(tab=>tab.tab_id===id&&tab.frames.some(frame=>frame.pip_session===pip.session)))pipVolumeEdits.delete(id); } }
+export function applyMedia(s: MediaSnapshot) { if (s.revision >= get(mediaState).revision) { confirmedMediaState.set(s);for(const [id,pip] of pipVolumeEdits)if(!s.tabs.some(tab=>tab.tab_id===id&&tab.frames.some(frame=>frame.pip_session===pip.session)))pipVolumeEdits.delete(id); } }
 export async function toggleTabMute(id: string) {
   if (get(mediaBusy).has(id)) return;
   mediaBusy.update(v => new Set(v).add(id)); mediaError.set("");

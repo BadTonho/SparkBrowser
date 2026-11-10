@@ -41,7 +41,11 @@ impl UpdateService {
     pub fn new(app: &AppHandle) -> Result<Self, String> {
         let version = app.package_info().version.to_string();
         let browser = app.state::<BrowserState>();
-        let db = browser.db.lock().map_err(|e| e.to_string())?;
+        let db = browser
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let (channel, last_checked) = updates_repo::load(
             db.as_ref().ok_or("Database is not ready")?,
             UpdateChannel::initial(&version),
@@ -122,7 +126,11 @@ impl UpdateService {
             return Err("Installation is already starting".into());
         }
         let browser = app.state::<BrowserState>();
-        let db = browser.db.lock().map_err(|e| e.to_string())?;
+        let db = browser
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         updates_repo::set_channel(db.as_ref().ok_or("Database is not ready")?, channel)?;
         inner.invalidate();
         inner.snapshot.channel = channel;
@@ -187,7 +195,11 @@ impl UpdateService {
             }
             let timestamp = now();
             let browser = app.state::<BrowserState>();
-            let db = browser.db.lock().map_err(|e| e.to_string())?;
+            let db = browser
+                .infrastructure()
+                .db()
+                .lock()
+                .map_err(|e| e.to_string())?;
             let saved =
                 updates_repo::record_check(db.as_ref().ok_or("Database is not ready")?, timestamp);
             inner.snapshot.last_checked = Some(timestamp);

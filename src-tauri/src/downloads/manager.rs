@@ -58,13 +58,21 @@ impl Default for DownloadManager {
 impl DownloadManager {
     fn persist(app: &AppHandle, record: &DownloadRecord) -> Result<(), String> {
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         repo::save(db.as_ref().ok_or("downloads.database_unavailable")?, record)
     }
     pub fn initialize(&self, app: &AppHandle) -> Result<(), String> {
         let records = {
             let state = app.state::<BrowserState>();
-            let db = state.db.lock().map_err(|e| e.to_string())?;
+            let db = state
+                .infrastructure()
+                .db()
+                .lock()
+                .map_err(|e| e.to_string())?;
             let conn = db.as_ref().ok_or("downloads.database_unavailable")?;
             conn.execute("DELETE FROM download_jobs WHERE json_extract(document,'$.task.status') IN('Completed','Cancelled') AND id NOT IN(SELECT id FROM download_jobs ORDER BY rowid DESC LIMIT 100)",[]).map_err(|e|e.to_string())?;
             repo::load(conn)?
@@ -315,10 +323,10 @@ impl DownloadManager {
                 })
             })
             .unwrap_or(true);
-        if let Ok(mut tabs) = app.state::<BrowserState>().tabs.lock() {
-            if let Some(tab) = tabs.iter_mut().find(|t| t.id == tab_id) {
-                tab.activity.downloading = protected;
-            }
+        if let Ok(Some(payload)) = app.state::<BrowserState>().observe_document(tab_id, |tab| {
+            tab.activity.downloading = protected;
+        }) {
+            let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
         }
     }
     pub fn enqueue(
@@ -331,7 +339,8 @@ impl DownloadManager {
         let url = super::transfer::validate_download_url(url)?;
         let id = app
             .state::<BrowserState>()
-            .active_tab_id
+            .session()
+            .active_tab_id()
             .lock()
             .map_err(|e| e.to_string())?
             .clone();
@@ -366,7 +375,11 @@ impl DownloadManager {
     }
     fn commit_completed(&self, app: &AppHandle, record: &DownloadRecord) -> Result<(), String> {
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         repo::complete(db.as_ref().ok_or("downloads.database_unavailable")?, record)
     }
     pub fn complete(&self, app: &AppHandle, id: &str) -> Result<(), String> {
@@ -414,7 +427,11 @@ impl DownloadManager {
     pub fn flush(&self, app: &AppHandle) -> Result<(), String> {
         let records = self.tasks.lock().map_err(|e| e.to_string())?;
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let tx = db
             .as_ref()
             .ok_or("downloads.database_unavailable")?

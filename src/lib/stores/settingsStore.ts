@@ -1,3 +1,4 @@
+import { setSidebarOpen } from "./browserStore";
 import {
   createThemePreference,
   type ThemeMode,
@@ -19,10 +20,6 @@ import { isTauriRuntime } from "../services/bridge/runtime";
 import type { PanelSession } from "../components/panels/panel-host";
 import { fetchWorkspaceIsolation, setWorkspaceIsolation } from "../services/bridge/workspaces";
 import {
-  isSidebarOpen,
-  sidebarWidth,
-  SIDEBAR_EXPANDED_WIDTH,
-  SIDEBAR_COLLAPSED_WIDTH,
   applyTabsSnapshot,
 } from "./browserStore";
 
@@ -486,11 +483,9 @@ export function toggleZenMode(): void {
   isZenMode.set(nextZen);
 
   if (nextZen) {
-    isSidebarOpen.set(false);
-    sidebarWidth.set(SIDEBAR_COLLAPSED_WIDTH);
+    setSidebarOpen(false);
   } else {
-    isSidebarOpen.set(true);
-    sidebarWidth.set(SIDEBAR_EXPANDED_WIDTH);
+    setSidebarOpen(true);
   }
 }
 

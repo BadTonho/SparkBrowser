@@ -73,22 +73,36 @@ struct Action {
 }
 
 fn blocked(state: &BrowserState) -> bool {
-    state.is_overlay_open.lock().map_or(true, |v| *v)
-        || state.workspace_switcher_open.lock().map_or(true, |v| *v)
-        || state.bookmark_context_menu_open.lock().map_or(true, |v| *v)
+    state
+        .surfaces()
+        .is_overlay_open()
+        .lock()
+        .map_or(true, |v| *v)
+        || state
+            .surfaces()
+            .workspace_switcher_open()
+            .lock()
+            .map_or(true, |v| *v)
+        || state
+            .surfaces()
+            .bookmark_context_menu_open()
+            .lock()
+            .map_or(true, |v| *v)
 }
 
 fn current(_app: &AppHandle, state: &BrowserState, session: &Session) -> bool {
     !blocked(state)
         && state
-            .active_tab_id
+            .session()
+            .active_tab_id()
             .lock()
             .is_ok_and(|id| *id == session.presentation.tab_id)
         && state
-            .active_workspace_id
+            .session()
+            .active_workspace_id()
             .lock()
             .is_ok_and(|id| *id == session.workspace)
-        && state.tabs.lock().is_ok_and(|tabs| {
+        && state.session().tabs().lock().is_ok_and(|tabs| {
             tabs.iter().any(|tab| {
                 tab.id == session.presentation.tab_id && tab.url == session.presentation.url
             })
@@ -267,7 +281,8 @@ pub fn set(
     }
     let state = app.state::<BrowserState>();
     let workspace = state
-        .active_workspace_id
+        .session()
+        .active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();

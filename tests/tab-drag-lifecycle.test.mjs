@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../src/lib/services/lifecycle.js";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -10,7 +11,7 @@ function load(path, imports, globals = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const exports = {};
-  runInNewContext(source, { exports, require: name => {
+  runInNewContext(source, { exports, require: name => { if (name === "../services/lifecycle.js") return { createSharedLifecycle };
     if (!(name in imports)) throw Error('Missing test import: ' + name);
     return imports[name];
   }, ...globals });

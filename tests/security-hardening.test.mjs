@@ -13,14 +13,14 @@ test('content WebViews harden DevTools and never expose host objects', () => {
 });
 
 test('workspace isolation is opt-in, durable and scoped to content WebViews', () => {
-  const state = read('src-tauri/src/state/browser_state.rs');
+  const state = read('src-tauri/src/state/domains/policies.rs');
   assert.match(state, /workspace_isolation: AtomicBool::new\(false\)/);
-  const command = read('src-tauri/src/commands/workspaces.rs');
+  const command = read('src-tauri/src/state/session_ops/workspaces.rs');
   assert.match(command, /pub async fn set_workspace_isolation\(/);
   assert.match(command, /preferences_repo::WORKSPACE_ISOLATION_KEY/);
   // Only tabs' WebViews change folders; the shell keeps the default profile.
-  assert.match(read('src-tauri/src/window/webview_manager.rs'), /workspace_data::content_directory\(app, tab_id\)/);
-  assert.equal(read('src-tauri/src/window/webview_manager.rs').match(/\.data_directory\(/g)?.length, 1);
+  assert.match(read('src-tauri/src/window/content_lifecycle.rs'), /workspace_data::content_directory\(app, id\)/);
+  assert.equal(read('src-tauri/src/window/content_factory.rs').match(/\.data_directory\(/g)?.length, 1);
 });
 
 test('isolated data folders are never derived from untrusted workspace ids', () => {
@@ -29,13 +29,13 @@ test('isolated data folders are never derived from untrusted workspace ids', () 
   assert.match(workspace_data, /sha2::\{Digest, Sha256\}|use sha2/);
   assert.match(workspace_data, /format!\("h-\{:x\}", Sha256::digest/);
   // Workspace deletion reclaims its folder on a best-effort basis.
-  assert.match(read('src-tauri/src/commands/workspaces.rs'), /workspace_data::remove\(&app, &workspace_id\)/);
+  assert.match(read('src-tauri/src/state/session_ops/workspaces.rs'), /workspace_data::remove\(&app, &workspace_id\)/);
 });
 
-test('moved tabs drop their WebView before joining another workspace', () => {
-  const tabs = read('src-tauri/src/commands/tabs.rs');
-  assert.match(tabs, /state\s*\.\s*workspace_isolation\s*\.\s*load\(std::sync::atomic::Ordering::Acquire\)/);
-  assert.match(tabs, /close_tab_webview\(&app, &tab_id\)/);
+test('workspace moves recreate content only when the resolved profile changes', () => {
+  const lifecycle = read('src-tauri/src/window/content_lifecycle.rs');
+  assert.match(lifecycle, /content_profiles\(\)\.matches|content_profiles\(\)[\s\S]*\.matches/);
+  assert.match(lifecycle, /close_and_clean\(app, &label\)/);
 });
 
 test('per-navigation and per-close token revocation stays in place', () => {

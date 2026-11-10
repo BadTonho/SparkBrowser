@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { useAutomaticDownloads } from './download-preferences.mjs';
 
 export async function checkWebviewRuntime(context) {
+  await useAutomaticDownloads(context);
   const { invoke, script, click, until, fixture, directory, restart, request, sessionId } = context;
   await context.focusWindow();
   const fixturePath = join(directory, 'config', 'runtime-fixture.json');
@@ -16,9 +18,9 @@ export async function checkWebviewRuntime(context) {
   await until(() => script('return !!document.querySelector("[data-testid=runtime-notice]")'), 'runtime notice');
   await click('[data-testid=runtime-later]');
   assert.equal((await invoke('get_webview_runtime_status')).restartRequired, true);
-  await click('[data-testid=open-settings]'); await click('[data-testid=settings-updates]');
+  await context.openSettings(); await click('[data-testid=settings-updates]');
   await until(() => script('return !!document.querySelector("[data-testid=runtime-settings-restart]")'), 'pending runtime visible in settings');
-  await script('window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+  await context.closeSettings();
   configure('202.0.0.0');
   await until(() => script('return !!document.querySelector("[data-testid=runtime-notice]")'), 'new version is not dismissed');
 

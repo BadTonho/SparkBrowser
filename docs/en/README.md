@@ -10,6 +10,7 @@ Welcome to the official documentation of the Open-Source Browser project. All do
 
 ### 1. 🏗️ Architecture & Technology Stack
 - [Architecture Overview](./architecture/overview.md): Hybrid **Rust (Tauri v2 / Wry)** + **Svelte** architecture, Multi-WebView window composition, and native GPU vibrancy.
+- [State ownership and operation contracts](./architecture/state-ownership.md): Domain boundaries, committed sessions and native document lifecycle.
 - [Project Directory Structure](./architecture/project-structure.md): Modular breakdown of `src/` (Svelte) and `src-tauri/` (Rust).
 
 ### 2. [✨ Core Features & Visual Experience](./features/core-features.md)
@@ -22,6 +23,7 @@ Step-by-step milestones from Phase 1 (MVP Prototype) to Phase 4 (Advanced Polish
 Mandatory repository guidelines covering security (zero-leak policy), folder organization, and bilingual documentation maintenance.
 
 - [Validation](./contributing/validation.md)
+- [Regression prevention workflow](./contributing/regression-workflow.md)
 - [Local native integration](./contributing/native-tests.md)
 - [Performance validation](./contributing/performance.md)
 - [Optimization work](./architecture/optimization-work.md)

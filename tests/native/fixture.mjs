@@ -15,6 +15,9 @@ export async function createFixture() {
   const download = { version: 1, mode: 'normal', requests: [], images: new Map() };
   const payload = version => Buffer.from(Array.from({ length: 2 * 1024 * 1024 }, (_, i) => (i + version) % 251));
   const server = createServer(async (request, response) => {
+    if (request.url === '/account-cookie') {
+      response.writeHead(204, { 'Set-Cookie': 'fixture_account=alpha; Max-Age=3600; Path=/', 'Cache-Control': 'no-store' }).end(); return;
+    }
     if (request.url === '/fixture-feed.xml') {
       feed.requests++;
       response.writeHead(200, { 'Content-Type': 'application/rss+xml', 'Cache-Control': 'no-store' }).end(feed.invalid ? '<rss><channel>' : feed.body ?? '<rss><channel><item><title><![CDATA[Fixture article]]></title><link>/page/feed-article</link><description>&lt;script&gt;not executed&lt;/script&gt;</description></item></channel></rss>'); return;
@@ -202,6 +205,7 @@ export async function createFixture() {
         <label>Fixture form <input id="draft"></label><div style="height:3000px"></div>
         <script>
           const id = ${JSON.stringify(id)};
+          const pageLoad = ${loads.get(id)};
           let measuredGain=null,measuredAnalyser=null;
           if(id.startsWith('media')) {const create=AudioContext.prototype.createGain;AudioContext.prototype.createGain=function(){const gain=create.call(this);measuredGain=gain;measuredAnalyser=this.createAnalyser();measuredAnalyser.fftSize=1024;gain.connect(measuredAnalyser);return gain;};}
           if (id.startsWith('media')) { const audio = document.createElement('audio'); audio.id = 'fixture-audio'; audio.src = '/tone.wav'; audio.loop = true; audio.autoplay = true; document.body.append(audio); audio.play().catch(() => {}); }
@@ -210,6 +214,31 @@ export async function createFixture() {
           if (id === 'a') field.dispatchEvent(new Event('input', { bubbles: true }));
           scrollTo(0, 600);
           let busy = false; let permission = null;
+          async function accountStorage(write = false) {
+            const db = await new Promise((resolve, reject) => {
+              const request = indexedDB.open('fixture-account', 1);
+              request.onupgradeneeded = () => request.result.createObjectStore('records');
+              request.onerror = () => reject(request.error);
+              request.onsuccess = () => resolve(request.result);
+            });
+            try {
+              if (write) {
+                localStorage.setItem('fixture-account', 'alpha');
+                await fetch('/account-cookie');
+                await new Promise((resolve, reject) => {
+                  const tx = db.transaction('records', 'readwrite');
+                  tx.objectStore('records').put('alpha', 'value');
+                  tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+                });
+              }
+              const indexed = await new Promise((resolve, reject) => {
+                const request = db.transaction('records').objectStore('records').get('value');
+                request.onsuccess = () => resolve(request.result ?? null);
+                request.onerror = () => reject(request.error);
+              });
+              return { local: localStorage.getItem('fixture-account'), cookie: document.cookie, indexed };
+            } finally { db.close(); }
+          }
           let hiddenCount = 0, pageClicks = 0;
           let widthTracking = 0, widths = [innerWidth];
           window.addEventListener('resize', () => { widths.push(innerWidth); if(widths.length>32)widths.shift(); });
@@ -241,6 +270,7 @@ export async function createFixture() {
             if (busy) return; busy = true;
             try {
               const command = await fetch('/control/' + id).then(response => response.json());
+              const account = id.startsWith('account-') ? await accountStorage(command === 'store-account-alpha') : undefined;
               if (command === 'reset-widths') { widthTracking++; widths = [innerWidth]; }
               if (command === 'native-player-volume') {const el=document.getElementById('fixture-audio');Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').set.call(el,0.8);}
               if (command === 'restore-player-volume') document.getElementById('fixture-audio').volume=1;
@@ -259,7 +289,7 @@ export async function createFixture() {
               if (command === 'remove-iframe') document.querySelectorAll('iframe').forEach(frame => frame.remove());
               if (command === 'download') { const a = document.createElement('a'); a.href = '/download/file?native=1'; a.download = 'fixture.bin'; a.click(); }
               const samples=new Float32Array(1024);measuredAnalyser?.getFloatTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((sum,n)=>sum+n*n,0)/samples.length);const audio=document.getElementById('fixture-audio');
-              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ videoCount:document.querySelectorAll('video').length,pip:Boolean(document.pictureInPictureElement),videoTime:document.pictureInPictureElement?.currentTime,audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, width: innerWidth, widths, widthTracking, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, scrollAnchor: document.querySelector('div[style*="3000px"]').getBoundingClientRect().top, pageClicks, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
+              await fetch('/report/' + id, { method: 'POST', body: JSON.stringify({ pageLoad, account, videoCount:document.querySelectorAll('video').length,pip:Boolean(document.pictureInPictureElement),videoTime:document.pictureInPictureElement?.currentTime,audioRms:rms,audioGain:measuredGain?.gain.value,nativeVolume:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'volume').get.call(audio):null,nativeMuted:audio?Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,'muted').get.call(audio):null,playerVolume:audio?.volume,value: field.value, width: innerWidth, widths, widthTracking, pixelRatio: devicePixelRatio, focused: document.hasFocus(), scroll: scrollY, scrollAnchor: document.querySelector('div[style*="3000px"]').getBoundingClientRect().top, pageClicks, url: location.pathname + location.search, dirty: id === 'a', permission, visibility: document.visibilityState, hiddenCount, reportedAt: Date.now() }) });
             } finally { busy = false; }
           }
           setInterval(tick, 200); tick();

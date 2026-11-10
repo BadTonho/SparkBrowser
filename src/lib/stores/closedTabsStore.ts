@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { get, writable } from "svelte/store";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import { clearClosedTabs, fetchClosedTabs, onClosedTabsUpdated, reopenClosedTab } from "../services/bridge/closed-tabs";
@@ -30,10 +31,12 @@ export const restoreClosedTab = (id: number | null = null) => action(async () =>
 });
 export const wipeClosedTabs = () => action(async () => { await clearClosedTabs(); await refreshClosedTabs(); });
 export function dismissClosedNotice(): void { closedTabsError.set(""); closedTabsNotice.set(null); }
-export function initializeClosedTabEvents(): () => void {
+function startClosedTabEvents(): () => void {
   let disposed = false; let stop: (() => void) | undefined;
   void onClosedTabsUpdated(rows => { if (!disposed) { ++revision; closedTabs.set(rows); } })
     .then(unlisten => { if (disposed) unlisten(); else { stop = unlisten; void refreshClosedTabs(); } })
-    .catch(error => closedTabsError.set(describeError(error)));
-  return () => { disposed = true; stop?.(); };
+    .catch(error => { if (!disposed) closedTabsError.set(describeError(error)); });
+  return () => { disposed = true; ++revision; stop?.(); };
 }
+
+export const initializeClosedTabEvents = createSharedLifecycle(scope => scope.own(startClosedTabEvents()));

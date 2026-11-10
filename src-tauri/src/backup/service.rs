@@ -72,9 +72,13 @@ impl BackupService {
 pub async fn capture(app: &AppHandle, prefs: BackupPreferences) -> Result<BackupDocument, String> {
     flush(app).await?;
     let state = app.state::<BrowserState>();
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     state.persist_session()?;
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("backup.database_unavailable")?;
     Ok(BackupDocument {
         format: FORMAT.into(),
@@ -115,7 +119,8 @@ pub async fn preview(
     let token = crate::window::webview_manager::create_internal_bridge_token();
     let counter = *app
         .state::<BrowserState>()
-        .next_tab_counter
+        .session()
+        .next_tab_counter()
         .lock()
         .map_err(|e| e.to_string())?;
     let plan = merge::plan(&current.data, &doc.data, &token, counter)?;
@@ -143,7 +148,7 @@ pub async fn import(
     let _serial = service.operation.lock().await;
     flush(app).await?;
     let state = app.state::<BrowserState>();
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     state.persist_session()?;
     let mut preview_guard = service.preview.lock().map_err(|e| e.to_string())?;
     let pending = preview_guard
@@ -151,7 +156,11 @@ pub async fn import(
         .filter(|p| p.preview.token == token)
         .ok_or("backup.preview_missing")?;
     let original_tabs = state.snapshot_tabs();
-    let mut db = state.db.lock().map_err(|e| e.to_string())?;
+    let mut db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let conn = db.as_mut().ok_or("backup.database_unavailable")?;
     let current = backup_repo::collect(conn)?;
     let prefs = current_preferences(conn, prefs)?;
@@ -172,18 +181,12 @@ pub async fn import(
     };
     let tabs = merge_live_tabs(original_tabs, &pending.plan.data.tabs)?;
     backup_repo::commit(conn, &current, &pending.plan.data, task.as_ref())?;
-    *state.tabs.lock().map_err(|e| e.to_string())? = tabs;
-    *state.workspaces.lock().map_err(|e| e.to_string())? = pending.plan.data.workspaces.clone();
-    {
-        let mut layouts = state.split_layouts.lock().map_err(|e| e.to_string())?;
-        for layout in &pending.plan.data.split_layouts {
-            layouts
-                .entry(layout.workspace_id.clone())
-                .or_insert_with(|| layout.clone());
-        }
-    }
-    let mut counter = state.next_tab_counter.lock().map_err(|e| e.to_string())?;
-    *counter = (*counter).max(pending.plan.next_tab_counter);
+    state.install_imported_session(
+        tabs,
+        pending.plan.data.workspaces.clone(),
+        &pending.plan.data.split_layouts,
+        pending.plan.next_tab_counter,
+    )?;
     state.refresh_visible_tabs()?;
     let snapshot = state.snapshot_packet();
     let result = BackupImportResult {

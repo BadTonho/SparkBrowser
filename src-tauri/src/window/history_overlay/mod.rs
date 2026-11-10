@@ -97,27 +97,35 @@ struct ActionEvent {
 }
 
 fn valid_context(state: &BrowserState, session: &Session) -> bool {
-    if state.is_overlay_open.lock().map_or(true, |value| *value)
+    if state
+        .surfaces()
+        .is_overlay_open()
+        .lock()
+        .map_or(true, |value| *value)
         || state
-            .workspace_switcher_open
+            .surfaces()
+            .workspace_switcher_open()
             .lock()
             .map_or(true, |value| *value)
         || state
-            .bookmark_context_menu_open
+            .surfaces()
+            .bookmark_context_menu_open()
             .lock()
             .map_or(true, |value| *value)
     {
         return false;
     }
     let active = state
-        .active_tab_id
+        .session()
+        .active_tab_id()
         .lock()
         .is_ok_and(|id| *id == session.presentation.tab_id);
     let workspace = state
-        .active_workspace_id
+        .session()
+        .active_workspace_id()
         .lock()
         .is_ok_and(|id| *id == session.workspace);
-    let page = state.tabs.lock().is_ok_and(|tabs| {
+    let page = state.session().tabs().lock().is_ok_and(|tabs| {
         tabs.iter()
             .any(|tab| tab.id == session.presentation.tab_id && tab.url == session.presentation.url)
     });
@@ -270,7 +278,8 @@ pub fn set(
     }
     let state = app.state::<BrowserState>();
     let workspace = state
-        .active_workspace_id
+        .session()
+        .active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();

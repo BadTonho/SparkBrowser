@@ -97,9 +97,21 @@ struct Action {
 }
 
 fn blocked(state: &BrowserState) -> bool {
-    state.is_overlay_open.lock().map_or(true, |v| *v)
-        || state.workspace_switcher_open.lock().map_or(true, |v| *v)
-        || state.bookmark_context_menu_open.lock().map_or(true, |v| *v)
+    state
+        .surfaces()
+        .is_overlay_open()
+        .lock()
+        .map_or(true, |v| *v)
+        || state
+            .surfaces()
+            .workspace_switcher_open()
+            .lock()
+            .map_or(true, |v| *v)
+        || state
+            .surfaces()
+            .bookmark_context_menu_open()
+            .lock()
+            .map_or(true, |v| *v)
 }
 
 fn current(_app: &AppHandle, state: &BrowserState, _session: &Session) -> bool {

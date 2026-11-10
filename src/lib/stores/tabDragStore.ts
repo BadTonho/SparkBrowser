@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { get, writable } from "svelte/store";
 import { tabs, beginTabReorder, previewTabReorder, finishTabReorder, applyTabsSnapshot, selectTab, changeTabWorkspace } from "./browserStore";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
@@ -156,10 +157,12 @@ export function startTabDrag(event: PointerEvent, id: string) {
   const follow = () => { if (!drag) return; if (!contextValid()) { cancelTabDrag(); return; } if (drag.moved) updateDestination(); frame = requestAnimationFrame(follow); };
   frame = requestAnimationFrame(follow);
 }
-export function initializeTabDrag() {
+function startTabDragLifecycle() {
   const stopOverlay = onOverlayOpening(cancelTabDrag);
   const stopMedia = mediaPopover.subscribe(value => { if (value) cancelTabDrag(); });
   const stopPrivacy = privacyPopover.subscribe(value => { if (value) cancelTabDrag(); });
   const stopZoom = zoomPopover.subscribe(value => { if (value) cancelTabDrag(); });
   return () => { cancelTabDrag(); stopOverlay(); stopMedia(); stopPrivacy(); stopZoom(); };
 }
+
+export const initializeTabDrag = createSharedLifecycle(scope => scope.own(startTabDragLifecycle()));

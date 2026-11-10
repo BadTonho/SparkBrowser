@@ -20,6 +20,8 @@ pub async fn navigate_to(
     input: String,
     search_engine: Option<String>,
 ) -> Result<String, String> {
+    let state = app.state::<BrowserState>();
+    let _operation = state.session().operation().await;
     navigate_content_webview_with_search_engine(
         &app,
         &input,
@@ -66,13 +68,17 @@ pub async fn sync_viewport_bounds(
         _ => false,
     };
     {
-        let mut stored_bounds = state.bounds.lock().map_err(|e| e.to_string())?;
+        let mut stored_bounds = state
+            .surfaces()
+            .bounds()
+            .lock()
+            .map_err(|e| e.to_string())?;
         if *stored_bounds == bounds && !ratio_changed {
             return Ok(());
         }
         *stored_bounds = bounds;
     }
-    let mut span = state.diagnostics.span("viewport.resize");
+    let mut span = state.infrastructure().diagnostics().span("viewport.resize");
     let result = resize_visible_webviews(&app, &state);
     span.finish(result.is_ok(), 0);
     result

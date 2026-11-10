@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { locale } from "../i18n";
 import { derived, get, writable } from "svelte/store";
 import {
@@ -175,7 +176,7 @@ export async function handleWorkspaceShortcutEvent(
   }
 }
 
-export function initializeWorkspaceShortcutBridge(): () => void {
+function startWorkspaceShortcutBridge(): () => void {
   let disposed = false;
   let unlistenEvent: (() => void) | undefined;
   let unlistenCancel: (() => void) | undefined;
@@ -219,3 +220,5 @@ export async function chooseWorkspaceFromPicker(workspaceId: string): Promise<vo
 }
 
 locale.subscribe(refreshOpenOverlay);
+
+export const initializeWorkspaceShortcutBridge = createSharedLifecycle(scope => scope.own(startWorkspaceShortcutBridge()));

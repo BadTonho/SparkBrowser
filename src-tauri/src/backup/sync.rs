@@ -554,7 +554,11 @@ pub async fn push_sync(
 
     let (config, previous_fp) = {
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("backup.database_unavailable")?;
         let cfg = load_config(conn)?;
         let prev = preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
@@ -575,7 +579,11 @@ pub async fn push_sync(
 
     if only_if_changed && target_exists && previous_fp.as_deref() == Some(current_fp.as_str()) {
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("backup.database_unavailable")?;
         let snap = snapshot(conn, &service.sync)?;
         return Ok(SyncPushResult {
@@ -607,7 +615,11 @@ pub async fn push_sync(
         } => {
             let secret = {
                 let state = app.state::<BrowserState>();
-                let db = state.db.lock().map_err(|e| e.to_string())?;
+                let db = state
+                    .infrastructure()
+                    .db()
+                    .lock()
+                    .map_err(|e| e.to_string())?;
                 let conn = db.as_ref().ok_or("backup.database_unavailable")?;
                 resolve_secret(conn, &service.sync)?
             };
@@ -623,7 +635,11 @@ pub async fn push_sync(
     };
 
     let state = app.state::<BrowserState>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("backup.database_unavailable")?;
     if let Err(err) = io_result {
         record_error(&service.sync, &err);
@@ -649,7 +665,11 @@ pub async fn pull_sync(
     let backup_service = app.state::<service::BackupService>();
     let (config, secret) = {
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("backup.database_unavailable")?;
         let cfg = load_config(conn)?;
         let sec = resolve_secret(conn, &backup_service.sync)?;
@@ -727,7 +747,11 @@ pub async fn pull_sync(
 
     if !direct_apply {
         let state = app.state::<BrowserState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("backup.database_unavailable")?;
         let snap = snapshot(conn, &backup_service.sync)?;
         return Ok(SyncPullResponse::Preview {
@@ -744,7 +768,11 @@ pub async fn pull_sync(
     let current_fp = fingerprint_hex(&synced_doc)?;
     let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
     let state = app.state::<BrowserState>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("backup.database_unavailable")?;
     clear_error_and_record_sync(conn, &backup_service.sync, &current_fp, now)?;
     let snap = snapshot(conn, &backup_service.sync)?;

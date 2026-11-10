@@ -1,10 +1,10 @@
+import { surfaceCoordinator } from "../services/surface-coordinator.js";
 import { derived, get, writable } from "svelte/store";
 import { tabs } from "./browserStore";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { mediaState, mediaError, refreshMedia, flushVolume } from "./mediaStore";
 import { setMediaPopover } from "../services/bridge/media-popover";
 import { describeError } from "../services/user-errors.js";
-import { closeZoom } from "./zoomPopoverStore";
 
 interface MediaPopoverSession {
   id: number;
@@ -22,7 +22,8 @@ let revision = 0;
 export async function openMedia(anchor: HTMLButtonElement) {
   if (get(mediaPopover)) return closeMedia(true);
   const request = ++revision;
-  await closeZoom();
+  const currentClaim = await surfaceCoordinator.claim("media");
+  if (!currentClaim()) return;
   const active = get(tabs).find(tab => tab.is_active);
   const workspaceId = get(activeWorkspaceId);
   if (!active) return;
@@ -30,7 +31,7 @@ export async function openMedia(anchor: HTMLButtonElement) {
   const residentMediaTabs = get(tabs).filter(tab => !tab.is_hibernated);
   await Promise.all(residentMediaTabs.map(tab => refreshMedia(tab.id, true)));
   const current = get(tabs).find(tab => tab.is_active);
-  if (request !== revision || !anchor.isConnected || current?.id !== active.id || current.url !== active.url || workspaceId !== get(activeWorkspaceId)) return;
+  if (!currentClaim() || request !== revision || !anchor.isConnected || current?.id !== active.id || current.url !== active.url || workspaceId !== get(activeWorkspaceId)) return;
   mediaPopover.set({ id: request, tabId: active.id, documentKey: get(mediaState).tabs.find(tab => tab.tab_id === active.id)?.document_key ?? "", url: active.url, workspaceId, anchor });
 }
 
@@ -45,3 +46,5 @@ export async function closeMedia(restoreFocus = false) {
   } catch (error) { mediaError.set(describeError(error)); }
   finally { await flushVolume(); }
 }
+
+surfaceCoordinator.register("media", () => closeMedia());

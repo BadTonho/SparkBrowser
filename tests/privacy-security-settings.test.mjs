@@ -17,7 +17,7 @@ test('privacy and security controls are searchable and rendered in their own set
 test('local history retention and pop-up choices persist through shell-only native commands', () => {
   const bridge = read('src/lib/services/bridge/privacy-settings.ts');
   const native = read('src-tauri/src/commands/privacy_settings.rs');
-  const state = read('src-tauri/src/state/browser_state.rs');
+  const state = read('src-tauri/src/state/domains/policies.rs');
   for (const option of ['one_month', 'three_months', 'six_months', 'twelve_months', 'always']) assert.match(bridge, new RegExp(option));
   assert.match(native, /HISTORY_RETENTION_KEY/);
   assert.match(native, /ALLOW_POPUPS_KEY/);
@@ -39,8 +39,8 @@ test('history cleanup deletes history, derived icons and closed tabs, and expiry
 });
 
 test('pop-ups accept only enabled web destinations and keep the PiP path separate', () => {
-  const tabs = read('src-tauri/src/commands/tabs.rs');
-  const windows = read('src-tauri/src/window/webview_manager.rs');
+  const tabs = read('src-tauri/src/state/session_ops/tabs.rs');
+  const windows = read('src-tauri/src/window/content_factory.rs');
   const pip = read('src-tauri/src/media/pip_window.rs');
   assert.match(tabs, /enabled\s*&&\s*matches!\(url\.scheme\(\), "http" \| "https"\)/);
   assert.match(windows, /pip_window::new_window[\s\S]*open_popup_url/);

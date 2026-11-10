@@ -16,6 +16,7 @@
   import { initializeClosedTabEvents, restoreClosedTab } from "./lib/stores/closedTabsStore";
   import BackupNotice from "./lib/components/status/BackupNotice.svelte";
   import { initializeBackupStatus } from "./lib/stores/backupStore";
+  import { initializeBrowserSession } from "./lib/stores/browser/lifecycle";
   import { onMount } from "svelte";
   import { initializeUpdates } from "./lib/stores/updatesStore";
   import UpdateNotice from "./lib/components/status/UpdateNotice.svelte";
@@ -51,9 +52,6 @@
   import BookmarkContextMenu from "./lib/components/bookmarks/BookmarkContextMenu.svelte";
   import {
     tabs,
-    applyNavigationPatch,
-    initializeTabs,
-    applyTabsSnapshot,
     addTab,
     removeTab,
     selectTab,
@@ -73,11 +71,10 @@
     toggleHistoryDrawer,
   } from "./lib/stores/persistenceStore";
   import {
-    privacyStats,
+    applyPrivacyStats,
     initializePrivacyStats,
   } from "./lib/stores/privacyStore";
   import {
-    initializeWorkspaces,
     activeWorkspaceId,
   } from "./lib/stores/workspaceStore";
   import { toggleDownloadsDrawer, initializeDownloadEvents } from "./lib/stores/downloadsStore";
@@ -107,8 +104,6 @@
     recordingShortcutId,
   } from "./lib/stores/shortcutsStore";
   import {
-    onNavigationUpdated,
-    onTabsUpdated,
     onPrivacyStatsUpdated,
     onBrowserShortcutAction,
   } from "./lib/services/tauri-bridge";
@@ -175,7 +170,7 @@
     const stopShutdown = initializeShutdown();
     const stopRuntime = initializeRuntime();
     void initializeRecovery();
-    initializeBackupStatus();
+    const stopBackup = initializeBackupStatus();
     const stopClosedTabs = initializeClosedTabEvents();
     const stopUpdates = initializeUpdates();
     const stopPermissionEvents = initializePermissionEvents();
@@ -188,25 +183,15 @@
     motionPreference.addEventListener("change", updateMotionPreference);
 
 
-    let unlistenNavigation: (() => void) | undefined;
-    let unlistenTabs: (() => void) | undefined;
     let unlistenPrivacy: (() => void) | undefined;
     let unlistenBrowserShortcut: (() => void) | undefined;
     const stopWorkspaceShortcutBridge = initializeWorkspaceShortcutBridge();
 
     let disposed = false;
-    const navigationListener = onNavigationUpdated(applyNavigationPatch).then(fn => {
-      if (disposed) fn(); else unlistenNavigation = fn;
-    });
-
-    const tabsListener = onTabsUpdated((updatedTabs) => {
-      applyTabsSnapshot(updatedTabs);
-    }).then((fn) => {
-      if (disposed) fn(); else unlistenTabs = fn;
-    });
+    const session = initializeBrowserSession();
 
     const privacyListener = onPrivacyStatsUpdated((stats) => {
-      privacyStats.set(stats);
+      applyPrivacyStats(stats);
     }).then((fn) => {
       if (disposed) fn(); else unlistenPrivacy = fn;
     });
@@ -217,10 +202,7 @@
       if (disposed) fn(); else unlistenBrowserShortcut = fn;
     });
 
-    void Promise.all([navigationListener, tabsListener, privacyListener, shortcutListener]).then(async () => {
-      if (disposed) return;
-      // Independent backend reads: fetch concurrently.
-      await Promise.all([initializeWorkspaces(), initializeTabs()]);
+    void Promise.all([session.ready, privacyListener, shortcutListener]).then(async () => {
       if (disposed) return;
       await setHibernationExemptions(get(hibernationExemptions));
       await setAskDownloadDestination(get(askDownloadDestination));
@@ -316,11 +298,11 @@
       stopPermissionEvents();
       stopUpdates();
       stopClosedTabs();
+      stopBackup();
       stopDownloadEvents();
       clearInterval(hibernationInterval);
       disposed = true;
-      if (unlistenNavigation) unlistenNavigation();
-      if (unlistenTabs) unlistenTabs();
+      session.stop();
       if (unlistenPrivacy) unlistenPrivacy();
       if (unlistenBrowserShortcut) unlistenBrowserShortcut();
       stopWorkspaceShortcutBridge();

@@ -51,8 +51,8 @@ pub fn handler(
                     }
                     let selected_target = if app
                         .state::<BrowserState>()
-                        .ask_download_destination
-                        .load(std::sync::atomic::Ordering::Acquire)
+                        .policies()
+                        .ask_download_destination()
                     {
                         let selected = app
                             .dialog()

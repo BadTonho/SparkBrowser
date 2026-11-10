@@ -7,7 +7,8 @@ use tauri::{AppHandle, State};
 #[tauri::command]
 pub fn get_shield_exceptions(state: State<'_, BrowserState>) -> Result<Vec<String>, String> {
     state
-        .shield_settings
+        .policies()
+        .shield_settings()
         .lock()
         .map(|value| value.exceptions.clone())
         .map_err(|e| e.to_string())
@@ -24,9 +25,10 @@ pub async fn set_shield_exceptions(
         exceptions,
     }
     .validate()?;
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     if state
-        .tabs
+        .session()
+        .tabs()
         .lock()
         .map_err(|e| e.to_string())?
         .iter()
@@ -41,20 +43,18 @@ pub async fn set_shield_exceptions(
             "Save edited forms and finish media/downloads before changing shield exceptions".into(),
         );
     }
-    let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
-    crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
-        crate::window::webview_manager::prepare_content_reset(&state, shield)
-    })?;
+    let shield = *state
+        .policies()
+        .shield_enabled()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let encoded = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
-    {
-        let db = state.db.lock().map_err(|e| e.to_string())?;
-        crate::database::preferences_repo::store(
-            db.as_ref().ok_or("Database unavailable")?,
-            crate::database::preferences_repo::SHIELD_EXCEPTIONS_KEY,
-            &encoded,
-        )?;
-    }
-    *state.shield_settings.lock().map_err(|e| e.to_string())? = settings.clone();
+    state.commit_content_policy(
+        crate::database::preferences_repo::SHIELD_EXCEPTIONS_KEY,
+        &encoded,
+        shield,
+    )?;
+    state.policies().set_shield_settings(settings.clone())?;
     crate::window::webview_manager::reset_content_webviews(&app, &state)?;
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
     let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
@@ -66,7 +66,8 @@ pub fn get_gpc(
     state: State<'_, BrowserState>,
 ) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
     state
-        .gpc_settings
+        .policies()
+        .gpc_settings()
         .lock()
         .map(|value| value.clone())
         .map_err(|e| e.to_string())
@@ -79,9 +80,10 @@ pub async fn set_gpc(
     settings: crate::privacy::tracking_parameters::TrackingSettings,
 ) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
     let settings = settings.validate()?;
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     if state
-        .tabs
+        .session()
+        .tabs()
         .lock()
         .map_err(|e| e.to_string())?
         .iter()
@@ -94,20 +96,14 @@ pub async fn set_gpc(
     {
         return Err("Save edited forms and finish media/downloads before changing GPC".into());
     }
-    let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
-    crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
-        crate::window::webview_manager::prepare_content_reset(&state, shield)
-    })?;
+    let shield = *state
+        .policies()
+        .shield_enabled()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let encoded = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
-    {
-        let db = state.db.lock().map_err(|e| e.to_string())?;
-        crate::database::preferences_repo::store(
-            db.as_ref().ok_or("Database unavailable")?,
-            crate::database::preferences_repo::GPC_KEY,
-            &encoded,
-        )?;
-    }
-    *state.gpc_settings.lock().map_err(|e| e.to_string())? = settings.clone();
+    state.commit_content_policy(crate::database::preferences_repo::GPC_KEY, &encoded, shield)?;
+    state.policies().set_gpc_settings(settings.clone())?;
     crate::window::webview_manager::reset_content_webviews(&app, &state)?;
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
     let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
@@ -119,7 +115,8 @@ pub fn get_tracking_cleaning(
     state: State<'_, BrowserState>,
 ) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
     state
-        .tracking_settings
+        .policies()
+        .tracking_settings()
         .lock()
         .map(|value| value.clone())
         .map_err(|e| e.to_string())
@@ -132,9 +129,10 @@ pub async fn set_tracking_cleaning(
     settings: crate::privacy::tracking_parameters::TrackingSettings,
 ) -> Result<crate::privacy::tracking_parameters::TrackingSettings, String> {
     let settings = settings.validate()?;
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     if state
-        .tabs
+        .session()
+        .tabs()
         .lock()
         .map_err(|e| e.to_string())?
         .iter()
@@ -149,20 +147,18 @@ pub async fn set_tracking_cleaning(
             "Save edited forms and finish media/downloads before changing link cleaning".into(),
         );
     }
-    let shield = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
-    crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
-        crate::window::webview_manager::prepare_content_reset(&state, shield)
-    })?;
+    let shield = *state
+        .policies()
+        .shield_enabled()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let encoded = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
-    {
-        let db = state.db.lock().map_err(|e| e.to_string())?;
-        crate::database::preferences_repo::store(
-            db.as_ref().ok_or("Database unavailable")?,
-            crate::database::preferences_repo::TRACKING_CLEANING_KEY,
-            &encoded,
-        )?;
-    }
-    *state.tracking_settings.lock().map_err(|e| e.to_string())? = settings.clone();
+    state.commit_content_policy(
+        crate::database::preferences_repo::TRACKING_CLEANING_KEY,
+        &encoded,
+        shield,
+    )?;
+    state.policies().set_tracking_settings(settings.clone())?;
     crate::window::webview_manager::reset_content_webviews(&app, &state)?;
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
     let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
@@ -180,16 +176,11 @@ pub async fn set_auto_skip_ads(
     state: State<'_, BrowserState>,
     enabled: bool,
 ) -> Result<PrivacyStats, String> {
-    use std::sync::atomic::Ordering;
-    let _operation = state.tab_operations.lock().await;
-    let previous = state.auto_skip_ads_enabled.load(Ordering::Acquire);
-    state
-        .auto_skip_ads_enabled
-        .store(enabled, Ordering::Release);
+    let _operation = state.session().operation().await;
+    let previous = state.policies().auto_skip_ads_enabled();
+    state.policies().set_auto_skip_ads_enabled(enabled);
     if let Err(error) = crate::privacy::auto_skip::apply(&app, enabled) {
-        state
-            .auto_skip_ads_enabled
-            .store(previous, Ordering::Release);
+        state.policies().set_auto_skip_ads_enabled(previous);
         if crate::privacy::auto_skip::apply(&app, previous).is_err() {
             let _ = crate::security::emit_shell(
                 &app,
@@ -209,8 +200,12 @@ pub async fn toggle_adblock_shield(
     app: AppHandle,
     state: State<'_, BrowserState>,
 ) -> Result<PrivacyStats, String> {
-    let _operation = state.tab_operations.lock().await;
-    let previous = *state.shield_enabled.lock().map_err(|e| e.to_string())?;
+    let _operation = state.session().operation().await;
+    let previous = *state
+        .policies()
+        .shield_enabled()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let enabled = !previous;
     #[cfg(windows)]
     {
@@ -231,12 +226,13 @@ pub async fn toggle_adblock_shield(
             }
             return Err(error);
         }
-        *state.shield_enabled.lock().map_err(|e| e.to_string())? = enabled;
+        state.policies().set_shield_enabled(enabled)?;
     }
     #[cfg(not(windows))]
     {
         if state
-            .tabs
+            .session()
+            .tabs()
             .lock()
             .map_err(|e| e.to_string())?
             .iter()
@@ -251,7 +247,10 @@ pub async fn toggle_adblock_shield(
         crate::state::tab_checkpoint::TabCheckpoint::commit(&state, || {
             crate::window::webview_manager::prepare_content_reset(&state, enabled)
         })?;
-        *state.shield_enabled.lock().map_err(|e| e.to_string())? = enabled;
+        state
+            .policies()
+            .set_shield_enabled(enabled)
+            .map_err(|e| e.to_string())?;
         if let Err(error) =
             reset_content_webviews(&app, &state).and_then(|()| sync_all_webviews(&app, &state))
         {

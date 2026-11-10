@@ -106,7 +106,8 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
         .as_deref()
         .and_then(|request_token| {
             state
-                .workspace_switcher_token
+                .surfaces()
+                .workspace_switcher_token()
                 .lock()
                 .ok()
                 .map(|token| token.as_deref() == Some(request_token))
@@ -120,26 +121,28 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
                 return;
             };
             let is_valid_workspace = state
-                .workspaces
+                .session()
+                .workspaces()
                 .lock()
                 .map(|workspaces| workspaces.iter().any(|item| item.id == workspace_id))
                 .unwrap_or(false);
             if !is_valid_workspace {
                 return;
             }
-            if let Ok(mut token) = state.workspace_switcher_token.lock() {
+            if let Ok(mut token) = state.surfaces().workspace_switcher_token().lock() {
                 *token = None;
             }
             let _ = crate::security::emit_shell(app, "workspace-switcher-selected", workspace_id);
         }
         "dismiss" if token_matches && !parameters.contains_key("workspace_id") => {
             let is_open = state
-                .workspace_switcher_open
+                .surfaces()
+                .workspace_switcher_open()
                 .lock()
                 .map(|open| *open)
                 .unwrap_or(false);
             if is_open {
-                if let Ok(mut token) = state.workspace_switcher_token.lock() {
+                if let Ok(mut token) = state.surfaces().workspace_switcher_token().lock() {
                     *token = None;
                 }
                 let _ = crate::security::emit_shell(app, "workspace-switcher-dismissed", ());
@@ -167,7 +170,8 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
         return;
     };
     let menu_is_open = state
-        .bookmark_context_menu_open
+        .surfaces()
+        .bookmark_context_menu_open()
         .lock()
         .map(|open| *open)
         .unwrap_or(false);
@@ -178,7 +182,8 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
         .as_deref()
         .and_then(|request_token| {
             state
-                .bookmark_context_menu_token
+                .surfaces()
+                .bookmark_context_menu_token()
                 .lock()
                 .ok()
                 .map(|token| token.as_deref() == Some(request_token))
@@ -190,7 +195,8 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
 
     if action != "dismiss"
         && !state
-            .bookmark_context_menu_actions
+            .surfaces()
+            .bookmark_context_menu_actions()
             .lock()
             .map(|actions| actions.iter().any(|allowed| allowed == &action))
             .unwrap_or(false)
@@ -198,10 +204,10 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
         return;
     }
 
-    if let Ok(mut token) = state.bookmark_context_menu_token.lock() {
+    if let Ok(mut token) = state.surfaces().bookmark_context_menu_token().lock() {
         *token = None;
     }
-    if let Ok(mut actions) = state.bookmark_context_menu_actions.lock() {
+    if let Ok(mut actions) = state.surfaces().bookmark_context_menu_actions().lock() {
         actions.clear();
     }
     // Let the frontend close the overlay after it receives the action. Hiding

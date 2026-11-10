@@ -168,15 +168,17 @@ pub fn run() {
                 window::quick_settings_popover::focus_lost(window.app_handle());
                 if let Some(state) = window.try_state::<BrowserState>() {
                     state
-                        .workspace_alt_pressed
+                        .surfaces()
+                        .workspace_alt_pressed()
                         .store(false, std::sync::atomic::Ordering::SeqCst);
-                    if let Ok(mut token) = state.bookmark_context_menu_token.lock() {
+                    if let Ok(mut token) = state.surfaces().bookmark_context_menu_token().lock() {
                         *token = None;
                     }
-                    if let Ok(mut actions) = state.bookmark_context_menu_actions.lock() {
+                    if let Ok(mut actions) = state.surfaces().bookmark_context_menu_actions().lock()
+                    {
                         actions.clear();
                     }
-                    if let Ok(mut open) = state.bookmark_context_menu_open.lock() {
+                    if let Ok(mut open) = state.surfaces().bookmark_context_menu_open().lock() {
                         *open = false;
                     }
                     if let Some(webview) = window
@@ -256,11 +258,10 @@ pub fn run() {
             })
             .and_then(|settings| settings.validate().ok())
             {
-                *state
-                    .tracking_settings
-                    .lock()
-                    .map_err(|_| std::io::Error::other("Tracking settings unavailable"))? =
-                    settings;
+                state
+                    .policies()
+                    .set_tracking_settings(settings)
+                    .map_err(|_| std::io::Error::other("Tracking settings unavailable"))?;
             }
             if let Some(settings) =
                 database::preferences_repo::load(&conn, database::preferences_repo::GPC_KEY)
@@ -274,10 +275,10 @@ pub fn run() {
                     })
                     .and_then(|settings| settings.validate().ok())
             {
-                *state
-                    .gpc_settings
-                    .lock()
-                    .map_err(|_| std::io::Error::other("GPC settings unavailable"))? = settings;
+                state
+                    .policies()
+                    .set_gpc_settings(settings)
+                    .map_err(|_| std::io::Error::other("GPC settings unavailable"))?;
             }
             if let Some(settings) = database::preferences_repo::load(
                 &conn,
@@ -290,18 +291,17 @@ pub fn run() {
             })
             .and_then(|settings| settings.validate().ok())
             {
-                *state
-                    .shield_settings
-                    .lock()
-                    .map_err(|_| std::io::Error::other("Shield settings unavailable"))? = settings;
+                state
+                    .policies()
+                    .set_shield_settings(settings)
+                    .map_err(|_| std::io::Error::other("Shield settings unavailable"))?;
             }
-            state.workspace_isolation.store(
+            state.policies().set_workspace_isolation(
                 database::preferences_repo::load_bool(
                     &conn,
                     database::preferences_repo::WORKSPACE_ISOLATION_KEY,
                 )
                 .unwrap_or(false),
-                std::sync::atomic::Ordering::Release,
             );
             let history_retention =
                 crate::database::history_repo::HistoryRetention::from_preference(
@@ -312,19 +312,17 @@ pub fn run() {
                     .ok()
                     .flatten(),
                 );
-            state.history_retention_months.store(
-                history_retention.state_value(),
-                std::sync::atomic::Ordering::Release,
-            );
-            state.allow_popups.store(
+            state
+                .policies()
+                .set_history_retention_months(history_retention.state_value());
+            state.policies().set_allow_popups(
                 crate::database::preferences_repo::load_bool(
                     &conn,
                     crate::database::preferences_repo::ALLOW_POPUPS_KEY,
                 )
                 .unwrap_or(false),
-                std::sync::atomic::Ordering::Release,
             );
-            state.smart_screen_enabled.store(
+            state.policies().set_smart_screen_enabled(
                 crate::database::preferences_repo::load(
                     &conn,
                     crate::database::preferences_repo::SMART_SCREEN_KEY,
@@ -333,7 +331,6 @@ pub fn run() {
                 .flatten()
                 .as_deref()
                     != Some("false"),
-                std::sync::atomic::Ordering::Release,
             );
             crate::database::history_repo::prune_expired(
                 &conn,
@@ -358,7 +355,8 @@ pub fn run() {
             window::new_tab::widgets::initialize(app.handle());
             spawn_content_webview(app.handle())?;
             state
-                .startup_ready
+                .infrastructure()
+                .startup_ready()
                 .store(true, std::sync::atomic::Ordering::Release);
             feeds::start(app.handle().clone());
 

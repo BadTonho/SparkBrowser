@@ -3,6 +3,7 @@ import { withScenarioDatabase } from './persistence/database.mjs';
 import { inspectDragWindows } from './tab-drag-window.mjs';
 import { checkDragCard } from './tab-drag-card.mjs';
 import { previewMeasurements, checkUnloadedCompanion } from './tab-docking-preview.mjs';
+import { createNativePointerSender } from './native-pointer.mjs';
 
 export async function checkTabDocking(context) {
   const { invoke, until, fixture, script, click, request, sessionId, restart, resizeWindow, wait } = context;
@@ -23,7 +24,9 @@ export async function checkTabDocking(context) {
   const order = (await invoke('get_tabs')).tabs.map(t => t.id);
   const anchors = new Map(['dock-a','dock-b','dock-c'].map(name=>[name,fixture.reports.get(name).scrollAnchor]));
   await script(`window.dockingEvents=[];for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture','blur'])window.addEventListener(type,event=>{window.dockingEvents.push([type,event.clientX,event.clientY,event.pointerId]);if(window.dockingEvents.length>24)window.dockingEvents.shift();},true);`);
-  const pointer = async actions => request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'pointer', id: 'dock-mouse', parameters: { pointerType: 'mouse' }, actions }] });
+  const nativePointer = process.platform === 'win32' ? createNativePointerSender(context.directory) : null;
+  if (nativePointer) context.ownCleanup(() => nativePointer([{ type: 'pointerUp', button: 0 }]));
+  const pointer = async actions => nativePointer ? nativePointer(actions) : request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'pointer', id: 'dock-mouse', parameters: { pointerType: 'mouse' }, actions }] });
   const box = () => script('const r=document.querySelector(".viewport-frame").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}');
   const measurements = previewMeasurements(context, box);
   const point = id => script('const tab=document.querySelector(`[data-tab-id="${arguments[0]}"]`);tab.scrollIntoView({block:"nearest",inline:"nearest"});const r=tab.querySelector(".tab-title").getBoundingClientRect();return {x:Math.round(r.left+Math.min(25,r.width/2)),y:Math.round(r.top+r.height/2)}', id);
@@ -130,8 +133,8 @@ export async function checkTabDocking(context) {
   });
   await dock(a.id, 'left', 'dock-b');
   console.log('Docking: vertical tabs and resize');
-  await click('[data-testid=open-settings]'); await click('[data-testid=settings-appearance_layout]');
-  await script('document.querySelectorAll("#setting-browser-layout button")[1].click();document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await context.openSettings(); await click('[data-testid=settings-appearance_layout]');
+  await click('#setting-browser-layout .mini-pill:nth-child(2)'); await context.closeSettings();
   await until(() => script('return Boolean(document.querySelector(".tab-row"))'), 'vertical tabs');
   await wait(300); await resizeWindow(1000, 740); await wait(300);
   await holdAtEdge(b.id,null);await checkPreview();await cancelHold();

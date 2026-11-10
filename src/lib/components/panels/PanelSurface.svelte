@@ -19,6 +19,8 @@
   let sequence = 0;
   let closing = false;
   let closedSession = 0;
+  let presentationGeneration = 0;
+  let pendingOpeningFocus = false;
   const outbox: PanelViewAction[] = [];
   let inFlight: number | null = null;
   let viewport = $state({ width: innerWidth, height: innerHeight });
@@ -52,14 +54,18 @@
     const set = async (value: Payload) => {
       if (!value.visible) {
         closedSession = Math.max(closedSession, value.sessionId);
-        if (!presentation || presentation.sessionId <= value.sessionId) presentation = null;
+        if (presentation && presentation.sessionId > value.sessionId) return;
+        presentationGeneration++;
+        pendingOpeningFocus = false;
+        presentation = null;
         outbox.length = 0; inFlight = null;
         return;
       }
       if (value.sessionId <= closedSession) return;
       const opening = presentation?.sessionId !== value.sessionId;
       if (!opening && presentation && value.revision < presentation.revision) return;
-      if (opening) { sequence = 0; pending.clear(); closing = false; outbox.length = 0; inFlight = null; }
+      const generation = ++presentationGeneration;
+      if (opening) { sequence = 0; pending.clear(); closing = false; outbox.length = 0; inFlight = null; pendingOpeningFocus = true; }
       const hadForm = !!root?.querySelector('[data-testid="download-url"]');
       presentation = value;
       if (inFlight !== null && value.ack >= inFlight) inFlight = null;
@@ -67,10 +73,12 @@
       document.documentElement.lang = value.locale;
       for (const [key, color] of Object.entries(value.theme)) document.documentElement.style.setProperty(key, color);
       await tick();
-      if (presentation?.sessionId !== value.sessionId || closing) return;
-      if (downloads) syncDownloadFocus(root, opening, hadForm);
-      else if (quickSettings && opening) root?.querySelector<HTMLElement>('[data-testid="settings-quick-theme-dark"], [data-testid="settings-quick-theme-light"]')?.focus();
-      else if (opening) root?.querySelector<HTMLElement>("[role=tab][aria-selected=true]")?.focus();
+      if (generation !== presentationGeneration || closing) return;
+      const focusOpening = pendingOpeningFocus;
+      pendingOpeningFocus = false;
+      if (downloads) syncDownloadFocus(root, focusOpening, hadForm);
+      else if (quickSettings && focusOpening) root?.querySelector<HTMLElement>('[data-testid="settings-quick-theme-dark"], [data-testid="settings-quick-theme-light"]')?.focus();
+      else if (focusOpening) root?.querySelector<HTMLElement>("[role=tab][aria-selected=true]")?.focus();
     };
     (window as unknown as Record<string, typeof set>)[setter] = set;
     const click = (event: MouseEvent) => {

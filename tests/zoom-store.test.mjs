@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../src/lib/services/lifecycle.js";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -9,6 +10,7 @@ import { createZoomWriter } from '../src/lib/services/zoom-writer.js';
 function fixture(override) {
   const currentUrl = writable('https://first.test/a'), writes = [], saved = new Map();
   let revision = 0;
+  let listener;
   const snapshot = () => ({ revision, sites:[...saved].map(([origin,factor])=>({origin,factor})) });
   const exports = {};
   const imports = {
@@ -22,12 +24,12 @@ function fixture(override) {
         await override?.(origin, factor);
         saved.set(origin,factor); revision++;
         return snapshot();
-      }, fetchSiteZoom: async () => snapshot(), onSiteZoom: async () => () => {},
+      }, fetchSiteZoom: async () => snapshot(), onSiteZoom: async callback => { listener = callback; return () => {}; },
     },
   };
   const source = ts.transpileModule(readFileSync('src/lib/stores/zoomStore.ts','utf8'), { compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022} }).outputText;
-  runInNewContext(source, { exports, require: name => { if (!(name in imports)) throw Error(name); return imports[name]; }, queueMicrotask, URL });
-  return { ...exports, currentUrl, writes, saved };
+  runInNewContext(source, { exports, require: name => { if (name === "../services/lifecycle.js") return { createSharedLifecycle }; if (!(name in imports)) throw Error(name); return imports[name]; }, queueMicrotask, URL });
+  return { ...exports, currentUrl, writes, saved, emit: value => listener(value) };
 }
 
 test('rapid shortcuts use the latest requested level and coalesce without dropping the final value', async () => {
@@ -76,10 +78,13 @@ test('a delayed write reply cannot replace a newer published zoom revision', asy
   let release;
   const gate=new Promise(resolve=>{release=resolve;});
   const f=fixture(async()=>gate);
+  const stop = f.initializeZoom();
   const write=f.setZoomFactor(1.1);
   await Promise.resolve();
-  f.zoomState.set({revision:100,sites:[{origin:'https://first.test',factor:2}]});
+  f.emit({revision:100,sites:[{origin:'https://first.test',factor:2}]});
   release();await write;
   assert.equal(get(f.currentZoom),2);
   assert.equal(get(f.zoomState).revision,100);
+  assert.equal(f.zoomState.set, undefined);
+  stop();
 });

@@ -8,27 +8,15 @@ use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect};
 
 /// Prepare fallback metadata before persistence; no document is closed here.
 pub fn prepare_content_reset(state: &BrowserState, enabled: bool) -> Result<(), String> {
-    let active = state
-        .active_tab_id
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clone();
-    for tab in state.tabs.lock().map_err(|e| e.to_string())?.iter_mut() {
-        tab.is_hibernated = tab.id != active;
-        if tab.id == active
-            && crate::privacy::adblock_engine::site_is_protected(state, &tab.url)
-            && crate::privacy::adblock_engine::should_block_url(&tab.url, enabled)
-        {
-            tab.url = crate::state::browser_state::DEFAULT_HOME_URL.to_string();
-        }
-    }
-    Ok(())
+    state.prepare_content_reset(enabled)
 }
 
 /// Closes a content WebView and retires every stateful session bound to it.
 pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String> {
     super::fullscreen::exit(app, label, true);
     let state = app.state::<BrowserState>();
+    #[cfg(windows)]
+    state.surfaces().content_bootstrap().retire(label)?;
     crate::site_permissions::cancel_view(app, label);
     crate::downloads::native::cancel_view(app, label);
     #[cfg(windows)]
@@ -46,18 +34,22 @@ pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String
         webview.close().map_err(|e| e.to_string())?;
     }
     super::new_tab::revoke(app, label);
+    state.surfaces().content_profiles().forget(label)?;
     state
-        .keyboard_bridge_sequences
+        .security()
+        .keyboard_bridge_sequences()
         .lock()
         .map_err(|_| "security.state_unavailable")?
         .remove(label);
     state
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map_err(|e| e.to_string())?
         .remove(label);
     state
-        .shield_script_ids
+        .security()
+        .shield_script_ids()
         .lock()
         .map_err(|e| e.to_string())?
         .remove(label);
@@ -75,40 +67,66 @@ pub fn close_tab_webview(app: &AppHandle, tab_id: &str) -> Result<(), String> {
     }
 }
 
+/// Startup requests wait for native handlers; later requests reuse the same document.
+pub fn navigate_tab_document(
+    app: &AppHandle,
+    tab_id: &str,
+    target: tauri::Url,
+) -> Result<(), String> {
+    let label = webview_label_for_tab(tab_id);
+    let view = app
+        .get_webview(&label)
+        .ok_or("Active WebView was not found")?;
+    #[cfg(windows)]
+    return app
+        .state::<BrowserState>()
+        .surfaces()
+        .content_bootstrap()
+        .navigate(&label, target.as_str(), |url| {
+            view.navigate(tauri::Url::parse(url).map_err(|e| e.to_string())?)
+                .map_err(|e| e.to_string())
+        });
+    #[cfg(not(windows))]
+    view.navigate(target).map_err(|e| e.to_string())
+}
+
 /// Rebuild views only after their fallback metadata has been committed.
-pub fn reset_content_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
-    state
-        .keyboard_bridge_sequences
-        .lock()
-        .map_err(|_| "security.state_unavailable")?
-        .clear();
-    state
-        .shield_script_ids
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clear();
-    state
-        .keyboard_bridge_tokens
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clear();
-    for (label, view) in app.webviews() {
-        if label.starts_with(CONTENT_WEBVIEW_PREFIX) {
-            crate::site_permissions::cancel_view(app, &label);
-            crate::downloads::native::cancel_view(app, &label);
-            #[cfg(windows)]
-            app.run_on_main_thread({
-                let label = label.clone();
-                {
-                    let app = app.clone();
-                    move || crate::media::protocol::clear(&app, &label)
-                }
-            })
-            .map_err(|e| e.to_string())?;
-            view.close().map_err(|e| e.to_string())?;
-        }
+pub fn reset_content_webviews(app: &AppHandle, _state: &BrowserState) -> Result<(), String> {
+    for label in app
+        .webviews()
+        .keys()
+        .filter(|label| label.starts_with(CONTENT_WEBVIEW_PREFIX))
+    {
+        close_and_clean(app, label)?;
     }
     ensure_active_content_webview(app)
+}
+
+/// Repeated reconciliation reuses an existing document without navigating it.
+pub(super) fn ensure_tab_webview(
+    app: &AppHandle,
+    id: &str,
+    url: &str,
+    bounds: crate::state::browser_state::ViewportBounds,
+) -> Result<(), String> {
+    let label = webview_label_for_tab(id);
+    let profile = super::workspace_data::content_directory(app, id)?;
+    let state = app.state::<BrowserState>();
+    if app.get_webview(&label).is_some() {
+        if state
+            .surfaces()
+            .content_profiles()
+            .matches(&label, &profile)?
+        {
+            return Ok(());
+        }
+        close_and_clean(app, &label)?;
+    }
+    super::content_factory::create_tab_webview(app, id, url, bounds, profile.clone())?;
+    state
+        .surfaces()
+        .content_profiles()
+        .remember(&label, profile)
 }
 
 /// Synchronizes visibility and bounds of the child WebView.
@@ -122,26 +140,24 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
             .into_iter()
             .find(|t| &t.id == id)
             .ok_or("Visible tab not found")?;
-        super::webview_manager::ensure_tab_webview(app, id, &tab.url, *bounds)?;
+        ensure_tab_webview(app, id, &tab.url, *bounds)?;
     }
-    crate::state::memory_policy::enforce_resident_limit(
-        &mut state.tabs.lock().map_err(|e| e.to_string())?,
-        state
-            .resident_limit
-            .load(std::sync::atomic::Ordering::Relaxed),
-        &state
-            .hibernation_exemptions
-            .lock()
-            .map_err(|e| e.to_string())?,
-    );
-    let bounds = state.bounds.lock().map(|b| *b).unwrap_or_default();
+    state.enforce_resident_policy()?;
+    let bounds = state
+        .surfaces()
+        .bounds()
+        .lock()
+        .map(|b| *b)
+        .unwrap_or_default();
     let workspace_switcher_open = state
-        .workspace_switcher_open
+        .surfaces()
+        .workspace_switcher_open()
         .lock()
         .map(|open| *open)
         .unwrap_or(false);
     let bookmark_context_menu_open = state
-        .bookmark_context_menu_open
+        .surfaces()
+        .bookmark_context_menu_open()
         .lock()
         .map(|open| *open)
         .unwrap_or(false);
@@ -164,7 +180,16 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
             }) => {
                 close_and_clean(app, &label)?;
             }
-            Some(_) => {}
+            Some(tab) => {
+                let profile = super::workspace_data::content_directory(app, &tab.id)?;
+                if !state
+                    .surfaces()
+                    .content_profiles()
+                    .matches(&label, &profile)?
+                {
+                    close_and_clean(app, &label)?;
+                }
+            }
         }
     }
     super::viewport::sync_content_geometry(app, state)?;

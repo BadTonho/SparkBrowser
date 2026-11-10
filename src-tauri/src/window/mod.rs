@@ -1,5 +1,6 @@
 #[cfg(target_os = "linux")]
 mod caret_browsing;
+pub(crate) mod content_bridge;
 mod content_focus;
 mod content_lifecycle;
 pub mod favicon;
@@ -129,3 +130,5 @@ pub fn show_overlay_webview(view: &tauri::Webview) -> Result<(), String> {
     bring_webview_to_front(view);
     Ok(())
 }
+
+mod content_factory;

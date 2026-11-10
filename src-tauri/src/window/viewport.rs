@@ -10,7 +10,11 @@ use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect};
 
 /// Geometry updates do not reconcile the tab lifecycle or acquire the database/operation lock.
 pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
-    let bounds = *state.bounds.lock().map_err(|e| e.to_string())?;
+    let bounds = *state
+        .surfaces()
+        .bounds()
+        .lock()
+        .map_err(|e| e.to_string())?;
     #[cfg(not(target_os = "linux"))]
     let rect = Rect {
         position: LogicalPosition::new(bounds.x, bounds.y).into(),
@@ -18,7 +22,8 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
     };
     sync_content_geometry(app, state)?;
     if *state
-        .workspace_switcher_open
+        .surfaces()
+        .workspace_switcher_open()
         .lock()
         .map_err(|e| e.to_string())?
     {
@@ -38,7 +43,8 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
         }
     }
     if *state
-        .bookmark_context_menu_open
+        .surfaces()
+        .bookmark_context_menu_open()
         .lock()
         .map_err(|e| e.to_string())?
     {
@@ -132,9 +138,14 @@ pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<()
         return Ok(());
     }
     let panes = content_bounds(app, state)?;
-    let hidden = *state.is_overlay_open.lock().map_err(|e| e.to_string())?
+    let hidden = *state
+        .surfaces()
+        .is_overlay_open()
+        .lock()
+        .map_err(|e| e.to_string())?
         || *state
-            .bookmark_context_menu_open
+            .surfaces()
+            .bookmark_context_menu_open()
             .lock()
             .map_err(|e| e.to_string())?;
     for (label, _view) in app.webviews() {
@@ -179,13 +190,18 @@ pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<()
 pub fn visible_bounds(
     state: &BrowserState,
 ) -> Result<Vec<(String, crate::state::browser_state::ViewportBounds)>, String> {
-    let bounds = *state.bounds.lock().map_err(|e| e.to_string())?;
+    let bounds = *state
+        .surfaces()
+        .bounds()
+        .lock()
+        .map_err(|e| e.to_string())?;
     if let Some(layout) = state.display_split() {
         return Ok(crate::state::split_layout::pane_bounds(bounds, &layout).into());
     }
     Ok(vec![(
         state
-            .active_tab_id
+            .session()
+            .active_tab_id()
             .lock()
             .map_err(|e| e.to_string())?
             .clone(),

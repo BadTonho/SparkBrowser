@@ -1,0 +1,50 @@
+name: Native regressions
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  native-windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> ../.cache/native-target'
+      - run: npm ci
+      - name: Install isolated WebDriver tools
+        run: |
+          cargo install tauri-driver --version 2.1.0 --locked --root .cache/native-tools
+          ./tools/testing/install-edge-driver.ps1
+      - run: npm run test:native:build:fast
+      - name: Run native regressions
+        env:
+          VELOCE_NATIVE_DRIVER: .cache/native-tools/edge/msedgedriver.exe
+        run: |
+          if ('${{ github.event_name }}' -eq 'pull_request') {
+            npm run test:native:critical
+          } else {
+            npm run test:native
+          }
+      # Only the machine-readable outcome is published. Browser profiles, raw logs,
+      # databases and screenshots may contain page content and stay off CI artifacts.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-regression-results
+          path: .cache/native-results.json
+          if-no-files-found: ignore
+          retention-days: 7

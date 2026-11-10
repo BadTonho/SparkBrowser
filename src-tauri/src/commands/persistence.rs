@@ -27,7 +27,7 @@ pub async fn get_history(
 pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
     flush_navigation(app.clone()).await?;
     let state = app.state::<crate::state::browser_state::BrowserState>();
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     let clear_app = app.clone();
     executor::run(app.clone(), move |conn| {
         let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;

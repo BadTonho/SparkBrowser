@@ -27,15 +27,12 @@ pub async fn set_keyboard_shortcuts(
         .unwrap_or("Alt")
         .to_string();
 
-    if let Ok(mut current) = state.keyboard_shortcuts.lock() {
-        *current = shortcuts.clone();
-    }
-    if let Ok(mut current) = state.workspace_picker_hold_key.lock() {
-        *current = hold_key;
-    }
+    state.policies().set_keyboard_shortcuts(shortcuts.clone())?;
+    state.policies().set_workspace_picker_hold_key(hold_key)?;
 
     let keyboard_tokens = state
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();

@@ -47,7 +47,7 @@ Review the 36 items and record their current state, existing entry points, depen
 
 - Full-page capture: investigate long pages, fixed content and scrolling; `CapturePreview` alone does not establish complete coverage.
 - Forced dark page mode: offer an opt-in setting and site exception; assess images, videos and already-dark pages.
-- Caret browsing: implemented with F7 and native WebView2/WebKitGTK support, with temporary session state shared across tabs. Native validation remains pending. See [documentation](../features/caret-browsing.md).
+- Caret browsing: implemented with F7 and native WebView2/WebKitGTK support, with temporary session state shared across tabs. The Windows native scenario passed; Linux native validation remains pending. See [documentation](../features/caret-browsing.md).
 - Minimum font size: documentation investigation completed; WebKitGTK exposes a native setting and documented WebView2 interfaces do not list an equivalent. The Windows visual probe compiles, but its WebDriver session does not start; Linux validation is pending. Do not use `min-font-size` as a CSS property. See [investigation](../features/minimum-font-size-investigation.md).
 
 **Feasibility gate:** investigate Windows and Linux before implementation or reduced coverage. Present limitations and alternatives for a decision if the proposed scope is infeasible.

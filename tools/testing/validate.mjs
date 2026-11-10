@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 export function runValidation({ native = false } = {}) {
   const npm = process.env.npm_execpath ?? resolve(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
   const steps = [
+    [process.execPath, ['tools/architecture/check.mjs']],
     [process.execPath, [npm, 'test']],
     [process.execPath, [npm, 'run', 'check']],
     ['cargo', ['fmt', '--manifest-path', 'src-tauri/Cargo.toml', '--check']],

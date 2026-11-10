@@ -62,22 +62,12 @@ pub fn remove(app: &AppHandle, id: &str, context: Option<&str>) {
 pub fn sync_activity(app: &AppHandle, id: &str) {
     let media = app.state::<MediaService>().tab(id);
     let browser = app.state::<BrowserState>();
-    let Ok(mut tabs) = browser.tabs.lock() else {
-        return;
-    };
-    let Some(tab) = tabs.iter_mut().find(|t| t.id == id) else {
-        return;
-    };
-    let before = tab.activity.clone();
-    tab.activity.native_audio = media.audible;
-    tab.activity.frame_media = media.frames.iter().any(|f| f.playing);
-    tab.activity.picture_in_picture = media.frames.iter().any(|f| f.picture_in_picture);
-    tab.activity.refresh_media();
-    if before == tab.activity {
-        return;
+    if let Ok(Some(payload)) = browser.observe_document(id, |tab| {
+        tab.activity.native_audio = media.audible;
+        tab.activity.frame_media = media.frames.iter().any(|f| f.playing);
+        tab.activity.picture_in_picture = media.frames.iter().any(|f| f.picture_in_picture);
+        tab.activity.refresh_media();
+    }) {
+        let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
     }
-    tab.navigation.revision += 1;
-    let payload = serde_json::json!({"id":tab.id,"url":tab.url,"title":tab.title,"navigation":tab.navigation,"activity":tab.activity});
-    drop(tabs);
-    let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
 }

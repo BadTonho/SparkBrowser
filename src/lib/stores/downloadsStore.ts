@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { writable, get, derived } from "svelte/store";
 import { tick } from "svelte";
 import { t } from "../i18n";
@@ -19,8 +20,10 @@ import {
   onDownloadsUpdated,
 } from "../services/tauri-bridge";
 
-export const downloads = writable<DownloadItem[]>([]);
-export const downloadTasks = writable<DownloadTask[]>([]);
+const confirmedDownloads = writable<DownloadItem[]>([]);
+export const downloads = { subscribe: confirmedDownloads.subscribe };
+const confirmedDownloadTasks = writable<DownloadTask[]>([]);
+export const downloadTasks = { subscribe: confirmedDownloadTasks.subscribe };
 export const isDownloadsDrawerOpen = writable<boolean>(false);
 export const downloadsSession = writable<{ id: number; anchor: HTMLButtonElement } | null>(null);
 export const downloadsLoadError = writable("");
@@ -39,7 +42,7 @@ const changedAt = new Map<string, number>();
 function applyTask(task: DownloadTask): void {
   if (clearedTasks.has(task.id)) return;
   changedAt.set(task.id, ++taskSequence);
-  downloadTasks.update(tasks => {
+  confirmedDownloadTasks.update(tasks => {
     const previous = tasks.find(item => item.id === task.id);
     if (previous && previous.revision >= task.revision) return tasks;
     observeDownloadNotices([task], "event");
@@ -47,26 +50,26 @@ function applyTask(task: DownloadTask): void {
   });
 }
 
-export function initializeDownloadEvents(): () => void {
+function startDownloadEvents(): () => void {
   let disposed = false;
   const stops: (() => void)[] = [];
-  const subscriptions = [onDownloadTaskUpdated(task => { if (!disposed) applyTask(task); }), onDownloadsUpdated(() => { if (!disposed) void loadDownloads().catch(() => {}); })];
+  const subscriptions = [onDownloadTaskUpdated(task => { if (!disposed) applyTask(task); }), onDownloadsUpdated(() => { if (!disposed) void loadDownloads(() => !disposed).catch(() => {}); })];
   void Promise.all(subscriptions.map(promise => promise.then(stop => { if (disposed) stop(); else stops.push(stop); })))
-    .then(() => { if (!disposed) return loadDownloads(); }).catch(() => {});
+    .then(() => { if (!disposed) return loadDownloads(() => !disposed); }).catch(() => {});
   return () => { disposed = true; stops.forEach(stop => stop()); };
 }
 
-export async function loadDownloads(): Promise<void> {
+export async function loadDownloads(active = () => true): Promise<void> {
   const revision = ++loadRevision;
   const startedAt = taskSequence;
   let list: DownloadItem[], tasks: DownloadTask[];
   try { [list, tasks] = await Promise.all([fetchDownloads(), fetchDownloadTasks()]); }
-  catch (error) { if (revision === loadRevision) downloadsLoadError.set(describeError(error)); throw error; }
-  if (revision !== loadRevision) return;
+  catch (error) { if (active() && revision === loadRevision) downloadsLoadError.set(describeError(error)); throw error; }
+  if (!active() || revision !== loadRevision) return;
   downloadsLoadError.set("");
-  downloads.set(list);
+  confirmedDownloads.set(list);
   const ids = new Set(tasks.map(task => task.id));
-  downloadTasks.update(current => {
+  confirmedDownloadTasks.update(current => {
     const fetched = tasks.map(task => {
       const live = current.find(item => item.id === task.id);
       return live && live.revision > task.revision ? live : task;
@@ -93,10 +96,10 @@ export async function wipeDownloads(): Promise<void> {
   ++loadRevision;
   const removed = await clearAllDownloads();
   removed.forEach(id => clearedTasks.add(id));
-  downloadTasks.update(tasks => tasks.filter(task => !clearedTasks.has(task.id)));
+  confirmedDownloadTasks.update(tasks => tasks.filter(task => !clearedTasks.has(task.id)));
   observeDownloadNotices(get(downloadTasks), "snapshot");
   ++loadRevision;
-  downloads.set([]);
+  confirmedDownloads.set([]);
 }
 
 export async function openDownloadsDrawer(anchor?: HTMLButtonElement): Promise<void> {
@@ -136,3 +139,5 @@ export async function toggleDownloadsDrawer(): Promise<void> {
   }
 }
 
+
+export const initializeDownloadEvents = createSharedLifecycle(scope => scope.own(startDownloadEvents()));

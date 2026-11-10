@@ -82,7 +82,11 @@ pub async fn commit_backup_import(
 pub async fn get_backup_pending_preferences(
     state: State<'_, BrowserState>,
 ) -> Result<Option<PreferenceTask>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     backup_repo::pending(db.as_ref().ok_or("backup.database_unavailable")?)
 }
 #[tauri::command]
@@ -91,7 +95,11 @@ pub async fn finish_backup_preferences(
     id: String,
     error: Option<String>,
 ) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     backup_repo::acknowledge(
         db.as_ref().ok_or("backup.database_unavailable")?,
         &id,
@@ -135,7 +143,11 @@ pub async fn choose_backup_sync_folder(
         let directory_path = path.to_string_lossy().into_owned();
         let state = dialog_app.state::<BrowserState>();
         let service = dialog_app.state::<backup::service::BackupService>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("backup.database_unavailable")?;
         let snap = backup::sync::save_config(
             conn,
@@ -170,7 +182,7 @@ pub async fn set_backup_sync_config(
         ) {
             return Err("backup.sync_invalid_config".into());
         }
-        let _tabs = state.tab_operations.lock().await;
+        let _tabs = state.session().operation().await;
         backup::gdrive_webview::session::bind(&app, &id)?;
     }
     let worker_app = app.clone();

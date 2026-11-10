@@ -20,12 +20,22 @@ pub async fn run<T: Send + 'static>(
     tauri::async_runtime::spawn_blocking(move || {
         let _permit = permit;
         let state = app.state::<BrowserState>();
-        let mut wait = state.diagnostics.span("database.lock_wait");
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let mut wait = state
+            .infrastructure()
+            .diagnostics()
+            .span("database.lock_wait");
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         wait.finish(true, 0);
         drop(wait);
         let conn = db.as_ref().ok_or("Database is not ready")?;
-        let mut span = state.diagnostics.span("database.execute");
+        let mut span = state
+            .infrastructure()
+            .diagnostics()
+            .span("database.execute");
         let result = operation(conn);
         span.finish(result.is_ok(), 0);
         result

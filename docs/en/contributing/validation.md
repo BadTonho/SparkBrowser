@@ -42,3 +42,7 @@ These checks require an interactive desktop and are separate from unit/build res
 7. Navigate to a blocked host. The last committed page URL should remain unchanged. A successful ordinary navigation should add one history entry.
 
 Finish by checking `git status`, `git diff`, `git diff --cached`, and sensitive-file ignore rules.
+
+## Architecture and cross-feature contracts
+
+`npm run architecture:check` is part of consolidated validation. Run `npm run test:native:critical` after building the isolated native application to check the mandatory cross-feature scenarios. CI runs this set on pull requests and the full suite daily and before release publication. See [regression workflow](regression-workflow.md) and [state ownership](../architecture/state-ownership.md).

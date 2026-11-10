@@ -45,7 +45,11 @@ pub fn commit(
     let activation = (cross && context.active_tab_id != id).then_some((id, false));
     TabCheckpoint::commit_with_activation(state, activation, || {
         {
-            let mut tabs = state.tabs.lock().map_err(|e| e.to_string())?;
+            let mut tabs = state
+                .session()
+                .edit_tabs()
+                .lock()
+                .map_err(|e| e.to_string())?;
             let by_id: std::collections::HashMap<_, _> = tabs
                 .iter()
                 .map(|tab| (tab.id.clone(), tab.clone()))
@@ -56,7 +60,11 @@ pub fn commit(
             }
             next.normalize(&tabs);
         }
-        let mut layouts = state.split_layouts.lock().map_err(|e| e.to_string())?;
+        let mut layouts = state
+            .session()
+            .edit_split_layouts()
+            .lock()
+            .map_err(|e| e.to_string())?;
         if keep_split || !cross {
             layouts.insert(context.workspace_id.clone(), next);
         } else {

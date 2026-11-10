@@ -295,7 +295,11 @@ async fn perform(
             // silently restoring the connection on the next launch.
             let blocked = {
                 let browser = app.state::<BrowserState>();
-                let db = browser.db.lock().map_err(|_| "settings_unavailable")?;
+                let db = browser
+                    .infrastructure()
+                    .db()
+                    .lock()
+                    .map_err(|_| "settings_unavailable")?;
                 db.as_ref().ok_or("settings_unavailable").and_then(|conn| {
                     new_tab_repo::set_account_disconnected(conn, true)
                         .map_err(|_| "settings_unavailable")
@@ -380,7 +384,11 @@ async fn connect(source: &Source) -> Result<serde_json::Value, String> {
             }
             {
                 let browser = app.state::<BrowserState>();
-                let db = browser.db.lock().map_err(|_| "settings_unavailable")?;
+                let db = browser
+                    .infrastructure()
+                    .db()
+                    .lock()
+                    .map_err(|_| "settings_unavailable")?;
                 new_tab_repo::set_account_disconnected(
                     db.as_ref().ok_or("settings_unavailable")?,
                     false,

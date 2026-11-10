@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { unlinkSync } from 'node:fs';
 import { resolve, relative, isAbsolute, toNamespacedPath } from 'node:path';
+import { useAutomaticDownloads } from './download-preferences.mjs';
 
 export async function checkDownloadsList(c) {
+  await useAutomaticDownloads(c);
   const { script, invoke, click, until, fixture } = c;
   const inside = action => c.withWebview('/index.html?surface=downloads', action);
   const shown = () => inside(() => until(() => script('return !!document.querySelector("[data-testid=downloads-dialog]")'), 'compact downloads surface'));

@@ -95,7 +95,8 @@ pub fn site_is_protected(state: &crate::state::browser_state::BrowserState, raw:
         return true;
     }
     state
-        .shield_settings
+        .policies()
+        .shield_settings()
         .lock()
         .map(|settings| settings.applies_to(&url))
         .unwrap_or(true)
@@ -109,7 +110,8 @@ pub fn download_shield_enabled(
     destination: &str,
 ) -> bool {
     let enabled = state
-        .shield_enabled
+        .policies()
+        .shield_enabled()
         .lock()
         .map(|value| *value)
         .unwrap_or(true);
@@ -117,7 +119,7 @@ pub fn download_shield_enabled(
         return false;
     }
     let source = tab_id.and_then(|id| {
-        state.tabs.lock().ok().and_then(|tabs| {
+        state.session().tabs().lock().ok().and_then(|tabs| {
             tabs.iter()
                 .find(|tab| tab.id == id)
                 .map(|tab| tab.url.clone())
@@ -164,7 +166,13 @@ mod tests {
     #[test]
     fn download_exceptions_require_an_actual_excluded_site() {
         let state = crate::state::browser_state::BrowserState::default();
-        state.shield_settings.lock().unwrap().exceptions = vec!["example.test".into()];
+        state
+            .policies()
+            .set_shield_settings(crate::privacy::tracking_parameters::TrackingSettings {
+                enabled: true,
+                exceptions: vec!["example.test".into()],
+            })
+            .unwrap();
         assert!(!download_shield_enabled(
             &state,
             None,
@@ -177,7 +185,9 @@ mod tests {
         ));
         assert!(site_is_protected(&state, "about:blank"));
         assert!(!site_is_protected(&state, "https://sub.example.test/"));
-        state.tabs.lock().unwrap()[0].url = "https://sub.example.test/".into();
+        state
+            .observe_document("tab-1", |tab| tab.url = "https://sub.example.test/".into())
+            .unwrap();
         assert!(!download_shield_enabled(
             &state,
             Some("tab-1"),

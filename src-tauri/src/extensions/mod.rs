@@ -33,7 +33,11 @@ fn with_database<T>(
     op: impl FnOnce(&rusqlite::Connection) -> Result<T, String>,
 ) -> Result<T, String> {
     let state = app.state::<crate::state::browser_state::BrowserState>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     op(db.as_ref().ok_or("Database is not ready")?)
 }
 

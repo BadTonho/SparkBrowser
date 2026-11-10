@@ -1,16 +1,15 @@
 import assert from 'node:assert/strict';
 
 /** Real toolbar interaction in both layouts and in the focused split pane. */
-export async function checkPipToolbarLayouts({invoke,until,click,script,fixture},id) {
+export async function checkPipToolbarLayouts({invoke,until,click,script,fixture,openSettings,closeSettings},id) {
   const floating=value=>until(async()=>{
     const tab=(await invoke('get_tab_media')).tabs.find(tab=>tab.tab_id===id);
     return Boolean(tab?.frames.some(frame=>frame.picture_in_picture))===value;
   },`toolbar floating state ${value}`);
   const enabled=()=>until(()=>script('return document.querySelector("[data-testid=toggle-pip]")?.disabled===false;'),'PiP toolbar ready');
   for (const layout of [1,0]) {
-    await click('[data-testid=open-settings]');await click('[data-testid=settings-appearance_layout]');
-    await script('document.querySelectorAll("#setting-browser-layout button")[arguments[0]].click();',layout);
-    await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+    await openSettings(); await click('[data-testid=settings-appearance_layout]');
+    await click(`#setting-browser-layout .mini-pill:nth-child(${layout+1})`); await closeSettings();
     await enabled();
     await click('[data-testid=toggle-pip]');await floating(true);
     await enabled();await click('[data-testid=toggle-pip]');await floating(false);

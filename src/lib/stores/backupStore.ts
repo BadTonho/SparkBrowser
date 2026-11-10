@@ -1,3 +1,5 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
+import { applyWorkspaceSnapshot } from "./workspaceStore";
 import type { TabItem } from "../types/browser";
 import { applyBackupZoom } from "../services/bridge/zoom";
 import { get, writable } from "svelte/store";
@@ -137,7 +139,7 @@ async function applyImportedResult(result: BackupImportResult): Promise<void> {
   backupResult.set(result);
   backupPreview.set(null);
   source = null;
-  workspaces.set(result.workspaces);
+  applyWorkspaceSnapshot(result.workspaces);
   applyTabsSnapshot(result.snapshot);
   pendingBackupPreferences.set(result.pending_preferences);
   await loadBookmarks();
@@ -331,22 +333,23 @@ export async function flushBackupSyncBeforeShutdown(): Promise<void> {
   }
 }
 
-export function initializeBackupStatus(): void {
-  if (!isTauriRuntime()) return;
+function startBackupStatus(scope: import("../services/lifecycle.js").LifecycleScope): () => void {
+  if (!isTauriRuntime()) return () => {};
+  let startupTimer: ReturnType<typeof setTimeout> | undefined;
   void fetchPendingBackupPreferences()
-    .then((value) => pendingBackupPreferences.set(value))
-    .catch((error) => backupError.set(describeError(error)));
+    .then(scope.guard((value) => pendingBackupPreferences.set(value)))
+    .catch(scope.guard((error) => backupError.set(describeError(error))));
 
   void fetchBackupSyncState()
-    .then((state) => {
+    .then(scope.guard((state) => {
       backupSyncState.set(state);
       autoSyncReady = true;
       if (state.config.mode !== "disabled" && state.config.auto_save && !state.last_synced_at) {
         hasPendingChangesForCloud = true;
-        setTimeout(() => void runBackgroundAutoSync(), 1500);
+        startupTimer = setTimeout(() => { if (scope.active()) void runBackgroundAutoSync(); }, 1500);
       }
-    })
-    .catch((error) => backupError.set(describeError(error)));
+    }))
+    .catch(scope.guard((error) => backupError.set(describeError(error))));
 
   for (const unsub of autoSyncUnsubscribes) unsub();
   autoSyncUnsubscribes = [
@@ -390,6 +393,15 @@ export function initializeBackupStatus(): void {
       void runBackgroundAutoSync();
     }
   }, 60_000);
+  return () => {
+    autoSyncReady = false;
+    for (const stop of autoSyncUnsubscribes.splice(0)) stop();
+    clearInterval(cloudMinuteInterval);
+    clearTimeout(folderAutoSaveTimer);
+    clearTimeout(startupTimer);
+    cloudMinuteInterval = undefined;
+    folderAutoSaveTimer = undefined;
+  };
 }
 
 export function dismissBackupPreview(): void {
@@ -399,3 +411,5 @@ export function dismissBackupPreview(): void {
   if (token)
     void discardBackupImport(token).catch((error) => backupError.set(describeError(error)));
 }
+
+export const initializeBackupStatus = createSharedLifecycle(scope => scope.own(startBackupStatus(scope)));

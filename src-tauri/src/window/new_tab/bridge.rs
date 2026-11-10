@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    database::{executor, navigation_writer::NavigationWriter},
-    state::{tab_checkpoint::TabCheckpoint, tab_model::webview_label_for_tab},
-};
+use crate::database::{executor, navigation_writer::NavigationWriter};
 use std::collections::HashMap;
 
 pub(super) fn valid(app: &AppHandle, id: &str, label: &str, token: &str) -> bool {
@@ -168,12 +165,14 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
         let autofocus = first
             && app
                 .state::<BrowserState>()
-                .active_tab_id
+                .session()
+                .active_tab_id()
                 .lock()
                 .is_ok_and(|active| *active == id)
             && !app
                 .state::<BrowserState>()
-                .is_overlay_open
+                .surfaces()
+                .is_overlay_open()
                 .lock()
                 .map_or(true, |v| *v);
         let payload = serde_json::json!({"preferences":prefs,"labels":text,"sites":rows.as_ref().ok(),"error":rows.is_err(),"autofocus":autofocus});
@@ -227,7 +226,7 @@ pub(super) fn navigate(
     );
     tauri::async_runtime::spawn(async move {
         let state = app.state::<BrowserState>();
-        let _operation = state.tab_operations.lock().await;
+        let _operation = state.session().operation().await;
         if !valid(&app, &id, &label, &token)
             || !app.state::<NewTabService>().sessions.lock().is_ok_and(|s| {
                 s.get(&label)
@@ -237,7 +236,11 @@ pub(super) fn navigate(
                 .snapshot_tabs()
                 .iter()
                 .any(|tab| tab.id == id && tab.is_visible)
-            || state.is_overlay_open.lock().map_or(true, |v| *v)
+            || state
+                .surfaces()
+                .is_overlay_open()
+                .lock()
+                .map_or(true, |v| *v)
             || app.state::<crate::shutdown::ShutdownService>().blocked()
         {
             return;
@@ -287,7 +290,11 @@ pub(super) fn navigate(
                         session.document == document && session.navigation == sequence
                     })
                 })
-                || state.is_overlay_open.lock().map_or(true, |v| *v)
+                || state
+                    .surfaces()
+                    .is_overlay_open()
+                    .lock()
+                    .map_or(true, |v| *v)
                 || app.state::<crate::shutdown::ShutdownService>().blocked()
             {
                 return Ok(());
@@ -295,19 +302,22 @@ pub(super) fn navigate(
             if crate::privacy::adblock_engine::site_is_protected(&state, target.as_str())
                 && crate::privacy::adblock_engine::should_block_url(
                     target.as_str(),
-                    *state.shield_enabled.lock().map_err(|e| e.to_string())?,
+                    *state
+                        .policies()
+                        .shield_enabled()
+                        .lock()
+                        .map_err(|e| e.to_string())?,
                 )
             {
                 return Err("Navigation blocked".to_string());
             }
             // Select the originating pane under the same operation lock before navigation.
-            TabCheckpoint::commit_with_activation(&state, Some((&id, false)), || {
-                state.select_tab(&id).map(|_| ())
-            })?;
-            app.get_webview(&webview_label_for_tab(&id))
-                .ok_or("Page unavailable")?
-                .navigate(physical_url(&app, target.as_str())?)
-                .map_err(|e| e.to_string())?;
+            state.select_tab_committed(&id)?;
+            super::super::webview_manager::navigate_tab_document(
+                &app,
+                &id,
+                physical_url(&app, target.as_str())?,
+            )?;
             let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
             Ok::<_, String>(())
         })();

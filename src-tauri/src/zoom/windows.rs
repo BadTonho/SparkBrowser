@@ -12,7 +12,8 @@ use webview2_com::{
 
 fn current(app: &AppHandle, label: &str, token: &str) -> bool {
     app.state::<BrowserState>()
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .is_ok_and(|m| m.get(label).is_some_and(|t| t == token))
 }
@@ -139,7 +140,7 @@ pub fn install(
                             );
                             tauri::async_runtime::spawn(async move {
                                 let browser = a.state::<BrowserState>();
-                                let _operation = browser.tab_operations.lock().await;
+                                let _operation = browser.session().operation().await;
                                 if !current(&a, &l, &t)
                                     || generation != n.load(Ordering::Acquire)
                                     || a.state::<crate::shutdown::ShutdownService>().blocked()

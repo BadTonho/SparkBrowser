@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "./lifecycle.js";
 import { derived } from 'svelte/store';
 import { locale } from '../i18n';
 import { defaultSearchEngine } from '../stores/searchEngineStore';
@@ -6,7 +7,7 @@ import { invoke, isTauriRuntime } from './bridge/runtime';
 export const NEW_TAB_URL = 'veloce://newtab';
 export const isNewTab = (url: string) => url === NEW_TAB_URL;
 
-export function initializeNewTab(): () => void {
+function startNewTab(): () => void {
   if (!isTauriRuntime()) return () => {};
   let queue = Promise.resolve();
   let disposed = false;
@@ -15,3 +16,5 @@ export function initializeNewTab(): () => void {
   });
   return () => { disposed = true; stop(); };
 }
+
+export const initializeNewTab = createSharedLifecycle(scope => scope.own(startNewTab()));

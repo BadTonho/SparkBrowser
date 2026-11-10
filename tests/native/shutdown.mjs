@@ -4,7 +4,9 @@ import { resolve, relative } from 'node:path';
 import { realpathSync } from 'node:fs';
 import { validateRunDirectory } from './run-directory.mjs';
 import { prepareTabs } from './setup.mjs';
+import { useAutomaticDownloads } from './download-preferences.mjs';
 export async function checkShutdown(context) {
+  await useAutomaticDownloads(context);
   await context.focusWindow();
   const { invoke, script, click, until, fixture, restart } = context;
   const { a, b } = await prepareTabs(context);

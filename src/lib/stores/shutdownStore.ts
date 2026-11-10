@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { get, writable } from "svelte/store";
 import { idleShutdown, fetchShutdown, onShutdown, prepareShutdown, confirmShutdown, cancelShutdown } from "../services/bridge/shutdown";
 import { setOverlayVisibility } from "../services/bridge/overlays";
@@ -51,7 +52,7 @@ export async function continueBrowsing() {
   try { apply(await cancelShutdown(attempt)); }
   catch (error) { shutdownError.set(describeError(error)); }
 }
-export function initializeShutdown() {
+function startShutdown() {
   let disposed = false;
   let stop: (() => void) | undefined;
   void (async () => {
@@ -62,3 +63,5 @@ export function initializeShutdown() {
   })().catch(error => shutdownError.set(describeError(error)));
   return () => { disposed = true; stop?.(); };
 }
+
+export const initializeShutdown = createSharedLifecycle(scope => scope.own(startShutdown()));

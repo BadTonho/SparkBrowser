@@ -238,7 +238,7 @@ pub fn persist_detected_gdrive_email(app: &AppHandle) {
     let Some(state) = app.try_state::<BrowserState>() else {
         return;
     };
-    let Ok(db) = state.db.lock() else {
+    let Ok(db) = state.infrastructure().db().lock() else {
         return;
     };
     if let Some(conn) = db.as_ref() {
@@ -282,7 +282,7 @@ pub async fn push_document_via_webview(
     }
 
     let browser = app.state::<BrowserState>();
-    let tabs_guard = browser.tab_operations.lock().await;
+    let tabs_guard = browser.session().operation().await;
     let (_data_dir, authuser, preferred_tab_id) = resolve_gdrive_session_context(app)?;
     let (cookie_header, cookie_map) =
         collect_google_cookies(app, preferred_tab_id.as_deref()).await?;
@@ -358,7 +358,7 @@ pub async fn push_document_via_webview(
 pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument, String> {
     close_gdrive_sync_webview(app);
     let browser = app.state::<BrowserState>();
-    let tabs_guard = browser.tab_operations.lock().await;
+    let tabs_guard = browser.session().operation().await;
     let (_data_dir, authuser, preferred_tab_id) = resolve_gdrive_session_context(app)?;
     let (cookie_header, cookie_map) =
         collect_google_cookies(app, preferred_tab_id.as_deref()).await?;

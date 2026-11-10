@@ -6,7 +6,7 @@ export async function checkPipShadow(context) {
   const {invoke,script,until,wait,click,restart,fixture,floatingWindow,withWebview}=context;
   const setting='[data-testid=setting-pip-shadow]';
   async function openSetting(search=false) {
-    await click('[data-testid=open-settings]');
+    await context.openSettings();
     if(search){
       await script('const s=document.querySelector("#settings-search-input");s.value="sombra";s.dispatchEvent(new Event("input",{bubbles:true}));');
       await until(()=>script('return [...document.querySelectorAll(".settings-search-result")].some(b=>b.textContent.includes("Sombra"));'),'translated shadow search result');
@@ -14,7 +14,7 @@ export async function checkPipShadow(context) {
     }else await click('[data-testid=settings-appearance_layout]');
     await until(()=>script('return document.querySelector(arguments[0])?.disabled===false;',setting),'shadow preference ready');
   }
-  const close=()=>script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  const close=()=>context.closeSettings();
   async function change(value){await click(setting);await until(()=>script('const b=document.querySelector(arguments[0]);return !b.disabled&&b.getAttribute("aria-pressed")===arguments[1];',setting,String(value)),'shadow setting confirms');}
   await openSetting(true);
   assert.equal(await script('return document.querySelector(arguments[0]).getAttribute("aria-pressed")',setting),'false');

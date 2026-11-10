@@ -46,15 +46,17 @@ pub async fn get_diagnostics(
     let context_counts = crate::media::contexts::resource_counts(&app).await.ok();
     #[cfg(not(windows))]
     let context_counts: Option<(usize, usize)> = None;
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     // Release each guard before snapshot() takes the tab locks.
     let bridge_tokens = state
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map_err(|e| e.to_string())?
         .len();
     let shield_scripts = state
-        .shield_script_ids
+        .security()
+        .shield_script_ids()
         .lock()
         .map_err(|e| e.to_string())?
         .len();
@@ -71,7 +73,7 @@ pub async fn get_diagnostics(
         execution_contexts: context_counts.map(|c| c.1),
     };
     let split = state.current_split();
-    let tabs = state.tabs.lock().map_err(|e| e.to_string())?;
+    let tabs = state.session().tabs().lock().map_err(|e| e.to_string())?;
     let views = app.webviews();
     let now = crate::state::tab_model::TabInfo::current_epoch_secs();
     let tab_details: Vec<_> = tabs
@@ -94,7 +96,8 @@ pub async fn get_diagnostics(
     Ok(BrowserDiagnostics {
         native_resources,
         startup_ready: state
-            .startup_ready
+            .infrastructure()
+            .startup_ready()
             .load(std::sync::atomic::Ordering::Acquire),
         application_identifier: app.config().identifier.clone(),
         application_data_directory: app
@@ -103,11 +106,9 @@ pub async fn get_diagnostics(
             .map_err(|e| e.to_string())?
             .to_string_lossy()
             .into_owned(),
-        metrics: state.diagnostics.snapshot()?,
+        metrics: state.infrastructure().diagnostics().snapshot()?,
         hibernated_tabs: tab_details.iter().filter(|t| !t.resident).count(),
-        resident_limit: state
-            .resident_limit
-            .load(std::sync::atomic::Ordering::Relaxed),
+        resident_limit: state.session().resident_limit(),
         tab_details,
         tabs: tabs.len(),
         resident_webviews: app

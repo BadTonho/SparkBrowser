@@ -263,7 +263,7 @@ fn persist(app: &AppHandle, approved: &ShutdownState) -> Result<Option<ShutdownR
     }
     downloads.flush(app)?;
     let browser = app.state::<BrowserState>();
-    let _tabs = browser.tab_operations.blocking_lock();
+    let _tabs = browser.session().blocking_operation();
     let final_review = review(app)?;
     if final_review.tabs.iter().any(|t| {
         (t.form || t.media)

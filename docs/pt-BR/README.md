@@ -10,6 +10,7 @@ Bem-vindo à documentação oficial em Português do projeto de Navegador Open-S
 
 ### 1. 🏗️ Arquitetura e Stack Tecnológica
 - [Visão Geral da Arquitetura](./architecture/overview.md): Explicação detalhada da arquitetura híbrida **Rust (Tauri v2 / Wry)** + **Svelte**, composição de janela Multi-WebView e efeitos de vidro nativos na GPU.
+- [Responsabilidade sobre estados e contratos de operações](./architecture/state-ownership.md): Fronteiras dos domínios, sessões confirmadas e ciclo dos documentos nativos.
 - [Estrutura de Diretórios do Projeto](./architecture/project-structure.md): Organização modular de `src/` (Svelte) e `src-tauri/` (Rust).
 
 ### 2. [✨ Funcionalidades Principais e Experiência Visual](./features/core-features.md)
@@ -22,6 +23,7 @@ Etapas passo a passo desde a Fase 1 (Protótipo Base / MVP) até a Fase 4 (Polim
 Diretrizes obrigatórias do repositório cobrindo segurança (política de vazamento zero), organização de pastas e manutenção da documentação bilíngue.
 
 - [Validação](./contributing/validation.md)
+- [Fluxo de prevenção de regressões](./contributing/regression-workflow.md)
 - [Integração nativa local](./contributing/native-tests.md)
 - [Validação de desempenho](./contributing/performance.md)
 - [Otimizações implementadas](./architecture/optimization-work.md)

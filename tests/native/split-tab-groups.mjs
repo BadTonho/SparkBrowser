@@ -73,14 +73,14 @@ export async function checkSplitTabGroups(context) {
   });
   await invoke('move_tab_in_split',{tabId:d.id,side:'right',beforeId:b.id,context:dragContext(p)});
   await assert.rejects(invoke('move_tab_in_split',{tabId:a.id,side:'right',beforeId:null,context:dragContext(p)}),/context changed/);
-  await click('[data-testid=open-settings]');await click('[data-testid=settings-appearance_layout]');
-  await script('document.querySelectorAll("#setting-browser-layout button")[1].click();document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await context.openSettings(); await click('[data-testid=settings-appearance_layout]');
+  await click('#setting-browser-layout .mini-pill:nth-child(2)'); await context.closeSettings();
   await until(()=>script('return Boolean(document.querySelector(".tab-row"))&&!document.querySelector("[data-testid=split-tabs-left]")'),'vertical layout uses one list');
   await invoke('switch_tab',{tabId:a.id});
   assert.equal((await packet()).split_layout.left_tab_id,a.id);
   assert.equal((await packet()).split_layout.right_tab_id,d.id);
-  await click('[data-testid=open-settings]');await click('[data-testid=settings-appearance_layout]');
-  await script('document.querySelectorAll("#setting-browser-layout button")[0].click();document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await context.openSettings(); await click('[data-testid=settings-appearance_layout]');
+  await click('#setting-browser-layout .mini-pill:first-child'); await context.closeSettings();
   await checkLists();
   for (const name of ['a','b','c','d']) {
     assert.equal(fixture.loads.get('groups-'+name),1,'group operations reuse resident documents');

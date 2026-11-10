@@ -18,6 +18,22 @@ pub fn configure(context: &mut tauri::Context<tauri::Wry>) -> std::io::Result<()
             "Native scenario must be inside .cache/native-runs",
         ));
     }
+    // EdgeDriver otherwise overrides every WebView's data directory. This runs
+    // on the startup thread, before creating the runtime or any WebView, and is
+    // available only in the isolated native-test application.
+    #[cfg(windows)]
+    if std::env::var("VELOCE_NATIVE_REAL_PROFILES").as_deref() == Ok("1") {
+        std::env::remove_var("WEBVIEW2_USER_DATA_FOLDER");
+    }
+    // Keep the canonical containment check above, but give native profile APIs
+    // a conventional drive path instead of std::fs::canonicalize's verbatim form.
+    #[cfg(windows)]
+    let directory = directory
+        .to_str()
+        .and_then(|path| path.strip_prefix(r"\\?\"))
+        .filter(|path| path.as_bytes().get(1) == Some(&b':'))
+        .map(PathBuf::from)
+        .unwrap_or(directory);
     context.config_mut().app.app_directories_override =
         Some(AppDirectoriesOverride::Directories(AppDirectoryOverrides {
             config: Some(directory.join("config")),

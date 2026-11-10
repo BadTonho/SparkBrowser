@@ -9,12 +9,14 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
     use webview2_com::{AddScriptToExecuteOnDocumentCreatedCompletedHandler, CoTaskMemPWSTR};
     let state = app.state::<BrowserState>();
     let tokens = state
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
     let exceptions = state
-        .shield_settings
+        .policies()
+        .shield_settings()
         .lock()
         .map_err(|e| e.to_string())?
         .exceptions
@@ -28,7 +30,8 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
             serde_json::to_string(&token).map_err(|e| e.to_string())?
         );
         let old = state
-            .shield_script_ids
+            .security()
+            .shield_script_ids()
             .lock()
             .map_err(|e| e.to_string())?
             .get(&label)
@@ -76,7 +79,8 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
         .map_err(|e| e.to_string())?;
         let id = receive.await.map_err(|e| e.to_string())??;
         state
-            .shield_script_ids
+            .security()
+            .shield_script_ids()
             .lock()
             .map_err(|e| e.to_string())?
             .insert(label, id);

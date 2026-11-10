@@ -33,7 +33,7 @@ impl NavigationWriter {
                         Write::Session => {
                             queued_for_worker.store(false, Ordering::Release);
                             let state = app.state::<BrowserState>();
-                            let _operation = state.tab_operations.blocking_lock();
+                            let _operation = state.session().blocking_operation();
                             if let Err(error) = state.persist_session() {
                                 last_error = Some(error);
                                 let _ = crate::security::emit_shell(
@@ -46,7 +46,7 @@ impl NavigationWriter {
                         Write::Visit { title, url } => {
                             let state = app.state::<BrowserState>();
                             // Snapshot only after serialized tab operations have finished.
-                            let _operation = state.tab_operations.blocking_lock();
+                            let _operation = state.session().blocking_operation();
                             let result = state
                                 .record_history_visit(&title, &url)
                                 .and_then(|()| state.persist_session());

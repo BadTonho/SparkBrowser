@@ -64,14 +64,14 @@ export async function checkPrivacy(context) {
   await open(); await script('document.querySelector("[data-testid=open-media]").click()'); await expanded(false);
   await script('document.querySelector("[data-testid=open-media]").click()');
   await open(); await script('document.querySelector("[data-testid=open-settings]").click()'); await expanded(false);
-  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+  await context.closeSettings();
   const b = (await invoke('create_tab', { url: fixture.origin + '/page/privacy-b' })).tabs.find(t => t.is_active);
   await until(() => fixture.reports.has('privacy-b'), 'privacy split fixture');
   await invoke('set_split_view', { leftTabId: a.id, rightTabId: b.id });
   for (const layout of [1, 0]) {
-    await click('[data-testid=open-settings]'); await click('[data-testid=settings-appearance_layout]');
+    await context.openSettings(); await click('[data-testid=settings-appearance_layout]');
     await script('document.querySelectorAll("#setting-browser-layout button")[arguments[0]].click()', layout);
-    await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
+    await context.closeSettings();
     await open();
     await resizeWindow(900, 700);
     if (layout === 0) {

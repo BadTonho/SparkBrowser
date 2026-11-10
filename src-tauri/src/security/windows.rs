@@ -21,11 +21,7 @@ pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result
             if !internal && !shell {
                 let enabled = app
                     .try_state::<crate::state::browser_state::BrowserState>()
-                    .map(|state| {
-                        state
-                            .smart_screen_enabled
-                            .load(std::sync::atomic::Ordering::Acquire)
-                    })
+                    .map(|state| state.policies().smart_screen_enabled())
                     .unwrap_or(true);
                 let supported = unsafe {
                     core.Settings()
@@ -34,9 +30,7 @@ pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result
                 }
                 .is_ok();
                 if let Some(state) = app.try_state::<crate::state::browser_state::BrowserState>() {
-                    state
-                        .smart_screen_supported
-                        .store(supported, std::sync::atomic::Ordering::Release);
+                    state.policies().set_smart_screen_supported(supported);
                 }
             }
             let mut registration = 0;

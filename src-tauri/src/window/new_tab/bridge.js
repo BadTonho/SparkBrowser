@@ -7,7 +7,9 @@
   const widgetRequests = new Map();
   const send = (action, values = {}) => {
     const params = new URLSearchParams({ token, document: documentId, sequence: String(++sequence), ...values });
-    location.href = `veloce-internal://new-tab/${action}?${params}`;
+    const url = `veloce-internal://new-tab/${action}?${params}`;
+    if (window.__velocePostContent) window.__velocePostContent(url);
+    else location.href = url;
   };
   window.__veloceRefreshNewTab = () => send('read', { request: String(++request) });
   window.__veloceNewTabReply = (id, number, payload) => {

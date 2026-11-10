@@ -49,4 +49,10 @@ test('native focus follows form expansion and collapse without stealing focus on
   input=field; syncDownloadFocus(root,false,false); assert.equal(focused,'input');
   focused='other'; syncDownloadFocus(root,false,true); assert.equal(focused,'other');
   input=null; syncDownloadFocus(root,false,true); assert.equal(focused,'button');
+  input=field; syncDownloadFocus(root,false,false);
+  button.disabled=true; input=null;
+  syncDownloadFocus(root,false,false); assert.equal(focused,'input', 'a superseded render cannot lose the busy submit focus request');
+  button.disabled=false;
+  syncDownloadFocus(root,false,false); assert.equal(focused,'button', 'enabling the confirmed control completes the pending focus request');
+  focused='other'; syncDownloadFocus(root,false,false); assert.equal(focused,'other');
 });

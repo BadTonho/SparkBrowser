@@ -86,14 +86,36 @@ export async function runScenario(name, scenario) {
       await request('POST', `/session/${session}/window`, { handle: previous });
     }
   }
+  async function openSettings() {
+    await focusWindow();
+    if (!await script('return Boolean(document.querySelector("#settings-search-input"))')) {
+      if (!await script('return Boolean(document.querySelector("[data-testid=settings-quick-menu]"))')) {
+        await click('[data-testid=open-settings]');
+      }
+      await withWebview('/index.html?surface=settings-quick', () => click('[data-testid=settings-quick-all]'));
+    }
+    await until(() => script('return Boolean(document.querySelector("#settings-search-input"))'), 'full settings opened');
+  }
+  async function closeSettings() {
+    if (await script('return Boolean(document.querySelector("#settings-search-input"))')) {
+      await withWebview('/index.html?surface=settings', () => script('document.querySelector("#settings-search-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))'));
+      await until(() => script('return !document.querySelector("#settings-search-input")'), 'full settings closed');
+    }
+    if (await script('return Boolean(document.querySelector("[data-testid=settings-quick-menu]"))')) {
+      await withWebview('/index.html?surface=settings-quick', () => script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))'));
+      await until(() => script('return !document.querySelector("[data-testid=settings-quick-menu]")'), 'quick settings closed');
+    }
+  }
   async function windowsWindowAction(args) {
-    await new Promise((resolveAction, reject) => {
+    return new Promise((resolveAction, reject) => {
       const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve('tests/native/windows-window.ps1'),
-        '-Executable', binary, ...args], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
+        '-Executable', binary, ...args], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
       let error = '';
+      let output = '';
+      helper.stdout.on('data', chunk => { output += chunk; });
       helper.stderr.on('data', chunk => { error += chunk; });
       helper.on('error', reject);
-      helper.on('exit', code => code === 0 ? resolveAction() : reject(new Error(error || 'Native window operation failed')));
+      helper.on('exit', code => code === 0 ? resolveAction(output) : reject(new Error(error || 'Native window operation failed')));
     });
   }
   async function resizeWindow(width, height) {
@@ -102,13 +124,13 @@ export async function runScenario(name, scenario) {
   }
   async function focusWindow() {
     if (process.platform === 'win32') {
-      for (let attempt = 0; attempt < 3; attempt++) {
+      const previous = await request('GET', `/session/${session}/window`);
+      await request('POST', `/session/${session}/window`, { handle: shellWebview });
+      try {
         await invoke('plugin:window|set_focus', { label:'main' });
-        try { await windowsWindowAction(['-Focus']); return; }
-        catch (error) {
-          if (attempt === 2 || !String(error).includes('did not receive foreground focus')) throw error;
-          await wait(150);
-        }
+        await windowsWindowAction(['-Focus']);
+      } finally {
+        await request('POST', `/session/${session}/window`, { handle: previous });
       }
     }
   }
@@ -174,6 +196,14 @@ export async function runScenario(name, scenario) {
     assert.equal(toNamespacedPath(resolve(diagnostics.application_data_directory)).toLowerCase(), toNamespacedPath(resolve(directory, 'data')).toLowerCase());
     await until(async () => (await invoke('get_diagnostics')).startup_ready, 'native startup completes');
     await until(() => script('return document.querySelectorAll(".h-tab,.tab-row").length > 0'), 'shell initialization');
+    if (name !== 'account-containers') {
+      // Database/shell readiness precedes the content document. Scenarios start
+      // only after the restored active page has finished its initial navigation.
+      const active = (await invoke('get_tabs')).tabs.find(tab => tab.is_active);
+      assert.ok(active, 'startup selected a content tab');
+      const path = active.url === 'veloce://newtab' ? '/new-tab.html' : new URL(active.url).pathname + new URL(active.url).search;
+      await withWebview(path, () => until(() => script('return document.readyState === "complete"'), 'initial native document ready'));
+    }
   }
   async function closeSession() {
     if (!session) return;
@@ -183,6 +213,7 @@ export async function runScenario(name, scenario) {
 
   let failure;
   const cleanupErrors = [];
+  const resourceCleanups = [];
   const started = new Date().toISOString();
   async function screenshot(name) {
     const png = await request('GET', `/session/${session}/screenshot`);
@@ -190,7 +221,7 @@ export async function runScenario(name, scenario) {
   }
   async function startDriver() {
     driverError = undefined;
-    driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, VELOCE_NATIVE_TEST_RUN_DIR: directory }, detached: process.platform !== 'win32' });
+    driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, VELOCE_NATIVE_TEST_RUN_DIR: directory, VELOCE_NATIVE_REAL_PROFILES: name === 'account-containers' ? '1' : '0' }, detached: process.platform !== 'win32' });
     driver.on('error', error => { driverError = error; });
     driver.on('exit', (code, signal) => { driverError = new Error(`Scenario driver exited (${code ?? signal})`); });
     await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'driver ready');
@@ -220,6 +251,15 @@ export async function runScenario(name, scenario) {
           return !(await request('GET', `/session/${session}/window/handles`)).length;
         } catch (error) { if (String(error).includes('Protected shutdown failed:')) throw error; return true; }
       }, 'normal native exit');
+      if (process.platform === 'win32' && name === 'account-containers') {
+        await new Promise((resolveExit, reject) => {
+          const helper = spawn('powershell.exe', ['-NoProfile', '-File', resolve('tests/native/wait-profile-exit.ps1'), '-Executable', binary, '-RunDirectory', directory], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
+          let error = '';
+          helper.stderr.on('data', chunk => { error += chunk; });
+          helper.on('error', reject);
+          helper.on('exit', code => code === 0 ? resolveExit() : reject(new Error(error || 'Profile processes did not exit')));
+        });
+      }
       await closeSession().catch(() => {});
     }
     // Forced restarts kill only our process tree, without sending a clean-close command.
@@ -238,12 +278,35 @@ export async function runScenario(name, scenario) {
     fixture = await createFixture();
     await startDriver();
     await openSession();
-    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, floatingWindow, sessionId: () => session, restart, directory });
+    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, openSettings, closeSettings, floatingWindow, sessionId: () => session, restart, directory, ownCleanup: cleanup => resourceCleanups.push(cleanup) });
     if (process.env.VELOCE_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
   } catch (error) {
     failure = error;
     if (session) await screenshot('failure').catch(() => {});
+    if (session) {
+      try {
+        const snapshot = await invoke('get_tabs');
+        const webviews = [];
+        const selected = await request('GET', `/session/${session}/window`);
+        try {
+          for (const handle of await request('GET', `/session/${session}/window/handles`)) {
+            await request('POST', `/session/${session}/window`, { handle });
+            const dom = await script('const active=document.activeElement;const toggle=document.querySelector("[data-testid=download-add-toggle]");return {focused:document.hasFocus(),activeTag:active?.tagName,activeTestId:active?.getAttribute("data-testid"),downloadForm:!!document.querySelector("[data-testid=download-url]"),downloadToggleDisabled:toggle?.disabled}');
+            webviews.push({ handle, url: await request('GET', `/session/${session}/url`), dom });
+          }
+        } finally {
+          await request('POST', `/session/${session}/window`, { handle: selected });
+        }
+        // Isolated fixtures only. This local diagnostic is never a CI upload target.
+        const foreground = process.platform === 'win32' ? JSON.parse(await windowsWindowAction(['-Inspect'])) : undefined;
+        writeFileSync(resolve(directory, 'artifacts/diagnostics.json'), JSON.stringify({ snapshot, webviews, foreground }, null, 2));
+      } catch { /* Keep the original failure when the crashed application cannot answer. */ }
+    }
   } finally {
+    for (const cleanup of resourceCleanups.reverse()) {
+      try { await cleanup(); } catch (error) { cleanupErrors.push(String(error)); }
+    }
+    if (session) await request('DELETE', `/session/${session}/actions`).catch(error => cleanupErrors.push(`Input release: ${error}`));
     await closeSession().catch(error => cleanupErrors.push(String(error)));
     await stopDriver();
     await fixture?.close().catch(error => cleanupErrors.push(String(error)));

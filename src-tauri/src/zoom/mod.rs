@@ -17,7 +17,11 @@ pub struct ZoomService {
 impl ZoomService {
     pub fn initialize(&self, app: &AppHandle) -> Result<(), String> {
         let browser = app.state::<BrowserState>();
-        let db = browser.db.lock().map_err(|e| e.to_string())?;
+        let db = browser
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         let sites = repo::list(db.as_ref().ok_or("zoom.database_unavailable")?)?;
         let mut inner = self.inner.lock().map_err(|e| e.to_string())?;
         inner.sites = sites;
@@ -46,7 +50,11 @@ impl ZoomService {
         repo::validate(&row)?;
         {
             let state = app.state::<BrowserState>();
-            let db = state.db.lock().map_err(|e| e.to_string())?;
+            let db = state
+                .infrastructure()
+                .db()
+                .lock()
+                .map_err(|e| e.to_string())?;
             repo::set(db.as_ref().ok_or("zoom.database_unavailable")?, &row)?;
         }
         self.initialize(app)?;
@@ -71,7 +79,11 @@ impl ZoomService {
     pub fn import_pending(&self, app: &AppHandle, id: &str) -> Result<ZoomSnapshot, String> {
         {
             let state = app.state::<BrowserState>();
-            let db = state.db.lock().map_err(|e| e.to_string())?;
+            let db = state
+                .infrastructure()
+                .db()
+                .lock()
+                .map_err(|e| e.to_string())?;
             let conn = db.as_ref().ok_or("zoom.database_unavailable")?;
             let pending = crate::database::backup_repo::pending(conn)?
                 .filter(|p| p.id == id)

@@ -62,8 +62,8 @@ pub fn folder_name(workspace_id: &str) -> String {
 
 fn enabled(app: &AppHandle) -> bool {
     app.state::<crate::state::browser_state::BrowserState>()
-        .workspace_isolation
-        .load(std::sync::atomic::Ordering::Acquire)
+        .policies()
+        .workspace_isolation()
 }
 
 /// Returns the per-workspace data directory while isolation stays enabled.
@@ -86,7 +86,11 @@ pub fn directory(app: &AppHandle, workspace_id: &str) -> Result<Option<PathBuf>,
 pub fn content_directory(app: &AppHandle, tab_id: &str) -> Result<Option<PathBuf>, String> {
     let state = app.state::<crate::state::browser_state::BrowserState>();
     {
-        let tabs = state.tabs.lock().map_err(|_| "Tab state unavailable")?;
+        let tabs = state
+            .session()
+            .tabs()
+            .lock()
+            .map_err(|_| "Tab state unavailable")?;
         if let Some(tab) = tabs.iter().find(|tab| tab.id == tab_id) {
             if tab.is_ephemeral {
                 return crate::window::ephemeral::ephemeral_directory(app, tab_id).map(Some);
@@ -95,7 +99,11 @@ pub fn content_directory(app: &AppHandle, tab_id: &str) -> Result<Option<PathBuf
                 if !crate::database::account_containers_repo::valid_id(id) {
                     return Err("Invalid account container ID".into());
                 }
-                let db = state.db.lock().map_err(|e| e.to_string())?;
+                let db = state
+                    .infrastructure()
+                    .db()
+                    .lock()
+                    .map_err(|e| e.to_string())?;
                 let conn = db.as_ref().ok_or("Database unavailable")?;
                 let available: bool = conn.query_row(
                     "SELECT EXISTS(SELECT 1 FROM account_containers WHERE id=?1 AND deleting=0)",
@@ -119,13 +127,21 @@ pub fn content_directory(app: &AppHandle, tab_id: &str) -> Result<Option<PathBuf
     }
     let state = app.state::<crate::state::browser_state::BrowserState>();
     let workspace_id = state
-        .tabs
+        .session()
+        .tabs()
         .lock()
         .map_err(|e| e.to_string())?
         .iter()
         .find(|tab| tab.id == tab_id)
         .map(|tab| tab.workspace_id.clone())
-        .or_else(|| state.active_workspace_id.lock().ok().map(|id| id.clone()))
+        .or_else(|| {
+            state
+                .session()
+                .active_workspace_id()
+                .lock()
+                .ok()
+                .map(|id| id.clone())
+        })
         .ok_or_else(|| "Workspace unavailable".to_string())?;
     directory(app, &workspace_id)
 }

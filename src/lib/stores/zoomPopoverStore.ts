@@ -1,10 +1,9 @@
+import { surfaceCoordinator } from "../services/surface-coordinator.js";
 import { get, writable } from "svelte/store";
 import { tabs } from "./browserStore";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { tabLayout } from "./settingsStore";
 import { zoomOrigin, zoomError, flushZoom } from "./zoomStore";
-import { closeMedia } from "./mediaPopoverStore";
-import { closePrivacy } from "./privacyPopoverStore";
 import { setZoomPopover } from "../services/bridge/zoom-popover";
 import { describeError } from "../services/user-errors.js";
 
@@ -14,8 +13,8 @@ let revision = 0;
 export async function openZoom(anchor: HTMLButtonElement) {
   if (get(zoomPopover)) return closeZoom(true);
   const id = ++revision;
-  await closeMedia();
-  await closePrivacy();
+  const currentClaim = await surfaceCoordinator.claim("zoom");
+  if (!currentClaim()) return;
   const tab = get(tabs).find(tab => tab.is_active), origin = get(zoomOrigin);
   if (!tab || !origin || id !== revision || !anchor.isConnected) return;
   zoomPopover.set({ id, tabId: tab.id, url: tab.url, origin, workspaceId: get(activeWorkspaceId), layout: get(tabLayout), anchor });
@@ -31,3 +30,5 @@ export async function closeZoom(restoreFocus = false) {
   } catch (error) { zoomError.set(describeError(error)); }
   finally { await flushZoom(); }
 }
+
+surfaceCoordinator.register("zoom", () => closeZoom());

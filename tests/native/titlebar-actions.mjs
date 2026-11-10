@@ -61,15 +61,17 @@ export async function checkTitlebarActions(context) {
   await click('[data-action=zen]');
   await until(() => script('return !document.querySelector(".titlebar")'), 'zen quick click hides toolbar');
   await request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'key', id: 'toolbar-key', actions: [
-    { type: 'keyDown', value: '\uE00A' }, { type: 'keyDown', value: 'z' },
-    { type: 'keyUp', value: 'z' }, { type: 'keyUp', value: '\uE00A' },
+    { type: 'keyDown', value: '\uE009' }, { type: 'keyDown', value: '\uE008' }, { type: 'keyDown', value: 'z' },
+    { type: 'keyUp', value: 'z' }, { type: 'keyUp', value: '\uE008' }, { type: 'keyUp', value: '\uE009' },
   ] }] });
-  await until(() => script('return !!document.querySelector(".titlebar-actions")'), 'Alt+Z restores toolbar');
-  for (const [id, selector] of [['tools', '[data-testid=tools-dialog]'], ['commands', '.command-modal'], ['history', '.history-panel'], ['downloads', '.downloads-panel'], ['settings', '.settings-modal']]) {
+  await until(() => script('return !!document.querySelector(".titlebar-actions")'), 'Ctrl+Shift+Z restores toolbar');
+  for (const [id, path] of [['tools', '/index.html?surface=tools'], ['commands', null], ['history', '/history-overlay.html'], ['downloads', '/index.html?surface=downloads'], ['settings', '/index.html?surface=settings-quick']]) {
     await click(`[data-action="${id}"]`);
-    await until(() => script('return !!document.querySelector(arguments[0])', selector), id + ' quick click opens');
-    await escape();
-    await until(() => script('return !document.querySelector(arguments[0])', selector), id + ' closes');
+    const inside = action => path ? withWebview(path, action) : action();
+    const visible = () => script('return [...document.querySelectorAll("[role=dialog]")].some(node=>node.getClientRects().length&&!node.hidden)');
+    await inside(() => until(visible, id + ' quick click opens'));
+    await inside(() => script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))'));
+    await inside(() => until(async () => !await visible(), id + ' closes'));
   }
   await click('[data-action="privacy"]');
   await until(() => script('return document.querySelector("[data-action=privacy]").getAttribute("aria-expanded")==="true"'), 'privacy still opens');
@@ -79,21 +81,22 @@ export async function checkTitlebarActions(context) {
   await until(() => script('return document.querySelector("[data-action=privacy]").getAttribute("aria-expanded")==="false"'), 'privacy closes');
 
   // Switch through the real settings UI, keeping the hidden bookmark slot intact.
-  await click('[data-action="settings"]'); await click('[data-testid="settings-appearance_layout"]');
-  await click('#setting-browser-layout .mini-pill:nth-child(2)'); await escape();
+  await context.openSettings(); await click('[data-testid="settings-appearance_layout"]');
+  await click('#setting-browser-layout .mini-pill:nth-child(2)'); await context.closeSettings();
   await until(async () => (await order()).length === 9, 'vertical layout hides bookmark action');
   const verticalRect = await request('GET', `/session/${sessionId()}/window/rect`);
   await gesture('zen','left');
   const expected = ['zen', 'bookmarks', 'tools', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'qr'];
   assert.deepEqual(JSON.parse(await saved()), expected);
   assert.deepEqual(await request('GET', `/session/${sessionId()}/window/rect`), verticalRect, 'vertical drag region does not move the window');
-  await click('[data-action="settings"]');
-  await click('#setting-browser-layout .mini-pill:first-child'); await escape();
+  await context.openSettings();
+  await click('#setting-browser-layout .mini-pill:first-child'); await context.closeSettings();
   await until(async () => (await order()).length === 10, 'horizontal restores bookmark action');
   assert.deepEqual(await order(), expected);
   await restart(); assert.deepEqual(await order(), expected, 'order survives native app restart');
 
   await invoke('navigate_to', { input: fixture.origin + '/page/toolbar-a' });
+  await until(async () => (await invoke('get_tabs')).tabs.find(tab => tab.is_active)?.url === fixture.origin + '/page/toolbar-a', 'toolbar destination confirmed');
   const a = (await invoke('get_tabs')).tabs.find(tab => tab.is_active);
   await click('[data-action="qr"]');
   await until(() => script('return !!document.querySelector(".panel img[alt]")'), 'QR image generates for active HTTP page');

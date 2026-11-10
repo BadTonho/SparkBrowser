@@ -4,7 +4,7 @@ import { checkPipToolbarLayouts } from './pip-toolbar.mjs';
 import { withFloatingPlayer, checkFloatingVolume, checkBackgroundFloatingVolume, checkFloatingFrameChurn } from './pip-player.mjs';
 import { checkMinimalPlayer } from './pip-appearance.mjs';
 
-export async function checkMediaMute({invoke,until,fixture,click,restart,script}) {
+export async function checkMediaMute({invoke,until,fixture,click,restart,script,openSettings,closeSettings}) {
   if (process.platform !== 'win32') return;
   const packet = await invoke('create_tab', {url: fixture.origin+'/page/media-a'});
   const a = packet.tabs.find(t=>t.is_active).id;
@@ -25,10 +25,9 @@ export async function checkMediaMute({invoke,until,fixture,click,restart,script}
   await restart();
   await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.mute_available,'restored view');
   assert.equal((await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a).muted,false,'mute is not persisted');
-  await click('[data-testid=open-settings]');await click('[data-testid=settings-appearance_layout]');
+  await openSettings(); await click('[data-testid=settings-appearance_layout]');
   await until(()=>script('return Boolean(document.querySelector("#setting-browser-layout"))'),'layout settings');
-  await script('document.querySelectorAll("#setting-browser-layout button")[1].click();');
-  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+  await click('#setting-browser-layout .mini-pill:nth-child(2)'); await closeSettings();
   await until(()=>script('return Boolean(document.querySelector(`.tab-row [data-media-tab="${arguments[0]}"]`))',a),'vertical mute control');
   await click(`[data-media-tab="${a}"]`);await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.muted,'vertical mute');
   fixture.commands.set('media-c','stop-media');await until(async()=> !(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.audible,'audio stopped');

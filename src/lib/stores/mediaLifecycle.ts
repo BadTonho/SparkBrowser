@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { get } from "svelte/store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { tabs } from "./browserStore";
@@ -9,7 +10,7 @@ import { initializePipControls } from "./pipLifecycle";
 import {initializePipAppearance} from "./pipAppearanceStore";
 
 /** One focused-tab report loop serves volume and PiP, including dynamically added videos. */
-export function initializeMedia() {
+function startMedia() {
   if (!isTauriRuntime()) return () => {};
   let disposed = false;
   let focused = true;
@@ -57,3 +58,5 @@ export function initializeMedia() {
     document.removeEventListener("visibilitychange", refreshFocused);
   };
 }
+
+export const initializeMedia = createSharedLifecycle(scope => scope.own(startMedia()));

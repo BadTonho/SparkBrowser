@@ -47,7 +47,7 @@ Revisar os 36 itens para registrar o estado atual, os pontos de entrada existent
 
 - Captura da página inteira: investigar APIs para páginas longas, conteúdo fixo e rolagem; `CapturePreview` isoladamente não comprova cobertura integral.
 - Modo escuro forçado em páginas: oferecer opção desligada por padrão e exceção por site; avaliar imagens, vídeos e páginas já escuras.
-- Navegação por cursor de texto: implementada com F7 e suporte nativo do WebView2/WebKitGTK; estado temporário compartilhado entre abas da sessão. A validação nativa fica pendente para execução posterior. Ver [documentação](../features/caret-browsing.md).
+- Navegação por cursor de texto: implementada com F7 e suporte nativo do WebView2/WebKitGTK; estado temporário compartilhado entre abas da sessão. O cenário nativo no Windows passou; a validação nativa no Linux continua pendente. Ver [documentação](../features/caret-browsing.md).
 - Tamanho mínimo de fonte: investigação documental concluída; WebKitGTK expõe configuração nativa e a interface documentada do WebView2 não lista equivalente. A prova visual Windows compila, mas a sessão WebDriver não inicia; validação Linux pendente. Não usar `min-font-size` como propriedade CSS. Ver [investigação](../features/minimum-font-size-investigation.md).
 
 **Gate de viabilidade:** fazer a investigação em Windows e Linux antes de implementar ou reduzir cobertura. Se o escopo proposto não for viável, apresentar as limitações e alternativas para decisão antes de prosseguir.

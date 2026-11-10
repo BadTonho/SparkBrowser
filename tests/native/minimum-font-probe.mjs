@@ -3,7 +3,8 @@ import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export async function checkMinimumFontProbe(context) {
-  const { invoke, until, fixture, script, screenshot, directory } = context;
+  const { invoke, until, fixture, screenshot, directory, withWebview } = context;
+  const script = (...args) => withWebview('/minimum-font-probe', () => context.script(...args));
   const url = new URL('/minimum-font-probe', fixture.origin).toString();
   await invoke('create_tab', { url, searchEngine: 'google' });
   await until(() => script('return window.minimumFontProbeReady && document.querySelector("iframe")?.contentDocument?.readyState === "complete"'), 'font samples and iframe ready');

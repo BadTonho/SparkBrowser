@@ -42,6 +42,12 @@ export async function checkPermissions(invoke, until, fixture, a, b, script, wit
   console.log('Checking native permission expiry (60 seconds).');
   await until(async () => !(await pending()), 'permission expires without a response', 70_000);
   await assert.rejects(invoke('respond_site_permission', { id: current.id, decision: 'allow_once' }));
+  current = await request();
+  await invoke('switch_tab', { tabId: a.id });
+  await invoke('hibernate_tab', { tabId: p.id });
+  await until(async () => !(await pending()), 'hibernation cancels the pending permission');
+  assert.equal((await invoke('get_tabs')).tabs.find(tab => tab.id === p.id).is_hibernated, true);
+  await assert.rejects(invoke('respond_site_permission', { id: current.id, decision: 'allow_once' }));
   await invoke('close_tab', { tabId: p.id, searchEngine: 'google' }); await open();
 
   const childOrigin = fixture.origin.replace('127.0.0.1', 'localhost');

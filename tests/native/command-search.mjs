@@ -71,7 +71,7 @@ export async function checkCommandSearch(context) {
   await until(()=>script('return document.querySelector("textarea").value==="Unsaved draft for original saved URL"'),'note remains bound to original URL');
   await click('[data-testid="note-follow-active"]');
   await until(()=>script('return !document.querySelector("[data-testid=note-pinned-url]")'),'follow active page');
-  await click('[data-testid="close-tools"]');
+  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
   await query('cafe');
   await until(()=>script('return Boolean(document.querySelector("[data-command-id^=session-]"))'),'session result');
   await click(`[data-command-id="session-${session.id}"]`);
@@ -85,7 +85,7 @@ export async function checkCommandSearch(context) {
   await assert.rejects(()=>invoke('restore_named_session',{id:session.id,expectedSession:session}),/command_search.changed/);
   await click('[data-testid="session-details-restore"]');
   await until(async()=> (await invoke('get_tabs')).tabs.length===before+session.pages.length,'explicit restoration adds tabs');
-  await click('[data-testid="close-tools"]');
+  await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
   // Stale search items are revalidated before opening.
   await query('other cafe');
   await until(()=>script('return Boolean(document.querySelector("[data-command-id^=note-]"))'),'note to remove');

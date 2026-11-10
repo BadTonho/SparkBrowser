@@ -304,7 +304,11 @@ pub async fn remove_browser_extension(app: &AppHandle, extension_id: String) -> 
 pub fn sync_new_webview(app: &AppHandle, view: &Webview) -> Result<(), String> {
     let state = app.state::<crate::state::browser_state::BrowserState>();
     let extensions = {
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         crate::database::extensions_repo::get_all(db.as_ref().ok_or("Database is not ready")?)?
     };
     let enabled_paths: Vec<String> = extensions

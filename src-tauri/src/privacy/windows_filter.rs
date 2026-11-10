@@ -79,9 +79,10 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
                             }
                         });
                     if top_document && method.eq_ignore_ascii_case("GET") {
-                        if let (Ok(parsed), Ok(settings)) =
-                            (url::Url::parse(&url), state.tracking_settings.lock())
-                        {
+                        if let (Ok(parsed), Ok(settings)) = (
+                            url::Url::parse(&url),
+                            state.policies().tracking_settings().lock(),
+                        ) {
                             let cleaned = super::tracking_parameters::clean(&parsed, &settings);
                             if cleaned != parsed {
                                 request.SetUri(&HSTRING::from(cleaned.as_str()))?;
@@ -110,7 +111,8 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
                         url.as_str()
                     };
                     let shield = state
-                        .shield_enabled
+                        .policies()
+                        .shield_enabled()
                         .lock()
                         .map(|enabled| *enabled)
                         .unwrap_or(false);
@@ -128,10 +130,8 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
                             &HSTRING::from("Cache-Control: no-store\r\n"),
                         )?;
                         args.SetResponse(&response)?;
-                        if let Ok(mut count) = state.blocked_count.lock() {
-                            *count += 1;
-                        }
-                    } else if let Ok(settings) = state.gpc_settings.lock() {
+                        state.policies().record_blocked_request();
+                    } else if let Ok(settings) = state.policies().gpc_settings().lock() {
                         if let (Ok(target), Ok(owner)) =
                             (url::Url::parse(&url), url::Url::parse(source))
                         {

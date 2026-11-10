@@ -112,7 +112,8 @@ pub async fn extract_article(
     let id = match tab_id {
         Some(id) => id,
         None => state
-            .active_tab_id
+            .session()
+            .active_tab_id()
             .lock()
             .map_err(|e| e.to_string())?
             .clone(),

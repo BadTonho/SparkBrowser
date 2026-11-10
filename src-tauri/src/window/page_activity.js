@@ -14,7 +14,9 @@
     if (key === last) return;
     last = key;
     const query = new URLSearchParams({ token, document: documentId, sequence: String(++sequence), dirty: String(dirty), media: String(media) });
-    window.location.href = `veloce-internal://page-activity/state?${query}`;
+    const url = `veloce-internal://page-activity/state?${query}`;
+    if (window.__velocePostContent) window.__velocePostContent(url);
+    else window.location.href = url;
   }
   function schedule() {
     if (scheduled || document.readyState === 'loading') return;

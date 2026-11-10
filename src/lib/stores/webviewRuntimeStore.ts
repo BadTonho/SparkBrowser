@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { get, writable } from "svelte/store";
 import { fetchRuntimeStatus, onRuntimeStatus, requestRuntimeRestart, unavailableRuntime } from "../services/bridge/webview-runtime";
 import { applyShutdownState } from "./shutdownStore";
@@ -9,7 +10,7 @@ export const runtimeBusy = writable(false);
 export const runtimeError = writable("");
 export const dismissedRuntimeVersion = writable("");
 function apply(status: WebviewRuntimeStatus) { if (status.revision >= get(runtimeStatus).revision) runtimeStatus.set(status); }
-export function initializeRuntime(): () => void {
+function startRuntime(): () => void {
   let disposed = false, stop: (() => void) | undefined;
   void (async () => {
     stop = await onRuntimeStatus(value => { if (!disposed) apply(value); });
@@ -26,3 +27,5 @@ export async function restartRuntime() {
   catch (error) { runtimeError.set(describeError(error)); }
   finally { runtimeBusy.set(false); }
 }
+
+export const initializeRuntime = createSharedLifecycle(scope => scope.own(startRuntime()));

@@ -36,37 +36,19 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
             .unwrap_or(&tabs[0])
             .id
             .clone();
-        let workspace = tabs
-            .iter()
-            .find(|tab| tab.id == active)
-            .unwrap()
-            .workspace_id
-            .clone();
         // Older snapshots may contain several active flags. Persist a single consistent selection.
         for tab in &mut tabs {
             tab.is_active = tab.id == active;
             tab.is_visible = tab.is_active;
             tab.is_hibernated = !tab.is_active;
         }
-        let next = tabs
-            .iter()
-            .filter_map(|tab| tab.id.strip_prefix("tab-")?.parse::<u64>().ok())
-            .max()
-            .unwrap_or(1)
-            .checked_add(1)
-            .ok_or("recovery.invalid_session: Tab ID limit")?;
-        *state.next_tab_counter.lock().map_err(|e| e.to_string())? = next;
-        *state.active_tab_id.lock().map_err(|e| e.to_string())? = active;
-        *state
-            .active_workspace_id
-            .lock()
-            .map_err(|e| e.to_string())? = workspace;
-        *state.tabs.lock().map_err(|e| e.to_string())? = tabs;
     }
-    *state.workspaces.lock().map_err(|e| e.to_string())? = workspaces;
-    *state.split_layouts.lock().map_err(|e| e.to_string())? = layouts;
-    state.refresh_visible_tabs()?;
-    *state.db.lock().map_err(|e| e.to_string())? = Some(conn);
+    state.install_restored_session(tabs, workspaces, layouts)?;
+    *state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())? = Some(conn);
     // The previous committed snapshot survives any failure, including split or marker writes.
     state.persist_run_checkpoint(recovery_repo::RunCheckpoint::Restored)?;
     Ok(RecoveryStatus {
@@ -110,7 +92,7 @@ mod tests {
         conn.execute_batch("CREATE TRIGGER fail_restore BEFORE UPDATE ON browser_run_state WHEN NEW.restoration_confirmed=1 BEGIN SELECT RAISE(ABORT,'Artificial restore failure'); END;").unwrap();
         let state = BrowserState::default();
         assert!(restore(&state, conn).is_err());
-        let mut guard = state.db.lock().unwrap();
+        let mut guard = state.infrastructure().db().lock().unwrap();
         let conn = guard.take().unwrap();
         assert_eq!(
             session_repo::load_session_tabs(&conn)
@@ -145,12 +127,13 @@ mod tests {
     fn shutdown_persistence_failure_never_marks_a_run_clean() {
         let state = BrowserState::default();
         restore(&state, database()).unwrap();
-        state.db.lock().unwrap().as_ref().unwrap().execute_batch("CREATE TRIGGER fail_save BEFORE INSERT ON session_tabs BEGIN SELECT RAISE(ABORT,'Artificial save failure'); END;").unwrap();
+        state.infrastructure().db().lock().unwrap().as_ref().unwrap().execute_batch("CREATE TRIGGER fail_save BEFORE INSERT ON session_tabs BEGIN SELECT RAISE(ABORT,'Artificial save failure'); END;").unwrap();
         assert!(state
             .persist_run_checkpoint(recovery_repo::RunCheckpoint::CleanExit)
             .is_err());
         assert!(!state
-            .db
+            .infrastructure()
+            .db()
             .lock()
             .unwrap()
             .as_ref()

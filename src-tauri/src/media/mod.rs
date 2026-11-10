@@ -173,7 +173,8 @@ impl MediaService {
 }
 pub fn current(app: &AppHandle, label: &str, token: &str) -> bool {
     app.state::<BrowserState>()
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .is_ok_and(|m| m.get(label).is_some_and(|t| t == token))
 }

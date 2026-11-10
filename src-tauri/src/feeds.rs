@@ -174,7 +174,11 @@ pub fn refresh(app: &AppHandle, id: i64) -> Result<(), String> {
     let _permit = RefreshPermit::acquire(id)?;
     let state = app.state::<crate::state::browser_state::BrowserState>();
     let feed = {
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
         list(db.as_ref().ok_or("Database unavailable")?)?
             .into_iter()
             .find(|v| v.id == id)
@@ -204,7 +208,11 @@ pub fn refresh(app: &AppHandle, id: i64) -> Result<(), String> {
             &base,
         )
     })();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Database unavailable")?;
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
     // Ignore responses from a deleted or edited subscription.
@@ -240,7 +248,7 @@ pub fn refresh(app: &AppHandle, id: i64) -> Result<(), String> {
 }
 pub fn start(app: AppHandle) {
     std::thread::spawn(move || loop {
-        let ids = app.try_state::<crate::state::browser_state::BrowserState>().and_then(|state| state.db.lock().ok().and_then(|db| db.as_ref().and_then(|c| c.prepare("SELECT id FROM rss_feeds WHERE next_update<=?1 ORDER BY next_update LIMIT 20").ok().and_then(|mut s| s.query_map([now()], |row| row.get::<_,i64>(0)).ok().map(|rows| rows.filter_map(Result::ok).collect::<Vec<_>>()))))).unwrap_or_default();
+        let ids = app.try_state::<crate::state::browser_state::BrowserState>().and_then(|state| state.infrastructure().db().lock().ok().and_then(|db| db.as_ref().and_then(|c| c.prepare("SELECT id FROM rss_feeds WHERE next_update<=?1 ORDER BY next_update LIMIT 20").ok().and_then(|mut s| s.query_map([now()], |row| row.get::<_,i64>(0)).ok().map(|rows| rows.filter_map(Result::ok).collect::<Vec<_>>()))))).unwrap_or_default();
         refresh_batch(&ids, |id| {
             let _ = refresh(&app, id);
         });

@@ -17,11 +17,15 @@ export async function checkSecurityBoundaries(context) {
   await until(() => fixture.reports.has('security'), 'untrusted content loaded');
   await withWebview('/page/security', async () => {
     await assert.rejects(() => invoke('get_tabs'), /restricted|not allowed|denied/i);
+    if (process.platform === 'win32') await script(`window.__velocePostContent('veloce-internal://page-activity/state?token=invalid&document=fixture&sequence=999&dirty=true&media=true');window.__velocePostContent('veloce-internal://new-tab/navigate?token=invalid&document=fixture&sequence=999&input=https%3A%2F%2Fexternal-navigation.invalid');`);
+    await wait(100);
     await script('location.href="http://tauri.localhost/index.html"'); await wait(100);
     assert.ok((await request('GET', `/session/${sessionId()}/url`)).startsWith(fixture.origin));
     await script('location.href="file:///C:/nonexistent-security-fixture.html"'); await wait(100);
     assert.ok((await request('GET', `/session/${sessionId()}/url`)).startsWith(fixture.origin));
   });
+  const untrusted = (await invoke('get_tabs')).tabs.find(tab => tab.url.startsWith(fixture.origin + '/page/security'));
+  assert.ok(untrusted && !untrusted.activity.dirty_form && !untrusted.activity.playing_media, 'unauthenticated native messages cannot change session observations');
 
   await click('[data-testid=open-privacy]');
   const before = (await invoke('get_privacy_stats')).shield_enabled;

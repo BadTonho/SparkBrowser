@@ -16,7 +16,7 @@ pub async fn set_site_zoom(
     origin: String,
     factor: f64,
 ) -> Result<ZoomSnapshot, String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     service.set(
         &app,
         SiteZoom {
@@ -32,6 +32,6 @@ pub async fn apply_backup_zoom(
     service: State<'_, ZoomService>,
     task_id: String,
 ) -> Result<ZoomSnapshot, String> {
-    let _operation = state.tab_operations.lock().await;
+    let _operation = state.session().operation().await;
     service.import_pending(&app, &task_id)
 }

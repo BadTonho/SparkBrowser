@@ -1,9 +1,10 @@
-use crate::state::{browser_state::BrowserState, tab_model::TabInfo};
+use crate::state::{browser_state::BrowserState, document_observations::DocumentObservation};
 use tauri::{AppHandle, Manager};
 
 pub(crate) fn is_current_generation(app: &AppHandle, label: &str, token: &str) -> bool {
     app.state::<BrowserState>()
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map(|tokens| tokens.get(label).map(String::as_str) == Some(token))
         .unwrap_or(false)
@@ -15,44 +16,21 @@ pub(super) fn update_navigation(
     tab_id: &str,
     label: &str,
     token: &str,
-    update: impl FnOnce(&mut TabInfo),
+    update: impl FnOnce(&mut DocumentObservation),
 ) {
     let state = app.state::<BrowserState>();
     if !state
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map(|tokens| tokens.get(label).map(String::as_str) == Some(token))
         .unwrap_or(false)
     {
         return;
     }
-    let Ok(mut tabs) = state.tabs.lock() else {
-        return;
-    };
-    let Some(tab) = tabs.iter_mut().find(|tab| tab.id == tab_id) else {
-        return;
-    };
-    let before = (
-        tab.url.clone(),
-        tab.title.clone(),
-        tab.navigation.clone(),
-        tab.activity.clone(),
-    );
-    update(tab);
-    if before
-        == (
-            tab.url.clone(),
-            tab.title.clone(),
-            tab.navigation.clone(),
-            tab.activity.clone(),
-        )
-    {
-        return;
+    if let Ok(Some(payload)) = state.observe_document(tab_id, update) {
+        let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
     }
-    tab.navigation.revision += 1;
-    let payload = serde_json::json!({ "id": tab.id, "url": tab.url, "title": tab.title, "navigation": tab.navigation, "activity": tab.activity });
-    drop(tabs);
-    let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
 }
 
 #[cfg(windows)]
@@ -242,7 +220,8 @@ pub(super) fn with_page_events(
         };
         crate::privacy::auto_skip::loaded(&webview, &state, &keyboard_token_for_load);
         let (title, is_ephemeral) = state
-            .tabs
+            .session()
+            .tabs()
             .lock()
             .ok()
             .and_then(|tabs| {
@@ -279,7 +258,7 @@ pub(super) fn with_page_events(
                 }
             }
         }
-        let Ok(shortcuts) = state.keyboard_shortcuts.lock() else {
+        let Ok(shortcuts) = state.policies().keyboard_shortcuts().lock() else {
             return;
         };
         if let Ok(serialized) = serde_json::to_string(&*shortcuts) {

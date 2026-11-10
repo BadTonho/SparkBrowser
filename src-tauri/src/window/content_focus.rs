@@ -6,7 +6,8 @@ use tauri::{AppHandle, Manager};
 pub fn focus_active_content_webview(app: &AppHandle) -> Result<(), String> {
     let id = app
         .state::<BrowserState>()
-        .active_tab_id
+        .session()
+        .active_tab_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
@@ -15,10 +16,26 @@ pub fn focus_active_content_webview(app: &AppHandle) -> Result<(), String> {
     dispatcher
         .run_on_main_thread(move || {
             let state = app.state::<BrowserState>();
-            if !state.active_tab_id.lock().is_ok_and(|active| *active == id)
-                || state.is_overlay_open.lock().map_or(true, |v| *v)
-                || state.workspace_switcher_open.lock().map_or(true, |v| *v)
-                || state.bookmark_context_menu_open.lock().map_or(true, |v| *v)
+            if !state
+                .session()
+                .active_tab_id()
+                .lock()
+                .is_ok_and(|active| *active == id)
+                || state
+                    .surfaces()
+                    .is_overlay_open()
+                    .lock()
+                    .map_or(true, |v| *v)
+                || state
+                    .surfaces()
+                    .workspace_switcher_open()
+                    .lock()
+                    .map_or(true, |v| *v)
+                || state
+                    .surfaces()
+                    .bookmark_context_menu_open()
+                    .lock()
+                    .map_or(true, |v| *v)
                 || super::media_popover::is_open(&app)
                 || super::tools_popover::is_open(&app)
                 || super::quick_settings_popover::is_open(&app)

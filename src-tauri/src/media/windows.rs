@@ -10,7 +10,8 @@ pub async fn set_muted(app: &AppHandle, view: &tauri::Webview, muted: bool) -> R
     let label = view.label().to_owned();
     let token = app
         .state::<crate::state::browser_state::BrowserState>()
-        .keyboard_bridge_tokens
+        .security()
+        .keyboard_bridge_tokens()
         .lock()
         .map_err(|_| "media.error")?
         .get(&label)

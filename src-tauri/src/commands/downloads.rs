@@ -14,7 +14,11 @@ pub async fn get_download_visual(
 
 #[tauri::command]
 pub async fn get_downloads(state: State<'_, BrowserState>) -> Result<Vec<DownloadItem>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     list_downloads(db.as_ref().ok_or("Download database is not ready")?)
 }
 #[tauri::command]
@@ -32,10 +36,7 @@ pub async fn enqueue_download(
     expected_sha256: Option<String>,
 ) -> Result<Option<DownloadTask>, String> {
     let parsed = crate::downloads::transfer::validate_download_url(&url)?;
-    let target = if state
-        .ask_download_destination
-        .load(std::sync::atomic::Ordering::Acquire)
-    {
+    let target = if state.policies().ask_download_destination() {
         let dialog_app = app.clone();
         let name = crate::downloads::transfer::file_name(&parsed);
         let selected = tauri::async_runtime::spawn_blocking(move || {

@@ -64,7 +64,11 @@ pub(crate) fn bind(app: &AppHandle, id: &str) -> Result<(), String> {
         authuser,
         email: None,
     };
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or(LOGIN)?;
     preferences_repo::store(
         conn,
@@ -98,7 +102,11 @@ fn selected_account(tab: &crate::state::tab_model::TabInfo) -> Result<String, St
 
 fn load(app: &AppHandle) -> Result<Binding, String> {
     let state = app.state::<BrowserState>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     let raw = preferences_repo::load(db.as_ref().ok_or(LOGIN)?, KEY)?.ok_or(LOGIN)?;
     serde_json::from_str(&raw).map_err(|_| LOGIN.into())
 }
@@ -132,7 +140,11 @@ pub(super) fn verify_email(app: &AppHandle, email: Option<&str>) -> Result<(), S
     let mut binding = load(app)?;
     binding.accept_email(email)?;
     let state = app.state::<BrowserState>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     preferences_repo::store(
         db.as_ref().ok_or(LOGIN)?,
         KEY,

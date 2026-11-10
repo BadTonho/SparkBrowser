@@ -78,15 +78,15 @@ export async function checkVolumePopover(context, id) {
   await resizeWindow(1280,820);
 
   for (const layout of [1,0]) {
-    await click('[data-testid=open-settings]');await withWebview('/index.html?surface=settings-quick',()=>click('[data-testid=settings-quick-all]'));await click('[data-testid=settings-appearance_layout]');
+    await context.openSettings();await click('[data-testid=settings-appearance_layout]');
     await script('document.querySelectorAll("#setting-browser-layout button")[arguments[0]].click();',layout);
-    await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+    await context.closeSettings();
     await open();
     await withWebview('/media-popover.html',()=>until(()=>script('const p=document.querySelector("#media-popover"),r=p.getBoundingClientRect();return !p.hidden && r.height>=64 && r.height<=440 && document.querySelector("#volume-percentage").textContent===document.querySelector("input").value+"%";'),'popover in both tab layouts'));
     // Opening a shell overlay dismisses the volume control before hiding content.
     await script('document.querySelector("[data-testid=open-settings]").click();');
     await expanded(false);
-    await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));');
+    await context.closeSettings();
   }
   await open();
   const other=(await invoke('create_tab',{url:fixture.origin+'/page/volume-popover-context'})).tabs.find(tab=>tab.is_active).id;

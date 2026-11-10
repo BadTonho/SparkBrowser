@@ -12,6 +12,7 @@ use windows_core::{Interface, PCWSTR};
 #[derive(Clone)]
 struct Context {
     unique: String,
+    origin: String,
     session: String,
     document: Option<String>,
     sequence: u64,
@@ -92,6 +93,10 @@ fn remove_session(app: &AppHandle, label: &str, session: &str) {
 fn enable(core: &ICoreWebView2, session: &str) {
     for (method, params) in [
         ("Runtime.addBinding", json!({"name":"__veloceMediaSignal"})),
+        (
+            "Runtime.addBinding",
+            json!({"name":"__veloceContentSignal"}),
+        ),
         ("Runtime.enable", json!({})),
         (
             "Target.setAutoAttach",
@@ -189,6 +194,10 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                                         (session.clone(), id),
                                                         Context {
                                                             unique: unique.into(),
+                                                            origin: c["origin"]
+                                                                .as_str()
+                                                                .unwrap_or_default()
+                                                                .into(),
                                                             session,
                                                             document: None,
                                                             sequence: 0,
@@ -215,7 +224,8 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                 }
                             }
                             "Runtime.bindingCalled" => {
-                                if value["name"] != "__veloceMediaSignal" {
+                                let content = value["name"] == "__veloceContentSignal";
+                                if !content && value["name"] != "__veloceMediaSignal" {
                                     return Ok(());
                                 }
                                 let context = VIEWS.with(|m| {
@@ -225,6 +235,28 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                             .and_then(|id| v.contexts.get(&(session, id)).cloned())
                                     })
                                 });
+                                if content {
+                                    if let (Some(context), Some(raw), Some(core)) =
+                                        (context, value["payload"].as_str(), sender)
+                                    {
+                                        if context.session.is_empty() {
+                                            let mut source = Default::default();
+                                            core.Source(&mut source)?;
+                                            let source = CoTaskMemPWSTR::from(source).to_string();
+                                            if let Ok(url) = url::Url::parse(&source) {
+                                                crate::window::content_bridge::receive(
+                                                    &a,
+                                                    &l,
+                                                    &t,
+                                                    raw,
+                                                    &context.origin,
+                                                    &url.origin().ascii_serialization(),
+                                                );
+                                            }
+                                        }
+                                    }
+                                    return Ok(());
+                                }
                                 if let (Some(c), Some(raw), Some(id)) = (
                                     context,
                                     value["payload"].as_str().filter(|s| s.len() <= 2048),

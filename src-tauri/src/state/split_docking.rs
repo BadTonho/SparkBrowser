@@ -92,12 +92,14 @@ pub fn validate_context(
     tab_id: &str,
 ) -> Result<(), String> {
     let workspace = state
-        .active_workspace_id
+        .session()
+        .edit_active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
     let active = state
-        .active_tab_id
+        .session()
+        .edit_active_tab_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
@@ -149,7 +151,8 @@ pub fn commit(
     let activation = (context.active_tab_id != tab_id).then_some((tab_id, false));
     TabCheckpoint::commit_with_activation(state, activation, || {
         state
-            .split_layouts
+            .session()
+            .edit_split_layouts()
             .lock()
             .map_err(|e| e.to_string())?
             .insert(context.workspace_id.clone(), next);

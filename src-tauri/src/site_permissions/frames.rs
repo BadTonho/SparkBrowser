@@ -36,7 +36,8 @@ fn attach(context: Context, frame: ICoreWebView2Frame) -> Result<(), String> {
                     let top_origin = c
                         .app
                         .state::<crate::state::browser_state::BrowserState>()
-                        .tabs
+                        .session()
+                        .tabs()
                         .lock()
                         .ok()
                         .and_then(|tabs| {

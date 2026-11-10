@@ -7,7 +7,11 @@ use tauri::State;
 pub async fn get_site_search_shortcuts(
     state: State<'_, BrowserState>,
 ) -> Result<Vec<SiteSearchShortcut>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     repo::list(db.as_ref().ok_or("Database is not ready")?)
 }
 #[tauri::command]
@@ -16,7 +20,11 @@ pub async fn save_site_search_shortcut(
     previous: Option<String>,
     item: SiteSearchShortcut,
 ) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     repo::save(
         db.as_ref().ok_or("Database is not ready")?,
         previous.as_deref(),
@@ -28,7 +36,11 @@ pub async fn delete_site_search_shortcut(
     state: State<'_, BrowserState>,
     keyword: String,
 ) -> Result<(), String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
     db.as_ref()
         .ok_or("Database is not ready")?
         .execute(

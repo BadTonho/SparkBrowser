@@ -1,3 +1,4 @@
+import { createSharedLifecycle } from "../services/lifecycle.js";
 import { get } from "svelte/store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { selectTab } from "./browserStore";
@@ -6,7 +7,7 @@ import { onPipAction, onPipFallback } from "../services/bridge/media";
 import { describeError, UserError } from "../services/user-errors.js";
 
 /** The auxiliary player can address only its current document and video session. */
-export function initializePipControls() {
+function startPipControls() {
   let disposed = false;
   const stops: (() => void)[] = [];
   function register(promise: Promise<() => void>) {
@@ -40,3 +41,5 @@ export function initializePipControls() {
   }));
   return () => { disposed = true; stops.forEach(stop => stop()); };
 }
+
+export const initializePipControls = createSharedLifecycle(scope => scope.own(startPipControls()));
