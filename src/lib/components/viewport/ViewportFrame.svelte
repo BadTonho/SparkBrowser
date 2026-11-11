@@ -18,9 +18,11 @@
   import { titlebarMenu } from "../../stores/titlebarMenuStore";
   import { syncViewportBounds, isTauriRuntime } from "../../services/tauri-bridge";
   import { createViewportSync } from "../../services/viewport-sync.js";
+  import { isWhatsAppWindowOpen, activeWhatsAppDisplayMode } from "../../stores/whatsappStore";
 
   let viewportEl: HTMLDivElement | undefined = $state();
   const inTauri = isTauriRuntime();
+  let sidePanelOpen = $derived($isWhatsAppWindowOpen && $activeWhatsAppDisplayMode === "side_panel");
 
   let anyOverlayOpen = $derived(
     $isSitePermissionsOpen || $permissionRequests.length > 0 || $isCommandBarOpen ||
@@ -58,6 +60,7 @@
     void $splitDragRatio;
     void $sidebarWidth;
     void $isZenMode;
+    void sidePanelOpen;
     measureAndSync();
   });
 
@@ -102,6 +105,9 @@
       {/if}
     {/if}
   </div>
+  {#if sidePanelOpen}
+    <div class="whatsapp-panel-slot" aria-hidden="true"></div>
+  {/if}
 </main>
 
 <style>
@@ -128,6 +134,14 @@
     box-shadow: none;
     overflow: hidden;
     position: relative;
+  }
+
+  .whatsapp-panel-slot {
+    flex: 0 0 min(420px, max(100px, calc(100vw - 220px)));
+    height: 100%;
+    margin-left: 8px;
+    border-radius: var(--radius-md);
+    background: var(--bg-viewport-frame, #101010);
   }
 
   .viewport-frame.framed {

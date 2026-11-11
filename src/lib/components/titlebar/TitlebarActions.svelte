@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from "svelte";
+  import { get } from "svelte/store";
   import { onMount } from "svelte";
   import TitlebarActionIcon from "./TitlebarActionIcon.svelte";
   import DownloadProgressIndicator from "../downloads/DownloadProgressIndicator.svelte";
@@ -7,7 +9,8 @@
   import { openHistoryDrawer } from "../../stores/persistenceStore";
   import { openDownloadsDrawer, downloadProgressText, isDownloadsDrawerOpen } from "../../stores/downloadsStore";
   import { openCommandBar } from "../../stores/commandBarStore";
-  import { tabLayout, showBookmarksBar, toggleBookmarksBar, toggleZenMode } from "../../stores/settingsStore";
+  import { tabLayout, showBookmarksBar, toggleBookmarksBar, toggleZenMode, whatsappDisplayMode } from "../../stores/settingsStore";
+  import { isWhatsAppWindowOpen, activeWhatsAppDisplayMode } from "../../stores/whatsappStore";
   import { isSettingsQuickOpen, openSettingsQuickMenu } from "../../stores/settingsQuickPopoverStore";
   import { privacyStats } from "../../stores/privacyStore";
   import { openPrivacy, privacyPopover } from "../../stores/privacyPopoverStore";
@@ -23,10 +26,29 @@ import { invoke } from "../../services/tauri-bridge";
   let drag: ReturnType<typeof createActionDrag> | undefined;
   // The standalone WhatsApp window ships on Windows first; elsewhere the button stays hidden.
   const supportsWhatsApp = typeof navigator !== "undefined" && navigator.userAgent.includes("Windows");
-  const openWhatsApp = (button: HTMLButtonElement) => {
+  const openWhatsApp = async (button: HTMLButtonElement) => {
     const rect = button.getBoundingClientRect();
-    void invoke("toggle_whatsapp_popover", { anchor: { left: rect.left, top: rect.top, width: rect.width, height: rect.height } })
-      .catch(error => console.error("WhatsApp popover failed", error));
+    const anchor = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    if (get(isWhatsAppWindowOpen)) {
+      try {
+        await invoke("toggle_whatsapp_popover", { anchor, mode: get(activeWhatsAppDisplayMode) });
+        isWhatsAppWindowOpen.set(false);
+      } catch (error) {
+        console.error("WhatsApp window failed", error);
+      }
+      return;
+    }
+
+    const mode = get(whatsappDisplayMode);
+    activeWhatsAppDisplayMode.set(mode);
+    isWhatsAppWindowOpen.set(true);
+    await tick();
+    try {
+      await invoke("toggle_whatsapp_popover", { anchor, mode });
+    } catch (error) {
+      isWhatsAppWindowOpen.set(false);
+      console.error("WhatsApp window failed", error);
+    }
   };
   const visible = $derived($titlebarActionOrder.filter(id => (id !== "bookmarks" || $tabLayout === "horizontal") && (id !== "whatsapp" || supportsWhatsApp)));
   $effect(() => { $tabLayout; drag?.cancel(); });

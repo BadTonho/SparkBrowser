@@ -1,7 +1,7 @@
 <script lang="ts">
   import AppIcon from "../icons/AppIcon.svelte";
-import LanguageSettings from "./LanguageSettings.svelte";
-import PipAppearanceSettings from "./PipAppearanceSettings.svelte";
+  import LanguageSettings from "./LanguageSettings.svelte";
+  import PipAppearanceSettings from "./PipAppearanceSettings.svelte";
   import { t } from "../../i18n";
 import {
   isZenMode,
@@ -30,11 +30,15 @@ import {
   setCompactToolbar,
   roundedContentFrame,
   setRoundedContentFrame,
+  whatsappDisplayMode,
+  setWhatsAppDisplayMode,
   MIN_WINDOW_SURFACE_OPACITY,
   MAX_WINDOW_SURFACE_OPACITY,
   MAX_WINDOW_SURFACE_BLUR_PX,
 } from "../../stores/settingsStore";
 import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../stores/shortcutsStore";
+
+const supportsWhatsApp = typeof navigator !== "undefined" && navigator.userAgent.includes("Windows");
 </script>
 
 <section class="setting-group" aria-labelledby="appearance-heading">
@@ -92,6 +96,33 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
       </button>
     </div>
   </div>
+
+  {#if supportsWhatsApp}
+    <div class="setting-row" id="setting-whatsapp-display-mode" tabindex="-1">
+      <div class="row-text">
+        <span class="row-label">{$t("settings.whatsapp_display_mode")}</span>
+        <span class="row-desc">{$t("settings.whatsapp_display_mode_description")}</span>
+      </div>
+      <div class="timer-pills">
+        <button
+          class="mini-pill"
+          class:selected={$whatsappDisplayMode === "popover"}
+          aria-pressed={$whatsappDisplayMode === "popover"}
+          onclick={() => setWhatsAppDisplayMode("popover")}
+        >
+          {$t("settings.whatsapp_popover")}
+        </button>
+        <button
+          class="mini-pill"
+          class:selected={$whatsappDisplayMode === "side_panel"}
+          aria-pressed={$whatsappDisplayMode === "side_panel"}
+          onclick={() => setWhatsAppDisplayMode("side_panel")}
+        >
+          {$t("settings.whatsapp_side_panel")}
+        </button>
+      </div>
+    </div>
+  {/if}
 
   <h3 class="group-title visual-settings-heading">{$t("settings.toolbar_appearance")}</h3>
 

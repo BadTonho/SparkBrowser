@@ -21,6 +21,8 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
         size: LogicalSize::new(bounds.width, bounds.height).into(),
     };
     sync_content_geometry(app, state)?;
+    #[cfg(windows)]
+    super::whatsapp_window::resize(app, bounds)?;
     if *state
         .surfaces()
         .workspace_switcher_open()

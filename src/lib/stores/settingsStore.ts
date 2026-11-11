@@ -424,6 +424,22 @@ export function setWorkspaceSwitcherDisplay(display: WorkspaceSwitcherDisplay): 
   }
 }
 
+export type WhatsAppDisplayMode = "popover" | "side_panel";
+const WHATSAPP_DISPLAY_MODE_STORAGE_KEY = "veloce_whatsapp_display_mode";
+
+function getInitialWhatsAppDisplayMode(): WhatsAppDisplayMode {
+  const saved = safeStorage.getItem(WHATSAPP_DISPLAY_MODE_STORAGE_KEY);
+  return saved === "side_panel" ? "side_panel" : "popover";
+}
+
+export const whatsappDisplayMode = writable<WhatsAppDisplayMode>(getInitialWhatsAppDisplayMode());
+
+export function setWhatsAppDisplayMode(mode: WhatsAppDisplayMode): void {
+  const next = mode === "side_panel" ? "side_panel" : "popover";
+  whatsappDisplayMode.set(next);
+  safeStorage.setItem(WHATSAPP_DISPLAY_MODE_STORAGE_KEY, next);
+}
+
 const initialTabLayout: TabLayout = (() => {
   if (typeof safeStorage === "undefined") return "horizontal";
   const saved = safeStorage.getItem("veloce_tab_layout");
