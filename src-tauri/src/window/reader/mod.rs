@@ -104,6 +104,16 @@ const EXTRACT_SCRIPT: &str = r#"
 })()
 "#;
 
+#[cfg_attr(windows, allow(dead_code))]
+fn escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 pub async fn extract_article(
     app: &AppHandle,
     tab_id: Option<String>,
@@ -168,8 +178,9 @@ pub async fn extract_article(
         })
         .map_err(|e| e.to_string())?;
 
-        let raw_result = receiver
+        let raw_result = tokio::time::timeout(std::time::Duration::from_secs(10), receiver)
             .await
+            .map_err(|_| "Reader extraction timed out".to_string())?
             .map_err(|_| "Evaluation channel closed".to_string())??;
 
         // WebView2 ExecuteScript returns the result JSON-encoded as a JSON string
@@ -196,7 +207,7 @@ pub async fn extract_article(
             site_name: String::new(),
             content_html: format!(
                 "<p>Reading mode for {} is available on Windows.</p>",
-                tab.url
+                escape_html(&tab.url)
             ),
             text_content: String::new(),
             word_count: 10,

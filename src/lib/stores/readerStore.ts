@@ -2,6 +2,7 @@ import { writable, get } from "svelte/store";
 import type { ReaderArticle, ReaderTheme, ReaderFont, ReaderWidth } from "../types/reader";
 import { invoke, isTauriRuntime } from "../services/tauri-bridge";
 import { setOverlayVisibility } from "../services/bridge/overlays";
+import { sanitizeArticleHtml } from "../services/reader-sanitizer";
 
 export const isReaderOpen = writable<boolean>(false);
 export const readerArticle = writable<ReaderArticle | null>(null);
@@ -38,7 +39,7 @@ export async function openReaderMode(tabId?: string): Promise<void> {
     if (!article || !article.content_html) {
       throw new Error("Não foi possível extrair o conteúdo principal desta página.");
     }
-    readerArticle.set(article);
+    readerArticle.set({ ...article, content_html: sanitizeArticleHtml(article.content_html) });
   } catch (err: any) {
     readerError.set(err?.message ?? String(err));
   } finally {

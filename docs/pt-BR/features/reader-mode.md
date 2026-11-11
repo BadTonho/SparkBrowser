@@ -18,6 +18,7 @@ O Veloce Browser conta com um Modo Leitura personalizável e livre de distraçõ
   * **Monoespaçada:** Ideal para tutoriais e artigos técnicos de programação.
   * **Tamanho de Fonte Dinâmico:** Ajuste fino de 14px a 28px através dos botões A- / A+.
   * **Largura de Coluna:** Estreita (640px), Média (760px) e Larga (940px).
+* **Segurança do Conteúdo:** Scripts, iframes, formulários, objetos incorporados e manipuladores de evento inline são removidos dos artigos extraídos. Links no texto do artigo aparecem como texto simples.
 * **Métricas de Leitura:** Informa o tempo estimado de leitura ("~4 min de leitura") e contagem total de palavras.
 * **Integração com a Janela Nativa:** Oculta temporariamente o WebView nativo subjacente com `setOverlayVisibility(true, "reader-mode")`, garantindo que o leitor nunca sofra interferência da página web de fundo.
 

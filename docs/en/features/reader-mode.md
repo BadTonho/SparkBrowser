@@ -18,6 +18,7 @@ Veloce Browser features a distraction-free, customizable Reader View that strips
   * **Monospace:** Technical typography for development and programming articles.
   * **Dynamic Font Sizing:** Adjustable scaling from 14px to 28px.
   * **Adjustable Reading Width:** Narrow (640px), Medium (760px), and Wide (940px) columns.
+* **Content Safety:** Scripts, iframes, forms, embedded objects, and inline event handlers are removed from extracted articles. Links in article text appear as plain text.
 * **Reading Metrics:** Displays estimated reading time ("~4 min read") and article word counts.
 * **Native Viewport Protection:** Coordinates with Tauri native viewport overlays (`setOverlayVisibility(true, "reader-mode")`) to seamlessly obscure child WebViews beneath the reader canvas.
 
