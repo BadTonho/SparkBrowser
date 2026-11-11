@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t, labelText } from "../../i18n";
 import "./settings.css";
 import { normalizeSearch as normalizeSearchText } from "../../services/command-ranking.js";
@@ -180,7 +181,7 @@ function handleWindowMousedown(event: MouseEvent): void {
       tabindex="-1"
     >
       <div class="settings-header">
-        <span class="settings-title">{$t("settings.browser_settings_59f9")}</span>
+        <span class="settings-title"><AppIcon name="settings" /> {$t("settings.browser_settings_59f9")}</span>
         <div class="settings-search">
           <span class="search-icon" aria-hidden="true">⌕</span>
           <input
@@ -222,7 +223,7 @@ function handleWindowMousedown(event: MouseEvent): void {
               aria-pressed={$activeSettingsCategory === category.id}
               onclick={() => selectCategory(category.id)}
             >
-              <span class="category-icon" aria-hidden="true">{category.icon}</span>
+              <span class="category-icon" aria-hidden="true"><AppIcon name={category.icon} /></span>
               <span>{$labelText(category.label)}</span>
             </button>
           {/each}
@@ -248,7 +249,7 @@ function handleWindowMousedown(event: MouseEvent): void {
                         <span class="search-result-description">{$labelText(result.description)}</span>
                       </span>
                       <span class="search-result-category">
-                        <span aria-hidden="true">{category?.icon}</span>
+                        <span aria-hidden="true"><AppIcon name={category?.icon ?? ""} /></span>
                         {$labelText(category?.label ?? "")}
                       </span>
                     </button>

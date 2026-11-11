@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
 import {
   autoHibernateMode,
@@ -29,7 +30,7 @@ async function removeDomain(domain: string) {
 </script>
 
 <section class="setting-group" aria-labelledby="performance-heading">
-  <h2 class="group-title" id="performance-heading">{$t("settings.performance_privacy_41ef")}</h2>
+  <h2 class="group-title" id="performance-heading"><AppIcon name="rocket" /> {$t("settings.performance_privacy_41ef")}</h2>
 
   <div class="setting-row" id="setting-resident-limit" tabindex="-1">
     <div class="row-text"><span class="row-label">{$t("settings.resident_tab_limit_9a94")}</span><span class="row-desc">{$t("settings.keep_up_to_this_many_webviews_awake_active_pinned_loading_media_download_9f92")}</span></div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { onMount, onDestroy, untrack } from "svelte";
   import { get } from "svelte/store";
   import MediaButton from "../media/MediaButton.svelte";
@@ -97,7 +98,7 @@
   function handleBookmarkToggle() {
     const activeTab = $tabs.find((t) => t.is_active);
     const title = activeTab?.title || $currentUrl;
-    void openBookmarkEditor(title, $currentUrl, "⭐");
+    void openBookmarkEditor(title, $currentUrl, "star");
   }
 </script>
 
@@ -124,7 +125,7 @@
           <span class="brand-dot"></span>
           <span class="brand-name" data-tauri-drag-region>Spark</span>
           {#if activeWs}
-            <span class="ws-badge">{activeWs.icon} {activeWs.name}</span>
+            <span class="ws-badge"><AppIcon name={activeWs.icon} /> {activeWs.name}</span>
           {/if}
         </div>
       {/if}
@@ -176,7 +177,7 @@
       </div>
 
       <div class="omnibox-wrapper" class:loading={$isLoading} title={$activeNavigation?.error ?? undefined}>
-        {#if suspicious}<button type="button" class="suspicious-address" aria-expanded={showSuspiciousHost} title={$t("titlebar.suspicious_address", { host: suspicious.host })} aria-label={$t("titlebar.suspicious_address", { host: suspicious.host })} onclick={() => showSuspiciousHost = !showSuspiciousHost}>⚠</button>{#if showSuspiciousHost}<span role="status">{suspicious.host}</span>{/if}{/if}
+        {#if suspicious}<button type="button" class="suspicious-address" aria-expanded={showSuspiciousHost} title={$t("titlebar.suspicious_address", { host: suspicious.host })} aria-label={$t("titlebar.suspicious_address", { host: suspicious.host })} onclick={() => showSuspiciousHost = !showSuspiciousHost}><AppIcon name="alert" /></button>{#if showSuspiciousHost}<span role="status">{suspicious.host}</span>{/if}{/if}
         <button class="omnibox-icon" disabled={internalPage} onclick={openSitePermissions} aria-label={internalPage ? $t("newtab.internal") : $t("titlebar.site_permissions_a688")} title={internalPage ? $t("newtab.internal") : $currentUrl.startsWith("https:") ? $t("titlebar.https_connection_site_permissions_9979") : $t("titlebar.unencrypted_connection_site_permissions_7add")}>{internalPage ? "\u25C7" : $currentUrl.startsWith("https:") ? "\u{1F512}" : "\u26A0"}</button>
         <input
           class="omnibox-input"

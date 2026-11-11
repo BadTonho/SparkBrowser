@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { describeError } from "../../services/user-errors.js";
   import { t, tr } from "../../i18n";
@@ -17,7 +18,7 @@
 
   let title = $state("");
   let url = $state("");
-  let icon = $state("⭐");
+  let icon = $state("star");
   let selectedFolderId = $state<number | null>(null);
   let folderName = $state("");
   let newFolderName = $state("");
@@ -224,7 +225,7 @@
             <div class="folder-manager-list">
               {#each $bookmarkFolders as folder (folder.id)}
                 <div class="folder-manager-row">
-                  <span aria-hidden="true">📁</span>
+                  <span aria-hidden="true"><AppIcon name="folder" /></span>
                   <input
                     value={folderDrafts[folder.id] ?? folder.name}
                     maxlength="64"

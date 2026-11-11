@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
   import { fade, fly } from "svelte/transition";
@@ -98,7 +99,7 @@
               aria-label={workspace.name}
               onclick={() => chooseWorkspaceFromPicker(workspace.id)}
             >
-              <span class="workspace-icon" aria-hidden="true">{workspace.icon}</span>
+              <span class="workspace-icon" aria-hidden="true"><AppIcon name={workspace.icon} /></span>
               <span class="workspace-name">{workspace.name}</span>
             </button>
           {/each}

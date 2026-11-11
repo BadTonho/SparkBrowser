@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import ContainerBadge from "./ContainerBadge.svelte";
   import type { TabItem } from "../../types/browser";
   import { startTabDrag, tabDrag } from "../../stores/tabDragStore";
@@ -22,13 +23,13 @@
   }
 
   function getTabGlyph(rawUrl: string, isHibernated: boolean): string {
-    if (isHibernated) return "💤";
+    if (isHibernated) return "sleep";
     const lower = rawUrl.toLowerCase();
-    if (lower.includes("duckduckgo")) return "🦆";
-    if (lower.includes("github")) return "🐙";
-    if (lower.includes("rust-lang")) return "🦀";
-    if (lower.includes("wikipedia")) return "🌐";
-    if (lower.includes("youtube")) return "▶️";
+    if (lower.includes("duckduckgo")) return "search";
+    if (lower.includes("github")) return "code";
+    if (lower.includes("rust-lang")) return "box";
+    if (lower.includes("wikipedia")) return "globe";
+    if (lower.includes("youtube")) return "play";
     return "✦";
   }
 
@@ -86,7 +87,7 @@
         title={getTabTooltip(tab, $tabsMemory[tab.id])}
       >
         <TabMuteButton tabId={tab.id} />
-        <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
+        <span class="tab-glyph"><AppIcon name={getTabGlyph(tab.url, tab.is_hibernated)} /></span>
         {#if tab.container_id}<ContainerBadge id={tab.container_id} />{/if}
         {#if tab.is_ephemeral}
           <span class="ephemeral-badge" title={$t("tabs.ephemeral_tooltip")}>

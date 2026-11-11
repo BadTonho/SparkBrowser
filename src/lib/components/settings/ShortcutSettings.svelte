@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
 import { errorText } from "../../i18n/errors";
   import { t, labelText } from "../../i18n";
 import {
@@ -12,7 +13,7 @@ let { error, onStart }: { error: string; onStart: (id: string) => void } = $prop
 </script>
 
 <section class="setting-group" aria-labelledby="shortcuts-heading">
-  <h2 class="group-title" id="shortcuts-heading">{$t("settings.keyboard_shortcuts_4e09")}</h2>
+  <h2 class="group-title" id="shortcuts-heading"><AppIcon name="keyboard" /> {$t("settings.keyboard_shortcuts_4e09")}</h2>
   <div class="shortcuts-grid">
     {#each SHORTCUT_DEFINITIONS as item}
       {@const binding = getShortcutBinding($keyboardShortcuts, item.id)}

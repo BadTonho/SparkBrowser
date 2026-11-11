@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -72,7 +73,7 @@
         {#if $readerArticle}
           <div class="meta-pills">
             <span class="read-time-pill">
-              ⏱️ {$t("reader.read_time", { mins: $readerArticle.reading_time_mins })}
+              <AppIcon name="timer" /> {$t("reader.read_time", { mins: $readerArticle.reading_time_mins })}
             </span>
             <span class="word-count-pill">
               {$t("reader.words", { words: $readerArticle.word_count })}

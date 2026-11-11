@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
   import {
     workspaces,
@@ -63,7 +64,7 @@
         : $t("workspaces.switch_to_p0_workspace_c856", { p0: ws.name })}
       style="--ws-primary: {ws.accent_primary}; --ws-secondary: {ws.accent_secondary};"
     >
-      <span class="ws-icon">{ws.icon}</span>
+      <span class="ws-icon"><AppIcon name={ws.icon} /></span>
       <span class="ws-name">{ws.name}</span>
     </button>
   {/each}

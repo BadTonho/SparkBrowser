@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import TabList from "../tabs/TabList.svelte";
@@ -47,7 +48,7 @@
             oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
             title={item.url}
           >
-            <span class="quick-icon">{item.icon}</span>
+            <span class="quick-icon"><AppIcon name={item.icon} /></span>
             <span class="quick-title">{item.title}</span>
           </button>
         {/each}
@@ -58,7 +59,7 @@
       {@const folderBookmarks = ($bookmarksByFolder.get(folder.id) ?? [])}
       <details class="bookmark-folder" open={false}>
         <summary oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "folder", folder })}>
-          <span aria-hidden="true">📁</span><span>{folder.name}</span><span class="folder-count">{folderBookmarks.length}</span>
+          <span aria-hidden="true"><AppIcon name="folder" /></span><span>{folder.name}</span><span class="folder-count">{folderBookmarks.length}</span>
         </summary>
         {#if folderBookmarks.length > 0}
           <div class="quick-links-grid folder-links">
@@ -70,7 +71,7 @@
                 oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
                 title={item.url}
               >
-                <span class="quick-icon">{item.icon}</span>
+                <span class="quick-icon"><AppIcon name={item.icon} /></span>
                 <span class="quick-title">{item.title}</span>
               </button>
             {/each}

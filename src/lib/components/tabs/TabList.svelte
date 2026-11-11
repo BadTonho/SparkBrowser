@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import ContainerBadge from "./ContainerBadge.svelte";
   import { startTabDrag, cancelTabDrag, tabDrag } from "../../stores/tabDragStore";
   import TabMuteButton from "../media/TabMuteButton.svelte";
@@ -41,13 +42,13 @@
   }
 
   function getTabGlyph(rawUrl: string, isHibernated: boolean): string {
-    if (isHibernated) return "💤";
+    if (isHibernated) return "sleep";
     const lower = rawUrl.toLowerCase();
-    if (lower.includes("duckduckgo")) return "🦆";
-    if (lower.includes("github")) return "🐙";
-    if (lower.includes("rust-lang")) return "🦀";
-    if (lower.includes("wikipedia")) return "🌐";
-    if (lower.includes("youtube")) return "▶️";
+    if (lower.includes("duckduckgo")) return "search";
+    if (lower.includes("github")) return "code";
+    if (lower.includes("rust-lang")) return "box";
+    if (lower.includes("wikipedia")) return "globe";
+    if (lower.includes("youtube")) return "play";
     return "✦";
   }
 
@@ -152,17 +153,17 @@
         </div>
         <div class="tab-active-bar"></div>
         <TabMuteButton tabId={tab.id} />
-        <span class="tab-glyph">{getTabGlyph(tab.url, tab.is_hibernated)}</span>
+        <span class="tab-glyph"><AppIcon name={getTabGlyph(tab.url, tab.is_hibernated)} /></span>
         {#if tab.container_id}<ContainerBadge id={tab.container_id} />{/if}
         <div class="tab-meta">
           <span class="tab-title" class:is-hibernated={tab.is_hibernated}>{tab.title}</span>
           <span class="tab-host">
             {getTabHost(tab.url)}
             {#if tab.is_hibernated}
-              <span class="hibernated-badge">· 💤 {formatTabSavings(tab.id)}</span>
+              <span class="hibernated-badge">· <AppIcon name="sleep" /> {formatTabSavings(tab.id)}</span>
             {/if}
             {#if tab.is_ephemeral}
-              <span class="ephemeral-tag">· 🕵️ {$t("tabs.ephemeral_badge")}</span>
+              <span class="ephemeral-tag">· <AppIcon name="eye-off" /> {$t("tabs.ephemeral_badge")}</span>
             {/if}
           </span>
         </div>
@@ -176,7 +177,7 @@
               title={$t("tabs.hibernate_tab_to_free_ram_8298")}
               aria-label={$t("tabs.hibernate_tab_1b5f")}
             >
-              💤
+              <AppIcon name="sleep" />
             </button>
           {/if}
           <button

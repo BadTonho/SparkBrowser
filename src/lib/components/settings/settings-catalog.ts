@@ -9,12 +9,12 @@ export const categories: {
     { id: "data_backup", icon: "⇩", label: "Data & Backup" },
     { id: "updates", icon: "↻", label: "About & Updates" },
     { id: "diagnostics", icon: "◷", label: "Local Diagnostics" },
-    { id: "appearance_layout", icon: "🖥️", label: "Appearance & Layout" },
-    { id: "search_navigation", icon: "🔎", label: "Search & Navigation" },
-    { id: "workspaces", icon: "🎨", label: "Workspaces & Theme" },
-    { id: "performance_privacy", icon: "🚀", label: "Performance" },
-    { id: "privacy_security", icon: "🛡️", label: "Privacy & Security" },
-    { id: "shortcuts", icon: "⌨️", label: "Keyboard Shortcuts" },
+    { id: "appearance_layout", icon: "monitor", label: "Appearance & Layout" },
+    { id: "search_navigation", icon: "search", label: "Search & Navigation" },
+    { id: "workspaces", icon: "palette", label: "Workspaces & Theme" },
+    { id: "performance_privacy", icon: "rocket", label: "Performance" },
+    { id: "privacy_security", icon: "shield", label: "Privacy & Security" },
+    { id: "shortcuts", icon: "keyboard", label: "Keyboard Shortcuts" },
   ];
 
 export type SearchEntry = {

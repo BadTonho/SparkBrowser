@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
   import { isSitePermissionsOpen, permissionRequests } from "../../stores/sitePermissionsStore";
   import SplitDivider from "./SplitDivider.svelte";
@@ -87,7 +88,7 @@
       {#if (!inTauri || !$isWorkspaceSwitcherOverlayOpen) && !$titlebarMenu}
         <div class="browser-preview-fallback">
           <div class="fallback-card">
-            <h2>{$t("viewport.multi_webview_viewport_5f2a")}{$tabs.length} {$tabs.length === 1 ? $t("viewport.tab_90dd") : $t("viewport.tabs_8e5e")})</h2>
+            <h2><AppIcon name="box" /> {$t("viewport.multi_webview_viewport_5f2a")}{$tabs.length} {$tabs.length === 1 ? $t("viewport.tab_90dd") : $t("viewport.tabs_8e5e")})</h2>
             <p>{$t("viewport.active_url_fa41")} <strong>{$currentUrl}</strong></p>
             <p class="hint">
               {#if blockingOverlayOpen}

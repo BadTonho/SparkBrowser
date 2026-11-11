@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { describeError } from "../../services/user-errors.js";
   import { t, plural } from "../../i18n";
@@ -37,15 +38,15 @@
   function getKindIcon(kind: string): string {
     switch (kind) {
       case "notifications":
-        return "🔔";
+        return "bell";
       case "camera":
-        return "📷";
+        return "camera";
       case "microphone":
-        return "🎙️";
+        return "mic";
       case "location":
-        return "📍";
+        return "map-pin";
       default:
-        return "🔒";
+        return "lock";
     }
   }
 
@@ -71,7 +72,7 @@
       use:focusDialog={{ onEscape: () => respond("block") }}
     >
       <div class="popover-header">
-        <span class="kind-icon">{getKindIcon(request.kind)}</span>
+        <span class="kind-icon"><AppIcon name={getKindIcon(request.kind)} /></span>
         <div class="header-titles">
           <h3>{$t("permissions.site_permission_request_1192")}</h3>
           <span class="origin-host">{cleanOrigin(request.frame_origin ?? request.origin)}</span>

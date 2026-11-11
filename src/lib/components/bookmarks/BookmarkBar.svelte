@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
   import { onDestroy } from "svelte";
   import {
@@ -61,7 +62,7 @@
         title={item.url}
         aria-label="{$t("bookmarks.open_bookmark_9217")} {item.title}"
       >
-        <span class="bookmark-icon" aria-hidden="true">{item.icon}</span>
+        <span class="bookmark-icon" aria-hidden="true"><AppIcon name={item.icon} /></span>
         <span class="bookmark-title">{item.title}</span>
       </button>
     {/each}
@@ -75,7 +76,7 @@
           aria-expanded={openFolderId === folder.id}
           aria-label="{$t("bookmarks.open_folder_ae74")} {folder.name}"
         >
-          <span aria-hidden="true">📁</span>
+          <span aria-hidden="true"><AppIcon name="folder" /></span>
           <span class="bookmark-title">{folder.name}</span>
           <span class="folder-count">{($bookmarksByFolder.get(folder.id) ?? []).length}</span>
         </button>
@@ -92,7 +93,7 @@
     role="menu"
     aria-label="{openFolder.name} {$t("bookmarks.bookmarks_37d1")}"
   >
-    <div class="folder-menu-heading">📁 {openFolder.name}</div>
+    <div class="folder-menu-heading"><AppIcon name="folder" /> {openFolder.name}</div>
     {#if openFolderBookmarks.length === 0}
       <span class="bookmark-empty">{$t("bookmarks.this_folder_is_empty_3043")}</span>
     {:else}
@@ -104,7 +105,7 @@
           oncontextmenu={(event) => showBookmarkContextMenu(event, { kind: "bookmark", bookmark: item })}
           title={item.url}
         >
-          <span aria-hidden="true">{item.icon}</span><span>{item.title}</span>
+          <span aria-hidden="true"><AppIcon name={item.icon} /></span><span>{item.title}</span>
         </button>
       {/each}
     {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { createCommandQuery } from "../../services/command-query.js";
   import { searchCommandItems, emptyCommandSearch } from "../../services/bridge/command-search";
   import type { CommandSearchResult } from "../../types/command-search";
@@ -109,7 +110,7 @@
         id: "open-new-tab",
         title: $t("commandbar.open_p0_in_a_new_tab_1c56", { p0: query.trim() }),
         subtitle: $t("commandbar.creates_a_new_isolated_rust_webview_tab_23ab"),
-        icon: "🚀",
+        icon: "rocket",
         badge: $t("commandbar.new_tab_822c"),
         action: async () => {
           const target = query.trim();
@@ -122,7 +123,7 @@
         id: "navigate-current",
         title: $t("commandbar.navigate_current_tab_to_p0_62a5", { p0: query.trim() }),
         subtitle: $t("commandbar.loads_url_or_search_in_the_active_tab_822c"),
-        icon: "🧭",
+        icon: "compass",
         badge: $t("commandbar.navigate_5ea5"),
         action: async () => {
           const target = query.trim();
@@ -155,7 +156,7 @@
           id: `switch-${tab.id}`,
           title: tab.title,
           subtitle: `${tab.url} · ${$t("commandbar.tab_in_workspace", { p0: workspaceName })}`,
-          icon: tab.is_hibernated ? "💤" : tab.is_active ? "🟢" : "🗂️",
+          icon: tab.is_hibernated ? "sleep" : tab.is_active ? "status-online" : "tabs",
           badge: tab.is_active
             ? $t("common.active_tab")
             : tab.is_hibernated
@@ -215,7 +216,7 @@
         id: "cmd-zen",
         title: $t("commandbar.toggle_zen_focus_mode_eaad"),
         subtitle: $t("commandbar.hide_all_browser_toolbars_for_100_fullscreen_web_p0_ae51", { p0: shortcuts && shortcutLabel("zen") }),
-        icon: "🧘",
+        icon: "leaf",
         badge: $t("commandbar.zen_mode_826b"),
         action: async () => {
           await closeCommandBar();
@@ -226,7 +227,7 @@
         id: "cmd-downloads",
         title: $t("commandbar.open_download_manager_d563"),
         subtitle: $t("commandbar.view_downloaded_files_or_save_a_url_p0_4a0b", { p0: shortcutLabel("downloads") }),
-        icon: "📥",
+        icon: "download",
         badge: $t("commandbar.downloads_d5fd"),
         action: async () => {
           await closeCommandBar();
@@ -237,7 +238,7 @@
         id: "cmd-settings",
         title: $t("commandbar.open_browser_settings_shortcuts_55cd"),
         subtitle: $t("commandbar.customize_themes_hibernation_timer_view_shortcuts_p0_4bdc", { p0: shortcutLabel("settings") }),
-        icon: "⚙️",
+        icon: "settings",
         badge: $t("commandbar.settings_74a8"),
         action: async () => {
           await closeCommandBar();
@@ -248,7 +249,7 @@
         id: "cmd-hibernate",
         title: $t("commandbar.hibernate_inactive_tabs_free_ram_5e90"),
         subtitle: $t("commandbar.suspends_background_webviews_while_keeping_tabs_in_sidebar_16ea"),
-        icon: "💤",
+        icon: "sleep",
         badge: $t("commandbar.ram_saver_c859"),
         action: async () => {
           await closeCommandBar();
@@ -259,7 +260,7 @@
         id: "cmd-history",
         title: $t("commandbar.open_browsing_history_a45d"),
         subtitle: $t("commandbar.search_or_clear_local_sqlite_history_p0_148b", { p0: shortcutLabel("history") }),
-        icon: "🕒",
+        icon: "clock",
         badge: "SQLite",
         action: async () => {
           await closeCommandBar();
@@ -270,7 +271,7 @@
         id: "cmd-adblock",
         title: $t("commandbar.toggle_native_rust_adblock_shield_a0eb"),
         subtitle: $t("commandbar.enable_or_pause_network_cosmetic_tracker_blocking_1652"),
-        icon: "🛡️",
+        icon: "shield",
         badge: $t("commandbar.privacy_54a5"),
         action: async () => {
           await closeCommandBar();
@@ -281,7 +282,7 @@
         id: "cmd-toggle-sidebar",
         title: $t("commandbar.toggle_sidebar_1d4c"),
         subtitle: $t("commandbar.collapse_or_expand_the_vertical_tab_bar_p0_b3fc", { p0: shortcutLabel("sidebar") }),
-        icon: "📐",
+        icon: "ruler",
         badge: $t("commandbar.command_7131"),
         action: async () => {
           await closeCommandBar();
@@ -292,7 +293,7 @@
         id: "cmd-reload",
         title: $t("commandbar.reload_active_tab_89d3"),
         subtitle: $t("commandbar.refresh_the_current_web_page_p0_9ea5", { p0: shortcutLabel("reload-tab") }),
-        icon: "🔄",
+        icon: "refresh",
         badge: $t("commandbar.command_7131"),
         action: async () => {
           await closeCommandBar();
@@ -362,7 +363,7 @@
       tabindex="-1"
     >
       <div class="command-input-bar">
-        <span class="spark-icon">⚡</span>
+        <span class="spark-icon"><AppIcon name="zap" /></span>
         <input
           bind:this={inputEl}
           bind:value={$commandQuery}
@@ -388,7 +389,7 @@
             onmouseenter={() => (selectedId = item.id)}
             onclick={() => execute(item)}
           >
-            <span class="item-icon">{item.icon}</span>
+            <span class="item-icon"><AppIcon name={item.icon} /></span>
             <div class="item-text">
               <span class="item-title">{item.title}</span>
               <span class="item-subtitle">{item.subtitle}</span>

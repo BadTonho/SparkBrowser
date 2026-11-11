@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { t, plural, formatNumber } from "../../i18n";
   import { privacyStats, flipAdblockShield } from "../../stores/privacyStore";
   import { tabs, suspendInactiveTabs } from "../../stores/browserStore";
@@ -13,14 +14,14 @@
   <div class="shield-top">
     <div class="shield-info">
       <span class="shield-icon">
-        {$privacyStats.shield_enabled ? "🛡️" : "⚪"}
+        {$privacyStats.shield_enabled ? "shield" : "circle-filled"}
       </span>
       <div class="shield-labels">
         <span class="shield-title">
           {$privacyStats.shield_enabled ? $t("privacy.privacy_shield_active_3f20") : $t("privacy.shield_paused_01b0")}
         </span>
         <span class="shield-sub">
-          {$formatNumber($privacyStats.blocked_count)} {$t("privacy.trackers_blocked_d400")} {$formatNumber(hibernatedCount)} {$t("privacy.saved_f3d3")}
+          {$formatNumber($privacyStats.blocked_count)} {$t("privacy.trackers_blocked_d400")} {$formatNumber(hibernatedCount)} <AppIcon name="sleep" /> {$t("privacy.saved_f3d3")}
         </span>
       </div>
     </div>
@@ -44,7 +45,7 @@
       onclick={() => suspendInactiveTabs(0)}
       title={$t("privacy.hibernate_all_background_tabs_to_free_ram_immediately_dea9")}
     >
-      <span>{$plural(backgroundAwakeCount, $t("common.hibernate_one"), $t("common.hibernate_other"))}</span>
+      <span><AppIcon name="sleep" /> {$plural(backgroundAwakeCount, $t("common.hibernate_one"), $t("common.hibernate_other"))}</span>
     </button>
   {/if}
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { t, formatDate } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
@@ -167,7 +168,7 @@
     >
       <div class="history-header">
         <div class="header-title">
-          <span>{$t("history.browsing_history_sqlite_59d8")}</span>
+          <span><AppIcon name="clock" /> {$t("history.browsing_history_sqlite_59d8")}</span>
         </div>
         <div class="header-actions">
           {#if $historyEntries.length > 0}

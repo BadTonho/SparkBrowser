@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import AccountContainerSettings from "./AccountContainerSettings.svelte";
   import { onMount } from "svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
@@ -136,7 +137,7 @@
 
 <section class="setting-group" aria-labelledby="workspaces-heading">
   <div class="section-heading">
-    <h2 class="group-title" id="workspaces-heading">{$t("settings.workspaces_theme_0497")}</h2>
+    <h2 class="group-title" id="workspaces-heading"><AppIcon name="palette" /> {$t("settings.workspaces_theme_0497")}</h2>
     <button class="primary-action" onclick={startNewWorkspace}>{$t("settings.create_workspace_a862")}</button>
   </div>
 
@@ -175,7 +176,7 @@
         onclick={() => editWorkspace(workspace)}
         style="--c1: {workspace.accent_primary}; --c2: {workspace.accent_secondary};"
       >
-        <span class="workspace-icon">{workspace.icon || "◌"}</span>
+        <span class="workspace-icon"><AppIcon name={workspace.icon || "◌"} /></span>
         <span class="workspace-name">{workspace.name}</span>
         {#if $activeWorkspaceId === workspace.id}
           <span class="active-badge">{$t("settings.active_9234")}</span>
@@ -229,7 +230,7 @@
               <span>{$t("settings.move_tabs_to_438f")}</span>
               <select bind:value={deleteTargetId} disabled={deleteAction !== "move"}>
                 {#each $workspaces.filter((workspace) => workspace.id !== selectedWorkspaceId) as destination (destination.id)}
-                  <option value={destination.id}>{destination.icon} {destination.name}</option>
+                  <option value={destination.id}>{destination.name}</option>
                 {/each}
               </select>
             </label>

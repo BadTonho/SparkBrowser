@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import ZoomSettings from "./ZoomSettings.svelte";
   import { t } from "../../i18n";
 import SiteSearchSettings from "./SiteSearchSettings.svelte";
@@ -11,7 +12,7 @@ import {
 </script>
 
 <section class="setting-group" aria-labelledby="search-heading">
-  <h2 class="group-title" id="search-heading">{$t("settings.search_navigation_58d9")}</h2>
+  <h2 class="group-title" id="search-heading"><AppIcon name="search" /> {$t("settings.search_navigation_58d9")}</h2>
   <div class="setting-row" id="setting-default-search-engine" tabindex="-1">
     <div class="row-text">
       <span class="row-label">{$t("settings.default_search_engine_2779")}</span>

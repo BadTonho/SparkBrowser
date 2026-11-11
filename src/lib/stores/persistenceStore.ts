@@ -68,7 +68,7 @@ export async function loadBookmarks(): Promise<void> {
   applyBookmarkData(await fetchBookmarkData());
 }
 
-export async function openBookmarkEditor(title: string, url: string, icon = "⭐"): Promise<void> {
+export async function openBookmarkEditor(title: string, url: string, icon = "star"): Promise<void> {
   const existing = get(bookmarks).find((item) => item.url === url) ?? null;
   bookmarkEditorState.set({
     kind: "save",

@@ -116,7 +116,7 @@ export function createWorkspaceDraft(): WorkspaceItem {
   return {
     id: `ws-custom-${randomId}`,
     name: "New Workspace",
-    icon: "📁",
+    icon: "folder",
     ...NEW_WORKSPACE_DEFAULT_COLORS,
   };
 }

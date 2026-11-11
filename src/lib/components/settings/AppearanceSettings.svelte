@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
 import LanguageSettings from "./LanguageSettings.svelte";
 import PipAppearanceSettings from "./PipAppearanceSettings.svelte";
   import { t } from "../../i18n";
@@ -37,7 +38,7 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
 </script>
 
 <section class="setting-group" aria-labelledby="appearance-heading">
-  <h2 class="group-title" id="appearance-heading">{$t("settings.appearance_layout_a2b1")}</h2>
+  <h2 class="group-title" id="appearance-heading"><AppIcon name="monitor" /> {$t("settings.appearance_layout_a2b1")}</h2>
 
   <LanguageSettings />
   <PipAppearanceSettings />
@@ -54,7 +55,7 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
         aria-pressed={$themeMode === "dark"}
         onclick={() => setThemeMode("dark")}
       >
-        {$t("settings.theme_dark")}
+        <AppIcon name="moon" /> {$t("settings.theme_dark")}
       </button>
       <button
         class="mini-pill"
@@ -62,7 +63,7 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
         aria-pressed={$themeMode === "light"}
         onclick={() => setThemeMode("light")}
       >
-        {$t("settings.theme_light")}
+        <AppIcon name="sun" /> {$t("settings.theme_light")}
       </button>
     </div>
   </div>
@@ -150,7 +151,7 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
         aria-pressed={$windowSurfaceStyle === "frosted"}
         onclick={() => setWindowSurfaceStyle("frosted")}
       >
-        {$t("settings.window_surface_frosted")}
+        <AppIcon name="window" /> {$t("settings.window_surface_frosted")}
       </button>
       <button
         class="mini-pill"
@@ -158,7 +159,7 @@ import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../sto
         aria-pressed={$windowSurfaceStyle === "solid"}
         onclick={() => setWindowSurfaceStyle("solid")}
       >
-        {$t("settings.window_surface_solid")}
+        <AppIcon name="square-filled" /> {$t("settings.window_surface_solid")}
       </button>
     </div>
   </div>

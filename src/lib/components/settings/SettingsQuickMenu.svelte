@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AppIcon from "../icons/AppIcon.svelte";
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import { focusDialog } from "../../actions/focusDialog";
   import { panelPosition } from "../../services/panel-presentation";
@@ -70,8 +71,8 @@
         <div class="settings-quick-section" aria-labelledby="settings-quick-theme-label">
           <h3 id="settings-quick-theme-label">{$t("settings.theme_mode")}</h3>
           <div class="settings-quick-options" role="group" aria-label={$t("settings.theme_mode")}>
-            <button class:active={$themeMode === "light"} aria-pressed={$themeMode === "light"} data-testid="settings-quick-theme-light" onclick={() => setThemeMode("light")}>{$t("settings.theme_light")}</button>
-            <button class:active={$themeMode === "dark"} aria-pressed={$themeMode === "dark"} data-testid="settings-quick-theme-dark" onclick={() => setThemeMode("dark")}>{$t("settings.theme_dark")}</button>
+            <button class:active={$themeMode === "light"} aria-pressed={$themeMode === "light"} data-testid="settings-quick-theme-light" onclick={() => setThemeMode("light")}><AppIcon name="sun" /> {$t("settings.theme_light")}</button>
+            <button class:active={$themeMode === "dark"} aria-pressed={$themeMode === "dark"} data-testid="settings-quick-theme-dark" onclick={() => setThemeMode("dark")}><AppIcon name="moon" /> {$t("settings.theme_dark")}</button>
           </div>
         </div>
 
