@@ -87,6 +87,7 @@
     "allow-set-tab-pinned",
     "allow-create-tab",
     "allow-create-ephemeral-tab",
+    "allow-open-private-window",
     "allow-get-reader-article",
     "allow-switch-tab",
     "allow-close-tab",

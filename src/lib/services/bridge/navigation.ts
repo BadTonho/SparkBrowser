@@ -134,3 +134,8 @@ export async function moveTabToWorkspace(
   if(!isTauriRuntime()) return [];
   return await invoke<TabSnapshot>("move_tab_to_workspace", { tabId, workspaceId });
 }
+
+export async function openPrivateWindow(): Promise<void> {
+  if (!isTauriRuntime()) return;
+  await invoke<void>("open_private_window");
+}

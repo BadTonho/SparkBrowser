@@ -106,7 +106,8 @@
   import {
     onPrivacyStatsUpdated,
     onBrowserShortcutAction,
-  } from "./lib/services/tauri-bridge";
+    openPrivateWindow,
+} from "./lib/services/tauri-bridge";
   import WorkspaceSwitcherOverlay from "./lib/components/workspaces/WorkspaceSwitcherOverlay.svelte";
   import {
     cancelWorkspaceAltHoldTimer,
@@ -350,6 +351,7 @@
       case "move-tab-down":
       case "move-tab-down-ctrl-shift": moveActiveTabDown(get(activeWorkspaceId)); break;
       case "new-tab": addTab(undefined, get(activeWorkspaceId)); break;
+      case "private-window": openPrivateWindow().catch((error) => console.warn(error)); break;
       case "navigate-back": void triggerBack(); break;
       case "navigate-forward": void triggerForward(); break;
       case "command-bar": toggleCommandBar(); break;

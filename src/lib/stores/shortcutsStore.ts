@@ -35,6 +35,7 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
   { id: "zoom-out", label: "Zoom out", description: "Decrease page zoom", defaults: [combo("-", { ctrl: true })] },
   { id: "zoom-reset", label: "Reset page zoom", description: "Restore page zoom to 100%", defaults: [combo("0", { ctrl: true })] },
   { id: "reopen-tab", label: "Reopen closed tab", description: "Restore the most recently closed tab", defaults: [combo("T", { ctrl: true, shift: true })] },
+  { id: "private-window", label: "Open private window", description: "Open a separate window that keeps no history, cookies or session", defaults: [combo("N", { ctrl: true, shift: true })] },
   { id: "switch-tabs", label: "Switch to Tab 1–9 (9: Last Tab)", description: "Switch tabs by number", defaults: [combo("Digit", { ctrl: true })], sequence: "digit" },
   { id: "workspace-picker", label: "Open the workspace picker", description: "Hold a modifier to show workspaces", defaults: [combo("Alt")], hold: true },
   { id: "switch-workspaces", label: "Switch workspaces by list order", description: "Switch to a workspace by number", defaults: [combo("Digit", { alt: true })], sequence: "digit" },

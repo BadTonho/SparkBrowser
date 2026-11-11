@@ -24,6 +24,7 @@ pub const SHORTCUT_IDS: &[&str] = &[
     "zoom-in",
     "zoom-out",
     "zoom-reset",
+    "private-window",
     "reopen-tab",
     "switch-tabs",
     "next-tab",

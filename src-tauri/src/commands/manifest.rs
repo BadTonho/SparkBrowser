@@ -99,6 +99,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_tab_pinned",
     "create_tab",
     "create_ephemeral_tab",
+    "open_private_window",
     "get_reader_article",
     "focus_address_bar",
     "set_new_tab_preferences",

@@ -237,6 +237,12 @@
           "markdownDescription": "Enables the clear_closed_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the close_private_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-close-private-window",
+          "markdownDescription": "Enables the close_private_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the close_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-close-tab",
@@ -295,6 +301,12 @@
           "type": "string",
           "const": "allow-create-ephemeral-tab",
           "markdownDescription": "Enables the create_ephemeral_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the create_private_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-private-tab",
+          "markdownDescription": "Enables the create_private_tab command without any pre-configured scope."
         },
         {
           "description": "Enables the create_tab command without any pre-configured scope.",
@@ -699,6 +711,12 @@
           "markdownDescription": "Enables the navigate_to command without any pre-configured scope."
         },
         {
+          "description": "Enables the open_private_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-private-window",
+          "markdownDescription": "Enables the open_private_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the open_whatsapp_window command without any pre-configured scope.",
           "type": "string",
           "const": "allow-open-whatsapp-window",
@@ -715,6 +733,18 @@
           "type": "string",
           "const": "allow-preview-backup-import",
           "markdownDescription": "Enables the preview_backup_import command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the private_window_go command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-private-window-go",
+          "markdownDescription": "Enables the private_window_go command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the private_window_navigate command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-private-window-navigate",
+          "markdownDescription": "Enables the private_window_navigate command without any pre-configured scope."
         },
         {
           "description": "Enables the pull_backup_sync command without any pre-configured scope.",
@@ -1203,6 +1233,12 @@
           "markdownDescription": "Denies the clear_closed_tabs command without any pre-configured scope."
         },
         {
+          "description": "Denies the close_private_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-close-private-window",
+          "markdownDescription": "Denies the close_private_window command without any pre-configured scope."
+        },
+        {
           "description": "Denies the close_tab command without any pre-configured scope.",
           "type": "string",
           "const": "deny-close-tab",
@@ -1261,6 +1297,12 @@
           "type": "string",
           "const": "deny-create-ephemeral-tab",
           "markdownDescription": "Denies the create_ephemeral_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the create_private_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-private-tab",
+          "markdownDescription": "Denies the create_private_tab command without any pre-configured scope."
         },
         {
           "description": "Denies the create_tab command without any pre-configured scope.",
@@ -1665,6 +1707,12 @@
           "markdownDescription": "Denies the navigate_to command without any pre-configured scope."
         },
         {
+          "description": "Denies the open_private_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-private-window",
+          "markdownDescription": "Denies the open_private_window command without any pre-configured scope."
+        },
+        {
           "description": "Denies the open_whatsapp_window command without any pre-configured scope.",
           "type": "string",
           "const": "deny-open-whatsapp-window",
@@ -1681,6 +1729,18 @@
           "type": "string",
           "const": "deny-preview-backup-import",
           "markdownDescription": "Denies the preview_backup_import command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the private_window_go command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-private-window-go",
+          "markdownDescription": "Denies the private_window_go command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the private_window_navigate command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-private-window-navigate",
+          "markdownDescription": "Denies the private_window_navigate command without any pre-configured scope."
         },
         {
           "description": "Denies the pull_backup_sync command without any pre-configured scope.",

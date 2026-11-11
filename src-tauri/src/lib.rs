@@ -13,6 +13,7 @@ use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_ta
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::new_tab::set_new_tab_preferences;
+use commands::private_session::open_private_window;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
@@ -25,6 +26,7 @@ pub mod feeds;
 pub mod media;
 mod native_tests;
 pub mod privacy;
+pub mod private_session;
 pub mod recovery;
 pub mod security;
 pub mod shutdown;
@@ -115,13 +117,21 @@ use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVI
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let mode = private_session::Mode::from_args().expect("invalid private session arguments");
+    if let private_session::Mode::Cleanup(root) = &mode {
+        let _ = private_session::remove_session(root);
+        return;
+    }
     webview_runtime::restart::wait_for_parent()
         .expect("Runtime restart could not wait for the previous process");
     updates::initialize_crypto();
     let mut context = tauri::generate_context!();
     native_tests::configure(&mut context).expect("invalid native test directory");
+    let role = private_session::PrivateRole::from_mode(mode);
+    private_session::configure(&mut context, role.launch());
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(role)
         .manage(BrowserState::default())
         .manage(window::fullscreen::FullscreenState::default())
         .manage(webview_runtime::RuntimeService::default())
@@ -224,6 +234,17 @@ pub fn run() {
             );
             window::ephemeral::purge_all_ephemeral_data(app.handle())
                 .map_err(std::io::Error::other)?;
+            if app.state::<private_session::PrivateRole>().is_private() {
+                if let Some(window) = app.get_webview_window("main") {
+                    window
+                        .set_title("Veloce - Privada")
+                        .map_err(std::io::Error::other)?;
+                }
+                private_session::seed_profile(app.handle()).map_err(std::io::Error::other)?;
+            } else {
+                private_session::purge_stale_sessions(app.handle())
+                    .map_err(std::io::Error::other)?;
+            }
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
@@ -465,6 +486,7 @@ pub fn run() {
             set_tab_pinned,
             create_tab,
             create_ephemeral_tab,
+            open_private_window,
             get_reader_article,
             switch_tab,
             close_tab,

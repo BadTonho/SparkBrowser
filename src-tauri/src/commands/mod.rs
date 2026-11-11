@@ -37,6 +37,7 @@ pub mod command_search;
 pub mod media;
 pub mod minimum_font_probe;
 pub mod new_tab;
+pub mod private_session;
 pub mod reader;
 
 pub mod qr_code;

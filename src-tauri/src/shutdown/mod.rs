@@ -181,6 +181,7 @@ impl ShutdownService {
                             .unwrap_or_else(|| "shutdown.installer_returned".into()),
                     )
                 } else {
+                    crate::private_session::schedule_cleanup(&app);
                     app.exit(0);
                     self.snapshot()
                 }
