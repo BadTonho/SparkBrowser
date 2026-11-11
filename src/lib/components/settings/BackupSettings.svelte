@@ -481,13 +481,14 @@
   h3 { margin: 0; color: var(--text-primary); font-size: 16px; line-height: 1.35; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   article, aside { border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; margin-top: 0; background: var(--bg-glass, rgba(255, 255, 255, 0.025)); }
-  .backup-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
-  .manual-backup-card { display: flex; min-width: 0; min-height: 92px; flex-direction: column; justify-content: center; gap: 10px; }
-  .sync-panel { display: block; min-width: 0; min-height: 92px; padding: 14px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--bg-glass, rgba(255,255,255,.025)); }
-  .sync-compact-row { display: flex; min-height: 92px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 2px; text-align: center; cursor: pointer; list-style: none; }
+  .backup-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 270px)); align-items: start; justify-content: start; gap: 12px; }
+  .manual-backup-card { display: flex; box-sizing: border-box; width: 100%; max-width: 270px; min-width: 0; height: 128px; flex-direction: column; justify-content: center; gap: 8px; }
+  .sync-panel { display: block; box-sizing: border-box; width: 100%; max-width: 270px; height: 128px; min-width: 0; padding: 12px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--bg-glass, rgba(255,255,255,.025)); }
+  .sync-panel[open] { height: auto; min-height: 128px; }
+  .sync-compact-row { display: flex; box-sizing: border-box; min-height: 102px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 2px; text-align: center; cursor: pointer; list-style: none; }
   .sync-compact-row::-webkit-details-marker, .sync-compact-row::marker { display: none; }
   .sync-compact-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 8px; }
-  .sync-panel[open] > .sync-compact-row { min-height: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle); }
+  .sync-panel[open] > .sync-compact-row { min-height: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
   .sync-settings { display: flex; width: 100%; min-width: 0; flex-direction: column; gap: 9px; padding-top: 12px; }
   .sync-state-chip { display: inline-flex; max-width: 100%; align-items: center; justify-content: center; padding: 4px 10px; border: 1px solid var(--border-subtle); border-radius: 999px; background: rgba(255,255,255,.04); color: var(--text-secondary); font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
   .sync-state-chip.connection.connected, .sync-state-chip.synced { border-color: rgba(34, 197, 94, .35); background: rgba(34, 197, 94, .1); color: #86efac; }
@@ -601,12 +602,9 @@
     margin: 0;
     border-top: 1px solid var(--border-subtle);
   }
-  @media (max-width: 920px) {
-    .backup-cards { grid-template-columns: minmax(0, 1fr); }
-  }
   @media (max-width: 520px) {
     article, aside { padding: 14px; border-radius: 12px; }
-    .sync-compact-row { min-height: 100px; }
+    .manual-backup-card, .sync-panel { height: auto; min-height: 128px; }
     .gdrive-account-card { align-items: flex-start; }
     .gdrive-account-actions { width: 100%; }
     .gdrive-account-actions :global(button) { max-width: 100%; white-space: normal; text-align: left; }
