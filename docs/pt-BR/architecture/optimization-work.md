@@ -71,3 +71,13 @@ As leituras de sites recentes compartilham um cache por revisão da nova guia, m
 ## Diagnósticos locais
 
 As configurações exibem amostras limitadas de tempo de IPC em memória, contagens acumuladas de chamadas/erros, duração de operações nativas, linhas de sessão gravadas e contagens de abas residentes/protegidas. Os contadores de tempo omitem argumentos, URLs, títulos e tokens. O inventário local separado `get_diagnostics.tab_details` contém URLs/títulos das abas e IDs de workspace; a resposta também contém o diretório local de dados da aplicação. Os contadores de recursos informam quantidades de tokens de bridge, scripts do escudo, entradas de mídia e contextos de execução do Windows sem expor seus identificadores. Remova inventários/caminhos locais antes de compartilhar uma resposta de diagnóstico. Veja [validação de desempenho](../contributing/performance.md) para comparações reproduzíveis e limites de medição.
+
+## Inicialização, polling e armazenamento
+
+As listas de filtro em cache são reaproveitadas enquanto têm menos de 24 horas. A atualização em segundo plano espera o tempo restante, em vez de baixar e recompilar a cada abertura do app; um cache ausente é atualizado imediatamente. A compilação do motor continua síncrona na inicialização, então a proteção por filtros vale desde a primeira requisição. Movê-la para fora da thread principal exige antes um formato serializado do motor e medições.
+
+O painel de popover lê as variáveis de tema só depois que o estilo, as classes ou os atributos de tema do elemento raiz mudam, em vez de chamar `getComputedStyle` a cada frame. Enquanto um popover está aberto, o acompanhamento da âncora ainda usa um callback por frame, porque transformações CSS podem mover o botão sem redimensioná-lo.
+
+O polling de mídia continua para descobrir vídeos. Ele roda a cada 3 segundos quando a aba em foco não tem áudio, vídeo nem frames tocando, e a cada segundo quando há mídia. Por isso, um vídeo adicionado a uma página ociosa pode levar até 3 segundos para aparecer.
+
+As conexões SQLite definem um tempo limite de ocupado, armazenamento temporário em memória, um cache de páginas de 8 MB e um limite de memória mapeada de 256 MB. As consultas de listagem de histórico e favoritos usam instruções preparadas em cache.

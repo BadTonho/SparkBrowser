@@ -72,3 +72,13 @@ Recent-site reads share a cache keyed by the new-tab revision, SQLite connection
 ## Local diagnostics
 
 Settings exposes bounded in-memory IPC timing samples, cumulative call/error counts, native operation spans, session rows written and resident/protected tab counts. Timing counters omit command arguments, page URLs, titles and tokens. The separate local `get_diagnostics.tab_details` inventory contains tab URLs/titles and workspace IDs; the response also contains the local application-data directory. Resource counters report counts of bridge tokens, shield scripts, media entries and Windows execution contexts without exposing their identifiers. Redact local inventories/paths before sharing a diagnostic response. See [performance validation](../contributing/performance.md) for repeatable comparisons and measurement limits.
+
+## Startup, polling and storage
+
+Cached filter lists are reused until they are 24 hours old. The background refresh waits for the remaining time instead of downloading and recompiling on every launch; a missing cache refreshes immediately. Engine compilation still runs synchronously during startup, so filter protection is active from the first request. Moving it off the main thread needs a serialized engine format and measurements first.
+
+The panel host reads theme variables only after the root element's style, class or theme attributes change, instead of calling `getComputedStyle` on every frame. While a popover is open, anchor tracking still uses one frame callback, because CSS transforms can move the trigger without a resize.
+
+Media polling continues for video discovery. It runs every 3 seconds when the focused tab has no audio, video or playing frames, and every second once media is present, so a video added to an idle page can take up to 3 seconds to appear.
+
+SQLite connections set a busy timeout, in-memory temporary storage, an 8 MB page cache and a 256 MB memory-map limit. History and bookmark list queries use cached prepared statements.

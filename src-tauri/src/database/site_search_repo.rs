@@ -51,7 +51,7 @@ pub fn validate(item: &SiteSearchShortcut) -> Result<(), String> {
 }
 pub fn list(conn: &Connection) -> Result<Vec<SiteSearchShortcut>, String> {
     let mut stmt = conn
-        .prepare("SELECT keyword,name,template FROM site_search_shortcuts ORDER BY keyword")
+        .prepare_cached("SELECT keyword,name,template FROM site_search_shortcuts ORDER BY keyword")
         .map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map([], |r| {

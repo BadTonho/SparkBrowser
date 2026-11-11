@@ -34,6 +34,10 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
         "
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = NORMAL;
+        PRAGMA busy_timeout = 5000;
+        PRAGMA temp_store = MEMORY;
+        PRAGMA cache_size = -8000;
+        PRAGMA mmap_size = 268435456;
 
         CREATE TABLE IF NOT EXISTS history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

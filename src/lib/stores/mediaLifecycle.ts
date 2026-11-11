@@ -36,7 +36,20 @@ function startMedia() {
   }
   const stopTabs = tabs.subscribe(reconcile);
   const stopState = mediaState.subscribe(reconcile);
-  const timer = setInterval(refreshFocused, 1000);
+  // Video discovery still needs polling. An idle focused tab uses a slower interval;
+  // a newly added video on such a tab is found within POLL_WITHOUT_MEDIA_MS.
+  const POLL_WITH_MEDIA_MS = 1000, POLL_WITHOUT_MEDIA_MS = 3000;
+  let pollTimer: ReturnType<typeof setTimeout> | undefined;
+  function activeTabHasMedia() {
+    const active = get(tabs).find(tab => tab.is_active);
+    const media = get(mediaState).tabs.find(tab => tab.tab_id === active?.id);
+    return Boolean(media && (media.audible || media.mute_available || media.frames.some(frame => frame.playing || frame.picture_in_picture || frame.videos.length > 0)));
+  }
+  function schedulePoll() {
+    if (disposed) return;
+    pollTimer = setTimeout(() => { refreshFocused(); schedulePoll(); }, activeTabHasMedia() ? POLL_WITH_MEDIA_MS : POLL_WITHOUT_MEDIA_MS);
+  }
+  schedulePoll();
   document.addEventListener("visibilitychange", refreshFocused);
 
   void getCurrentWindow().onFocusChanged(event => {
@@ -52,7 +65,7 @@ function startMedia() {
 
   return () => {
     disposed = true;
-    clearInterval(timer);
+    clearTimeout(pollTimer);
     stopTabs(); stopState(); stopMedia?.(); stopFocus?.();
     stopPip();
     document.removeEventListener("visibilitychange", refreshFocused);

@@ -24,12 +24,30 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
   };
   window.addEventListener("keydown", keys, true);
   const themeKeys = ["--text-primary", "--text-secondary", "--text-muted", "--accent-primary", "--accent-foreground", "--border-subtle", "--bg-glass-elevated", "--bg-glass-hover", "--bg-downloads-panel", "--bg-permission-popover", "--modal-surface-bg", "--modal-surface-filter", "--modal-surface-border", "--modal-surface-shadow", "--overlay-backdrop-blur"];
+  // getComputedStyle forces a style recalculation, so theme values are re-read only
+  // after the root element's style, classes or theme attributes change. Theme changes
+  // do not set `dirty`: publish still compares the encoded payload, so echoes of a
+  // value we just applied do not start another native update.
+  let themeChanged = true, theme: Record<string, string> = {};
+  const themeObserver = new MutationObserver(() => { themeChanged = true; });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class", "data-theme"] });
+  const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
+  const onColorScheme = () => { themeChanged = true; };
+  colorScheme.addEventListener("change", onColorScheme);
+  const readTheme = () => {
+    if (themeChanged) {
+      const style = getComputedStyle(document.documentElement);
+      theme = Object.fromEntries(themeKeys.map(key => [key, style.getPropertyValue(key).trim()]));
+      themeChanged = false;
+    }
+    return theme;
+  };
   const publish = () => {
     if (disposed || !listening || get(sessionStore) !== session) return;
     if (!session.anchor.isConnected || !session.anchor.getClientRects().length) { void close(); return; }
-    const r = session.anchor.getBoundingClientRect(), style = getComputedStyle(document.documentElement);
+    const r = session.anchor.getBoundingClientRect();
     const meta = { anchor: { left: r.left, top: r.top, width: r.width, height: r.height },
-      theme: Object.fromEntries(themeKeys.map(key => [key, style.getPropertyValue(key).trim()])), locale: get(locale), ack };
+      theme: readTheme(), locale: get(locale), ack };
     const encoded = JSON.stringify(meta);
     if (!dirty && encoded === last) return;
     dirty = false;
@@ -52,5 +70,5 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     await tick(); publish();
   }).then(stop => { if (disposed) stop(); else { stopActions = stop; listening = true; } });
   frame = requestAnimationFrame(follow);
-  return () => { disposed = true; observer.disconnect(); cancelAnimationFrame(frame); stopActions?.(); stopOverlay(); window.removeEventListener("keydown", keys, true); };
+  return () => { disposed = true; observer.disconnect(); themeObserver.disconnect(); colorScheme.removeEventListener("change", onColorScheme); cancelAnimationFrame(frame); stopActions?.(); stopOverlay(); window.removeEventListener("keydown", keys, true); };
 }

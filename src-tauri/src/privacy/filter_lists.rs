@@ -18,6 +18,17 @@ const SOURCES: [&str; 3] = [
     "https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt",
 ];
 const MAX_SIZE: u64 = 5 * 1024 * 1024;
+const REFRESH_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
+
+/// Time left before the cached lists are due for refresh. A missing or unreadable
+/// cache means the lists are due now, so the first refresh starts immediately.
+fn refresh_delay(cache: &Path) -> Duration {
+    std::fs::metadata(cache)
+        .and_then(|metadata| metadata.modified())
+        .ok()
+        .and_then(|modified| modified.elapsed().ok())
+        .map_or(Duration::ZERO, |age| REFRESH_INTERVAL.saturating_sub(age))
+}
 
 #[derive(Serialize, Deserialize)]
 struct Snapshots {
@@ -149,11 +160,14 @@ impl FilterLists {
         let service = Arc::new(Self::new(cache.to_owned()));
         if update {
             let service = Arc::clone(&service);
-            std::thread::spawn(move || loop {
-                if let Err(error) = service.refresh() {
-                    eprintln!("Filter-list refresh failed: {error}");
+            std::thread::spawn(move || {
+                std::thread::sleep(refresh_delay(&service.cache));
+                loop {
+                    if let Err(error) = service.refresh() {
+                        eprintln!("Filter-list refresh failed: {error}");
+                    }
+                    std::thread::sleep(REFRESH_INTERVAL);
                 }
-                std::thread::sleep(Duration::from_secs(24 * 60 * 60));
             });
         }
         service
@@ -193,6 +207,18 @@ mod tests {
             before
         );
         assert!(!service.cache.exists());
+    }
+
+    #[test]
+    fn refresh_waits_for_a_fresh_cache_and_runs_immediately_without_one() {
+        let directory = tempfile::tempdir().unwrap();
+        assert_eq!(
+            refresh_delay(&directory.path().join("missing.json")),
+            Duration::ZERO
+        );
+        let path = directory.path().join("lists.json");
+        std::fs::write(&path, b"{}").unwrap();
+        assert!(refresh_delay(&path) > Duration::from_secs(23 * 60 * 60));
     }
 
     #[test]

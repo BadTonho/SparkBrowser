@@ -130,7 +130,7 @@ pub fn search_history(
             .replace('_', "!_")
     );
     let mut stmt = conn
-        .prepare(
+        .prepare_cached(
             "SELECT id, title, url, visited_at
              FROM history
              WHERE (?2 = '%%' OR title LIKE ?2 ESCAPE '!' OR url LIKE ?2 ESCAPE '!')

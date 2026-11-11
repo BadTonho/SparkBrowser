@@ -113,7 +113,7 @@ pub fn migrate_trailing_slash_default_bookmarks_once(conn: &Connection) -> Resul
 
 pub fn list_bookmarks(conn: &Connection) -> Result<Vec<BookmarkItem>, String> {
     let mut stmt = conn
-        .prepare("SELECT id, title, url, icon, folder_id FROM bookmarks ORDER BY id ASC")
+        .prepare_cached("SELECT id, title, url, icon, folder_id FROM bookmarks ORDER BY id ASC")
         .map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map([], |row| {
@@ -132,7 +132,7 @@ pub fn list_bookmarks(conn: &Connection) -> Result<Vec<BookmarkItem>, String> {
 
 pub fn list_folders(conn: &Connection) -> Result<Vec<BookmarkFolder>, String> {
     let mut stmt = conn
-        .prepare("SELECT id, name FROM bookmark_folders ORDER BY id ASC")
+        .prepare_cached("SELECT id, name FROM bookmark_folders ORDER BY id ASC")
         .map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map([], |row| {
