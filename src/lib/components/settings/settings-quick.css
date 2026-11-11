@@ -10,6 +10,7 @@
 .settings-quick-panel button { min-width: 0; min-height: 30px; padding: 6px 8px; border: 1px solid var(--border-subtle, #ffffff17); border-radius: 7px; color: inherit; background: #ffffff06; font: inherit; cursor: pointer; }
 .settings-quick-panel button:hover { background: var(--bg-glass-hover, #ffffff10); }
 .settings-quick-panel button.active, .settings-quick-panel button[aria-pressed="true"] { border-color: color-mix(in srgb, var(--accent-primary, #e5e5e5) 40%, transparent); background: color-mix(in srgb, var(--accent-primary, #e5e5e5) 14%, transparent); }
+.settings-quick-theme-options .settings-quick-theme-button { transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease; }
 .settings-quick-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
 .settings-quick-state { color: var(--text-secondary, #a3a3a3); font-size: 11px; }
 .settings-quick-panel .settings-quick-all { display: flex; align-items: center; justify-content: space-between; margin-top: 1px; padding-inline: 10px; color: var(--accent-foreground, #111); background: var(--accent-primary, #e5e5e5); border-color: transparent; font-weight: 650; }
