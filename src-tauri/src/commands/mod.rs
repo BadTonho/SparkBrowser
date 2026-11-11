@@ -40,4 +40,5 @@ pub mod new_tab;
 pub mod reader;
 
 pub mod qr_code;
+pub mod whatsapp;
 pub mod webview_runtime;

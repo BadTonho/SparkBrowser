@@ -75,6 +75,7 @@ use commands::privacy_settings::{
     get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
 };
 use commands::qr_code::save_qr_code_png;
+use commands::whatsapp::toggle_whatsapp_popover;
 use commands::reader::get_reader_article;
 use commands::recovery::get_recovery_status;
 use commands::saved_sessions::{
@@ -521,7 +522,8 @@ pub fn run() {
             get_extension_action,
             install_extension_from_url,
             install_extension_from_archive,
-            save_qr_code_png
+            save_qr_code_png,
+            toggle_whatsapp_popover
         ]))
         .build(context)
         .expect("error while building Spark")

@@ -23,6 +23,8 @@ pub(crate) mod url_input;
 pub mod vibrancy;
 pub mod viewport;
 pub mod webview_manager;
+#[cfg(windows)]
+pub mod whatsapp_window;
 pub mod workspace_data;
 pub mod zoom_popover;
 

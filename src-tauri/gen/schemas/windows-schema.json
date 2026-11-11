@@ -699,6 +699,12 @@
           "markdownDescription": "Enables the navigate_to command without any pre-configured scope."
         },
         {
+          "description": "Enables the open_whatsapp_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-whatsapp-window",
+          "markdownDescription": "Enables the open_whatsapp_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the prepare_shutdown command without any pre-configured scope.",
           "type": "string",
           "const": "allow-prepare-shutdown",
@@ -1123,6 +1129,12 @@
           "type": "string",
           "const": "allow-toggle-extension",
           "markdownDescription": "Enables the toggle_extension command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the toggle_whatsapp_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-toggle-whatsapp-popover",
+          "markdownDescription": "Enables the toggle_whatsapp_popover command without any pre-configured scope."
         },
         {
           "description": "Enables the update_workspace command without any pre-configured scope.",
@@ -1653,6 +1665,12 @@
           "markdownDescription": "Denies the navigate_to command without any pre-configured scope."
         },
         {
+          "description": "Denies the open_whatsapp_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-whatsapp-window",
+          "markdownDescription": "Denies the open_whatsapp_window command without any pre-configured scope."
+        },
+        {
           "description": "Denies the prepare_shutdown command without any pre-configured scope.",
           "type": "string",
           "const": "deny-prepare-shutdown",
@@ -2077,6 +2095,12 @@
           "type": "string",
           "const": "deny-toggle-extension",
           "markdownDescription": "Denies the toggle_extension command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the toggle_whatsapp_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-toggle-whatsapp-popover",
+          "markdownDescription": "Denies the toggle_whatsapp_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the update_workspace command without any pre-configured scope.",

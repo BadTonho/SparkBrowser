@@ -16,11 +16,19 @@
   import { titlebarActionOrder, moveTitlebarAction, type TitlebarAction } from "../../stores/titlebarActionsStore";
   import { createActionDrag, type ActionDragPreview } from "../../services/titlebar-action-drag";
   import { isQrCodeOpen, openQrCode } from "../../stores/qrCodeStore";
+import { invoke } from "../../services/tauri-bridge";
 
   let root = $state<HTMLDivElement>(null!);
   let preview = $state<ActionDragPreview | null>(null);
   let drag: ReturnType<typeof createActionDrag> | undefined;
-  const visible = $derived($titlebarActionOrder.filter(id => id !== "bookmarks" || $tabLayout === "horizontal"));
+  // The standalone WhatsApp window ships on Windows first; elsewhere the button stays hidden.
+  const supportsWhatsApp = typeof navigator !== "undefined" && navigator.userAgent.includes("Windows");
+  const openWhatsApp = (button: HTMLButtonElement) => {
+    const rect = button.getBoundingClientRect();
+    void invoke("toggle_whatsapp_popover", { anchor: { left: rect.left, top: rect.top, width: rect.width, height: rect.height } })
+      .catch(error => console.error("WhatsApp popover failed", error));
+  };
+  const visible = $derived($titlebarActionOrder.filter(id => (id !== "bookmarks" || $tabLayout === "horizontal") && (id !== "whatsapp" || supportsWhatsApp)));
   $effect(() => { $tabLayout; drag?.cancel(); });
 
   onMount(() => {
@@ -233,6 +241,20 @@
         title={$t("qr_code.title") + " · " + $t("titlebar.reorder_hint")}
         aria-label={$t("qr_code.title")}
         aria-haspopup="dialog" aria-expanded={$isQrCodeOpen}
+      >
+        <TitlebarActionIcon action={id} />
+      </button>
+    {/if}
+    {#if id === "whatsapp"}
+      <button
+        data-action="whatsapp"
+        aria-describedby="titlebar-reorder-hint"
+        class:dragging={preview?.id === "whatsapp"}
+        style:translate={preview?.id === "whatsapp" ? `${preview.offset}px 0` : undefined}
+        class="icon-btn"
+        onclick={event => openWhatsApp(event.currentTarget)}
+        title={$t("whatsapp.open") + " · " + $t("titlebar.reorder_hint")}
+        aria-label={$t("whatsapp.open")}
       >
         <TitlebarActionIcon action={id} />
       </button>

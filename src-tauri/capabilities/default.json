@@ -167,7 +167,8 @@
     "allow-get-extension-action",
     "allow-install-extension-from-url",
     "allow-install-extension-from-archive",
-    "allow-save-qr-code-png"
+    "allow-save-qr-code-png",
+    "allow-toggle-whatsapp-popover"
   ],
   "webviews": [
     "main"
