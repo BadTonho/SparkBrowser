@@ -225,6 +225,11 @@ async function applyImportedResult(result: BackupImportResult): Promise<void> {
   applyWorkspaceSnapshot(result.workspaces);
   applyTabsSnapshot(result.snapshot);
   pendingBackupPreferences.set(result.pending_preferences);
+  // The pre-replace safety copy now exists in the history list.
+  if (result.safety_snapshot)
+    void fetchLocalBackupState()
+      .then((state) => localBackupState.set(state))
+      .catch((error) => localBackupError.set(describeError(error)));
   await loadBookmarks();
   if (result.pending_preferences) await applyPending();
 }
@@ -412,6 +417,27 @@ export const restoreFromHistory = (id: string) =>
     source = null;
     backupLocked.set(null);
     resetRestoreOptions();
+    try {
+      source = await restoreLocalBackup(id);
+    } catch (error) {
+      if (holdForPassword(error)) return;
+      throw error;
+    }
+    await createPreview();
+  });
+
+/** Reopens the pre-replace safety copy as a replace-mode review of the same groups. */
+export const undoLastReplace = () =>
+  action(async () => {
+    const result = get(backupResult);
+    const id = result?.safety_snapshot;
+    if (!result || !id) return;
+    if (source) await discardBackupImport(source);
+    backupResult.set(null);
+    backupPreview.set(null);
+    source = null;
+    backupLocked.set(null);
+    restoreOptions.set({ groups: [...result.replaced], mode: "replace" });
     try {
       source = await restoreLocalBackup(id);
     } catch (error) {

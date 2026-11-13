@@ -34,7 +34,7 @@ export interface BackupPreview {
   skipped: BackupConflict[]; preferences: BackupPreferences;
 }
 export interface BackupPreferenceTask { id: string; preferences: BackupPreferences; error: string | null; }
-export interface BackupImportResult { added: Record<BackupKind, number>; removed: Partial<Record<BackupKind, number>>; skipped: BackupConflict[]; pending_preferences: BackupPreferenceTask | null; snapshot: TabSnapshot; workspaces: WorkspaceItem[]; }
+export interface BackupImportResult { added: Record<BackupKind, number>; removed: Partial<Record<BackupKind, number>>; replaced: RestoreGroup[]; safety_snapshot: string | null; skipped: BackupConflict[]; pending_preferences: BackupPreferenceTask | null; snapshot: TabSnapshot; workspaces: WorkspaceItem[]; }
 
 export type SyncTargetConfig =
   | { mode: "disabled" }
@@ -61,7 +61,7 @@ export type SyncPullResponse =
   | { kind: "preview"; source_token: string; preview: BackupPreview; state: SyncStateSnapshot }
   | { kind: "imported"; result: BackupImportResult; state: SyncStateSnapshot };
 
-export type LocalBackupReason = "manual" | "scheduled" | "exit";
+export type LocalBackupReason = "manual" | "scheduled" | "exit" | "pre_restore";
 export type LocalBackupInterval = "six_hours" | "daily" | "weekly";
 export interface LocalBackupSchedule {
   enabled: boolean;
@@ -85,4 +85,4 @@ export interface LocalBackupState {
   entries: LocalBackupEntry[];
   total_bytes: number;
 }
-export interface LocalBackupOutcome { created: boolean; state: LocalBackupState; }
+export interface LocalBackupOutcome { created: boolean; snapshot_id: string | null; state: LocalBackupState; }

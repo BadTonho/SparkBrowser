@@ -27,17 +27,23 @@ Substituir vale para favoritos, sessões salvas, notas e buscas por site. Worksp
 
 A substituição roda na mesma transação SQLite do restante da importação: se qualquer gravação falhar, nada é apagado. A prévia continua vinculada aos dados atuais, então uma prévia desatualizada precisa ser atualizada antes de confirmar.
 
+## Snapshot de segurança e desfazer
+
+Antes de uma substituição que apagaria algo, o aplicativo salva os dados atuais no histórico de backups locais com o motivo **Antes de substituir** (criptografado quando a criptografia está ativa). Se essa cópia não puder ser gravada, a substituição não acontece. Depois da importação, o resultado mostra **Desfazer substituição…**, que abre a cópia de segurança como uma revisão em modo substituir dos mesmos grupos; confirmar restaura os dados anteriores (e cria uma nova cópia de segurança, então o próprio desfazer pode ser desfeito).
+
+As cópias de segurança contam no limite do histórico e podem ser removidas como qualquer outra entrada, e não reiniciam o agendamento de backup automático. Importações em modo mesclar não apagam nada e não geram cópia.
+
 ## Ainda não incluído
 
 - O histórico de navegação não faz parte do formato de backup, então não pode ser restaurado seletivamente.
 - O arquivo de backup não registra a versão do aplicativo, apenas a versão do formato do arquivo.
 - A seleção vale ao restaurar. Exportações, snapshots do histórico e arquivos de sincronização sempre contêm tudo.
-- Um snapshot antes de uma substituição arriscada é um item separado do roadmap; exporte um backup antes se quiser poder desfazer.
 
 ## Implementação
 
 - `RestoreOptions` (`groups`, `mode`) é enviado com `preview_backup_import`; a confirmação reutiliza as opções guardadas com o token da prévia.
 - `merge::plan_with` filtra os dados recebidos por grupo, esvazia os grupos substituídos em uma cópia de trabalho e mescla nela, informando `removed` por tipo.
+- `commit_backup_import` chama `local::create(..., Reason::PreRestore)` antes quando `BackupService::deletes_local_data` é verdadeiro.
 - `backup_repo::commit_with` apaga os grupos substituídos dentro da transação da importação.
 - A interface fica em `BackupPreviewPanel.svelte`; o estado está em `backupStore.ts` (`restoreOptions`, `updateRestoreOptions`).
 - Testes Rust: `src-tauri/src/backup/selective_tests.rs`.

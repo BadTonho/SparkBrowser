@@ -113,7 +113,24 @@ pub async fn commit_backup_import(
     apply_preferences: bool,
     current_preferences: BackupPreferences,
 ) -> Result<BackupImportResult, String> {
-    backup::service::import(&app, token, apply_preferences, current_preferences).await
+    let service = app.state::<backup::service::BackupService>();
+    // Replace mode deletes data: keep a restorable copy first, and abort if it cannot be written.
+    let snapshot = if service.deletes_local_data(&token)? {
+        backup::local::create(
+            &app,
+            current_preferences.clone(),
+            backup::local::Reason::PreRestore,
+            false,
+        )
+        .await?
+        .snapshot_id
+    } else {
+        None
+    };
+    let mut result =
+        backup::service::import(&app, token, apply_preferences, current_preferences).await?;
+    result.safety_snapshot = snapshot;
+    Ok(result)
 }
 #[tauri::command]
 pub async fn get_backup_pending_preferences(

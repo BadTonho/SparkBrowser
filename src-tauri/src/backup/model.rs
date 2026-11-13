@@ -236,6 +236,10 @@ pub struct PreferenceTask {
 pub struct BackupImportResult {
     pub added: BTreeMap<String, usize>,
     pub removed: BTreeMap<String, usize>,
+    /// Groups whose local rows were replaced by this import.
+    pub replaced: Vec<RestoreGroup>,
+    /// Local history entry holding the pre-replace state, when one was taken.
+    pub safety_snapshot: Option<String>,
     pub skipped: Vec<BackupConflict>,
     pub pending_preferences: Option<PreferenceTask>,
     pub snapshot: crate::state::browser_state::TabSnapshot,

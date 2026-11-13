@@ -25,6 +25,8 @@ pub enum Reason {
     Manual,
     Scheduled,
     Exit,
+    /// Safety copy taken right before a replace-mode restore, so it can be undone.
+    PreRestore,
 }
 impl Reason {
     fn as_str(self) -> &'static str {
@@ -32,6 +34,7 @@ impl Reason {
             Reason::Manual => "manual",
             Reason::Scheduled => "scheduled",
             Reason::Exit => "exit",
+            Reason::PreRestore => "pre_restore",
         }
     }
     fn parse(value: &str) -> Option<Self> {
@@ -39,6 +42,7 @@ impl Reason {
             "manual" => Some(Reason::Manual),
             "scheduled" => Some(Reason::Scheduled),
             "exit" => Some(Reason::Exit),
+            "pre_restore" => Some(Reason::PreRestore),
             _ => None,
         }
     }
@@ -113,6 +117,8 @@ pub struct LocalState {
 #[derive(Clone, Debug, Serialize)]
 pub struct CreateOutcome {
     pub created: bool,
+    /// File name of the snapshot written by this call, when one was.
+    pub snapshot_id: Option<String>,
     pub state: LocalState,
 }
 
@@ -201,11 +207,18 @@ fn prune(dir: &Path, keep: u32) -> Result<usize, String> {
 }
 
 /// Writes atomically under a name that never replaces an existing snapshot.
-fn write_snapshot(dir: &Path, created_at: i64, reason: Reason, bytes: &[u8]) -> Result<(), String> {
+fn write_snapshot(
+    dir: &Path,
+    created_at: i64,
+    reason: Reason,
+    bytes: &[u8],
+) -> Result<String, String> {
     for offset in 0..60 {
-        let path = dir.join(file_name(created_at + offset, reason));
+        let name = file_name(created_at + offset, reason);
+        let path = dir.join(&name);
         if !path.exists() {
-            return files::write_bytes(&path, bytes);
+            files::write_bytes(&path, bytes)?;
+            return Ok(name);
         }
     }
     Err("backup.invalid_path".into())
@@ -306,26 +319,33 @@ pub async fn create(
         .await?
     };
 
+    let mut snapshot_id = None;
     if !skip {
         let dir = dir.clone();
-        tauri::async_runtime::spawn_blocking(move || {
-            // Key derivation and fsync stay off the database lock.
-            let bytes = files::encode(&document, password.as_deref())?;
-            write_snapshot(&dir, now(), reason, &bytes)?;
-            prune(&dir, max_backups).map(|_| ())
-        })
-        .await
-        .map_err(|e| e.to_string())??;
+        snapshot_id = Some(
+            tauri::async_runtime::spawn_blocking(move || {
+                // Key derivation and fsync stay off the database lock.
+                let bytes = files::encode(&document, password.as_deref())?;
+                let id = write_snapshot(&dir, now(), reason, &bytes)?;
+                prune(&dir, max_backups)?;
+                Ok::<_, String>(id)
+            })
+            .await
+            .map_err(|e| e.to_string())??,
+        );
     }
+    // Safety copies must not postpone the schedule or mask a later unchanged check.
+    let record_run = reason != Reason::PreRestore;
 
     let dir_for_state = dir;
     crate::database::executor::run(app.clone(), move |conn| {
-        if !skip {
+        if !skip && record_run {
             prefs::store(conn, prefs::BACKUP_LOCAL_FINGERPRINT_KEY, &fingerprint)?;
             prefs::store(conn, prefs::BACKUP_LOCAL_LAST_RUN_KEY, &now().to_string())?;
         }
         Ok(CreateOutcome {
             created: !skip,
+            snapshot_id,
             state: build_state(conn, &dir_for_state)?,
         })
     })
@@ -404,6 +424,17 @@ mod tests {
             path_for_id(dir.path(), &name).unwrap_err(),
             "backup.history_not_found"
         );
+    }
+
+    #[test]
+    fn pre_restore_snapshots_roundtrip_and_are_listed_with_their_reason() {
+        let name = file_name(1_700_000_000, Reason::PreRestore);
+        assert_eq!(parse_name(&name), Some((1_700_000_000, Reason::PreRestore)));
+        let dir = temp();
+        let written = write_snapshot(dir.path(), 5, Reason::PreRestore, b"{}").unwrap();
+        let entries = list(dir.path()).unwrap();
+        assert_eq!(entries[0].id, written);
+        assert_eq!(entries[0].reason, Reason::PreRestore);
     }
 
     #[test]

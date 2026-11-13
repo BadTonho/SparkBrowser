@@ -27,17 +27,23 @@ Replace applies to bookmarks, saved sessions, notes and site searches. Workspace
 
 Replacement runs in the same SQLite transaction as the rest of the import: if any write fails, nothing is deleted. The preview is still bound to current data, so a stale preview must be refreshed before confirming.
 
+## Safety snapshot and undo
+
+Before a replace that would delete anything, the app saves the current data to the local backup history with the reason **Before replace** (encrypted when encryption is on). If that copy cannot be written, the replace does not happen. After the import, the result shows **Undo replace…**, which opens the safety copy as a replace-mode review of the same groups; confirming it restores the previous data (and takes a new safety copy, so the undo can itself be undone).
+
+Safety copies count toward the history limit and can be pruned like any other entry, and they do not reset the automatic backup schedule. Merge imports delete nothing and take no safety copy.
+
 ## Not included yet
 
 - Browsing history is not part of the backup format, so it cannot be restored selectively.
 - The backup file does not record the app version, only the file format version.
 - Selection applies when restoring. Exports, history snapshots and sync files always contain everything.
-- A snapshot before a risky replace is a separate roadmap item; export a backup first if you may want to undo.
 
 ## Implementation
 
 - `RestoreOptions` (`groups`, `mode`) is sent with `preview_backup_import`; the commit reuses the options stored with the preview token.
 - `merge::plan_with` filters the incoming data by group, empties replaced groups in a working copy and merges into it, then reports `removed` per kind.
+- `commit_backup_import` calls `local::create(..., Reason::PreRestore)` first when `BackupService::deletes_local_data` is true.
 - `backup_repo::commit_with` wipes replaced groups inside the import transaction.
 - The interface lives in `BackupPreviewPanel.svelte`; state is in `backupStore.ts` (`restoreOptions`, `updateRestoreOptions`).
 - Rust tests: `src-tauri/src/backup/selective_tests.rs`.

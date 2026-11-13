@@ -86,6 +86,15 @@ impl BackupService {
         *self.locked.lock().map_err(|e| e.to_string())? = None;
         Ok(())
     }
+    /// True when committing this preview deletes local rows, which calls for a safety snapshot.
+    pub fn deletes_local_data(&self, token: &str) -> Result<bool, String> {
+        let preview = self.preview.lock().map_err(|e| e.to_string())?;
+        let pending = preview
+            .as_ref()
+            .filter(|p| p.preview.token == token)
+            .ok_or("backup.preview_missing")?;
+        Ok(pending.preview.removed.values().any(|n| *n > 0))
+    }
     pub fn discard(&self, token: &str) -> Result<(), String> {
         let mut source = self.source.lock().map_err(|e| e.to_string())?;
         if source.as_ref().is_some_and(|(id, _)| id == token) {
@@ -247,6 +256,8 @@ pub async fn import(
     let result = BackupImportResult {
         added: pending.preview.added.clone(),
         removed: pending.preview.removed.clone(),
+        replaced: pending.plan.replaced.clone(),
+        safety_snapshot: None,
         skipped: pending.preview.skipped.clone(),
         pending_preferences: task,
         snapshot,

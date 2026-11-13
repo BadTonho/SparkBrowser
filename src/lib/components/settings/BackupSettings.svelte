@@ -18,6 +18,7 @@
     syncPullDirect,
     syncPullPreview,
     syncPushNow,
+    undoLastReplace,
   } from "../../stores/backupStore";
   import GoogleDriveIcon from "../icons/GoogleDriveIcon.svelte";
   import BackupLocalPanel from "./BackupLocalPanel.svelte";
@@ -422,7 +423,13 @@
       <aside role="status"><p>{$t("backup.pending")}</p><ErrorMessage error={$pendingBackupPreferences.error} /><button data-testid="backup-retry-preferences" disabled={$backupBusy} onclick={retryBackupPreferences}>{$t("backup.retry")}</button></aside>
     {/if}
     <BackupPreviewPanel />
-    {#if $backupResult}<p role="status" data-testid="backup-result">{$t("backup.imported")}</p>{/if}
+    {#if $backupResult}
+      <p role="status" data-testid="backup-result">{$t("backup.imported")}</p>
+      {#if $backupResult.safety_snapshot}
+        <p role="status" data-testid="backup-safety-note">{$t("backup.safety_saved")}</p>
+        <div class="actions"><button class="pill-action" data-testid="backup-undo-replace" disabled={$backupBusy} onclick={undoLastReplace}>{$t("backup.undo_replace")}</button></div>
+      {/if}
+    {/if}
   {/if}
 </section>
 <style>
