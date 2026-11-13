@@ -18,6 +18,8 @@ pub struct BackupService {
     pub sync: super::sync::SyncRuntime,
     preview: Mutex<Option<PendingPreview>>,
     source: Mutex<Option<(String, Arc<BackupDocument>)>>,
+    /// Encrypted file waiting for a password. Replaced by any new selection.
+    locked: Mutex<Option<Vec<u8>>>,
 }
 pub async fn flush(app: &AppHandle) -> Result<(), String> {
     let app = app.clone();
@@ -58,7 +60,30 @@ impl BackupService {
         let token = crate::window::webview_manager::create_internal_bridge_token();
         *self.source.lock().map_err(|e| e.to_string())? = Some((token.clone(), Arc::new(document)));
         *self.preview.lock().map_err(|e| e.to_string())? = None;
+        *self.locked.lock().map_err(|e| e.to_string())? = None;
         Ok(token)
+    }
+    /// Keeps an encrypted file until `unlock` succeeds or the prompt is cancelled.
+    pub fn hold_locked(&self, bytes: Vec<u8>) -> Result<(), String> {
+        *self.source.lock().map_err(|e| e.to_string())? = None;
+        *self.preview.lock().map_err(|e| e.to_string())? = None;
+        *self.locked.lock().map_err(|e| e.to_string())? = Some(bytes);
+        Ok(())
+    }
+    /// A wrong password keeps the file locked so the user can retry.
+    pub fn unlock(&self, password: &str) -> Result<String, String> {
+        let bytes = self
+            .locked
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone()
+            .ok_or("backup.preview_missing")?;
+        let document = super::files::decode_with(&bytes, Some(password))?;
+        self.select(document)
+    }
+    pub fn cancel_unlock(&self) -> Result<(), String> {
+        *self.locked.lock().map_err(|e| e.to_string())? = None;
+        Ok(())
     }
     pub fn discard(&self, token: &str) -> Result<(), String> {
         let mut source = self.source.lock().map_err(|e| e.to_string())?;

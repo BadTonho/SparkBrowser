@@ -6,11 +6,22 @@ use crate::{
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
+/// Password for encrypted writes; `None` when encryption is off.
+async fn stored_write_password(app: &AppHandle) -> Result<Option<String>, String> {
+    let worker = app.clone();
+    crate::database::executor::run(app.clone(), move |conn| {
+        let service = worker.state::<backup::service::BackupService>();
+        backup::encryption::write_password(conn, &service.sync.credentials)
+    })
+    .await
+}
+
 #[tauri::command]
 pub async fn export_backup(app: AppHandle, preferences: BackupPreferences) -> Result<bool, String> {
     let service = app.state::<backup::service::BackupService>();
     let _operation = service.operation.lock().await;
     let document = backup::service::capture(&app, preferences).await?;
+    let password = stored_write_password(&app).await?;
     let dialog_app = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let Some(path) = dialog_app
@@ -31,7 +42,7 @@ pub async fn export_backup(app: AppHandle, preferences: BackupPreferences) -> Re
             // Do not append after selection: that could overwrite a path the dialog never confirmed.
             return Err("backup.invalid_extension".into());
         }
-        backup::files::write(&path, &document)?;
+        backup::files::write_with(&path, &document, password.as_deref())?;
         Ok(true)
     })
     .await
@@ -51,11 +62,29 @@ pub async fn choose_backup_file(app: AppHandle) -> Result<Option<String>, String
         else {
             return Ok(None);
         };
-        let doc = backup::files::read(&path.into_path().map_err(|e| e.to_string())?)?;
-        dialog_app
-            .state::<backup::service::BackupService>()
-            .select(doc)
-            .map(Some)
+        let bytes = backup::files::read_bytes(&path.into_path().map_err(|e| e.to_string())?)?;
+        let service = dialog_app.state::<backup::service::BackupService>();
+        let password = {
+            let state = dialog_app.state::<BrowserState>();
+            let db = state
+                .infrastructure()
+                .db()
+                .lock()
+                .map_err(|e| e.to_string())?;
+            db.as_ref()
+                .and_then(|conn| backup::encryption::read_password(conn, &service.sync.credentials))
+        };
+        match backup::files::decode_with(&bytes, password.as_deref()) {
+            Ok(doc) => service.select(doc).map(Some),
+            // Keep the file so the interface can ask for its password and retry.
+            Err(error)
+                if error == "backup.password_required" || error == "backup.password_wrong" =>
+            {
+                service.hold_locked(bytes)?;
+                Err(error)
+            }
+            Err(error) => Err(error),
+        }
     })
     .await
     .map_err(|e| e.to_string())?
@@ -216,4 +245,69 @@ pub async fn pull_backup_sync(
         apply_preferences_override,
     )
     .await
+}
+
+#[tauri::command]
+pub async fn unlock_backup_file(app: AppHandle, password: String) -> Result<String, String> {
+    let service = app.state::<backup::service::BackupService>();
+    let _operation = service.operation.lock().await;
+    let worker = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        worker
+            .state::<backup::service::BackupService>()
+            .unlock(&password)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn cancel_backup_unlock(app: AppHandle) -> Result<(), String> {
+    app.state::<backup::service::BackupService>()
+        .cancel_unlock()
+}
+
+#[tauri::command]
+pub async fn get_local_backup_state(app: AppHandle) -> Result<backup::local::LocalState, String> {
+    backup::local::state(&app).await
+}
+
+#[tauri::command]
+pub async fn set_local_backup_schedule(
+    app: AppHandle,
+    schedule: backup::local::Schedule,
+) -> Result<backup::local::LocalState, String> {
+    backup::local::set_schedule(&app, schedule).await
+}
+
+#[tauri::command]
+pub async fn set_backup_encryption(
+    app: AppHandle,
+    enabled: bool,
+    password: Option<String>,
+) -> Result<backup::local::LocalState, String> {
+    backup::local::set_encryption(&app, enabled, password).await
+}
+
+#[tauri::command]
+pub async fn create_local_backup(
+    app: AppHandle,
+    preferences: BackupPreferences,
+    reason: backup::local::Reason,
+    only_if_changed: bool,
+) -> Result<backup::local::CreateOutcome, String> {
+    backup::local::create(&app, preferences, reason, only_if_changed).await
+}
+
+#[tauri::command]
+pub async fn delete_local_backup(
+    app: AppHandle,
+    id: String,
+) -> Result<backup::local::LocalState, String> {
+    backup::local::delete(&app, id).await
+}
+
+#[tauri::command]
+pub async fn restore_local_backup(app: AppHandle, id: String) -> Result<String, String> {
+    backup::local::restore(&app, id).await
 }

@@ -45,6 +45,7 @@ pub fn shell_only(
                         | "cancel_shutdown"
                         | "save_page_note"
                         | "push_backup_sync"
+                        | "create_local_backup"
                         | "set_overlay_visibility"
                         | "set_tools_popover"
                         | "set_downloads_popover"

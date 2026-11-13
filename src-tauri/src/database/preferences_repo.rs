@@ -15,6 +15,11 @@ pub const BACKUP_SYNC_LAST_AT_KEY: &str = "backup_sync_last_at_v1";
 pub const BACKUP_SYNC_FINGERPRINT_KEY: &str = "backup_sync_fingerprint_v1";
 pub const BACKUP_SYNC_GDRIVE_EMAIL_KEY: &str = "backup_sync_gdrive_email_v1";
 pub const BACKUP_SYNC_GDRIVE_AUTHUSER_KEY: &str = "backup_sync_gdrive_authuser_v1";
+// The `backup_sync` prefix keeps these out of private-profile copies.
+pub const BACKUP_ENCRYPTION_KEY: &str = "backup_sync_encryption_v1";
+pub const BACKUP_LOCAL_SCHEDULE_KEY: &str = "backup_sync_local_schedule_v1";
+pub const BACKUP_LOCAL_LAST_RUN_KEY: &str = "backup_sync_local_last_run_v1";
+pub const BACKUP_LOCAL_FINGERPRINT_KEY: &str = "backup_sync_local_fingerprint_v1";
 
 pub fn initialize_preferences_table(conn: &Connection) -> Result<(), String> {
     crate::database::migrations::apply(conn, "app-preferences-v1", |tx| {

@@ -521,6 +521,48 @@ fn folder_sync_pushes_skips_unchanged_and_pulls_without_leaking_sync_paths() {
 }
 
 #[test]
+fn folder_sync_encrypts_when_enabled_and_pull_uses_the_stored_password() {
+    let (conn, doc) = setup();
+    crate::database::preferences_repo::initialize_preferences_table(&conn).unwrap();
+    let runtime = super::sync::SyncRuntime::default();
+    let dir = tempfile::tempdir().unwrap();
+    super::sync::save_config(
+        &conn,
+        &runtime,
+        super::sync::SyncTargetConfig::Folder {
+            directory_path: dir.path().to_string_lossy().into_owned(),
+            auto_save: true,
+            apply_preferences_on_direct_pull: false,
+        },
+        None,
+    )
+    .unwrap();
+    super::encryption::configure(
+        &conn,
+        &runtime.credentials,
+        true,
+        Some("correct horse".into()),
+    )
+    .unwrap();
+    let pushed = super::sync::push_document_to_target(&conn, &runtime, &doc, false).unwrap();
+    assert!(pushed.synced);
+    let path = dir.path().join(super::sync::SYNC_FILE_NAME);
+    let raw = std::fs::read_to_string(&path).unwrap();
+    assert!(raw.contains("veloce-backup-encrypted") && !raw.contains(&doc.data.tabs[0].url));
+    let pulled = super::sync::pull_document_from_target(&conn, &runtime).unwrap();
+    assert_eq!(pulled.data.tabs[0].url, doc.data.tabs[0].url);
+
+    // Without the stored password the pull reports it instead of leaking or crashing.
+    super::encryption::configure(&conn, &runtime.credentials, false, None).unwrap();
+    assert_eq!(
+        super::sync::pull_document_from_target(&conn, &runtime)
+            .err()
+            .unwrap(),
+        "backup.password_required"
+    );
+}
+
+#[test]
 fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_http() {
     use std::io::{Read, Write};
     use std::net::TcpListener;

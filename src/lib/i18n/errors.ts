@@ -81,6 +81,13 @@ const messages: Record<string, MessageKey> = {
   "backup.sync_network_failed": "backup.error_sync_network_failed",
   "backup.sync_invalid_config": "backup.error_sync_invalid_config",
   "backup.sync_gdrive_login_required": "backup.error_sync_gdrive_login_required",
+  "backup.password_required": "backup.error_password_required",
+  "backup.password_wrong": "backup.error_password_wrong",
+  "backup.password_invalid": "backup.error_password_invalid",
+  "backup.password_missing": "backup.error_password_missing",
+  "backup.crypto_failed": "backup.error_crypto_failed",
+  "backup.history_not_found": "backup.error_history_not_found",
+  "backup.schedule_invalid": "backup.error_schedule_invalid",
 
   "storage.failed": "common.storage_failed",
   "desktop.required": "common.desktop_required",

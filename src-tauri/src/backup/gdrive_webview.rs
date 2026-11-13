@@ -21,11 +21,7 @@ use http::{
 };
 use session::resolve_gdrive_session_context;
 
-use super::{
-    files,
-    model::{BackupDocument, MAX_BYTES},
-    service::BackupService,
-};
+use super::{files, model::BackupDocument, service::BackupService};
 use crate::{database::preferences_repo, state::browser_state::BrowserState};
 #[cfg(not(windows))]
 use base64::Engine;
@@ -273,13 +269,12 @@ pub fn close_gdrive_sync_webview(app: &AppHandle) {
 pub async fn push_document_via_webview(
     app: &AppHandle,
     document: &BackupDocument,
+    password: Option<&str>,
 ) -> Result<(), String> {
     close_gdrive_sync_webview(app);
-    super::validation::document(document)?;
-    let json_text = serde_json::to_string_pretty(document).map_err(|e| e.to_string())?;
-    if json_text.len() as u64 > MAX_BYTES {
-        return Err("backup.file_too_large".into());
-    }
+    // Plain or encrypted, the payload is always UTF-8 JSON text.
+    let json_text =
+        String::from_utf8(files::encode(document, password)?).map_err(|e| e.to_string())?;
 
     let browser = app.state::<BrowserState>();
     let tabs_guard = browser.session().operation().await;
@@ -355,7 +350,10 @@ pub async fn push_document_via_webview(
 }
 
 #[cfg(windows)]
-pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument, String> {
+pub async fn pull_document_via_webview(
+    app: &AppHandle,
+    password: Option<&str>,
+) -> Result<BackupDocument, String> {
     close_gdrive_sync_webview(app);
     let browser = app.state::<BrowserState>();
     let tabs_guard = browser.session().operation().await;
@@ -414,7 +412,7 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
         }
         if resp.status().is_success() {
             let mut buf = Vec::new();
-            resp.take(MAX_BYTES + 1)
+            resp.take(files::MAX_FILE_BYTES + 1)
                 .read_to_end(&mut buf)
                 .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
             return Ok((buf, found.api_key, email));
@@ -430,7 +428,7 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
             if dl_resp.status().is_success() {
                 let mut buf = Vec::new();
                 dl_resp
-                    .take(MAX_BYTES + 1)
+                    .take(files::MAX_FILE_BYTES + 1)
                     .read_to_end(&mut buf)
                     .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
                 return Ok((buf, found.api_key, email));
@@ -452,7 +450,7 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
         }
         persist_detected_gdrive_email(app);
     }
-    files::decode(&bytes)
+    files::decode_with(&bytes, password)
 }
 
 #[cfg(not(windows))]
@@ -587,12 +585,9 @@ async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, St
 pub async fn push_document_via_webview(
     app: &AppHandle,
     document: &BackupDocument,
+    password: Option<&str>,
 ) -> Result<(), String> {
-    super::validation::document(document)?;
-    let json_bytes = serde_json::to_vec_pretty(document).map_err(|e| e.to_string())?;
-    if json_bytes.len() as u64 > MAX_BYTES {
-        return Err("backup.file_too_large".into());
-    }
+    let json_bytes = files::encode(document, password)?;
     let b64_json = base64::engine::general_purpose::STANDARD.encode(&json_bytes);
     let (webview, token) = wait_until_webview_ready(app).await?;
 
@@ -647,7 +642,10 @@ pub async fn push_document_via_webview(
 }
 
 #[cfg(not(windows))]
-pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument, String> {
+pub async fn pull_document_via_webview(
+    app: &AppHandle,
+    password: Option<&str>,
+) -> Result<BackupDocument, String> {
     let (webview, token) = wait_until_webview_ready(app).await?;
 
     let request_id = next_request_id();
@@ -703,5 +701,5 @@ pub async fn pull_document_via_webview(app: &AppHandle) -> Result<BackupDocument
     let decoded_bytes = base64::engine::general_purpose::STANDARD
         .decode(b64_payload.as_bytes())
         .map_err(|e| format!("backup.invalid_document: {e}"))?;
-    files::decode(&decoded_bytes)
+    files::decode_with(&decoded_bytes, password)
 }

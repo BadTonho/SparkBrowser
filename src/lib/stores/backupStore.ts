@@ -5,21 +5,29 @@ import { applyBackupZoom } from "../services/bridge/zoom";
 import { get, writable } from "svelte/store";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import {
+  cancelBackupUnlock,
   chooseBackupFile,
   chooseBackupSyncFolder,
   commitBackupImport,
+  createLocalBackup,
+  deleteLocalBackup,
   discardBackupImport,
   exportBackup,
   fetchBackupSyncState,
+  fetchLocalBackupState,
   fetchPendingBackupPreferences,
   finishBackupPreferences,
   previewBackupImport,
   pullBackupSync,
   pushBackupSync,
+  restoreLocalBackup,
+  saveBackupEncryption,
   saveBackupSyncConfig,
+  saveLocalBackupSchedule,
+  unlockBackupFile,
 } from "../services/bridge/backup";
 import { applyBackupPreferences, capturePreferences } from "../services/backup/preferences";
-import { describeError } from "../services/user-errors.js";
+import { UserError, describeError } from "../services/user-errors.js";
 import { noteWriter } from "./notesStore";
 import { addTab, applyTabsSnapshot, tabs } from "./browserStore";
 import { reloadCurrentPage } from "../services/tauri-bridge";
@@ -46,6 +54,9 @@ import type {
   BackupImportResult,
   BackupPreferenceTask,
   BackupPreview,
+  LocalBackupReason,
+  LocalBackupSchedule,
+  LocalBackupState,
   SyncStateSnapshot,
   SyncTargetConfig,
 } from "../types/backup";
@@ -64,6 +75,20 @@ export const backupSyncState = writable<SyncStateSnapshot>({
   last_error: null,
 });
 export const backupSyncNotice = writable<"pushed" | "unchanged" | "config_saved" | "">("");
+/** Set while an encrypted file waits for its password; `wrong` after a failed attempt. */
+export const backupLocked = writable<{ wrong: boolean } | null>(null);
+export const localBackupState = writable<LocalBackupState>({
+  schedule: { enabled: false, interval: "daily", on_exit: false, max_backups: 10 },
+  encryption_enabled: false,
+  last_run_at: null,
+  next_due_at: null,
+  directory: "",
+  entries: [],
+  total_bytes: 0,
+});
+export const localBackupBusy = writable(false);
+export const localBackupError = writable("");
+export const localBackupNotice = writable<"created" | "encryption_saved" | "">("");
 
 let source: string | null = null;
 let folderAutoSaveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -75,6 +100,7 @@ let gdriveLoginRequiredPause = false;
 let awaitingGoogleAccountSelection = false;
 let googleLoginTabId: string | null = null;
 let lastTabsSignature = "";
+let localScheduleInterval: ReturnType<typeof setInterval> | undefined;
 
 async function action(work: () => Promise<void>): Promise<void> {
   if (get(backupBusy) || !isTauriRuntime()) return;
@@ -102,11 +128,50 @@ export const selectBackup = () =>
     backupResult.set(null);
     backupPreview.set(null);
     source = null;
-    const document = await chooseBackupFile();
+    backupLocked.set(null);
+    let document: string | null;
+    try {
+      document = await chooseBackupFile();
+    } catch (error) {
+      if (holdForPassword(error)) return;
+      throw error;
+    }
     if (!document) return;
     source = document;
     await createPreview();
   });
+
+function errorCode(error: unknown): string {
+  return error instanceof UserError ? error.code : "";
+}
+
+/** Encrypted backups pause the import and ask for a password instead of failing. */
+function holdForPassword(error: unknown): boolean {
+  const code = errorCode(error);
+  if (code !== "backup.password_required" && code !== "backup.password_wrong") return false;
+  backupLocked.set({ wrong: code === "backup.password_wrong" });
+  return true;
+}
+
+export const unlockBackup = (password: string) =>
+  action(async () => {
+    try {
+      source = await unlockBackupFile(password);
+    } catch (error) {
+      if (errorCode(error) === "backup.password_wrong") {
+        backupLocked.set({ wrong: true });
+        return;
+      }
+      throw error;
+    }
+    backupLocked.set(null);
+    await createPreview();
+  });
+
+export function cancelBackupPasswordPrompt(): void {
+  backupLocked.set(null);
+  void cancelBackupUnlock().catch((error) => backupError.set(describeError(error)));
+}
 
 async function createPreview(): Promise<void> {
   if (!source) return;
@@ -270,6 +335,87 @@ export const syncPullDirect = (applyPreferencesOverride: boolean | null = null) 
     }
   });
 
+async function localAction(work: () => Promise<void>): Promise<void> {
+  if (get(localBackupBusy) || !isTauriRuntime()) return;
+  localBackupBusy.set(true);
+  localBackupError.set("");
+  localBackupNotice.set("");
+  try {
+    await work();
+  } catch (error) {
+    localBackupError.set(describeError(error));
+  } finally {
+    localBackupBusy.set(false);
+  }
+}
+
+export const refreshLocalBackups = () =>
+  localAction(async () => {
+    localBackupState.set(await fetchLocalBackupState());
+  });
+
+export const saveLocalSchedule = (schedule: LocalBackupSchedule) =>
+  localAction(async () => {
+    localBackupState.set(await saveLocalBackupSchedule(schedule));
+  });
+
+export const saveEncryption = (enabled: boolean, password: string | null = null) =>
+  localAction(async () => {
+    localBackupState.set(await saveBackupEncryption(enabled, password));
+    localBackupNotice.set("encryption_saved");
+  });
+
+async function createLocal(reason: LocalBackupReason, onlyIfChanged: boolean): Promise<boolean> {
+  await noteWriter.flushAll();
+  const outcome = await createLocalBackup(capturePreferences(), reason, onlyIfChanged);
+  localBackupState.set(outcome.state);
+  return outcome.created;
+}
+
+export const backupNow = () =>
+  localAction(async () => {
+    if (await createLocal("manual", false)) localBackupNotice.set("created");
+  });
+
+export const removeLocalBackup = (id: string) =>
+  localAction(async () => {
+    localBackupState.set(await deleteLocalBackup(id));
+  });
+
+export const restoreFromHistory = (id: string) =>
+  action(async () => {
+    if (source) await discardBackupImport(source);
+    backupResult.set(null);
+    backupPreview.set(null);
+    source = null;
+    backupLocked.set(null);
+    try {
+      source = await restoreLocalBackup(id);
+    } catch (error) {
+      if (holdForPassword(error)) return;
+      throw error;
+    }
+    await createPreview();
+  });
+
+/** Runs when the schedule is due; failures surface in the panel but never interrupt browsing. */
+async function runScheduledLocalBackup(): Promise<void> {
+  if (!isTauriRuntime() || get(localBackupBusy) || get(backupBusy)) return;
+  const { schedule, next_due_at } = get(localBackupState);
+  if (!schedule.enabled || next_due_at === null || Date.now() / 1000 < next_due_at) return;
+  localBackupBusy.set(true);
+  try {
+    await createLocal("scheduled", true);
+    localBackupError.set("");
+  } catch (error) {
+    localBackupError.set(describeError(error));
+    // Retry in 15 minutes rather than every minute while the problem persists.
+    localBackupState.update((state) => ({ ...state, next_due_at: Math.floor(Date.now() / 1000) + 15 * 60 }));
+  } finally {
+    localBackupBusy.set(false);
+  }
+}
+
 async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<void> {
   if (!isTauriRuntime() || get(backupBusy)) return;
   const current = get(backupSyncState).config;
@@ -318,6 +464,13 @@ function notifyPersistentDataChanged(): void {
 
 export async function flushBackupSyncBeforeShutdown(): Promise<void> {
   if (!isTauriRuntime()) return;
+  if (get(localBackupState).schedule.on_exit) {
+    try {
+      await createLocal("exit", true);
+    } catch {
+      // A failed local snapshot must never block closing the browser.
+    }
+  }
   if (folderAutoSaveTimer) {
     clearTimeout(folderAutoSaveTimer);
     folderAutoSaveTimer = undefined;
@@ -336,6 +489,7 @@ export async function flushBackupSyncBeforeShutdown(): Promise<void> {
 function startBackupStatus(scope: import("../services/lifecycle.js").LifecycleScope): () => void {
   if (!isTauriRuntime()) return () => {};
   let startupTimer: ReturnType<typeof setTimeout> | undefined;
+  let startupLocalTimer: ReturnType<typeof setTimeout> | undefined;
   void fetchPendingBackupPreferences()
     .then(scope.guard((value) => pendingBackupPreferences.set(value)))
     .catch(scope.guard((error) => backupError.set(describeError(error))));
@@ -350,6 +504,16 @@ function startBackupStatus(scope: import("../services/lifecycle.js").LifecycleSc
       }
     }))
     .catch(scope.guard((error) => backupError.set(describeError(error))));
+
+  void fetchLocalBackupState()
+    .then(scope.guard((state) => {
+      localBackupState.set(state);
+      // Catch up after the browser was closed while a backup came due.
+      startupLocalTimer = setTimeout(() => { if (scope.active()) void runScheduledLocalBackup(); }, 20_000);
+    }))
+    .catch(scope.guard((error) => localBackupError.set(describeError(error))));
+  if (localScheduleInterval) clearInterval(localScheduleInterval);
+  localScheduleInterval = setInterval(() => void runScheduledLocalBackup(), 60_000);
 
   for (const unsub of autoSyncUnsubscribes) unsub();
   autoSyncUnsubscribes = [
@@ -399,6 +563,9 @@ function startBackupStatus(scope: import("../services/lifecycle.js").LifecycleSc
     clearInterval(cloudMinuteInterval);
     clearTimeout(folderAutoSaveTimer);
     clearTimeout(startupTimer);
+    clearTimeout(startupLocalTimer);
+    clearInterval(localScheduleInterval);
+    localScheduleInterval = undefined;
     cloudMinuteInterval = undefined;
     folderAutoSaveTimer = undefined;
   };

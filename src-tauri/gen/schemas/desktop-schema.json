@@ -189,6 +189,12 @@
           "markdownDescription": "Enables the auto_hibernate_inactive_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the cancel_backup_unlock command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-cancel-backup-unlock",
+          "markdownDescription": "Enables the cancel_backup_unlock command without any pre-configured scope."
+        },
+        {
           "description": "Enables the cancel_download command without any pre-configured scope.",
           "type": "string",
           "const": "allow-cancel-download",
@@ -303,6 +309,12 @@
           "markdownDescription": "Enables the create_ephemeral_tab command without any pre-configured scope."
         },
         {
+          "description": "Enables the create_local_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-local-backup",
+          "markdownDescription": "Enables the create_local_backup command without any pre-configured scope."
+        },
+        {
           "description": "Enables the create_private_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-create-private-tab",
@@ -337,6 +349,12 @@
           "type": "string",
           "const": "allow-delete-feed",
           "markdownDescription": "Enables the delete_feed command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_local_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-local-backup",
+          "markdownDescription": "Enables the delete_local_backup command without any pre-configured scope."
         },
         {
           "description": "Enables the delete_named_session command without any pre-configured scope.",
@@ -523,6 +541,12 @@
           "type": "string",
           "const": "allow-get-installed-extensions",
           "markdownDescription": "Enables the get_installed_extensions command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_local_backup_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-local-backup-state",
+          "markdownDescription": "Enables the get_local_backup_state command without any pre-configured scope."
         },
         {
           "description": "Enables the get_page_note command without any pre-configured scope.",
@@ -837,6 +861,12 @@
           "markdownDescription": "Enables the restart_webview_runtime command without any pre-configured scope."
         },
         {
+          "description": "Enables the restore_local_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-restore-local-backup",
+          "markdownDescription": "Enables the restore_local_backup command without any pre-configured scope."
+        },
+        {
           "description": "Enables the restore_named_session command without any pre-configured scope.",
           "type": "string",
           "const": "allow-restore-named-session",
@@ -903,6 +933,12 @@
           "markdownDescription": "Enables the set_auto_skip_ads command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_backup_encryption command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-backup-encryption",
+          "markdownDescription": "Enables the set_backup_encryption command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_backup_sync_config command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-backup-sync-config",
@@ -967,6 +1003,12 @@
           "type": "string",
           "const": "allow-set-keyboard-shortcuts",
           "markdownDescription": "Enables the set_keyboard_shortcuts command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_local_backup_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-local-backup-schedule",
+          "markdownDescription": "Enables the set_local_backup_schedule command without any pre-configured scope."
         },
         {
           "description": "Enables the set_media_popover command without any pre-configured scope.",
@@ -1167,6 +1209,12 @@
           "markdownDescription": "Enables the toggle_whatsapp_popover command without any pre-configured scope."
         },
         {
+          "description": "Enables the unlock_backup_file command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-unlock-backup-file",
+          "markdownDescription": "Enables the unlock_backup_file command without any pre-configured scope."
+        },
+        {
           "description": "Enables the update_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-update-workspace",
@@ -1183,6 +1231,12 @@
           "type": "string",
           "const": "deny-auto-hibernate-inactive-tabs",
           "markdownDescription": "Denies the auto_hibernate_inactive_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the cancel_backup_unlock command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-cancel-backup-unlock",
+          "markdownDescription": "Denies the cancel_backup_unlock command without any pre-configured scope."
         },
         {
           "description": "Denies the cancel_download command without any pre-configured scope.",
@@ -1299,6 +1353,12 @@
           "markdownDescription": "Denies the create_ephemeral_tab command without any pre-configured scope."
         },
         {
+          "description": "Denies the create_local_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-local-backup",
+          "markdownDescription": "Denies the create_local_backup command without any pre-configured scope."
+        },
+        {
           "description": "Denies the create_private_tab command without any pre-configured scope.",
           "type": "string",
           "const": "deny-create-private-tab",
@@ -1333,6 +1393,12 @@
           "type": "string",
           "const": "deny-delete-feed",
           "markdownDescription": "Denies the delete_feed command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_local_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-local-backup",
+          "markdownDescription": "Denies the delete_local_backup command without any pre-configured scope."
         },
         {
           "description": "Denies the delete_named_session command without any pre-configured scope.",
@@ -1519,6 +1585,12 @@
           "type": "string",
           "const": "deny-get-installed-extensions",
           "markdownDescription": "Denies the get_installed_extensions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_local_backup_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-local-backup-state",
+          "markdownDescription": "Denies the get_local_backup_state command without any pre-configured scope."
         },
         {
           "description": "Denies the get_page_note command without any pre-configured scope.",
@@ -1833,6 +1905,12 @@
           "markdownDescription": "Denies the restart_webview_runtime command without any pre-configured scope."
         },
         {
+          "description": "Denies the restore_local_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-restore-local-backup",
+          "markdownDescription": "Denies the restore_local_backup command without any pre-configured scope."
+        },
+        {
           "description": "Denies the restore_named_session command without any pre-configured scope.",
           "type": "string",
           "const": "deny-restore-named-session",
@@ -1899,6 +1977,12 @@
           "markdownDescription": "Denies the set_auto_skip_ads command without any pre-configured scope."
         },
         {
+          "description": "Denies the set_backup_encryption command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-backup-encryption",
+          "markdownDescription": "Denies the set_backup_encryption command without any pre-configured scope."
+        },
+        {
           "description": "Denies the set_backup_sync_config command without any pre-configured scope.",
           "type": "string",
           "const": "deny-set-backup-sync-config",
@@ -1963,6 +2047,12 @@
           "type": "string",
           "const": "deny-set-keyboard-shortcuts",
           "markdownDescription": "Denies the set_keyboard_shortcuts command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_local_backup_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-local-backup-schedule",
+          "markdownDescription": "Denies the set_local_backup_schedule command without any pre-configured scope."
         },
         {
           "description": "Denies the set_media_popover command without any pre-configured scope.",
@@ -2161,6 +2251,12 @@
           "type": "string",
           "const": "deny-toggle-whatsapp-popover",
           "markdownDescription": "Denies the toggle_whatsapp_popover command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the unlock_backup_file command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-unlock-backup-file",
+          "markdownDescription": "Denies the unlock_backup_file command without any pre-configured scope."
         },
         {
           "description": "Denies the update_workspace command without any pre-configured scope.",

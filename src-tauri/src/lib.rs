@@ -3,10 +3,12 @@ use commands::account_containers::{
     get_account_containers, rename_account_container, set_tab_account_container,
 };
 use commands::backup::{
-    choose_backup_file, choose_backup_sync_folder, commit_backup_import, discard_backup_import,
-    export_backup, finish_backup_preferences, get_backup_pending_preferences,
-    get_backup_sync_state, preview_backup_import, pull_backup_sync, push_backup_sync,
-    set_backup_sync_config,
+    cancel_backup_unlock, choose_backup_file, choose_backup_sync_folder, commit_backup_import,
+    create_local_backup, delete_local_backup, discard_backup_import, export_backup,
+    finish_backup_preferences, get_backup_pending_preferences, get_backup_sync_state,
+    get_local_backup_state, preview_backup_import, pull_backup_sync, push_backup_sync,
+    restore_local_backup, set_backup_encryption, set_backup_sync_config, set_local_backup_schedule,
+    unlock_backup_file,
 };
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
@@ -77,7 +79,6 @@ use commands::privacy_settings::{
     get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
 };
 use commands::qr_code::save_qr_code_png;
-use commands::whatsapp::toggle_whatsapp_popover;
 use commands::reader::get_reader_article;
 use commands::recovery::get_recovery_status;
 use commands::saved_sessions::{
@@ -104,6 +105,7 @@ use commands::tabs::{
 use commands::updates::{
     check_for_updates, download_update, get_update_state, install_update, set_update_channel,
 };
+use commands::whatsapp::toggle_whatsapp_popover;
 use commands::workspaces::{
     create_workspace, delete_workspace, get_active_workspace, get_workspace_isolation,
     get_workspaces, set_workspace_isolation, switch_workspace, update_workspace,
@@ -446,6 +448,14 @@ pub fn run() {
             set_backup_sync_config,
             push_backup_sync,
             pull_backup_sync,
+            unlock_backup_file,
+            cancel_backup_unlock,
+            get_local_backup_state,
+            set_local_backup_schedule,
+            set_backup_encryption,
+            create_local_backup,
+            delete_local_backup,
+            restore_local_backup,
             get_update_state,
             set_update_channel,
             check_for_updates,

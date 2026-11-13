@@ -50,3 +50,29 @@ export interface SyncPushResult {
 export type SyncPullResponse =
   | { kind: "preview"; source_token: string; preview: BackupPreview; state: SyncStateSnapshot }
   | { kind: "imported"; result: BackupImportResult; state: SyncStateSnapshot };
+
+export type LocalBackupReason = "manual" | "scheduled" | "exit";
+export type LocalBackupInterval = "six_hours" | "daily" | "weekly";
+export interface LocalBackupSchedule {
+  enabled: boolean;
+  interval: LocalBackupInterval;
+  on_exit: boolean;
+  max_backups: number;
+}
+export interface LocalBackupEntry {
+  id: string;
+  created_at: number;
+  reason: LocalBackupReason;
+  size_bytes: number;
+  encrypted: boolean;
+}
+export interface LocalBackupState {
+  schedule: LocalBackupSchedule;
+  encryption_enabled: boolean;
+  last_run_at: number | null;
+  next_due_at: number | null;
+  directory: string;
+  entries: LocalBackupEntry[];
+  total_bytes: number;
+}
+export interface LocalBackupOutcome { created: boolean; state: LocalBackupState; }

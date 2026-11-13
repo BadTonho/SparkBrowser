@@ -1,6 +1,6 @@
 use super::{
-    files, gdrive_webview,
-    model::{BackupDocument, BackupImportResult, BackupPreferences, BackupPreview, MAX_BYTES},
+    encryption, files, gdrive_webview,
+    model::{BackupDocument, BackupImportResult, BackupPreferences, BackupPreview},
     service,
 };
 use crate::{database::preferences_repo, state::browser_state::BrowserState};
@@ -375,19 +375,26 @@ pub fn push_document_to_target(
         });
     }
 
+    let password = encryption::write_password(conn, &runtime.credentials)?;
     let write_result = match &config {
         SyncTargetConfig::Disabled | SyncTargetConfig::GoogleDriveWeb { .. } => {
             Err("backup.sync_not_configured".to_string())
         }
         SyncTargetConfig::Folder { directory_path, .. } => resolve_folder_file_path(directory_path)
-            .and_then(|file_path| files::write(&file_path, document)),
+            .and_then(|file_path| files::write_with(&file_path, document, password.as_deref())),
         SyncTargetConfig::DirectWebdav {
             endpoint_url,
             username,
             ..
         } => {
             let secret = resolve_secret(conn, runtime)?;
-            webdav_put(endpoint_url, username, secret.as_deref(), document)
+            webdav_put(
+                endpoint_url,
+                username,
+                secret.as_deref(),
+                document,
+                password.as_deref(),
+            )
         }
     };
 
@@ -412,6 +419,7 @@ pub fn pull_document_from_target(
     runtime: &SyncRuntime,
 ) -> Result<BackupDocument, String> {
     let config = load_config(conn)?;
+    let password = encryption::read_password(conn, &runtime.credentials);
     let read_result = match &config {
         SyncTargetConfig::Disabled | SyncTargetConfig::GoogleDriveWeb { .. } => {
             Err("backup.sync_not_configured".to_string())
@@ -421,7 +429,7 @@ pub fn pull_document_from_target(
             if !file_path.is_file() {
                 Err("backup.sync_file_not_found".to_string())
             } else {
-                files::read(&file_path)
+                files::read_with(&file_path, password.as_deref())
             }
         }
         SyncTargetConfig::DirectWebdav {
@@ -430,7 +438,12 @@ pub fn pull_document_from_target(
             ..
         } => {
             let secret = resolve_secret(conn, runtime)?;
-            webdav_get(endpoint_url, username, secret.as_deref())
+            webdav_get(
+                endpoint_url,
+                username,
+                secret.as_deref(),
+                password.as_deref(),
+            )
         }
     };
 
@@ -476,12 +489,9 @@ pub fn webdav_put(
     username: &str,
     secret: Option<&str>,
     document: &BackupDocument,
+    password: Option<&str>,
 ) -> Result<(), String> {
-    super::validation::document(document)?;
-    let bytes = serde_json::to_vec_pretty(document).map_err(|e| e.to_string())?;
-    if bytes.len() as u64 > MAX_BYTES {
-        return Err("backup.file_too_large".into());
-    }
+    let bytes = files::encode(document, password)?;
     let url = resolve_webdav_file_url(endpoint_url)?;
     let client = build_http_client()?;
     let request = apply_auth(
@@ -511,6 +521,7 @@ pub fn webdav_get(
     endpoint_url: &str,
     username: &str,
     secret: Option<&str>,
+    password: Option<&str>,
 ) -> Result<BackupDocument, String> {
     let url = resolve_webdav_file_url(endpoint_url)?;
     let client = build_http_client()?;
@@ -536,10 +547,10 @@ pub fn webdav_get(
     }
     let mut bytes = Vec::new();
     response
-        .take(MAX_BYTES + 1)
+        .take(files::MAX_FILE_BYTES + 1)
         .read_to_end(&mut bytes)
         .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
-    files::decode(&bytes)
+    files::decode_with(&bytes, password)
 }
 
 pub async fn push_sync(
@@ -552,7 +563,7 @@ pub async fn push_sync(
     let document = service::capture(app, preferences).await?;
     let current_fp = fingerprint_hex(&document)?;
 
-    let (config, previous_fp) = {
+    let (config, previous_fp, password) = {
         let state = app.state::<BrowserState>();
         let db = state
             .infrastructure()
@@ -562,7 +573,8 @@ pub async fn push_sync(
         let conn = db.as_ref().ok_or("backup.database_unavailable")?;
         let cfg = load_config(conn)?;
         let prev = preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
-        (cfg, prev)
+        let password = encryption::write_password(conn, &service.sync.credentials)?;
+        (cfg, prev, password)
     };
 
     if config == SyncTargetConfig::Disabled {
@@ -597,13 +609,15 @@ pub async fn push_sync(
     let io_result = match &config {
         SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
         SyncTargetConfig::GoogleDriveWeb { .. } => {
-            gdrive_webview::push_document_via_webview(app, &document).await
+            gdrive_webview::push_document_via_webview(app, &document, password.as_deref()).await
         }
         SyncTargetConfig::Folder { directory_path, .. } => {
             let dir = directory_path.clone();
             let doc = document.clone();
+            let password = password.clone();
             tauri::async_runtime::spawn_blocking(move || {
-                resolve_folder_file_path(&dir).and_then(|file_path| files::write(&file_path, &doc))
+                resolve_folder_file_path(&dir)
+                    .and_then(|file_path| files::write_with(&file_path, &doc, password.as_deref()))
             })
             .await
             .map_err(|e| e.to_string())?
@@ -626,8 +640,9 @@ pub async fn push_sync(
             let url = endpoint_url.clone();
             let user = username.clone();
             let doc = document.clone();
+            let password = password.clone();
             tauri::async_runtime::spawn_blocking(move || {
-                webdav_put(&url, &user, secret.as_deref(), &doc)
+                webdav_put(&url, &user, secret.as_deref(), &doc, password.as_deref())
             })
             .await
             .map_err(|e| e.to_string())?
@@ -675,6 +690,16 @@ pub async fn pull_sync(
         let sec = resolve_secret(conn, &backup_service.sync)?;
         (cfg, sec)
     };
+    let password = {
+        let state = app.state::<BrowserState>();
+        let db = state
+            .infrastructure()
+            .db()
+            .lock()
+            .map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+        encryption::read_password(conn, &backup_service.sync.credentials)
+    };
 
     let config_apply_prefs = match &config {
         SyncTargetConfig::GoogleDriveWeb {
@@ -695,16 +720,17 @@ pub async fn pull_sync(
     let read_res = match &config {
         SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
         SyncTargetConfig::GoogleDriveWeb { .. } => {
-            gdrive_webview::pull_document_via_webview(app).await
+            gdrive_webview::pull_document_via_webview(app, password.as_deref()).await
         }
         SyncTargetConfig::Folder { directory_path, .. } => {
             let dir = directory_path.clone();
+            let password = password.clone();
             tauri::async_runtime::spawn_blocking(move || {
                 let file_path = resolve_folder_file_path(&dir)?;
                 if !file_path.is_file() {
                     Err("backup.sync_file_not_found".to_string())
                 } else {
-                    files::read(&file_path)
+                    files::read_with(&file_path, password.as_deref())
                 }
             })
             .await
@@ -717,9 +743,12 @@ pub async fn pull_sync(
         } => {
             let url = endpoint_url.clone();
             let user = username.clone();
-            tauri::async_runtime::spawn_blocking(move || webdav_get(&url, &user, secret.as_deref()))
-                .await
-                .map_err(|e| e.to_string())?
+            let password = password.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                webdav_get(&url, &user, secret.as_deref(), password.as_deref())
+            })
+            .await
+            .map_err(|e| e.to_string())?
         }
     };
 

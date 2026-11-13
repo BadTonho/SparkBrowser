@@ -26,6 +26,8 @@
   import { SHORTCUT_DEFINITIONS, formatShortcut } from "../../stores/shortcutsStore";
   import type { BackupKind } from "../../types/backup";
   import GoogleDriveIcon from "../icons/GoogleDriveIcon.svelte";
+  import BackupLocalPanel from "./BackupLocalPanel.svelte";
+  import BackupUnlockPrompt from "./BackupUnlockPrompt.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
 
   const desktop = isTauriRuntime();
@@ -445,6 +447,9 @@
         <ErrorMessage error={syncActionError || $backupSyncState.last_error} />
       </details>
     </div>
+
+    <BackupUnlockPrompt />
+    <BackupLocalPanel />
 
     <ErrorMessage error={$backupError} />
     {#if $backupExported}<p role="status">{$t("backup.exported")}</p>{/if}

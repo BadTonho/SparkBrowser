@@ -1,5 +1,5 @@
 import { invoke } from "./runtime";
-import type { BackupImportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, SyncPullResponse, SyncPushResult, SyncStateSnapshot, SyncTargetConfig } from "../../types/backup";
+import type { BackupImportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, LocalBackupOutcome, LocalBackupReason, LocalBackupSchedule, LocalBackupState, SyncPullResponse, SyncPushResult, SyncStateSnapshot, SyncTargetConfig } from "../../types/backup";
 export const exportBackup = (preferences: BackupPreferences) => invoke<boolean>("export_backup", { preferences });
 export const chooseBackupFile = () => invoke<string | null>("choose_backup_file");
 export const previewBackupImport = (sourceToken: string, currentPreferences: BackupPreferences) => invoke<BackupPreview>("preview_backup_import", { sourceToken, currentPreferences });
@@ -18,3 +18,15 @@ export const pushBackupSync = (preferences: BackupPreferences, onlyIfChanged: bo
   invoke<SyncPushResult>("push_backup_sync", { preferences, onlyIfChanged });
 export const pullBackupSync = (currentPreferences: BackupPreferences, directApply: boolean, applyPreferencesOverride: boolean | null = null) =>
   invoke<SyncPullResponse>("pull_backup_sync", { currentPreferences, directApply, applyPreferencesOverride });
+
+export const unlockBackupFile = (password: string) => invoke<string>("unlock_backup_file", { password });
+export const cancelBackupUnlock = () => invoke<void>("cancel_backup_unlock");
+export const fetchLocalBackupState = () => invoke<LocalBackupState>("get_local_backup_state");
+export const saveLocalBackupSchedule = (schedule: LocalBackupSchedule) =>
+  invoke<LocalBackupState>("set_local_backup_schedule", { schedule });
+export const saveBackupEncryption = (enabled: boolean, password: string | null) =>
+  invoke<LocalBackupState>("set_backup_encryption", { enabled, password });
+export const createLocalBackup = (preferences: BackupPreferences, reason: LocalBackupReason, onlyIfChanged: boolean) =>
+  invoke<LocalBackupOutcome>("create_local_backup", { preferences, reason, onlyIfChanged });
+export const deleteLocalBackup = (id: string) => invoke<LocalBackupState>("delete_local_backup", { id });
+export const restoreLocalBackup = (id: string) => invoke<string>("restore_local_backup", { id });
