@@ -11,6 +11,7 @@ pub struct PendingPreview {
     fingerprint: [u8; 32],
     preview: BackupPreview,
     plan: merge::MergePlan,
+    options: RestoreOptions,
 }
 #[derive(Default)]
 pub struct BackupService {
@@ -119,6 +120,16 @@ pub async fn preview(
     source_token: Option<String>,
     prefs: BackupPreferences,
 ) -> Result<BackupPreview, String> {
+    preview_with(app, document, source_token, prefs, RestoreOptions::default()).await
+}
+pub async fn preview_with(
+    app: &AppHandle,
+    document: Option<BackupDocument>,
+    source_token: Option<String>,
+    prefs: BackupPreferences,
+    options: RestoreOptions,
+) -> Result<BackupPreview, String> {
+    options.validate()?;
     let service = app.state::<BackupService>();
     let _serial = service.operation.lock().await;
     // Structured imports remain supported; file selections never round-trip through JS.
@@ -148,11 +159,16 @@ pub async fn preview(
         .next_tab_counter()
         .lock()
         .map_err(|e| e.to_string())?;
-    let plan = merge::plan(&current.data, &doc.data, &token, counter)?;
+    let plan = merge::plan_with(&current.data, &doc.data, &token, counter, &options)?;
     let preview = BackupPreview {
         token,
+        created_at: doc.created_at,
+        version: doc.version,
+        mode: options.mode,
+        groups: options.groups.clone(),
         counts: merge::counts(&doc.data),
         added: plan.added.clone(),
+        removed: plan.removed.clone(),
         skipped: plan.skipped.clone(),
         preferences: doc.preferences.clone(),
     };
@@ -160,6 +176,7 @@ pub async fn preview(
         fingerprint: fingerprint(&current.data, &current.preferences)?,
         preview: preview.clone(),
         plan,
+        options,
     });
     Ok(preview)
 }
@@ -192,20 +209,33 @@ pub async fn import(
     if pending.fingerprint != fingerprint(&current, &prefs)? {
         return Err("backup.preview_stale".into());
     }
-    let task = if apply_preferences {
+    let queued = if apply_preferences {
+        pending
+            .options
+            .preferences(&prefs, &pending.preview.preferences)
+    } else {
+        None
+    };
+    let task = if let Some(preferences) = queued {
         if backup_repo::pending(conn)?.is_some() {
             return Err("backup.preferences_pending".into());
         }
         Some(PreferenceTask {
             id: token.clone(),
-            preferences: pending.preview.preferences.clone(),
+            preferences,
             error: None,
         })
     } else {
         None
     };
     let tabs = merge_live_tabs(original_tabs, &pending.plan.data.tabs)?;
-    backup_repo::commit(conn, &current, &pending.plan.data, task.as_ref())?;
+    backup_repo::commit_with(
+        conn,
+        &current,
+        &pending.plan.data,
+        task.as_ref(),
+        &pending.plan.replaced,
+    )?;
     state.install_imported_session(
         tabs,
         pending.plan.data.workspaces.clone(),
@@ -216,6 +246,7 @@ pub async fn import(
     let snapshot = state.snapshot_packet();
     let result = BackupImportResult {
         added: pending.preview.added.clone(),
+        removed: pending.preview.removed.clone(),
         skipped: pending.preview.skipped.clone(),
         pending_preferences: task,
         snapshot,

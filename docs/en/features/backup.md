@@ -48,4 +48,4 @@ Drive synchronization requires the explicit **Choose / Switch Google account** f
 
 Remembered WebDAV passwords never enter new SQLite preference values. Linux requires `secret-tool` (the `libsecret-tools` package on Debian/Ubuntu) and an unlocked Secret Service provider. Storage errors are reported without plaintext fallback. Legacy SQLite passwords are removed with secure deletion enabled and migrated to the system store on startup; if migration fails, they remain only in process memory for that session. Historical database copies and backups cannot be erased by this migration. Changing the WebDAV server or username does not reuse the previous target's password.
 
-See [Automatic backups, history and encryption](backup-automation.md) for scheduled snapshots, restore from history and password protection.
+See [Automatic backups, history and encryption](backup-automation.md) for scheduled snapshots, restore from history and password protection, and [Selective restore and replace mode](selective-restore.md) for choosing what a restore touches.

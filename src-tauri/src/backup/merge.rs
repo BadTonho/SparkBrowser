@@ -7,8 +7,43 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 pub struct MergePlan {
     pub data: BackupData,
     pub added: BTreeMap<String, usize>,
+    /// Local rows deleted by replace mode, per kind (empty when merging).
+    pub removed: BTreeMap<String, usize>,
+    /// Groups whose local rows are wiped before the merged rows are written.
+    pub replaced: Vec<RestoreGroup>,
     pub skipped: Vec<BackupConflict>,
     pub next_tab_counter: u64,
+}
+/// Keeps only the data groups the user picked; preference groups live outside `BackupData`.
+pub fn select(data: &BackupData, options: &RestoreOptions) -> BackupData {
+    let mut selected = data.clone();
+    if !options.has(RestoreGroup::Workspaces) {
+        selected.workspaces.clear();
+        selected.tabs.clear();
+        selected.split_layouts.clear();
+    }
+    clear(
+        &mut selected,
+        &RestoreGroup::DATA
+            .into_iter()
+            .filter(|group| !options.has(*group))
+            .collect::<Vec<_>>(),
+    );
+    selected
+}
+fn clear(data: &mut BackupData, groups: &[RestoreGroup]) {
+    for group in groups {
+        match group {
+            RestoreGroup::Bookmarks => {
+                data.bookmarks.folders.clear();
+                data.bookmarks.bookmarks.clear();
+            }
+            RestoreGroup::Sessions => data.sessions.clear(),
+            RestoreGroup::Notes => data.notes.clear(),
+            RestoreGroup::SiteSearch => data.site_search.clear(),
+            _ => {}
+        }
+    }
 }
 pub fn counts(d: &BackupData) -> BTreeMap<String, usize> {
     [
@@ -49,6 +84,44 @@ fn page_key(
         .collect()
 }
 pub fn plan(
+    current: &BackupData,
+    incoming: &BackupData,
+    token: &str,
+    counter: u64,
+) -> Result<MergePlan, String> {
+    plan_with(current, incoming, token, counter, &RestoreOptions::default())
+}
+pub fn plan_with(
+    current: &BackupData,
+    incoming: &BackupData,
+    token: &str,
+    counter: u64,
+    options: &RestoreOptions,
+) -> Result<MergePlan, String> {
+    options.validate()?;
+    let incoming = select(incoming, options);
+    let replaced: Vec<_> = if options.mode == RestoreMode::Replace {
+        RestoreGroup::REPLACEABLE
+            .into_iter()
+            .filter(|group| options.has(*group))
+            .collect()
+    } else {
+        Vec::new()
+    };
+    // Replacing merges the incoming rows into an emptied group, so nothing local survives or collides.
+    let mut base = current.clone();
+    clear(&mut base, &replaced);
+    let mut plan = merge_into(&base, &incoming, token, counter)?;
+    let before = counts(current);
+    let mut cleared = counts(&base);
+    for (kind, total) in &mut cleared {
+        *total = before[kind] - *total;
+    }
+    plan.removed = cleared.into_iter().filter(|(_, n)| *n > 0).collect();
+    plan.replaced = replaced;
+    Ok(plan)
+}
+fn merge_into(
     current: &BackupData,
     incoming: &BackupData,
     token: &str,
@@ -293,6 +366,8 @@ pub fn plan(
     Ok(MergePlan {
         data: merged,
         added,
+        removed: BTreeMap::new(),
+        replaced: Vec::new(),
         skipped,
         next_tab_counter: counter,
     })

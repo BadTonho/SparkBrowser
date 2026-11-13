@@ -112,11 +112,117 @@ pub struct BackupConflict {
     pub key: String,
     pub reason: String,
 }
+/// What a restore touches. Workspaces own their tabs and split layouts; bookmarks own their folders.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RestoreGroup {
+    Workspaces,
+    Bookmarks,
+    Sessions,
+    Notes,
+    SiteSearch,
+    Settings,
+    Shortcuts,
+}
+impl RestoreGroup {
+    pub const ALL: [Self; 7] = [
+        Self::Workspaces,
+        Self::Bookmarks,
+        Self::Sessions,
+        Self::Notes,
+        Self::SiteSearch,
+        Self::Settings,
+        Self::Shortcuts,
+    ];
+    pub const DATA: [Self; 5] = [
+        Self::Workspaces,
+        Self::Bookmarks,
+        Self::Sessions,
+        Self::Notes,
+        Self::SiteSearch,
+    ];
+    /// Workspaces stay merge-only: replacing them would tear down live tabs and webviews.
+    pub const REPLACEABLE: [Self; 4] = [
+        Self::Bookmarks,
+        Self::Sessions,
+        Self::Notes,
+        Self::SiteSearch,
+    ];
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RestoreMode {
+    #[default]
+    Merge,
+    Replace,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RestoreOptions {
+    pub groups: Vec<RestoreGroup>,
+    #[serde(default)]
+    pub mode: RestoreMode,
+}
+impl Default for RestoreOptions {
+    fn default() -> Self {
+        Self {
+            groups: RestoreGroup::ALL.to_vec(),
+            mode: RestoreMode::Merge,
+        }
+    }
+}
+impl RestoreOptions {
+    pub fn has(&self, group: RestoreGroup) -> bool {
+        self.groups.contains(&group)
+    }
+    pub fn validate(&self) -> Result<(), String> {
+        if self.groups.is_empty() {
+            return Err("backup.nothing_selected".into());
+        }
+        let mut seen = std::collections::HashSet::new();
+        if !self.groups.iter().all(|group| seen.insert(*group)) {
+            return Err("backup.invalid_selection".into());
+        }
+        Ok(())
+    }
+    /// Preferences to queue: the backup's values for picked groups, current values for the rest.
+    pub fn preferences(
+        &self,
+        current: &BackupPreferences,
+        incoming: &BackupPreferences,
+    ) -> Option<BackupPreferences> {
+        let (settings, shortcuts) = (
+            self.has(RestoreGroup::Settings),
+            self.has(RestoreGroup::Shortcuts),
+        );
+        match (settings, shortcuts) {
+            (false, false) => None,
+            (true, true) => Some(incoming.clone()),
+            (true, false) => {
+                let mut mixed = incoming.clone();
+                mixed.keyboard_shortcuts = current.keyboard_shortcuts.clone();
+                Some(mixed)
+            }
+            (false, true) => {
+                let mut mixed = current.clone();
+                mixed.keyboard_shortcuts = incoming.keyboard_shortcuts.clone();
+                Some(mixed)
+            }
+        }
+    }
+}
 #[derive(Clone, Serialize)]
 pub struct BackupPreview {
     pub token: String,
+    /// Backup creation time (epoch seconds) and its format version.
+    pub created_at: i64,
+    pub version: u32,
+    pub mode: RestoreMode,
+    pub groups: Vec<RestoreGroup>,
     pub counts: BTreeMap<String, usize>,
     pub added: BTreeMap<String, usize>,
+    /// Local rows that replace mode will delete, per kind.
+    pub removed: BTreeMap<String, usize>,
     pub skipped: Vec<BackupConflict>,
     pub preferences: BackupPreferences,
 }
@@ -129,6 +235,7 @@ pub struct PreferenceTask {
 #[derive(Serialize)]
 pub struct BackupImportResult {
     pub added: BTreeMap<String, usize>,
+    pub removed: BTreeMap<String, usize>,
     pub skipped: Vec<BackupConflict>,
     pub pending_preferences: Option<PreferenceTask>,
     pub snapshot: crate::state::browser_state::TabSnapshot,

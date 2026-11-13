@@ -22,9 +22,19 @@ export interface BackupDocument {
 }
 export type BackupKind = "workspaces" | "folders" | "bookmarks" | "sessions" | "notes" | "site_search" | "tabs" | "split_layouts";
 export interface BackupConflict { kind: BackupKind; key: string; reason: "existing" | "identical"; }
-export interface BackupPreview { token: string; counts: Record<BackupKind, number>; added: Record<BackupKind, number>; skipped: BackupConflict[]; preferences: BackupPreferences; }
+/** What a restore touches. Workspaces own their tabs/splits and bookmarks own their folders. */
+export type RestoreGroup = "workspaces" | "bookmarks" | "sessions" | "notes" | "site_search" | "settings" | "shortcuts";
+export type RestoreMode = "merge" | "replace";
+export interface RestoreOptions { groups: RestoreGroup[]; mode: RestoreMode; }
+export interface BackupPreview {
+  token: string; created_at: number; version: number; mode: RestoreMode; groups: RestoreGroup[];
+  counts: Record<BackupKind, number>; added: Record<BackupKind, number>;
+  /** Local rows replace mode deletes; kinds with nothing to delete are absent. */
+  removed: Partial<Record<BackupKind, number>>;
+  skipped: BackupConflict[]; preferences: BackupPreferences;
+}
 export interface BackupPreferenceTask { id: string; preferences: BackupPreferences; error: string | null; }
-export interface BackupImportResult { added: Record<BackupKind, number>; skipped: BackupConflict[]; pending_preferences: BackupPreferenceTask | null; snapshot: TabSnapshot; workspaces: WorkspaceItem[]; }
+export interface BackupImportResult { added: Record<BackupKind, number>; removed: Partial<Record<BackupKind, number>>; skipped: BackupConflict[]; pending_preferences: BackupPreferenceTask | null; snapshot: TabSnapshot; workspaces: WorkspaceItem[]; }
 
 export type SyncTargetConfig =
   | { mode: "disabled" }

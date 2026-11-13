@@ -95,8 +95,16 @@ pub async fn preview_backup_import(
     document: Option<BackupDocument>,
     source_token: Option<String>,
     current_preferences: BackupPreferences,
+    options: Option<RestoreOptions>,
 ) -> Result<BackupPreview, String> {
-    backup::service::preview(&app, document, source_token, current_preferences).await
+    backup::service::preview_with(
+        &app,
+        document,
+        source_token,
+        current_preferences,
+        options.unwrap_or_default(),
+    )
+    .await
 }
 #[tauri::command]
 pub async fn commit_backup_import(

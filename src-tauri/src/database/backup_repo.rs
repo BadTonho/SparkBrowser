@@ -80,21 +80,66 @@ pub fn commit(
     merged: &BackupData,
     task: Option<&PreferenceTask>,
 ) -> Result<(), String> {
+    commit_with(conn, current, merged, task, &[])
+}
+/// `replaced` groups are wiped inside the transaction, so `merged` holds their complete new content.
+pub fn commit_with(
+    conn: &Connection,
+    current: &BackupData,
+    merged: &BackupData,
+    task: Option<&PreferenceTask>,
+    replaced: &[RestoreGroup],
+) -> Result<(), String> {
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    // A wiped group has no surviving rows, so every merged row of it is inserted.
+    let kept = |group| !replaced.contains(&group);
+    let wipe = |sql: &str| tx.execute_batch(sql).map_err(|e| e.to_string());
+    if !kept(RestoreGroup::Bookmarks) {
+        wipe("DELETE FROM bookmarks; DELETE FROM bookmark_folders;")?;
+    }
+    if !kept(RestoreGroup::Notes) {
+        wipe("DELETE FROM page_notes;")?;
+    }
+    if !kept(RestoreGroup::SiteSearch) {
+        wipe("DELETE FROM site_search_shortcuts;")?;
+    }
+    if !kept(RestoreGroup::Sessions) {
+        wipe("DELETE FROM saved_session_pages; DELETE FROM saved_sessions;")?;
+    }
     let workspace_ids: std::collections::HashSet<_> =
         current.workspaces.iter().map(|v| v.id.as_str()).collect();
-    let folder_ids: std::collections::HashSet<_> =
-        current.bookmarks.folders.iter().map(|v| v.id).collect();
-    let bookmark_ids: std::collections::HashSet<_> =
-        current.bookmarks.bookmarks.iter().map(|v| v.id).collect();
-    let note_urls: std::collections::HashSet<_> =
-        current.notes.iter().map(|v| v.url.as_str()).collect();
+    let folder_ids: std::collections::HashSet<_> = current
+        .bookmarks
+        .folders
+        .iter()
+        .filter(|_| kept(RestoreGroup::Bookmarks))
+        .map(|v| v.id)
+        .collect();
+    let bookmark_ids: std::collections::HashSet<_> = current
+        .bookmarks
+        .bookmarks
+        .iter()
+        .filter(|_| kept(RestoreGroup::Bookmarks))
+        .map(|v| v.id)
+        .collect();
+    let note_urls: std::collections::HashSet<_> = current
+        .notes
+        .iter()
+        .filter(|_| kept(RestoreGroup::Notes))
+        .map(|v| v.url.as_str())
+        .collect();
     let keywords: std::collections::HashSet<_> = current
         .site_search
         .iter()
+        .filter(|_| kept(RestoreGroup::SiteSearch))
         .map(|v| v.keyword.to_lowercase())
         .collect();
-    let session_ids: std::collections::HashSet<_> = current.sessions.iter().map(|v| v.id).collect();
+    let session_ids: std::collections::HashSet<_> = current
+        .sessions
+        .iter()
+        .filter(|_| kept(RestoreGroup::Sessions))
+        .map(|v| v.id)
+        .collect();
     for ws in &merged.workspaces {
         if !workspace_ids.contains(ws.id.as_str()) {
             super::workspace_repo::create_workspace(&tx, ws)?;

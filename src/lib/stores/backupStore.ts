@@ -57,6 +57,8 @@ import type {
   LocalBackupReason,
   LocalBackupSchedule,
   LocalBackupState,
+  RestoreGroup,
+  RestoreOptions,
   SyncStateSnapshot,
   SyncTargetConfig,
 } from "../types/backup";
@@ -65,6 +67,8 @@ export const backupBusy = writable(false);
 export const backupError = writable("");
 export const backupPreview = writable<BackupPreview | null>(null);
 export const backupResult = writable<BackupImportResult | null>(null);
+export const DEFAULT_RESTORE_GROUPS: RestoreGroup[] = ["workspaces", "bookmarks", "sessions", "notes", "site_search"];
+export const restoreOptions = writable<RestoreOptions>({ groups: [...DEFAULT_RESTORE_GROUPS], mode: "merge" });
 export const backupExported = writable(false);
 export const pendingBackupPreferences = writable<BackupPreferenceTask | null>(null);
 export const backupSyncState = writable<SyncStateSnapshot>({
@@ -129,6 +133,7 @@ export const selectBackup = () =>
     backupPreview.set(null);
     source = null;
     backupLocked.set(null);
+    resetRestoreOptions();
     let document: string | null;
     try {
       document = await chooseBackupFile();
@@ -176,10 +181,23 @@ export function cancelBackupPasswordPrompt(): void {
 async function createPreview(): Promise<void> {
   if (!source) return;
   await noteWriter.flushAll();
-  backupPreview.set(await previewBackupImport(source, capturePreferences()));
+  backupPreview.set(await previewBackupImport(source, capturePreferences(), get(restoreOptions)));
 }
 
 export const refreshBackupPreview = () => action(createPreview);
+
+/** Every new file starts from the safe default: all data merged, preferences left alone. */
+function resetRestoreOptions(): void {
+  restoreOptions.set({ groups: [...DEFAULT_RESTORE_GROUPS], mode: "merge" });
+}
+
+/** Changing the selection re-plans the import, so counts always match what will be written. */
+export const updateRestoreOptions = (next: RestoreOptions) =>
+  action(async () => {
+    restoreOptions.set(next);
+    // Nothing selected has no plan; confirming stays disabled until a group is picked again.
+    if (next.groups.length > 0) await createPreview();
+  });
 
 async function applyPending(): Promise<void> {
   const task = await fetchPendingBackupPreferences();
@@ -211,10 +229,12 @@ async function applyImportedResult(result: BackupImportResult): Promise<void> {
   if (result.pending_preferences) await applyPending();
 }
 
-export const importBackup = (applyPreferences: boolean) =>
+export const importBackup = () =>
   action(async () => {
     const preview = get(backupPreview);
     if (!preview) return;
+    // Preferences are queued only when the previewed selection includes settings or shortcuts.
+    const applyPreferences = preview.groups.some((group) => group === "settings" || group === "shortcuts");
     await noteWriter.flushAll();
     const result = await commitBackupImport(preview.token, applyPreferences, capturePreferences());
     // Import data is already committed, even if applying preferences or refreshing the UI fails.
@@ -311,12 +331,14 @@ export const syncPullPreview = () =>
     backupResult.set(null);
     backupPreview.set(null);
     source = null;
+    resetRestoreOptions();
     await noteWriter.flushAll();
     const res = await pullBackupSync(capturePreferences(), false, null);
     backupSyncState.set(res.state);
     if (res.kind === "preview") {
       source = res.source_token;
-      backupPreview.set(res.preview);
+      // The pull previews with backend defaults; re-plan with the UI selection (preferences off by default).
+      await createPreview();
     }
   });
 
@@ -389,6 +411,7 @@ export const restoreFromHistory = (id: string) =>
     backupPreview.set(null);
     source = null;
     backupLocked.set(null);
+    resetRestoreOptions();
     try {
       source = await restoreLocalBackup(id);
     } catch (error) {

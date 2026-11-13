@@ -40,6 +40,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Idiomas da interface](./features/localization.md)
 - [Backup local e importação com revisão](./features/backup.md)
 - [Backups automáticos, histórico e criptografia](./features/backup-automation.md)
+- [Restauração seletiva e modo substituir](./features/selective-restore.md)
 - [Abas fechadas recentemente](./features/closed-tabs.md)
 - [Recuperação automática de sessão](./features/recovery.md)
 - [Downloads retomáveis e hashes](./features/downloads.md)

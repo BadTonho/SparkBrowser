@@ -48,4 +48,4 @@ A sincronização com o Drive exige o fluxo explícito **Escolher / Trocar conta
 
 Senhas WebDAV lembradas não entram em novos valores de preferências SQLite. No Linux, é necessário `secret-tool` (pacote `libsecret-tools` no Debian/Ubuntu) e um provedor de Secret Service desbloqueado. Falhas são informadas sem recorrer a texto simples. Senhas antigas no SQLite são removidas com exclusão segura ativada e migradas para o cofre do sistema na inicialização; se a migração falhar, permanecem somente na memória do processo durante essa sessão. Cópias históricas do banco e backups não podem ser apagados por essa migração. Alterar o servidor WebDAV ou o usuário não reutiliza a senha do destino anterior.
 
-Veja [Backups automáticos, histórico e criptografia](backup-automation.md) para snapshots agendados, restauração pelo histórico e proteção por senha.
+Veja [Backups automáticos, histórico e criptografia](backup-automation.md) para snapshots agendados, restauração pelo histórico e proteção por senha, e [Restauração seletiva e modo substituir](selective-restore.md) para escolher o que uma restauração altera.

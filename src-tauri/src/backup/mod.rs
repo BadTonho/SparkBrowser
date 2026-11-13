@@ -13,4 +13,6 @@ pub mod validation;
 #[cfg(test)]
 mod regression_tests;
 #[cfg(test)]
+mod selective_tests;
+#[cfg(test)]
 mod tests;
