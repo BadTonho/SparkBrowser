@@ -11,6 +11,7 @@ pub(crate) struct Session {
         Mutex<std::collections::HashMap<String, crate::state::split_layout::SplitLayout>>,
     split_preview: Mutex<Option<(String, f64)>>,
     resident_limit: std::sync::atomic::AtomicUsize,
+    resident_limit_enforced: std::sync::atomic::AtomicBool,
     hibernation_exemptions: std::sync::Mutex<Vec<String>>,
     snapshot_revision: Mutex<u64>,
     tab_operations: tauri::async_runtime::Mutex<()>,
@@ -33,6 +34,23 @@ impl Session {
     pub(crate) fn resident_limit(&self) -> usize {
         self.resident_limit
             .load(std::sync::atomic::Ordering::Acquire)
+    }
+    /// The limit the memory policy actually applies: with automatic hibernation switched off nothing is
+    /// put to sleep on its own, so the configured number is kept but not enforced.
+    pub(crate) fn effective_resident_limit(&self) -> usize {
+        if self.resident_limit_enforced() {
+            self.resident_limit()
+        } else {
+            usize::MAX
+        }
+    }
+    pub(crate) fn resident_limit_enforced(&self) -> bool {
+        self.resident_limit_enforced
+            .load(std::sync::atomic::Ordering::Acquire)
+    }
+    pub(in crate::state) fn set_resident_limit_enforced(&self, value: bool) {
+        self.resident_limit_enforced
+            .store(value, std::sync::atomic::Ordering::Release);
     }
     pub(in crate::state) fn set_resident_limit(&self, value: usize) {
         self.resident_limit
@@ -96,6 +114,7 @@ impl Default for Session {
             split_layouts: Mutex::new(Default::default()),
             split_preview: Mutex::new(None),
             resident_limit: std::sync::atomic::AtomicUsize::new(8),
+            resident_limit_enforced: std::sync::atomic::AtomicBool::new(true),
             hibernation_exemptions: std::sync::Mutex::new(Vec::new()),
             snapshot_revision: Mutex::new(0),
             tab_operations: tauri::async_runtime::Mutex::new(()),

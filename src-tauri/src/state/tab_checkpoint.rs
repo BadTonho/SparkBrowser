@@ -8,11 +8,13 @@ pub struct TabCheckpoint {
     pub active_tab: String,
     pub active_workspace: String,
     resident_limit: usize,
+    resident_limit_enforced: bool,
 }
 impl TabCheckpoint {
     pub fn capture(state: &BrowserState) -> Result<Self, String> {
         Ok(Self {
             resident_limit: state.session().resident_limit(),
+            resident_limit_enforced: state.session().resident_limit_enforced(),
             tabs: state.snapshot_tabs(),
             layouts: state
                 .session()
@@ -36,6 +38,9 @@ impl TabCheckpoint {
     }
     pub fn restore(mut self, state: &BrowserState) -> Result<(), String> {
         state.session().set_resident_limit(self.resident_limit);
+        state
+            .session()
+            .set_resident_limit_enforced(self.resident_limit_enforced);
         *state
             .session()
             .edit_active_tab_id()
@@ -104,7 +109,7 @@ impl TabCheckpoint {
                     .edit_tabs()
                     .lock()
                     .map_err(|e| e.to_string())?,
-                state.session().resident_limit(),
+                state.session().effective_resident_limit(),
                 &state
                     .session()
                     .edit_hibernation_exemptions()

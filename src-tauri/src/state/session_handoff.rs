@@ -115,7 +115,7 @@ impl BrowserState {
                 .edit_tabs()
                 .lock()
                 .map_err(|e| e.to_string())?,
-            self.session().resident_limit(),
+            self.session().effective_resident_limit(),
             &self
                 .session()
                 .hibernation_exemptions()

@@ -43,8 +43,8 @@ export async function syncViewportBounds(bounds: ViewportBounds): Promise<void> 
   await invoke("sync_viewport_bounds", { bounds, splitRatio: bounds.split_ratio ?? null, splitKey: bounds.split_key ?? null });
 }
 
-export async function setResidentLimit(limit: number): Promise<TabSnapshot> {
-  return isTauriRuntime() ? invoke<TabSnapshot>("set_resident_limit", { limit }) : [];
+export async function setResidentLimit(limit: number, enforce = true): Promise<TabSnapshot> {
+  return isTauriRuntime() ? invoke<TabSnapshot>("set_resident_limit", { limit, enforce }) : [];
 }
 export async function setHibernationExemptions(domains: string[]): Promise<TabSnapshot> {
   return isTauriRuntime() ? invoke<TabSnapshot>("set_hibernation_exemptions", { domains }) : [];

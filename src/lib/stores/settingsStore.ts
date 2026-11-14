@@ -78,6 +78,8 @@ export const autoHibernateMode = writable<AutoHibernateMode>(getInitialAutoHiber
 export function setAutoHibernateMode(mode: AutoHibernateMode): void {
   if (!AUTO_HIBERNATE_MODES.includes(mode)) return;
   autoHibernateMode.set(mode);
+  // The resident limit follows this switch, so tell the native side right away.
+  void setResidentTabLimit(get(residentTabLimit)).catch(() => {});
 
   if (typeof safeStorage === "undefined") return;
   try {
@@ -510,7 +512,8 @@ const savedResidentLimit = Number(safeStorage.getItem("spark_resident_limit"));
 export const residentTabLimit = writable(Number.isInteger(savedResidentLimit) && savedResidentLimit >= 1 && savedResidentLimit <= 100 ? savedResidentLimit : 8);
 export async function setResidentTabLimit(limit: number): Promise<void> {
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) return;
-  applyTabsSnapshot(await setResidentLimit(limit));
+  // With automatic hibernation off, the limit is remembered but nothing is put to sleep on its own.
+  applyTabsSnapshot(await setResidentLimit(limit, get(autoHibernateMode) !== "off"));
   residentTabLimit.set(limit);
   safeStorage.setItem("spark_resident_limit", String(limit));
 }

@@ -501,7 +501,7 @@ pub async fn hibernate_inactive_tabs(
                 .edit_tabs()
                 .lock()
                 .map_err(|e| e.to_string())?,
-            state.session().resident_limit(),
+            state.session().effective_resident_limit(),
             &state
                 .session()
                 .edit_hibernation_exemptions()
@@ -545,7 +545,7 @@ pub async fn auto_hibernate_inactive_tabs(
                     .edit_tabs()
                     .lock()
                     .map_err(|e| e.to_string())?,
-                state.session().resident_limit(),
+                state.session().effective_resident_limit(),
                 &state
                     .session()
                     .edit_hibernation_exemptions()
@@ -607,7 +607,7 @@ pub async fn auto_hibernate_inactive_tabs(
                 .edit_tabs()
                 .lock()
                 .map_err(|e| e.to_string())?,
-            state.session().resident_limit(),
+            state.session().effective_resident_limit(),
             &exemptions,
         ) > 0;
         Ok(changed)
@@ -679,6 +679,7 @@ pub async fn set_resident_limit(
     app: AppHandle,
     state: State<'_, BrowserState>,
     limit: usize,
+    enforce: Option<bool>,
 ) -> Result<TabSnapshot, String> {
     if !(1..=100).contains(&limit) {
         return Err("Resident limit must be between 1 and 100".into());
@@ -686,6 +687,9 @@ pub async fn set_resident_limit(
     let _operation = state.session().operation().await;
     TabCheckpoint::commit(&state, || {
         state.session().set_resident_limit(limit);
+        state
+            .session()
+            .set_resident_limit_enforced(enforce.unwrap_or(true));
         Ok(())
     })?;
     reconcile_committed(&app, &state);

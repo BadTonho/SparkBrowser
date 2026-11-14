@@ -58,7 +58,7 @@ async function removeDomain(domain: string) {
 
   <div class="setting-row" id="setting-resident-limit" tabindex="-1">
     <div class="row-text"><span class="row-label">{$t("settings.resident_tab_limit_9a94")}</span><span class="row-desc">{$t("settings.keep_up_to_this_many_webviews_awake_active_pinned_loading_media_download_9f92")}</span></div>
-    <input type="number" min="1" max="100" step="1" value={$residentTabLimit} aria-label={$t("settings.resident_tab_limit_e214")} onchange={event => setResidentTabLimit(Number(event.currentTarget.value))} />
+    <input type="number" min="1" max="100" step="1" disabled={$autoHibernateMode === "off"} value={$residentTabLimit} aria-label={$t("settings.resident_tab_limit_e214")} onchange={event => setResidentTabLimit(Number(event.currentTarget.value))} />
   </div>
 
   <div class="setting-row" id="setting-auto-hibernate" tabindex="-1">

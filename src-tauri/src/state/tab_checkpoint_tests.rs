@@ -332,3 +332,15 @@ fn fallback_shield_metadata_is_restored_before_any_document_is_rebuilt() {
     .is_err());
     assert_eq!(memory(&state), before);
 }
+
+#[test]
+fn resident_limit_is_not_enforced_while_automatic_hibernation_is_off() {
+    let state = state();
+    state.session().set_resident_limit(1);
+    state.session().set_resident_limit_enforced(false);
+    assert_eq!(state.enforce_resident_policy().unwrap(), 0);
+    assert_eq!(state.session().resident_limit(), 1, "the setting is kept");
+
+    state.session().set_resident_limit_enforced(true);
+    assert!(state.enforce_resident_policy().unwrap() > 0);
+}
