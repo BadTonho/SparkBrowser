@@ -56,6 +56,14 @@ export async function checkBrowserWindows(context) {
   assert.ok(main.tabs.find(tab => tab.id === firstTab)?.is_active, 'main keeps its own selection');
   assert.equal((await invoke('get_browser_windows')).length, 2);
 
+  // A tab can be sent to the other window; it is selected there and the page keeps working.
+  const extra = (await invoke('create_tab', { url: fixture.origin + '/page/a' })).tabs.find(tab => tab.is_active).id;
+  await invoke('move_tab_to_window', { tabId: extra, windowId: 'window-2' });
+  assert.ok((await invokeIn('get_tabs')).tabs.find(tab => tab.id === extra)?.is_active, 'moved tab is selected in the other window');
+  assert.ok(!(await invoke('get_tabs')).tabs.some(tab => tab.id === extra), 'it left the first window');
+  assert.ok((await invoke('get_tabs')).tabs.some(tab => tab.is_active), 'the first window keeps a selection');
+  await until(async () => (await invokeIn('get_tabs')).tabs.find(tab => tab.id === extra)?.url.endsWith('/page/a'), 'moved page loads in its new window');
+
   // Panels are created in the window that asks for them and move when another window asks.
   for (const panel of ['tools', 'downloads', 'zoom', 'history']) {
     await invokeIn('prepare_panel', { panel });

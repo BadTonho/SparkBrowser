@@ -14,6 +14,9 @@ import {
   setBookmarkContextMenuOverlay,
   setOverlayVisibility,
   isTauriRuntime,
+  currentWindowId,
+  getBrowserWindows,
+  windowNumber,
 } from "../services/tauri-bridge";
 import { overlayBlurPx } from "./settingsStore";
 
@@ -34,6 +37,7 @@ export type BookmarkContextMenuState =
   | { kind: "bookmark"; x: number; y: number; bookmark: BookmarkItem }
   | { kind: "folder"; x: number; y: number; folder: BookmarkFolder }
   | { kind: "empty"; x: number; y: number }
+  | { kind: "tab"; x: number; y: number; tabId: string; windows: string[] }
   | null;
 
 export const bookmarks = writable<BookmarkItem[]>([]);
@@ -114,10 +118,31 @@ export function showBookmarkContextMenu(
   refreshBookmarkContextMenu();
 }
 
+/** Right-click on a tab: offers to send it to another browser window. */
+export async function showTabContextMenu(event: MouseEvent, tabId: string): Promise<void> {
+  event.preventDefault();
+  event.stopPropagation();
+  const own = currentWindowId();
+  const others = (await getBrowserWindows()).map((item) => item.id).filter((id) => id !== own);
+  bookmarkContextMenuState.set({
+    kind: "tab",
+    tabId,
+    windows: others,
+    x: Math.max(8, Math.min(event.clientX, window.innerWidth - 236)),
+    y: Math.max(8, Math.min(event.clientY, window.innerHeight - 180)),
+  });
+  refreshBookmarkContextMenu();
+}
+
 function refreshBookmarkContextMenu(): void {
   const menu = get(bookmarkContextMenuState);
   if (!menu) return;
-  const actions = menu.kind === "bookmark"
+  const actions = menu.kind === "tab"
+    ? [
+        ...menu.windows.map((id) => ({ id: `move-window:${id}`, label: tr("tabs.move_to_window", { number: windowNumber(id) }) })),
+        { id: "move-window:new", label: tr("tabs.move_to_new_window") },
+      ]
+    : menu.kind === "bookmark"
     ? [
         { id: "edit-bookmark", label: tr("common.edit_bookmark") },
         { id: "delete-bookmark", label: tr("common.delete_bookmark"), danger: true },

@@ -6,6 +6,7 @@
   import { removeTab, toggleTabPin, selectTab } from "../../stores/browserStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { t } from "../../i18n";
+  import { showTabContextMenu } from "../../stores/persistenceStore";
   import TabMuteButton from "../media/TabMuteButton.svelte";
   import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
   import { tabs } from "../../stores/browserStore";
@@ -78,6 +79,7 @@
         class:ephemeral={tab.is_ephemeral}
         class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
         onpointerdown={handlePointerDown}
+        oncontextmenu={(event) => void showTabContextMenu(event, tab.id)}
         onmouseup={(e) => e.button === 1 && removeTab(tab.id)}
         onkeydown={handleKeydown}
         role="button"

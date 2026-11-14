@@ -135,6 +135,7 @@
     "allow-update-workspace",
     "allow-delete-workspace",
     "allow-reorder-tabs",
+    "allow-move-tab-to-window",
     "allow-move-tab-to-workspace",
     "allow-get-downloads",
     "allow-get-download-tasks",

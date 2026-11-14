@@ -735,6 +735,12 @@
           "markdownDescription": "Enables the move_tab_in_split command without any pre-configured scope."
         },
         {
+          "description": "Enables the move_tab_to_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-move-tab-to-window",
+          "markdownDescription": "Enables the move_tab_to_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the move_tab_to_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-move-tab-to-workspace",
@@ -1807,6 +1813,12 @@
           "type": "string",
           "const": "deny-move-tab-in-split",
           "markdownDescription": "Denies the move_tab_in_split command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the move_tab_to_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-move-tab-to-window",
+          "markdownDescription": "Denies the move_tab_to_window command without any pre-configured scope."
         },
         {
           "description": "Denies the move_tab_to_workspace command without any pre-configured scope.",

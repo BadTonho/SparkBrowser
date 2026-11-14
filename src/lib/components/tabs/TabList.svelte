@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { showTabContextMenu } from "../../stores/persistenceStore";
   import AppIcon from "../icons/AppIcon.svelte";
   import TabFavicon from "./TabFavicon.svelte";
   import ContainerBadge from "./ContainerBadge.svelte";
@@ -134,6 +135,7 @@
         class:ephemeral={tab.is_ephemeral}
         class:is-dragging={$tabDrag?.id === tab.id && $tabDrag.dragging}
         onpointerdown={(e) => handlePointerDown(e, tab.id)}
+        oncontextmenu={(event) => void showTabContextMenu(event, tab.id)}
         onkeydown={(e) => handleKeydown(e, tab.id)}
         role="button"
         tabindex="0"

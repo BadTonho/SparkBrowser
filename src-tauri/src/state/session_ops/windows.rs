@@ -62,6 +62,104 @@ pub fn open_window(
     Ok(tab_id)
 }
 
+/// Moves a tab to another window and selects it there. Returns the window it came from. The window
+/// it leaves selects a neighbour (or a new-tab page when that was its last tab).
+pub fn move_tab(state: &BrowserState, tab_id: &str, target: &str) -> Result<String, String> {
+    if state.session().window(target).is_none() {
+        return Err("windows.not_found".into());
+    }
+    let source = state.window_of_tab(tab_id)?;
+    if source == target {
+        return Ok(source);
+    }
+    TabCheckpoint::commit_with_activation(state, Some((tab_id, false)), || {
+        let source_state = state.session().window(&source).ok_or("windows.not_found")?;
+        let was_active = source_state
+            .edit_active_tab_id()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .as_str()
+            == tab_id;
+        let source_workspace = source_state
+            .edit_active_workspace_id()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
+        state
+            .session()
+            .edit_split_layouts()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .retain(|_, layout| layout.remove_member(tab_id));
+        if was_active {
+            let replacement = {
+                let tabs = state
+                    .session()
+                    .edit_tabs()
+                    .lock()
+                    .map_err(|e| e.to_string())?;
+                let others = || {
+                    tabs.iter()
+                        .rev()
+                        .filter(|t| t.window_id == source && t.id != tab_id)
+                };
+                others()
+                    .find(|t| t.workspace_id == source_workspace)
+                    .or_else(|| others().next())
+                    .map(|t| t.id.clone())
+            };
+            let replacement = match replacement {
+                Some(id) => id,
+                None => {
+                    let id = {
+                        let mut counter = state
+                            .session()
+                            .edit_next_tab_counter()
+                            .lock()
+                            .map_err(|e| e.to_string())?;
+                        let id = format!("tab-{}", *counter);
+                        *counter += 1;
+                        id
+                    };
+                    let mut tab = TabInfo::new(
+                        id.clone(),
+                        crate::window::new_tab::URL.into(),
+                        source_workspace.clone(),
+                        false,
+                    );
+                    tab.window_id = source.clone();
+                    state
+                        .session()
+                        .edit_tabs()
+                        .lock()
+                        .map_err(|e| e.to_string())?
+                        .push(tab);
+                    id
+                }
+            };
+            state.select_tab(&replacement)?;
+        }
+        {
+            let mut tabs = state
+                .session()
+                .edit_tabs()
+                .lock()
+                .map_err(|e| e.to_string())?;
+            // It joins the end of the destination's tabs, like a tab opened there.
+            let index = tabs
+                .iter()
+                .position(|t| t.id == tab_id)
+                .ok_or("Tab was not found")?;
+            let mut tab = tabs.remove(index);
+            tab.window_id = target.to_string();
+            tabs.push(tab);
+        }
+        state.select_tab(tab_id)?;
+        Ok(())
+    })?;
+    Ok(source)
+}
+
 /// What closing a window removed, so the native pages can follow.
 pub struct ClosedWindow {
     pub tab_ids: Vec<String>,
@@ -195,5 +293,33 @@ mod tests {
         assert!(open_window(&state, "window-2", "ws-personal").is_err());
         assert!(state.session().window("window-2").is_none());
         assert_eq!(state.snapshot_tabs().len(), 1);
+    }
+
+    #[test]
+    fn a_moved_tab_is_selected_in_its_new_window_and_the_old_one_keeps_a_page() {
+        let state = state_with_database();
+        let second = open_window(&state, "window-2", "ws-personal").unwrap();
+        // Moving main's only tab leaves main with a new-tab page; the tab becomes window-2's selection.
+        let source = move_tab(&state, INITIAL_TAB_ID, "window-2").unwrap();
+        assert_eq!(source, MAIN_WINDOW_ID);
+        assert_eq!(state.window_of_tab(INITIAL_TAB_ID).unwrap(), "window-2");
+        assert_eq!(
+            *state
+                .session()
+                .window("window-2")
+                .unwrap()
+                .edit_active_tab_id()
+                .lock()
+                .unwrap(),
+            INITIAL_TAB_ID
+        );
+        let main = state.snapshot_packet_for(MAIN_WINDOW_ID);
+        assert_eq!(main.tabs.len(), 1);
+        assert_ne!(main.tabs[0].id, INITIAL_TAB_ID);
+        assert!(main.tabs[0].is_active);
+        let moved = state.snapshot_packet_for("window-2");
+        assert_eq!(moved.tabs.len(), 2);
+        assert!(moved.tabs.iter().any(|tab| tab.id == second));
+        assert!(move_tab(&state, INITIAL_TAB_ID, "window-9").is_err());
     }
 }

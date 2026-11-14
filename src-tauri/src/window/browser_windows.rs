@@ -72,6 +72,22 @@ pub async fn open(app: &AppHandle, from_window: &str) -> Result<String, String> 
     Ok(id)
 }
 
+/// Sends a tab to another window. The page is rebuilt inside that window, so it reloads.
+pub async fn move_tab(app: &AppHandle, tab_id: &str, target: &str) -> Result<(), String> {
+    let state = app.state::<BrowserState>();
+    let _operation = state.session().operation().await;
+    let source = crate::state::session_ops::windows::move_tab(&state, tab_id, target)?;
+    if source == target {
+        return Ok(());
+    }
+    super::webview_manager::close_tab_webview(app, tab_id)?;
+    super::webview_manager::sync_all_webviews(app, &state)?;
+    for id in [source.as_str(), target] {
+        crate::state::publish::publish_tabs(app, &state, id);
+    }
+    Ok(())
+}
+
 /// Closes a window the user closed: its tabs move to the recently closed list.
 pub async fn closed(app: &AppHandle, window_id: &str) -> Result<(), String> {
     let state = app.state::<BrowserState>();

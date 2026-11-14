@@ -28,5 +28,7 @@
   "tabs.sleeping_badge": "Sleeping",
   "tabs.new_ephemeral": "New Ephemeral Tab",
   "tabs.ephemeral_badge": "Ephemeral",
-  "tabs.ephemeral_tooltip": "Disposable container: cookies and storage are wiped on close and never saved."
+  "tabs.ephemeral_tooltip": "Disposable container: cookies and storage are wiped on close and never saved.",
+  "tabs.move_to_window": "Move to window {number}",
+  "tabs.move_to_new_window": "Move to a new window"
 }

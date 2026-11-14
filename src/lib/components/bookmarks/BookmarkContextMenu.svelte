@@ -14,6 +14,7 @@
     openBookmarkFolderManager,
   } from "../../stores/persistenceStore";
   import { onBookmarkContextMenuAction } from "../../services/tauri-bridge";
+  import { moveTabToWindow, openBrowserWindow } from "../../services/bridge/windows";
 
   async function handleAction(action: string): Promise<void> {
     const menu = get(bookmarkContextMenuState);
@@ -21,7 +22,11 @@
     closeBookmarkContextMenu();
 
     try {
-      if ((action === "edit-bookmark" || action === "delete-bookmark") && menu.kind === "bookmark") {
+      if (action.startsWith("move-window:") && menu.kind === "tab") {
+        const target = action.slice("move-window:".length);
+        const windowId = target === "new" ? await openBrowserWindow() : target;
+        if (windowId) await moveTabToWindow(menu.tabId, windowId);
+      } else if ((action === "edit-bookmark" || action === "delete-bookmark") && menu.kind === "bookmark") {
         await openBookmarkEditor(menu.bookmark.title, menu.bookmark.url, menu.bookmark.icon);
       } else if (action === "rename-folder" && menu.kind === "folder") {
         await openBookmarkFolderEditor(menu.folder);

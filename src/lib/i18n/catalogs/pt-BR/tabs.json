@@ -28,5 +28,7 @@
   "tabs.sleeping_badge": "Em repouso",
   "tabs.new_ephemeral": "Nova Aba Efêmera",
   "tabs.ephemeral_badge": "Efêmera",
-  "tabs.ephemeral_tooltip": "Container descartável: cookies e dados são destruídos ao fechar e não vão para o histórico."
+  "tabs.ephemeral_tooltip": "Container descartável: cookies e dados são destruídos ao fechar e não vão para o histórico.",
+  "tabs.move_to_window": "Mover para a janela {number}",
+  "tabs.move_to_new_window": "Mover para uma nova janela"
 }
