@@ -3,7 +3,34 @@ use super::super::{
     tab_model::TabInfo,
     workspace_model::{WorkspaceItem, DEFAULT_WORKSPACE_ID},
 };
-use std::sync::Mutex;
+use crate::state::tab_model::MAIN_WINDOW_ID;
+use std::sync::{Arc, Mutex};
+
+/// What one browser window has selected. Tabs and workspaces are shared; each window chooses its own.
+pub(crate) struct WindowState {
+    active_tab_id: Mutex<String>,
+    active_workspace_id: Mutex<String>,
+}
+impl WindowState {
+    pub(crate) fn new(active_tab_id: String, active_workspace_id: String) -> Self {
+        Self {
+            active_tab_id: Mutex::new(active_tab_id),
+            active_workspace_id: Mutex::new(active_workspace_id),
+        }
+    }
+    pub(crate) fn active_tab_id(&self) -> super::read_port::ReadPort<'_, String> {
+        super::read_port::ReadPort::new(&self.active_tab_id)
+    }
+    pub(in crate::state) fn edit_active_tab_id(&self) -> &Mutex<String> {
+        &self.active_tab_id
+    }
+    pub(crate) fn active_workspace_id(&self) -> super::read_port::ReadPort<'_, String> {
+        super::read_port::ReadPort::new(&self.active_workspace_id)
+    }
+    pub(in crate::state) fn edit_active_workspace_id(&self) -> &Mutex<String> {
+        &self.active_workspace_id
+    }
+}
 
 /// Domain-owned state. Storage cannot be accessed through BrowserState fields.
 pub(crate) struct Session {
@@ -16,9 +43,11 @@ pub(crate) struct Session {
     snapshot_revision: Mutex<u64>,
     tab_operations: tauri::async_runtime::Mutex<()>,
     workspaces: Mutex<Vec<WorkspaceItem>>,
-    active_workspace_id: Mutex<String>,
     tabs: Mutex<Vec<TabInfo>>,
-    active_tab_id: Mutex<String>,
+    /// The first window. Code that has not been made window-aware yet works on this one.
+    main: Arc<WindowState>,
+    /// Every open window in the order it was created, including `main`.
+    windows: Mutex<Vec<(String, Arc<WindowState>)>>,
     next_tab_counter: Mutex<u64>,
 }
 
@@ -78,10 +107,56 @@ impl Session {
         &self.workspaces
     }
     pub(crate) fn active_workspace_id(&self) -> super::read_port::ReadPort<'_, String> {
-        super::read_port::ReadPort::new(&self.active_workspace_id)
+        self.main.active_workspace_id()
     }
     pub(in crate::state) fn edit_active_workspace_id(&self) -> &Mutex<String> {
-        &self.active_workspace_id
+        self.main.edit_active_workspace_id()
+    }
+    /// The selection of one window, or `None` once it is closed.
+    pub(crate) fn window(&self, id: &str) -> Option<Arc<WindowState>> {
+        if id == MAIN_WINDOW_ID {
+            return Some(self.main.clone());
+        }
+        self.windows
+            .lock()
+            .ok()?
+            .iter()
+            .find(|(window, _)| window == id)
+            .map(|(_, state)| state.clone())
+    }
+    /// The window ids in creation order.
+    pub(crate) fn window_ids(&self) -> Vec<String> {
+        self.windows
+            .lock()
+            .map(|windows| windows.iter().map(|(id, _)| id.clone()).collect())
+            .unwrap_or_else(|_| vec![MAIN_WINDOW_ID.to_string()])
+    }
+    // Called by the window commands (next step); exercised by the state tests until then.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(in crate::state) fn open_window(
+        &self,
+        id: &str,
+        active_tab_id: String,
+        active_workspace_id: String,
+    ) -> Result<Arc<WindowState>, String> {
+        let mut windows = self.windows.lock().map_err(|e| e.to_string())?;
+        if let Some((_, state)) = windows.iter().find(|(window, _)| window == id) {
+            return Ok(state.clone());
+        }
+        let state = Arc::new(WindowState::new(active_tab_id, active_workspace_id));
+        windows.push((id.to_string(), state.clone()));
+        Ok(state)
+    }
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(in crate::state) fn close_window(&self, id: &str) -> Result<(), String> {
+        if id == MAIN_WINDOW_ID {
+            return Err("windows.cannot_close_main".into());
+        }
+        self.windows
+            .lock()
+            .map_err(|e| e.to_string())?
+            .retain(|(window, _)| window != id);
+        Ok(())
     }
     pub(crate) fn tabs(&self) -> super::read_port::ReadPort<'_, Vec<TabInfo>> {
         super::read_port::ReadPort::new(&self.tabs)
@@ -90,10 +165,10 @@ impl Session {
         &self.tabs
     }
     pub(crate) fn active_tab_id(&self) -> super::read_port::ReadPort<'_, String> {
-        super::read_port::ReadPort::new(&self.active_tab_id)
+        self.main.active_tab_id()
     }
     pub(in crate::state) fn edit_active_tab_id(&self) -> &Mutex<String> {
-        &self.active_tab_id
+        self.main.edit_active_tab_id()
     }
     pub(crate) fn next_tab_counter(&self) -> super::read_port::ReadPort<'_, u64> {
         super::read_port::ReadPort::new(&self.next_tab_counter)
@@ -105,6 +180,10 @@ impl Session {
 
 impl Default for Session {
     fn default() -> Self {
+        let main = Arc::new(WindowState::new(
+            INITIAL_TAB_ID.to_string(),
+            DEFAULT_WORKSPACE_ID.to_string(),
+        ));
         let initial_tab = TabInfo::new_default(
             INITIAL_TAB_ID.to_string(),
             DEFAULT_HOME_URL.to_string(),
@@ -119,9 +198,9 @@ impl Default for Session {
             snapshot_revision: Mutex::new(0),
             tab_operations: tauri::async_runtime::Mutex::new(()),
             workspaces: Mutex::new(WorkspaceItem::default_workspaces()),
-            active_workspace_id: Mutex::new(DEFAULT_WORKSPACE_ID.to_string()),
             tabs: Mutex::new(vec![initial_tab]),
-            active_tab_id: Mutex::new(INITIAL_TAB_ID.to_string()),
+            main: main.clone(),
+            windows: Mutex::new(vec![(MAIN_WINDOW_ID.to_string(), main)]),
             next_tab_counter: Mutex::new(2),
         }
     }

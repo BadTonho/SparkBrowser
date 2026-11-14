@@ -66,11 +66,11 @@ pub struct SyncPushResult {
 pub enum SyncPullResponse {
     Preview {
         source_token: String,
-        preview: BackupPreview,
+        preview: Box<BackupPreview>,
         state: SyncStateSnapshot,
     },
     Imported {
-        result: BackupImportResult,
+        result: Box<BackupImportResult>,
         state: SyncStateSnapshot,
     },
 }
@@ -831,7 +831,7 @@ pub async fn pull_sync(
         let snap = snapshot(conn, &backup_service.sync)?;
         return Ok(SyncPullResponse::Preview {
             source_token,
-            preview,
+            preview: Box::new(preview),
             state: snap,
         });
     }
@@ -852,7 +852,7 @@ pub async fn pull_sync(
     clear_error_and_record_sync(conn, &backup_service.sync, &current_fp, now)?;
     let snap = snapshot(conn, &backup_service.sync)?;
     Ok(SyncPullResponse::Imported {
-        result,
+        result: Box::new(result),
         state: snap,
     })
 }

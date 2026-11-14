@@ -109,8 +109,13 @@ impl BrowserState {
     }
 
     pub fn current_split(&self) -> Option<SplitLayout> {
+        self.current_split_in(crate::state::tab_model::MAIN_WINDOW_ID)
+    }
+    /// The split shown by one window: the layout of the workspace that window has selected.
+    pub fn current_split_in(&self, window_id: &str) -> Option<SplitLayout> {
         let ws = self
             .session()
+            .window(window_id)?
             .edit_active_workspace_id()
             .lock()
             .ok()?
@@ -123,12 +128,17 @@ impl BrowserState {
             .cloned()
     }
     pub fn refresh_visible_tabs(&self) -> Result<(), String> {
-        let workspace = self
-            .session()
-            .edit_active_workspace_id()
-            .lock()
-            .map_err(|e| e.to_string())?
-            .clone();
+        let mut workspaces = std::collections::HashMap::new();
+        for id in self.session().window_ids() {
+            if let Some(window) = self.session().window(&id) {
+                let workspace = window
+                    .edit_active_workspace_id()
+                    .lock()
+                    .map_err(|e| e.to_string())?
+                    .clone();
+                workspaces.insert(id, workspace);
+            }
+        }
         let mut tabs = self
             .session()
             .edit_tabs()
@@ -145,8 +155,9 @@ impl BrowserState {
         });
         for tab in tabs.iter_mut() {
             tab.is_visible = tab.is_active
-                || layouts
-                    .get(&workspace)
+                || workspaces
+                    .get(&tab.window_id)
+                    .and_then(|workspace| layouts.get(workspace))
                     .is_some_and(|layout| layout.contains(&tab.id));
             if tab.is_visible {
                 tab.is_hibernated = false;

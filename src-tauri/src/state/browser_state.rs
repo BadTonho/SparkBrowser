@@ -29,6 +29,8 @@ impl Default for ViewportBounds {
 #[derive(Debug, Clone, Serialize)]
 pub struct TabSnapshot {
     pub revision: u64,
+    /// The window this snapshot is for; it lists only that window's tabs.
+    pub window_id: String,
     pub tabs: Vec<TabInfo>,
     pub split_layout: Option<super::split_layout::SplitLayout>,
 }
@@ -63,8 +65,12 @@ impl BrowserState {
 impl BrowserState {
     /// Select a tab and its workspace together, without navigating its WebView.
     pub(in crate::state) fn select_tab(&self, tab_id: &str) -> Result<TabInfo, String> {
-        let mut active = self
+        let window_id = self.window_of_tab(tab_id)?;
+        let window = self
             .session()
+            .window(&window_id)
+            .ok_or("windows.not_found")?;
+        let mut active = window
             .edit_active_tab_id()
             .lock()
             .map_err(|e| e.to_string())?;
@@ -77,8 +83,7 @@ impl BrowserState {
             .iter()
             .position(|tab| tab.id == tab_id)
             .ok_or("Tab was not found")?;
-        let mut workspace = self
-            .session()
+        let mut workspace = window
             .edit_active_workspace_id()
             .lock()
             .map_err(|e| e.to_string())?;
@@ -97,7 +102,7 @@ impl BrowserState {
             }
         }
         let now = TabInfo::current_epoch_secs();
-        for tab in tabs.iter_mut() {
+        for tab in tabs.iter_mut().filter(|tab| tab.window_id == window_id) {
             if tab.id == *active || tab.id == tab_id {
                 tab.last_active_epoch = now;
             }
@@ -124,8 +129,12 @@ impl BrowserState {
         {
             return Err("Destination workspace was not found".into());
         }
-        let active = self
+        let window_id = self.window_of_tab(tab_id)?;
+        let window = self
             .session()
+            .window(&window_id)
+            .ok_or("windows.not_found")?;
+        let active = window
             .edit_active_tab_id()
             .lock()
             .map_err(|e| e.to_string())?;
@@ -162,8 +171,7 @@ impl BrowserState {
             if let Some(layout) = layouts.get_mut(workspace_id) {
                 layout.focus_tab(tab_id);
             }
-            *self
-                .session()
+            *window
                 .edit_active_workspace_id()
                 .lock()
                 .map_err(|e| e.to_string())? = workspace_id.to_string();
@@ -171,15 +179,33 @@ impl BrowserState {
         Ok(())
     }
 
+    /// The window that shows a tab.
+    pub(crate) fn window_of_tab(&self, tab_id: &str) -> Result<String, String> {
+        self.session()
+            .edit_tabs()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .iter()
+            .find(|tab| tab.id == tab_id)
+            .map(|tab| tab.window_id.clone())
+            .ok_or_else(|| "Tab was not found".to_string())
+    }
+
     /// Returns a cloned snapshot of all tabs with `is_active` synchronized.
     pub fn snapshot_tabs(&self) -> Vec<TabInfo> {
-        let Ok(active_id) = self.session().edit_active_tab_id().lock() else {
-            return Vec::new();
-        };
+        let mut active_by_window = std::collections::HashMap::new();
+        for id in self.session().window_ids() {
+            if let Some(window) = self.session().window(&id) {
+                let Ok(active) = window.edit_active_tab_id().lock() else {
+                    return Vec::new();
+                };
+                active_by_window.insert(id, active.clone());
+            }
+        }
 
         if let Ok(mut tabs) = self.session().edit_tabs().lock() {
             for tab in tabs.iter_mut() {
-                tab.is_active = tab.id == *active_id;
+                tab.is_active = active_by_window.get(&tab.window_id) == Some(&tab.id);
             }
             return tabs.clone();
         }
@@ -188,6 +214,11 @@ impl BrowserState {
 
     /// Saves the current tab list into SQLite for automatic session restoration.
     pub fn snapshot_packet(&self) -> TabSnapshot {
+        self.snapshot_packet_for(crate::state::tab_model::MAIN_WINDOW_ID)
+    }
+
+    /// The tabs and split layout of one window.
+    pub fn snapshot_packet_for(&self, window_id: &str) -> TabSnapshot {
         let mut revision = self
             .session()
             .edit_snapshot_revision()
@@ -195,12 +226,17 @@ impl BrowserState {
             .expect("snapshot revision poisoned");
         self.refresh_visible_tabs()
             .expect("visible tab state poisoned");
-        let tabs = self.snapshot_tabs();
+        let tabs: Vec<_> = self
+            .snapshot_tabs()
+            .into_iter()
+            .filter(|tab| tab.window_id == window_id)
+            .collect();
         *revision += 1;
         TabSnapshot {
             revision: *revision,
+            window_id: window_id.to_string(),
             tabs,
-            split_layout: self.current_split(),
+            split_layout: self.current_split_in(window_id),
         }
     }
 
@@ -396,6 +432,99 @@ mod tests {
             *state.session().edit_active_workspace_id().lock().unwrap(),
             "ws-work"
         );
+    }
+
+    fn tab_in(id: &str, window: &str, workspace: &str) -> TabInfo {
+        let mut tab = TabInfo::new(
+            id.into(),
+            "https://example.test/".into(),
+            workspace.into(),
+            false,
+        );
+        tab.window_id = window.into();
+        tab
+    }
+
+    #[test]
+    fn each_window_selects_its_own_tab_without_touching_the_others() {
+        let state = BrowserState::default();
+        state
+            .session()
+            .open_window("window-2", "tab-2".into(), "ws-personal".into())
+            .unwrap();
+        {
+            let mut tabs = state.session().edit_tabs().lock().unwrap();
+            tabs.push(tab_in("tab-2", "window-2", "ws-personal"));
+            tabs.push(tab_in("tab-3", "window-2", "ws-personal"));
+        }
+        state.select_tab("tab-3").unwrap();
+        let tabs = state.snapshot_tabs();
+        assert_eq!(tabs.iter().filter(|t| t.is_active).count(), 2);
+        assert!(tabs.iter().find(|t| t.id == "tab-3").unwrap().is_active);
+        assert!(
+            tabs.iter()
+                .find(|t| t.id == INITIAL_TAB_ID)
+                .unwrap()
+                .is_active
+        );
+        assert_eq!(
+            *state
+                .session()
+                .window("window-2")
+                .unwrap()
+                .edit_active_tab_id()
+                .lock()
+                .unwrap(),
+            "tab-3"
+        );
+        assert_eq!(
+            *state.session().edit_active_tab_id().lock().unwrap(),
+            INITIAL_TAB_ID
+        );
+    }
+
+    #[test]
+    fn windows_choose_workspaces_independently_and_list_only_their_tabs() {
+        let state = BrowserState::default();
+        state
+            .session()
+            .open_window("window-2", "tab-2".into(), "ws-personal".into())
+            .unwrap();
+        state
+            .session()
+            .edit_tabs()
+            .lock()
+            .unwrap()
+            .push(tab_in("tab-2", "window-2", "ws-work"));
+        state.select_tab("tab-2").unwrap();
+        assert_eq!(
+            *state
+                .session()
+                .window("window-2")
+                .unwrap()
+                .edit_active_workspace_id()
+                .lock()
+                .unwrap(),
+            "ws-work"
+        );
+        assert_eq!(
+            *state.session().edit_active_workspace_id().lock().unwrap(),
+            "ws-personal"
+        );
+        assert_eq!(state.snapshot_packet().tabs.len(), 1);
+        let second = state.snapshot_packet_for("window-2");
+        assert_eq!(second.window_id, "window-2");
+        assert_eq!(
+            second
+                .tabs
+                .iter()
+                .map(|t| t.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["tab-2"]
+        );
+        assert!(state.session().close_window("main").is_err());
+        state.session().close_window("window-2").unwrap();
+        assert!(state.session().window("window-2").is_none());
     }
 
     #[test]
