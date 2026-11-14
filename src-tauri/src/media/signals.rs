@@ -4,7 +4,6 @@ use super::{volume::FrameMedia, MediaService};
 use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, Manager};
 
-#[cfg_attr(not(windows), allow(dead_code))]
 pub(super) fn receive(app: &AppHandle, id: &str, context: &str, value: &Signal) {
     let document = value.document.as_str();
     app.state::<MediaService>().update(app, id, |t| {
@@ -35,7 +34,7 @@ pub(super) fn receive(app: &AppHandle, id: &str, context: &str, value: &Signal) 
     sync_activity(app, id);
 }
 pub fn remove(app: &AppHandle, id: &str, context: Option<&str>) {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     super::pip_window::source_removed(app, id, context);
     if !app
         .state::<BrowserState>()

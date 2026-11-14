@@ -3666,6 +3666,7 @@ dependencies = [
  "flate2",
  "getrandom 0.3.4",
  "gtk",
+ "javascriptcore-rs",
  "png 0.17.16",
  "quick-xml",
  "reqwest 0.12.28",

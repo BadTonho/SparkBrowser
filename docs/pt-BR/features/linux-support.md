@@ -12,7 +12,17 @@ O Spark roda no Windows (WebView2) e no Linux (WebKitGTK por meio do `webkit2gtk
 | Foco do painel no split view | WebView2 `GotFocus` | GTK `focus-in-event` |
 | Mudo da aba e indicador de áudio | WebView2 `IsMuted` / `IsDocumentPlayingAudio` | WebKitGTK `is-muted` / `is-playing-audio` |
 | Zoom por site | Zoom da página e rastreamento nativo de mudanças | Zoom aplicado na navegação; mudanças nativas por pinça ou Ctrl+roda não são gravadas |
-| Controle de mídia por quadro, volume da aba, Picture-in-Picture | Contextos de execução do Chromium DevTools Protocol | Indisponível (informado como `media.unavailable`) |
+| Volume da aba (0-200%) | Chromium DevTools Protocol e captura de stream para amplificação | Script da página por um manipulador de mensagens do WebKit; atenuação pelo volume do elemento, amplificação por WebAudio |
+| Player flutuante Picture-in-Picture | Stream capturado do vídeo, imagem original oculta | Quadros copiados para um canvas no popup; a origem continua visível |
+
+### Mídia no WebKitGTK
+
+O WebKitGTK não tem `HTMLMediaElement.captureStream()` e, em builds comuns, não tem WebRTC, então um `MediaStream` não pode ser exibido em um `<video>`. Os caminhos do Linux diferem do Windows assim:
+
+- **Volume acima de 100%** passa o elemento por um nó de ganho do WebAudio. Uma fonte de elemento de mídia nunca pode ser liberada, então o grafo permanece enquanto o documento existir (o ganho volta a 1 em 100%). Só é usado para mídia que o WebAudio pode ler (mesma origem, `blob:` ou CORS); caso contrário o ajuste informa `limited` e o áudio da página não é alterado.
+- **Picture-in-Picture** funciona com qualquer vídeo sem proteção, inclusive de outra origem, porque o popup desenha os quadros com `drawImage`. O vídeo original continua visível porque o WebKit pausa vídeos mudos com autoplay que ficam invisíveis. A janela sem moldura é criada como webview relacionada e o WebKit refaz seu documento depois de `window.open()`, então o player é montado depois disso.
+- **Comportamento da janela:** sempre no topo, ocultar da barra de tarefas e a sombra são feitos na medida do possível e dependem do gerenciador de janelas (o Wayland ignora o sempre no topo em janelas comuns).
+- **Eco do motor:** o WebKitGTK informa o volume lembrado do stream de áudio como `volumechange`. O controlador ignora essas mudanças, a menos que o usuário tenha interagido com a página, para que o volume da aba nunca vire o volume próprio da página.
 
 A URL do shell nos builds de release é `tauri://localhost`. Esquemas personalizados têm caminho vazio e origem opaca em `url::Url`, então as verificações do shell comparam esquema, host e porta em vez de `Url::origin`.
 
@@ -34,6 +44,7 @@ Os testes nativos também precisam do `tauri-driver` no diretório ignorado `.ca
 cargo install tauri-driver --locked --root .cache/native-tools
 npm run test:native:build:fast
 npm run test:native:critical
+npm run test:native -- --case media-linux   # volume, mudo e Picture-in-Picture no WebKitGTK
 ```
 
 Limite conhecido: o cenário `backup-identities` não alcança abas de contêiner de conta, porque cada contêiner usa seu próprio diretório de dados do WebKit, que a sessão do WebDriver não automatiza.

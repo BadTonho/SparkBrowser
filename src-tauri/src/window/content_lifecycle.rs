@@ -19,7 +19,7 @@ pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String
     state.surfaces().content_bootstrap().retire(label)?;
     crate::site_permissions::cancel_view(app, label);
     crate::downloads::native::cancel_view(app, label);
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     app.run_on_main_thread({
         let label = label.to_owned();
         {

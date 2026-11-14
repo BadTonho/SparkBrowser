@@ -12,7 +12,17 @@ Spark runs on Windows (WebView2) and Linux (WebKitGTK through `webkit2gtk` 2.0).
 | Split view pane focus | WebView2 `GotFocus` | GTK `focus-in-event` |
 | Tab mute and audible indicator | WebView2 `IsMuted` / `IsDocumentPlayingAudio` | WebKitGTK `is-muted` / `is-playing-audio` |
 | Per-site zoom | Page zoom plus native zoom-change tracking | Page zoom applied on navigation; native pinch or Ctrl+wheel changes are not persisted |
-| Per-frame media control, tab volume, Picture-in-Picture | Chromium DevTools Protocol execution contexts | Not available (reported as `media.unavailable`) |
+| Tab volume (0-200%) | Chromium DevTools Protocol plus stream capture for amplification | Page script through a WebKit script message handler; attenuation by element volume, amplification through WebAudio |
+| Floating Picture-in-Picture player | Stream captured from the video, source image hidden | Frames copied into a canvas in the popup; the source stays visible |
+
+### Media on WebKitGTK
+
+WebKitGTK has no `HTMLMediaElement.captureStream()` and, in common builds, no WebRTC, so a `MediaStream` cannot be displayed in a `<video>`. The Linux paths differ from Windows in these ways:
+
+- **Volume above 100%** routes the element through a WebAudio gain node. A media element source can never be released, so the graph stays for the life of the document (gain returns to 1 at 100%). It is only used for media WebAudio may read (same origin, `blob:`, or CORS); otherwise the setting reports `limited` and the page's audio is left untouched.
+- **Picture-in-Picture** works with any non-protected video, including cross-origin ones, because the popup draws frames with `drawImage`. The original video stays visible because WebKit pauses invisible muted-autoplay videos. The frameless window is created as a related webview and WebKit rebuilds its document after `window.open()`, so the player is built after that happens.
+- **Window behavior:** always-on-top, taskbar hiding and the shadow option are best effort and depend on the window manager (Wayland ignores always-on-top for ordinary windows).
+- **Engine echo:** WebKitGTK reports the audio stream's remembered volume as `volumechange`. The controller ignores such changes unless the user interacted with the page, so the tab volume never becomes the page's own volume.
 
 The shell URL on release builds is `tauri://localhost`. Custom schemes have an empty path and an opaque origin in `url::Url`, so shell checks compare scheme, host and port instead of `Url::origin`.
 
@@ -34,6 +44,7 @@ Native tests also need `tauri-driver` in the ignored `.cache/native-tools` direc
 cargo install tauri-driver --locked --root .cache/native-tools
 npm run test:native:build:fast
 npm run test:native:critical
+npm run test:native -- --case media-linux   # volume, mute and Picture-in-Picture on WebKitGTK
 ```
 
 Known limit: the `backup-identities` scenario cannot reach account-container tabs because each container uses its own WebKit data directory, which the WebDriver session does not automate.

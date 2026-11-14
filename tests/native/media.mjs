@@ -5,7 +5,7 @@ import { withFloatingPlayer, checkFloatingVolume, checkBackgroundFloatingVolume,
 import { checkMinimalPlayer } from './pip-appearance.mjs';
 
 export async function checkMediaMute({invoke,until,fixture,click,restart,script,openSettings,closeSettings}) {
-  if (process.platform !== 'win32') return;
+  if (!['win32','linux'].includes(process.platform)) return;
   const packet = await invoke('create_tab', {url: fixture.origin+'/page/media-a'});
   const a = packet.tabs.find(t=>t.is_active).id;
   await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===a)?.audible, 'native audio activity');

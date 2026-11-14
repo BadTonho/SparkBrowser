@@ -78,12 +78,25 @@ pub(super) fn create_tab_webview(
             tab_id,
         )?)
         .initialization_script(
-            include_str!("../media/controller.js")
+            [
+                // WebKitGTK has no runtime bindings; the page reaches the host through a script
+                // message handler registered by `media::protocol`.
+                #[cfg(target_os = "linux")]
+                "Object.defineProperty(window,'__sparkMediaSignal',{value:s=>window.webkit.messageHandlers.sparkMedia.postMessage(String(s))});",
+                #[cfg(not(target_os = "linux"))]
+                "",
+                include_str!("../media/controller.js"),
+            ]
+            .concat()
                 .replace(
                     "__MEDIA_TOKEN__",
                     &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
                 )
                 .replace("__PIP_PLAYER__", &crate::media::pip::player_script())
+                .replace(
+                    "__MEDIA_ENGINE_ECHO__",
+                    if cfg!(target_os = "linux") { "true" } else { "false" },
+                )
                 .replace(
                     "__MEDIA_VOLUME__",
                     &app.state::<crate::media::MediaService>()
@@ -145,7 +158,7 @@ pub(super) fn create_tab_webview(
         tab_id.to_string(),
     ));
 
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     let webview_builder = {
         let app = app.clone();
         let id = tab_id.to_string();
@@ -159,7 +172,7 @@ pub(super) fn create_tab_webview(
         })
     };
 
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     let webview_builder = {
         let app = app.clone();
         let id = tab_id.to_string();
@@ -367,6 +380,12 @@ pub(super) fn create_tab_webview(
     )?;
 
     #[cfg(windows)]
+    crate::media::protocol::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        &navigation_registration_token,
+    )?;
+    #[cfg(target_os = "linux")]
     crate::media::protocol::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,

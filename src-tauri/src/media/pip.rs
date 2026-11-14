@@ -1,11 +1,11 @@
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use super::MediaService;
 use super::MediaSnapshot;
 use serde::{Deserialize, Serialize};
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use serde_json::json;
 use tauri::AppHandle;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use tauri::Manager;
 
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -37,8 +37,9 @@ pub fn player_script() -> String {
         )
         .replace("__PIP_ICONS__", include_str!("player/icons.js"))
         .replace("__PIP_CAPTURE__", include_str!("player/capture.js"))
+        .replace("__PIP_CANVAS__", include_str!("player/canvas.js"))
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 async fn exit_known(app: &AppHandle) -> Result<(), String> {
     if let Some((session, tab, token, context, document)) = super::pip_window::owner() {
         let _ = super::protocol::evaluate(
@@ -82,7 +83,7 @@ pub async fn enter(
     video: &str,
     presentation: Option<Presentation>,
 ) -> Result<MediaSnapshot, String> {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     {
         let snapshot = super::volume::refresh(app, id).await?;
         let tab = snapshot
@@ -125,19 +126,19 @@ pub async fn enter(
         }
         super::volume::refresh(app, id).await
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = (app, id, context, document, video, presentation);
         Err("media.unavailable".into())
     }
 }
 pub async fn exit(app: &AppHandle) -> Result<MediaSnapshot, String> {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     {
         exit_known(app).await?;
         app.state::<MediaService>().snapshot(app)
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = app;
         Err("media.unavailable".into())

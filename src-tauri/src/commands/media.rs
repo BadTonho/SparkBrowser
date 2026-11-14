@@ -7,11 +7,11 @@ pub async fn set_pip_window_shadow(
     enabled: bool,
 ) -> Result<bool, String> {
     let _operation = service.operations.lock().await;
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     {
         crate::media::pip_window::set_shadow(&app, enabled).await
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = (app, enabled);
         Err("media.unavailable".into())
@@ -58,11 +58,11 @@ pub async fn set_tab_volume(
     let result =
         crate::media::volume::set(&app, &tab_id, volume, &document_key, pip_session.as_deref())
             .await;
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     if let (Some(session), Some(sequence)) = (pip_session, pip_sequence) {
         crate::media::pip_window::acknowledge(&app, &session, sequence);
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     let _ = (pip_session, pip_sequence);
     result
 }

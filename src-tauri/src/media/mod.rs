@@ -3,15 +3,22 @@ pub mod contexts;
 #[cfg(target_os = "linux")]
 pub mod linux;
 pub mod pip;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 pub mod pip_window;
 #[cfg(windows)]
+pub mod protocol;
+#[cfg(target_os = "linux")]
+#[path = "protocol_linux.rs"]
 pub mod protocol;
 mod signal_message;
 pub mod signals;
 pub mod volume;
 #[cfg(windows)]
 pub mod windows;
+#[cfg(target_os = "linux")]
+pub(crate) use linux as native_audio;
+#[cfg(windows)]
+pub(crate) use windows as native_audio;
 
 use crate::state::{browser_state::BrowserState, tab_model::webview_label_for_tab};
 use serde::Serialize;
@@ -95,7 +102,7 @@ impl MediaSnapshot {
 #[derive(Default)]
 pub struct MediaService {
     pub operations: tokio::sync::Mutex<()>,
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     pub(crate) pip_window_shadow: std::sync::atomic::AtomicBool,
     inner: Mutex<MediaSnapshot>,
 }
@@ -113,7 +120,7 @@ impl MediaService {
             inner.revision += 1;
         }
         let mut snapshot = inner.clone();
-        snapshot.frame_tracking_supported = cfg!(windows);
+        snapshot.frame_tracking_supported = cfg!(any(windows, target_os = "linux"));
         Ok(snapshot)
     }
     pub fn tab(&self, id: &str) -> TabMediaState {
@@ -129,15 +136,15 @@ impl MediaService {
     pub fn update(&self, app: &AppHandle, id: &str, change: impl FnOnce(&mut TabMediaState)) {
         let live = app.state::<BrowserState>().snapshot_tabs();
         if let Ok(mut inner) = self.inner.lock() {
-            inner.frame_tracking_supported = cfg!(windows);
+            inner.frame_tracking_supported = cfg!(any(windows, target_os = "linux"));
             if !inner.update(id, &live, change) {
                 return;
             }
-            #[cfg(windows)]
+            #[cfg(any(windows, target_os = "linux"))]
             let changed = inner.tabs.iter().find(|t| t.tab_id == id).unwrap().clone();
             let _ = crate::security::emit_shell(app, "tab-media-state", inner.clone());
             drop(inner);
-            #[cfg(windows)]
+            #[cfg(any(windows, target_os = "linux"))]
             pip_window::sync(app, &changed);
         }
     }
@@ -155,21 +162,10 @@ impl MediaService {
         {
             return Err("media.tab_missing".into());
         }
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "linux"))]
         {
             if let Some(view) = app.get_webview(&webview_label_for_tab(id)) {
-                windows::set_muted(app, &view, muted || self.tab(id).volume == 0).await?;
-            }
-            self.update(app, id, |t| {
-                t.muted = muted;
-                t.mute_available = true;
-            });
-            self.snapshot(app)
-        }
-        #[cfg(target_os = "linux")]
-        {
-            if let Some(view) = app.get_webview(&webview_label_for_tab(id)) {
-                linux::set_muted(app, &view, muted || self.tab(id).volume == 0).await?;
+                native_audio::set_muted(app, &view, muted || self.tab(id).volume == 0).await?;
             }
             self.update(app, id, |t| {
                 t.muted = muted;

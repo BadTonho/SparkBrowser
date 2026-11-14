@@ -5,7 +5,7 @@
   const setInterval = popup.setInterval.bind(popup), clearInterval = popup.clearInterval.bind(popup);
   const labels = {play:'Play',pause:'Pause',back:'Back 10 seconds',forward:'Forward 10 seconds',progress:'Playback position',volume:'Volume',return:'Return to tab',close:'Close',minimize:'Minimize',...config.presentation?.labels};
   const icon = __PIP_ICONS__;
-  const createCapture = __PIP_CAPTURE__;
+  const createCapture = config.canvas ? __PIP_CANVAS__ : __PIP_CAPTURE__;
   const sheet = new popup.CSSStyleSheet();
   sheet.replaceSync(__PIP_PLAYER_STYLE__);
   doc.adoptedStyleSheets = [sheet];
@@ -14,7 +14,7 @@
   function el(tag, parent, properties = {}) { const node=doc.createElement(tag);Object.assign(node,properties);parent.append(node);return node; }
   function setIcon(button, name) { if(button.getAttribute('data-icon')===name)return;button.replaceChildren(icon(doc,name));button.setAttribute('data-icon',name); }
   function button(parent, name, label, id) { const node=el('button',parent,{type:'button',title:label});node.setAttribute('aria-label',label);node.setAttribute('data-testid',id);setIcon(node,name);return node; }
-  const video=el('video',doc.body,{muted:true,autoplay:true,playsInline:true});
+  const video=config.canvas?el('canvas',doc.body):el('video',doc.body,{muted:true,autoplay:true,playsInline:true});
   video.setAttribute('data-testid','pip-image');
   const chrome=el('div',doc.body,{className:'chrome'});chrome.setAttribute('data-testid','pip-chrome');chrome.setAttribute('data-visible','true');
   const header=el('div',chrome,{className:'header'});

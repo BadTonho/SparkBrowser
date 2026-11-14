@@ -3,7 +3,6 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-#[cfg_attr(not(windows), allow(dead_code))]
 pub(super) struct Signal {
     token: String,
     pub document: String,
@@ -14,7 +13,6 @@ pub(super) struct Signal {
     pub pip_mode: Option<String>,
     pub pip_session: Option<String>,
 }
-#[cfg_attr(not(windows), allow(dead_code))]
 pub(super) fn parse(raw: &str, token: &str) -> Option<Signal> {
     if raw.len() > 2048 {
         return None;

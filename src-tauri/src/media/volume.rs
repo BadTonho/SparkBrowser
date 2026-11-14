@@ -1,11 +1,11 @@
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use super::MediaService;
 use super::MediaSnapshot;
 use serde::{Deserialize, Serialize};
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use serde_json::json;
 use tauri::AppHandle;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use tauri::Manager;
 
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -36,7 +36,7 @@ pub fn validate_volume(value: u16) -> Result<(), String> {
         Ok(())
     }
 }
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "linux", test))]
 fn document_key(frames: &[FrameMedia]) -> String {
     let mut keys: Vec<_> = frames
         .iter()
@@ -45,7 +45,7 @@ fn document_key(frames: &[FrameMedia]) -> String {
     keys.sort();
     keys.join("|")
 }
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "linux", test))]
 fn validate_document(expected: &str, actual: &str, owned_pip: bool) -> Result<(), String> {
     // Removing an unrelated iframe clears the aggregate key. A PiP edit may
     // still proceed only after its source session matches the fresh reports.
@@ -54,7 +54,7 @@ fn validate_document(expected: &str, actual: &str, owned_pip: bool) -> Result<()
     }
     Ok(())
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 async fn reports(app: &AppHandle, id: &str) -> Result<(String, Vec<FrameMedia>), String> {
     let (token, contexts) = super::protocol::contexts(app, id).await?;
     let mut frames = Vec::new();
@@ -78,7 +78,7 @@ async fn reports(app: &AppHandle, id: &str) -> Result<(String, Vec<FrameMedia>),
     Ok((token, frames))
 }
 pub async fn refresh(app: &AppHandle, id: &str) -> Result<MediaSnapshot, String> {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     {
         let (_, frames) = reports(app, id).await?;
         let relevant: Vec<_> = frames.iter().filter(|f| f.count > 0).collect();
@@ -120,7 +120,7 @@ pub async fn refresh(app: &AppHandle, id: &str) -> Result<MediaSnapshot, String>
         super::signals::sync_activity(app, id);
         app.state::<MediaService>().snapshot(app)
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = (app, id);
         Err("media.unavailable".into())
@@ -134,7 +134,7 @@ pub async fn set(
     pip_session: Option<&str>,
 ) -> Result<MediaSnapshot, String> {
     validate_volume(value)?;
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     {
         let (token, frames) = reports(app, id).await?;
         let actual = document_key(&frames);
@@ -203,7 +203,7 @@ pub async fn set(
         }
         result?;
         if let Some(view) = app.get_webview(&crate::state::tab_model::webview_label_for_tab(id)) {
-            super::windows::set_muted(app, &view, previous.muted || applied == 0).await?;
+            super::native_audio::set_muted(app, &view, previous.muted || applied == 0).await?;
         }
         app.state::<MediaService>().update(app, id, |t| {
             t.muted = previous.muted;
@@ -215,7 +215,7 @@ pub async fn set(
         });
         app.state::<MediaService>().snapshot(app)
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = (app, id, value, expected, pip_session);
         Err("media.unavailable".into())

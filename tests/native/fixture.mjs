@@ -101,6 +101,18 @@ export async function createFixture() {
       response.setHeader('Content-Type', 'application/json');
       response.end(JSON.stringify(command)); return;
     }
+    if (url.pathname === '/clip.webm') {
+      // Artificial local video for engines that cannot play MediaRecorder output.
+      const clip = readFileSync(new URL('./fixtures/clip.webm', import.meta.url));
+      const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range ?? '');
+      response.setHeader('Content-Type', 'video/webm'); response.setHeader('Accept-Ranges', 'bytes');
+      if (range) {
+        const start = Number(range[1]), end = range[2] ? Number(range[2]) : clip.length - 1;
+        response.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${clip.length}`, 'Content-Length': end - start + 1 });
+        response.end(clip.subarray(start, end + 1));
+      } else { response.setHeader('Content-Length', clip.length); response.end(clip); }
+      return;
+    }
     if (url.pathname === '/pip-video.js') {
       response.setHeader('Content-Type','text/javascript; charset=utf-8');
       response.end(readFileSync(new URL('./fixtures/pip-video.js',import.meta.url),'utf8'));return;
@@ -277,6 +289,7 @@ export async function createFixture() {
               if (command === 'native-controls') {const el=document.getElementById('fixture-audio');el.controls=true;el.src='/tone.wav';await el.play();}
               if (command === 'oscillator') {document.querySelectorAll('audio,video').forEach(el=>el.pause());const c=new AudioContext();const o=c.createOscillator();const g=c.createGain();g.gain.value=0.001;o.connect(g).connect(c.destination);o.start();await c.resume();}
               if (command === 'videos') {for(let n=0;n<2;n++)await makeVideo(n);}
+              if (command === 'clip') {const video=document.createElement('video');video.title='Artificial clip';video.loop=true;video.src='/clip.webm';document.body.prepend(video);await video.play();}
               if (command === 'disable-pip') document.querySelectorAll('video').forEach(v=>v.disablePictureInPicture=true);
               if (command === 'exit-pip') {if(document.pictureInPictureElement)await document.exitPictureInPicture();}
               if (command === 'media-frame') {const f=document.createElement('iframe');f.src=location.origin.replace('127.0.0.1','localhost')+'/page/media-frame';document.body.prepend(f);}
