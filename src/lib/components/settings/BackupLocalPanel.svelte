@@ -12,6 +12,7 @@
     saveEncryption,
     saveLocalSchedule,
   } from "../../stores/backupStore";
+  import { UserError, describeError } from "../../services/user-errors.js";
   import type { LocalBackupInterval, LocalBackupSchedule } from "../../types/backup";
   import ErrorMessage from "../status/ErrorMessage.svelte";
 
@@ -27,6 +28,11 @@
 
   const busy = $derived($localBackupBusy || $backupBusy);
   const schedule = $derived($localBackupState.schedule);
+  /** Newest regular backup; "Before replace" safety copies are not what the schedule produces. */
+  const lastBackup = $derived($localBackupState.entries.find((entry) => entry.reason !== "pre_restore") ?? null);
+  const failure = $derived($localBackupState.last_failure);
+  const failureError = $derived(failure ? describeError(new UserError(failure.code, failure.code)) : "");
+  const status = $derived<"failed" | "ok" | "none">(failure ? "failed" : lastBackup ? "ok" : "none");
 
   $effect(() => {
     maxBackups = $localBackupState.schedule.max_backups;
@@ -85,6 +91,35 @@
     <h3 id="backup-local-heading">{$t("backup.local_heading")}</h3>
     <p>{$t("backup.local_description")}</p>
   </header>
+
+  <div class="block status-block" data-testid="backup-status">
+    <span class="chip" class:ok={status === "ok"} class:error={status === "failed"} role={status === "failed" ? "alert" : "status"} data-testid="backup-status-chip">
+      {$t(`backup.status_${status}` as MessageKey)}
+    </span>
+    {#if lastBackup}
+      <p class="status" data-testid="backup-status-last">{$t("backup.status_last", { time: when(lastBackup.created_at) })}</p>
+    {/if}
+    {#if failure}
+      <p class="status" data-testid="backup-status-failure">
+        {$t("backup.status_failed_at", { time: when(failure.at) })}
+        {#if schedule.enabled} {$t("backup.status_retry")}{/if}
+      </p>
+      <ErrorMessage error={failureError} />
+    {/if}
+    {#if schedule.enabled && $localBackupState.next_due_at}
+      <p class="status" data-testid="backup-schedule-next">
+        {$t("backup.schedule_next", { time: when($localBackupState.next_due_at) })}
+      </p>
+    {/if}
+    {#if $localBackupState.entries.length > 0}
+      <p class="status" data-testid="backup-status-usage">
+        {$t("backup.history_summary", {
+          count: $formatNumber($localBackupState.entries.length),
+          size: size($localBackupState.total_bytes),
+        })}
+      </p>
+    {/if}
+  </div>
 
   <div class="block">
     <label class="choice">
@@ -148,11 +183,6 @@
       />
     </label>
     <p class="status">{$t("backup.schedule_retention_note")}</p>
-    {#if schedule.enabled && $localBackupState.next_due_at}
-      <p class="status" data-testid="backup-schedule-next">
-        {$t("backup.schedule_next", { time: when($localBackupState.next_due_at) })}
-      </p>
-    {/if}
     <div class="actions">
       <button class="pill-action primary-pill" data-testid="backup-now" disabled={busy} onclick={backupNow}>
         {$t("backup.local_now")}
@@ -208,12 +238,6 @@
     {#if $localBackupState.entries.length === 0}
       <p>{$t("backup.history_empty")}</p>
     {:else}
-      <p class="status">
-        {$t("backup.history_summary", {
-          count: $formatNumber($localBackupState.entries.length),
-          size: size($localBackupState.total_bytes),
-        })}
-      </p>
       <ul class="history">
         {#each $localBackupState.entries as entry (entry.id)}
           <li data-testid="backup-history-entry">
@@ -264,6 +288,11 @@
   .status { font-size: 11.5px; color: var(--text-secondary); overflow-wrap: anywhere; }
   .status.ok { color: #86efac; }
   .lock { color: #93c5fd; }
+  .status-block { gap: 4px; }
+  .status-block p { margin: 0; }
+  .chip { align-self: flex-start; padding: 4px 10px; border: 1px solid var(--border-subtle); border-radius: 999px; background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); font-size: 11px; line-height: 1.35; }
+  .chip.ok { border-color: rgba(34, 197, 94, 0.35); background: rgba(34, 197, 94, 0.1); color: #86efac; }
+  .chip.error { border-color: rgba(248, 113, 113, 0.42); background: rgba(248, 113, 113, 0.12); color: #fca5a5; }
   .history { display: flex; max-height: 280px; flex-direction: column; gap: 6px; margin: 0; padding: 0; overflow: auto; list-style: none; }
   .history li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 9px; background: rgba(255, 255, 255, 0.025); }
   .entry-info { display: flex; min-width: 0; flex-direction: column; gap: 2px; font-size: 12px; color: var(--text-primary); }

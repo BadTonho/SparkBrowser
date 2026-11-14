@@ -85,6 +85,7 @@ export const localBackupState = writable<LocalBackupState>({
   schedule: { enabled: false, interval: "daily", on_exit: false, max_backups: 10, max_age_days: null },
   encryption_enabled: false,
   last_run_at: null,
+  last_failure: null,
   next_due_at: null,
   directory: "",
   entries: [],
@@ -394,9 +395,15 @@ export const saveEncryption = (enabled: boolean, password: string | null = null)
 
 async function createLocal(reason: LocalBackupReason, onlyIfChanged: boolean): Promise<boolean> {
   await noteWriter.flushAll();
-  const outcome = await createLocalBackup(capturePreferences(), reason, onlyIfChanged);
-  localBackupState.set(outcome.state);
-  return outcome.created;
+  try {
+    const outcome = await createLocalBackup(capturePreferences(), reason, onlyIfChanged);
+    localBackupState.set(outcome.state);
+    return outcome.created;
+  } catch (error) {
+    // The backend recorded the failure; reload so the status panel shows it right away.
+    await fetchLocalBackupState().then((state) => localBackupState.set(state)).catch(() => {});
+    throw error;
+  }
 }
 
 export const backupNow = () =>

@@ -129,11 +129,40 @@ pub struct Entry {
     pub encrypted: bool,
 }
 
+/// The most recent backup attempt that failed, kept until a later attempt succeeds. Only a stable
+/// error code is stored, never the native message, which may contain file paths.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Failure {
+    pub at: i64,
+    pub reason: Reason,
+    pub code: String,
+}
+/// `backup.some_code` or `backup.some_code: detail` becomes the code; anything else is generic.
+fn failure_code(error: &str) -> String {
+    let head = error.split(':').next().unwrap_or("").trim();
+    let valid = head.split_once('.').is_some_and(|(area, name)| {
+        !area.is_empty()
+            && !name.is_empty()
+            && head
+                .bytes()
+                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b'.')
+    });
+    if valid { head.to_owned() } else { "operation.failed".to_owned() }
+}
+fn load_failure(conn: &Connection) -> Option<Failure> {
+    prefs::load(conn, prefs::BACKUP_LOCAL_FAILURE_KEY)
+        .ok()
+        .flatten()
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct LocalState {
     pub schedule: Schedule,
     pub encryption_enabled: bool,
     pub last_run_at: Option<i64>,
+    /// Set while the latest attempt failed; cleared by the next success.
+    pub last_failure: Option<Failure>,
     /// Epoch seconds at which the next scheduled backup is due; `None` when disabled.
     pub next_due_at: Option<i64>,
     pub directory: String,
@@ -291,6 +320,7 @@ fn build_state(conn: &Connection, dir: &Path) -> Result<LocalState, String> {
         schedule,
         encryption_enabled: encryption::enabled(conn)?,
         last_run_at,
+        last_failure: load_failure(conn),
         next_due_at,
         directory: dir.to_string_lossy().into_owned(),
         total_bytes: entries.iter().map(|entry| entry.size_bytes).sum(),
@@ -336,9 +366,33 @@ pub async fn set_encryption(
     .await
 }
 
-/// Captures and stores a snapshot. With `only_if_changed`, an unchanged document
-/// only refreshes the schedule clock instead of piling up identical files.
+/// Captures and stores a snapshot, remembering whether the attempt worked so the status panel
+/// can show a failure after a restart. With `only_if_changed`, an unchanged document only
+/// refreshes the schedule clock instead of piling up identical files.
 pub async fn create(
+    app: &AppHandle,
+    preferences: BackupPreferences,
+    reason: Reason,
+    only_if_changed: bool,
+) -> Result<CreateOutcome, String> {
+    let result = create_snapshot(app, preferences, reason, only_if_changed).await;
+    let failure = result.as_ref().err().map(|error| Failure {
+        at: now(),
+        reason,
+        code: failure_code(error),
+    });
+    // Bookkeeping must never replace the real outcome of the backup.
+    let _ = crate::database::executor::run(app.clone(), move |conn| match &failure {
+        Some(failure) => serde_json::to_string(failure)
+            .map_err(|e| e.to_string())
+            .and_then(|raw| prefs::store(conn, prefs::BACKUP_LOCAL_FAILURE_KEY, &raw)),
+        None => prefs::remove(conn, prefs::BACKUP_LOCAL_FAILURE_KEY),
+    })
+    .await;
+    result
+}
+
+async fn create_snapshot(
     app: &AppHandle,
     preferences: BackupPreferences,
     reason: Reason,
@@ -578,6 +632,42 @@ mod tests {
             .filter(|e| ids.contains(&e.id))
             .map(|e| (NOW - e.created_at) / DAY)
             .collect()
+    }
+
+    #[test]
+    fn failures_keep_only_a_stable_code_and_roundtrip_through_the_state() {
+        assert_eq!(failure_code("backup.password_missing"), "backup.password_missing");
+        assert_eq!(
+            failure_code("backup.invalid_document: expected value at line 1"),
+            "backup.invalid_document"
+        );
+        for leaky in [
+            "Access is denied. (os error 5) C:\\Users\\me\\backups",
+            "No such file: /home/me/x",
+            "",
+            ":",
+            "Backup.Upper",
+        ] {
+            assert_eq!(failure_code(leaky), "operation.failed", "{leaky}");
+        }
+        let conn = Connection::open_in_memory().unwrap();
+        prefs::initialize_preferences_table(&conn).unwrap();
+        let dir = temp();
+        assert_eq!(build_state(&conn, dir.path()).unwrap().last_failure, None);
+        let failure = Failure {
+            at: 42,
+            reason: Reason::Scheduled,
+            code: "backup.crypto_failed".into(),
+        };
+        prefs::store(
+            &conn,
+            prefs::BACKUP_LOCAL_FAILURE_KEY,
+            &serde_json::to_string(&failure).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(build_state(&conn, dir.path()).unwrap().last_failure, Some(failure));
+        prefs::store(&conn, prefs::BACKUP_LOCAL_FAILURE_KEY, "garbage").unwrap();
+        assert_eq!(build_state(&conn, dir.path()).unwrap().last_failure, None);
     }
 
     #[test]

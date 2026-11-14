@@ -78,10 +78,13 @@ export interface LocalBackupEntry {
   size_bytes: number;
   encrypted: boolean;
 }
+export interface LocalBackupFailure { at: number; reason: LocalBackupReason; code: string; }
 export interface LocalBackupState {
   schedule: LocalBackupSchedule;
   encryption_enabled: boolean;
   last_run_at: number | null;
+  /** The latest attempt failed and no attempt has succeeded since; null otherwise. */
+  last_failure: LocalBackupFailure | null;
   next_due_at: number | null;
   directory: string;
   entries: LocalBackupEntry[];
