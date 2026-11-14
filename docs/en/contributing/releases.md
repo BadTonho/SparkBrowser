@@ -11,8 +11,7 @@ When you push a tag matching `v*`, the `.github/workflows/release.yml` workflow 
    - **`.deb` (Debian / Ubuntu):** Native package for Debian, Ubuntu, Pop!_OS, Linux Mint, Elementary OS, and Zorin OS.
    - **`.rpm` (Red Hat / SUSE):** Native package for Fedora, openSUSE, RHEL, CentOS Stream, AlmaLinux, and Rocky Linux.
    - **`portable.tar.gz` (Standalone Archive):** Standalone portable binary tarball ideal for Arch Linux (AUR packaging) and custom environments.
-3. **Linux Flatpak (experimental):** A separate job packs the same Linux binary as `SparkBrowser_<tag>_x86_64.flatpak` (manifest in `packaging/linux/flatpak/`). It runs on the GNOME runtime, includes `secret-tool` for credential storage and needs no root. If this job fails, the other packages are still published, without the `.flatpak` file. Because it is new, test it on a real Linux machine while the release is still a draft.
-4. **Publication (Draft Mode):** Creates the GitHub Release as a **Draft**, attaches all compiled installers, signatures, and manifests, and automatically marks `-beta.*` tags as **Pre-release**. Being created in draft mode allows you to review the generated release notes and inspect all attached packages privately before publishing them to the public.
+3. **Publication (Draft Mode):** Creates the GitHub Release as a **Draft**, attaches all compiled installers, signatures, and manifests, and automatically marks `-beta.*` tags as **Pre-release**. Being created in draft mode allows you to review the generated release notes and inspect all attached packages privately before publishing them to the public.
 
 ### Linux Installation Commands
 
@@ -32,11 +31,6 @@ When you push a tag matching `v*`, the `.github/workflows/release.yml` workflow 
 - **openSUSE (`.rpm`):**
   ```bash
   sudo zypper install ./spark-browser-*.rpm
-  ```
-- **Flatpak (any distribution with Flatpak, experimental):**
-  ```bash
-  flatpak install --user ./SparkBrowser_*_x86_64.flatpak
-  flatpak run org.spark.browser
   ```
 
 ### Before creating the tag
@@ -64,7 +58,7 @@ git push origin main --tags
 
 GitHub Actions will build and sign the packages and create the release as a **draft**. Nothing is public until you publish it:
 
-1. Open the draft in **Releases** and check that it has the Windows installer (`.exe`, `.sig`, `updater.json`) and every Linux package (`.AppImage`, `.deb`, `.rpm`, `.tar.gz` and, if it built, `.flatpak`).
+1. Open the draft in **Releases** and check that it has the Windows installer (`.exe`, `.sig`, `updater.json`) and every Linux package (`.AppImage`, `.deb`, `.rpm`, `.tar.gz`).
 2. Review the generated release notes and edit them if needed.
 3. Download and try at least the Windows installer and one Linux package.
 4. Click **Publish release**. Beta tags (`-beta.N`) are already marked **Pre-release**.

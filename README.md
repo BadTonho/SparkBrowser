@@ -56,7 +56,7 @@ See the [feature guide](./docs/en/features/core-features.md) for details and pla
 | Web engine | WebView2 | WebKitGTK |
 | Core browsing, workspaces, split view | ✅ | ✅ |
 | Extensions | ✅ | Not yet |
-| Release packages | Installer (x64) with signed updates | `.deb`, `.rpm`, AppImage, `.tar.gz`, Flatpak (experimental) |
+| Release packages | Installer (x64) with signed updates | `.deb`, `.rpm`, AppImage, `.tar.gz` |
 
 Behavior can differ between platforms because each uses its own system web view. Feature pages call out the differences where they matter.
 

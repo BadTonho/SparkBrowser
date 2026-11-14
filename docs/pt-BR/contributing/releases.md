@@ -11,8 +11,7 @@ Quando você envia uma tag iniciada em `v*`, o workflow `.github/workflows/relea
    - **`.deb` (Debian / Ubuntu):** Pacote nativo para Debian, Ubuntu, Pop!_OS, Linux Mint, Elementary OS e Zorin OS.
    - **`.rpm` (Red Hat / SUSE):** Pacote nativo para Fedora, openSUSE, RHEL, CentOS Stream, AlmaLinux e Rocky Linux.
    - **`portable.tar.gz` (Arquivo Portátil):** Tarball contendo o binário compilado portátil, ideal para empacotadores do Arch Linux (AUR) e ambientes customizados.
-3. **Flatpak para Linux (experimental):** Um job separado empacota o mesmo binário Linux como `SparkBrowser_<tag>_x86_64.flatpak` (manifesto em `packaging/linux/flatpak/`). Ele usa o runtime GNOME, inclui o `secret-tool` para o armazenamento de credenciais e não precisa de root. Se esse job falhar, os outros pacotes são publicados normalmente, sem o arquivo `.flatpak`. Por ser novo, teste-o em uma máquina Linux real enquanto a release ainda é um rascunho.
-4. **Publicação (Modo Rascunho / Draft):** Cria a Release no GitHub como **Draft (Rascunho)**, anexa todos os instaladores compilados, assinaturas e manifestos, e marca automaticamente tags `-beta.*` como **Pre-release**. O modo rascunho permite revisar as notas da versão geradas e inspecionar todos os arquivos anexados privadamente antes de liberar a release para o público.
+3. **Publicação (Modo Rascunho / Draft):** Cria a Release no GitHub como **Draft (Rascunho)**, anexa todos os instaladores compilados, assinaturas e manifestos, e marca automaticamente tags `-beta.*` como **Pre-release**. O modo rascunho permite revisar as notas da versão geradas e inspecionar todos os arquivos anexados privadamente antes de liberar a release para o público.
 
 ### Comandos de Instalação no Linux
 
@@ -32,11 +31,6 @@ Quando você envia uma tag iniciada em `v*`, o workflow `.github/workflows/relea
 - **openSUSE (`.rpm`):**
   ```bash
   sudo zypper install ./spark-browser-*.rpm
-  ```
-- **Flatpak (qualquer distribuição com Flatpak, experimental):**
-  ```bash
-  flatpak install --user ./SparkBrowser_*_x86_64.flatpak
-  flatpak run org.spark.browser
   ```
 
 ### Antes de criar a tag
@@ -64,7 +58,7 @@ git push origin main --tags
 
 O GitHub Actions compila e assina os pacotes e cria a release como **rascunho**. Nada fica público até você publicar:
 
-1. Abra o rascunho em **Releases** e confira se ele tem o instalador do Windows (`.exe`, `.sig`, `updater.json`) e todos os pacotes Linux (`.AppImage`, `.deb`, `.rpm`, `.tar.gz` e, se foi gerado, `.flatpak`).
+1. Abra o rascunho em **Releases** e confira se ele tem o instalador do Windows (`.exe`, `.sig`, `updater.json`) e todos os pacotes Linux (`.AppImage`, `.deb`, `.rpm`, `.tar.gz`).
 2. Revise as notas da versão geradas e edite se precisar.
 3. Baixe e teste pelo menos o instalador do Windows e um pacote Linux.
 4. Clique em **Publish release**. Tags beta (`-beta.N`) já saem marcadas como **Pre-release**.
