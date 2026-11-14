@@ -243,12 +243,6 @@
           "markdownDescription": "Enables the clear_closed_tabs command without any pre-configured scope."
         },
         {
-          "description": "Enables the close_private_window command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-close-private-window",
-          "markdownDescription": "Enables the close_private_window command without any pre-configured scope."
-        },
-        {
           "description": "Enables the close_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-close-tab",
@@ -313,12 +307,6 @@
           "type": "string",
           "const": "allow-create-local-backup",
           "markdownDescription": "Enables the create_local_backup command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the create_private_tab command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-create-private-tab",
-          "markdownDescription": "Enables the create_private_tab command without any pre-configured scope."
         },
         {
           "description": "Enables the create_tab command without any pre-configured scope.",
@@ -759,12 +747,6 @@
           "markdownDescription": "Enables the open_private_window command without any pre-configured scope."
         },
         {
-          "description": "Enables the open_whatsapp_window command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-open-whatsapp-window",
-          "markdownDescription": "Enables the open_whatsapp_window command without any pre-configured scope."
-        },
-        {
           "description": "Enables the prepare_panel command without any pre-configured scope.",
           "type": "string",
           "const": "allow-prepare-panel",
@@ -781,18 +763,6 @@
           "type": "string",
           "const": "allow-preview-backup-import",
           "markdownDescription": "Enables the preview_backup_import command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the private_window_go command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-private-window-go",
-          "markdownDescription": "Enables the private_window_go command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the private_window_navigate command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-private-window-navigate",
-          "markdownDescription": "Enables the private_window_navigate command without any pre-configured scope."
         },
         {
           "description": "Enables the pull_backup_sync command without any pre-configured scope.",
@@ -1335,12 +1305,6 @@
           "markdownDescription": "Denies the clear_closed_tabs command without any pre-configured scope."
         },
         {
-          "description": "Denies the close_private_window command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-close-private-window",
-          "markdownDescription": "Denies the close_private_window command without any pre-configured scope."
-        },
-        {
           "description": "Denies the close_tab command without any pre-configured scope.",
           "type": "string",
           "const": "deny-close-tab",
@@ -1405,12 +1369,6 @@
           "type": "string",
           "const": "deny-create-local-backup",
           "markdownDescription": "Denies the create_local_backup command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the create_private_tab command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-create-private-tab",
-          "markdownDescription": "Denies the create_private_tab command without any pre-configured scope."
         },
         {
           "description": "Denies the create_tab command without any pre-configured scope.",
@@ -1851,12 +1809,6 @@
           "markdownDescription": "Denies the open_private_window command without any pre-configured scope."
         },
         {
-          "description": "Denies the open_whatsapp_window command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-open-whatsapp-window",
-          "markdownDescription": "Denies the open_whatsapp_window command without any pre-configured scope."
-        },
-        {
           "description": "Denies the prepare_panel command without any pre-configured scope.",
           "type": "string",
           "const": "deny-prepare-panel",
@@ -1873,18 +1825,6 @@
           "type": "string",
           "const": "deny-preview-backup-import",
           "markdownDescription": "Denies the preview_backup_import command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the private_window_go command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-private-window-go",
-          "markdownDescription": "Denies the private_window_go command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the private_window_navigate command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-private-window-navigate",
-          "markdownDescription": "Denies the private_window_navigate command without any pre-configured scope."
         },
         {
           "description": "Denies the pull_backup_sync command without any pre-configured scope.",
@@ -4465,60 +4405,6 @@
           "type": "string",
           "const": "dialog:deny-save",
           "markdownDescription": "Denies the save command without any pre-configured scope."
-        },
-        {
-          "description": "This permission set configures which kind of\nupdater functions are exposed to the frontend.\n\n#### Granted Permissions\n\nThe full workflow from checking for updates to installing them\nis enabled.\n\n\n#### This default permission set includes:\n\n- `allow-check`\n- `allow-download`\n- `allow-install`\n- `allow-download-and-install`",
-          "type": "string",
-          "const": "updater:default",
-          "markdownDescription": "This permission set configures which kind of\nupdater functions are exposed to the frontend.\n\n#### Granted Permissions\n\nThe full workflow from checking for updates to installing them\nis enabled.\n\n\n#### This default permission set includes:\n\n- `allow-check`\n- `allow-download`\n- `allow-install`\n- `allow-download-and-install`"
-        },
-        {
-          "description": "Enables the check command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:allow-check",
-          "markdownDescription": "Enables the check command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the download command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:allow-download",
-          "markdownDescription": "Enables the download command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the download_and_install command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:allow-download-and-install",
-          "markdownDescription": "Enables the download_and_install command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the install command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:allow-install",
-          "markdownDescription": "Enables the install command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the check command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:deny-check",
-          "markdownDescription": "Denies the check command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the download command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:deny-download",
-          "markdownDescription": "Denies the download command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the download_and_install command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:deny-download-and-install",
-          "markdownDescription": "Denies the download_and_install command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the install command without any pre-configured scope.",
-          "type": "string",
-          "const": "updater:deny-install",
-          "markdownDescription": "Denies the install command without any pre-configured scope."
         }
       ]
     },
