@@ -287,7 +287,7 @@ export const saveBackupSyncSettings = (
     if (config.mode !== "disabled" && config.auto_save) {
       hasPendingChangesForCloud = true;
       if (config.mode === "folder") {
-        scheduleFolderAutoSync();
+        scheduleAutoSync();
       } else if (config.mode === "google_drive_web" || config.mode === "direct_webdav") {
         gdriveLoginRequiredPause = false;
         setTimeout(() => void runBackgroundAutoSync(), 150);
@@ -510,23 +510,33 @@ async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<v
   }
 }
 
-function scheduleFolderAutoSync(): void {
+/**
+ * A folder is written almost instantly, so it follows each change closely. Google Drive and WebDAV go over
+ * the network (Drive through a hidden page), so they wait for a quiet moment instead of uploading on every
+ * edit. Either way the changes are already saved by the time the browser closes, which keeps closing fast:
+ * only edits made in the last few seconds are left for the exit sync to finish.
+ */
+const FOLDER_AUTO_SYNC_DELAY_MS = 1_000;
+const REMOTE_AUTO_SYNC_DELAY_MS = 15_000;
+
+function scheduleAutoSync(): void {
   if (folderAutoSaveTimer) clearTimeout(folderAutoSaveTimer);
+  const delay = get(backupSyncState).config.mode === "folder" ? FOLDER_AUTO_SYNC_DELAY_MS : REMOTE_AUTO_SYNC_DELAY_MS;
   folderAutoSaveTimer = setTimeout(() => {
     folderAutoSaveTimer = undefined;
     const cfg = get(backupSyncState).config;
-    if (cfg.mode === "folder" && cfg.auto_save) {
+    if (cfg.mode !== "disabled" && cfg.auto_save) {
       void runBackgroundAutoSync();
     }
-  }, 1000);
+  }, delay);
 }
 
 function notifyPersistentDataChanged(): void {
   if (!autoSyncReady) return;
   hasPendingChangesForCloud = true;
   const cfg = get(backupSyncState).config;
-  if (cfg.mode === "folder" && cfg.auto_save) {
-    scheduleFolderAutoSync();
+  if (cfg.mode !== "disabled" && cfg.auto_save) {
+    scheduleAutoSync();
   }
 }
 
