@@ -1,7 +1,14 @@
 use super::RecoveryStatus;
 use crate::{
-    database::{recovery_repo, session_repo, split_repo, workspace_repo},
-    state::browser_state::BrowserState,
+    database::{
+        recovery_repo, session_repo,
+        session_windows_repo::{self, WindowRecord},
+        split_repo, workspace_repo,
+    },
+    state::{
+        browser_state::BrowserState,
+        tab_model::{TabInfo, MAIN_WINDOW_ID},
+    },
 };
 use rusqlite::Connection;
 use std::collections::HashSet;
@@ -30,18 +37,10 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
                 tab.workspace_id = "ws-personal".into();
             }
         }
-        let active = tabs
-            .iter()
-            .find(|tab| tab.is_active)
-            .unwrap_or(&tabs[0])
-            .id
-            .clone();
-        // Older snapshots may contain several active flags. Persist a single consistent selection.
-        for tab in &mut tabs {
-            tab.is_active = tab.id == active;
-            tab.is_visible = tab.is_active;
-            tab.is_hibernated = !tab.is_active;
-        }
+        assign_windows(
+            &mut tabs,
+            &session_windows_repo::load_session_windows(&conn)?,
+        );
     }
     state.install_restored_session(tabs, workspaces, layouts)?;
     *state
@@ -57,10 +56,104 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
     })
 }
 
+/// Tabs of a window that no longer exists move to the main window, and every window keeps exactly
+/// one active tab. Older snapshots may contain several active flags; persist one consistent choice.
+fn assign_windows(tabs: &mut [TabInfo], windows: &[WindowRecord]) {
+    for tab in tabs.iter_mut() {
+        if tab.window_id != MAIN_WINDOW_ID
+            && !windows.iter().any(|window| window.id == tab.window_id)
+        {
+            tab.window_id = MAIN_WINDOW_ID.into();
+        }
+    }
+    let mut ids: Vec<String> = Vec::new();
+    for tab in tabs.iter() {
+        if !ids.contains(&tab.window_id) {
+            ids.push(tab.window_id.clone());
+        }
+    }
+    for window in ids {
+        let active = tabs
+            .iter()
+            .filter(|tab| tab.window_id == window)
+            .find(|tab| tab.is_active)
+            .or_else(|| tabs.iter().find(|tab| tab.window_id == window))
+            .map(|tab| tab.id.clone());
+        for tab in tabs.iter_mut().filter(|tab| tab.window_id == window) {
+            tab.is_active = Some(&tab.id) == active.as_ref();
+            tab.is_visible = tab.is_active;
+            tab.is_hibernated = !tab.is_active;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::state::tab_model::TabInfo;
+
+    fn tab(id: &str, window: &str, active: bool) -> TabInfo {
+        let mut tab = TabInfo::new_default(id.into(), "https://example.test/".into(), active);
+        tab.window_id = window.into();
+        tab
+    }
+    fn record(id: &str) -> WindowRecord {
+        WindowRecord {
+            id: id.into(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn every_window_keeps_one_active_tab_and_unknown_windows_fall_back_to_main() {
+        let mut tabs = vec![
+            tab("a", "main", true),
+            tab("b", "main", true),
+            tab("c", "window-2", false),
+            tab("d", "window-2", false),
+            tab("e", "window-9", true),
+        ];
+        assign_windows(&mut tabs, &[record("main"), record("window-2")]);
+        let active: Vec<_> = tabs
+            .iter()
+            .filter(|t| t.is_active)
+            .map(|t| t.id.as_str())
+            .collect();
+        // `e` came from a window that is gone, so it joins main (where `a` already won).
+        assert_eq!(active, vec!["a", "c"]);
+        assert_eq!(tabs[4].window_id, "main");
+        assert!(tabs
+            .iter()
+            .filter(|t| !t.is_active)
+            .all(|t| t.is_hibernated));
+    }
+
+    #[test]
+    fn two_saved_windows_both_restore_with_their_tabs() {
+        let conn = database();
+        let mut tabs = vec![
+            tab("a", "main", true),
+            tab("b", "main", false),
+            tab("c", "window-2", true),
+        ];
+        tabs[2].workspace_id = "ws-personal".into();
+        session_repo::save_session_tabs(&conn, &tabs).unwrap();
+        session_windows_repo::save_session_windows(&conn, &[record("main"), record("window-2")])
+            .unwrap();
+        let state = BrowserState::default();
+        restore(&state, conn).unwrap();
+        let restored = state.snapshot_tabs();
+        assert_eq!(restored.len(), 3);
+        assert_eq!(
+            restored
+                .iter()
+                .filter(|t| t.window_id == "window-2")
+                .count(),
+            1
+        );
+        // Which tab is shown per window needs the per-window session state of the next stage;
+        // `assign_windows` above already keeps one active tab per window in the saved data.
+    }
+
     fn database() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         crate::database::connection::initialize_schema(&conn).unwrap();

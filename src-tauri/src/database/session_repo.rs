@@ -37,14 +37,15 @@ fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Strin
         }
     }
     let mut upsert = conn.prepare_cached(
-        "INSERT INTO session_tabs (tab_id, title, url, workspace_id, is_active, is_hibernated, position, is_pinned, container_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+        "INSERT INTO session_tabs (tab_id, title, url, workspace_id, is_active, is_hibernated, position, is_pinned, container_id, window_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
          ON CONFLICT(tab_id) DO UPDATE SET title=excluded.title, url=excluded.url,
            workspace_id=excluded.workspace_id, is_active=excluded.is_active,
-           is_hibernated=excluded.is_hibernated, position=excluded.position, is_pinned=excluded.is_pinned, container_id=excluded.container_id
+           is_hibernated=excluded.is_hibernated, position=excluded.position, is_pinned=excluded.is_pinned, container_id=excluded.container_id, window_id=excluded.window_id
          WHERE title IS NOT excluded.title OR url IS NOT excluded.url
            OR workspace_id IS NOT excluded.workspace_id OR is_active IS NOT excluded.is_active
-           OR is_hibernated IS NOT excluded.is_hibernated OR position IS NOT excluded.position OR is_pinned IS NOT excluded.is_pinned OR container_id IS NOT excluded.container_id"
+           OR is_hibernated IS NOT excluded.is_hibernated OR position IS NOT excluded.position OR is_pinned IS NOT excluded.is_pinned OR container_id IS NOT excluded.container_id
+           OR window_id IS NOT excluded.window_id"
     ).map_err(|e| e.to_string())?;
     for (idx, tab) in persistent_tabs.iter().enumerate() {
         upsert
@@ -57,7 +58,8 @@ fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Strin
                 tab.is_hibernated,
                 idx as i64,
                 tab.is_pinned,
-                tab.container_id
+                tab.container_id,
+                tab.window_id
             ])
             .map_err(|e| e.to_string())?;
     }
@@ -69,7 +71,7 @@ fn replace_session_tabs(conn: &Connection, tabs: &[TabInfo]) -> Result<(), Strin
 pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT tab_id, title, url, workspace_id, is_active, is_pinned, container_id
+            "SELECT tab_id, title, url, workspace_id, is_active, is_pinned, container_id, window_id
              FROM session_tabs
              ORDER BY position ASC",
         )
@@ -87,6 +89,7 @@ pub fn load_session_tabs(conn: &Connection) -> Result<Vec<TabInfo>, String> {
                 title: row.get(1)?,
                 url: row.get(2)?,
                 workspace_id: ws_id,
+                window_id: row.get(7)?,
                 container_id: row.get(6)?,
                 is_active: active_bool,
                 is_visible: active_bool,
@@ -122,7 +125,8 @@ mod tests {
             "CREATE TABLE session_tabs (
             tab_id TEXT PRIMARY KEY, title TEXT NOT NULL, url TEXT NOT NULL,
             workspace_id TEXT NOT NULL, is_active INTEGER NOT NULL,
-            is_hibernated INTEGER NOT NULL, position INTEGER NOT NULL, is_pinned INTEGER NOT NULL DEFAULT 0, container_id TEXT
+            is_hibernated INTEGER NOT NULL, position INTEGER NOT NULL, is_pinned INTEGER NOT NULL DEFAULT 0, container_id TEXT,
+            window_id TEXT NOT NULL DEFAULT 'main'
         )",
         )
         .unwrap();
@@ -148,6 +152,28 @@ mod tests {
         tabs.pop();
         save_session_tabs(&conn, &tabs).unwrap();
         assert_eq!(conn.total_changes(), before + 2);
+    }
+
+    #[test]
+    fn tabs_keep_their_window_and_legacy_rows_belong_to_main() {
+        let conn = database();
+        let mut second = TabInfo::new_default("b".into(), "https://example.test/b".into(), false);
+        second.window_id = "window-2".into();
+        let tabs = vec![
+            TabInfo::new_default("a".into(), "https://example.test/a".into(), true),
+            second,
+        ];
+        save_session_tabs(&conn, &tabs).unwrap();
+        let restored = load_session_tabs(&conn).unwrap();
+        assert_eq!(restored[0].window_id, "main");
+        assert_eq!(restored[1].window_id, "window-2");
+        // Moving a tab to another window is a change the writer must not skip.
+        let before = conn.total_changes();
+        let mut moved = tabs.clone();
+        moved[1].window_id = "main".into();
+        save_session_tabs(&conn, &moved).unwrap();
+        assert_eq!(conn.total_changes(), before + 1);
+        assert_eq!(load_session_tabs(&conn).unwrap()[1].window_id, "main");
     }
 
     #[test]

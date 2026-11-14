@@ -9,6 +9,7 @@ pub mod new_tab_repo;
 pub mod notes_repo;
 pub mod saved_sessions_repo;
 pub mod session_repo;
+pub mod session_windows_repo;
 pub mod site_icons_repo;
 pub mod site_search_repo;
 pub mod split_repo;

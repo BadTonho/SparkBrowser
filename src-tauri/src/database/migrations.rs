@@ -50,6 +50,31 @@ pub fn upgrade_session(conn: &Connection) -> Result<(), String> {
     })
 }
 
+/// Tabs belong to a browser window. Every tab saved before windows existed goes to `main`, and the
+/// window table remembers each window's size, monitor and selection so all of them can reopen.
+pub fn upgrade_session_windows(conn: &Connection) -> Result<(), String> {
+    apply(conn, "session-windows-v1", |conn| {
+        if !has_column(conn, "session_tabs", "window_id")? {
+            conn.execute_batch(
+                "ALTER TABLE session_tabs ADD COLUMN window_id TEXT NOT NULL DEFAULT 'main'",
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS session_windows (
+                window_id TEXT PRIMARY KEY,
+                position INTEGER NOT NULL,
+                x INTEGER, y INTEGER, width INTEGER, height INTEGER,
+                maximized INTEGER NOT NULL DEFAULT 0,
+                monitor TEXT,
+                active_tab_id TEXT,
+                active_workspace_id TEXT
+            )",
+        )
+        .map_err(|e| e.to_string())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

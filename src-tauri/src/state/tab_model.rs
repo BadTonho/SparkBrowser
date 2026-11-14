@@ -3,6 +3,13 @@ use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Url;
 
+/// The first window. Tabs saved before windows existed belong to it.
+pub const MAIN_WINDOW_ID: &str = "main";
+
+fn main_window_id() -> String {
+    MAIN_WINDOW_ID.to_string()
+}
+
 pub fn normalize_hibernation_domain(raw: &str) -> Result<String, String> {
     let input = raw.trim().trim_end_matches('.');
     if input.is_empty() || input.contains('/') || input.contains('@') || input.contains(':') {
@@ -42,6 +49,9 @@ pub struct TabInfo {
     pub title: String,
     pub url: String,
     pub workspace_id: String,
+    /// The browser window that shows this tab.
+    #[serde(default = "main_window_id")]
+    pub window_id: String,
     #[serde(default)]
     pub container_id: Option<String>,
     pub is_active: bool,
@@ -110,6 +120,7 @@ impl TabInfo {
             title,
             url,
             workspace_id,
+            window_id: main_window_id(),
             container_id: None,
             is_active,
             is_visible: false,
