@@ -20,9 +20,21 @@ pub const CONTENT_WEBVIEW_PREFIX: &str = "content-webview-";
 pub const WORKSPACE_SWITCHER_WEBVIEW_LABEL: &str = "workspace-switcher-webview";
 pub const BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL: &str = "bookmark-context-menu-webview";
 
+/// The page the main window shows. Code that has no window to work with yet uses this.
 pub fn active_content_webview(app: &AppHandle) -> Option<Webview> {
+    active_content_webview_in(app, crate::state::tab_model::MAIN_WINDOW_ID)
+}
+
+/// The page one window shows.
+pub fn active_content_webview_in(app: &AppHandle, window_id: &str) -> Option<Webview> {
     let state = app.try_state::<BrowserState>()?;
-    let id = state.session().active_tab_id().lock().ok()?.clone();
+    let id = state
+        .session()
+        .window(window_id)?
+        .active_tab_id()
+        .lock()
+        .ok()?
+        .clone();
     app.get_webview(&webview_label_for_tab(&id))
 }
 
@@ -84,6 +96,21 @@ pub fn navigate_content_webview_with_search_engine(
     target_url_str: &str,
     search_engine: &str,
 ) -> Result<String, String> {
+    navigate_window_with_search_engine(
+        app,
+        crate::state::tab_model::MAIN_WINDOW_ID,
+        target_url_str,
+        search_engine,
+    )
+}
+
+/// Navigates the page one window shows.
+pub fn navigate_window_with_search_engine(
+    app: &AppHandle,
+    window_id: &str,
+    target_url_str: &str,
+    search_engine: &str,
+) -> Result<String, String> {
     let parsed_url = super::url_input::resolve_browser_input(app, target_url_str, search_engine)?;
     let resolved_str = parsed_url.to_string();
     let state = app.state::<BrowserState>();
@@ -98,7 +125,13 @@ pub fn navigate_content_webview_with_search_engine(
         return Err("Navigation blocked by the privacy shield".to_string());
     }
 
-    let active = state.session().active_tab_id().lock()?.clone();
+    let active = state
+        .session()
+        .window(window_id)
+        .ok_or("windows.not_found")?
+        .active_tab_id()
+        .lock()?
+        .clone();
     navigate_tab_document(
         app,
         &active,
@@ -109,17 +142,17 @@ pub fn navigate_content_webview_with_search_engine(
     Ok(resolved_str)
 }
 
-pub fn go_back_content_webview(app: &AppHandle) -> Result<(), String> {
-    navigate_content_history(app, true)
+pub fn go_back_content_webview(app: &AppHandle, window_id: &str) -> Result<(), String> {
+    navigate_content_history(app, window_id, true)
 }
 
-pub fn go_forward_content_webview(app: &AppHandle) -> Result<(), String> {
-    navigate_content_history(app, false)
+pub fn go_forward_content_webview(app: &AppHandle, window_id: &str) -> Result<(), String> {
+    navigate_content_history(app, window_id, false)
 }
 
-fn navigate_content_history(app: &AppHandle, go_back: bool) -> Result<(), String> {
-    let webview =
-        active_content_webview(app).ok_or_else(|| "Content WebView was not found".to_string())?;
+fn navigate_content_history(app: &AppHandle, window_id: &str, go_back: bool) -> Result<(), String> {
+    let webview = active_content_webview_in(app, window_id)
+        .ok_or_else(|| "Content WebView was not found".to_string())?;
 
     #[cfg(windows)]
     {

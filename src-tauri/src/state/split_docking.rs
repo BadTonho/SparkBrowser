@@ -91,19 +91,25 @@ pub fn validate_context(
     context: &DockContext,
     tab_id: &str,
 ) -> Result<(), String> {
-    let workspace = state
+    // The window that shows the tab being dragged decides what "current" means.
+    let window_id = state
+        .window_of_tab(&context.active_tab_id)
+        .map_err(|_| "Tab drag context changed".to_string())?;
+    let window = state
         .session()
+        .window(&window_id)
+        .ok_or("Tab drag context changed")?;
+    let workspace = window
         .edit_active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
-    let active = state
-        .session()
+    let active = window
         .edit_active_tab_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
-    let current = state.current_split();
+    let current = state.current_split_in(&window_id);
     if workspace != context.workspace_id
         || active != context.active_tab_id
         || current.as_ref().map(SplitLayout::key) != context.split_key

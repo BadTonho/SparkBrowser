@@ -57,9 +57,11 @@ pub async fn rename_account_container(
 #[tauri::command]
 pub async fn create_container_tab(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     id: String,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _op = state.session().operation().await;
     {
         let db = state
@@ -83,6 +85,7 @@ pub async fn create_container_tab(
         None,
         super::tabs::TabProfile {
             container_id: Some(id),
+            window_id: Some(window_id),
             ..Default::default()
         },
     )
@@ -125,8 +128,9 @@ pub async fn set_tab_account_container(
         }
         tab.container_id == container_id
     };
+    let window_id = state.window_of_tab(&tab_id)?;
     if unchanged {
-        return Ok(state.snapshot_packet());
+        return Ok(state.snapshot_packet_for(&window_id));
     }
     let result = TabCheckpoint::commit(&state, || {
         let mut tabs = state
@@ -146,17 +150,19 @@ pub async fn set_tab_account_container(
     }
     crate::window::webview_manager::close_tab_webview(&app, &tab_id)?;
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }
 
 #[tauri::command]
 pub async fn delete_account_container(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     id: String,
 ) -> Result<Vec<AccountContainer>, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _op = state.session().operation().await;
     if !repo::valid_id(&id) {
         return Err("Invalid container ID".into());
@@ -217,8 +223,7 @@ pub async fn delete_account_container(
         }
     }
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    crate::state::publish::publish_tabs(&app, &state, &window_id);
     let directory = app
         .path()
         .app_local_data_dir()

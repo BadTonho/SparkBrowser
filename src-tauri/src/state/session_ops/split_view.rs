@@ -8,12 +8,14 @@ use tauri::{AppHandle, Manager, State};
 #[tauri::command]
 pub async fn move_tab_in_split(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     tab_id: String,
     side: crate::state::split_docking::DockSide,
     before_id: Option<String>,
     context: crate::state::split_docking::DockContext,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     crate::window::tab_drag_preview::cancel(&app, &state)?;
     if crate::window::tab_drag_preview::blocked(&state)
@@ -23,25 +25,26 @@ pub async fn move_tab_in_split(
     }
     crate::state::split_transfer::commit(&state, &context, &tab_id, side, before_id.as_deref())?;
     super::tabs::reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    let snapshot = crate::state::publish::publish_tabs(&app, &state, &window_id);
     let active = state
         .snapshot_tabs()
         .into_iter()
-        .find(|tab| tab.is_active)
+        .find(|tab| tab.is_active && tab.window_id == window_id)
         .ok_or("Active tab not found")?;
-    let _ = crate::security::emit_shell(&app, "content-url-changed", active.url);
+    let _ = crate::security::emit_shell_to(&app, &window_id, "content-url-changed", active.url);
     Ok(snapshot)
 }
 
 #[tauri::command]
 pub async fn dock_tab_to_split(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     tab_id: String,
     side: crate::state::split_docking::DockSide,
     context: crate::state::split_docking::DockContext,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     let result = if crate::window::tab_drag_preview::blocked(&state)
         || app.state::<crate::shutdown::ShutdownService>().blocked()
@@ -67,14 +70,13 @@ pub async fn dock_tab_to_split(
         .map_err(|e| e.to_string())? = None;
     super::tabs::reconcile_committed(&app, &state);
     crate::window::tab_drag_preview::hide_surface(&app);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    let _ = crate::security::emit_shell(
+    let snapshot = crate::state::publish::publish_tabs(&app, &state, &window_id);
+    crate::security::emit_shell_all(
         &app,
         "privacy-stats-updated",
         state.snapshot_privacy_stats(),
     );
-    let _ = crate::security::emit_shell(&app, "content-url-changed", url);
+    let _ = crate::security::emit_shell_to(&app, &window_id, "content-url-changed", url);
     if let Err(error) = crate::window::webview_manager::focus_active_content_webview(&app) {
         let _ = crate::security::emit_shell(&app, "browser-error", error);
     }
@@ -83,13 +85,18 @@ pub async fn dock_tab_to_split(
 #[tauri::command]
 pub async fn set_split_view(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     left_tab_id: Option<String>,
     right_tab_id: Option<String>,
 ) -> Result<TabSnapshot, String> {
-    let _operation = state.session().operation().await;
-    let workspace = state
+    let window_id = crate::commands::access::caller_window(&webview);
+    let window = state
         .session()
+        .window(&window_id)
+        .ok_or("windows.not_found")?;
+    let _operation = state.session().operation().await;
+    let workspace = window
         .edit_active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
@@ -97,8 +104,7 @@ pub async fn set_split_view(
     TabCheckpoint::commit(&state, || {
         match (left_tab_id, right_tab_id) {
             (Some(left), Some(right)) => {
-                let active = state
-                    .session()
+                let active = window
                     .edit_active_tab_id()
                     .lock()
                     .map_err(|e| e.to_string())?
@@ -141,16 +147,23 @@ pub async fn set_split_view(
         .lock()
         .map_err(|e| e.to_string())? = None;
     super::tabs::reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }
-pub fn update_ratio(state: &BrowserState, key: &str, ratio: f64) -> Result<(), String> {
+pub fn update_ratio(
+    state: &BrowserState,
+    window_id: &str,
+    key: &str,
+    ratio: f64,
+) -> Result<(), String> {
     if !ratio.is_finite() || !(0.2..=0.8).contains(&ratio) {
         return Err("Invalid split ratio".into());
     }
     let workspace = state
         .session()
+        .window(window_id)
+        .ok_or("windows.not_found")?
         .edit_active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
@@ -170,12 +183,14 @@ pub fn update_ratio(state: &BrowserState, key: &str, ratio: f64) -> Result<(), S
 #[tauri::command]
 pub async fn commit_split_ratio(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     key: String,
     ratio: f64,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
-    let result = TabCheckpoint::commit(&state, || update_ratio(&state, &key, ratio));
+    let result = TabCheckpoint::commit(&state, || update_ratio(&state, &window_id, &key, ratio));
     state.clear_split_preview(&key)?;
     if let Err(error) = result {
         if let Err(resize_error) = crate::window::viewport::resize_visible_webviews(&app, &state) {
@@ -188,7 +203,7 @@ pub async fn commit_split_ratio(
         return Err(error);
     }
     super::tabs::reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }

@@ -66,7 +66,7 @@ fn failed_commit_discards_preview_without_changing_the_saved_ratio() {
     ).unwrap();
     assert!(
         TabCheckpoint::commit(&state, || crate::commands::split_view::update_ratio(
-            &state, &key, 0.7
+            &state, "main", &key, 0.7
         ))
         .is_err()
     );

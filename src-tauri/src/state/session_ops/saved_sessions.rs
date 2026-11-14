@@ -21,13 +21,18 @@ pub async fn get_saved_sessions(
 
 #[tauri::command]
 pub async fn save_named_session(
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     id: Option<i64>,
     name: String,
 ) -> Result<(), String> {
-    let _operation = state.session().operation().await;
-    let workspace = state
+    let window_id = crate::commands::access::caller_window(&webview);
+    let window = state
         .session()
+        .window(&window_id)
+        .ok_or("windows.not_found")?;
+    let _operation = state.session().operation().await;
+    let workspace = window
         .edit_active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
@@ -35,7 +40,7 @@ pub async fn save_named_session(
     let tabs: Vec<_> = state
         .snapshot_tabs()
         .into_iter()
-        .filter(|tab| tab.workspace_id == workspace)
+        .filter(|tab| tab.window_id == window_id && tab.workspace_id == workspace)
         .collect();
     let db = state
         .infrastructure()
@@ -83,10 +88,16 @@ pub struct SessionRestore {
 #[tauri::command]
 pub async fn restore_named_session(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     id: i64,
     expected_session: Option<SavedSession>,
 ) -> Result<SessionRestore, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
+    let window = state
+        .session()
+        .window(&window_id)
+        .ok_or("windows.not_found")?;
     let _operation = state.session().operation().await;
     let pages = {
         let db = state
@@ -100,8 +111,7 @@ pub async fn restore_named_session(
         }
         current.pages
     };
-    let workspace = state
-        .session()
+    let workspace = window
         .edit_active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
@@ -133,6 +143,7 @@ pub async fn restore_named_session(
                     false,
                 );
                 *counter += 1;
+                tab.window_id.clone_from(&window_id);
                 tab.title = page.title;
                 tab.is_pinned = page.is_pinned;
                 tab.is_hibernated = true;
@@ -163,7 +174,6 @@ pub async fn restore_named_session(
         Ok(())
     })?;
     super::tabs::reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
+    let snapshot = crate::state::publish::publish_tabs(&app, &state, &window_id);
     Ok(SessionRestore { snapshot, warnings })
 }

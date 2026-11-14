@@ -1,14 +1,14 @@
 use crate::state::browser_state::{BrowserState, ViewportBounds};
 use crate::window::viewport::resize_visible_webviews;
 use crate::window::webview_manager::{
-    active_content_webview, go_back_content_webview, go_forward_content_webview,
-    navigate_content_webview_with_search_engine,
+    active_content_webview_in, go_back_content_webview, go_forward_content_webview,
+    navigate_window_with_search_engine,
 };
 use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
-pub async fn focus_address_bar(app: AppHandle) -> Result<(), String> {
-    app.get_webview("main")
+pub async fn focus_address_bar(app: AppHandle, webview: tauri::Webview) -> Result<(), String> {
+    app.get_webview(&super::access::caller_window(&webview))
         .ok_or("Browser shell unavailable")?
         .set_focus()
         .map_err(|e| e.to_string())
@@ -17,31 +17,33 @@ pub async fn focus_address_bar(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub async fn navigate_to(
     app: AppHandle,
+    webview: tauri::Webview,
     input: String,
     search_engine: Option<String>,
 ) -> Result<String, String> {
     let state = app.state::<BrowserState>();
     let _operation = state.session().operation().await;
-    navigate_content_webview_with_search_engine(
+    navigate_window_with_search_engine(
         &app,
+        &super::access::caller_window(&webview),
         &input,
         search_engine.as_deref().unwrap_or("google"),
     )
 }
 
 #[tauri::command]
-pub async fn go_back(app: AppHandle) -> Result<(), String> {
-    go_back_content_webview(&app)
+pub async fn go_back(app: AppHandle, webview: tauri::Webview) -> Result<(), String> {
+    go_back_content_webview(&app, &super::access::caller_window(&webview))
 }
 
 #[tauri::command]
-pub async fn go_forward(app: AppHandle) -> Result<(), String> {
-    go_forward_content_webview(&app)
+pub async fn go_forward(app: AppHandle, webview: tauri::Webview) -> Result<(), String> {
+    go_forward_content_webview(&app, &super::access::caller_window(&webview))
 }
 
 #[tauri::command]
-pub async fn reload_page(app: AppHandle) -> Result<(), String> {
-    active_content_webview(&app)
+pub async fn reload_page(app: AppHandle, webview: tauri::Webview) -> Result<(), String> {
+    active_content_webview_in(&app, &super::access::caller_window(&webview))
         .ok_or("Active WebView was not found")?
         .eval("window.location.reload();")
         .map_err(|e| e.to_string())
