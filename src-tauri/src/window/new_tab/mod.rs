@@ -125,8 +125,7 @@ pub fn invalidate(app: &AppHandle) {
     }
 }
 pub fn set_preferences(app: &AppHandle, engine: String, language: String) -> Result<(), String> {
-    if !["google", "duckduckgo"].contains(&engine.as_str())
-        || !["en", "pt-BR"].contains(&language.as_str())
+    if !crate::search_engines::is_valid(&engine) || !["en", "pt-BR"].contains(&language.as_str())
     {
         return Err("Invalid new tab preferences".into());
     }

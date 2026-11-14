@@ -3,12 +3,13 @@ import type { LanguagePreference } from "../i18n";
 import type { ShortcutMap } from "../stores/shortcutsStore";
 import type { AutoHibernateMode, TabLayout, WorkspaceSwitcherDisplay } from "../stores/settingsStore";
 import type { UpdateChannel } from "./updates";
+import type { SearchEngine } from "../stores/searchEngineStore";
 export interface BackupPreferences {
   auto_skip_ads_enabled: boolean;
   pip_window_shadow?: boolean;
   workspace_isolation?: boolean;
   tab_layout: TabLayout; show_bookmarks_bar: boolean; overlay_blur_px: number;
-  workspace_switcher_display: WorkspaceSwitcherDisplay; default_search_engine: "google" | "duckduckgo";
+  workspace_switcher_display: WorkspaceSwitcherDisplay; default_search_engine: SearchEngine;
   auto_hibernate_mode: AutoHibernateMode; resident_limit: number; language: LanguagePreference;
   hibernation_exemptions?: string[]; ask_download_destination?: boolean;
   site_zoom?: import("./zoom").SiteZoom[];

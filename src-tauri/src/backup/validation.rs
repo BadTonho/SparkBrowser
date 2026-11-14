@@ -77,7 +77,7 @@ pub fn preferences(p: &BackupPreferences) -> Result<(), String> {
     if !["horizontal", "vertical"].contains(&p.tab_layout.as_str())
         || p.overlay_blur_px > 24
         || !["toolbar", "popup"].contains(&p.workspace_switcher_display.as_str())
-        || !["google", "duckduckgo"].contains(&p.default_search_engine.as_str())
+        || !crate::search_engines::is_valid(&p.default_search_engine)
         || !["system", "pt-BR", "en"].contains(&p.language.as_str())
         || !(1..=100).contains(&p.resident_limit)
         || ![

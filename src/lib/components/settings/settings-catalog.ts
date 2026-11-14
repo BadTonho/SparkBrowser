@@ -90,7 +90,7 @@ export const searchableSettings: SearchEntry[] = [
     description: "Used when typing search queries in the Omnibox.",
     category: "search_navigation",
     targetId: "setting-default-search-engine",
-    keywords: "search omnibox web google duckduckgo engine",
+    keywords: "search omnibox web engine google duckduckgo bing brave startpage ecosia qwant yahoo mojeek kagi buscador",
   },
   {
     id: "workspace-profile",

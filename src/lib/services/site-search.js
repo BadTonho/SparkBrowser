@@ -1,3 +1,4 @@
+import { buildSearchUrl } from './search-engines.js';
 /** @param {{keyword:string,name:string,template:string}} item */
 export function validateSiteSearch(item) {
   if (!/^[a-z0-9_-]{1,24}$/i.test(item.keyword)) throw new Error('Keyword must contain 1–24 letters, digits, _ or -');
@@ -17,7 +18,5 @@ export function resolvePreviewInput(input, shortcuts, engine = 'google') {
   }
   if (/^https?:\/\//.test(trimmed)) return new URL(trimmed).href;
   if (!/\s/.test(trimmed) && trimmed.includes('.')) return new URL('https://' + trimmed).href;
-  const url = new URL(engine === 'duckduckgo' ? 'https://duckduckgo.com/' : 'https://www.google.com/search');
-  url.searchParams.set('q', trimmed);
-  return url.href;
+  return buildSearchUrl(engine, trimmed);
 }

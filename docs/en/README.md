@@ -29,6 +29,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Optimization work](./architecture/optimization-work.md)
 - [Named sessions and Tools](./features/named-sessions.md)
 - [Site search shortcuts](./features/site-search.md)
+- [Search engines](./features/search-engines.md)
 - [Page notes](./features/page-notes.md)
 - [Feed reader](./features/feed-reader.md)
 - [Tab organizer](./features/tab-organizer.md)

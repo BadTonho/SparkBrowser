@@ -31,20 +31,17 @@ pub fn resolve_input_to_url_with_search_engine(
         }
     }
 
-    let search_url_base = match search_engine {
-        "duckduckgo" => "https://duckduckgo.com/",
-        _ => "https://www.google.com/search",
-    };
-    let mut search_url = Url::parse(search_url_base).map_err(|e| e.to_string())?;
-    search_url.query_pairs_mut().append_pair("q", trimmed);
+    let engine = crate::search_engines::get_or_default(search_engine);
+    let mut search_url = Url::parse(engine.search).map_err(|e| e.to_string())?;
+    search_url
+        .query_pairs_mut()
+        .append_pair(engine.param, trimmed);
     Ok(search_url)
 }
 
 pub fn search_engine_home_url(search_engine: Option<&str>) -> &'static str {
-    match search_engine {
-        Some("duckduckgo") => "https://duckduckgo.com/",
-        _ => "https://www.google.com/",
-    }
+    crate::search_engines::get_or_default(search_engine.unwrap_or(crate::search_engines::DEFAULT_ID))
+        .home
 }
 
 /// Resolve explicit shell input through stored site searches before the default parser.
@@ -99,6 +96,28 @@ mod tests {
                 .host_str(),
             Some("www.google.com")
         );
+    }
+    #[test]
+    fn every_engine_searches_with_its_own_parameter_and_homes_to_its_own_site() {
+        for engine in crate::search_engines::ENGINES {
+            let url = resolve_input_to_url_with_search_engine("rust & svelte", engine.id).unwrap();
+            let expected = Url::parse(engine.search).unwrap();
+            assert_eq!(url.host_str(), expected.host_str(), "{}", engine.id);
+            assert_eq!(url.path(), expected.path(), "{}", engine.id);
+            let query: Vec<_> = url.query_pairs().collect();
+            assert_eq!(query.len(), 1);
+            assert_eq!((query[0].0.as_ref(), query[0].1.as_ref()), (engine.param, "rust & svelte"));
+            assert_eq!(search_engine_home_url(Some(engine.id)), engine.home);
+        }
+        // Yahoo is the one engine whose query parameter is not `q`.
+        let yahoo = resolve_input_to_url_with_search_engine("a b", "yahoo").unwrap();
+        assert!(yahoo.query().unwrap().starts_with("p=a"));
+        // Stale or unknown ids keep working with the default engine.
+        assert_eq!(
+            resolve_input_to_url_with_search_engine("a b", "gone").unwrap().host_str(),
+            Some("www.google.com")
+        );
+        assert_eq!(search_engine_home_url(None), "https://www.google.com/");
     }
     #[test]
     fn explicit_web_addresses_are_preserved() {

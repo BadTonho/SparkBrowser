@@ -1,31 +1,24 @@
 import { safeStorage } from "../services/storage.js";
 import { writable } from "svelte/store";
+import { DEFAULT_SEARCH_ENGINE as DEFAULT_ID, SEARCH_ENGINES, findSearchEngine, isSearchEngineId } from "../services/search-engines.js";
 
-export const SEARCH_ENGINES = [
-  { id: "google", label: "Google" },
-  { id: "duckduckgo", label: "DuckDuckGo" },
-] as const;
+export { SEARCH_ENGINES };
 
 export type SearchEngine = (typeof SEARCH_ENGINES)[number]["id"];
 
-const SEARCH_ENGINE_HOME_URLS: Record<SearchEngine, string> = {
-  google: "https://www.google.com/",
-  duckduckgo: "https://duckduckgo.com/",
-};
-
 export function getSearchEngineHomeUrl(engine: SearchEngine): string {
-  return SEARCH_ENGINE_HOME_URLS[engine];
+  return findSearchEngine(engine).home;
 }
 
 export function getSearchEngineLabel(engine: SearchEngine): string {
-  return SEARCH_ENGINES.find((item) => item.id === engine)?.label ?? "Google";
+  return findSearchEngine(engine).label;
 }
 
 const SEARCH_ENGINE_STORAGE_KEY = "veloce_default_search_engine";
-const DEFAULT_SEARCH_ENGINE: SearchEngine = "google";
+const DEFAULT_SEARCH_ENGINE = DEFAULT_ID as SearchEngine;
 
 function isSearchEngine(value: string | null): value is SearchEngine {
-  return SEARCH_ENGINES.some((engine) => engine.id === value);
+  return isSearchEngineId(value);
 }
 
 function getInitialSearchEngine(): SearchEngine {

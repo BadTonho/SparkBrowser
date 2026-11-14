@@ -31,6 +31,7 @@ mod native_tests;
 pub mod privacy;
 pub mod private_session;
 pub mod recovery;
+pub mod search_engines;
 pub mod security;
 pub mod shutdown;
 pub mod site_permissions;
