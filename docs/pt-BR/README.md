@@ -32,6 +32,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Mecanismos de busca](./features/search-engines.md)
 - [Atualizando a partir do nome Veloce](./features/rename-migration.md)
 - [Aceleração de hardware](./features/hardware-acceleration.md)
+- [Modo escuro nos sites](./features/forced-dark-mode.md)
 - [Notas por página](./features/page-notes.md)
 - [Leitor de feeds](./features/feed-reader.md)
 - [Organizador de abas](./features/tab-organizer.md)

@@ -28,6 +28,7 @@ test('visual preferences default off, restore saved booleans and persist edits',
     showFullUrls: true,
     compactToolbar: true,
     roundedContentFrame: true,
+    forcedDarkPages: true,
   });
   assert.equal(writeVisualPreference(storage, 'compactToolbar', false), true);
   assert.equal(readVisualPreferences(storage).compactToolbar, false);

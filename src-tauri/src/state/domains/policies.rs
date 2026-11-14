@@ -14,6 +14,7 @@ pub(crate) struct Policies {
     smart_screen_enabled: AtomicBool,
     smart_screen_supported: AtomicBool,
     auto_skip_ads_enabled: AtomicBool,
+    forced_dark_enabled: AtomicBool,
     workspace_isolation: AtomicBool,
     tracking_settings: Mutex<crate::privacy::tracking_parameters::TrackingSettings>,
     gpc_settings: Mutex<crate::privacy::tracking_parameters::TrackingSettings>,
@@ -106,6 +107,14 @@ impl Policies {
         self.auto_skip_ads_enabled
             .store(value, std::sync::atomic::Ordering::Release);
     }
+    pub(crate) fn forced_dark_enabled(&self) -> bool {
+        self.forced_dark_enabled
+            .load(std::sync::atomic::Ordering::Acquire)
+    }
+    pub(crate) fn set_forced_dark_enabled(&self, value: bool) {
+        self.forced_dark_enabled
+            .store(value, std::sync::atomic::Ordering::Release);
+    }
     pub(crate) fn workspace_isolation(&self) -> bool {
         self.workspace_isolation
             .load(std::sync::atomic::Ordering::Acquire)
@@ -175,6 +184,7 @@ impl Default for Policies {
             smart_screen_enabled: AtomicBool::new(true),
             smart_screen_supported: AtomicBool::new(false),
             auto_skip_ads_enabled: AtomicBool::new(false),
+            forced_dark_enabled: AtomicBool::new(false),
             workspace_isolation: AtomicBool::new(false),
             tracking_settings: Mutex::new(Default::default()),
             gpc_settings: Mutex::new(Default::default()),

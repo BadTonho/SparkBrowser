@@ -3,6 +3,7 @@ export const VISUAL_PREFERENCE_STORAGE_KEYS = Object.freeze({
   showFullUrls: "spark_visual_show_full_urls",
   compactToolbar: "spark_visual_compact_toolbar",
   roundedContentFrame: "spark_visual_rounded_content_frame",
+  forcedDarkPages: "spark_visual_forced_dark_pages",
 });
 
 export const DEFAULT_VISUAL_PREFERENCES = Object.freeze({
@@ -10,6 +11,7 @@ export const DEFAULT_VISUAL_PREFERENCES = Object.freeze({
   showFullUrls: false,
   compactToolbar: false,
   roundedContentFrame: false,
+  forcedDarkPages: false,
 });
 
 /** @typedef {keyof typeof VISUAL_PREFERENCE_STORAGE_KEYS} VisualPreferenceName */

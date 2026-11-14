@@ -26,6 +26,8 @@ import {
   setWideAddressBar,
   showFullUrls,
   setShowFullUrls,
+  forcedDarkPages,
+  setForcedDarkPages,
   compactToolbar,
   setCompactToolbar,
   roundedContentFrame,
@@ -144,6 +146,17 @@ const supportsWhatsApp = typeof navigator !== "undefined" && navigator.userAgent
     </span>
     <span class="visual-switch">
       <input type="checkbox" role="switch" checked={$showFullUrls} onchange={event => setShowFullUrls((event.currentTarget as HTMLInputElement).checked)} />
+      <span class="visual-switch-track" aria-hidden="true"></span>
+    </span>
+  </label>
+
+  <label class="visual-toggle-row" id="setting-forced-dark-pages" tabindex="-1" data-testid="forced-dark-pages">
+    <span class="row-text">
+      <span class="row-label">{$t("settings.forced_dark_pages")}</span>
+      <span class="row-desc">{$t("settings.forced_dark_pages_description")}</span>
+    </span>
+    <span class="visual-switch">
+      <input type="checkbox" role="switch" data-testid="forced-dark-pages-switch" checked={$forcedDarkPages} onchange={event => void setForcedDarkPages((event.currentTarget as HTMLInputElement).checked).catch(() => { (event.currentTarget as HTMLInputElement).checked = $forcedDarkPages; })} />
       <span class="visual-switch-track" aria-hidden="true"></span>
     </span>
   </label>

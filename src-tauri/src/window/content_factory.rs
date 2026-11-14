@@ -96,6 +96,10 @@ pub(super) fn create_tab_webview(
         .initialization_script(crate::privacy::auto_skip::initializer(
             &keyboard_bridge_token,
         ))
+        .initialization_script(crate::privacy::forced_dark::initializer(
+            &keyboard_bridge_token,
+            app.state::<BrowserState>().policies().forced_dark_enabled(),
+        ))
         .zoom_hotkeys_enabled(false)
         .initialization_script(include_str!("page_activity.js").replace(
             "__ACTIVITY_TOKEN__",

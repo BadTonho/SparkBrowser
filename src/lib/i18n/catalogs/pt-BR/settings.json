@@ -281,6 +281,8 @@
   "settings.toolbar_appearance": "Barra e conteúdo",
   "settings.wide_address_bar": "Usar barra de endereços larga",
   "settings.wide_address_bar_description": "Deixa a barra de endereços ocupar o espaço disponível entre os controles.",
+  "settings.forced_dark_pages": "Modo escuro nos sites",
+  "settings.forced_dark_pages_description": "Escurece os sites que estão claros. Páginas que já são escuras ficam como estão.",
   "settings.show_full_urls": "Sempre mostrar URLs completos",
   "settings.show_full_urls_description": "Mantém o protocolo e o www. visíveis quando a barra não está em edição.",
   "settings.compact_toolbar": "Usar modo compacto",

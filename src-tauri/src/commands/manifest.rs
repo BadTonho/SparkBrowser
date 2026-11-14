@@ -148,6 +148,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_privacy_stats",
     "toggle_adblock_shield",
     "set_auto_skip_ads",
+    "set_forced_dark_mode",
     "set_privacy_popover",
     "set_permission_popover",
     "set_history_overlay",

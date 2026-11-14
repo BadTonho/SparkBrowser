@@ -11,6 +11,7 @@ import {
 } from "../services/visual-preferences.js";
 import { writable, get } from "svelte/store";
 import { setOverlayVisibility, setResidentLimit } from "../services/tauri-bridge";
+import { setForcedDarkMode } from "../services/bridge/forced-dark";
 import { setHibernationExemptions as setNativeHibernationExemptions } from "../services/bridge/navigation";
 import { setAskDownloadDestination as setNativeAskDownloadDestination } from "../services/bridge/navigation";
 import { normalizeHibernationDomain } from "../services/hibernation-domains.js";
@@ -33,6 +34,23 @@ export const wideAddressBar = writable(initialVisualPreferences.wideAddressBar);
 export const showFullUrls = writable(initialVisualPreferences.showFullUrls);
 export const compactToolbar = writable(initialVisualPreferences.compactToolbar);
 export const roundedContentFrame = writable(initialVisualPreferences.roundedContentFrame);
+/** Darkens websites that are light; pages that are already dark are left as they are. */
+export const forcedDarkPages = writable(initialVisualPreferences.forcedDarkPages);
+
+export async function setForcedDarkPages(enabled: boolean): Promise<void> {
+  const previous = get(forcedDarkPages);
+  forcedDarkPages.set(enabled);
+  try {
+    await setForcedDarkMode(enabled);
+    writeVisualPreference(safeStorage, "forcedDarkPages", enabled);
+  } catch (error) {
+    forcedDarkPages.set(previous);
+    throw error;
+  }
+}
+
+/** The native side forgets the choice on restart, so the saved value is sent again when the shell starts. */
+export const syncForcedDarkPages = () => setForcedDarkMode(get(forcedDarkPages)).catch(() => {});
 
 export function setWideAddressBar(enabled: boolean): void {
   wideAddressBar.set(enabled);

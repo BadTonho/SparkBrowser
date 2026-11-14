@@ -120,6 +120,7 @@
     "allow-get-privacy-stats",
     "allow-toggle-adblock-shield",
     "allow-set-auto-skip-ads",
+    "allow-set-forced-dark-mode",
     "allow-set-privacy-popover",
     "allow-set-permission-popover",
     "allow-set-history-overlay",

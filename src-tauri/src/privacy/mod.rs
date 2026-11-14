@@ -1,6 +1,7 @@
 pub mod adblock_engine;
 pub mod auto_skip;
 pub mod filter_lists;
+pub mod forced_dark;
 pub mod gpc;
 pub mod tracking_parameters;
 #[cfg(windows)]

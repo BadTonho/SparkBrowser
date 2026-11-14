@@ -80,7 +80,8 @@ use commands::persistence::{
 };
 use commands::privacy::{
     get_gpc, get_privacy_stats, get_shield_exceptions, get_tracking_cleaning, set_auto_skip_ads,
-    set_gpc, set_shield_exceptions, set_tracking_cleaning, toggle_adblock_shield,
+    set_forced_dark_mode, set_gpc, set_shield_exceptions, set_tracking_cleaning,
+    toggle_adblock_shield,
 };
 use commands::privacy_settings::{
     get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
@@ -558,6 +559,7 @@ pub fn run() {
             get_privacy_stats,
             toggle_adblock_shield,
             set_auto_skip_ads,
+            set_forced_dark_mode,
             set_tools_popover,
             set_downloads_popover,
             set_quick_settings_popover,

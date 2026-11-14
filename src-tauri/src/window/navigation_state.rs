@@ -219,6 +219,7 @@ pub(super) fn with_page_events(
             return;
         };
         crate::privacy::auto_skip::loaded(&webview, &state, &keyboard_token_for_load);
+        crate::privacy::forced_dark::loaded(&webview, &state, &keyboard_token_for_load);
         let (title, is_ephemeral) = state
             .session()
             .tabs()

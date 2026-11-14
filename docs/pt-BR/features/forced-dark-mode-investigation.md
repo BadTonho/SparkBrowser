@@ -1,5 +1,7 @@
 # Modo escuro forçado em páginas: investigação de viabilidade
 
+> **Resultado:** a função foi construída com um filtro injetado que age só em páginas claras. Veja [Modo escuro nos sites](forced-dark-mode.md).
+
 **Estado:** a prova isolada compila no Windows, mas a validação visual em execução está bloqueada durante a criação da sessão WebDriver. A validação Linux está pendente.
 
 ## Descobertas

@@ -281,6 +281,8 @@
   "settings.toolbar_appearance": "Toolbar and content",
   "settings.wide_address_bar": "Use a wide address bar",
   "settings.wide_address_bar_description": "Let the address bar use the available space between toolbar controls.",
+  "settings.forced_dark_pages": "Dark mode for websites",
+  "settings.forced_dark_pages_description": "Darkens websites that are light. Pages that are already dark are left as they are.",
   "settings.show_full_urls": "Always show full URLs",
   "settings.show_full_urls_description": "Keep the protocol and www. visible when the address bar is not being edited.",
   "settings.compact_toolbar": "Use compact mode",

@@ -195,6 +195,18 @@ pub async fn set_auto_skip_ads(
     Ok(stats)
 }
 
+/// Darkens pages that are light. Held in memory only: the interface owns the preference and sends it at
+/// start-up and whenever it changes, like the resident-tab limit.
+#[tauri::command]
+pub fn set_forced_dark_mode(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    enabled: bool,
+) -> Result<(), String> {
+    state.policies().set_forced_dark_enabled(enabled);
+    crate::privacy::forced_dark::apply(&app, enabled)
+}
+
 #[tauri::command]
 pub async fn toggle_adblock_shield(
     app: AppHandle,

@@ -85,6 +85,7 @@
     autoHibernateMode,
     residentTabLimit,
     setResidentTabLimit,
+    syncForcedDarkPages,
     hibernationExemptions,
     setHibernationExemptions,
     askDownloadDestination,
@@ -207,6 +208,7 @@
 
     void Promise.all([session.ready, privacyListener, shortcutListener]).then(async () => {
       if (disposed) return;
+      void syncForcedDarkPages();
       await setHibernationExemptions(get(hibernationExemptions));
       await setAskDownloadDestination(get(askDownloadDestination));
       await Promise.all([setResidentTabLimit(get(residentTabLimit)), loadBookmarks(), initializePrivacyStats(), initializeKeyboardShortcuts()]);

@@ -1,5 +1,7 @@
 # Forced dark mode for pages: feasibility investigation
 
+> **Outcome:** the feature was built with an injected, light-pages-only filter. See [Dark mode for websites](forced-dark-mode.md).
+
 **Status:** The isolated probe builds on Windows, but its visual runtime check is blocked while WebDriver creates the application session. Linux validation is pending.
 
 ## Findings
