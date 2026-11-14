@@ -113,7 +113,6 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
         .map_err(|e| e.to_string())
     })?;
 
-    migrate_legacy_new_tab_url(conn)?;
     crate::database::bookmarks_repo::migrate_default_bookmarks_once(conn)?;
     crate::database::bookmarks_repo::migrate_trailing_slash_default_bookmarks_once(conn)?;
     crate::database::workspace_repo::initialize_workspace_table(conn)?;
@@ -127,6 +126,8 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
     crate::database::closed_tabs_repo::migrate(conn)?;
     crate::database::recovery_repo::migrate(conn)?;
     crate::database::command_search_repo::register(conn)?;
+    // After the search functions exist: updating saved session pages fires index triggers that call them.
+    migrate_legacy_new_tab_url(conn)?;
     crate::database::site_zoom_repo::migrate(conn)?;
     crate::database::site_icons_repo::migrate(conn)?;
     crate::database::new_tab_repo::migrate(conn)?;
@@ -205,6 +206,35 @@ mod rename_tests {
         .unwrap();
         migrate_legacy_new_tab_url(&conn).unwrap();
         assert_eq!(url("a"), "veloce://newtab");
+    }
+
+    #[test]
+    fn opening_an_old_database_file_rewrites_the_address_even_though_index_triggers_fire() {
+        // Regression: the rewrite used to run before the search functions were registered, so a
+        // saved session page made the old trigger fail with "no such function: veloce_search_fold".
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("spark_browser.db");
+        {
+            let conn = Connection::open(&path).unwrap();
+            initialize_schema(&conn).unwrap();
+            conn.execute_batch(
+                "INSERT INTO saved_sessions(id,name) VALUES(1,'Work');
+                 INSERT INTO saved_session_pages(session_id,position,title,url,is_pinned,is_selected) VALUES(1,0,'New tab','veloce://newtab',0,0);
+                 DROP TRIGGER session_page_search_update;
+                 CREATE TRIGGER session_page_search_update AFTER UPDATE OF title,url ON saved_session_pages BEGIN
+                   UPDATE session_page_search SET title=veloce_search_fold(new.title), address=veloce_search_fold(new.url) WHERE rowid=old.rowid;
+                 END;
+                 DELETE FROM app_migrations WHERE name='spark-rename-new-tab-url-v1';",
+            )
+            .unwrap();
+        }
+        // A fresh connection starts with no functions registered, exactly like an app launch.
+        let conn = Connection::open(&path).unwrap();
+        initialize_schema(&conn).unwrap();
+        let url: String = conn
+            .query_row("SELECT url FROM saved_session_pages", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(url, "spark://newtab");
     }
 
     #[test]
