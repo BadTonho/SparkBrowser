@@ -40,6 +40,8 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Suporte ao Linux](./features/linux-support.md)
 - [Permissões por site](./features/site-permissions.md)
 - [Dependencias](./security/dependency-notes.md)
+- [Política de segurança e relato de vulnerabilidades](./security/reporting-vulnerabilities.md)
+- [Créditos e licenças de terceiros](./legal/acknowledgements.md)
 - [Canais de versão e atualizações](./features/updates.md)
 - [Releases assinadas localmente](./contributing/releases.md)
 - [Idiomas da interface](./features/localization.md)

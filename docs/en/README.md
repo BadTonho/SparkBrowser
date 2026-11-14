@@ -40,6 +40,8 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Linux support](./features/linux-support.md)
 - [Site permissions](./features/site-permissions.md)
 - [Dependency notes](./security/dependency-notes.md)
+- [Security policy and reporting vulnerabilities](./security/reporting-vulnerabilities.md)
+- [Acknowledgements and third-party licenses](./legal/acknowledgements.md)
 - [Release channels and updates](./features/updates.md)
 - [Local signed releases](./contributing/releases.md)
 - [Interface languages](./features/localization.md)

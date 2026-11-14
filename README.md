@@ -1,18 +1,64 @@
+<div align="center">
+
 # Spark
 
-**A desktop browser built with Rust, Tauri, and Svelte.** Spark combines native web views with a customizable browser interface and local tools for managing tabs, workspaces, and browsing data.
+**A fast, private desktop browser built with Rust, Tauri and Svelte.**
 
-[Documentation](./docs/en/README.md) · [Português (Brasil)](./docs/pt-BR/README.md) · [Architecture](./docs/en/architecture/overview.md) · [Contributing](./docs/en/contributing/validation.md)
+Native web views, workspaces, split view and local-first privacy tools, in one customizable interface.
+
+[![CI](https://github.com/BadTonho/SparkBrowser/actions/workflows/ci.yml/badge.svg)](https://github.com/BadTonho/SparkBrowser/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux-lightgrey)
+![Rust](https://img.shields.io/badge/Rust-2021-orange?logo=rust&logoColor=white)
+![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
+![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte&logoColor=white)
+
+[Documentation](./docs/en/README.md) · [Português (Brasil)](./docs/pt-BR/README.md) · [Features](./docs/en/features/core-features.md) · [Architecture](./docs/en/architecture/overview.md) · [Contributing](#contributing)
+
+</div>
+
+---
+
+> [!NOTE]
+> Spark is in **early development** (version 0.1.0). Expect rough edges and changes between releases. Windows is the most tested platform; Linux support is described in the [Linux support guide](./docs/en/features/linux-support.md).
 
 ## Highlights
 
-- **Native web views:** each open tab keeps its page and navigation state while you switch between tabs. The system web view is used on each platform.
-- **Flexible workspace:** arrange tabs horizontally or vertically, group them into workspaces, or use split view and Zen mode.
-- **Personalized new tab:** configure the clock, weather, background media, and other widgets.
-- **Useful browser tools:** search and switch tabs from the command bar, save bookmarks, manage downloads, and restore recently closed tabs.
-- **Local controls:** manage browsing history, site permissions, privacy settings, and tab hibernation from the browser interface.
+### Browsing and workspaces
 
-See the [feature guide](./docs/en/features/core-features.md) for details and behavior notes.
+- **Native web views:** each tab keeps its page and navigation state while you switch between tabs. Spark uses the web view runtime of your operating system, so there is no bundled browser engine.
+- **Workspaces and layouts:** group tabs into workspaces, arrange them horizontally or vertically, or use [split view](./docs/en/features/split-view.md) and Zen mode.
+- **Command bar:** search, switch tabs and run actions from the [command bar](./docs/en/features/command-search.md), with [keyboard shortcuts](./docs/en/features/keyboard-shortcuts.md) across tabs.
+- **Tab care:** [hibernation](./docs/en/features/hibernation.md) for idle tabs, restore recently closed tabs, and [tab media controls](./docs/en/features/tab-media.md).
+
+### Privacy and security
+
+- **Ad and tracker shield:** a network rule engine with bundled filter lists, plus [link cleaning](./docs/en/features/tracking-protection.md) of tracking parameters.
+- **Ephemeral tabs:** [disposable tabs](./docs/en/features/ephemeral-tabs.md) with isolated, temporary storage that is deleted when the tab closes.
+- **Workspace isolation (opt-in):** [separate cookies and storage per workspace](./docs/en/features/workspace-isolation.md), off by default.
+- **You decide:** per-site [permissions](./docs/en/features/site-permissions.md), local history and privacy settings.
+
+### Tools and customization
+
+- **New tab page:** an offline-first page with recent sites and optional [clock, weather, Gmail and wallpaper widgets](./docs/en/features/new-tab-widgets.md).
+- **Reader view and dark mode:** a distraction-free [reader](./docs/en/features/reader-mode.md) and an optional [dark mode for websites](./docs/en/features/forced-dark-mode.md).
+- **Built-in tools:** [downloads manager](./docs/en/features/downloads.md), [feed reader](./docs/en/features/feed-reader.md), notes, bookmarks with [export](./docs/en/features/bookmark-export.md), and several [search engines](./docs/en/features/search-engines.md).
+- **Local backup:** export and review your settings, workspaces and bookmarks in a [versioned file](./docs/en/features/backup.md).
+- **Extensions (Windows):** [Chrome WebExtensions support](./docs/en/features/extensions.md), depending on the web view runtime.
+- **Updates:** [stable and beta channels](./docs/en/features/updates.md) with signed releases.
+
+See the [feature guide](./docs/en/features/core-features.md) for details and platform notes.
+
+## Platform support
+
+| | Windows | Linux |
+| --- | :---: | :---: |
+| Web engine | WebView2 | WebKitGTK |
+| Core browsing, workspaces, split view | ✅ | ✅ |
+| Extensions | ✅ | Not yet |
+| Release packages | Installer (x64) with signed updates | `.deb`, `.rpm`, AppImage, `.tar.gz`, Flatpak (experimental) |
+
+Behavior can differ between platforms because each uses its own system web view. Feature pages call out the differences where they matter.
 
 ## Get started
 
@@ -45,17 +91,17 @@ npm.cmd run tauri dev
 | Local persistence | SQLite |
 | Web content | The operating system's web view runtime |
 
-## Checks
+## Contributing
 
-Run the project checks before proposing a change:
+Bug reports, usability feedback and code contributions are welcome. Before opening a change, read the [project standards](./docs/en/contributing/rules-and-standards.md) and run the checks below. The [project structure guide](./docs/en/architecture/project-structure.md) helps you find the right area to update.
 
 ```bash
-npm run check
-npm test
-npm run validate
+npm run check      # Svelte and TypeScript checks
+npm test           # unit and documentation tests
+npm run validate   # broader workflow: frontend and Rust checks
 ```
 
-`npm run validate` runs the broader validation workflow, including frontend and Rust checks. See the [validation guide](./docs/en/contributing/validation.md) for platform notes and optional native tests.
+See the [validation guide](./docs/en/contributing/validation.md) for platform notes and optional native tests.
 
 ## Documentation
 
@@ -63,13 +109,17 @@ The documentation is maintained in English and Brazilian Portuguese.
 
 - [Documentation home](./docs/en/README.md) · [Início da documentação](./docs/pt-BR/README.md)
 - [Feature guides](./docs/en/features) · [Guias de funcionalidades](./docs/pt-BR/features)
-- [Architecture](./docs/en/architecture/overview.md) · [Architecture and project structure](./docs/en/architecture/project-structure.md)
+- [Architecture overview](./docs/en/architecture/overview.md) · [Project structure](./docs/en/architecture/project-structure.md)
 - [Security boundaries](./docs/en/security/application-boundaries.md) · [Validation and contribution notes](./docs/en/contributing/validation.md)
 
-## Contributing
+## Security
 
-Bug reports, usability feedback, and code contributions are welcome. Before opening a change, review the [project standards](./docs/en/contributing/rules-and-standards.md) and run the checks above. The [project structure guide](./docs/en/architecture/project-structure.md) can help you find the right area to update.
+To report a vulnerability, follow the [security policy](./.github/SECURITY.md). Please do not open a public issue for security problems.
 
-## Platform notes
+## Acknowledgements
 
-Spark uses the web view runtime provided by the operating system, so rendering behavior and some native capabilities can differ between Windows and Linux. Feature documentation calls out platform-specific behavior where it matters.
+Spark stands on the shoulders of excellent open-source projects and services, including [Tauri](https://tauri.app/), [Svelte](https://svelte.dev/), [adblock-rust](https://github.com/brave/adblock-rust), [EasyList](https://easylist.to/), [Open-Meteo](https://open-meteo.com/) and [Simple Icons](https://github.com/simple-icons/simple-icons). See the full list in [Acknowledgements and third-party licenses](./docs/en/legal/acknowledgements.md).
+
+## License
+
+Spark is licensed under the [Apache License 2.0](./LICENSE). The bundled EasyList, EasyPrivacy and NoCoin filter lists are third-party data under their own licenses; see [their notice](./src-tauri/resources/filterlists/README.md).
