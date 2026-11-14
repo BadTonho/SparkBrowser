@@ -95,6 +95,8 @@ const messages: Record<string, MessageKey> = {
   "backup.checksum_missing": "backup.error_checksum",
   "backup.newer_version": "backup.error_newer_version",
 
+  "graphics.write_failed": "settings.error_graphics_write",
+  "graphics.no_change": "settings.error_graphics_no_change",
   "storage.failed": "common.storage_failed",
   "desktop.required": "common.desktop_required",
   "notes.page_required": "common.notes_page_required",

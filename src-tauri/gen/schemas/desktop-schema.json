@@ -537,6 +537,12 @@
           "markdownDescription": "Enables the get_gpc command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_graphics_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-graphics-status",
+          "markdownDescription": "Enables the get_graphics_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_history command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-history",
@@ -861,6 +867,12 @@
           "markdownDescription": "Enables the respond_site_permission command without any pre-configured scope."
         },
         {
+          "description": "Enables the restart_for_graphics command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-restart-for-graphics",
+          "markdownDescription": "Enables the restart_for_graphics command without any pre-configured scope."
+        },
+        {
           "description": "Enables the restart_webview_runtime command without any pre-configured scope.",
           "type": "string",
           "const": "allow-restart-webview-runtime",
@@ -985,6 +997,12 @@
           "type": "string",
           "const": "allow-set-gpc",
           "markdownDescription": "Enables the set_gpc command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_hardware_acceleration command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-hardware-acceleration",
+          "markdownDescription": "Enables the set_hardware_acceleration command without any pre-configured scope."
         },
         {
           "description": "Enables the set_hibernation_exemptions command without any pre-configured scope.",
@@ -1587,6 +1605,12 @@
           "markdownDescription": "Denies the get_gpc command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_graphics_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-graphics-status",
+          "markdownDescription": "Denies the get_graphics_status command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_history command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-history",
@@ -1911,6 +1935,12 @@
           "markdownDescription": "Denies the respond_site_permission command without any pre-configured scope."
         },
         {
+          "description": "Denies the restart_for_graphics command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-restart-for-graphics",
+          "markdownDescription": "Denies the restart_for_graphics command without any pre-configured scope."
+        },
+        {
           "description": "Denies the restart_webview_runtime command without any pre-configured scope.",
           "type": "string",
           "const": "deny-restart-webview-runtime",
@@ -2035,6 +2065,12 @@
           "type": "string",
           "const": "deny-set-gpc",
           "markdownDescription": "Denies the set_gpc command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_hardware_acceleration command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-hardware-acceleration",
+          "markdownDescription": "Denies the set_hardware_acceleration command without any pre-configured scope."
         },
         {
           "description": "Denies the set_hibernation_exemptions command without any pre-configured scope.",

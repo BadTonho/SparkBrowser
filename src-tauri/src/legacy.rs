@@ -19,7 +19,7 @@ fn env_dir(name: &str) -> Option<PathBuf> {
 
 /// The per-identifier folders the OS keeps for this app: data, local data (where WebView2 stores
 /// its profile) on Windows; data, config and cache on Linux.
-fn identifier_roots() -> Vec<PathBuf> {
+pub(crate) fn identifier_roots() -> Vec<PathBuf> {
     #[cfg(windows)]
     {
         ["APPDATA", "LOCALAPPDATA"]

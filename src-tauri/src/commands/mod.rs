@@ -26,6 +26,7 @@ pub mod backup;
 pub mod bookmark_export;
 pub mod capture_probe;
 pub mod dark_mode_probe;
+pub mod graphics;
 
 pub mod closed_tabs;
 pub mod recovery;

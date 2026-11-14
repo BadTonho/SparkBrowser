@@ -12,6 +12,8 @@ import {
   setAskDownloadDestination,
 } from "../../stores/settingsStore";
 import { addHibernationDomain } from "../../services/hibernation-domains.js";
+import { graphicsBusy, graphicsError, graphicsStatus, refreshGraphics, restartForGraphics, setHardwareAcceleration } from "../../stores/graphicsStore";
+import ErrorMessage from "../status/ErrorMessage.svelte";
 const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
 let domainInput = $state("");
 let domainError = $state(false);
@@ -24,6 +26,8 @@ async function addDomain() {
   catch { domainError = true; }
 }
 
+$effect(() => { void refreshGraphics(); });
+
 async function removeDomain(domain: string) {
   await setHibernationExemptions($hibernationExemptions.filter(item => item !== domain));
 }
@@ -31,6 +35,26 @@ async function removeDomain(domain: string) {
 
 <section class="setting-group" aria-labelledby="performance-heading">
   <h2 class="group-title" id="performance-heading"><AppIcon name="rocket" /> {$t("settings.performance_privacy_41ef")}</h2>
+
+  <div class="setting-row" id="setting-hardware-acceleration" tabindex="-1" data-testid="hardware-acceleration">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.hardware_acceleration")}</span>
+      <span class="row-desc">{$t("settings.hardware_acceleration_desc")}</span>
+      {#if $graphicsStatus.restartRequired}
+        <span class="row-desc restart-note" role="status" data-testid="hardware-acceleration-restart-note">{$t("settings.hardware_acceleration_restart")}</span>
+      {/if}
+    </div>
+    <div class="gpu-controls">
+      {#if $graphicsStatus.restartRequired}
+        <button class="pill-action" type="button" data-testid="hardware-acceleration-restart" disabled={$graphicsBusy} onclick={restartForGraphics}>{$t("settings.hardware_acceleration_restart_now")}</button>
+      {/if}
+      <label class="gpu-switch">
+        <input type="checkbox" role="switch" data-testid="hardware-acceleration-switch" aria-label={$t("settings.hardware_acceleration")} checked={$graphicsStatus.enabled} disabled={$graphicsBusy} onchange={event => setHardwareAcceleration(event.currentTarget.checked)} />
+        <span class="gpu-track" aria-hidden="true"></span>
+      </label>
+    </div>
+  </div>
+  <ErrorMessage error={$graphicsError} />
 
   <div class="setting-row" id="setting-resident-limit" tabindex="-1">
     <div class="row-text"><span class="row-label">{$t("settings.resident_tab_limit_9a94")}</span><span class="row-desc">{$t("settings.keep_up_to_this_many_webviews_awake_active_pinned_loading_media_download_9f92")}</span></div>
@@ -97,4 +121,14 @@ async function removeDomain(domain: string) {
   .domain-editor li button { border: 0; background: transparent; color: inherit; }
   .domain-error { color: var(--status-danger, #e55); }
   @media (max-width: 700px) { .domain-editor { width: 100%; min-width: 0; } }
+  .restart-note { color: #fcd34d; }
+  .gpu-controls { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; }
+  .gpu-switch { position: relative; flex: 0 0 auto; width: 40px; height: 22px; cursor: pointer; }
+  .gpu-switch input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+  .gpu-track { position: absolute; inset: 0; border-radius: 99px; background: rgba(255, 255, 255, 0.2); transition: background 0.16s ease; }
+  .gpu-track::before { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.16s ease; }
+  .gpu-switch input:checked + .gpu-track { background: var(--accent-primary); }
+  .gpu-switch input:checked + .gpu-track::before { transform: translateX(18px); }
+  .gpu-switch input:focus-visible + .gpu-track { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .gpu-track, .gpu-track::before { transition: none; } }
 </style>

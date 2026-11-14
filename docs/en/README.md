@@ -31,6 +31,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Site search shortcuts](./features/site-search.md)
 - [Search engines](./features/search-engines.md)
 - [Upgrading from the Veloce name](./features/rename-migration.md)
+- [Hardware acceleration](./features/hardware-acceleration.md)
 - [Page notes](./features/page-notes.md)
 - [Feed reader](./features/feed-reader.md)
 - [Tab organizer](./features/tab-organizer.md)

@@ -15,6 +15,7 @@ use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
+use commands::graphics::{get_graphics_status, restart_for_graphics, set_hardware_acceleration};
 use commands::new_tab::set_new_tab_preferences;
 use commands::private_session::open_private_window;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
@@ -26,6 +27,7 @@ pub mod database;
 pub mod downloads;
 pub mod extensions;
 pub mod feeds;
+pub mod graphics;
 pub mod legacy;
 pub mod media;
 mod native_tests;
@@ -136,11 +138,20 @@ pub fn run() {
     if matches!(mode, private_session::Mode::Normal) {
         legacy::migrate_profile(&context.config().identifier);
     }
+    // Graphics flags are read once, when the first webview starts, so they are set here. Private
+    // windows and restarted children keep whatever their parent put in the environment.
+    if matches!(mode, private_session::Mode::Normal) {
+        let accelerated = graphics::data_directory(context.config())
+            .is_none_or(|directory| graphics::load(&directory));
+        graphics::apply_environment(accelerated);
+    }
+    let graphics_service = graphics::GraphicsService::new(graphics::running_accelerated());
     let role = private_session::PrivateRole::from_mode(mode);
     private_session::configure(&mut context, role.launch());
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(role)
+        .manage(graphics_service)
         .manage(BrowserState::default())
         .manage(window::fullscreen::FullscreenState::default())
         .manage(webview_runtime::RuntimeService::default())
@@ -451,6 +462,9 @@ pub fn run() {
             reopen_closed_tab,
             clear_closed_tabs,
             export_backup,
+            get_graphics_status,
+            set_hardware_acceleration,
+            restart_for_graphics,
             export_bookmarks,
             choose_backup_file,
             discard_backup_import,
