@@ -20,6 +20,7 @@ use commands::new_tab::set_new_tab_preferences;
 use commands::panels::prepare_panel;
 use commands::private_session::{get_private_window_state, open_private_window};
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
+use commands::site_icons::site_icons;
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
@@ -464,6 +465,7 @@ pub fn run() {
             clear_closed_tabs,
             export_backup,
             prepare_panel,
+            site_icons,
             get_graphics_status,
             set_hardware_acceleration,
             restart_for_graphics,

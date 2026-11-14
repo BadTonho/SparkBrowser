@@ -1209,6 +1209,12 @@
           "markdownDescription": "Enables the set_zoom_popover command without any pre-configured scope."
         },
         {
+          "description": "Enables the site_icons command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-site-icons",
+          "markdownDescription": "Enables the site_icons command without any pre-configured scope."
+        },
+        {
           "description": "Enables the switch_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-switch-tab",
@@ -2287,6 +2293,12 @@
           "type": "string",
           "const": "deny-set-zoom-popover",
           "markdownDescription": "Denies the set_zoom_popover command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the site_icons command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-site-icons",
+          "markdownDescription": "Denies the site_icons command without any pre-configured scope."
         },
         {
           "description": "Denies the switch_tab command without any pre-configured scope.",

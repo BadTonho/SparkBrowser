@@ -156,6 +156,7 @@ fn capture(
             .await;
             if matches!(result, Ok(true)) {
                 super::super::new_tab::invalidate(&app);
+                let _ = crate::security::emit_shell(&app, "site-icons-changed", ());
             }
         });
         Ok(())

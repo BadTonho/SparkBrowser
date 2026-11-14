@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AppIcon from "../icons/AppIcon.svelte";
+  import TabFavicon from "./TabFavicon.svelte";
   import ContainerBadge from "./ContainerBadge.svelte";
   import type { TabItem } from "../../types/browser";
   import { startTabDrag, tabDrag } from "../../stores/tabDragStore";
@@ -87,7 +87,7 @@
         title={getTabTooltip(tab, $tabsMemory[tab.id])}
       >
         <TabMuteButton tabId={tab.id} />
-        <span class="tab-glyph"><AppIcon name={getTabGlyph(tab.url, tab.is_hibernated)} /></span>
+        <span class="tab-glyph"><TabFavicon url={tab.url} glyph={getTabGlyph(tab.url, tab.is_hibernated)} dimmed={tab.is_hibernated} /></span>
         {#if tab.container_id}<ContainerBadge id={tab.container_id} />{/if}
         {#if tab.is_ephemeral}
           <span class="ephemeral-badge" title={$t("tabs.ephemeral_tooltip")}>

@@ -140,6 +140,7 @@
     "allow-clear-all-downloads",
     "allow-export-backup",
     "allow-prepare-panel",
+    "allow-site-icons",
     "allow-get-graphics-status",
     "allow-set-hardware-acceleration",
     "allow-restart-for-graphics",

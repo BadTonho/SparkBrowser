@@ -1,5 +1,6 @@
 <script lang="ts">
   import AppIcon from "../icons/AppIcon.svelte";
+  import TabFavicon from "./TabFavicon.svelte";
   import ContainerBadge from "./ContainerBadge.svelte";
   import { startTabDrag, cancelTabDrag, tabDrag } from "../../stores/tabDragStore";
   import TabMuteButton from "../media/TabMuteButton.svelte";
@@ -153,7 +154,7 @@
         </div>
         <div class="tab-active-bar"></div>
         <TabMuteButton tabId={tab.id} />
-        <span class="tab-glyph"><AppIcon name={getTabGlyph(tab.url, tab.is_hibernated)} /></span>
+        <span class="tab-glyph"><TabFavicon url={tab.url} glyph={getTabGlyph(tab.url, tab.is_hibernated)} dimmed={tab.is_hibernated} /></span>
         {#if tab.container_id}<ContainerBadge id={tab.container_id} />{/if}
         <div class="tab-meta">
           <span class="tab-title" class:is-hibernated={tab.is_hibernated}>{tab.title}</span>

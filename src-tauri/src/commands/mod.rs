@@ -22,6 +22,7 @@ pub mod diagnostics;
 pub mod extensions;
 pub mod overlays;
 pub mod panels;
+pub mod site_icons;
 
 pub mod backup;
 pub mod bookmark_export;
