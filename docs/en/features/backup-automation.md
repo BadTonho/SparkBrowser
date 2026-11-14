@@ -4,8 +4,9 @@ Settings → Data & Backup includes an **Automatic backups** panel built on top 
 
 ## Scheduled backups
 
-- **Back up automatically** keeps a rolling history in the application data directory (`backups/`). Frequency is every 6 hours, daily or weekly.
-- **Also back up when the browser closes** adds a snapshot during shutdown. A failure never delays or blocks closing the browser.
+- **Back up automatically** keeps a rolling history in the application data directory (`backups/`). Frequency is every 6 hours, daily or weekly. It is **on by default**, daily, so a new profile gets its first backup shortly after the first start. Turning it off is remembered; only a profile that never touched the schedule gets the default.
+- **Also back up when the browser closes** adds a snapshot during shutdown. It is **on by default** too. The wait is bounded (8 seconds for the snapshot, 5 for the final sync), and a failure never delays or blocks closing the browser.
+- Local backups are not encrypted unless you turn on encryption below. They contain bookmarks, notes, sessions, tabs and preferences, but never cookies, passwords or site permissions.
 - **Back up now** creates a snapshot on demand and always writes one.
 - The interface checks the schedule once a minute and shortly after startup, so a backup that came due while the browser was closed is taken on the next launch. Scheduled and on-close snapshots compare the streamed SHA-256 fingerprint of data and preferences with the previous snapshot and skip identical content, only refreshing the schedule clock. After a failure the next attempt is delayed by 15 minutes.
 - Snapshots are captured through the same flush, session lock and consistency rules as manual export.

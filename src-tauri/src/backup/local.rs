@@ -86,9 +86,11 @@ pub struct Schedule {
 impl Default for Schedule {
     fn default() -> Self {
         Self {
-            enabled: false,
+            // On from the start: a backup you forgot to turn on is the one you miss. A choice already
+            // saved, including "off", is kept; only profiles that never touched the schedule change.
+            enabled: true,
             interval: Interval::Daily,
-            on_exit: false,
+            on_exit: true,
             max_backups: DEFAULT_MAX_BACKUPS,
             max_age_days: None,
         }
@@ -813,7 +815,25 @@ mod tests {
         let conn = Connection::open_in_memory().unwrap();
         prefs::initialize_preferences_table(&conn).unwrap();
         let dir = temp();
-        assert_eq!(build_state(&conn, dir.path()).unwrap().next_due_at, None);
+        // Untouched profiles are on by default, so a first backup is due right away.
+        let untouched = build_state(&conn, dir.path()).unwrap();
+        assert!(untouched.schedule.enabled && untouched.schedule.on_exit);
+        assert!(untouched.next_due_at.is_some());
+        // An explicit "off" is respected and has nothing due.
+        let off = Schedule {
+            enabled: false,
+            on_exit: false,
+            ..Schedule::default()
+        };
+        prefs::store(
+            &conn,
+            prefs::BACKUP_LOCAL_SCHEDULE_KEY,
+            &serde_json::to_string(&off).unwrap(),
+        )
+        .unwrap();
+        let declined = build_state(&conn, dir.path()).unwrap();
+        assert!(!declined.schedule.enabled && !declined.schedule.on_exit);
+        assert_eq!(declined.next_due_at, None);
         let schedule = Schedule {
             enabled: true,
             ..Schedule::default()

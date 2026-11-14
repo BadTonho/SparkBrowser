@@ -1,4 +1,5 @@
 import { createSharedLifecycle } from "../services/lifecycle.js";
+import { settleWithin } from "../services/deadline.js";
 import { applyWorkspaceSnapshot } from "./workspaceStore";
 import type { TabItem } from "../types/browser";
 import { applyBackupZoom } from "../services/bridge/zoom";
@@ -86,7 +87,7 @@ export const backupSyncNotice = writable<"pushed" | "unchanged" | "config_saved"
 /** Set while an encrypted file waits for its password; `wrong` after a failed attempt. */
 export const backupLocked = writable<{ wrong: boolean } | null>(null);
 export const localBackupState = writable<LocalBackupState>({
-  schedule: { enabled: false, interval: "daily", on_exit: false, max_backups: 10, max_age_days: null },
+  schedule: { enabled: true, interval: "daily", on_exit: true, max_backups: 10, max_age_days: null },
   encryption_enabled: false,
   last_run_at: null,
   last_failure: null,
@@ -529,14 +530,16 @@ function notifyPersistentDataChanged(): void {
   }
 }
 
+/** How long closing the browser waits for the exit backup and the final sync before it gives up on them. */
+export const EXIT_BACKUP_WAIT_MS = 8_000;
+export const EXIT_SYNC_WAIT_MS = 5_000;
+
 export async function flushBackupSyncBeforeShutdown(): Promise<void> {
   if (!isTauriRuntime()) return;
+  // Both steps are best effort and bounded: a slow disk, an unreachable WebDAV server or a Google
+  // Drive page that never finishes loading must never keep the browser from closing.
   if (get(localBackupState).schedule.on_exit) {
-    try {
-      await createLocal("exit", true);
-    } catch {
-      // A failed local snapshot must never block closing the browser.
-    }
+    await settleWithin(createLocal("exit", true), EXIT_BACKUP_WAIT_MS);
   }
   if (folderAutoSaveTimer) {
     clearTimeout(folderAutoSaveTimer);
@@ -544,12 +547,10 @@ export async function flushBackupSyncBeforeShutdown(): Promise<void> {
   }
   const cfg = get(backupSyncState).config;
   if (cfg.mode === "disabled" || !cfg.auto_save) return;
-  try {
-    const res = await pushBackupSync(capturePreferences(), true);
-    backupSyncState.set(res.state);
+  const pushed = await settleWithin(pushBackupSync(capturePreferences(), true), EXIT_SYNC_WAIT_MS);
+  if ("value" in pushed) {
+    backupSyncState.set(pushed.value.state);
     hasPendingChangesForCloud = false;
-  } catch {
-    // Never block browser shutdown if the external folder or remote WebDAV server is unreachable.
   }
 }
 

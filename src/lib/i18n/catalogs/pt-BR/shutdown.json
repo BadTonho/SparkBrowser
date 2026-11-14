@@ -7,7 +7,7 @@
   "shutdown.manual": "{count} transferências ou verificações serão pausadas. Retome manualmente ao reabrir.",
   "shutdown.native": "{count} downloads de páginas perderão a conexão com o motor e não poderão ser retomados após sair. Volte à página de origem para iniciar novamente.",
   "shutdown.saving": "Salvando a sessão e interrompendo transferências…",
-  "shutdown.preparing": "Salvando notas pendentes…",
+  "shutdown.preparing": "Salvando suas alterações…",
   "shutdown.continue": "Continuar navegando",
   "shutdown.exit": "Sair mesmo assim",
   "shutdown.install": "Instalar e reiniciar",
