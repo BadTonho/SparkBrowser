@@ -36,7 +36,7 @@ impl GitHub {
                 .https_only(true)
                 .connect_timeout(Duration::from_secs(10))
                 .timeout(Duration::from_secs(30))
-                .user_agent(format!("VeloceBrowser/{version}"))
+                .user_agent(format!("SparkBrowser/{version}"))
                 .build()
                 .map_err(CheckError::plain)?,
             releases_url: format!("https://api.github.com/repos/{REPOSITORY}/releases"),

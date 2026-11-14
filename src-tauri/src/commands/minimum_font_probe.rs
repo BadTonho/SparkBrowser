@@ -3,7 +3,7 @@ use tauri::AppHandle;
 
 #[tauri::command]
 pub async fn set_minimum_font_probe_size(app: AppHandle, size: u32) -> Result<u32, String> {
-    if app.config().identifier != "org.veloce.browser.native-tests" {
+    if app.config().identifier != "org.spark.browser.native-tests" {
         return Err("minimum_font_probe.test_application_only".into());
     }
     if size > 72 {

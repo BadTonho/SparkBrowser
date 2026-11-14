@@ -124,7 +124,7 @@ pub fn install(
                         menu.remove(&item);
                     }
                 }
-                let action = gio::SimpleAction::new("veloce-open-link", None);
+                let action = gio::SimpleAction::new("spark-open-link", None);
                 let app = app.clone();
                 let tab = tab.clone();
                 let generation = generation.clone();

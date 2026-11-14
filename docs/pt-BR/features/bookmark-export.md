@@ -1,6 +1,6 @@
 # Exportar favoritos para outros navegadores
 
-Configurações → Dados e backup tem um cartão **Favoritos** com dois botões que gravam todos os favoritos em um arquivo que outros navegadores sabem ler. Isso é separado do backup `.veloce-backup.json`, que só este aplicativo restaura.
+Configurações → Dados e backup tem um cartão **Favoritos** com dois botões que gravam todos os favoritos em um arquivo que outros navegadores sabem ler. Isso é separado do backup `.spark-backup.json`, que só este aplicativo restaura.
 
 ## Formatos
 

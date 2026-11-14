@@ -111,8 +111,8 @@ jobs:
       - name: Package portable Linux tarball
         run: |
           mkdir -p linux-artifacts
-          if [ -f "src-tauri/target/release/veloce-browser" ]; then
-            tar -czvf linux-artifacts/veloce-browser-linux-x86_64-portable.tar.gz -C src-tauri/target/release veloce-browser
+          if [ -f "src-tauri/target/release/spark-browser" ]; then
+            tar -czvf linux-artifacts/spark-browser-linux-x86_64-portable.tar.gz -C src-tauri/target/release spark-browser
           fi
 
       - name: Collect Linux artifacts

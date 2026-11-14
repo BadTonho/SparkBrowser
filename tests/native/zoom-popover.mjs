@@ -38,7 +38,7 @@ export async function checkZoomPopover(context, a, b) {
     assert.ok(Math.abs(rect.left+120-anchor.left-anchor.width/2)<=1);
     await context.screenshot('zoom-popover');
     assert.equal(await script('return document.querySelector("#zoom-percentage").textContent'),'100%');
-    await script('location.href="veloce-internal://zoom-popover/zoom?token=invalid&sequence=999&value=5"');
+    await script('location.href="spark-internal://zoom-popover/zoom?token=invalid&sequence=999&value=5"');
   });
   await wait(150);assert.equal(await factor(),1,'unauthenticated adjustment rejected');
   await ui.close();

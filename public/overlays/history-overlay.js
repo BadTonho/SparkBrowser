@@ -5,7 +5,7 @@
   function send(action, value = {}) {
     if (!state || closing) return;
     if (action === 'close') closing = true;
-    const url = new URL('veloce-internal://history-overlay/action');
+    const url = new URL('spark-internal://history-overlay/action');
     url.searchParams.set('token', state.token);
     url.searchParams.set('sequence', String(++sequence));
     url.searchParams.set('payload', JSON.stringify({ action, ...value }));
@@ -54,7 +54,7 @@
     }
     panel.hidden = false;
   }
-  window.__veloceSetHistoryOverlay = payload => {
+  window.__sparkSetHistoryOverlay = payload => {
     if (!payload.visible) {
       if (!state || state.sessionId <= payload.sessionId) { state = null; panel.hidden = true; closing = false; }
       return;

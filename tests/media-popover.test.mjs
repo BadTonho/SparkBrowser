@@ -36,7 +36,7 @@ function fixture() {
     volume: 100, disabled: false, locale: 'pt-BR', label: 'Media', theme: { accent: '#eee' },
     labels: { title: 'Media controls', playing: 'Playing', audible: 'Audible', mute: 'Mute', unmute: 'Unmute', noMedia: 'No media', frameLimit: 'Frames unavailable' },
     items: [], frameTrackingSupported: true };
-  const update = patch => context.__veloceSetMediaPopover({ ...payload, ...patch });
+  const update = patch => context.__sparkSetMediaPopover({ ...payload, ...patch });
   const fire = (target, type, event = {}) => listeners.get(`${target}:${type}`)?.(event);
   const frame = () => { const callbacks = [...frames.values()]; frames.clear(); for (const callback of callbacks) callback(); };
   return { popover, slider, percentage, title, items, empty, frameNote, document, sent, update, fire, frame, context };

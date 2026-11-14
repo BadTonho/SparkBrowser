@@ -6,13 +6,13 @@
 use super::model::*;
 
 pub fn upgrade(document: &mut BackupDocument) {
+    // 1→2 (site zoom), 2→3 (floating window shadow) and 4→5 (checksum) only add optional fields or
+    // file-level metadata, which deserialization defaults already cover. Add a `match` here when a
+    // step needs code again.
     for from in document.version..CURRENT_VERSION {
-        match from {
-            // Split layouts gained explicit left/right tab groups; legacy ones put the rest on the left.
-            3 => normalize_splits(&mut document.data),
-            // 1→2 (site zoom), 2→3 (floating window shadow) and 4→5 (checksum) only add optional
-            // fields or file-level metadata, which deserialization defaults already cover.
-            _ => {}
+        // Split layouts gained explicit left/right tab groups; legacy ones put the rest on the left.
+        if from == 3 {
+            normalize_splits(&mut document.data);
         }
     }
 }

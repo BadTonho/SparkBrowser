@@ -11,7 +11,7 @@ const { createDownloadNotices } = exports;
 const row = (id, revision, status) => ({ id, revision, status, url: 'https://private.example/file', save_path: 'C:/private/file' });
 function storage(raw = null) {
   let value = raw, writes = 0;
-  return { getItem: () => value, setItem(key, next) { assert.equal(key, 'veloce_download_notices'); value = next; writes++; }, value: () => value, writes: () => writes };
+  return { getItem: () => value, setItem(key, next) { assert.equal(key, 'spark_download_notices'); value = next; writes++; }, value: () => value, writes: () => writes };
 }
 const counts = ledger => ({ ...ledger.summary() });
 

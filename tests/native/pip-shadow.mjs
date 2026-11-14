@@ -51,6 +51,6 @@ export async function checkPipShadow(context) {
   await openSetting();assert.equal(await script('return document.querySelector(arguments[0]).getAttribute("aria-pressed");',setting),'true');await close();
   const restoredId=await openControlledPip(context);
   await invoke('exit_video_pip');await openSetting();await change(false);await close();
-  assert.equal(await script('return localStorage.getItem("veloce_pip_window_shadow");'),'false');
+  assert.equal(await script('return localStorage.getItem("spark_pip_window_shadow");'),'false');
   assert.ok((await invoke('get_tabs')).tabs.some(t=>t.id===restoredId));
 }

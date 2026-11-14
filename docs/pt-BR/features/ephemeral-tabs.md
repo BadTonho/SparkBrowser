@@ -1,6 +1,6 @@
 # Abas Efêmeras (Containers Descartáveis)
 
-O Veloce Browser oferece abas temporárias e descartáveis ("Abas Efêmeras") para navegação temporária e privada.
+O Spark Browser oferece abas temporárias e descartáveis ("Abas Efêmeras") para navegação temporária e privada.
 
 ---
 

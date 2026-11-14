@@ -47,9 +47,9 @@ export async function checkTabDocking(context) {
   const checkPreview = async () => {
     if (process.platform === 'win32') {
       let windows;
-      try { windows=await until(async()=>{const all=await inspectDragWindows();return all.some(w=>w.title==='Veloce split preview' && w.visible)?all:null;},'preview window visible'); }
+      try { windows=await until(async()=>{const all=await inspectDragWindows();return all.some(w=>w.title==='Spark split preview' && w.visible)?all:null;},'preview window visible'); }
       catch(error){console.log('Drag diagnostics',await script('return {events:window.dockingEvents,focus:document.hasFocus(),drag:document.querySelector(".is-dragging")?.dataset.tabId,error:document.querySelector("[role=alert]")?.textContent}'));console.log('Native windows',await inspectDragWindows());throw error;}
-      const preview=windows.find(w=>w.title==='Veloce split preview');
+      const preview=windows.find(w=>w.title==='Spark split preview');
       assert.equal(preview.owner,true);assert.equal(preview.foreground,false);
       const main=windows.find(window=>window.main);
       assert.ok(Math.abs(preview.width-main.clientWidth)<=2 && Math.abs(preview.height-main.clientHeight)<=2,'transparent surface covers main client');

@@ -10,9 +10,11 @@ use std::sync::{
 };
 use tauri::{AppHandle, Manager, Url};
 
-pub const URL: &str = "veloce://newtab";
+pub const URL: &str = "spark://newtab";
+/// Address saved by builds from before the rename; tabs, sessions and backups may still carry it.
+pub const LEGACY_URL: &str = "veloce://newtab";
 pub fn is_new_tab(raw: &str) -> bool {
-    raw == URL
+    raw == URL || raw == LEGACY_URL
 }
 pub fn valid_tab_url(raw: &str) -> bool {
     is_new_tab(raw)
@@ -120,13 +122,12 @@ pub fn invalidate(app: &AppHandle) {
         if let Some(view) =
             app.get_webview(&crate::state::tab_model::webview_label_for_tab(&tab.id))
         {
-            let _ = view.eval("window.__veloceRefreshNewTab?.()");
+            let _ = view.eval("window.__sparkRefreshNewTab?.()");
         }
     }
 }
 pub fn set_preferences(app: &AppHandle, engine: String, language: String) -> Result<(), String> {
-    if !crate::search_engines::is_valid(&engine) || !["en", "pt-BR"].contains(&language.as_str())
-    {
+    if !crate::search_engines::is_valid(&engine) || !["en", "pt-BR"].contains(&language.as_str()) {
         return Err("Invalid new tab preferences".into());
     }
     *app.state::<NewTabService>()
@@ -165,9 +166,9 @@ mod tests {
     fn only_the_exact_internal_address_is_supported() {
         assert!(super::valid_tab_url(super::URL));
         for raw in [
-            "veloce://newtab/",
-            "veloce://newtab?x=1",
-            "veloce://settings",
+            "spark://newtab/",
+            "spark://newtab?x=1",
+            "spark://settings",
             "file:///tmp/x",
             "javascript:alert(1)",
         ] {

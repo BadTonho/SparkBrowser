@@ -1,6 +1,6 @@
 # Ephemeral Tabs (Disposable Containers)
 
-Veloce Browser provides disposable, isolated browsing tabs ("Ephemeral Tabs") designed for private, transient browsing tasks.
+Spark Browser provides disposable, isolated browsing tabs ("Ephemeral Tabs") designed for private, transient browsing tasks.
 
 ---
 

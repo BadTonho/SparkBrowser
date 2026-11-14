@@ -51,7 +51,7 @@ export async function checkDownloads({ invoke, until, fixture, restart, director
   fixture.download.mode = 'normal';
   for (const damage of ['changed', 'missing']) {
     const current = await create(); await pause(current.id);
-    const partial = resolve(directory, 'data', 'downloads', '.veloce-partials', current.id + '.part');
+    const partial = resolve(directory, 'data', 'downloads', '.spark-partials', current.id + '.part');
     if (damage === 'missing') unlinkSync(partial); else { const bytes = readFileSync(partial); bytes[0] ^= 1; writeFileSync(partial, bytes); }
     const previousRequests = fixture.download.requests.length;
     await act(current.id, 'resume'); await waitState(current.id, 'RestartRequired');

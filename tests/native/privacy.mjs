@@ -34,12 +34,12 @@ export async function checkPrivacy(context) {
   console.log('Privacy: auto skip enabled');
   await inside(() => until(() => script('return document.querySelector("#auto-skip").checked && !document.querySelector("#auto-skip").disabled'), 'confirmed checkbox'));
   assert.equal((await invoke('get_privacy_stats')).shield_enabled, stats.shield_enabled, 'independent controls');
-  await script(`window.fixtureStorageSet=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='veloce_auto_skip_ads')throw Error('fixture storage failure');return window.fixtureStorageSet.call(this,key,value);}`);
+  await script(`window.fixtureStorageSet=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='spark_auto_skip_ads')throw Error('fixture storage failure');return window.fixtureStorageSet.call(this,key,value);}`);
   await inside(() => script('document.querySelector("#auto-skip").click()'));
   await inside(() => until(() => script('return !document.querySelector("#privacy-error").hidden && document.querySelector("#auto-skip").checked && !document.querySelector("#auto-skip").disabled'), 'storage failure restores checkbox'));
   assert.equal((await invoke('get_privacy_stats')).auto_skip_ads_enabled, true, 'storage failure rolls native policy back');
   await script('Storage.prototype.setItem=window.fixtureStorageSet;delete window.fixtureStorageSet;');
-  await inside(() => script('location.href="veloce-internal://privacy-popover/auto-skip?token=invalid&sequence=999&value=false"'));
+  await inside(() => script('location.href="spark-internal://privacy-popover/auto-skip?token=invalid&sequence=999&value=false"'));
   await wait(100);
   assert.equal((await invoke('get_privacy_stats')).auto_skip_ads_enabled, true, 'unauthenticated popup action rejected');
   await inside(() => script('document.querySelector("#adblock").click()'));
@@ -101,7 +101,7 @@ export async function checkPrivacy(context) {
       window.fixtureClicks=0;player.querySelector('button').onclick=()=>window.fixtureClicks++;
       const facade={addEventListener:window.addEventListener.bind(window),removeEventListener:window.removeEventListener.bind(window)};facade.top=facade;
       new Function('location','window',arguments[0])(new URL('https://www.youtube.com/watch?v=fixture'),facade);
-      window.fixtureAutoSkip=facade.__veloceSetAutoSkip;window.fixtureAutoSkip('fixture-auto-skip',true);`, source);
+      window.fixtureAutoSkip=facade.__sparkSetAutoSkip;window.fixtureAutoSkip('fixture-auto-skip',true);`, source);
     await until(() => script('return window.fixtureClicks===1'), 'native DOM auto click');
     await wait(600); assert.equal(await script('return window.fixtureClicks'), 1);
     await script('window.fixtureAutoSkip("fixture-auto-skip",false);const b=document.querySelector("#movie_player button");const n=b.cloneNode(true);n.onclick=()=>window.fixtureClicks++;b.replaceWith(n);');

@@ -14,9 +14,9 @@ fn updater(
     tauri::App<tauri::test::MockRuntime>,
     tauri_plugin_updater::Updater,
 ) {
-    veloce_browser_lib::updates::initialize_crypto();
+    spark_browser_lib::updates::initialize_crypto();
     let mut context = tauri::test::mock_context(tauri::test::noop_assets());
-    context.config_mut().identifier = "org.veloce.browser.updater-unit-tests".into();
+    context.config_mut().identifier = "org.spark.browser.updater-unit-tests".into();
     context.config_mut().plugins.0.insert("updater".into(), serde_json::json!({"pubkey":public_key,"requireSignedVersion":true,"endpoints":["https://example.invalid/updater.json"]}));
     let app = tauri::test::mock_builder()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -113,7 +113,7 @@ fn isolated_nsis_fixtures_have_valid_version_bound_signatures() {
         .join(".cache/update-fixtures");
     let fixtures: serde_json::Value =
         serde_json::from_slice(&std::fs::read(root.join("fixtures.json")).unwrap()).unwrap();
-    assert_eq!(fixtures["identifier"], "org.veloce.browser.updater-tests");
+    assert_eq!(fixtures["identifier"], "org.spark.browser.updater-tests");
     let (_app, updater) = updater(fixtures["publicKey"].as_str().unwrap());
     for version in fixtures["versions"].as_array().unwrap() {
         let version = version.as_str().unwrap();
@@ -123,7 +123,7 @@ fn isolated_nsis_fixtures_have_valid_version_bound_signatures() {
             serde_json::from_slice(&std::fs::read(folder.join("updater.json")).unwrap()).unwrap();
         let update = updater.restore_update(manifest).unwrap().unwrap();
         let bytes =
-            std::fs::read(folder.join(format!("VeloceBrowser_{version}_x64-setup.exe"))).unwrap();
+            std::fs::read(folder.join(format!("SparkBrowser_{version}_x64-setup.exe"))).unwrap();
         assert_eq!(
             &bytes[..2],
             b"MZ",

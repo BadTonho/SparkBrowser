@@ -5,8 +5,8 @@
   let timer = 0, attempts = 0;
   function drain() {
     timer = 0;
-    if (typeof window.__veloceContentSignal === 'function') {
-      for (const url of pending.splice(0)) window.__veloceContentSignal(JSON.stringify({ veloceContent: url }));
+    if (typeof window.__sparkContentSignal === 'function') {
+      for (const url of pending.splice(0)) window.__sparkContentSignal(JSON.stringify({ sparkContent: url }));
       attempts = 0;
     } else if (++attempts < 200) timer = setTimeout(drain, 10);
     else {
@@ -15,7 +15,7 @@
       if (latest) window.location.href = latest;
     }
   }
-  Object.defineProperty(window, '__velocePostContent', { value(url) {
+  Object.defineProperty(window, '__sparkPostContent', { value(url) {
     if (!native) { window.location.href = url; return; }
     if (pending.length === 64) pending.shift();
     pending.push(url);

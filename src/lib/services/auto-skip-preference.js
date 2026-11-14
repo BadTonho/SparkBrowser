@@ -1,4 +1,4 @@
-export const AUTO_SKIP_STORAGE_KEY = 'veloce_auto_skip_ads';
+export const AUTO_SKIP_STORAGE_KEY = 'spark_auto_skip_ads';
 
 /** @param {{getItem:(key:string)=>string|null}} storage */
 export function readAutoSkip(storage) {

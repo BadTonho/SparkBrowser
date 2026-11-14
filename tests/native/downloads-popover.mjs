@@ -131,7 +131,7 @@ export async function checkDownloadsPopover(c) {
   await inside(() => script(`const u=new URL(window.savedDownloadAction),p=JSON.parse(u.searchParams.get('payload'));p.value='https://fixture.example/stale';u.searchParams.set('sequence','999');u.searchParams.set('payload',JSON.stringify(p));location.href=u.toString();`));
   await wait(100);
   assert.equal(await script('return document.querySelector("[data-testid=download-url]").value'), 'https://fixture.example/original', 'closed session token is inert');
-  await inside(() => script('location.href="veloce-internal://downloads-popover/action?token=invalid&sequence=999&payload="+encodeURIComponent(JSON.stringify({kind:"invoke",command:"close_tab"}))'));
+  await inside(() => script('location.href="spark-internal://downloads-popover/action?token=invalid&sequence=999&payload="+encodeURIComponent(JSON.stringify({kind:"invoke",command:"close_tab"}))'));
   await wait(100); assert.equal(await script('return !!document.querySelector(".downloads-controller")'), true);
   await escape();
 

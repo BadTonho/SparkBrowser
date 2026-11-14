@@ -53,7 +53,7 @@ export async function checkClosedTabs({ invoke, until, fixture, restart, script 
   // Import a hibernated blocked page without ever contacting an external site.
   const packet = await invoke('get_tabs');
   const prefs = backupPreferences();
-  const document = { format: 'veloce-backup', version: 1, created_at: 1, preferences: prefs, data: {
+  const document = { format: 'spark-backup', version: 1, created_at: 1, preferences: prefs, data: {
     workspaces: await invoke('get_workspaces'), bookmarks: { folders: [], bookmarks: [] }, sessions: [], notes: [], site_search: [], split_layouts: [],
     tabs: [...packet.tabs.map(({ id, title, url, workspace_id, is_active, is_pinned }) => ({ id, title, url, workspace_id, is_active, is_pinned })),
       { id: 'blocked-foreign', title: 'Blocked fixture', url: 'https://doubleclick.net/fixture', workspace_id: 'ws-personal', is_active: false, is_pinned: false }],

@@ -12,7 +12,7 @@ export async function checkBackupIdentities({ invoke, fixture, restart, until, w
   await invoke('set_split_view', { leftTabId: regular.id, rightTabId: companion.id });
   const before = await invoke('get_tabs');
   const prefs = backupPreferences();
-  const source = { format: 'veloce-backup', version: 4, created_at: 1, preferences: prefs,
+  const source = { format: 'spark-backup', version: 4, created_at: 1, preferences: prefs,
     data: { bookmarks: await invoke('get_bookmark_data'), workspaces: await invoke('get_workspaces'),
       tabs: before.tabs.filter(tab => !tab.is_ephemeral).map(({ id, title, url, workspace_id, is_pinned }) => ({ id, title, url, workspace_id, is_pinned, is_active: false })),
       split_layouts: [], sessions: [], notes: [], site_search: [] } };

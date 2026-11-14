@@ -6,16 +6,16 @@ import {
   migrateLegacyDefaultWorkspaceColors,
 } from '../../constants/workspaceDefaults';
 import { fetchTabs } from '../bridge/navigation';
-const WORKSPACE_PALETTE_MIGRATION_KEY = 'veloce_workspace_palette_version';
+const WORKSPACE_PALETTE_MIGRATION_KEY = 'spark_workspace_palette_version';
 export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
   if(typeof safeStorage !== "undefined") {
-    const saved = safeStorage.getItem("veloce_workspaces");
+    const saved = safeStorage.getItem("spark_workspaces");
     if(saved) {
       let parsed: unknown = undefined;
       try {
         parsed = JSON.parse(saved);
       } catch {
-        safeStorage.removeItem("veloce_workspaces");
+        safeStorage.removeItem("spark_workspaces");
       }
 
       if(Array.isArray(parsed) && parsed.length > 0 && parsed.every(isWorkspaceItem) && new Set(parsed.map(item => item.id)).size === parsed.length) {
@@ -30,7 +30,7 @@ export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
         ) {
           const migrated = migrateLegacyDefaultWorkspaceColors(savedWorkspaces);
           try {
-            safeStorage.setItem("veloce_workspaces", JSON.stringify(migrated));
+            safeStorage.setItem("spark_workspaces", JSON.stringify(migrated));
             safeStorage.setItem(
               WORKSPACE_PALETTE_MIGRATION_KEY,
               String(WORKSPACE_PALETTE_MIGRATION_VERSION)
@@ -50,7 +50,7 @@ export async function fetchWorkspaces(): Promise<WorkspaceItem[]> {
 export async function fetchActiveWorkspace(): Promise<string> {
   return typeof safeStorage === "undefined"
     ? "ws-personal"
-    : safeStorage.getItem("veloce_active_workspace") ?? "ws-personal";
+    : safeStorage.getItem("spark_active_workspace") ?? "ws-personal";
 }
 
 export async function switchWorkspace(_workspaceId: string): Promise<TabSnapshot> {
@@ -62,7 +62,7 @@ export async function createWorkspaceProfile(
 ): Promise<WorkspaceItem[]> {
   const next = [...(await fetchWorkspaces()), workspace];
   if(typeof safeStorage !== "undefined") {
-    safeStorage.setItem("veloce_workspaces", JSON.stringify(next));
+    safeStorage.setItem("spark_workspaces", JSON.stringify(next));
   }
   return next;
 }
@@ -74,7 +74,7 @@ export async function updateWorkspaceProfile(
     item.id === workspace.id ? workspace : item
   );
   if(typeof safeStorage !== "undefined") {
-    safeStorage.setItem("veloce_workspaces", JSON.stringify(next));
+    safeStorage.setItem("spark_workspaces", JSON.stringify(next));
   }
   return next;
 }
@@ -95,7 +95,7 @@ export async function deleteWorkspaceProfile(
   const activeId =
     typeof safeStorage === "undefined"
       ? "ws-personal"
-      : safeStorage.getItem("veloce_active_workspace") ?? "ws-personal";
+      : safeStorage.getItem("spark_active_workspace") ?? "ws-personal";
   const deletingActive = activeId === workspaceId;
   const nextActiveId = deletingActive
     ? action === "move"
@@ -130,8 +130,8 @@ export async function deleteWorkspaceProfile(
     is_active: tab.id === activeTab?.id,
   }));
   if(typeof safeStorage !== "undefined") {
-    safeStorage.setItem("veloce_workspaces", JSON.stringify(remaining));
-    safeStorage.setItem("veloce_active_workspace", nextActiveId);
+    safeStorage.setItem("spark_workspaces", JSON.stringify(remaining));
+    safeStorage.setItem("spark_active_workspace", nextActiveId);
   }
   return {
     workspaces: remaining,

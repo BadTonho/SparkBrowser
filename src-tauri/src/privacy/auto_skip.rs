@@ -11,7 +11,7 @@ pub fn initializer(token: &str) -> String {
 /// No content-page IPC. The immutable initializer starts disabled on every document.
 pub fn apply_view(view: &tauri::Webview, token: &str, enabled: bool) -> Result<(), String> {
     view.eval(format!(
-        "window.__veloceSetAutoSkip?.({}, {enabled});",
+        "window.__sparkSetAutoSkip?.({}, {enabled});",
         serde_json::to_string(token).map_err(|e| e.to_string())?
     ))
     .map_err(|e| e.to_string())

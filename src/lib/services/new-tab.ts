@@ -4,7 +4,7 @@ import { locale } from '../i18n';
 import { defaultSearchEngine } from '../stores/searchEngineStore';
 import { invoke, isTauriRuntime } from './bridge/runtime';
 
-export const NEW_TAB_URL = 'veloce://newtab';
+export const NEW_TAB_URL = 'spark://newtab';
 export const isNewTab = (url: string) => url === NEW_TAB_URL;
 
 function startNewTab(): () => void {

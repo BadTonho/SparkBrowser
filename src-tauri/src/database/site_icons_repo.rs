@@ -157,7 +157,7 @@ mod tests {
             Some("example.test:444")
         );
         for raw in [
-            "veloce://newtab",
+            "spark://newtab",
             "file:///x",
             "https://user:pass@example.test",
             "http://tauri.localhost/new-tab.html",

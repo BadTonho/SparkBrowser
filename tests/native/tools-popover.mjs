@@ -53,7 +53,7 @@ export async function checkToolsPopover(context) {
   await until(() => inside(() => script('return !!document.querySelector("[data-testid=diagnostics-totals]")')), 'diagnostics loaded');
   await inside(() => screenshot('tools-diagnostics'));
 
-  await inside(() => script('location.href="veloce-internal://tools-popover/action?token=invalid&sequence=999&payload="+encodeURIComponent(JSON.stringify({kind:"dismiss",reason:"outside"}));'));
+  await inside(() => script('location.href="spark-internal://tools-popover/action?token=invalid&sequence=999&payload="+encodeURIComponent(JSON.stringify({kind:"dismiss",reason:"outside"}));'));
   await wait(100);
   assert.equal(await script('return document.querySelector("[data-action=tools]").getAttribute("aria-expanded")'), 'true', 'forged action rejected');
   await inside(() => script('window.toolsForbidden=false;window.__TAURI_INTERNALS__.invoke("get_tabs").then(()=>window.toolsForbidden=false,()=>window.toolsForbidden=true);'));

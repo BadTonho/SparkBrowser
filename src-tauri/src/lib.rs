@@ -26,6 +26,7 @@ pub mod database;
 pub mod downloads;
 pub mod extensions;
 pub mod feeds;
+pub mod legacy;
 pub mod media;
 mod native_tests;
 pub mod privacy;
@@ -131,6 +132,10 @@ pub fn run() {
     updates::initialize_crypto();
     let mut context = tauri::generate_context!();
     native_tests::configure(&mut context).expect("invalid native test directory");
+    // Move a profile created under the old name before any webview opens it.
+    if matches!(mode, private_session::Mode::Normal) {
+        legacy::migrate_profile(&context.config().identifier);
+    }
     let role = private_session::PrivateRole::from_mode(mode);
     private_session::configure(&mut context, role.launch());
     tauri::Builder::default()
@@ -229,7 +234,7 @@ pub fn run() {
             let data_directory = app.path().app_data_dir()?;
             let lists = privacy::filter_lists::FilterLists::start(
                 &data_directory.join("filter-lists").join("last-valid.json"),
-                !cfg!(test) && app.config().identifier != "org.veloce.browser.native-tests",
+                !cfg!(test) && app.config().identifier != "org.spark.browser.native-tests",
             );
             app.manage(lists);
             app.manage(
@@ -241,7 +246,7 @@ pub fn run() {
             if app.state::<private_session::PrivateRole>().is_private() {
                 if let Some(window) = app.get_webview_window("main") {
                     window
-                        .set_title("Veloce - Privada")
+                        .set_title("Spark - Privada")
                         .map_err(std::io::Error::other)?;
                 }
                 private_session::seed_profile(app.handle()).map_err(std::io::Error::other)?;
@@ -252,6 +257,13 @@ pub fn run() {
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
+            // Secrets saved under the pre-rename names follow the profile; a locked keyring just retries next start.
+            let _ = backup::migrate_legacy_secrets(
+                &conn,
+                &app.state::<backup::service::BackupService>()
+                    .sync
+                    .credentials,
+            );
             let legacy_credential = database::preferences_repo::load(
                 &conn,
                 database::preferences_repo::BACKUP_SYNC_SECRET_KEY,

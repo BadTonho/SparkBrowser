@@ -40,8 +40,10 @@ pub fn resolve_input_to_url_with_search_engine(
 }
 
 pub fn search_engine_home_url(search_engine: Option<&str>) -> &'static str {
-    crate::search_engines::get_or_default(search_engine.unwrap_or(crate::search_engines::DEFAULT_ID))
-        .home
+    crate::search_engines::get_or_default(
+        search_engine.unwrap_or(crate::search_engines::DEFAULT_ID),
+    )
+    .home
 }
 
 /// Resolve explicit shell input through stored site searches before the default parser.
@@ -106,7 +108,10 @@ mod tests {
             assert_eq!(url.path(), expected.path(), "{}", engine.id);
             let query: Vec<_> = url.query_pairs().collect();
             assert_eq!(query.len(), 1);
-            assert_eq!((query[0].0.as_ref(), query[0].1.as_ref()), (engine.param, "rust & svelte"));
+            assert_eq!(
+                (query[0].0.as_ref(), query[0].1.as_ref()),
+                (engine.param, "rust & svelte")
+            );
             assert_eq!(search_engine_home_url(Some(engine.id)), engine.home);
         }
         // Yahoo is the one engine whose query parameter is not `q`.
@@ -114,7 +119,9 @@ mod tests {
         assert!(yahoo.query().unwrap().starts_with("p=a"));
         // Stale or unknown ids keep working with the default engine.
         assert_eq!(
-            resolve_input_to_url_with_search_engine("a b", "gone").unwrap().host_str(),
+            resolve_input_to_url_with_search_engine("a b", "gone")
+                .unwrap()
+                .host_str(),
             Some("www.google.com")
         );
         assert_eq!(search_engine_home_url(None), "https://www.google.com/");

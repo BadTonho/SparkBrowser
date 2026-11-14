@@ -29,7 +29,7 @@
   function send(action, reason = '') {
     if (!state || closing) return;
     cancelAnimationFrame(pendingFrame); pendingFrame = 0;
-    const url = new URL(`veloce-internal://zoom-popover/${action}`);
+    const url = new URL(`spark-internal://zoom-popover/${action}`);
     url.searchParams.set('token', state.token);
     url.searchParams.set('sequence', String(++sequence));
     if (dirty) url.searchParams.set('value', String(draft));
@@ -43,7 +43,7 @@
     draft = direction === 0 ? 1 : direction > 0 ? state.levels.find(level => level > value + .001) ?? state.levels.at(-1) : [...state.levels].reverse().find(level => level < value - .001) ?? state.levels[0];
     dirty = true; render(); send('zoom');
   }
-  window.__veloceSetZoomPopover = payload => {
+  window.__sparkSetZoomPopover = payload => {
     if (!payload.visible) {
       cancelAnimationFrame(pendingFrame); pendingFrame = 0;
       state = null; closing = false; editing = false; draft = null; dirty = false; popover.hidden = true;

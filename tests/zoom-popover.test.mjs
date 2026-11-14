@@ -20,7 +20,7 @@ function fixture() {
   };context.window=context;
   runInNewContext(readFileSync('public/overlays/zoom-popover.js','utf8'),context);
   const initial={visible:true,token:'artificial-zoom-token',factor:1,levels:[.25,.5,.75,1,1.1,1.25,1.5,2,3,4,5],pending:false,error:'',locale:'en',label:'Page zoom',inLabel:'Increase',outLabel:'Decrease',resetLabel:'Reset 100%',anchor:{left:400,top:10,width:25,height:25},theme:{}};
-  const update=patch=>context.__veloceSetZoomPopover({...initial,...patch});
+  const update=patch=>context.__sparkSetZoomPopover({...initial,...patch});
   const fire=(id,type,event={})=>listeners.get(id+':'+type)?.(event);
   const key=(key,extra={})=>fire('window','keydown',{key,preventDefault(){},stopImmediatePropagation(){},...extra});
   const frame=()=>{const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn());};

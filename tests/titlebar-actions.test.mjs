@@ -19,7 +19,7 @@ const plain = value => JSON.parse(JSON.stringify(value));
 const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'zen', 'qr', 'whatsapp'];
 
 function storeFixture(saved = null, failWrite = false) {
-  const storage = new Map(saved == null ? [] : [['veloce_titlebar_action_order', saved]]);
+  const storage = new Map(saved == null ? [] : [['spark_titlebar_action_order', saved]]);
   const writable = value => ({ set(next) { value = next; }, subscribe(fn) { fn(value); return () => {}; } });
   const get = store => { let value; store.subscribe(next => value = next)(); return value; };
   const store = load('src/lib/stores/titlebarActionsStore.ts', {
@@ -42,7 +42,7 @@ test('visible actions move to either end, persist and reload', () => {
   assert.equal(f.current()[0], 'zen');
   f.moveTitlebarAction('tools', null, defaults);
   assert.equal(f.current().at(-1), 'tools');
-  assert.deepEqual(storeFixture(f.storage.get('veloce_titlebar_action_order')).current(), f.current());
+  assert.deepEqual(storeFixture(f.storage.get('spark_titlebar_action_order')).current(), f.current());
 });
 
 test('hidden bookmarks retain their saved slot; unavailable storage still updates the session', () => {

@@ -8,7 +8,7 @@
         function sendRequest(action) {
           if (!isOpen || requestSent) return;
           requestSent = true;
-          const url = new URL(`veloce-internal://bookmark-context-menu/${action}`);
+          const url = new URL(`spark-internal://bookmark-context-menu/${action}`);
           url.searchParams.set("token", activeToken);
           window.location.href = url.toString();
         }
@@ -24,7 +24,7 @@
           sendRequest("dismiss");
         }
 
-        window.__veloceSetBookmarkContextMenu = (payload) => {
+        window.__sparkSetBookmarkContextMenu = (payload) => {
           if (payload.language) {
             document.documentElement.lang = payload.language.locale === "pt-BR" ? "pt-BR" : "en";
             menu.setAttribute("aria-label", payload.language.label);

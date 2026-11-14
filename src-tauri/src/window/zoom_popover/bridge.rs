@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager, Url};
 
 /// The auxiliary page has no IPC grants; only its current authenticated session can act.
 pub(super) fn navigation(app: &AppHandle, url: &Url) {
-    if url.scheme() != "veloce-internal" || url.host_str() != Some("zoom-popover") {
+    if url.scheme() != "spark-internal" || url.host_str() != Some("zoom-popover") {
         return;
     }
     let Some(parameters) =

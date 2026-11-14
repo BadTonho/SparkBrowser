@@ -105,7 +105,7 @@ export async function activateWorkspace(workspaceId: string): Promise<void> {
     return;
   }
   confirmWorkspaceSelection(workspaceId);
-  if (typeof safeStorage !== "undefined") safeStorage.setItem("veloce_active_workspace", workspaceId);
+  if (typeof safeStorage !== "undefined") safeStorage.setItem("spark_active_workspace", workspaceId);
 }
 
 export function createWorkspaceDraft(): WorkspaceItem {
@@ -163,7 +163,7 @@ export async function removeWorkspaceProfile(
   applyTabsSnapshot(result.tabs);
   if (typeof safeStorage !== "undefined") {
     if (!isTauriRuntime()) {
-      safeStorage.setItem("veloce_active_workspace", result.active_workspace_id);
+      safeStorage.setItem("spark_active_workspace", result.active_workspace_id);
     }
   }
   const active = result.workspaces.find(

@@ -45,7 +45,7 @@ test('idle URL formatting hides only HTTP(S) protocol and leading www', () => {
   assert.equal(formatAddressForDisplay('https://www.example.test/path?q=one#part', false), 'example.test/path?q=one#part');
   assert.equal(formatAddressForDisplay('http://example.test:8080/path', false), 'example.test:8080/path');
   assert.equal(formatAddressForDisplay('https://www.example.test/path', true), 'https://www.example.test/path');
-  assert.equal(formatAddressForDisplay('veloce-internal://new-tab/', false), 'veloce-internal://new-tab/');
+  assert.equal(formatAddressForDisplay('spark-internal://new-tab/', false), 'spark-internal://new-tab/');
 });
 
 test('appearance controls are searchable and live classes preserve responsive and Zen behavior', () => {

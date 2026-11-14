@@ -38,7 +38,7 @@
   function handleDrop(event: DragEvent, wsId: string) {
     event.preventDefault();
     const tabId =
-      event.dataTransfer?.getData("application/x-veloce-tab") ||
+      event.dataTransfer?.getData("application/x-spark-tab") ||
       event.dataTransfer?.getData("text/plain");
 
     if (tabId) {

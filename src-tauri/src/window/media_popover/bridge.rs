@@ -5,7 +5,7 @@ use tauri::{AppHandle, Manager, Url};
 /// Child content pages have no IPC grants. Only this WebView's authenticated
 /// navigation callback can forward the two fixed popover actions to the shell.
 pub(super) fn navigation(app: &AppHandle, url: &Url) {
-    if url.scheme() != "veloce-internal" || url.host_str() != Some("media-popover") {
+    if url.scheme() != "spark-internal" || url.host_str() != Some("media-popover") {
         return;
     }
     let Some(parameters) = crate::security::bridge::query(

@@ -5,7 +5,7 @@ const RECOVERY = 'fixture recovery key';
 const OS_KEY = 'fixture operating system key';
 const ORIGIN = 'https://fixture.example';
 const RECORD = { username: 'fixture-user', password: 'fixture-password' };
-const AAD = Buffer.from('veloce-test-vault-v1');
+const AAD = Buffer.from('spark-test-vault-v1');
 function derive(value, salt) {
   return scryptSync(value, Buffer.from(salt, 'base64'), 32, { N: 16384, r: 8, p: 1 });
 }

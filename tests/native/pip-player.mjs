@@ -6,7 +6,7 @@ export async function withFloatingPlayer({request,sessionId,script},operation) {
   try {
     for(const handle of await request('GET',base+'/window/handles')) {
       await request('POST',base+'/window',{handle});
-      if((await script('return location.href')).startsWith('about:blank#veloce-pip-'))return await operation();
+      if((await script('return location.href')).startsWith('about:blank#spark-pip-'))return await operation();
     }
     throw new Error('Custom floating player not found');
   } finally { await request('POST',base+'/window',{handle:previous}); }

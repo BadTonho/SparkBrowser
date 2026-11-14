@@ -8,7 +8,7 @@ import {withScenarioDatabase} from './persistence/database.mjs';
 export async function checkNewTabWidgets(context,{inside,ready,active}){
   const {restart,script,click,until,invoke,resizeWindow,wait}=context;
   const provider=await widgetFixture();
-  const event=(operation,data={})=>inside(()=>script('window.dispatchEvent(new CustomEvent("veloce-new-tab-action",{detail:{action:"widgets",operation:arguments[0],data:arguments[1]}}))',operation,data));
+  const event=(operation,data={})=>inside(()=>script('window.dispatchEvent(new CustomEvent("spark-new-tab-action",{detail:{action:"widgets",operation:arguments[0],data:arguments[1]}}))',operation,data));
   const open=()=>inside(async()=>{if(!await script('return document.querySelector("#settings-panel").open'))await click('#widget-settings');});
   const closed=()=>inside(()=>script('document.querySelector("#settings-close").click()'));
   const checked=async(id,value)=>inside(()=>script('const n=document.getElementById(arguments[0]);n.checked=arguments[1];n.dispatchEvent(new Event("change"))',id,value));
@@ -22,7 +22,7 @@ export async function checkNewTabWidgets(context,{inside,ready,active}){
     await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));document.activeElement?.blur()');
     await resizeWindow(1440,1000);
     await inside(()=>until(()=>script('return !document.querySelector("#widget-settings").disabled'),'customization available'));
-    await inside(()=>script('window.addEventListener("veloce-new-tab-widgets",e=>window.widgetLastReply=e.detail);window.addEventListener("error",e=>window.widgetLastError=e.message)'));
+    await inside(()=>script('window.addEventListener("spark-new-tab-widgets",e=>window.widgetLastReply=e.detail);window.addEventListener("error",e=>window.widgetLastError=e.message)'));
     assert.equal(provider.requests.length,0,'disabled widgets make no provider requests');
     await open();
     await inside(()=>script('document.querySelector("#search").value="keep my draft"'));

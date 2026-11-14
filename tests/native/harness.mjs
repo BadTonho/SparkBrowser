@@ -8,14 +8,14 @@ import { cleanRunData, createRunDirectory } from './run-directory.mjs';
 export async function runScenario(name, scenario) {
   if (!['win32', 'linux'].includes(process.platform)) throw new Error('This direct tauri-driver suite supports Windows/Linux. Use an embedded WebDriver service on macOS.');
   const build = JSON.parse(readFileSync('.cache/native-target/test-build.json', 'utf8'));
-  assert.equal(build.identifier, 'org.veloce.browser.native-tests', 'Build the isolated native test application first');
+  assert.equal(build.identifier, 'org.spark.browser.native-tests', 'Build the isolated native test application first');
   const binary = resolve(build.executable);
   assert.ok(binary.startsWith(resolve('.cache/native-target') + (process.platform === 'win32' ? '\\' : '/')));
   const directory = createRunDirectory(name);
-  const port = Number(process.env.VELOCE_DRIVER_PORT ?? 4444);
+  const port = Number(process.env.SPARK_DRIVER_PORT ?? 4444);
   const endpoint = `http://127.0.0.1:${port}`;
-  const driverPath = process.env.VELOCE_TAURI_DRIVER ?? resolve('.cache/native-tools/bin', process.platform === 'win32' ? 'tauri-driver.exe' : 'tauri-driver');
-  const nativePath = process.env.VELOCE_NATIVE_DRIVER;
+  const driverPath = process.env.SPARK_TAURI_DRIVER ?? resolve('.cache/native-tools/bin', process.platform === 'win32' ? 'tauri-driver.exe' : 'tauri-driver');
+  const nativePath = process.env.SPARK_NATIVE_DRIVER;
   const args = ['--port', String(port), '--native-port', String(port + 1)];
   if (nativePath) args.push('--native-driver', resolve(nativePath));
   let driver;
@@ -144,7 +144,7 @@ export async function runScenario(name, scenario) {
         for (const handle of await request('GET', `/session/${session}/window/handles`)) {
           await request('POST', `/session/${session}/window`, { handle });
           const url = await request('GET', `/session/${session}/url`);
-          const id = /^about:blank#veloce-pip-([a-f0-9]{64})$/.exec(url)?.[1];
+          const id = /^about:blank#spark-pip-([a-f0-9]{64})$/.exec(url)?.[1];
           if (id) { label = `floating-video-${id}`; break; }
         }
         assert.ok(label && shellWebview, 'Only the isolated floating player can receive focus');
@@ -192,7 +192,7 @@ export async function runScenario(name, scenario) {
     await request('POST', `/session/${session}/timeouts`, { script: 30_000, implicit: 0, pageLoad: 30_000 });
     // Never operate on the user's production profile if a wrong binary was supplied.
     const diagnostics = await invoke('get_diagnostics');
-    assert.equal(diagnostics.application_identifier, 'org.veloce.browser.native-tests');
+    assert.equal(diagnostics.application_identifier, 'org.spark.browser.native-tests');
     assert.equal(toNamespacedPath(resolve(diagnostics.application_data_directory)).toLowerCase(), toNamespacedPath(resolve(directory, 'data')).toLowerCase());
     await until(async () => (await invoke('get_diagnostics')).startup_ready, 'native startup completes');
     await until(() => script('return document.querySelectorAll(".h-tab,.tab-row").length > 0'), 'shell initialization');
@@ -201,7 +201,7 @@ export async function runScenario(name, scenario) {
       // only after the restored active page has finished its initial navigation.
       const active = (await invoke('get_tabs')).tabs.find(tab => tab.is_active);
       assert.ok(active, 'startup selected a content tab');
-      const path = active.url === 'veloce://newtab' ? '/new-tab.html' : new URL(active.url).pathname + new URL(active.url).search;
+      const path = active.url === 'spark://newtab' ? '/new-tab.html' : new URL(active.url).pathname + new URL(active.url).search;
       await withWebview(path, () => until(() => script('return document.readyState === "complete"'), 'initial native document ready'));
     }
   }
@@ -221,7 +221,7 @@ export async function runScenario(name, scenario) {
   }
   async function startDriver() {
     driverError = undefined;
-    driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, VELOCE_NATIVE_TEST_RUN_DIR: directory, VELOCE_NATIVE_REAL_PROFILES: name === 'account-containers' ? '1' : '0' }, detached: process.platform !== 'win32' });
+    driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, SPARK_NATIVE_TEST_RUN_DIR: directory, SPARK_NATIVE_REAL_PROFILES: name === 'account-containers' ? '1' : '0' }, detached: process.platform !== 'win32' });
     driver.on('error', error => { driverError = error; });
     driver.on('exit', (code, signal) => { driverError = new Error(`Scenario driver exited (${code ?? signal})`); });
     await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'driver ready');
@@ -279,7 +279,7 @@ export async function runScenario(name, scenario) {
     await startDriver();
     await openSession();
     await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, openSettings, closeSettings, floatingWindow, sessionId: () => session, restart, directory, ownCleanup: cleanup => resourceCleanups.push(cleanup) });
-    if (process.env.VELOCE_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
+    if (process.env.SPARK_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
   } catch (error) {
     failure = error;
     if (session) await screenshot('failure').catch(() => {});

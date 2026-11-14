@@ -37,7 +37,7 @@ test('the titlebar button sends its own rectangle and stays hidden outside Windo
 test('WhatsApp display mode is saved and offers compact and side-panel layouts', () => {
   const settings = read('src/lib/stores/settingsStore.ts');
   assert.match(settings, /type WhatsAppDisplayMode = "popover" \| "side_panel"/);
-  assert.match(settings, /veloce_whatsapp_display_mode/);
+  assert.match(settings, /spark_whatsapp_display_mode/);
   assert.match(settings, /saved === "side_panel" \? "side_panel" : "popover"/);
 
   const appearance = read('src/lib/components/settings/AppearanceSettings.svelte');

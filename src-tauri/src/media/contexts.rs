@@ -92,11 +92,8 @@ fn remove_session(app: &AppHandle, label: &str, session: &str) {
 }
 fn enable(core: &ICoreWebView2, session: &str) {
     for (method, params) in [
-        ("Runtime.addBinding", json!({"name":"__veloceMediaSignal"})),
-        (
-            "Runtime.addBinding",
-            json!({"name":"__veloceContentSignal"}),
-        ),
+        ("Runtime.addBinding", json!({"name":"__sparkMediaSignal"})),
+        ("Runtime.addBinding", json!({"name":"__sparkContentSignal"})),
         ("Runtime.enable", json!({})),
         (
             "Target.setAutoAttach",
@@ -224,8 +221,8 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                 }
                             }
                             "Runtime.bindingCalled" => {
-                                let content = value["name"] == "__veloceContentSignal";
-                                if !content && value["name"] != "__veloceMediaSignal" {
+                                let content = value["name"] == "__sparkContentSignal";
+                                if !content && value["name"] != "__sparkMediaSignal" {
                                     return Ok(());
                                 }
                                 let context = VIEWS.with(|m| {

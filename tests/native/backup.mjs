@@ -15,7 +15,7 @@ export async function checkBackup(context) {
   const resident = (await invoke('get_diagnostics')).resident_webviews;
   const prefs = backupPreferences();
   const workspaces = await invoke('get_workspaces');
-  const source = { format: 'veloce-backup', version: 1, created_at: 1, preferences: prefs,
+  const source = { format: 'spark-backup', version: 1, created_at: 1, preferences: prefs,
     data: { bookmarks: await invoke('get_bookmark_data'), workspaces, tabs: before.tabs.map(({ id, title, url, workspace_id, is_pinned, is_active }) => ({ id, title, url, workspace_id, is_pinned, is_active })), split_layouts: [], sessions: [], notes: [], site_search: [] } };
   source.version=3;
   source.preferences = { ...prefs, auto_skip_ads_enabled:true,pip_window_shadow:true,language: 'en', overlay_blur_px: 5, resident_limit: 4, update_channel: 'beta' };
@@ -37,7 +37,7 @@ export async function checkBackup(context) {
   assert.equal((await invoke('get_tabs')).tabs.length, before.tabs.length);
   review = await preview(); const result = await commit(review.token);
   assert.equal(result.pending_preferences, null);
-  assert.notEqual(await script('return localStorage.getItem("veloce_pip_window_shadow");'),'true','data-only import leaves the local preference unchanged');
+  assert.notEqual(await script('return localStorage.getItem("spark_pip_window_shadow");'),'true','data-only import leaves the local preference unchanged');
   assert.equal((await invoke('get_privacy_stats')).auto_skip_ads_enabled, false, 'data-only import keeps auto skip unchanged');
   assert.deepEqual(result.snapshot.tabs.slice(0, before.tabs.length).map(tab => [tab.id, tab.is_active]), before.tabs.map(tab => [tab.id, tab.is_active]));
   const imported = result.snapshot.tabs.slice(before.tabs.length);
@@ -65,10 +65,10 @@ export async function checkBackup(context) {
   assert.equal((await invoke('get_tabs')).tabs.length, result.snapshot.tabs.length);
   await script(`Storage.prototype.setItem = window.__nativeOriginalStorageWrite; delete window.__nativeOriginalStorageWrite; document.querySelector('[data-testid="backup-retry-preferences"]').click();`);
   await until(async () => !(await invoke('get_backup_pending_preferences')), 'preference retry acknowledged');
-  assert.equal(await script(`return localStorage.getItem('veloce_language')`), 'en');
-  assert.equal(await script(`return localStorage.getItem('veloce_overlay_blur_px')`), '5');
-  assert.equal(await script('return localStorage.getItem("veloce_pip_window_shadow");'),'true','preference retry applies imported shadow');
-  assert.equal(await script('return localStorage.getItem("veloce_auto_skip_ads");'),'true','preference retry applies imported auto skip');
+  assert.equal(await script(`return localStorage.getItem('spark_language')`), 'en');
+  assert.equal(await script(`return localStorage.getItem('spark_overlay_blur_px')`), '5');
+  assert.equal(await script('return localStorage.getItem("spark_pip_window_shadow");'),'true','preference retry applies imported shadow');
+  assert.equal(await script('return localStorage.getItem("spark_auto_skip_ads");'),'true','preference retry applies imported auto skip');
   assert.equal((await invoke('get_privacy_stats')).auto_skip_ads_enabled, true);
   assert.equal((await invoke('get_update_state')).channel, 'beta');
   await script(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`);

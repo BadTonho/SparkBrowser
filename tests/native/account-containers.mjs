@@ -25,7 +25,7 @@ export async function checkAccountContainers({ invoke, until, fixture, restart, 
     const tab = snapshot.tabs.find(item => item.is_active);
     await until(async () => {
       const current = (await invoke('get_tabs')).tabs.find(item => item.id === tab.id);
-      return current?.url === 'veloce://newtab' && current.navigation.revision > 0
+      return current?.url === 'spark://newtab' && current.navigation.revision > 0
         && !current.navigation.loading && !current.navigation.error;
     }, 'container initial document ready');
     await invoke('navigate_to', { input: `${fixture.origin}/page/${page}` });

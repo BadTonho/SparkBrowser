@@ -6,7 +6,7 @@
 
 `@sveltejs/vite-plugin-svelte` depends on `deepmerge 4.3.1`, affected by [GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4). At the time of this change, the advisory lists no patched upstream release, and the latest Svelte plugin still depends on the affected package.
 
-The npm override resolves `deepmerge` to `tools/vendor/deepmerge`, a private fork named `@veloce/deepmerge`. It contains the upstream 4.3.1 bundled CommonJS implementation and its MIT license. The only behavior change uses `Object.defineProperty` for destination writes from **both target and source** so an enumerable `__proto__` cannot invoke the inherited prototype setter. The fork has an explicit patched version and is never published.
+The npm override resolves `deepmerge` to `tools/vendor/deepmerge`, a private fork named `@spark/deepmerge`. It contains the upstream 4.3.1 bundled CommonJS implementation and its MIT license. The only behavior change uses `Object.defineProperty` for destination writes from **both target and source** so an enumerable `__proto__` cannot invoke the inherited prototype setter. The fork has an explicit patched version and is never published.
 
 `tests/deepmerge-security.test.mjs` resolves the dependency from the actual Svelte plugin and verifies the regression plus arrays, symbols, nested options, and custom merge behavior. Replacing this fork requires equivalent regression checks and a fresh npm audit; do not remove it solely to reduce vendor files.
 

@@ -1,6 +1,6 @@
 # Modo Leitura Imersivo (Reader View)
 
-O Veloce Browser conta com um Modo Leitura personalizável e livre de distrações, que remove anúncios, barras de navegação, menus laterais e elementos visuais pesados para apresentar artigos com tipografia elegante e foco total no conteúdo.
+O Spark Browser conta com um Modo Leitura personalizável e livre de distrações, que remove anúncios, barras de navegação, menus laterais e elementos visuais pesados para apresentar artigos com tipografia elegante e foco total no conteúdo.
 
 ---
 

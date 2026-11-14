@@ -1,4 +1,4 @@
-export const PIP_SHADOW_STORAGE_KEY = 'veloce_pip_window_shadow';
+export const PIP_SHADOW_STORAGE_KEY = 'spark_pip_window_shadow';
 
 /** @typedef {{getItem:(key:string)=>string|null,setItem:(key:string,value:string)=>unknown}} ShadowStorage */
 /** Missing, malformed and legacy values all opt out of the native shadow.

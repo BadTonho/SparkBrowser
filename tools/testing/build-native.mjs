@@ -13,4 +13,4 @@ const result = spawnSync(process.execPath, [
 if (result.error) throw result.error;
 if (result.status !== 0) process.exit(result.status ?? 1);
 mkdirSync('.cache/native-target', { recursive: true });
-writeFileSync('.cache/native-target/test-build.json', JSON.stringify({ identifier: 'org.veloce.browser.native-tests', profile: fast ? 'fast' : 'release', executable: resolve('.cache/native-target/release', process.platform === 'win32' ? 'veloce-browser.exe' : 'veloce-browser') }));
+writeFileSync('.cache/native-target/test-build.json', JSON.stringify({ identifier: 'org.spark.browser.native-tests', profile: fast ? 'fast' : 'release', executable: resolve('.cache/native-target/release', process.platform === 'win32' ? 'spark-browser.exe' : 'spark-browser') }));

@@ -20,7 +20,7 @@ Rejeições usam erros fixos e não reproduzem tokens ou corpos de mensagens. O 
 
 ## Manutenção do mecanismo
 
-As distribuições Windows utilizam explicitamente o instalador Evergreen do WebView2. A Microsoft gerencia a instalação e as atualizações do mecanismo; o Veloce não muda políticas de atualização do Windows nem baixa o código-fonte do Chromium.
+As distribuições Windows utilizam explicitamente o instalador Evergreen do WebView2. A Microsoft gerencia a instalação e as atualizações do mecanismo; o Spark não muda políticas de atualização do Windows nem baixa o código-fonte do Chromium.
 
 A interface observa `NewBrowserVersionAvailable`, disponibiliza as versões atual e disponível do mecanismo e mostra um aviso de reinício que pode ser dispensado. “Depois” dispensa somente aquela versão disponível na sessão atual; Configurações → Atualizações mantém o reinício pendente. Outra versão disponível pode exibir um novo aviso. Erros de detecção, canais de prévia e mecanismos fixos configurados explicitamente são apresentados como indisponíveis, nunca como prova de que o mecanismo está atualizado. Atualizações podem incluir correções de segurança; o aviso não afirma identificar correções específicas. A Microsoft explica por que adotar uma versão instalada exige [um novo ambiente ou reinício do aplicativo](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment#add_newbrowserversionavailable).
 

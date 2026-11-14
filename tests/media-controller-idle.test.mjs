@@ -28,7 +28,7 @@ test('ordinary document mutations do not schedule media scans at default volume'
   mutation();
   assert.equal(timers, 0);
   assert.equal(scans, 0);
-  await window.__veloceMedia('fixture', { kind: 'volume', value: 50 });
+  await window.__sparkMedia('fixture', { kind: 'volume', value: 50 });
   const previous = timers;
   mutation();
   assert.equal(timers, previous + 1, 'non-default volume still tracks newly inserted media');

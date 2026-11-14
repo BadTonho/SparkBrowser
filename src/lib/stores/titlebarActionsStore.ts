@@ -3,7 +3,7 @@ import { safeStorage } from "../services/storage.js";
 
 export const DEFAULT_TITLEBAR_ACTIONS = ["tools", "bookmarks", "commands", "history", "downloads", "privacy", "extensions", "settings", "zen", "qr", "whatsapp"] as const;
 export type TitlebarAction = typeof DEFAULT_TITLEBAR_ACTIONS[number];
-const STORAGE_KEY = "veloce_titlebar_action_order";
+const STORAGE_KEY = "spark_titlebar_action_order";
 
 export function normalizeActionOrder(value: unknown): TitlebarAction[] {
   const valid = Array.isArray(value) ? value.filter((id): id is TitlebarAction =>

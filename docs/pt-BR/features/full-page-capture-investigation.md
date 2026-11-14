@@ -13,12 +13,12 @@
 
 O cenário nativo isolado `capture-probe` abre um fixture local com documento longo, cabeçalho e rodapé fixos, conteúdo sticky, imagem lazy, iframe longo, texto que muda e marcador no final. O comando de prova, protegido por identificador do aplicativo, captura o WebView de conteúdo ativo, grava `artifacts/full-page-probe.png` e informa dimensões, tamanho em bytes, motor e tempo. O cenário verifica que a imagem ultrapassa a altura da viewport e que a posição de rolagem e a altura do documento permanecem iguais.
 
-No Windows, o protótipo chama `Page.captureScreenshot` com `captureBeyondViewport: true`. No Linux, chama o snapshot `FullDocument` do WebKitGTK. O comando rejeita qualquer identificador de aplicativo diferente de `org.veloce.browser.native-tests` e grava apenas no diretório `.cache/native-runs` daquele cenário. `cargo check --manifest-path src-tauri/Cargo.toml --lib` e a compilação isolada do aplicativo de teste no Windows passaram. O cenário em execução não criou uma sessão WebDriver: o EdgeDriver indicou que estava pronto, mas a solicitação para criar a sessão ficou aguardando antes de o processo isolado do aplicativo aparecer. Nenhum PNG ou resultado de cobertura visual foi coletado; portanto, a viabilidade no Windows ainda não foi confirmada.
+No Windows, o protótipo chama `Page.captureScreenshot` com `captureBeyondViewport: true`. No Linux, chama o snapshot `FullDocument` do WebKitGTK. O comando rejeita qualquer identificador de aplicativo diferente de `org.spark.browser.native-tests` e grava apenas no diretório `.cache/native-runs` daquele cenário. `cargo check --manifest-path src-tauri/Cargo.toml --lib` e a compilação isolada do aplicativo de teste no Windows passaram. O cenário em execução não criou uma sessão WebDriver: o EdgeDriver indicou que estava pronto, mas a solicitação para criar a sessão ficou aguardando antes de o processo isolado do aplicativo aparecer. Nenhum PNG ou resultado de cobertura visual foi coletado; portanto, a viabilidade no Windows ainda não foi confirmada.
 
 Para repetir a validação em execução no Windows, indique o EdgeDriver compatível com a versão do Edge instalada e rode o cenário isolado:
 
 ```powershell
-$env:VELOCE_NATIVE_DRIVER = '.cache/native-tools/edge/msedgedriver.exe'
+$env:SPARK_NATIVE_DRIVER = '.cache/native-tools/edge/msedgedriver.exe'
 npm.cmd run test:native -- --case capture-probe
 ```
 

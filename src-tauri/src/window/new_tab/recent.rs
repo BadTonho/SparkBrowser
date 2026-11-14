@@ -119,7 +119,7 @@ mod tests {
             "https://duckduckgo.com/?q=x",
             "https://html.duckduckgo.com/html/?q=x",
             "https://lite.duckduckgo.com/lite/?q=x",
-            "veloce://newtab",
+            "spark://newtab",
             "https://user:pass@example.test/",
             "http://tauri.localhost/new-tab.html",
         ] {

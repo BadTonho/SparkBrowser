@@ -1,4 +1,4 @@
-export const THEME_MODE_STORAGE_KEY = 'veloce_theme_mode';
+export const THEME_MODE_STORAGE_KEY = 'spark_theme_mode';
 export const THEME_MODES = /** @type {const} */ (['dark', 'light']);
 
 /**

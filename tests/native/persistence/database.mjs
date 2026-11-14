@@ -9,8 +9,8 @@ import { validateRunDirectory } from '../run-directory.mjs';
 export async function withScenarioDatabase(directory, action) {
   const root = validateRunDirectory(directory);
   const data = realpathSync(resolve(root, 'data'));
-  const file = realpathSync(resolve(data, 'veloce_browser.db'));
-  assert.equal(relative(data, file), 'veloce_browser.db');
+  const file = realpathSync(resolve(data, 'spark_browser.db'));
+  assert.equal(relative(data, file), 'spark_browser.db');
   const db = new DatabaseSync(file);
   try { db.exec('PRAGMA busy_timeout=5000'); return await action(db); }
   finally { db.close(); }

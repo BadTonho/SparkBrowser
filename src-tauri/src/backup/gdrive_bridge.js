@@ -4,7 +4,7 @@
   const BRIDGE_TOKEN = __GDRIVE_BRIDGE_TOKEN__;
   const FOLDER_NAME = "Spark Backup";
   const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
-  const FILE_NAME = "browser.veloce-backup.json";
+  const FILE_NAME = "browser.spark-backup.json";
   const CHUNK_SIZE = 400000;
   const nativeFetch = window.fetch.bind(window);
 
@@ -18,7 +18,7 @@
         if (explicitKey && /^AIza[0-9A-Za-z_-]{35}$/.test(explicitKey)) {
           window.top.postMessage(
             {
-              __veloceGDriveBridge: BRIDGE_TOKEN,
+              __sparkGDriveBridge: BRIDGE_TOKEN,
               type: "captured_key",
               key: explicitKey,
               isDrive: true,
@@ -32,7 +32,7 @@
           if (k && /^AIza[0-9A-Za-z_-]{35}$/.test(k)) {
             window.top.postMessage(
               {
-                __veloceGDriveBridge: BRIDGE_TOKEN,
+                __sparkGDriveBridge: BRIDGE_TOKEN,
                 type: "captured_key",
                 key: k,
                 isDrive: u.pathname.includes("/drive/"),
@@ -60,7 +60,7 @@
     window.addEventListener("message", async (event) => {
       if (event.origin !== "https://drive.google.com") return;
       const msg = event.data;
-      if (!msg || msg.__veloceGDriveBridge !== BRIDGE_TOKEN || msg.type !== "proxy_fetch") return;
+      if (!msg || msg.__sparkGDriveBridge !== BRIDGE_TOKEN || msg.type !== "proxy_fetch") return;
       try {
         const resp = await nativeFetch(msg.url, {
           method: msg.method || "GET",
@@ -71,7 +71,7 @@
         const bodyText = await resp.text();
         window.top.postMessage(
           {
-            __veloceGDriveBridge: BRIDGE_TOKEN,
+            __sparkGDriveBridge: BRIDGE_TOKEN,
             type: "proxy_fetch_result",
             id: msg.id,
             ok: resp.ok,
@@ -83,7 +83,7 @@
       } catch (err) {
         window.top.postMessage(
           {
-            __veloceGDriveBridge: BRIDGE_TOKEN,
+            __sparkGDriveBridge: BRIDGE_TOKEN,
             type: "proxy_fetch_result",
             id: msg.id,
             ok: false,
@@ -97,7 +97,7 @@
 
     try {
       window.top.postMessage(
-        { __veloceGDriveBridge: BRIDGE_TOKEN, type: "proxy_ready" },
+        { __sparkGDriveBridge: BRIDGE_TOKEN, type: "proxy_ready" },
         "https://drive.google.com"
       );
     } catch {}
@@ -135,7 +135,7 @@
   window.addEventListener("message", (event) => {
     if (event.origin !== "https://clients6.google.com") return;
     const msg = event.data;
-    if (!msg || msg.__veloceGDriveBridge !== BRIDGE_TOKEN) return;
+    if (!msg || msg.__sparkGDriveBridge !== BRIDGE_TOKEN) return;
     if (event.source) {
       proxyFrameWindow = event.source;
     }
@@ -414,7 +414,7 @@
           try {
             proxyFrameWindow.postMessage(
               {
-                __veloceGDriveBridge: BRIDGE_TOKEN,
+                __sparkGDriveBridge: BRIDGE_TOKEN,
                 type: "proxy_fetch",
                 id,
                 url,
@@ -720,7 +720,7 @@
   }
 
   async function tryMultipartUpload(headers, apiKey, apiVersion, existingId, folderId, jsonText) {
-    const boundary = "veloce_gdrive_boundary_" + Date.now();
+    const boundary = "spark_gdrive_boundary_" + Date.now();
     const isV2 = apiVersion === "v2beta" || apiVersion === "v2internal" || apiVersion === "v2";
     const parentId = folderId || "root";
     const metadata = isV2
@@ -871,7 +871,7 @@
       }
     }
     const query = new URLSearchParams(cleanParams);
-    window.location.href = `veloce-internal://google-drive-sync/${action}?${query}`;
+    window.location.href = `spark-internal://google-drive-sync/${action}?${query}`;
   }
 
   async function sendPayloadToRust(requestId, b64Payload) {
@@ -901,7 +901,7 @@
     });
   }
 
-  window.__veloceGDrivePush = async (token, requestId, b64Json) => {
+  window.__sparkGDrivePush = async (token, requestId, b64Json) => {
     if (token !== BRIDGE_TOKEN) return;
     try {
       const jsonText = decodeBase64Utf8(b64Json);
@@ -920,7 +920,7 @@
     }
   };
 
-  window.__veloceGDrivePull = async (token, requestId) => {
+  window.__sparkGDrivePull = async (token, requestId) => {
     if (token !== BRIDGE_TOKEN) return;
     try {
       const jsonText = await downloadBackupJson();
@@ -978,7 +978,7 @@
     }
   }
 
-  window.__veloceGDrivePing = (token) => {
+  window.__sparkGDrivePing = (token) => {
     if (token !== BRIDGE_TOKEN) return;
     void reportPageState();
   };

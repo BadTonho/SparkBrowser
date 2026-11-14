@@ -16,7 +16,8 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
             .map_err(|e| format!("Failed to create app_data_dir: {}", e))?;
     }
 
-    Ok(app_data_dir.join("veloce_browser.db"))
+    crate::legacy::rename_database_files(&app_data_dir);
+    Ok(app_data_dir.join("spark_browser.db"))
 }
 
 /// Opens the SQLite connection and ensures all required tables exist.
@@ -112,6 +113,7 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
         .map_err(|e| e.to_string())
     })?;
 
+    migrate_legacy_new_tab_url(conn)?;
     crate::database::bookmarks_repo::migrate_default_bookmarks_once(conn)?;
     crate::database::bookmarks_repo::migrate_trailing_slash_default_bookmarks_once(conn)?;
     crate::database::workspace_repo::initialize_workspace_table(conn)?;
@@ -131,4 +133,100 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
     crate::database::download_jobs_repo::migrate(conn)?;
     crate::database::extensions_repo::migrate(conn)?;
     Ok(())
+}
+
+/// Saved tabs, sessions and recently closed tabs that still hold the pre-rename new tab address.
+fn migrate_legacy_new_tab_url(conn: &Connection) -> Result<(), String> {
+    crate::database::migrations::apply(conn, "spark-rename-new-tab-url-v1", |conn| {
+        for (table, column) in [
+            ("session_tabs", "url"),
+            ("saved_session_pages", "url"),
+            ("closed_tabs", "url"),
+        ] {
+            let exists: bool = conn
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1)",
+                    [table],
+                    |row| row.get(0),
+                )
+                .map_err(|e| e.to_string())?;
+            if exists {
+                conn.execute(
+                    &format!("UPDATE {table} SET {column}=?1 WHERE {column}=?2"),
+                    [
+                        crate::window::new_tab::URL,
+                        crate::window::new_tab::LEGACY_URL,
+                    ],
+                )
+                .map_err(|e| e.to_string())?;
+            }
+        }
+        Ok(())
+    })
+}
+
+#[cfg(test)]
+mod rename_tests {
+    use super::*;
+
+    #[test]
+    fn the_old_new_tab_address_is_rewritten_in_saved_data_exactly_once() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+        conn.execute_batch(
+            "INSERT INTO session_tabs(tab_id,title,url,workspace_id,is_active,is_hibernated,position,is_pinned) VALUES('a','New tab','veloce://newtab','ws-personal',0,1,0,0);
+             INSERT INTO session_tabs(tab_id,title,url,workspace_id,is_active,is_hibernated,position,is_pinned) VALUES('b','Site','https://example.test/veloce://newtab','ws-personal',0,1,1,0);
+             INSERT INTO closed_tabs(url,title,workspace_id,workspace_name,position,is_pinned,closed_at) VALUES('veloce://newtab','t','ws-personal','Personal',0,0,1);
+             DELETE FROM app_migrations WHERE name='spark-rename-new-tab-url-v1';",
+        )
+        .unwrap();
+        migrate_legacy_new_tab_url(&conn).unwrap();
+        let url = |id: &str| -> String {
+            conn.query_row("SELECT url FROM session_tabs WHERE tab_id=?1", [id], |r| {
+                r.get(0)
+            })
+            .unwrap()
+        };
+        assert_eq!(url("a"), "spark://newtab");
+        assert_eq!(
+            url("b"),
+            "https://example.test/veloce://newtab",
+            "only the exact address changes"
+        );
+        let closed: String = conn
+            .query_row("SELECT url FROM closed_tabs", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(closed, "spark://newtab");
+        // The marker makes a second call a no-op, even if the old address reappears.
+        conn.execute(
+            "UPDATE session_tabs SET url='veloce://newtab' WHERE tab_id='a'",
+            [],
+        )
+        .unwrap();
+        migrate_legacy_new_tab_url(&conn).unwrap();
+        assert_eq!(url("a"), "veloce://newtab");
+    }
+
+    #[test]
+    fn databases_created_before_the_rename_keep_working_through_the_old_function_name() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+        // A trigger as an old database stores it: it calls the pre-rename function.
+        conn.execute_batch(
+            "CREATE TABLE legacy_probe(text TEXT, folded TEXT);
+             CREATE TRIGGER legacy_probe_fold AFTER INSERT ON legacy_probe BEGIN
+               UPDATE legacy_probe SET folded = veloce_search_fold(new.text) WHERE rowid = new.rowid;
+             END;
+             INSERT INTO legacy_probe(text) VALUES('Café Spark');",
+        )
+        .unwrap();
+        let folded: String = conn
+            .query_row("SELECT folded FROM legacy_probe", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(folded, "cafe spark");
+        let current: String = conn
+            .query_row("SELECT spark_search_fold('Café')", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(current, "cafe");
+    }
 }

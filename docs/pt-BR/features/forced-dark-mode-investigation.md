@@ -8,7 +8,7 @@
 - `PreferredColorScheme` do WebView2 seleciona `dark`, `light` ou `auto` para um perfil. A API define `prefers-color-scheme`; a página precisa fornecer estilos escuros para que suas superfícies mudem. Consulte a [API de perfil do WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2profile).
 - O WebKit documenta o mesmo modelo de adesão da página e informa que não escurece automaticamente qualquer conteúdo. Consulte [Suporte a modo escuro no WebKit](https://webkit.org/blog/8840/dark-mode-support-in-webkit/).
 - O cenário isolado `dark-mode-probe` cobre uma página com estilos escuros, uma página clara sem estilos escuros e uma página já escura. Cada uma contém imagem SVG local, vídeo gerado em canvas, texto dinâmico e uma variante de inversão CSS exclusiva da prova. O cenário registra cores calculadas e `matchMedia`, e mantém capturas e JSON em `.cache/native-runs/.../artifacts`.
-- O comando da prova é restrito ao aplicativo de teste isolado `org.veloce.browser.native-tests` e restaura o valor de esquema de cores anterior. Não foram adicionados preferência, exceção por site, interface ou comportamento público do produto.
+- O comando da prova é restrito ao aplicativo de teste isolado `org.spark.browser.native-tests` e restaura o valor de esquema de cores anterior. Não foram adicionados preferência, exceção por site, interface ou comportamento público do produto.
 
 ## Resultado no Windows
 
@@ -21,7 +21,7 @@ No Linux com os pré-requisitos Tauri, GTK e WebKitGTK do projeto instalados, re
 ```sh
 pkg-config --modversion webkit2gtk-4.1
 npm run test:native:build:fast
-VELOCE_TAURI_DRIVER="$(command -v tauri-driver)" VELOCE_NATIVE_DRIVER="$(command -v WebKitWebDriver)" VELOCE_DRIVER_PORT=4484 npm run test:native -- --case dark-mode-probe
+SPARK_TAURI_DRIVER="$(command -v tauri-driver)" SPARK_NATIVE_DRIVER="$(command -v WebKitWebDriver)" SPARK_DRIVER_PORT=4484 npm run test:native -- --case dark-mode-probe
 ```
 
 A prova Linux altera temporariamente a preferência de tema GTK somente no aplicativo de teste isolado e restaura o valor anterior. O cenário não grava as configurações de aparência do desktop. Inspecione as capturas e `dark-mode-probe.json` no diretório da execução impresso. Confirme que a página compatível reage à preferência escura, que a página clara sem suporte continua clara, que a página escura original permanece legível e que a transformação não degrada as cores de imagens/vídeo nem o conteúdo dinâmico. Registre a versão do WebKitGTK e o caminho dos artefatos junto com os resultados.

@@ -1,6 +1,6 @@
 # Bookmark export for other browsers
 
-Settings → Data & Backup has a **Bookmarks** card with two buttons that write every bookmark to a file other browsers can read. This is separate from the `.veloce-backup.json` backup, which only this app restores.
+Settings → Data & Backup has a **Bookmarks** card with two buttons that write every bookmark to a file other browsers can read. This is separate from the `.spark-backup.json` backup, which only this app restores.
 
 ## Formats
 

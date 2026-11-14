@@ -15,7 +15,7 @@ function fixture() {
   context.window = context; runInNewContext(source, context);
   const payload = { visible: true, token: 'fixture', anchor: { left: 500, top: 30, width: 30, height: 30 }, shield: true, autoSkip: false, busy: false,
     label: 'Protection', adblockLabel: 'Adblock', autoSkipLabel: 'Auto skip ads', description: 'YouTube', blocked: '0 blocked', error: '', locale: 'en' };
-  return { document, sent, element: id => document.getElementById(id), update: patch => context.__veloceSetPrivacyPopover({ ...payload, ...patch }),
+  return { document, sent, element: id => document.getElementById(id), update: patch => context.__sparkSetPrivacyPopover({ ...payload, ...patch }),
     fire: (target, type, event) => listeners.get(target + ':' + type)?.(event) };
 }
 test('privacy panel aligns its right edge below the trigger, clamping to the window', () => {

@@ -1,13 +1,13 @@
 # Extensões (Suporte a WebExtensions do Chrome)
 
-No Windows, o Veloce Browser pode carregar extensões do Chrome pelo WebView2; a compatibilidade depende do mecanismo e da extensão. No Linux, a instalação e o gerenciamento ainda não estão disponíveis e retornam um erro.
+No Windows, o Spark Browser pode carregar extensões do Chrome pelo WebView2; a compatibilidade depende do mecanismo e da extensão. No Linux, a instalação e o gerenciamento ainda não estão disponíveis e retornam um erro.
 
 ---
 
 ## Funcionalidades
 
-* **Instalação em 1-Clique na Chrome Web Store:** Ao navegar em qualquer extensão na `chromewebstore.google.com`, um botão interativo **`[🧩 Instalar no Veloce]`** aparece automaticamente no Omnibox. Um clique baixa, valida e ativa a extensão na hora.
-* **Interceptador de Download de CRX:** O clique no botão "Usar no Chrome" da Google é interceptado nativamente antes da barreira de downloads do WebView2, direcionando o pacote diretamente para o instalador em segundo plano do Veloce.
+* **Instalação em 1-Clique na Chrome Web Store:** Ao navegar em qualquer extensão na `chromewebstore.google.com`, um botão interativo **`[🧩 Instalar no Spark]`** aparece automaticamente no Omnibox. Um clique baixa, valida e ativa a extensão na hora.
+* **Interceptador de Download de CRX:** O clique no botão "Usar no Chrome" da Google é interceptado nativamente antes da barreira de downloads do WebView2, direcionando o pacote diretamente para o instalador em segundo plano do Spark.
 * **Instalador da Chrome Web Store (Manual):** Cole qualquer URL da Chrome Web Store ou o ID de 32 caracteres da extensão no modal para baixar, descompactar e instalar diretamente.
 * **Instalador de Arquivos (.zip / .crx):** Instale extensões empacotadas diretamente a partir de arquivos `.zip` ou `.crx` locais (formatos CRX2 e CRX3).
 * **Extensões Descompactadas:** Carregue pastas de extensões descompactadas diretamente do disco.
@@ -22,8 +22,8 @@ No Windows, o Veloce Browser pode carregar extensões do Chrome pelo WebView2; a
 
 ### 1. Em 1-Clique pela Chrome Web Store (Recomendado)
 1. Navegue até a página de qualquer extensão na Chrome Web Store (ex: `https://chromewebstore.google.com/detail/...`).
-2. O botão **`[🧩 Instalar no Veloce]`** aparecerá diretamente dentro da barra de endereços (Omnibox).
-3. Dê 1 clique: o Veloce baixa e ativa a extensão imediatamente, e uma notificação toast confirma a instalação.
+2. O botão **`[🧩 Instalar no Spark]`** aparecerá diretamente dentro da barra de endereços (Omnibox).
+3. Dê 1 clique: o Spark baixa e ativa a extensão imediatamente, e uma notificação toast confirma a instalação.
 
 ### 2. Pela Janela de Extensões
 1. Clique no ícone de **Extensões** (peça de quebra-cabeça) na barra superior.
@@ -33,7 +33,7 @@ No Windows, o Veloce Browser pode carregar extensões do Chrome pelo WebView2; a
 ### 3. A Partir de Arquivo .zip ou .crx
 1. Clique em **Carregar .zip / .crx** na janela de Extensões.
 2. Selecione o arquivo no gerenciador de arquivos.
-3. O Veloce extrairá o pacote em uma pasta gerenciada e ativará a extensão.
+3. O Spark extrairá o pacote em uma pasta gerenciada e ativará a extensão.
 
 ### 4. Carregar Descompactada
 1. Clique em **Carregar Descompactada**.

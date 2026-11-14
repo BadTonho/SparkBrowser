@@ -16,7 +16,7 @@ This environment has WebView2 Runtime `157.0.4341.42` and initially had cached E
 The probe builds with `npm.cmd run test:native:build:fast`. With the matching driver, the test harness still did not complete WebDriver session creation; no app fixture or captures were produced before the attempt was stopped. No visual claim about WebView2 zoom behavior is made yet. The matching-driver run command is:
 
 ```powershell
-$env:VELOCE_NATIVE_DRIVER = "$PWD/.cache/native-tools/edge/157/msedgedriver.exe"
+$env:SPARK_NATIVE_DRIVER = "$PWD/.cache/native-tools/edge/157/msedgedriver.exe"
 npm.cmd run test:native -- --case minimum-font-probe
 ```
 
@@ -27,7 +27,7 @@ Record the installed WebKitGTK version and run the isolated probe:
 ```sh
 pkg-config --modversion webkit2gtk-4.1
 npm run test:native:build:fast
-VELOCE_TAURI_DRIVER="$(command -v tauri-driver)" VELOCE_NATIVE_DRIVER="$(command -v WebKitWebDriver)" VELOCE_DRIVER_PORT=4484 npm run test:native -- --case minimum-font-probe
+SPARK_TAURI_DRIVER="$(command -v tauri-driver)" SPARK_NATIVE_DRIVER="$(command -v WebKitWebDriver)" SPARK_DRIVER_PORT=4484 npm run test:native -- --case minimum-font-probe
 ```
 
 Inspect `minimum-font-probe.json` and the screenshots in the run's `artifacts` directory. Compare 0 px and 12 px to see whether the native setting affects authored sizes below the threshold, while checking controls, the iframe and the 100%/150% zoom captures. The probe restores the previous minimum-font setting after measurement.

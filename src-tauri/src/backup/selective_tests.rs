@@ -120,7 +120,10 @@ fn preference_groups_mix_backup_and_current_values() {
         .preferences(&current, &incoming)
         .unwrap();
     assert_eq!(settings.tab_layout, "vertical");
-    assert_eq!(settings.keyboard_shortcuts.len(), current.keyboard_shortcuts.len());
+    assert_eq!(
+        settings.keyboard_shortcuts.len(),
+        current.keyboard_shortcuts.len()
+    );
     let shortcuts = pick(&[RestoreGroup::Shortcuts])
         .preferences(&current, &incoming)
         .unwrap();

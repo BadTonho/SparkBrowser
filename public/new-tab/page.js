@@ -1,7 +1,7 @@
 (() => {
   const applyTheme = () => {
     try {
-      const mode = (typeof localStorage !== 'undefined' && localStorage.getItem('veloce_theme_mode')) || 'dark';
+      const mode = (typeof localStorage !== 'undefined' && localStorage.getItem('spark_theme_mode')) || 'dark';
       if (document.documentElement && typeof document.documentElement.setAttribute === 'function') {
         document.documentElement.setAttribute('data-theme', mode);
       }
@@ -10,19 +10,19 @@
   applyTheme();
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('storage', event => {
-      if (event.key === 'veloce_theme_mode') applyTheme();
+      if (event.key === 'spark_theme_mode') applyTheme();
     });
   }
   const input = document.querySelector('#search');
   const recent = document.querySelector('#recent');
   let focused = false;
-  const send = detail => window.dispatchEvent(new CustomEvent('veloce-new-tab-action', { detail }));
+  const send = detail => window.dispatchEvent(new CustomEvent('spark-new-tab-action', { detail }));
   document.querySelector('#search-form').addEventListener('submit', event => {
     event.preventDefault();
     if (input.value.trim()) send({ action:'navigate', input:input.value.trim() });
   });
   document.querySelector('#retry').addEventListener('click', () => send({ action:'read' }));
-  window.addEventListener('veloce-new-tab', event => {
+  window.addEventListener('spark-new-tab', event => {
     applyTheme();
     const { labels, preferences, sites, error, autofocus } = event.detail;
     document.documentElement.lang = preferences.language;

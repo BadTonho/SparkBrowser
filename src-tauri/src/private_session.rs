@@ -25,7 +25,7 @@ pub const SESSIONS_DIR: &str = "private-sessions";
 const ROOT_FLAG: &str = "--private-root";
 const SOURCE_FLAG: &str = "--private-source";
 const CLEANUP_FLAG: &str = "--private-cleanup";
-const DATABASE_FILE: &str = "veloce_browser.db";
+const DATABASE_FILE: &str = "spark_browser.db";
 /// Tables copied from the normal profile when a private window opens.
 const COPIED_TABLES: &[&str] = &[
     "bookmark_folders",
@@ -101,8 +101,7 @@ fn flag_value(args: &[String], flag: &str) -> Option<String> {
 /// Accepts only an absolute folder named like a session, directly inside `private-sessions`.
 fn checked_root(raw: &str) -> Result<PathBuf, String> {
     let root = PathBuf::from(raw);
-    let under_sessions =
-        root.parent().and_then(Path::file_name) == Some(OsStr::new(SESSIONS_DIR));
+    let under_sessions = root.parent().and_then(Path::file_name) == Some(OsStr::new(SESSIONS_DIR));
     let plain_name = root
         .file_name()
         .and_then(OsStr::to_str)
@@ -122,15 +121,14 @@ pub fn configure(context: &mut tauri::Context<tauri::Wry>, launch: Option<&Launc
         return;
     };
     let directory = &launch.root;
-    context.config_mut().app.app_directories_override = Some(
-        AppDirectoriesOverride::Directories(AppDirectoryOverrides {
+    context.config_mut().app.app_directories_override =
+        Some(AppDirectoriesOverride::Directories(AppDirectoryOverrides {
             config: Some(directory.join("config")),
             data: Some(directory.join("data")),
             local_data: Some(directory.join("profile")),
             cache: Some(directory.join("cache")),
             log: Some(directory.join("logs")),
-        }),
-    );
+        }));
 }
 
 /// Opens a new private window as a separate process.

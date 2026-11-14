@@ -2,7 +2,7 @@
 
 > 🌍 **Idioma:** [English](../../en/features/window-appearance.md) | **Português (pt-BR)**
 
-O Veloce Browser oferece controle abrangente sobre a superfície visual e transparência das janelas flutuantes, diálogos, popovers e gavetas (como **Configurações do Navegador**, **Configurações Rápidas**, **Personalizar Nova Guia**, **Gerenciador de Extensões** e as **Gavetas de Histórico e Downloads**).
+O Spark Browser oferece controle abrangente sobre a superfície visual e transparência das janelas flutuantes, diálogos, popovers e gavetas (como **Configurações do Navegador**, **Configurações Rápidas**, **Personalizar Nova Guia**, **Gerenciador de Extensões** e as **Gavetas de Histórico e Downloads**).
 
 ---
 
@@ -41,6 +41,6 @@ Todos os controles estão disponíveis na seção **Aparência e disposição** 
 
 ## 3. Persistência e Compatibilidade Multiplataforma
 
-- **Persistência:** Os valores são armazenados no `safeStorage` sob as chaves `veloce_window_surface_style`, `veloce_window_surface_opacity` e `veloce_window_surface_blur_px`, sendo mantidos entre reinicializações do navegador.
+- **Persistência:** Os valores são armazenados no `safeStorage` sob as chaves `spark_window_surface_style`, `spark_window_surface_opacity` e `spark_window_surface_blur_px`, sendo mantidos entre reinicializações do navegador.
 - **Multiplataforma:** Desenvolvido com variáveis CSS e `backdrop-filter` nativo acelerado por hardware, garantindo desempenho fluido e sem travamentos tanto no **Windows** (WebView2) quanto no **Linux** (WebKitGTK e compositores modernos Wayland/X11).
 

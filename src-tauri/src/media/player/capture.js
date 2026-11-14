@@ -4,7 +4,7 @@
   const mirror = new popup.MediaStream();
   const now = () => popup.performance.now();
   // The page-visible styling marker is unrelated to the native bridge token.
-  const className = `veloce-pip-source-${popup.crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`;
+  const className = `spark-pip-source-${popup.crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`;
   const sheet = new document.defaultView.CSSStyleSheet();
   sheet.replaceSync(`.${className} { visibility: hidden !important; }`);
   let disposed = false, hidden = false, capture, frameCallback, recoveryTimer, watch;

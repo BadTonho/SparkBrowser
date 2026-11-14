@@ -8,7 +8,7 @@
 - WebView2 `PreferredColorScheme` can select `dark`, `light` or `auto` for a profile. It sets `prefers-color-scheme`; pages must provide dark styles for their authored surfaces to change. See the [WebView2 profile API](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2profile).
 - WebKit documents the same page opt-in model and says it does not automatically darken arbitrary page content. See [Dark Mode Support in WebKit](https://webkit.org/blog/8840/dark-mode-support-in-webkit/).
 - The isolated `dark-mode-probe` covers a page with dark styles, a light page without dark styles, and an already dark page. Each has local SVG imagery, a generated canvas video, dynamic text, and a test-only CSS inversion variant. The probe records computed colors and `matchMedia`, then retains screenshots and JSON under `.cache/native-runs/.../artifacts`.
-- The probe command is restricted to the isolated `org.veloce.browser.native-tests` application and restores its previous color-scheme value. No product preference, site exception, UI, or public product behavior was added.
+- The probe command is restricted to the isolated `org.spark.browser.native-tests` application and restores its previous color-scheme value. No product preference, site exception, UI, or public product behavior was added.
 
 ## Windows result
 
@@ -21,7 +21,7 @@ On Linux with the project's Tauri, GTK and WebKitGTK prerequisites installed, re
 ```sh
 pkg-config --modversion webkit2gtk-4.1
 npm run test:native:build:fast
-VELOCE_TAURI_DRIVER="$(command -v tauri-driver)" VELOCE_NATIVE_DRIVER="$(command -v WebKitWebDriver)" VELOCE_DRIVER_PORT=4484 npm run test:native -- --case dark-mode-probe
+SPARK_TAURI_DRIVER="$(command -v tauri-driver)" SPARK_NATIVE_DRIVER="$(command -v WebKitWebDriver)" SPARK_DRIVER_PORT=4484 npm run test:native -- --case dark-mode-probe
 ```
 
 The Linux probe temporarily switches the isolated test application's GTK dark preference and restores the previous value. The test does not write desktop appearance settings. Inspect the retained screenshots and `dark-mode-probe.json` in the printed run directory. Confirm that the supported page reacts to the dark preference, the light-only page stays light, the authored dark page remains legible, and the transformation's image/video colors and dynamic content are acceptable. Record the WebKitGTK version and the artifact path with the results.

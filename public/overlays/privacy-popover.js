@@ -10,7 +10,7 @@
   }
   function send(action, value, reason = '') {
     if (!state || closing || (action !== 'dismiss' && (pending || state.busy))) return;
-    const url = new URL(`veloce-internal://privacy-popover/${action}`);
+    const url = new URL(`spark-internal://privacy-popover/${action}`);
     url.searchParams.set('token', state.token); url.searchParams.set('sequence', String(++sequence));
     if (typeof value === 'boolean') url.searchParams.set('value', String(value));
     url.searchParams.set('reason', reason);
@@ -18,7 +18,7 @@
     else { pending = true; shield.disabled = autoSkip.disabled = true; }
     window.location.href = url.toString();
   }
-  window.__veloceSetPrivacyPopover = payload => {
+  window.__sparkSetPrivacyPopover = payload => {
     if (!payload.visible) { state = null; panel.hidden = true; closing = pending = false; return; }
     const opening = state?.token !== payload.token;
     if (!opening && closing) return;

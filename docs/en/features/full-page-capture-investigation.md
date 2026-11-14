@@ -13,12 +13,12 @@
 
 The isolated native `capture-probe` scenario loads a loopback fixture with a long document, fixed header/footer, sticky content, a lazy image, a long iframe, changing text and a bottom marker. The guarded probe command captures the active content WebView, writes `artifacts/full-page-probe.png`, and reports image dimensions, byte count, engine and elapsed time. The scenario checks that the image extends beyond the viewport and that the page's scroll position and document height remain unchanged.
 
-On Windows, the probe calls `Page.captureScreenshot` with `captureBeyondViewport: true`. On Linux, it calls WebKitGTK's `FullDocument` snapshot API. The command rejects any application identifier except `org.veloce.browser.native-tests` and writes only beneath that scenario's `.cache/native-runs` directory. `cargo check --manifest-path src-tauri/Cargo.toml --lib` and the isolated Windows native build pass. The runtime scenario did not produce a WebDriver session: EdgeDriver reported ready, but the session creation request stalled before the isolated app process appeared. No PNG or visual coverage result was collected, so Windows feasibility remains unconfirmed.
+On Windows, the probe calls `Page.captureScreenshot` with `captureBeyondViewport: true`. On Linux, it calls WebKitGTK's `FullDocument` snapshot API. The command rejects any application identifier except `org.spark.browser.native-tests` and writes only beneath that scenario's `.cache/native-runs` directory. `cargo check --manifest-path src-tauri/Cargo.toml --lib` and the isolated Windows native build pass. The runtime scenario did not produce a WebDriver session: EdgeDriver reported ready, but the session creation request stalled before the isolated app process appeared. No PNG or visual coverage result was collected, so Windows feasibility remains unconfirmed.
 
 To retry Windows runtime validation, point the harness at the EdgeDriver matching the installed Edge version and run the isolated scenario:
 
 ```powershell
-$env:VELOCE_NATIVE_DRIVER = '.cache/native-tools/edge/msedgedriver.exe'
+$env:SPARK_NATIVE_DRIVER = '.cache/native-tools/edge/msedgedriver.exe'
 npm.cmd run test:native -- --case capture-probe
 ```
 

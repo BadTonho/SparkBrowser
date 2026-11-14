@@ -42,5 +42,5 @@ pub mod private_session;
 pub mod reader;
 
 pub mod qr_code;
-pub mod whatsapp;
 pub mod webview_runtime;
+pub mod whatsapp;

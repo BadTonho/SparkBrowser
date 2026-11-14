@@ -76,7 +76,7 @@ pub async fn evaluate(
     view.with_webview(move |p| unsafe {
         let send=|result| {if let Ok(mut slot)=tx.lock(){if let Some(tx)=slot.take(){let _=tx.send(result);}}};
         if !current(&a,&label,&t) || !valid_context(&label,&t,&c) {send(Err("media.stale".into()));return;}
-        let expression=format!("window.__veloceMedia?.({}, {}) ?? null",serde_json::to_string(&t).unwrap_or_default(),operation);
+        let expression=format!("window.__sparkMedia?.({}, {}) ?? null",serde_json::to_string(&t).unwrap_or_default(),operation);
         let params=json!({"expression":expression,"uniqueContextId":c,"returnByValue":true,"awaitPromise":true,"userGesture":user_gesture,"allowUnsafeEvalBlockedByCSP":false});
         let session=super::contexts::session(&label,&t,&c).unwrap_or_default();
         let (cb,a,l,t,c)=(tx.clone(),a.clone(),label.clone(),t.clone(),c.clone());

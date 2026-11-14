@@ -1,8 +1,8 @@
 export const VISUAL_PREFERENCE_STORAGE_KEYS = Object.freeze({
-  wideAddressBar: "veloce_visual_wide_address_bar",
-  showFullUrls: "veloce_visual_show_full_urls",
-  compactToolbar: "veloce_visual_compact_toolbar",
-  roundedContentFrame: "veloce_visual_rounded_content_frame",
+  wideAddressBar: "spark_visual_wide_address_bar",
+  showFullUrls: "spark_visual_show_full_urls",
+  compactToolbar: "spark_visual_compact_toolbar",
+  roundedContentFrame: "spark_visual_rounded_content_frame",
 });
 
 export const DEFAULT_VISUAL_PREFERENCES = Object.freeze({

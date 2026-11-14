@@ -15,7 +15,7 @@ export async function checkYoutubeAutoSkip({ invoke, withWebview, script, wait, 
       observations.push(await script(`const p=document.querySelector('#movie_player');return {
         player:!!p,ad:!!p?.classList.contains('ad-showing'),
         skipButtons:p?.querySelectorAll('button.ytp-ad-skip-button,button.ytp-skip-ad-button,button.ytp-ad-skip-button-modern').length??0,
-        clicks:window.fixtureSkipClicks??0,controller:typeof window.__veloceSetAutoSkip==='function'};`));
+        clicks:window.fixtureSkipClicks??0,controller:typeof window.__sparkSetAutoSkip==='function'};`));
     }
   });
   const outcome = observations.some(o => o.clicks > 0) ? 'skip-observed' : 'no-skippable-ad-observed';

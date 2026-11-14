@@ -1,6 +1,6 @@
 # Immersive Reader View (Modo Leitura)
 
-Veloce Browser features a distraction-free, customizable Reader View that strips ads, navbars, sidebars, and cluttered formatting to present web articles with clean typography and focused aesthetics.
+Spark Browser features a distraction-free, customizable Reader View that strips ads, navbars, sidebars, and cluttered formatting to present web articles with clean typography and focused aesthetics.
 
 ---
 

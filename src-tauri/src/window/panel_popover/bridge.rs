@@ -80,7 +80,7 @@ impl UiAction {
 /// Only this packaged surface's callback can forward authenticated UI actions.
 /// An opaque control handle never selects a native command or an arbitrary DOM selector.
 pub(super) fn navigation<P: Panel>(app: &AppHandle, url: &Url) {
-    if url.scheme() != "veloce-internal"
+    if url.scheme() != "spark-internal"
         || url.host_str() != Some(P::HOST)
         || url.path() != "/action"
     {

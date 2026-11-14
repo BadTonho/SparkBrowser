@@ -16,7 +16,7 @@ Este ambiente tem WebView2 Runtime `157.0.4341.42` e inicialmente tinha EdgeDriv
 A prova compila com `npm.cmd run test:native:build:fast`. Mesmo com o driver correspondente, o harness não concluiu a criação da sessão WebDriver; o app de teste e as capturas não chegaram a ser produzidos antes de a tentativa ser interrompida. Ainda não há conclusão visual sobre o zoom no WebView2. O comando com o driver compatível é:
 
 ```powershell
-$env:VELOCE_NATIVE_DRIVER = "$PWD/.cache/native-tools/edge/157/msedgedriver.exe"
+$env:SPARK_NATIVE_DRIVER = "$PWD/.cache/native-tools/edge/157/msedgedriver.exe"
 npm.cmd run test:native -- --case minimum-font-probe
 ```
 
@@ -27,7 +27,7 @@ Registre a versão instalada do WebKitGTK e execute a prova isolada:
 ```sh
 pkg-config --modversion webkit2gtk-4.1
 npm run test:native:build:fast
-VELOCE_TAURI_DRIVER="$(command -v tauri-driver)" VELOCE_NATIVE_DRIVER="$(command -v WebKitWebDriver)" VELOCE_DRIVER_PORT=4484 npm run test:native -- --case minimum-font-probe
+SPARK_TAURI_DRIVER="$(command -v tauri-driver)" SPARK_NATIVE_DRIVER="$(command -v WebKitWebDriver)" SPARK_DRIVER_PORT=4484 npm run test:native -- --case minimum-font-probe
 ```
 
 Inspecione `minimum-font-probe.json` e as capturas no diretório `artifacts` da execução. Compare 0 px e 12 px para ver se a configuração nativa afeta os tamanhos abaixo do limite; confira também os controles, o iframe e as capturas com zoom em 100% e 150%. A prova restaura a configuração anterior após a medição.

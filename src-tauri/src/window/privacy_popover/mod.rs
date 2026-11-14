@@ -142,7 +142,7 @@ fn ensure_webview(app: &AppHandle) -> Result<(), String> {
             .transparent(true)
             .focused(false)
             .on_navigation(move |url| {
-                if url.scheme() == "veloce-internal" {
+                if url.scheme() == "spark-internal" {
                     bridge::navigation(&callback_app, url);
                     return false;
                 }
@@ -252,7 +252,7 @@ pub fn set(
         inner.session = None;
         drop(inner);
         if let Some(view) = app.get_webview(LABEL) {
-            let _ = view.eval("window.__veloceSetPrivacyPopover?.({visible:false});");
+            let _ = view.eval("window.__sparkSetPrivacyPopover?.({visible:false});");
             view.hide().map_err(|e| e.to_string())?;
         }
         if restore_focus {
@@ -330,7 +330,7 @@ pub fn set(
         let view = app
             .get_webview(LABEL)
             .ok_or("Privacy popover WebView not found")?;
-        view.eval(format!("(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (window.__veloceSetPrivacyPopover) window.__veloceSetPrivacyPopover(payload); else if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();")).map_err(|e| e.to_string())?;
+        view.eval(format!("(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (window.__sparkSetPrivacyPopover) window.__sparkSetPrivacyPopover(payload); else if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();")).map_err(|e| e.to_string())?;
         crate::window::show_overlay_webview(&view)?;
         if opening {
             view.set_focus().map_err(|e| e.to_string())?;

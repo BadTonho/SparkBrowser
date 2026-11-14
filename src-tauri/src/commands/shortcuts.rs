@@ -41,7 +41,7 @@ pub async fn set_keyboard_shortcuts(
             let payload = serde_json::to_string(&shortcuts).map_err(|error| error.to_string())?;
             webview
                 .eval(format!(
-                    "window.__veloceSetKeyboardShortcuts?.(\"{token}\", {payload});"
+                    "window.__sparkSetKeyboardShortcuts?.(\"{token}\", {payload});"
                 ))
                 .map_err(|error| format!("Failed to update WebView keyboard shortcuts: {error}"))?;
         }

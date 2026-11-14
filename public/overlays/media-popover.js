@@ -30,7 +30,7 @@
     if (!state || closing) return;
     cancelAnimationFrame(pendingFrame);
     pendingFrame = 0;
-    const url = new URL(`veloce-internal://media-popover/${action}`);
+    const url = new URL(`spark-internal://media-popover/${action}`);
     url.searchParams.set("token", state.token);
     url.searchParams.set("sequence", String(++sequence));
     if (!slider.disabled) url.searchParams.set("value", slider.value);
@@ -75,7 +75,7 @@
     frameNote.textContent = state.labels.frameLimit;
   }
 
-  window.__veloceSetMediaPopover = (payload) => {
+  window.__sparkSetMediaPopover = (payload) => {
     if (!payload.visible) {
       cancelAnimationFrame(pendingFrame);
       state = null;

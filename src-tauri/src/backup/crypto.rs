@@ -1,7 +1,7 @@
 //! Password-protected backup envelope: Argon2id key derivation + AES-256-GCM.
 //!
 //! The envelope is itself a JSON document so encrypted backups keep the
-//! `.veloce-backup.json` extension. KDF parameters travel inside the envelope
+//! `.spark-backup.json` extension. KDF parameters travel inside the envelope
 //! (bounded on read) so they can be strengthened later without breaking old files.
 use aes_gcm::{
     aead::{Aead, KeyInit, Payload},
@@ -11,13 +11,20 @@ use argon2::{Algorithm, Argon2, Params, Version};
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde::{Deserialize, Serialize};
 
-pub const ENCRYPTED_FORMAT: &str = "veloce-backup-encrypted";
+pub const ENCRYPTED_FORMAT: &str = "spark-backup-encrypted";
+/// Envelope tag written before the app was renamed; still read so older encrypted backups open.
+pub const LEGACY_ENCRYPTED_FORMAT: &str = "veloce-backup-encrypted";
+pub fn is_encrypted_format(tag: &str) -> bool {
+    tag == ENCRYPTED_FORMAT || tag == LEGACY_ENCRYPTED_FORMAT
+}
 const ENVELOPE_VERSION: u32 = 1;
 const KDF_NAME: &str = "argon2id";
 const CIPHER_NAME: &str = "aes-256-gcm";
 const SALT_LEN: usize = 16;
 const NONCE_LEN: usize = 12;
 const KEY_LEN: usize = 32;
+/// AES-GCM associated data. It is part of every encrypted file's authentication, so it keeps the
+/// value it had before the rename: changing it would make existing encrypted backups undecryptable.
 const AAD: &[u8] = b"veloce-backup-encrypted:1";
 
 pub const MIN_PASSWORD_CHARS: usize = 8;
@@ -68,7 +75,7 @@ struct Probe {
 
 /// True when the bytes are a JSON document declaring the encrypted format.
 pub fn is_encrypted(bytes: &[u8]) -> bool {
-    serde_json::from_slice::<Probe>(bytes).is_ok_and(|probe| probe.format == ENCRYPTED_FORMAT)
+    serde_json::from_slice::<Probe>(bytes).is_ok_and(|probe| is_encrypted_format(&probe.format))
 }
 
 pub fn validate_password(password: &str) -> Result<(), String> {
@@ -132,7 +139,7 @@ pub fn encrypt(plain: &[u8], password: &str) -> Result<Vec<u8>, String> {
 pub fn decrypt(bytes: &[u8], password: &str) -> Result<Vec<u8>, String> {
     let envelope: Envelope =
         serde_json::from_slice(bytes).map_err(|e| format!("backup.invalid_document: {e}"))?;
-    if envelope.format != ENCRYPTED_FORMAT
+    if !is_encrypted_format(&envelope.format)
         || envelope.version != ENVELOPE_VERSION
         || envelope.kdf.algorithm != KDF_NAME
         || envelope.cipher != CIPHER_NAME
@@ -184,7 +191,7 @@ mod tests {
     fn roundtrip_and_detection() {
         let sealed = encrypt(b"{\"hello\":1}", "correct horse").unwrap();
         assert!(is_encrypted(&sealed));
-        assert!(!is_encrypted(b"{\"format\":\"veloce-backup\"}"));
+        assert!(!is_encrypted(b"{\"format\":\"spark-backup\"}"));
         assert!(!is_encrypted(b"not json"));
         assert!(!String::from_utf8_lossy(&sealed).contains("hello"));
         assert_eq!(decrypt(&sealed, "correct horse").unwrap(), b"{\"hello\":1}");

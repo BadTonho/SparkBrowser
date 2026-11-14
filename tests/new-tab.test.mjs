@@ -21,7 +21,7 @@ function fixture() {
   const window={addEventListener:(t,fn)=>listeners.set(t,fn),dispatchEvent:event=>actions.push(event.detail)};
   runInNewContext(readFileSync('public/new-tab/page.js','utf8'),{window,document,CustomEvent:class {constructor(type,init){this.type=type;this.detail=init.detail;}}});
   const labels=JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8'));
-  const update=patch=>listeners.get('veloce-new-tab')({detail:{labels,preferences:{language:'en',engine:'google'},sites:[],error:false,autofocus:true,...patch}});
+  const update=patch=>listeners.get('spark-new-tab')({detail:{labels,preferences:{language:'en',engine:'google'},sites:[],error:false,autofocus:true,...patch}});
   return {document,nodes,actions,update};
 }
 
@@ -57,20 +57,20 @@ for (const transport of ['navigation', 'native message']) test(`new tab bridge r
   const listeners=new Map(),received=[],sent=[];
   const location={get href(){return 'http://tauri.localhost/new-tab.html';},set href(value){assert.equal(transport,'navigation','native reports must not cancel a page navigation');sent.push(new URL(value));}};
   const window={addEventListener:(type,fn)=>listeners.set(type,fn),dispatchEvent:e=>received.push(e.detail)};window.top=window;
-  if (transport === 'native message') window.__velocePostContent = url => sent.push(new URL(url));
+  if (transport === 'native message') window.__sparkPostContent = url => sent.push(new URL(url));
   const document={addEventListener:(type,fn)=>listeners.set(type,fn)};
   const source=readFileSync('src-tauri/src/window/new_tab/bridge.js','utf8').replaceAll('__NEW_TAB_URL__',JSON.stringify(location.href)).replaceAll('__NEW_TAB_TOKEN__',JSON.stringify('artificial-token')).replaceAll('__NEW_TAB_ID__',JSON.stringify('tab-1'));
   runInNewContext(source,{window,document,location,URLSearchParams,crypto:{randomUUID:()=> 'test-document'},CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail;}}});
-  listeners.get('DOMContentLoaded')();window.__veloceRefreshNewTab();
-  window.__veloceNewTabReply('test-document',1,{old:true});window.__veloceNewTabReply('old-document',2,{old:true});assert.equal(received.length,0);
-  window.__veloceNewTabReply('test-document',2,{current:true});assert.equal(received.length,1);
-  listeners.get('veloce-new-tab-action')({detail:{action:'visit',input:'https://one.test/a?q=a&b',site_key:'one.test'}});
+  listeners.get('DOMContentLoaded')();window.__sparkRefreshNewTab();
+  window.__sparkNewTabReply('test-document',1,{old:true});window.__sparkNewTabReply('old-document',2,{old:true});assert.equal(received.length,0);
+  window.__sparkNewTabReply('test-document',2,{current:true});assert.equal(received.length,1);
+  listeners.get('spark-new-tab-action')({detail:{action:'visit',input:'https://one.test/a?q=a&b',site_key:'one.test'}});
   assert.deepEqual(sent.map(url=>url.searchParams.get('sequence')),['1','2','3']);
   assert.equal(sent.at(-1).searchParams.get('input'),'https://one.test/a?q=a&b');assert.equal(sent.at(-1).pathname,'/visit');
   listeners.get('pageshow')({persisted:true});
   assert.equal(sent.at(-1).pathname,'/read');
   assert.equal(sent.at(-1).searchParams.get('request'),'3');
-  window.__veloceNewTabReply('test-document',2,{old:true});assert.equal(received.length,1);
+  window.__sparkNewTabReply('test-document',2,{old:true});assert.equal(received.length,1);
 });
 
 test('widget replies reject old documents, old operations and snapshots predating disconnect',()=>{
@@ -80,12 +80,12 @@ test('widget replies reject old documents, old operations and snapshots predatin
   const document={addEventListener:(type,fn)=>listeners.set(type,fn)};
   const source=readFileSync('src-tauri/src/window/new_tab/bridge.js','utf8').replaceAll('__NEW_TAB_URL__',JSON.stringify(location.href)).replaceAll('__NEW_TAB_TOKEN__',JSON.stringify('artificial-token')).replaceAll('__NEW_TAB_ID__',JSON.stringify('tab-1'));
   runInNewContext(source,{window,document,location,URLSearchParams,crypto:{randomUUID:()=> 'current-document'},CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail;}}});
-  window.__veloceRefreshWidgets();window.__veloceRefreshWidgets();
-  window.__veloceWidgetsReply('current-document',1,{version:1});window.__veloceWidgetsReply('old-document',2,{version:2});assert.equal(received.length,0);
-  window.__veloceWidgetsReply('current-document',2,{version:3,connected:true});assert.equal(received.length,1);
-  listeners.get('veloce-new-tab-action')({detail:{action:'widgets',operation:'disconnect',data:{}}});
-  window.__veloceWidgetsReply('current-document',3,{version:5,connected:false});
-  window.__veloceWidgetsReply('current-document',2,{version:4,connected:true});
+  window.__sparkRefreshWidgets();window.__sparkRefreshWidgets();
+  window.__sparkWidgetsReply('current-document',1,{version:1});window.__sparkWidgetsReply('old-document',2,{version:2});assert.equal(received.length,0);
+  window.__sparkWidgetsReply('current-document',2,{version:3,connected:true});assert.equal(received.length,1);
+  listeners.get('spark-new-tab-action')({detail:{action:'widgets',operation:'disconnect',data:{}}});
+  window.__sparkWidgetsReply('current-document',3,{version:5,connected:false});
+  window.__sparkWidgetsReply('current-document',2,{version:4,connected:true});
   assert.equal(received.length,2);assert.equal(received.at(-1).connected,false);
   assert.equal(sent.at(-1).pathname,'/widgets');assert.equal(sent.at(-1).searchParams.get('operation'),'disconnect');
 });

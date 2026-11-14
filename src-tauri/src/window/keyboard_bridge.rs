@@ -11,7 +11,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
           const documentId = Array.from(nonce, n => n.toString(16).padStart(8, "0")).join("");
           const nativeAltCapture = {native_alt_capture};
           const nativeCaretBrowsingToggle = {native_caret_browsing_toggle};
-          window.__veloceWorkspaceSwitcherOpen = false;
+          window.__sparkWorkspaceSwitcherOpen = false;
           let shortcuts = {{}};
           let holdPressed = false;
           let nextSequence = 0;
@@ -29,7 +29,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
             }});
             if (request.action) query.set("action", request.action);
             if (request.key) query.set(request.type === "link" ? "input" : "key", request.key);
-            window.location.href = `veloce-internal://keyboard-shortcut/${{request.type}}?${{query.toString()}}`;
+            window.location.href = `spark-internal://keyboard-shortcut/${{request.type}}?${{query.toString()}}`;
           }}
 
           function notifyBrowser(type, action, key) {{
@@ -56,14 +56,14 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
             notifyBrowser(type);
           }}
 
-          Object.defineProperty(window, "__veloceSetKeyboardShortcuts", {{
+          Object.defineProperty(window, "__sparkSetKeyboardShortcuts", {{
             configurable: false,
             enumerable: false,
             writable: false,
             value: (secret, value) => {{ if (secret === bridgeToken) shortcuts = value || {{}}; }}
           }});
 
-          Object.defineProperty(window, "__veloceWorkspaceShortcutAck", {{
+          Object.defineProperty(window, "__sparkWorkspaceShortcutAck", {{
             configurable: false,
             enumerable: false,
             writable: false,
@@ -91,7 +91,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
               return;
             }}
 
-            if (event.key === "Escape" && window.__veloceWorkspaceSwitcherOpen) {{
+            if (event.key === "Escape" && window.__sparkWorkspaceSwitcherOpen) {{
               event.preventDefault();
               event.stopImmediatePropagation();
               notifyBrowser("alt-cancel");
@@ -173,7 +173,7 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
           }});
 
           window.addEventListener("focus", () => {{
-            if (!nativeAltCapture) window.location.href = "veloce-internal://pane-focus?token=" + encodeURIComponent(bridgeToken);
+            if (!nativeAltCapture) window.location.href = "spark-internal://pane-focus?token=" + encodeURIComponent(bridgeToken);
             holdPressed = false;
           }}, true);
           document.addEventListener("visibilitychange", () => {{
@@ -701,7 +701,7 @@ pub(super) fn handle_keyboard_navigation(
 
     if let Some(sequence) = sequence {
         if let Some(webview) = app_handle_for_nav.get_webview(label_for_nav) {
-            let _ = webview.eval(format!("window.__veloceWorkspaceShortcutAck({sequence});"));
+            let _ = webview.eval(format!("window.__sparkWorkspaceShortcutAck({sequence});"));
         }
     }
 }

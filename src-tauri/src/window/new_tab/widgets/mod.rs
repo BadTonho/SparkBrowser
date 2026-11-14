@@ -46,7 +46,7 @@ impl Default for Endpoints {
 }
 impl Endpoints {
     fn for_app(app: &AppHandle) -> Self {
-        if app.config().identifier == "org.veloce.browser.native-tests" {
+        if app.config().identifier == "org.spark.browser.native-tests" {
             if let Some(base) = app
                 .path()
                 .app_config_dir()
@@ -235,7 +235,7 @@ fn broadcast(app: &AppHandle) {
             if let Some(view) =
                 app.get_webview(&crate::state::tab_model::webview_label_for_tab(&tab.id))
             {
-                let _ = view.eval("window.__veloceRefreshWidgets?.()");
+                let _ = view.eval("window.__sparkRefreshWidgets?.()");
             }
         }
     }

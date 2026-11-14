@@ -28,7 +28,7 @@ pub async fn export_backup(app: AppHandle, preferences: BackupPreferences) -> Re
             .dialog()
             .file()
             .add_filter("Spark backup", &["json"])
-            .set_file_name("browser.veloce-backup.json")
+            .set_file_name("browser.spark-backup.json")
             .blocking_save_file()
         else {
             return Ok(false);
@@ -37,7 +37,11 @@ pub async fn export_backup(app: AppHandle, preferences: BackupPreferences) -> Re
         if !path
             .to_string_lossy()
             .to_lowercase()
-            .ends_with(".veloce-backup.json")
+            .ends_with(".spark-backup.json")
+            && !path
+                .to_string_lossy()
+                .to_lowercase()
+                .ends_with(".veloce-backup.json")
         {
             // Do not append after selection: that could overwrite a path the dialog never confirmed.
             return Err("backup.invalid_extension".into());

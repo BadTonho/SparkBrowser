@@ -1,13 +1,13 @@
 # Extensions (Chrome WebExtensions Support)
 
-On Windows, Veloce Browser can load Chrome WebExtensions through WebView2; compatibility depends on the runtime and extension. Extension installation and management are not yet supported on Linux and return an error.
+On Windows, Spark Browser can load Chrome WebExtensions through WebView2; compatibility depends on the runtime and extension. Extension installation and management are not yet supported on Linux and return an error.
 
 ---
 
 ## Capabilities
 
-* **1-Click Chrome Web Store Install:** When browsing any extension on `chromewebstore.google.com`, an interactive **`[🧩 Install in Veloce]`** button automatically appears in the Omnibox. Clicking it downloads, extracts, validates, and activates the extension with a single click.
-* **CRX Download Interceptor:** Clicking Google's "Add to Chrome" button is natively intercepted before the WebView2 download barrier, routing the package directly to Veloce's background installer.
+* **1-Click Chrome Web Store Install:** When browsing any extension on `chromewebstore.google.com`, an interactive **`[🧩 Install in Spark]`** button automatically appears in the Omnibox. Clicking it downloads, extracts, validates, and activates the extension with a single click.
+* **CRX Download Interceptor:** Clicking Google's "Add to Chrome" button is natively intercepted before the WebView2 download barrier, routing the package directly to Spark's background installer.
 * **Chrome Web Store Installer (Manual):** Paste any Chrome Web Store URL or 32-character extension ID into the Extensions modal to download, unpack, and install directly.
 * **Archive Installer (.zip / .crx):** Directly install packaged extensions from local `.zip` or `.crx` (CRX2 and CRX3) files.
 * **Unpacked Extensions:** Load unpacked extension folders directly from your disk.
@@ -22,8 +22,8 @@ On Windows, Veloce Browser can load Chrome WebExtensions through WebView2; compa
 
 ### 1. 1-Click from the Chrome Web Store (Recommended)
 1. Navigate to any extension page on the Chrome Web Store (e.g., `https://chromewebstore.google.com/detail/...`).
-2. An **`[🧩 Install in Veloce]`** button will appear directly inside the address bar (Omnibox).
-3. Click it once: Veloce downloads and activates the extension immediately, and a floating toast confirms the installation.
+2. An **`[🧩 Install in Spark]`** button will appear directly inside the address bar (Omnibox).
+3. Click it once: Spark downloads and activates the extension immediately, and a floating toast confirms the installation.
 
 ### 2. From the Extensions Modal
 1. Click on the **Extensions** (puzzle piece) icon on the top toolbar.
@@ -33,7 +33,7 @@ On Windows, Veloce Browser can load Chrome WebExtensions through WebView2; compa
 ### 3. From a .zip or .crx Archive
 1. Click on **Load .zip / .crx** in the Extensions modal.
 2. Select the archive file from your file manager.
-3. Veloce will extract the package into a managed folder and register the extension.
+3. Spark will extract the package into a managed folder and register the extension.
 
 ### 4. Load Unpacked
 1. Click **Load Unpacked**.

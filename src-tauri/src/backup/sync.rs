@@ -14,7 +14,9 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-pub const SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
+pub const SYNC_FILE_NAME: &str = "browser.spark-backup.json";
+/// Name used before the rename. Pulls fall back to it so an existing backup is not orphaned.
+pub const LEGACY_SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(tag = "mode", rename_all = "snake_case")]
@@ -112,7 +114,8 @@ pub fn validate_webdav_url(raw: &str) -> Result<url::Url, String> {
 pub fn resolve_webdav_file_url(raw: &str) -> Result<url::Url, String> {
     let mut url = validate_webdav_url(raw)?;
     let path = url.path().to_string();
-    if path.to_lowercase().ends_with(".veloce-backup.json") {
+    let lower = path.to_lowercase();
+    if lower.ends_with(".spark-backup.json") || lower.ends_with(".veloce-backup.json") {
         return Ok(url);
     }
     let normalized = if path.ends_with('/') {
@@ -134,6 +137,31 @@ pub fn resolve_folder_file_path(directory_path: &str) -> Result<PathBuf, String>
         return Err("backup.sync_folder_missing".into());
     }
     Ok(dir.join(SYNC_FILE_NAME))
+}
+
+/// The folder file to read: the current name, or the old one when only that exists.
+pub fn resolve_folder_pull_path(directory_path: &str) -> Result<PathBuf, String> {
+    let current = resolve_folder_file_path(directory_path)?;
+    let legacy = current.with_file_name(LEGACY_SYNC_FILE_NAME);
+    Ok(if !current.is_file() && legacy.is_file() {
+        legacy
+    } else {
+        current
+    })
+}
+
+/// The pre-rename twin of a directory-derived WebDAV file URL, if it is one.
+fn legacy_webdav_file_url(url: &url::Url) -> Option<url::Url> {
+    let path = url.path();
+    let base = path.strip_suffix(SYNC_FILE_NAME)?;
+    let mut legacy = url.clone();
+    legacy.set_path(&format!("{base}{LEGACY_SYNC_FILE_NAME}"));
+    Some(legacy)
+}
+
+#[cfg(test)]
+pub(super) fn legacy_webdav_file_url_for_test(url: &url::Url) -> Option<url::Url> {
+    legacy_webdav_file_url(url)
 }
 
 pub fn load_config(conn: &Connection) -> Result<SyncTargetConfig, String> {
@@ -425,7 +453,7 @@ pub fn pull_document_from_target(
             Err("backup.sync_not_configured".to_string())
         }
         SyncTargetConfig::Folder { directory_path, .. } => {
-            let file_path = resolve_folder_file_path(directory_path)?;
+            let file_path = resolve_folder_pull_path(directory_path)?;
             if !file_path.is_file() {
                 Err("backup.sync_file_not_found".to_string())
             } else {
@@ -524,6 +552,21 @@ pub fn webdav_get(
     password: Option<&str>,
 ) -> Result<BackupDocument, String> {
     let url = resolve_webdav_file_url(endpoint_url)?;
+    match webdav_get_url(url.clone(), username, secret, password) {
+        Err(error) if error == "backup.sync_file_not_found" => match legacy_webdav_file_url(&url) {
+            Some(legacy) => webdav_get_url(legacy, username, secret, password),
+            None => Err(error),
+        },
+        other => other,
+    }
+}
+
+fn webdav_get_url(
+    url: url::Url,
+    username: &str,
+    secret: Option<&str>,
+    password: Option<&str>,
+) -> Result<BackupDocument, String> {
     let client = build_http_client()?;
     let request = apply_auth(
         client.get(url).header("Accept", "application/json"),

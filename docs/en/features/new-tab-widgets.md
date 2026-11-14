@@ -15,15 +15,15 @@ Forecasts and city search use [Open-Meteo](https://open-meteo.com/). Coordinates
 The widget supports two connection modes:
 
 ### 1. Direct Browser Session (Default & Recommended)
-Veloce configures WebViews with a standard desktop browser User-Agent, allowing seamless Google sign-in directly within browser tabs without third-party app warnings. When you are signed into Gmail (`mail.google.com`) in any normal tab, the widget automatically detects the session cookies and displays your unread count and latest messages via the inbox feed. No Google Cloud Console project or credentials are required. Clicking **Connect Gmail** navigates the current tab to `https://mail.google.com/` to sign in.
+Spark configures WebViews with a standard desktop browser User-Agent, allowing seamless Google sign-in directly within browser tabs without third-party app warnings. When you are signed into Gmail (`mail.google.com`) in any normal tab, the widget automatically detects the session cookies and displays your unread count and latest messages via the inbox feed. No Google Cloud Console project or credentials are required. Clicking **Connect Gmail** navigates the current tab to `https://mail.google.com/` to sign in.
 
 ### 2. Desktop OAuth Setup (Optional / Automated Testing)
 For automated native testing fixtures or developer OAuth usage:
 1. Create a project in [Google Cloud Console](https://console.cloud.google.com/) and enable the Gmail API.
 2. Configure the OAuth consent screen for personal testing and add your Google account as a test user. Add only `https://www.googleapis.com/auth/gmail.metadata`.
 3. Create an OAuth client of type **Desktop app** and download its JSON configuration.
-4. Place the downloaded file at `<application-config-directory>/oauth/google-desktop.credentials.json`. On Windows the normal application config directory is `%APPDATA%/org.veloce.browser`; development and isolated test profiles can use different directories. Restart Veloce after adding or changing this file.
-5. Enable **Show Gmail** and select **Connect Gmail**. Authorization opens Microsoft Edge outside Veloce, then returns through a temporary `127.0.0.1` callback. Finish consent and return to Veloce. The connection can be cancelled from settings.
+4. Place the downloaded file at `<application-config-directory>/oauth/google-desktop.credentials.json`. On Windows the normal application config directory is `%APPDATA%/org.spark.browser`; development and isolated test profiles can use different directories. Restart Spark after adding or changing this file.
+5. Enable **Show Gmail** and select **Connect Gmail**. Authorization opens Microsoft Edge outside Spark, then returns through a temporary `127.0.0.1` callback. Finish consent and return to Spark. The connection can be cancelled from settings.
 
 Never put the downloaded configuration, account tokens or exported user data in the repository. The app reads the standard Google `installed` configuration and uses fixed Google authorization/API endpoints. It does not ask for a Google password. Missing configuration or unavailable secure storage produces an explanatory state rather than a simulated connection.
 

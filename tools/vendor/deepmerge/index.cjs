@@ -76,7 +76,7 @@ function propertyIsUnsafe(target, key) {
 			&& Object.propertyIsEnumerable.call(target, key)) // and also unsafe if they're nonenumerable.
 }
 
-// Veloce security backport: never invoke inherited setters when copying keys.
+// Spark security backport: never invoke inherited setters when copying keys.
 // Applies to both target and source, including null-prototype objects.
 function defineOwn(target, key, value) {
     Object.defineProperty(target, key, { value: value, writable: true, configurable: true, enumerable: true });

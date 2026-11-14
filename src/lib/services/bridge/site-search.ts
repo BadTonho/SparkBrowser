@@ -2,7 +2,7 @@ import { invoke, isTauriRuntime } from "./runtime";
 import { safeStorage } from "../storage.js";
 import { validateSiteSearch } from "../site-search.js";
 import type { SiteSearchShortcut } from "../../types/browser";
-const key = "veloce_site_search_shortcuts";
+const key = "spark_site_search_shortcuts";
 function preview(): SiteSearchShortcut[] {
   try { const rows = JSON.parse(safeStorage.getItem(key) ?? "[]") as SiteSearchShortcut[]; if (!Array.isArray(rows)) return []; rows.forEach(validateSiteSearch); return rows; } catch { return []; }
 }

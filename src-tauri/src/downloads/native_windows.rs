@@ -246,7 +246,7 @@ pub fn install(
                     let url = CoTaskMemPWSTR::from(uri).to_string();
                     let parsed = tauri::Url::parse(&url).map_err(|_| "downloads.invalid_url")?;
 
-                    // If it is a Chrome Web Store extension or CRX package, intercept and install natively into Veloce
+                    // If it is a Chrome Web Store extension or CRX package, intercept and install natively into Spark
                     let is_crx = url.contains("clients2.google.com/service/update2/crx")
                         || parsed.path().ends_with(".crx");
                     if is_crx {

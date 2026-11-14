@@ -1,5 +1,5 @@
 (() => {
-  if (window.__veloceSetAutoSkip) return;
+  if (window.__sparkSetAutoSkip) return;
   const token = __AUTO_SKIP_TOKEN__;
   let enabled = false, observer = null, timer = 0, lastCheck = -Infinity;
   let clicked = new WeakSet(), videoKey = '';
@@ -36,7 +36,7 @@
     document.removeEventListener('yt-navigate-finish', schedule);
     window.removeEventListener('popstate', schedule);
   }
-  Object.defineProperty(window, '__veloceSetAutoSkip', { writable: false, configurable: false,
+  Object.defineProperty(window, '__sparkSetAutoSkip', { writable: false, configurable: false,
     value(secret, value) {
       if (secret !== token || typeof value !== 'boolean') return;
       stop(); enabled = value;
@@ -51,5 +51,5 @@
     }
   });
   window.addEventListener('pagehide', () => { stop(); });
-  window.addEventListener('pageshow', () => { if (enabled) window.__veloceSetAutoSkip(token, true); });
+  window.addEventListener('pageshow', () => { if (enabled) window.__sparkSetAutoSkip(token, true); });
 })();

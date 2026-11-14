@@ -9,7 +9,7 @@ import {newTabDriver} from './new-tab-driver.mjs';
 export async function checkNewTab(context) {
   const {invoke,script,click,until,fixture,resizeWindow,request,sessionId,restart}=context;
   const {inside,ready,active}=newTabDriver(context);
-  assert.equal((await active()).url,'veloce://newtab','empty profile starts locally');
+  assert.equal((await active()).url,'spark://newtab','empty profile starts locally');
   await ready();
   await inside(async()=>{
     assert.equal(await script('return document.activeElement.id'),'search','central search has initial focus');
@@ -47,26 +47,26 @@ export async function checkNewTab(context) {
   await inside(()=>until(()=>script('return document.querySelectorAll(".recent-site").length===0 && !document.querySelector("#empty").hidden'),'history clear refreshes existing page'));
   await withScenarioDatabase(context.directory,db=>assert.equal(db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n,0));
   await inside(()=>script('window.staleRecentCard.click()'));
-  await context.wait(150);assert.equal((await active()).url,'veloce://newtab','cleared card cannot navigate using an old snapshot');
+  await context.wait(150);assert.equal((await active()).url,'spark://newtab','cleared card cannot navigate using an old snapshot');
   // Fault injection stays inside the disposable test database.
   await withScenarioDatabase(context.directory,async db=>{
     db.exec('ALTER TABLE history RENAME TO unavailable_history');
     try {
-      await inside(()=>script('window.__veloceRefreshNewTab()'));
+      await inside(()=>script('window.__sparkRefreshNewTab()'));
       await inside(()=>until(()=>script('return !document.querySelector("#error").hidden'),'read failure appears'));
     } finally {db.exec('ALTER TABLE unavailable_history RENAME TO history');}
   });
   await inside(()=>click('#retry'));
   await inside(()=>until(()=>script('return document.querySelector("#error").hidden'),'retry recovers'));
 
-  await inside(()=>script('location.href="veloce-internal://new-tab/navigate?token=invalid&document=fake&sequence=999&input=https://example.test"'));
-  assert.equal((await active()).url,'veloce://newtab');
+  await inside(()=>script('location.href="spark-internal://new-tab/navigate?token=invalid&document=fake&sequence=999&input=https://example.test"'));
+  assert.equal((await active()).url,'spark://newtab');
   await inside(()=>script('const e=document.querySelector("#search");e.value=arguments[0];document.querySelector("#search-form").requestSubmit()',fixture.origin+'/page/new-tab-first'));
   await until(()=>fixture.reports.has('new-tab-first'),'search form navigates originating page');
   const first=await active();
   await until(()=>withScenarioDatabase(context.directory,db=>db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n===1),'native favicon captured into cache');
   const iconRequests=fixture.icons.requests.length;
-  await invoke('go_back');await ready();assert.equal((await active()).url,'veloce://newtab');
+  await invoke('go_back');await ready();assert.equal((await active()).url,'spark://newtab');
   await inside(async()=>{
     await until(()=>script('const e=document.querySelector(".site-icon");return e?.src.startsWith("data:image/png;base64,")&&e.complete&&e.naturalWidth>0'),'captured favicon renders');
     assert.equal(fixture.icons.requests.length,iconRequests,'opening new tab does not request a favicon');
@@ -88,7 +88,7 @@ export async function checkNewTab(context) {
   await withScenarioDatabase(context.directory,db=>assert.equal(db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n,0,'late pre-clear favicon cannot repopulate cache'));
   await invoke('navigate_to',{input:fixture.origin+'/page/new-tab-bad'});
   await until(()=>fixture.reports.has('new-tab-bad'),'invalid favicon fixture loaded');
-  await invoke('navigate_to',{input:'veloce://newtab'});await ready();
+  await invoke('navigate_to',{input:'spark://newtab'});await ready();
   await inside(()=>until(()=>script('return document.querySelector(".site-icon")?.getAttribute("src")==="/new-tab/site-fallback.svg"'),'invalid native image falls back'));
   await invoke('close_tab',{tabId:late.id});await ready();
   const secondPacket=await invoke('create_tab');const second=secondPacket.tabs.find(t=>t.is_active);
@@ -105,7 +105,7 @@ export async function checkNewTab(context) {
   await invoke('go_back');await ready();
   const rightLoads=fixture.loads.get('new-tab-right');
   const rightDocument=fixture.reports.get('new-tab-right');
-  assert.equal((await invoke('get_tabs')).tabs.find(t=>t.id===first.id).url,'veloce://newtab');
+  assert.equal((await invoke('get_tabs')).tabs.find(t=>t.id===first.id).url,'spark://newtab');
   await until(()=>context.focusWindow().then(()=>true,()=>false),'isolated new-tab test receives foreground focus');
   for(const layout of ['vertical','horizontal']) {
     await click('[data-testid=open-settings]');
@@ -114,7 +114,7 @@ export async function checkNewTab(context) {
       await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))');
       await until(()=>script('return !document.querySelector("[data-testid=settings-quick-menu]")'),'quick settings closes');
     });
-    await until(()=>script('return localStorage.getItem("veloce_tab_layout")===arguments[0]',layout),'layout changes');
+    await until(()=>script('return localStorage.getItem("spark_tab_layout")===arguments[0]',layout),'layout changes');
   }
   await invoke('switch_tab',{tabId:first.id});
   await invoke('reload_page');await ready();
@@ -130,7 +130,7 @@ export async function checkNewTab(context) {
   await inside(()=>until(()=>script('return document.activeElement.id==="submit"'),'Tab reaches search button'));
   if(process.platform==='win32') {
     const build=JSON.parse(readFileSync('.cache/native-target/test-build.json','utf8'));
-    assert.equal(build.identifier,'org.veloce.browser.native-tests');
+    assert.equal(build.identifier,'org.spark.browser.native-tests');
     const executable=resolve(build.executable);assert.ok(executable.startsWith(resolve('.cache/native-target')+'\\'));
     const key=(code,up=false)=>new Promise((done,fail)=>{
       const child=spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',resolve('tests/native/windows-input.ps1'),'-Executable',executable,'-Key',String(code),...(up?['-Up']:[])],{windowsHide:true,stdio:['ignore','ignore','pipe']});
@@ -156,13 +156,13 @@ export async function checkNewTab(context) {
   await invoke('switch_tab',{tabId:reopened});await ready();
   await invoke('save_named_session',{name:'Local new tab'});
   const saved=(await invoke('get_saved_sessions')).find(s=>s.name==='Local new tab');
-  assert.ok(saved.pages.some(p=>p.url==='veloce://newtab'));
+  assert.ok(saved.pages.some(p=>p.url==='spark://newtab'));
   await invoke('restore_named_session',{id:saved.id});await ready();
   const restored=(await active()).id;
   await until(()=>withScenarioDatabase(context.directory,db=>db.prepare('SELECT COUNT(*) AS n FROM site_icons').get().n>0),'icon cache populated before restart');
   const cached=await withScenarioDatabase(context.directory,db=>db.prepare('SELECT site_key,hex(png) AS image FROM site_icons ORDER BY site_key').all());
   await restart();
-  assert.equal((await active()).id,restored);assert.equal((await active()).url,'veloce://newtab');await ready();
+  assert.equal((await active()).id,restored);assert.equal((await active()).url,'spark://newtab');await ready();
   const after=await withScenarioDatabase(context.directory,db=>db.prepare('SELECT site_key,hex(png) AS image FROM site_icons ORDER BY site_key').all());
   for(const entry of cached)assert.ok(after.some(row=>row.site_key===entry.site_key&&row.image===entry.image),'favicon persists across restart');
   await context.screenshot('new-tab');

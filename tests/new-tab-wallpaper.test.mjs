@@ -142,17 +142,17 @@ function createWallpaperFixture(initialStorage = {}) {
 }
 
 test('wallpaper reads are shared until another tab changes the stored record', async () => {
-  const f = createWallpaperFixture({ veloce_wallpaper_enabled: 'true' });
+  const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true' });
   f.idbStore.set('current', 'data:image/png;base64,one');
   await new Promise(r => setTimeout(r, 20));
   const labels = {};
-  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels } });
-  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels } });
+  f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels } });
+  f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels } });
   await new Promise(r => setTimeout(r, 20));
   assert.equal(f.stats.opens, 1);
   assert.equal(f.stats.reads, 1);
   f.idbStore.set('current', 'data:image/png;base64,two');
-  f.window.dispatchEvent({ type: 'storage', key: 'veloce_wallpaper_updated' });
+  f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_updated' });
   await new Promise(r => setTimeout(r, 20));
   assert.equal(f.stats.reads, 2);
   assert.equal(f.nodes.get('wallpaper-image').src, 'data:image/png;base64,two');
@@ -162,7 +162,7 @@ test('images are size-limited and stored as one blob', async () => {
   const f = createWallpaperFixture();
   await new Promise(r => setTimeout(r, 20));
   const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json', 'utf8'));
-  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels } });
+  f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels } });
   const input = f.nodes.get('wallpaper-file');
   input.files = [{ name: 'large.png', type: 'image/png', size: 21 * 1024 * 1024 }];
   input.listeners.change();
@@ -191,8 +191,8 @@ test('wallpaper starts hidden when no custom image is saved', async () => {
 test('wallpaper applies stored image and activates background container with dimming', async () => {
   const testData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
   const f = createWallpaperFixture({
-    veloce_wallpaper_enabled: 'true',
-    veloce_wallpaper_dim: '50'
+    spark_wallpaper_enabled: 'true',
+    spark_wallpaper_dim: '50'
   });
   f.idbStore.set('current', testData);
 
@@ -217,8 +217,8 @@ test('wallpaper applies stored image and activates background container with dim
 
 test('dimming slider updates dimming value and saves preference', async () => {
   const f = createWallpaperFixture({
-    veloce_wallpaper_enabled: 'true',
-    veloce_wallpaper_dim: '40'
+    spark_wallpaper_enabled: 'true',
+    spark_wallpaper_dim: '40'
   });
   await new Promise(r => setTimeout(r, 10));
 
@@ -231,13 +231,13 @@ test('dimming slider updates dimming value and saves preference', async () => {
   assert.equal(overlay.style.properties['--wallpaper-dim'], '0.65');
 
   slider.listeners.change({ target: { value: '65' } });
-  assert.equal(f.storage.get('veloce_wallpaper_dim'), '65');
+  assert.equal(f.storage.get('spark_wallpaper_dim'), '65');
 });
 
 test('remove button deletes wallpaper and clears DOM presentation', async () => {
   const testData = 'data:image/png;base64,abc';
   const f = createWallpaperFixture({
-    veloce_wallpaper_enabled: 'true'
+    spark_wallpaper_enabled: 'true'
   });
   f.idbStore.set('current', testData);
 
@@ -255,7 +255,7 @@ test('remove button deletes wallpaper and clears DOM presentation', async () => 
 
 test('storage events from another tab update wallpaper state', async () => {
   const f = createWallpaperFixture({
-    veloce_wallpaper_enabled: 'false'
+    spark_wallpaper_enabled: 'false'
   });
   await new Promise(r => setTimeout(r, 10));
 
@@ -263,11 +263,11 @@ test('storage events from another tab update wallpaper state', async () => {
   assert.equal(container.hidden, true);
 
   // Another tab sets wallpaper and notifies
-  f.storage.set('veloce_wallpaper_enabled', 'true');
+  f.storage.set('spark_wallpaper_enabled', 'true');
   f.idbStore.set('current', 'data:image/png;base64,tab2');
 
   for (const fn of f.listeners.get('storage') || []) {
-    fn({ key: 'veloce_wallpaper_updated' });
+    fn({ key: 'spark_wallpaper_updated' });
   }
   await new Promise(r => setTimeout(r, 20));
 
@@ -302,8 +302,8 @@ test('settings menu list opens option detail view and back button returns to lis
 
 test('wallpaper applies stored video and plays in wallpaper-video element', async () => {
   const f = createWallpaperFixture({
-    veloce_wallpaper_enabled: 'true',
-    veloce_wallpaper_dim: '30'
+    spark_wallpaper_enabled: 'true',
+    spark_wallpaper_dim: '30'
   });
   f.idbStore.set('current', {
     mediaType: 'video',
@@ -333,12 +333,12 @@ test('wallpaper applies stored video and plays in wallpaper-video element', asyn
 
 test('video file size limit rejects files larger than 50MB', async () => {
   const f = createWallpaperFixture({
-    veloce_wallpaper_enabled: 'true'
+    spark_wallpaper_enabled: 'true'
   });
   await new Promise(r => setTimeout(r, 20));
 
   const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/pt-BR/newtab.json', 'utf8'));
-  f.window.dispatchEvent({ type: 'veloce-new-tab', detail: { labels, preferences: { language: 'pt-BR' } } });
+  f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels, preferences: { language: 'pt-BR' } } });
 
   const fileInput = f.nodes.get('wallpaper-file');
   const status = f.nodes.get('wallpaper-status');

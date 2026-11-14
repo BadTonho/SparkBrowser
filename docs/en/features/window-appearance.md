@@ -2,7 +2,7 @@
 
 > 🌍 **Language:** **English** | [Português (pt-BR)](../../pt-BR/features/window-appearance.md)
 
-Veloce Browser provides extensive control over the visual surface and transparency of floating windows, dialogs, popovers, and drawers (such as **Browser Settings**, **Quick Settings**, **Customize New Tab**, **Extensions Manager**, and **History/Downloads Drawers**).
+Spark Browser provides extensive control over the visual surface and transparency of floating windows, dialogs, popovers, and drawers (such as **Browser Settings**, **Quick Settings**, **Customize New Tab**, **Extensions Manager**, and **History/Downloads Drawers**).
 
 ---
 
@@ -41,6 +41,6 @@ All controls are accessible under **Appearance & Layout** in Browser Settings:
 
 ## 3. Persistence & Platform Compatibility
 
-- **Persistence:** Values are stored in `safeStorage` under `veloce_window_surface_style`, `veloce_window_surface_opacity`, and `veloce_window_surface_blur_px`, persisting across browser sessions.
+- **Persistence:** Values are stored in `safeStorage` under `spark_window_surface_style`, `spark_window_surface_opacity`, and `spark_window_surface_blur_px`, persisting across browser sessions.
 - **Cross-Platform:** Built using standard CSS custom properties and hardware-accelerated CSS `backdrop-filter`, ensuring smooth, zero-latency performance across both **Windows** (WebView2) and **Linux** (WebKitGTK and modern Wayland/X11 compositors).
 

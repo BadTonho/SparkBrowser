@@ -15,7 +15,7 @@
       case "installing": return $t("settings.saving_your_session_and_starting_the_installer_028b");
       case "error": return $t("settings.the_update_could_not_be_completed_5ba6");
       case "unavailable": return $t("common.updates_unavailable");
-      default: return $t("settings.check_for_a_newer_version_of_veloce_browser_078c");
+      default: return $t("settings.check_for_a_newer_version_of_spark_browser_078c");
     }
   });
   function date(timestamp: number) { return $formatDate(timestamp * 1000, { dateStyle: "medium", timeStyle: "short" }); }

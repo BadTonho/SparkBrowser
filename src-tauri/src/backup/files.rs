@@ -68,7 +68,12 @@ fn digest(value: &serde_json::Value) -> Result<String, String> {
     }
     let mut hasher = Hasher(Sha256::new());
     serde_json::to_writer(&mut hasher, value).map_err(|e| e.to_string())?;
-    Ok(hasher.0.finalize().iter().map(|b| format!("{b:02x}")).collect())
+    Ok(hasher
+        .0
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect())
 }
 /// Rejects files from newer versions and files whose content no longer matches the stored
 /// checksum. The checksum key is removed so the strict document parser never sees it.
@@ -76,7 +81,11 @@ fn verify_integrity(value: &mut serde_json::Value) -> Result<(), String> {
     let Some(object) = value.as_object_mut() else {
         return Ok(());
     };
-    if object.get("format").and_then(|v| v.as_str()) != Some(FORMAT) {
+    if !object
+        .get("format")
+        .and_then(|v| v.as_str())
+        .is_some_and(is_backup_format)
+    {
         return Ok(());
     }
     let version = object.get("version").and_then(|v| v.as_u64()).unwrap_or(0);
@@ -130,7 +139,7 @@ pub fn write_with(
 pub fn write_bytes(path: &Path, bytes: &[u8]) -> Result<(), String> {
     let parent = path.parent().ok_or("backup.invalid_path")?;
     let mut temporary = tempfile::Builder::new()
-        .prefix(".veloce-backup-")
+        .prefix(".spark-backup-")
         .suffix(".tmp")
         .tempfile_in(parent)
         .map_err(|e| e.to_string())?;
@@ -148,10 +157,10 @@ mod tests {
     fn encrypted_file_roundtrip_requires_the_password() {
         let (_, doc) = crate::backup::tests::setup();
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("backup.veloce-backup.json");
+        let path = dir.path().join("backup.spark-backup.json");
         write_with(&path, &doc, Some("correct horse")).unwrap();
         let raw = std::fs::read_to_string(&path).unwrap();
-        assert!(raw.contains("veloce-backup-encrypted"));
+        assert!(raw.contains("spark-backup-encrypted"));
         assert!(!raw.contains(&doc.data.tabs[0].url));
         assert_eq!(read(&path).err().unwrap(), "backup.password_required");
         assert_eq!(

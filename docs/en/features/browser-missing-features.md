@@ -1,4 +1,4 @@
-# Pending Veloce Browser features: decisions
+# Pending Spark Browser features: decisions
 
 This list separates features according to whether **your decision is needed before implementation**. Routine technical choices, feasibility research, and testing do not necessarily need your intervention. This classification does not authorize implementation; it is for planning discussion and work.
 

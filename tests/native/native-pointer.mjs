@@ -6,7 +6,7 @@ import { validateRunDirectory } from './run-directory.mjs';
 
 export function createNativePointerSender(directory) {
   const build = JSON.parse(readFileSync('.cache/native-target/test-build.json', 'utf8'));
-  assert.equal(build.identifier, 'org.veloce.browser.native-tests');
+  assert.equal(build.identifier, 'org.spark.browser.native-tests');
   const actionsFile = resolve(validateRunDirectory(directory), 'artifacts/pointer-actions.json');
   return actions => new Promise((done, reject) => {
     writeFileSync(actionsFile, JSON.stringify(actions));

@@ -1,4 +1,4 @@
-# Roadmap de recursos pendentes do Veloce Browser
+# Roadmap de recursos pendentes do Spark Browser
 
 Este roadmap organiza os 36 recursos das Partes 1 e 2 de [recursos pendentes do navegador](../features/browser-missing-features.md) em etapas de trabalho. A ordem proposta agrupa recursos relacionados e suas dependências; não representa um cronograma nem confirma que cada recurso esteja totalmente ausente.
 

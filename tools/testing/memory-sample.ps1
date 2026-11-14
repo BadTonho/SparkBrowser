@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $expectedRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../.cache/native-target')) + [IO.Path]::DirectorySeparatorChar
 $expectedExecutable = [IO.Path]::GetFullPath($Executable)
 if (-not $expectedExecutable.StartsWith($expectedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Only the isolated test executable may be sampled' }
-$roots = @(Get-Process -Name veloce-browser -ErrorAction SilentlyContinue | Where-Object { $_.Path -and [string]::Equals($_.Path, $expectedExecutable, [StringComparison]::OrdinalIgnoreCase) })
+$roots = @(Get-Process -Name spark-browser -ErrorAction SilentlyContinue | Where-Object { $_.Path -and [string]::Equals($_.Path, $expectedExecutable, [StringComparison]::OrdinalIgnoreCase) })
 if ($roots.Count -ne 1) { throw "Expected one isolated test process, found $($roots.Count)" }
 $processIndex = @(Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, Name, CommandLine)
 $owned = [Collections.Generic.HashSet[uint32]]::new()

@@ -130,7 +130,14 @@ pub async fn preview(
     source_token: Option<String>,
     prefs: BackupPreferences,
 ) -> Result<BackupPreview, String> {
-    preview_with(app, document, source_token, prefs, RestoreOptions::default()).await
+    preview_with(
+        app,
+        document,
+        source_token,
+        prefs,
+        RestoreOptions::default(),
+    )
+    .await
 }
 pub async fn preview_with(
     app: &AppHandle,

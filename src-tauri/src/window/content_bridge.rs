@@ -10,11 +10,11 @@ pub(super) fn handle(
     token: &str,
     nav_url: &Url,
 ) -> bool {
-    if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("new-tab") {
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("new-tab") {
         super::new_tab::handle(app, tab_id, label, token, nav_url);
         return false;
     }
-    if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("page-activity") {
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("page-activity") {
         if nav_url.path() != "/state" {
             return false;
         }
@@ -55,18 +55,18 @@ pub(super) fn handle(
         }
         return false;
     }
-    if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("workspace-switcher") {
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("workspace-switcher") {
         // Workspace selection belongs only to the packaged picker surface.
         // Content Escape uses the authenticated keyboard channel instead.
         return false;
     }
 
-    if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("keyboard-shortcut") {
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("keyboard-shortcut") {
         super::keyboard_bridge::handle_keyboard_navigation(app, nav_url, tab_id, label, token);
         return false;
     }
 
-    if nav_url.scheme() == "veloce-internal" && nav_url.host_str() == Some("pane-focus") {
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("pane-focus") {
         if !matches!(nav_url.path(), "" | "/") {
             return false;
         }
@@ -83,7 +83,7 @@ pub(super) fn handle(
     }
     // No internal URL is a supported keyboard transport on Windows; keep
     // the channel scheme from ever reaching the web content as navigation.
-    if nav_url.scheme() == "veloce-internal" {
+    if nav_url.scheme() == "spark-internal" {
         return false;
     }
     false
@@ -98,8 +98,8 @@ fn message_url(json: &str, source: &str, current: &str) -> Option<Url> {
     if value.as_object()?.len() != 1 {
         return None;
     }
-    let url = Url::parse(value.get("veloceContent")?.as_str()?).ok()?;
-    (url.scheme() == "veloce-internal"
+    let url = Url::parse(value.get("sparkContent")?.as_str()?).ok()?;
+    (url.scheme() == "spark-internal"
         && matches!(url.host_str(), Some("new-tab" | "page-activity")))
     .then_some(url)
 }
@@ -129,16 +129,16 @@ mod tests {
     use super::*;
     #[test]
     fn messages_are_bounded_and_bound_to_the_current_document_and_allowed_channels() {
-        let valid = r#"{"veloceContent":"veloce-internal://page-activity/state?token=fixture"}"#;
+        let valid = r#"{"sparkContent":"spark-internal://page-activity/state?token=fixture"}"#;
         assert!(message_url(valid, "https://site.test/a", "https://site.test/a").is_some());
         assert!(message_url(valid, "https://site.test/old", "https://site.test/current").is_none());
         for invalid in [
             "null",
             "[]",
-            r#"{"veloceContent":42}"#,
-            r#"{"veloceContent":"https://site.test"}"#,
-            r#"{"veloceContent":"veloce-internal://keyboard-shortcut/action"}"#,
-            r#"{"veloceContent":"veloce-internal://new-tab/read","other":true}"#,
+            r#"{"sparkContent":42}"#,
+            r#"{"sparkContent":"https://site.test"}"#,
+            r#"{"sparkContent":"spark-internal://keyboard-shortcut/action"}"#,
+            r#"{"sparkContent":"spark-internal://new-tab/read","other":true}"#,
         ] {
             assert!(message_url(invalid, "same", "same").is_none());
         }

@@ -1,4 +1,4 @@
-# Recursos pendentes do Veloce Browser: decisões
+# Recursos pendentes do Spark Browser: decisões
 
 Esta lista separa os recursos conforme a necessidade de uma decisão **sua antes da implementação**. Uma decisão técnica de rotina, investigação de viabilidade ou teste não exige necessariamente sua intervenção. A classificação não autoriza a implementação: ela serve para planejar a conversa e o trabalho.
 

@@ -142,7 +142,7 @@ pub fn build_replacement_shield_script_with_exceptions(
 ) -> String {
     let encoded = serde_json::to_string(token).expect("token serializable");
     let initialize = build_content_shield_script_with_exceptions(enabled, token, exceptions);
-    format!("if (typeof window.__veloceSetShieldPolicy === 'function') {{ window.__veloceSetShieldPolicy({encoded}, {enabled}); }} else {{ {initialize} }}")
+    format!("if (typeof window.__sparkSetShieldPolicy === 'function') {{ window.__sparkSetShieldPolicy({encoded}, {enabled}); }} else {{ {initialize} }}")
 }
 
 #[cfg(test)]

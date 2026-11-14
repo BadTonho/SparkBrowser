@@ -15,10 +15,10 @@ pub struct CaptureProbeResult {
 }
 
 fn artifact_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    if app.config().identifier != "org.veloce.browser.native-tests" {
+    if app.config().identifier != "org.spark.browser.native-tests" {
         return Err("capture_probe.test_application_only".into());
     }
-    let requested = std::env::var_os("VELOCE_NATIVE_TEST_RUN_DIR")
+    let requested = std::env::var_os("SPARK_NATIVE_TEST_RUN_DIR")
         .ok_or("capture_probe.missing_test_directory")?;
     let run = PathBuf::from(requested)
         .canonicalize()

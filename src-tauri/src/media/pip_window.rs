@@ -74,7 +74,7 @@ pub fn new_window(
             || s.token != token
             || s.created.elapsed() > Duration::from_secs(5)
             || !current(app, &webview_label_for_tab(tab), token)
-            || url.as_str() != format!("about:blank#veloce-pip-{}", s.id)
+            || url.as_str() != format!("about:blank#spark-pip-{}", s.id)
         {
             return NewWindowResponse::Deny;
         }
@@ -111,11 +111,11 @@ pub fn new_window(
         .resizable(true)
         .on_new_window(|_, _| NewWindowResponse::Deny)
         .on_navigation(move |url| {
-            if url.scheme() == "veloce-internal" {
+            if url.scheme() == "spark-internal" {
                 navigation(&a, &id, url);
                 return false;
             }
-            url.as_str() == format!("about:blank#veloce-pip-{id}") || url.as_str() == "about:blank"
+            url.as_str() == format!("about:blank#spark-pip-{id}") || url.as_str() == "about:blank"
         })
         .build();
     match window {
@@ -142,7 +142,7 @@ pub fn new_window(
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     if let Some(window) = a.get_webview_window(&label(&id)) {
-                        let _ = window.eval("window.__velocePipRequestClose?.();");
+                        let _ = window.eval("window.__sparkPipRequestClose?.();");
                     }
                 }
             });
@@ -312,7 +312,7 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
                 let _ = window.minimize();
             } else {
                 let _ = window.start_dragging();
-                let _ = window.eval("window.__velocePipDragFinished?.();");
+                let _ = window.eval("window.__sparkPipDragFinished?.();");
             }
         }
     } else {
@@ -329,7 +329,7 @@ pub fn sync(app: &AppHandle, tab: &TabMediaState) {
     if let Some(s) = session {
         if let Some(window) = app.get_webview_window(&label(&s.id)) {
             let payload = json!({"session":s.id,"sequence":s.acknowledged,"volume":tab.applied_volume,"disabled":tab.volume_status=="unavailable","muted":tab.muted});
-            let _ = window.eval(format!("window.__velocePipState?.({payload});"));
+            let _ = window.eval(format!("window.__sparkPipState?.({payload});"));
         }
     }
 }

@@ -1,13 +1,13 @@
 {
-  "identifier": "org.veloce.browser.native-tests",
-  "productName": "Veloce Native Tests",
+  "identifier": "org.spark.browser.native-tests",
+  "productName": "Spark Native Tests",
   "app": {
     "security": {
       "capabilities": ["default", "native-test-dark-mode-probe", "native-test-minimum-font-probe"]
     },
     "windows": [{
       "label": "main",
-      "title": "Veloce Native Tests",
+      "title": "Spark Native Tests",
       "width": 1280,
       "height": 820,
       "minWidth": 680,

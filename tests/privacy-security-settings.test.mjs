@@ -44,7 +44,7 @@ test('pop-ups accept only enabled web destinations and keep the PiP path separat
   const pip = read('src-tauri/src/media/pip_window.rs');
   assert.match(tabs, /enabled\s*&&\s*matches!\(url\.scheme\(\), "http" \| "https"\)/);
   assert.match(windows, /pip_window::new_window[\s\S]*open_popup_url/);
-  assert.match(pip, /about:blank#veloce-pip-/);
+  assert.match(pip, /about:blank#spark-pip-/);
 });
 
 test('SmartScreen is applied to current and future Windows WebViews and is unavailable elsewhere', () => {

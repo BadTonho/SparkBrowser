@@ -121,7 +121,7 @@ pub async fn locate(_app: &AppHandle) -> Result<(f64, f64), String> {
 
 pub fn open_authorization(url: &url::Url) -> Result<(), String> {
     // Never authenticate inside a content WebView. Edge also avoids routing an
-    // OS-default browser association back into Veloce itself.
+    // OS-default browser association back into Spark itself.
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

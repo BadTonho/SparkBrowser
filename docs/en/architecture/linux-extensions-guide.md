@@ -1,12 +1,12 @@
 # Linux Extensions Architecture & Development Guide
 
-This guide provides precise technical specifications, architectural blueprints, and actionable instructions for implementing and testing Chrome WebExtensions on Linux within **Veloce Browser**.
+This guide provides precise technical specifications, architectural blueprints, and actionable instructions for implementing and testing Chrome WebExtensions on Linux within **Spark Browser**.
 
 ---
 
 ## 1. Architectural Overview: Windows vs Linux
 
-Veloce Browser uses native platform webview engines to maintain exceptional speed and resource efficiency without bundling an entire Chromium distribution:
+Spark Browser uses native platform webview engines to maintain exceptional speed and resource efficiency without bundling an entire Chromium distribution:
 
 | Dimension | Windows (`#[cfg(windows)]`) | Linux (`#[cfg(target_os = "linux")]`) |
 | :--- | :--- | :--- |
@@ -15,21 +15,21 @@ Veloce Browser uses native platform webview engines to maintain exceptional spee
 | **Background Execution** | Handled natively by Chromium runtime | Injected background worker / WebKit web process |
 | **Content Script Injection** | Automatic via Chromium profile | `WebKitUserContentManager` / `WebKitWebExtension` |
 
-The Veloce backend is decoupled through the `crate::extensions::platform` module abstraction, ensuring full cross-platform compilation and zero compile errors on both operating systems.
+The Spark backend is decoupled through the `crate::extensions::platform` module abstraction, ensuring full cross-platform compilation and zero compile errors on both operating systems.
 
 ---
 
 ## 2. WebKitGTK Architecture Details
 
 WebKitGTK isolates web execution into separate operating system processes:
-1. **UI Process (Veloce Shell & Rust Backend):** Manages windows, tabs, SQLite database, titlebar, and user input.
+1. **UI Process (Spark Shell & Rust Backend):** Manages windows, tabs, SQLite database, titlebar, and user input.
 2. **Web Process (`WebKitWebProcess`):** Renders HTML, executes page JavaScript, and manages DOM trees.
 
 Because of this boundary, extensions running on Linux operate through two complementary strategies:
 
 ```
 +----------------------------------------------------------------------------------+
-|                            Linux UI Process (Veloce)                             |
+|                            Linux UI Process (Spark)                             |
 |                                                                                  |
 |  - Extension Storage (app_data_dir/extensions/<id>)                             |
 |  - SQLite Database (installed_extensions)                                        |
@@ -64,12 +64,12 @@ When developing on Linux, follow this incremental roadmap:
 
 ### Phase 2: Action Popups & UI Actions
 1. If the extension declares an `action` or `browser_action` with `default_popup`:
-   * The Veloce shell renders the action icon in `TitlebarActions.svelte`.
+   * The Spark shell renders the action icon in `TitlebarActions.svelte`.
    * Clicking the button opens an internal popover (`ExtensionActionPopover.svelte`) loading `file:///<extension_path>/<popup.html>` or a Tauri internal webview.
 
 ### Phase 3: WebKitWebExtension Shared Library (`.so`)
 For extensions that require background scripts and full `chrome.runtime` message passing:
-1. Create a dedicated dynamic library crate `veloce-web-extension` compiling to `libveloce_extension.so`.
+1. Create a dedicated dynamic library crate `spark-web-extension` compiling to `libspark_extension.so`.
 2. Implement `webkit_web_extension_initialize_with_user_data`.
 3. Point WebKit's context to the directory using `webkit_web_context_set_web_extensions_directory`.
 4. Expose a JavaScript bridge injecting `window.chrome = { runtime: { ... }, storage: { ... } }`.

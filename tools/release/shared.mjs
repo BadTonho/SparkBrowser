@@ -1,7 +1,20 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 
 export const repository = 'BadTonho/navegador';
+/**
+ * Where the updater's private signing key lives. An explicit SPARK_SIGNING_KEY_PATH wins, then the
+ * pre-rename VELOCE_SIGNING_KEY_PATH. Without either, ~/.spark-signing is used, except that an
+ * existing key still sitting in ~/.veloce-signing keeps being used, so a rename never strands it.
+ */
+export function signingKeyPath(env = process.env, home = homedir(), exists = existsSync) {
+  const explicit = env.SPARK_SIGNING_KEY_PATH || env.VELOCE_SIGNING_KEY_PATH;
+  if (explicit) return resolve(explicit);
+  const current = resolve(home, '.spark-signing', 'updater.key');
+  const legacy = resolve(home, '.veloce-signing', 'updater.key');
+  return !exists(current) && exists(legacy) ? legacy : current;
+}
 export function parseTag(tag) {
   const match = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-beta\.([1-9]\d*))?$/.exec(tag);
   if (!match || match[0] !== tag || match.slice(1, 4).some(number => BigInt(number) > 18446744073709551615n)) {
@@ -24,7 +37,7 @@ export function synchronizeVersion(root, tag, write = true) {
   });
   for (const [path, pattern] of [
     ['src-tauri/Cargo.toml', /(\[package\][\s\S]*?\nversion = ")([^"]+)(")/],
-    ['src-tauri/Cargo.lock', /(\[\[package\]\]\r?\nname = "veloce-browser"\r?\nversion = ")([^"]+)(")/],
+    ['src-tauri/Cargo.lock', /(\[\[package\]\]\r?\nname = "spark-browser"\r?\nversion = ")([^"]+)(")/],
   ]) {
     const text = readFileSync(resolve(root, path), 'utf8');
     const match = text.match(pattern);
@@ -37,7 +50,7 @@ export function synchronizeVersion(root, tag, write = true) {
 }
 export function createManifest(tag, fileName, signature, notes, date = new Date().toISOString()) {
   const { version } = parseTag(tag);
-  const expected = `VeloceBrowser_${version}_x64-setup.exe`;
+  const expected = `SparkBrowser_${version}_x64-setup.exe`;
   if (fileName !== expected || !signature.trim()) throw new Error('Installer name or signature does not match the release.');
   const comment = Buffer.from(signature.trim(), 'base64').toString('utf8');
   const trusted = comment.split(/\r?\n/).find(line => line.startsWith('trusted comment:'));

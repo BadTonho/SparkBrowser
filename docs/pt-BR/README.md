@@ -30,6 +30,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Sessões nomeadas e Ferramentas](./features/named-sessions.md)
 - [Atalhos de busca por site](./features/site-search.md)
 - [Mecanismos de busca](./features/search-engines.md)
+- [Atualizando a partir do nome Veloce](./features/rename-migration.md)
 - [Notas por página](./features/page-notes.md)
 - [Leitor de feeds](./features/feed-reader.md)
 - [Organizador de abas](./features/tab-organizer.md)

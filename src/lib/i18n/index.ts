@@ -6,7 +6,7 @@ import { interpolate, resolveLanguage } from "./language.js";
 export type LanguagePreference = "system" | "pt-BR" | "en";
 export type Locale = "pt-BR" | "en";
 export type Translate = (key: MessageKey, values?: Record<string, unknown>) => string;
-const saved = safeStorage.getItem("veloce_language");
+const saved = safeStorage.getItem("spark_language");
 export const languagePreference = writable<LanguagePreference>(saved === "pt-BR" || saved === "en" ? saved : "system");
 const systemLanguages = writable<readonly string[]>(typeof navigator === "undefined" ? ["en"] : navigator.languages);
 export const locale = derived([languagePreference, systemLanguages], ([preference, languages]) => resolveLanguage(preference, languages));
@@ -23,7 +23,7 @@ export const labelText = derived(t, translate => (text: string) => {
 export function setLanguage(preference: LanguagePreference): boolean {
   if (!["system", "pt-BR", "en"].includes(preference)) return false;
   languagePreference.set(preference);
-  return safeStorage.setItem("veloce_language", preference);
+  return safeStorage.setItem("spark_language", preference);
 }
 export const formatDate = derived(locale, language => (timestamp: number, options?: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(language, options).format(timestamp));
 export const formatNumber = derived(locale, language => (number: number, options?: Intl.NumberFormatOptions) => new Intl.NumberFormat(language, options).format(number));

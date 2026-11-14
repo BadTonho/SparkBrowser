@@ -23,7 +23,7 @@ function fixture(url = 'https://www.youtube.com/watch?v=fixture') {
   runInNewContext(source, context);
   return { context, button, buttons: () => buttons, setButtons: value => { buttons = value; },
     setAd: value => { ad = value; }, setPlayer: value => { player = value; },
-    enable: value => context.__veloceSetAutoSkip('fixture-token', value),
+    enable: value => context.__sparkSetAutoSkip('fixture-token', value),
     mutate: () => observe?.(), event: name => events.get(name)?.(), timers, disconnected: () => disconnected,
     advance(ms = 500) { now += ms; for (const [id, timer] of [...timers]) if (timer.due <= now) { timers.delete(id); timer.callback(); } },
   };
@@ -31,7 +31,7 @@ function fixture(url = 'https://www.youtube.com/watch?v=fixture') {
 test('auto skip starts inert, requires token, ad state and a usable player control', () => {
   const f = fixture(), b = f.buttons()[0];
   f.advance(); assert.equal(b.clicks, 0);
-  f.context.__veloceSetAutoSkip('wrong', true); f.advance(); assert.equal(b.clicks, 0);
+  f.context.__sparkSetAutoSkip('wrong', true); f.advance(); assert.equal(b.clicks, 0);
   f.setAd(false); f.enable(true); f.advance(); assert.equal(b.clicks, 0);
   f.setAd(true); b.disabled = true; f.mutate(); f.advance(); assert.equal(b.clicks, 0);
   b.disabled = false; b.hidden = true; f.mutate(); f.advance(); assert.equal(b.clicks, 0);

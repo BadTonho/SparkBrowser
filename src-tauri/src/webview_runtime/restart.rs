@@ -2,7 +2,7 @@
 //! The child waits for the previous process so the existing profile lock remains exclusive.
 use tauri::AppHandle;
 
-const PARENT: &str = "--veloce-runtime-restart-parent";
+const PARENT: &str = "--spark-runtime-restart-parent";
 
 pub(super) fn launch(app: &AppHandle) -> Result<(), String> {
     let executable = std::env::current_exe().map_err(|_| "runtime.restart_failed")?;

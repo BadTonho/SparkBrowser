@@ -270,7 +270,7 @@ mod tests {
     fn memory_lookup_only_matches_frames_for_the_requested_tab() {
         let resident = vec![
             "https://video.example/watch".into(),
-            "veloce://newtab".into(),
+            "spark://newtab".into(),
         ];
         let video_frames = vec!["https://video.example/watch".into()];
         assert_eq!(
@@ -278,7 +278,7 @@ mod tests {
             Some(1)
         );
         assert_eq!(
-            associated_resident_tab_count("veloce://newtab", &resident, &video_frames),
+            associated_resident_tab_count("spark://newtab", &resident, &video_frames),
             None
         );
     }

@@ -12,8 +12,8 @@ export async function checkShutdown(context) {
   const { a, b } = await prepareTabs(context);
   const root = validateRunDirectory(context.directory);
   const data = realpathSync(resolve(root, 'data'));
-  const file = realpathSync(resolve(data, 'veloce_browser.db'));
-  assert.equal(relative(data,file),'veloce_browser.db');
+  const file = realpathSync(resolve(data, 'spark_browser.db'));
+  assert.equal(relative(data,file),'spark_browser.db');
   function sql(statement) { const db=new DatabaseSync(file); try { db.exec('PRAGMA busy_timeout=5000'); db.exec(statement); } finally { db.close(); } }
   const noteUrl = (await invoke("get_tabs")).tabs.find(t=>t.id===a.id).url;
   await click('[data-testid="open-tools"]');

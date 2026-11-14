@@ -20,7 +20,7 @@ Rejections use fixed errors and do not echo tokens or message bodies. The Notes 
 
 ## Engine maintenance
 
-Windows distributions explicitly use the Evergreen WebView2 bootstrapper. Microsoft manages runtime installation and updates; Veloce does not change Windows update policies or download Chromium source.
+Windows distributions explicitly use the Evergreen WebView2 bootstrapper. Microsoft manages runtime installation and updates; Spark does not change Windows update policies or download Chromium source.
 
 The shell observes `NewBrowserVersionAvailable`, exposes the current and available runtime versions and shows a dismissible restart notice. “Later” dismisses only that available version for the current session; Settings → Updates retains the pending restart. A different available version can show a new notice. Detection errors, preview channels and explicitly configured fixed runtimes are represented as unavailable, never as proof that the engine is current. Runtime updates may include security fixes; the notice does not claim to identify particular fixes. Microsoft explains why adopting an installed version requires a [new environment or application restart](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment#add_newbrowserversionavailable).
 

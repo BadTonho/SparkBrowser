@@ -53,9 +53,9 @@ function fixture() {
 }
 
 test('source image is hidden only after a mirrored frame and restored without pausing or changing site styles',()=>{
-  const f=fixture();assert.equal(f.classes.has('veloce-pip-source-session'),false);
+  const f=fixture();assert.equal(f.classes.has('spark-pip-source-session'),false);
   assert.equal(f.audio.readyState,'ended');assert.equal(f.image.srcObject.getTracks().length,1);
-  f.frame();assert.equal(f.classes.has('veloce-pip-source-session'),true);assert.equal(f.document.adoptedStyleSheets.length,1);
+  f.frame();assert.equal(f.classes.has('spark-pip-source-session'),true);assert.equal(f.document.adoptedStyleSheets.length,1);
   const siteSheet={site:true};f.document.adoptedStyleSheets.push(siteSheet);
   f.stop();f.stop();assert.deepEqual([...f.classes],['site-player']);assert.equal(f.document.adoptedStyleSheets.length,1);assert.equal(f.document.adoptedStyleSheets[0],siteSheet);
   assert.equal(f.originalVideo.stops,1);assert.equal(f.source.paused,false);assert.equal(f.image.srcObject,null);
@@ -77,7 +77,7 @@ test('a stalled copy recaptures the same element; source bursts coalesce and rec
   for(let n=0;n<10;n++)f.source.fire('loadedmetadata');
   f.advance(300);assert.equal(f.stats().captures,1);
   f.advance(5000);assert.deepEqual(f.stats(),{captures:2,failed:1});
-  assert.equal(f.image.srcObject,null);assert.equal(f.classes.has('veloce-pip-source-session'),false);
+  assert.equal(f.image.srcObject,null);assert.equal(f.classes.has('spark-pip-source-session'),false);
   assert.equal(f.frames.size,0);assert.equal(f.intervals.size,0);
 });
 
@@ -99,7 +99,7 @@ test('a minimized floating document does not trigger recovery and restoring give
 test('late callbacks from a removed source or an old document cannot recapture or hide the new page',()=>{
   for(const invalidate of [f=>{f.source.isConnected=false;},f=>{f.document.defaultView.document={};}]) {
     const f=fixture();const callbacks=[...f.frames.values()];invalidate(f);callbacks.forEach(callback=>callback());f.advance(6000);
-    assert.deepEqual(f.stats(),{captures:0,failed:0});assert.equal(f.classes.has('veloce-pip-source-session'),false);assert.equal(f.image.srcObject,null);
+    assert.deepEqual(f.stats(),{captures:0,failed:0});assert.equal(f.classes.has('spark-pip-source-session'),false);assert.equal(f.image.srcObject,null);
   }
 });
 

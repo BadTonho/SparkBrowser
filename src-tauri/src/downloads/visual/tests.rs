@@ -43,7 +43,7 @@ fn local_reads_stay_inside_the_published_download_directory() {
         let visual = inspect(root.path(), path);
         assert!(visual.size_bytes.is_none() && visual.thumbnail_png.is_none());
     }
-    let nested = root.path().join(".veloce-partials");
+    let nested = root.path().join(".spark-partials");
     std::fs::create_dir(&nested).unwrap();
     let partial = nested.join("partial.png");
     std::fs::write(&partial, png(1, 1)).unwrap();

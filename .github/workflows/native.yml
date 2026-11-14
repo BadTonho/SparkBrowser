@@ -32,7 +32,7 @@ jobs:
       - run: npm run test:native:build:fast
       - name: Run native regressions
         env:
-          VELOCE_NATIVE_DRIVER: .cache/native-tools/edge/msedgedriver.exe
+          SPARK_NATIVE_DRIVER: .cache/native-tools/edge/msedgedriver.exe
         run: |
           if ('${{ github.event_name }}' -eq 'pull_request') {
             npm run test:native:critical

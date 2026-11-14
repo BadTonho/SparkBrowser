@@ -183,7 +183,7 @@ pub(super) fn create_tab_webview(
     let tab_for_nav = tab_id.to_string();
     let label_for_nav = label.clone();
     let webview_builder = webview_builder.on_navigation(move |nav_url| {
-        if nav_url.scheme() == "veloce-internal" {
+        if nav_url.scheme() == "spark-internal" {
             return super::content_bridge::handle(
                 &app_handle_for_nav,
                 &tab_for_nav,

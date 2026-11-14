@@ -27,28 +27,28 @@ impl Panel for Settings {
     const LABEL: &'static str = "settings-overlay-webview";
     const SURFACE: &'static str = "/index.html?surface=settings";
     const HOST: &'static str = "settings-popover";
-    const SETTER: &'static str = "__veloceSetSettingsPopover";
+    const SETTER: &'static str = "__sparkSetSettingsPopover";
     const EVENT: &'static str = "settings-popover-action";
 }
 impl Panel for Tools {
     const LABEL: &'static str = "tools-popover-webview";
     const SURFACE: &'static str = "/index.html?surface=tools";
     const HOST: &'static str = "tools-popover";
-    const SETTER: &'static str = "__veloceSetToolsPopover";
+    const SETTER: &'static str = "__sparkSetToolsPopover";
     const EVENT: &'static str = "tools-popover-action";
 }
 impl Panel for Downloads {
     const LABEL: &'static str = "downloads-popover-webview";
     const SURFACE: &'static str = "/index.html?surface=downloads";
     const HOST: &'static str = "downloads-popover";
-    const SETTER: &'static str = "__veloceSetDownloadsPopover";
+    const SETTER: &'static str = "__sparkSetDownloadsPopover";
     const EVENT: &'static str = "downloads-popover-action";
 }
 impl Panel for QuickSettings {
     const LABEL: &'static str = "quick-settings-popover-webview";
     const SURFACE: &'static str = "/index.html?surface=settings-quick";
     const HOST: &'static str = "settings-quick-popover";
-    const SETTER: &'static str = "__veloceSetQuickSettingsPopover";
+    const SETTER: &'static str = "__sparkSetQuickSettingsPopover";
     const EVENT: &'static str = "quick-settings-popover-action";
 }
 
@@ -145,7 +145,7 @@ fn ensure_webview<P: Panel>(app: &AppHandle) -> Result<(), String> {
                 .transparent(true)
                 .focused(false)
                 .on_navigation(move |url| {
-                    if url.scheme() == "veloce-internal" {
+                    if url.scheme() == "spark-internal" {
                         bridge::navigation::<P>(&callback_app, url);
                         return false;
                     }

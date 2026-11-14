@@ -8,7 +8,7 @@ const files = readdirSync('dist/assets').filter(file => /\.(js|css)$/.test(file)
   const content = readFileSync(join('dist/assets', file));
   return { file, bytes: content.length, gzip_bytes: gzipSync(content).length };
 });
-const binary = join('src-tauri/target/release', process.platform === 'win32' ? 'veloce-browser.exe' : 'veloce-browser');
+const binary = join('src-tauri/target/release', process.platform === 'win32' ? 'spark-browser.exe' : 'spark-browser');
 console.log(JSON.stringify({
   commit: command('git', ['rev-parse', 'HEAD']),
   tracked_changes: Boolean(command('git', ['status', '--porcelain', '--untracked-files=no'])),

@@ -49,7 +49,7 @@ export async function checkZoom(context) {
   await ui.percentage(125);
   await assert.rejects(()=>invoke('set_site_zoom',{origin:fixture.origin,factor:5.1}),/zoom.invalid_value/);
   const prefs=backupPreferences();
-  const document={format:'veloce-backup',version:2,created_at:1,preferences:{...prefs,site_zoom:[{origin:fixture.origin,factor:3},{origin:'https://zoom-import.example',factor:1.75}]},data:{bookmarks:await invoke('get_bookmark_data'),workspaces:await invoke('get_workspaces'),tabs:[],split_layouts:[],sessions:[],notes:[],site_search:[]}};
+  const document={format:'spark-backup',version:2,created_at:1,preferences:{...prefs,site_zoom:[{origin:fixture.origin,factor:3},{origin:'https://zoom-import.example',factor:1.75}]},data:{bookmarks:await invoke('get_bookmark_data'),workspaces:await invoke('get_workspaces'),tabs:[],split_layouts:[],sessions:[],notes:[],site_search:[]}};
   let preview=await invoke('preview_backup_import',{document,currentPreferences:prefs});
   await invoke('commit_backup_import',{token:preview.token,applyPreferences:false,currentPreferences:prefs});
   assert.ok(!(await invoke('get_site_zoom')).sites.some(s=>s.origin==='https://zoom-import.example'));

@@ -74,9 +74,9 @@ export async function checkNavigationCorrections(context) {
   assert.ok(!(await invoke('get_history', { limit: 100 })).some(entry => entry.url.endsWith('/page/never-record')));
   await restart();
   assert.equal((await invoke('get_privacy_settings')).history_retention, 'never');
-  await script(`localStorage.setItem('veloce_keyboard_shortcuts',JSON.stringify({zen:[{key:'Z',ctrl:false,alt:true,shift:false,meta:false}],history:[{key:'Y',ctrl:true,alt:false,shift:true,meta:false}]}));`);
+  await script(`localStorage.setItem('spark_keyboard_shortcuts',JSON.stringify({zen:[{key:'Z',ctrl:false,alt:true,shift:false,meta:false}],history:[{key:'Y',ctrl:true,alt:false,shift:true,meta:false}]}));`);
   await restart();
-  const migrated = await script('return JSON.parse(localStorage.getItem("veloce_keyboard_shortcuts"))');
+  const migrated = await script('return JSON.parse(localStorage.getItem("spark_keyboard_shortcuts"))');
   assert.deepEqual(migrated.zen[0], { key:'Z', ctrl:true, alt:false, shift:true, meta:false });
   assert.equal(migrated.history[0].key, 'Y', 'custom shortcut survives migration');
 }

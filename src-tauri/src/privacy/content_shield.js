@@ -1,6 +1,6 @@
 (() => {
   // A replacement native policy script can run before Tauri's immutable initializer.
-  if (typeof window.__veloceSetShieldPolicy === "function") return;
+  if (typeof window.__sparkSetShieldPolicy === "function") return;
   let enabled = __SHIELD_ENABLED__;
   const token = __SHIELD_TOKEN__;
   const domains = __BLOCKED_DOMAINS__;
@@ -22,7 +22,7 @@
   const originalFetch = window.fetch;
   if (originalFetch) {
     window.fetch = function(input) {
-      if (blocked(input)) return Promise.reject(new TypeError("Blocked by Veloce Shield"));
+      if (blocked(input)) return Promise.reject(new TypeError("Blocked by Spark Shield"));
       return originalFetch.apply(this, arguments);
     };
   }
@@ -38,7 +38,7 @@
   XMLHttpRequest.prototype.send = function() {
     if (blocked(requestURLs.get(this))) {
       this.abort();
-      throw new DOMException("Blocked by Veloce Shield", "NetworkError");
+      throw new DOMException("Blocked by Spark Shield", "NetworkError");
     }
     return originalSend.apply(this, arguments);
   };
@@ -52,14 +52,14 @@
   }
 
   const injectStyle = () => {
-    if (!enabled || siteExcluded()) { document.getElementById("veloce-adblock-style")?.remove(); return; }
-    if (document.getElementById("veloce-adblock-style")) return;
+    if (!enabled || siteExcluded()) { document.getElementById("spark-adblock-style")?.remove(); return; }
+    if (document.getElementById("spark-adblock-style")) return;
     const style = document.createElement("style");
-    style.id = "veloce-adblock-style";
+    style.id = "spark-adblock-style";
     style.textContent = 'ins.adsbygoogle,[id^="google_ads_"],[id^="div-gpt-ad"],.ad-banner,.ad-container,.sponsored-content { display: none !important; }';
     (document.head || document.documentElement).appendChild(style);
   };
-  Object.defineProperty(window, "__veloceSetShieldPolicy", { configurable: false, writable: false,
+  Object.defineProperty(window, "__sparkSetShieldPolicy", { configurable: false, writable: false,
     value: (secret, value) => {
       if (secret !== token) return;
       enabled = Boolean(value);

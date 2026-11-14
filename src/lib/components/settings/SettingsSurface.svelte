@@ -18,7 +18,7 @@
     const next = ++sequence;
     inFlight = next;
     if (action.kind === "input" || action.kind === "change") pending.set(action.target, next);
-    const url = new URL("veloce-internal://settings-popover/action");
+    const url = new URL("spark-internal://settings-popover/action");
     url.searchParams.set("token", presentation.token);
     url.searchParams.set("sequence", String(next));
     url.searchParams.set("payload", JSON.stringify(action));
@@ -45,7 +45,7 @@
         target.querySelector<HTMLElement>("button, input, select, [tabindex='0']")?.focus({ preventScroll: true });
       } else if (!target) highlighted = "";
     };
-    (window as unknown as Record<string, typeof set>).__veloceSetSettingsPopover = set;
+    (window as unknown as Record<string, typeof set>).__sparkSetSettingsPopover = set;
     const click = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target.closest<HTMLElement>("button[data-panel-control],summary[data-panel-control]") : null;
       if (!target || target.matches(":disabled")) return;

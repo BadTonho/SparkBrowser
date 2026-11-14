@@ -65,7 +65,7 @@ pub(super) fn install_native_navigation(
                         args.Uri(&mut uri)?;
                     }
                     if url::Url::parse(&CoTaskMemPWSTR::from(uri).to_string())
-                        .is_ok_and(|u| u.scheme() == "veloce-internal")
+                        .is_ok_and(|u| u.scheme() == "spark-internal")
                     {
                         return Ok(());
                     }
@@ -166,7 +166,7 @@ pub(super) fn with_page_events(
     let webview_builder = webview_builder.on_page_load(move |webview, payload| {
         // Navigation-shaped messages are cancelled by on_navigation; they do
         // not replace the document or invalidate its authenticated session.
-        if payload.url().scheme() == "veloce-internal" {
+        if payload.url().scheme() == "spark-internal" {
             return;
         }
         if !super::navigation_state::is_current_generation(
@@ -263,7 +263,7 @@ pub(super) fn with_page_events(
         };
         if let Ok(serialized) = serde_json::to_string(&*shortcuts) {
             let _ = webview.eval(format!(
-                "window.__veloceSetKeyboardShortcuts?.(\"{}\", {serialized});",
+                "window.__sparkSetKeyboardShortcuts?.(\"{}\", {serialized});",
                 keyboard_token_for_load
             ));
         }

@@ -14,7 +14,7 @@ export function getSearchEngineLabel(engine: SearchEngine): string {
   return findSearchEngine(engine).label;
 }
 
-const SEARCH_ENGINE_STORAGE_KEY = "veloce_default_search_engine";
+const SEARCH_ENGINE_STORAGE_KEY = "spark_default_search_engine";
 const DEFAULT_SEARCH_ENGINE = DEFAULT_ID as SearchEngine;
 
 function isSearchEngine(value: string | null): value is SearchEngine {

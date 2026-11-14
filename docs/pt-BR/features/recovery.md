@@ -1,6 +1,6 @@
 # Recuperação automática de sessão
 
-O Veloce registra se a execução anterior terminou normalmente. Após uma interrupção, restaura automaticamente todas as abas da última sessão confirmada no SQLite, preservando workspace, ordem, fixação, seleção e divisões. Um aviso traduzido abre o organizador de abas e pode ser dispensado. A recuperação restaura endereços e metadados; formulários, rolagem e histórico interno das páginas não são salvos.
+O Spark registra se a execução anterior terminou normalmente. Após uma interrupção, restaura automaticamente todas as abas da última sessão confirmada no SQLite, preservando workspace, ordem, fixação, seleção e divisões. Um aviso traduzido abre o organizador de abas e pode ser dispensado. A recuperação restaura endereços e metadados; formulários, rolagem e histórico interno das páginas não são salvos.
 
 Somente a aba ativa ou os dois painéis divididos do workspace atual criam WebViews na inicialização. Todas as demais abas restauradas, inclusive fixadas, começam hibernadas. Voltar a outro workspace desperta sua página selecionada ou seu par dividido normalmente.
 

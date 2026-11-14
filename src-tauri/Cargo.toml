@@ -1,12 +1,12 @@
 [package]
-name = "veloce-browser"
+name = "spark-browser"
 version = "0.1.0"
 description = "Open-source modern web browser built with Rust (Tauri v2) and Svelte"
 authors = ["Open-Source Contributors"]
 edition = "2021"
 
 [lib]
-name = "veloce_browser_lib"
+name = "spark_browser_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

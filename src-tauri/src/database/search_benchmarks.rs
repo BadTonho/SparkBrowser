@@ -52,13 +52,13 @@ fn compare_indexed_search_with_review_baseline() {
     println!("seed_ms={:.3}", started.elapsed().as_secs_f64() * 1_000.0);
     // SQL from the reviewed revision 1ba55b7, including per-row folding/exact totals.
     let mut old_notes = conn.prepare("SELECT url,substr(title,1,256),substr(text,1,160),length(text),count(*) OVER() FROM page_notes
-        WHERE instr(veloce_search_fold(title),?1)>0 OR instr(veloce_search_fold(url),?1)>0 OR instr(veloce_search_fold(text),?1)>0
+        WHERE instr(spark_search_fold(title),?1)>0 OR instr(spark_search_fold(url),?1)>0 OR instr(spark_search_fold(text),?1)>0
         ORDER BY updated_at DESC,url LIMIT 2").unwrap();
     let mut old_sessions = conn.prepare("SELECT s.id,s.name,
         (SELECT substr(title || ' · ' || url,1,160) FROM saved_session_pages WHERE session_id=s.id ORDER BY position LIMIT 1),
         (SELECT count(*) FROM saved_session_pages WHERE session_id=s.id),count(*) OVER() FROM saved_sessions s
-        WHERE instr(veloce_search_fold(s.name),?1)>0 OR EXISTS(SELECT 1 FROM saved_session_pages p WHERE p.session_id=s.id AND
-          (instr(veloce_search_fold(p.title),?1)>0 OR instr(veloce_search_fold(p.url),?1)>0)) ORDER BY s.id DESC LIMIT 2").unwrap();
+        WHERE instr(spark_search_fold(s.name),?1)>0 OR EXISTS(SELECT 1 FROM saved_session_pages p WHERE p.session_id=s.id AND
+          (instr(spark_search_fold(p.title),?1)>0 OR instr(spark_search_fold(p.url),?1)>0)) ORDER BY s.id DESC LIMIT 2").unwrap();
     for query in [
         "needle-4999",
         "common",

@@ -12,19 +12,19 @@ function bridge(native) {
 
 test('passive content reports wait for the document binding and never navigate while it installs', () => {
   const f = bridge(true);
-  f.window.__velocePostContent('veloce-internal://new-tab/read?sequence=1');
-  f.window.__velocePostContent('veloce-internal://page-activity/state?sequence=2');
+  f.window.__sparkPostContent('spark-internal://new-tab/read?sequence=1');
+  f.window.__sparkPostContent('spark-internal://page-activity/state?sequence=2');
   assert.equal(f.window.location.href, 'https://fixture.test/original');
-  f.window.__veloceContentSignal = message => f.messages.push(JSON.parse(message));
+  f.window.__sparkContentSignal = message => f.messages.push(JSON.parse(message));
   f.flush();
-  assert.deepEqual(f.messages.map(message => message.veloceContent), [
-    'veloce-internal://new-tab/read?sequence=1', 'veloce-internal://page-activity/state?sequence=2',
+  assert.deepEqual(f.messages.map(message => message.sparkContent), [
+    'spark-internal://new-tab/read?sequence=1', 'spark-internal://page-activity/state?sequence=2',
   ]);
   assert.equal(f.window.location.href, 'https://fixture.test/original');
 });
 
 test('legacy engines retain the existing authenticated navigation transport', () => {
   const f = bridge(false);
-  f.window.__velocePostContent('veloce-internal://new-tab/read?token=fixture');
-  assert.equal(f.window.location.href, 'veloce-internal://new-tab/read?token=fixture');
+  f.window.__sparkPostContent('spark-internal://new-tab/read?token=fixture');
+  assert.equal(f.window.location.href, 'spark-internal://new-tab/read?token=fixture');
 });

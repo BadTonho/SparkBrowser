@@ -11,7 +11,7 @@ struct Fixture {
     restart_outcome: String,
 }
 fn fixture(app: &AppHandle) -> Option<Fixture> {
-    if app.config().identifier != "org.veloce.browser.native-tests" {
+    if app.config().identifier != "org.spark.browser.native-tests" {
         return None;
     }
     let path = app
@@ -38,7 +38,7 @@ pub(super) fn apply(app: &AppHandle) -> bool {
     true
 }
 pub(super) fn watch(app: &AppHandle) {
-    if app.config().identifier != "org.veloce.browser.native-tests" {
+    if app.config().identifier != "org.spark.browser.native-tests" {
         return;
     }
     let app = app.clone();

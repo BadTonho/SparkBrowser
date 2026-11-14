@@ -25,15 +25,15 @@
   };
 
   function getConfig() {
-    const rawEnabled = getStorage('veloce_clock_enabled', 'true');
+    const rawEnabled = getStorage('spark_clock_enabled', 'true');
     const enabled = rawEnabled === 'true' || rawEnabled === true;
-    const font = FONTS.includes(getStorage('veloce_clock_font', 'system')) ? getStorage('veloce_clock_font', 'system') : 'system';
-    const format = getStorage('veloce_clock_format', '24h') === '12h' ? '12h' : '24h';
-    const rawPos = getStorage('veloce_clock_position', 'bottom');
+    const font = FONTS.includes(getStorage('spark_clock_font', 'system')) ? getStorage('spark_clock_font', 'system') : 'system';
+    const format = getStorage('spark_clock_format', '24h') === '12h' ? '12h' : '24h';
+    const rawPos = getStorage('spark_clock_position', 'bottom');
     const position = POSITIONS.includes(rawPos) ? rawPos : 'bottom';
-    const seconds = getStorage('veloce_clock_seconds', 'false') === 'true';
-    const showDate = getStorage('veloce_clock_date', 'true') === 'true';
-    const showGreeting = getStorage('veloce_clock_greeting', 'false') === 'true';
+    const seconds = getStorage('spark_clock_seconds', 'false') === 'true';
+    const showDate = getStorage('spark_clock_date', 'true') === 'true';
+    const showGreeting = getStorage('spark_clock_greeting', 'false') === 'true';
 
     return { enabled, font, format, position, seconds, showDate, showGreeting };
   }
@@ -195,62 +195,62 @@
 
   function notifyUpdated() {
     try {
-      window.dispatchEvent(new CustomEvent('veloce_clock_updated', { detail: getConfig() }));
+      window.dispatchEvent(new CustomEvent('spark_clock_updated', { detail: getConfig() }));
     } catch {}
   }
 
   function bindEvents() {
     $('clock-enabled')?.addEventListener('change', event => {
-      setStorage('veloce_clock_enabled', event.target.checked ? 'true' : 'false');
+      setStorage('spark_clock_enabled', event.target.checked ? 'true' : 'false');
       syncControls();
       scheduleNextTick();
       notifyUpdated();
     });
 
     $('clock-font')?.addEventListener('change', event => {
-      setStorage('veloce_clock_font', event.target.value);
+      setStorage('spark_clock_font', event.target.value);
       applyFont(event.target.value);
       notifyUpdated();
     });
 
     $('clock-format')?.addEventListener('change', event => {
-      setStorage('veloce_clock_format', event.target.value);
+      setStorage('spark_clock_format', event.target.value);
       scheduleNextTick();
       notifyUpdated();
     });
 
     $('clock-position')?.addEventListener('change', event => {
-      setStorage('veloce_clock_position', event.target.value);
+      setStorage('spark_clock_position', event.target.value);
       scheduleNextTick();
       notifyUpdated();
     });
 
     $('clock-seconds')?.addEventListener('change', event => {
-      setStorage('veloce_clock_seconds', event.target.checked ? 'true' : 'false');
+      setStorage('spark_clock_seconds', event.target.checked ? 'true' : 'false');
       scheduleNextTick();
       notifyUpdated();
     });
 
     $('clock-date')?.addEventListener('change', event => {
-      setStorage('veloce_clock_date', event.target.checked ? 'true' : 'false');
+      setStorage('spark_clock_date', event.target.checked ? 'true' : 'false');
       scheduleNextTick();
       notifyUpdated();
     });
 
     $('clock-greeting')?.addEventListener('change', event => {
-      setStorage('veloce_clock_greeting', event.target.checked ? 'true' : 'false');
+      setStorage('spark_clock_greeting', event.target.checked ? 'true' : 'false');
       scheduleNextTick();
       notifyUpdated();
     });
 
     window.addEventListener('storage', event => {
-      if (event.key && event.key.startsWith('veloce_clock_')) {
+      if (event.key && event.key.startsWith('spark_clock_')) {
         syncControls();
         scheduleNextTick();
       }
     });
 
-    window.addEventListener('veloce_clock_updated', () => {
+    window.addEventListener('spark_clock_updated', () => {
       syncControls();
       scheduleNextTick();
     });
@@ -262,7 +262,7 @@
     });
   }
 
-  window.addEventListener('veloce-new-tab', event => {
+  window.addEventListener('spark-new-tab', event => {
     if (event.detail?.labels) {
       labels = event.detail.labels;
     }

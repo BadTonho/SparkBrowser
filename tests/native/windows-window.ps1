@@ -47,7 +47,7 @@ $callback = [NativeTestWindow+Callback]{ param($window,$data)
         if ($class.ToString() -ne 'Tauri Window') { return $true }
         $title = New-Object Text.StringBuilder 256
         [void][NativeTestWindow]::GetWindowText($window,$title,256)
-        if ($title.ToString() -notin @('Floating video','Veloce split preview')) {
+        if ($title.ToString() -notin @('Floating video','Spark split preview')) {
             $area = New-Object NativeTestWindow+Rectangle
             if ([NativeTestWindow]::GetClientRect($window,[ref]$area)) {
                 $pixels = ($area.right-$area.left)*($area.bottom-$area.top)

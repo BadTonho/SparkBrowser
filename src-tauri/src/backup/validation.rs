@@ -15,7 +15,8 @@ pub fn page_url(raw: &str) -> Result<String, String> {
 }
 pub fn tab_url(raw: &str) -> Result<String, String> {
     if crate::window::new_tab::is_new_tab(raw) {
-        Ok(raw.into())
+        // The old address is rewritten, so imported tabs never keep it.
+        Ok(crate::window::new_tab::URL.into())
     } else {
         page_url(raw)
     }
@@ -120,7 +121,7 @@ fn name(value: &str) -> Result<(), String> {
     }
 }
 pub fn document(doc: &BackupDocument) -> Result<(), String> {
-    if doc.format != FORMAT || !(1..=CURRENT_VERSION).contains(&doc.version) {
+    if !is_backup_format(&doc.format) || !(1..=CURRENT_VERSION).contains(&doc.version) {
         return Err("backup.unsupported_version".into());
     }
     preferences(&doc.preferences)?;

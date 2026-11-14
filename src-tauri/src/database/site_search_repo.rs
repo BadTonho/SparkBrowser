@@ -27,7 +27,7 @@ pub fn validate(item: &SiteSearchShortcut) -> Result<(), String> {
     if item.template.len() > 4096 || item.template.matches("{query}").count() != 1 {
         return Err("Template must contain exactly one {query}".into());
     }
-    let url = url::Url::parse(&item.template.replace("{query}", "VELOCEQUERYMARKER"))
+    let url = url::Url::parse(&item.template.replace("{query}", "SPARKQUERYMARKER"))
         .map_err(|_| "Invalid search URL")?;
     let prefix = item
         .template
@@ -39,11 +39,11 @@ pub fn validate(item: &SiteSearchShortcut) -> Result<(), String> {
         || prefix.contains('#')
         || url
             .host_str()
-            .is_some_and(|host| host.contains("velocequerymarker"))
+            .is_some_and(|host| host.contains("sparkquerymarker"))
         || !url.username().is_empty()
         || url.password().is_some()
-        || !(url.path().contains("VELOCEQUERYMARKER")
-            || url.query().is_some_and(|q| q.contains("VELOCEQUERYMARKER")))
+        || !(url.path().contains("SPARKQUERYMARKER")
+            || url.query().is_some_and(|q| q.contains("SPARKQUERYMARKER")))
     {
         return Err("Use an HTTP/HTTPS template with {query} in its path or query".into());
     }

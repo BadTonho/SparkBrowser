@@ -1,6 +1,6 @@
 (() => {
   const $ = id => (typeof document !== 'undefined' && typeof document.getElementById === 'function' ? document.getElementById(id) : null);
-  const DB_NAME = 'veloce_newtab_wallpaper';
+  const DB_NAME = 'spark_newtab_wallpaper';
   const DB_VERSION = 1;
   const STORE_NAME = 'wallpaper';
   const KEY = 'current';
@@ -116,7 +116,7 @@
   }
 
   function notifyUpdated() {
-    setStorage('veloce_wallpaper_updated', Date.now().toString());
+    setStorage('spark_wallpaper_updated', Date.now().toString());
   }
 
   function setStatus(msg) {
@@ -169,8 +169,8 @@
   }
 
   async function applyWallpaper() {
-    const isEnabled = getStorage('veloce_wallpaper_enabled') === 'true';
-    const dim = Math.min(90, Math.max(0, parseInt(getStorage('veloce_wallpaper_dim') ?? '40', 10) || 40));
+    const isEnabled = getStorage('spark_wallpaper_enabled') === 'true';
+    const dim = Math.min(90, Math.max(0, parseInt(getStorage('spark_wallpaper_dim') ?? '40', 10) || 40));
 
     await loadMediaRecord();
 
@@ -293,7 +293,7 @@
       enabledToggle.addEventListener('change', async event => {
         $('menu-item-wallpaper')?.click();
         const checked = event.target.checked;
-        setStorage('veloce_wallpaper_enabled', checked ? 'true' : 'false');
+        setStorage('spark_wallpaper_enabled', checked ? 'true' : 'false');
         notifyUpdated();
         await applyWallpaper();
         if (checked && !currentMedia?.url) {
@@ -313,7 +313,7 @@
       });
       dimInput.addEventListener('change', event => {
         const val = event.target.value;
-        setStorage('veloce_wallpaper_dim', val);
+        setStorage('spark_wallpaper_dim', val);
         notifyUpdated();
       });
     }
@@ -344,7 +344,7 @@
             blob: file
           })
           .then(async () => {
-            setStorage('veloce_wallpaper_enabled', 'true');
+            setStorage('spark_wallpaper_enabled', 'true');
             notifyUpdated();
             await applyWallpaper();
             setStatus(text('wallpaperSaved'));
@@ -367,7 +367,7 @@
               blob: file
             })
               .then(async () => {
-                setStorage('veloce_wallpaper_enabled', 'true');
+                setStorage('spark_wallpaper_enabled', 'true');
                 notifyUpdated();
                 await applyWallpaper();
                 setStatus(text('wallpaperSaved'));
@@ -412,7 +412,7 @@
                 mime: finalBlob.type || file.type || 'image/jpeg',
                 blob: finalBlob
               });
-              setStorage('veloce_wallpaper_enabled', 'true');
+              setStorage('spark_wallpaper_enabled', 'true');
               notifyUpdated();
               await applyWallpaper();
               setStatus(text('wallpaperSaved'));
@@ -452,16 +452,16 @@
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('storage', event => {
       if (
-        event.key === 'veloce_wallpaper_updated' ||
-        event.key === 'veloce_wallpaper_enabled' ||
-        event.key === 'veloce_wallpaper_dim'
+        event.key === 'spark_wallpaper_updated' ||
+        event.key === 'spark_wallpaper_enabled' ||
+        event.key === 'spark_wallpaper_dim'
       ) {
-        if (event.key === 'veloce_wallpaper_updated') invalidateRecord();
+        if (event.key === 'spark_wallpaper_updated') invalidateRecord();
         applyWallpaper();
       }
     });
 
-    window.addEventListener('veloce-new-tab', event => {
+    window.addEventListener('spark-new-tab', event => {
       labels = event.detail.labels || {};
       for (const node of document.querySelectorAll?.('[data-label]') ?? []) {
         const val = text(node.dataset.label);

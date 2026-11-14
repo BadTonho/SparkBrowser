@@ -103,7 +103,7 @@ function createClockFixture(initialStorage = {}) {
   runInNewContext(readFileSync('public/new-tab/clock.js', 'utf8'), context);
 
   const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/pt-BR/newtab.json', 'utf8'));
-  window.dispatchEvent(new context.CustomEvent('veloce-new-tab', {
+  window.dispatchEvent(new context.CustomEvent('spark-new-tab', {
     detail: { labels, preferences: { language: 'pt-BR' } }
   }));
 
@@ -125,19 +125,19 @@ test('clock starts enabled by default at bottom position with 24h format', () =>
 });
 
 test('clock switches to 12h format with AM/PM', () => {
-  const f = createClockFixture({ veloce_clock_format: '12h' });
+  const f = createClockFixture({ spark_clock_format: '12h' });
   const time = f.nodes.get('clock-bottom-time');
   assert.equal(time.textContent, '2:30 PM');
 });
 
 test('clock includes seconds when seconds toggle is enabled', () => {
-  const f = createClockFixture({ veloce_clock_seconds: 'true' });
+  const f = createClockFixture({ spark_clock_seconds: 'true' });
   const time = f.nodes.get('clock-bottom-time');
   assert.equal(time.textContent, '14:30:45');
 });
 
 test('clock changes font family classes', () => {
-  const f = createClockFixture({ veloce_clock_font: 'monospace' });
+  const f = createClockFixture({ spark_clock_font: 'monospace' });
   const bottomWidget = f.nodes.get('clock-bottom-widget');
   assert.equal(bottomWidget.classList.contains('clock-font-monospace'), true);
 
@@ -146,7 +146,7 @@ test('clock changes font family classes', () => {
   fontSelect.listeners.change?.({ target: fontSelect });
 
   assert.equal(bottomWidget.classList.contains('clock-font-serif'), true);
-  assert.equal(f.storage.get('veloce_clock_font'), 'serif');
+  assert.equal(f.storage.get('spark_clock_font'), 'serif');
 });
 
 test('clock changes position to top (above search) and card', () => {
@@ -169,7 +169,7 @@ test('clock changes position to top (above search) and card', () => {
 });
 
 test('clock shows greeting when enabled', () => {
-  const f = createClockFixture({ veloce_clock_greeting: 'true' });
+  const f = createClockFixture({ spark_clock_greeting: 'true' });
   const greeting = f.nodes.get('clock-bottom-greeting');
   assert.equal(greeting.hidden, false);
   assert.equal(greeting.textContent, 'Boa tarde');
@@ -186,15 +186,15 @@ test('clock can be disabled via toggle', () => {
   assert.equal(f.nodes.get('clock-bottom-widget').hidden, true);
   assert.equal(f.nodes.get('clock-top-widget').hidden, true);
   assert.equal(f.nodes.get('clock-card-widget').hidden, true);
-  assert.equal(f.storage.get('veloce_clock_enabled'), 'false');
+  assert.equal(f.storage.get('spark_clock_enabled'), 'false');
 });
 
 test('clock synchronizes from storage event in another tab', () => {
   const f = createClockFixture();
-  f.storage.set('veloce_clock_format', '12h');
+  f.storage.set('spark_clock_format', '12h');
 
   for (const fn of f.listeners.get('storage') || []) {
-    fn({ key: 'veloce_clock_format' });
+    fn({ key: 'spark_clock_format' });
   }
 
   assert.equal(f.nodes.get('clock-bottom-time').textContent, '2:30 PM');

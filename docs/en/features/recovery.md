@@ -1,6 +1,6 @@
 # Automatic session recovery
 
-Veloce records whether its previous execution ended cleanly. After an interruption it automatically restores every tab in the last committed SQLite session, preserving workspace, order, pin, selection and split layouts. A translated notice opens the tab organizer and can be dismissed. Recovery restores page addresses and metadata; forms, scroll position and internal page history are not saved.
+Spark records whether its previous execution ended cleanly. After an interruption it automatically restores every tab in the last committed SQLite session, preserving workspace, order, pin, selection and split layouts. A translated notice opens the tab organizer and can be dismissed. Recovery restores page addresses and metadata; forms, scroll position and internal page history are not saved.
 
 Only the active tab or the current workspace's two split panes create WebViews at startup. Every other restored tab, including pinned tabs, starts hibernated. Returning to another workspace wakes its selected page or split pair normally.
 

@@ -186,8 +186,8 @@ mod tests {
         let mut r = release("v1.1.0");
         for name in [
             "updater.json",
-            "Veloce_1.1.0_x64-setup.exe",
-            "Veloce_1.1.0_x64-setup.exe.sig",
+            "Spark_1.1.0_x64-setup.exe",
+            "Spark_1.1.0_x64-setup.exe.sig",
         ] {
             r.assets.push(Asset {
                 name: name.into(),

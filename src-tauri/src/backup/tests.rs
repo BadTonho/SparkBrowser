@@ -104,7 +104,7 @@ fn new_tab_roundtrips_in_v4_tabs_and_sessions_without_relaxing_other_urls() {
     });
     validation::document(&doc).unwrap();
     let temp = tempfile::tempdir().unwrap();
-    let path = temp.path().join("local.veloce-backup.json");
+    let path = temp.path().join("local.spark-backup.json");
     files::write(&path, &doc).unwrap();
     let restored = files::read(&path).unwrap();
     assert_eq!(restored.data.tabs[0].url, crate::window::new_tab::URL);
@@ -130,7 +130,7 @@ fn new_tab_roundtrips_in_v4_tabs_and_sessions_without_relaxing_other_urls() {
 fn backup_file_roundtrip_rejects_invalid_versions_sizes_and_references_without_replacing_a_file() {
     let (_conn, doc) = setup();
     let directory = tempfile::tempdir().unwrap();
-    let path = directory.path().join("test.veloce-backup.json");
+    let path = directory.path().join("test.spark-backup.json");
     files::write(&path, &doc).unwrap();
     let original = std::fs::read(&path).unwrap();
     let restored = files::read(&path).unwrap();
@@ -156,7 +156,7 @@ fn backup_file_roundtrip_rejects_invalid_versions_sizes_and_references_without_r
     let mut json = serde_json::to_value(&doc).unwrap();
     json["cookies"] = serde_json::json!([]);
     assert!(files::decode(&serde_json::to_vec(&json).unwrap()).is_err());
-    let blocked = directory.path().join("directory.veloce-backup.json");
+    let blocked = directory.path().join("directory.spark-backup.json");
     std::fs::create_dir(&blocked).unwrap();
     assert!(files::write(&blocked, &doc).is_err());
     assert_eq!(
@@ -411,7 +411,7 @@ fn old_backups_default_new_settings_and_v3_roundtrips_them() {
     doc.preferences.hibernation_exemptions = vec!["example.com".into()];
     doc.preferences.ask_download_destination = false;
     let directory = tempfile::tempdir().unwrap();
-    let path = directory.path().join("v3.veloce-backup.json");
+    let path = directory.path().join("v3.spark-backup.json");
     files::write(&path, &doc).unwrap();
     let decoded = files::read(&path).unwrap();
     assert!(decoded.preferences.pip_window_shadow);
@@ -548,7 +548,7 @@ fn folder_sync_encrypts_when_enabled_and_pull_uses_the_stored_password() {
     assert!(pushed.synced);
     let path = dir.path().join(super::sync::SYNC_FILE_NAME);
     let raw = std::fs::read_to_string(&path).unwrap();
-    assert!(raw.contains("veloce-backup-encrypted") && !raw.contains(&doc.data.tabs[0].url));
+    assert!(raw.contains("spark-backup-encrypted") && !raw.contains(&doc.data.tabs[0].url));
     let pulled = super::sync::pull_document_from_target(&conn, &runtime).unwrap();
     assert_eq!(pulled.data.tabs[0].url, doc.data.tabs[0].url);
 
@@ -579,7 +579,7 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
         super::sync::resolve_webdav_file_url("https://cloud.example.com/dav/files/u").unwrap();
     assert_eq!(
         resolved.as_str(),
-        "https://cloud.example.com/dav/files/u/browser.veloce-backup.json"
+        "https://cloud.example.com/dav/files/u/browser.spark-backup.json"
     );
 
     // Session-only vs injected secure storage; never use the real OS keyring.
@@ -768,7 +768,7 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
     super::gdrive_webview::apply_bridge_navigation(
         &gdrive_rt,
         &url::Url::parse(&format!(
-            "veloce-internal://google-drive-sync/status?token={token}&reason=ready&data=user%40gmail.com"
+            "spark-internal://google-drive-sync/status?token={token}&reason=ready&data=user%40gmail.com"
         ))
         .unwrap(),
     );
@@ -828,14 +828,14 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
     super::gdrive_webview::apply_bridge_navigation(
         &gdrive_rt,
         &url::Url::parse(&format!(
-            "veloce-internal://google-drive-sync/chunk?token={token}&request={req_id}&value=0%3A2&payload=abc"
+            "spark-internal://google-drive-sync/chunk?token={token}&request={req_id}&value=0%3A2&payload=abc"
         ))
         .unwrap(),
     );
     super::gdrive_webview::apply_bridge_navigation(
         &gdrive_rt,
         &url::Url::parse(&format!(
-            "veloce-internal://google-drive-sync/complete?token={token}&request={req_id}&payload=def"
+            "spark-internal://google-drive-sync/complete?token={token}&request={req_id}&payload=def"
         ))
         .unwrap(),
     );

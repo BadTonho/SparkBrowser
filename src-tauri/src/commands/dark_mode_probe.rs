@@ -4,7 +4,7 @@ use tauri::AppHandle;
 
 #[tauri::command]
 pub async fn set_dark_mode_probe_scheme(app: AppHandle, mode: String) -> Result<String, String> {
-    if app.config().identifier != "org.veloce.browser.native-tests" {
+    if app.config().identifier != "org.spark.browser.native-tests" {
         return Err("dark_mode_probe.test_application_only".into());
     }
     if !matches!(mode.as_str(), "auto" | "light" | "dark") {

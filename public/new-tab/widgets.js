@@ -4,7 +4,7 @@
   let labels = {}, language = 'en', snapshot = null, desired = null, saving = false, saveRevision = -1;
   let cities = [], cityPending = false, cityQuery = '', weatherKey = '', gmailKey = '';
   const text = key => labels[`newtab.widgets.${key}`] ?? key;
-  const send = (operation, data = {}) => window.dispatchEvent(new CustomEvent('veloce-new-tab-action', { detail: { action: 'widgets', operation, data } }));
+  const send = (operation, data = {}) => window.dispatchEvent(new CustomEvent('spark-new-tab-action', { detail: { action: 'widgets', operation, data } }));
   const settings = () => desired ?? snapshot?.settings;
   const errorText = code => labels[`newtab.widgets.error.${code}`] ?? text('error');
   const cityName = city => city ? [city.name, city.region, city.country].filter(Boolean).join(', ') : text('noCity');
@@ -129,7 +129,7 @@
   $('gmail-disconnect').addEventListener('click', () => send('disconnect'));
   $('gmail-cancel').addEventListener('click', () => send('cancel_connect'));
   $('gmail-open').addEventListener('click', () => send('open_gmail'));
-  $('weather-attribution').addEventListener('click', () => window.dispatchEvent(new CustomEvent('veloce-new-tab-action', { detail: { action: 'navigate', input: 'https://open-meteo.com/' } })));
+  $('weather-attribution').addEventListener('click', () => window.dispatchEvent(new CustomEvent('spark-new-tab-action', { detail: { action: 'navigate', input: 'https://open-meteo.com/' } })));
 
   function renderWeather() {
     const config = settings(), weather = snapshot.weather;
@@ -193,7 +193,7 @@
     $('selected-city').textContent = cityName(config.city);
     renderWeather(); renderGmail();
   }
-  window.addEventListener('veloce-new-tab', event => {
+  window.addEventListener('spark-new-tab', event => {
     labels = event.detail.labels; language = event.detail.preferences.language;
     for (const node of document.querySelectorAll('[data-label]')) {
       const value = text(node.dataset.label);
@@ -205,7 +205,7 @@
     $('weather-heading').textContent = text('weather'); render();
     showCategory(currentCategory);
   });
-  window.addEventListener('veloce-new-tab-widgets', event => {
+  window.addEventListener('spark-new-tab-widgets', event => {
     snapshot = event.detail;
     if (snapshot.action_error || snapshot.settings_error) {
       $('settings-status').textContent = errorText(snapshot.action_error ?? snapshot.settings_error);

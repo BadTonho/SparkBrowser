@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 
 pub fn password_key(conn: &Connection) -> String {
     format!(
-        "org.veloce.browser/backup-password/{:x}",
+        "org.spark.browser/backup-password/{:x}",
         Sha256::digest(conn.path().unwrap_or("memory").as_bytes())
     )
 }

@@ -12,7 +12,7 @@ pub struct Credentials {
 
 pub fn key(conn: &Connection) -> String {
     format!(
-        "org.veloce.browser/webdav/{:x}",
+        "org.spark.browser/webdav/{:x}",
         Sha256::digest(conn.path().unwrap_or("memory").as_bytes())
     )
 }
@@ -52,6 +52,28 @@ impl Credentials {
         {
             os::delete(key)
         }
+    }
+    /// Copies a secret saved under the pre-rename name to the current one, once, then forgets the old.
+    pub fn migrate_legacy(&self, key: &str, legacy_key: &str) -> Result<(), String> {
+        if self.read(key)?.is_some() {
+            return Ok(());
+        }
+        #[cfg(test)]
+        let legacy = {
+            self.available()?;
+            self.values.lock().unwrap().get(legacy_key).cloned()
+        };
+        #[cfg(not(test))]
+        let legacy = os::read_legacy(legacy_key)?;
+        let Some(value) = legacy else {
+            return Ok(());
+        };
+        self.write(key, &value)?;
+        #[cfg(test)]
+        self.values.lock().unwrap().remove(legacy_key);
+        #[cfg(not(test))]
+        let _ = os::delete_legacy(legacy_key);
+        Ok(())
     }
     #[cfg(test)]
     fn available(&self) -> Result<(), String> {
@@ -109,6 +131,13 @@ mod os {
             ..Default::default()
         };
         unsafe { CredWriteW(&credential, 0).map_err(|_| ERROR.into()) }
+    }
+    /// The pre-rename secret differs only by its target name, which the caller passes in full.
+    pub fn read_legacy(key: &str) -> Result<Option<String>, String> {
+        read(key)
+    }
+    pub fn delete_legacy(key: &str) -> Result<(), String> {
+        delete(key)
     }
     pub fn delete(key: &str) -> Result<(), String> {
         let name: Vec<u16> = key.encode_utf16().chain(Some(0)).collect();
@@ -168,14 +197,18 @@ mod os {
         }
     }
     pub fn read(key: &str) -> Result<Option<String>, String> {
+        lookup("org.spark.browser", key)
+    }
+    /// Secrets saved before the rename carry the old application attribute.
+    pub fn read_legacy(key: &str) -> Result<Option<String>, String> {
+        lookup("org.veloce.browser", key)
+    }
+    pub fn delete_legacy(key: &str) -> Result<(), String> {
+        clear("org.veloce.browser", key)
+    }
+    fn lookup(application: &str, key: &str) -> Result<Option<String>, String> {
         let result = run(
-            &[
-                "lookup",
-                "application",
-                "org.veloce.browser",
-                "profile",
-                key,
-            ],
+            &["lookup", "application", application, "profile", key],
             None,
         )?;
         if result.status.code() == Some(1) {
@@ -199,7 +232,7 @@ mod os {
                 "store",
                 "--label=Spark WebDAV",
                 "application",
-                "org.veloce.browser",
+                "org.spark.browser",
                 "profile",
                 key,
             ],
@@ -212,10 +245,10 @@ mod os {
         }
     }
     pub fn delete(key: &str) -> Result<(), String> {
-        let result = run(
-            &["clear", "application", "org.veloce.browser", "profile", key],
-            None,
-        )?;
+        clear("org.spark.browser", key)
+    }
+    fn clear(application: &str, key: &str) -> Result<(), String> {
+        let result = run(&["clear", "application", application, "profile", key], None)?;
         if result.status.success() || result.status.code() == Some(1) {
             Ok(())
         } else {
@@ -234,5 +267,57 @@ mod os {
     }
     pub fn delete(_: &str) -> Result<(), String> {
         Err("backup.sync_secure_storage_failed".into())
+    }
+}
+
+/// Brings the WebDAV password and the backup-encryption password over from the pre-rename names.
+/// Both keys include a hash of the database path, which moved with the data folder, so the old
+/// keys are derived from the old path.
+pub fn migrate_legacy_secrets(conn: &Connection, credentials: &Credentials) -> Result<(), String> {
+    let legacy_path = crate::legacy::legacy_database_path(conn.path().unwrap_or("memory"));
+    let hash = format!("{:x}", Sha256::digest(legacy_path.as_bytes()));
+    credentials.migrate_legacy(&key(conn), &format!("org.veloce.browser/webdav/{hash}"))?;
+    credentials.migrate_legacy(
+        &super::encryption::password_key(conn),
+        &format!("org.veloce.browser/backup-password/{hash}"),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn legacy_secrets_move_to_the_new_names_once_and_never_overwrite() {
+        let conn = Connection::open_in_memory().unwrap();
+        let credentials = Credentials::default();
+        // Same derivation as the production code: whatever path the connection reports.
+        let path = crate::legacy::legacy_database_path(conn.path().unwrap_or("memory"));
+        let hash = format!("{:x}", Sha256::digest(path.as_bytes()));
+        let legacy = format!("org.veloce.browser/webdav/{hash}");
+        credentials.write(&legacy, "old-secret").unwrap();
+        migrate_legacy_secrets(&conn, &credentials).unwrap();
+        assert_eq!(
+            credentials.read(&key(&conn)).unwrap().as_deref(),
+            Some("old-secret")
+        );
+        assert_eq!(credentials.read(&legacy).unwrap(), None);
+        // A later legacy value cannot replace what the new name already holds.
+        credentials.write(&legacy, "stale").unwrap();
+        migrate_legacy_secrets(&conn, &credentials).unwrap();
+        assert_eq!(
+            credentials.read(&key(&conn)).unwrap().as_deref(),
+            Some("old-secret")
+        );
+    }
+
+    #[test]
+    fn an_unavailable_store_reports_the_error_instead_of_dropping_the_secret() {
+        let conn = Connection::open_in_memory().unwrap();
+        let credentials = Credentials::default();
+        credentials
+            .unavailable
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+        assert!(migrate_legacy_secrets(&conn, &credentials).is_err());
     }
 }

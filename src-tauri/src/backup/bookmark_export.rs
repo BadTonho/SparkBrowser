@@ -38,9 +38,16 @@ fn exportable(item: &BookmarkItem) -> bool {
         .is_ok_and(|url| matches!(url.scheme(), "http" | "https") && url.host_str().is_some())
 }
 
-/// Bookmarks grouped under their folders, in folder order, followed by the loose ones. A dangling
-/// folder id counts as loose. Returns `(folder name, items)` pairs; the loose group has no name.
-fn grouped(data: &BookmarkData) -> (Vec<(&str, Vec<&BookmarkItem>)>, Vec<&BookmarkItem>, usize) {
+/// Bookmarks split for output: per folder in folder order, then the loose ones.
+struct Grouped<'a> {
+    /// `(folder name, items)`; folders without exportable bookmarks are left out.
+    folders: Vec<(&'a str, Vec<&'a BookmarkItem>)>,
+    loose: Vec<&'a BookmarkItem>,
+    skipped: usize,
+}
+
+/// A dangling folder id counts as loose.
+fn grouped(data: &BookmarkData) -> Grouped<'_> {
     let mut skipped = 0;
     let mut by_folder: HashMap<i64, Vec<&BookmarkItem>> = HashMap::new();
     let mut loose = Vec::new();
@@ -64,7 +71,11 @@ fn grouped(data: &BookmarkData) -> (Vec<(&str, Vec<&BookmarkItem>)>, Vec<&Bookma
                 .map(|items| (folder.name.as_str(), items))
         })
         .collect();
-    (folders, loose, skipped)
+    Grouped {
+        folders,
+        loose,
+        skipped,
+    }
 }
 
 fn escape_html(text: &str) -> String {
@@ -98,7 +109,11 @@ fn link(item: &BookmarkItem, indent: &str) -> String {
 }
 
 pub fn html(data: &BookmarkData) -> Exported {
-    let (folders, loose, skipped) = grouped(data);
+    let Grouped {
+        folders,
+        loose,
+        skipped,
+    } = grouped(data);
     let mut out = String::from(
         "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n\
          <!-- This is an automatically generated file. It will be read and overwritten. DO NOT EDIT! -->\n\
@@ -109,7 +124,10 @@ pub fn html(data: &BookmarkData) -> Exported {
     );
     let mut count = 0;
     for (name, items) in &folders {
-        out.push_str(&format!("    <DT><H3>{}</H3>\n    <DL><p>\n", escape_html(name)));
+        out.push_str(&format!(
+            "    <DT><H3>{}</H3>\n    <DL><p>\n",
+            escape_html(name)
+        ));
         for item in items {
             out.push_str(&link(item, "        "));
             count += 1;
@@ -145,7 +163,11 @@ fn csv_cell(text: &str) -> String {
 
 /// UTF-8 with a byte order mark so Excel reads accented titles correctly; CRLF line endings.
 pub fn csv(data: &BookmarkData) -> Exported {
-    let (folders, loose, skipped) = grouped(data);
+    let Grouped {
+        folders,
+        loose,
+        skipped,
+    } = grouped(data);
     let mut out = String::from("\u{feff}folder,title,url\r\n");
     let mut count = 0;
     let rows = folders
@@ -192,8 +214,14 @@ mod tests {
     fn sample() -> BookmarkData {
         BookmarkData {
             folders: vec![
-                BookmarkFolder { id: 1, name: "Work & <Play>".into() },
-                BookmarkFolder { id: 2, name: "Empty".into() },
+                BookmarkFolder {
+                    id: 1,
+                    name: "Work & <Play>".into(),
+                },
+                BookmarkFolder {
+                    id: 2,
+                    name: "Empty".into(),
+                },
             ],
             bookmarks: vec![
                 item(1, "Loose \"one\"", "https://example.test/a?x=1&y=2", None),
@@ -212,15 +240,23 @@ mod tests {
         assert!(text.starts_with("<!DOCTYPE NETSCAPE-Bookmark-file-1>"));
         assert_eq!((out.count, out.skipped), (3, 2));
         assert!(text.contains("<DT><H3>Work &amp; &lt;Play&gt;</H3>"));
-        assert!(text.contains("HREF=\"https://example.test/a?x=1&amp;y=2\">Loose &quot;one&quot;</A>"));
+        assert!(
+            text.contains("HREF=\"https://example.test/a?x=1&amp;y=2\">Loose &quot;one&quot;</A>")
+        );
         assert!(!text.contains("javascript:") && !text.contains("data:text"));
         assert!(!text.contains("Empty"), "empty folders are not exported");
         // The folder's bookmark sits inside its list, loose ones after it.
         let folder = text.find("In folder").unwrap();
         assert!(folder < text.find("Loose").unwrap());
         assert!(folder > text.find("<H3>").unwrap());
-        assert!(text.contains("Dangling"), "a dangling folder id falls back to the root");
-        assert_eq!(text.matches("<DL><p>").count(), text.matches("</DL><p>").count());
+        assert!(
+            text.contains("Dangling"),
+            "a dangling folder id falls back to the root"
+        );
+        assert_eq!(
+            text.matches("<DL><p>").count(),
+            text.matches("</DL><p>").count()
+        );
     }
 
     #[test]
@@ -240,8 +276,10 @@ mod tests {
     #[test]
     fn csv_quotes_fields_guards_formulas_and_starts_with_a_bom() {
         let mut data = sample();
-        data.bookmarks.push(item(6, "=HYPERLINK(\"x\")", "https://example.test/f", None));
-        data.bookmarks.push(item(7, "a, b\nc", "https://example.test/g", Some(2)));
+        data.bookmarks
+            .push(item(6, "=HYPERLINK(\"x\")", "https://example.test/f", None));
+        data.bookmarks
+            .push(item(7, "a, b\nc", "https://example.test/g", Some(2)));
         let out = csv(&data);
         let text = String::from_utf8(out.bytes).unwrap();
         assert!(text.starts_with("\u{feff}folder,title,url\r\n"));
@@ -255,9 +293,14 @@ mod tests {
 
     #[test]
     fn nothing_to_export_still_produces_valid_files() {
-        let empty = BookmarkData { bookmarks: vec![], folders: vec![] };
+        let empty = BookmarkData {
+            bookmarks: vec![],
+            folders: vec![],
+        };
         assert_eq!(html(&empty).count, 0);
-        assert!(String::from_utf8(html(&empty).bytes).unwrap().contains("<DL><p>\n</DL><p>"));
+        assert!(String::from_utf8(html(&empty).bytes)
+            .unwrap()
+            .contains("<DL><p>\n</DL><p>"));
         assert_eq!(csv(&empty).bytes, "\u{feff}folder,title,url\r\n".as_bytes());
     }
 }

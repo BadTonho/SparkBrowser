@@ -3,10 +3,10 @@ use std::path::{Path, PathBuf};
 use tauri::utils::config::{AppDirectoriesOverride, AppDirectoryOverrides};
 
 pub fn configure(context: &mut tauri::Context<tauri::Wry>) -> std::io::Result<()> {
-    if context.config().identifier != "org.veloce.browser.native-tests" {
+    if context.config().identifier != "org.spark.browser.native-tests" {
         return Ok(());
     }
-    let requested = std::env::var_os("VELOCE_NATIVE_TEST_RUN_DIR").ok_or_else(|| {
+    let requested = std::env::var_os("SPARK_NATIVE_TEST_RUN_DIR").ok_or_else(|| {
         std::io::Error::other("Native tests require an isolated scenario directory")
     })?;
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -22,7 +22,7 @@ pub fn configure(context: &mut tauri::Context<tauri::Wry>) -> std::io::Result<()
     // on the startup thread, before creating the runtime or any WebView, and is
     // available only in the isolated native-test application.
     #[cfg(windows)]
-    if std::env::var("VELOCE_NATIVE_REAL_PROFILES").as_deref() == Ok("1") {
+    if std::env::var("SPARK_NATIVE_REAL_PROFILES").as_deref() == Ok("1") {
         std::env::remove_var("WEBVIEW2_USER_DATA_FOLDER");
     }
     // Keep the canonical containment check above, but give native profile APIs

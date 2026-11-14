@@ -14,7 +14,9 @@ use tauri::{AppHandle, Manager};
 
 const DIR_NAME: &str = "backups";
 const PREFIX: &str = "backup-";
-const SUFFIX: &str = ".veloce-backup.json";
+const SUFFIX: &str = ".spark-backup.json";
+/// Suffix of history files written before the rename; they are still listed and restorable.
+const LEGACY_SUFFIX: &str = ".veloce-backup.json";
 const SNIFF_BYTES: usize = 160;
 pub const DEFAULT_MAX_BACKUPS: u32 = 10;
 pub const MAX_BACKUPS_LIMIT: u32 = 100;
@@ -97,7 +99,7 @@ impl Schedule {
         if (1..=MAX_BACKUPS_LIMIT).contains(&self.max_backups)
             && self
                 .max_age_days
-                .map_or(true, |days| (1..=MAX_AGE_DAYS_LIMIT).contains(&days))
+                .is_none_or(|days| (1..=MAX_AGE_DAYS_LIMIT).contains(&days))
         {
             Ok(())
         } else {
@@ -147,7 +149,11 @@ fn failure_code(error: &str) -> String {
                 .bytes()
                 .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b'.')
     });
-    if valid { head.to_owned() } else { "operation.failed".to_owned() }
+    if valid {
+        head.to_owned()
+    } else {
+        "operation.failed".to_owned()
+    }
 }
 fn load_failure(conn: &Connection) -> Option<Failure> {
     prefs::load(conn, prefs::BACKUP_LOCAL_FAILURE_KEY)
@@ -198,7 +204,10 @@ fn file_name(created_at: i64, reason: Reason) -> String {
 
 /// Only names this module generates are accepted, which also rules out path traversal.
 fn parse_name(name: &str) -> Option<(i64, Reason)> {
-    let rest = name.strip_prefix(PREFIX)?.strip_suffix(SUFFIX)?;
+    let rest = name
+        .strip_prefix(PREFIX)?
+        .strip_suffix(SUFFIX)
+        .or_else(|| name.strip_prefix(PREFIX)?.strip_suffix(LEGACY_SUFFIX))?;
     let (epoch, reason) = rest.split_once('-')?;
     if epoch.is_empty() || epoch.len() > 12 || !epoch.bytes().all(|b| b.is_ascii_digit()) {
         return None;
@@ -222,6 +231,7 @@ fn looks_encrypted(path: &Path) -> bool {
         .and_then(|file| file.take(SNIFF_BYTES as u64).read_to_end(&mut head))
         .is_ok()
         && String::from_utf8_lossy(&head).contains(crypto::ENCRYPTED_FORMAT)
+        || String::from_utf8_lossy(&head).contains(crypto::LEGACY_ENCRYPTED_FORMAT)
 }
 
 /// Newest first. Foreign files and temporary exports are ignored.
@@ -254,7 +264,8 @@ fn list(dir: &Path) -> Result<Vec<Entry>, String> {
 /// Ids to delete. Regular snapshots follow the count and age limits but the newest one always
 /// stays, so retention can never leave the history empty. Safety copies follow their own limits.
 fn expired(entries: &[Entry], retention: Retention, now: i64) -> Vec<String> {
-    let too_old = |entry: &Entry, limit: Option<i64>| limit.is_some_and(|l| now - entry.created_at > l);
+    let too_old =
+        |entry: &Entry, limit: Option<i64>| limit.is_some_and(|l| now - entry.created_at > l);
     let (safety, regular): (Vec<_>, Vec<_>) = entries
         .iter()
         .partition(|entry| entry.reason == Reason::PreRestore);
@@ -503,6 +514,16 @@ pub async fn restore(app: &AppHandle, id: String) -> Result<String, String> {
     }
 }
 
+/// Test hooks: the helpers stay private, the legacy tests only need their behavior.
+#[cfg(test)]
+pub(super) fn file_name_for_test(created_at: i64, reason: &str) -> String {
+    file_name(created_at, Reason::parse(reason).unwrap())
+}
+#[cfg(test)]
+pub(super) fn parses_for_test(name: &str) -> bool {
+    parse_name(name).is_some()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -516,13 +537,13 @@ mod tests {
         let name = file_name(1_700_000_000, Reason::Scheduled);
         assert_eq!(parse_name(&name), Some((1_700_000_000, Reason::Scheduled)));
         for bad in [
-            "../backup-1-manual.veloce-backup.json",
-            "backup-1-manual.veloce-backup.json.bak",
-            "backup--manual.veloce-backup.json",
-            "backup-1-other.veloce-backup.json",
-            "backup-1.veloce-backup.json",
+            "../backup-1-manual.spark-backup.json",
+            "backup-1-manual.spark-backup.json.bak",
+            "backup--manual.spark-backup.json",
+            "backup-1-other.spark-backup.json",
+            "backup-1.spark-backup.json",
             "notes.txt",
-            "backup-1234567890123-manual.veloce-backup.json",
+            "backup-1234567890123-manual.spark-backup.json",
         ] {
             assert_eq!(parse_name(bad), None, "{bad}");
         }
@@ -555,19 +576,19 @@ mod tests {
             dir.path(),
             100,
             Reason::Manual,
-            b"{\n  \"format\": \"veloce-backup\"\n}",
+            b"{\n  \"format\": \"spark-backup\"\n}",
         )
         .unwrap();
         write_snapshot(
             dir.path(),
             300,
             Reason::Exit,
-            b"{\n  \"format\": \"veloce-backup-encrypted\"\n}",
+            b"{\n  \"format\": \"spark-backup-encrypted\"\n}",
         )
         .unwrap();
         write_snapshot(dir.path(), 200, Reason::Scheduled, b"{}").unwrap();
         fs::write(dir.path().join("readme.txt"), "x").unwrap();
-        fs::write(dir.path().join(".veloce-backup-abc.tmp"), "x").unwrap();
+        fs::write(dir.path().join(".spark-backup-abc.tmp"), "x").unwrap();
         let entries = list(dir.path()).unwrap();
         assert_eq!(
             entries.iter().map(|e| e.created_at).collect::<Vec<_>>(),
@@ -636,7 +657,10 @@ mod tests {
 
     #[test]
     fn failures_keep_only_a_stable_code_and_roundtrip_through_the_state() {
-        assert_eq!(failure_code("backup.password_missing"), "backup.password_missing");
+        assert_eq!(
+            failure_code("backup.password_missing"),
+            "backup.password_missing"
+        );
         assert_eq!(
             failure_code("backup.invalid_document: expected value at line 1"),
             "backup.invalid_document"
@@ -665,7 +689,10 @@ mod tests {
             &serde_json::to_string(&failure).unwrap(),
         )
         .unwrap();
-        assert_eq!(build_state(&conn, dir.path()).unwrap().last_failure, Some(failure));
+        assert_eq!(
+            build_state(&conn, dir.path()).unwrap().last_failure,
+            Some(failure)
+        );
         prefs::store(&conn, prefs::BACKUP_LOCAL_FAILURE_KEY, "garbage").unwrap();
         assert_eq!(build_state(&conn, dir.path()).unwrap().last_failure, None);
     }
@@ -710,7 +737,11 @@ mod tests {
         };
         let mut entries = vec![entry(0, Reason::Scheduled)];
         // Seven safety copies, the oldest beyond 30 days: age and the cap of five both apply.
-        entries.extend([0, 1, 2, 3, 4, 5, 40].iter().map(|d| entry(*d, Reason::PreRestore)));
+        entries.extend(
+            [0, 1, 2, 3, 4, 5, 40]
+                .iter()
+                .map(|d| entry(*d, Reason::PreRestore)),
+        );
         // The five newest safety copies survive a one-version, one-day policy.
         let removed = expired_ages(&entries, tight);
         assert_eq!(removed, [5, 40]);

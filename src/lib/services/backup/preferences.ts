@@ -18,11 +18,11 @@ export function capturePreferences(): BackupPreferences {
 export async function applyBackupPreferences(p: BackupPreferences): Promise<void> {
   // Verify durable writes explicitly; existing setters intentionally tolerate storage failures.
   const entries: [string, string][] = [
-    ["veloce_tab_layout", p.tab_layout], ["veloce_show_bookmarks_bar", String(p.show_bookmarks_bar)], ["veloce_overlay_blur_px", String(p.overlay_blur_px)],
-    ["veloce_workspace_switcher_display", p.workspace_switcher_display], ["veloce_default_search_engine", p.default_search_engine],
-    ["veloce_auto_hibernate_mode", String(p.auto_hibernate_mode)], ["veloce_resident_limit", String(p.resident_limit)],
-    ["veloce_hibernation_exemptions", JSON.stringify(p.hibernation_exemptions ?? [])], ["veloce_ask_download_destination", String(p.ask_download_destination ?? true)],
-    ["veloce_language", p.language], ["veloce_keyboard_shortcuts", JSON.stringify(p.keyboard_shortcuts)],
+    ["spark_tab_layout", p.tab_layout], ["spark_show_bookmarks_bar", String(p.show_bookmarks_bar)], ["spark_overlay_blur_px", String(p.overlay_blur_px)],
+    ["spark_workspace_switcher_display", p.workspace_switcher_display], ["spark_default_search_engine", p.default_search_engine],
+    ["spark_auto_hibernate_mode", String(p.auto_hibernate_mode)], ["spark_resident_limit", String(p.resident_limit)],
+    ["spark_hibernation_exemptions", JSON.stringify(p.hibernation_exemptions ?? [])], ["spark_ask_download_destination", String(p.ask_download_destination ?? true)],
+    ["spark_language", p.language], ["spark_keyboard_shortcuts", JSON.stringify(p.keyboard_shortcuts)],
   ];
   for (const [key, value] of entries) if (!safeStorage.setItem(key, value)) throw new UserError("storage.failed", "Backup preference writes remain pending");
   setTabLayout(p.tab_layout); setShowBookmarksBar(p.show_bookmarks_bar); setOverlayBlurPx(p.overlay_blur_px);

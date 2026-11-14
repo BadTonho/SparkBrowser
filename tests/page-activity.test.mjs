@@ -10,7 +10,7 @@ for (const transport of ['navigation', 'native message']) test(`activity dedupli
   const media = { paused: true, ended: false };
   const window = { location: { href: '' } }; window.top = window;
   const messages = [];
-  if (transport === 'native message') window.__velocePostContent = url => messages.push(url);
+  if (transport === 'native message') window.__sparkPostContent = url => messages.push(url);
   const document = { readyState: 'complete', querySelectorAll: () => [media], addEventListener: (name, fn) => listeners.set(name, fn) };
   class Element { value = 'private form contents'; matches() { return true; } }
   const source = readFileSync(new URL('../src-tauri/src/window/page_activity.js', import.meta.url), 'utf8').replace('__ACTIVITY_TOKEN__', '"test-generation"');

@@ -42,7 +42,9 @@ pub const GDRIVE_SYNC_WEBVIEW_LABEL: &str = "google-drive-sync-webview";
 pub const SYNC_FOLDER_NAME: &str = "Spark Backup";
 pub const LEGACY_SYNC_FOLDER_NAME: &str = "Veloce Browser Backup";
 pub const FOLDER_MIME_TYPE: &str = "application/vnd.google-apps.folder";
-const SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
+const SYNC_FILE_NAME: &str = "browser.spark-backup.json";
+/// Name before the rename. Lookups match either, so an existing Drive file is found and updated in place.
+const LEGACY_SYNC_FILE_NAME: &str = "browser.veloce-backup.json";
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 static NEXT_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
@@ -130,7 +132,7 @@ fn sanitize_email(raw: Option<&String>) -> Option<String> {
 }
 
 pub fn apply_bridge_navigation(runtime: &GDriveWebRuntime, nav_url: &Url) {
-    if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("google-drive-sync") {
+    if nav_url.scheme() != "spark-internal" || nav_url.host_str() != Some("google-drive-sync") {
         return;
     }
     let Some(params) = crate::security::bridge::query(
@@ -510,7 +512,7 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
     .focused(false)
     .initialization_script_for_all_frames(initializer_script(&token))
     .on_navigation(move |nav_url| {
-        if nav_url.scheme() == "veloce-internal" {
+        if nav_url.scheme() == "spark-internal" {
             handle_bridge_navigation(&app_for_nav, nav_url);
             return false;
         }
@@ -570,7 +572,7 @@ async fn wait_until_webview_ready(app: &AppHandle) -> Result<(tauri::Webview, St
                 if attempt > 0 && attempt % 10 == 0 {
                     if let Ok(encoded_token) = serde_json::to_string(&token) {
                         let _ =
-                            webview.eval(&format!("window.__veloceGDrivePing?.({encoded_token});"));
+                            webview.eval(&format!("window.__sparkGDrivePing?.({encoded_token});"));
                     }
                 }
                 tokio::time::sleep(Duration::from_millis(200)).await;
@@ -611,7 +613,7 @@ pub async fn push_document_via_webview(
     }
 
     let script = format!(
-        "window.__veloceGDrivePush?.({}, {}, {});",
+        "window.__sparkGDrivePush?.({}, {}, {});",
         serde_json::to_string(&token).map_err(|e| e.to_string())?,
         serde_json::to_string(&request_id).map_err(|e| e.to_string())?,
         serde_json::to_string(&b64_json).map_err(|e| e.to_string())?,
@@ -668,7 +670,7 @@ pub async fn pull_document_via_webview(
     }
 
     let script = format!(
-        "window.__veloceGDrivePull?.({}, {});",
+        "window.__sparkGDrivePull?.({}, {});",
         serde_json::to_string(&token).map_err(|e| e.to_string())?,
         serde_json::to_string(&request_id).map_err(|e| e.to_string())?,
     );

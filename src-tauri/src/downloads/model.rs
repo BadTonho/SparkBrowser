@@ -51,7 +51,7 @@ pub struct DownloadRecord {
 impl DownloadRecord {
     pub fn partial(&self) -> PathBuf {
         self.directory
-            .join(".veloce-partials")
+            .join(".spark-partials")
             .join(format!("{}.part", self.task.id))
     }
     pub fn refresh_capabilities(&mut self, native_available: bool) {

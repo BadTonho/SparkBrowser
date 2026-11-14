@@ -22,10 +22,10 @@ function fixture(){
   document.createElement=()=>new Node();
   const window={addEventListener:(t,fn)=>listeners.set(t,fn),dispatchEvent:e=>actions.push(e.detail)};
   runInNewContext(readFileSync('public/new-tab/widgets.js','utf8'),{window,document,Intl,Date,CustomEvent:class{constructor(t,o){this.type=t;this.detail=o.detail;}}});
-  listeners.get('veloce-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'}}});
+  listeners.get('spark-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'}}});
   const settings={weather_enabled:false,gmail_enabled:false,automatic_location:false,fahrenheit:false,city:null};
   let current={settings,revision:0,weather:{data:null,error:null,busy:false},gmail:{data:null,email:null,error:null,busy:false,connecting:false,configured:true}};
-  const update=patch=>{current={...current,...patch};listeners.get('veloce-new-tab-widgets')({detail:current});};update({});
+  const update=patch=>{current={...current,...patch};listeners.get('spark-new-tab-widgets')({detail:current});};update({});
   return {nodes,actions,update,settings,document};
 }
 const change=(node,key,value)=>{node[key]=value;node.listeners.change({target:node});};

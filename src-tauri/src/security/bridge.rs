@@ -48,17 +48,17 @@ mod tests {
     #[test]
     fn duplicated_unknown_or_oversized_parameters_are_rejected() {
         for url in [
-            "veloce-internal://test/action?token=a&token=b",
-            "veloce-internal://test/action?%74oken=a&token=b",
-            "veloce-internal://test/action?command=delete",
-            "veloce-internal://user@test/action?token=a",
-            "veloce-internal://test/action?token=a#fragment",
+            "spark-internal://test/action?token=a&token=b",
+            "spark-internal://test/action?%74oken=a&token=b",
+            "spark-internal://test/action?command=delete",
+            "spark-internal://user@test/action?token=a",
+            "spark-internal://test/action?token=a#fragment",
         ] {
             assert!(query(&Url::parse(url).unwrap(), &["token"]).is_none());
         }
         assert!(query(
             &Url::parse(&format!(
-                "veloce-internal://test/action?token={}",
+                "spark-internal://test/action?token={}",
                 "a".repeat(2_000_000)
             ))
             .unwrap(),
@@ -67,7 +67,7 @@ mod tests {
         .is_none());
         assert_eq!(
             query(
-                &Url::parse("veloce-internal://test/action?token=a%20b").unwrap(),
+                &Url::parse("spark-internal://test/action?token=a%20b").unwrap(),
                 &["token"]
             )
             .unwrap()["token"],

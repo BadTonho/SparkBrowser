@@ -274,15 +274,11 @@ fn query_backup_file_in_parent_blocking(
     ))
     .map_err(|e| e.to_string())?;
 
-    let query = match (is_v2, parent_id) {
-        (true, Some(pid)) => {
-            format!("title = '{SYNC_FILE_NAME}' and '{pid}' in parents and trashed = false")
-        }
-        (true, None) => format!("title = '{SYNC_FILE_NAME}' and trashed = false"),
-        (false, Some(pid)) => {
-            format!("name = '{SYNC_FILE_NAME}' and '{pid}' in parents and trashed = false")
-        }
-        (false, None) => format!("name = '{SYNC_FILE_NAME}' and trashed = false"),
+    let field = if is_v2 { "title" } else { "name" };
+    let named = format!("({field} = '{SYNC_FILE_NAME}' or {field} = '{LEGACY_SYNC_FILE_NAME}')");
+    let query = match parent_id {
+        Some(pid) => format!("{named} and '{pid}' in parents and trashed = false"),
+        None => format!("{named} and trashed = false"),
     };
 
     {
@@ -415,7 +411,7 @@ pub(super) fn upload_multipart_blocking(
     }
 
     let boundary = format!(
-        "veloce_gdrive_boundary_{}",
+        "spark_gdrive_boundary_{}",
         crate::state::tab_model::TabInfo::current_epoch_secs()
     );
     let mut last_status = 0u16;

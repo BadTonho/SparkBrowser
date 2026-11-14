@@ -60,7 +60,7 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
 ];
 
 export type ShortcutMap = Record<string, ShortcutCombo[]>;
-const STORAGE_KEY = "veloce_keyboard_shortcuts";
+const STORAGE_KEY = "spark_keyboard_shortcuts";
 
 function defaultsMap(): ShortcutMap {
   return Object.fromEntries(SHORTCUT_DEFINITIONS.map(({ id, defaults }) => [id, defaults.map((item) => ({ ...item }))]));

@@ -89,7 +89,13 @@ pub fn plan(
     token: &str,
     counter: u64,
 ) -> Result<MergePlan, String> {
-    plan_with(current, incoming, token, counter, &RestoreOptions::default())
+    plan_with(
+        current,
+        incoming,
+        token,
+        counter,
+        &RestoreOptions::default(),
+    )
 }
 pub fn plan_with(
     current: &BackupData,

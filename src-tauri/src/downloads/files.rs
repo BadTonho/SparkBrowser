@@ -7,7 +7,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 
 pub fn directory(app: &AppHandle) -> Result<PathBuf, String> {
-    let path = if app.config().identifier == "org.veloce.browser.native-tests" {
+    let path = if app.config().identifier == "org.spark.browser.native-tests" {
         app.path()
             .app_data_dir()
             .map_err(|e| e.to_string())?
@@ -30,7 +30,7 @@ pub fn owned_partial(record: &DownloadRecord) -> Result<PathBuf, String> {
     }
     let root =
         std::fs::canonicalize(&record.directory).map_err(|_| "downloads.missing_directory")?;
-    let folder = root.join(".veloce-partials");
+    let folder = root.join(".spark-partials");
     std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
     if std::fs::canonicalize(&folder).map_err(|e| e.to_string())? != folder {
         return Err("downloads.invalid_partial".into());

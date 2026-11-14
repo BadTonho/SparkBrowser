@@ -58,8 +58,8 @@ export async function checkRecovery(context) {
 function withScenarioDatabase(directory, action) {
   // Only fixture data from the already identity-verified, stopped test scenario is edited.
   const root = validateRunDirectory(directory);
-  const file = realpathSync(resolve(root, 'data', 'veloce_browser.db'));
-  assert.equal(relative(realpathSync(resolve(root, 'data')), file), 'veloce_browser.db');
+  const file = realpathSync(resolve(root, 'data', 'spark_browser.db'));
+  assert.equal(relative(realpathSync(resolve(root, 'data')), file), 'spark_browser.db');
   const db = new DatabaseSync(file);
   try { db.exec('PRAGMA busy_timeout=5000'); return action(db); } finally { db.close(); }
 }

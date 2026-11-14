@@ -56,7 +56,7 @@ export function setRoundedContentFrame(enabled: boolean): void {
 
 export type AutoHibernateMode = 5 | 10 | 30 | "auto" | "off";
 
-const AUTO_HIBERNATE_STORAGE_KEY = "veloce_auto_hibernate_mode";
+const AUTO_HIBERNATE_STORAGE_KEY = "spark_auto_hibernate_mode";
 const AUTO_HIBERNATE_MODES: AutoHibernateMode[] = [5, 10, 30, "auto", "off"];
 
 function getInitialAutoHibernateMode(): AutoHibernateMode {
@@ -87,7 +87,7 @@ export function setAutoHibernateMode(mode: AutoHibernateMode): void {
   }
 }
 
-const HIBERNATION_EXEMPTIONS_KEY = "veloce_hibernation_exemptions";
+const HIBERNATION_EXEMPTIONS_KEY = "spark_hibernation_exemptions";
 function loadHibernationExemptions(): string[] {
   try {
     const parsed = JSON.parse(safeStorage.getItem(HIBERNATION_EXEMPTIONS_KEY) ?? "[]");
@@ -112,7 +112,7 @@ export async function setHibernationExemptions(domains: string[]): Promise<void>
   }
 }
 
-const ASK_DOWNLOAD_DESTINATION_KEY = "veloce_ask_download_destination";
+const ASK_DOWNLOAD_DESTINATION_KEY = "spark_ask_download_destination";
 function getInitialAskDownloadDestination(): boolean {
   const saved = safeStorage.getItem(ASK_DOWNLOAD_DESTINATION_KEY);
   return saved === null ? true : saved === "true";
@@ -134,7 +134,7 @@ export {
   type SearchEngine,
 } from "./searchEngineStore";
 
-const BOOKMARKS_BAR_STORAGE_KEY = "veloce_show_bookmarks_bar";
+const BOOKMARKS_BAR_STORAGE_KEY = "spark_show_bookmarks_bar";
 
 function getInitialShowBookmarksBar(): boolean {
   if (typeof safeStorage === "undefined") return true;
@@ -184,7 +184,7 @@ export function setThemeMode(mode: ThemeMode): void {
 
 export const DEFAULT_OVERLAY_BLUR_PX = 16;
 export const MAX_OVERLAY_BLUR_PX = 24;
-const OVERLAY_BLUR_STORAGE_KEY = "veloce_overlay_blur_px";
+const OVERLAY_BLUR_STORAGE_KEY = "spark_overlay_blur_px";
 
 function getInitialOverlayBlurPx(): number {
   if (typeof safeStorage === "undefined") return DEFAULT_OVERLAY_BLUR_PX;
@@ -228,16 +228,16 @@ export function setOverlayBlurPx(value: number): void {
 
 export type WindowSurfaceStyle = "frosted" | "solid";
 export const DEFAULT_WINDOW_SURFACE_STYLE: WindowSurfaceStyle = "solid";
-const WINDOW_SURFACE_STYLE_STORAGE_KEY = "veloce_window_surface_style";
+const WINDOW_SURFACE_STYLE_STORAGE_KEY = "spark_window_surface_style";
 
 export const DEFAULT_WINDOW_SURFACE_OPACITY = 70;
 export const MIN_WINDOW_SURFACE_OPACITY = 30;
 export const MAX_WINDOW_SURFACE_OPACITY = 100;
-const WINDOW_SURFACE_OPACITY_STORAGE_KEY = "veloce_window_surface_opacity";
+const WINDOW_SURFACE_OPACITY_STORAGE_KEY = "spark_window_surface_opacity";
 
 export const DEFAULT_WINDOW_SURFACE_BLUR_PX = 20;
 export const MAX_WINDOW_SURFACE_BLUR_PX = 32;
-const WINDOW_SURFACE_BLUR_STORAGE_KEY = "veloce_window_surface_blur_px";
+const WINDOW_SURFACE_BLUR_STORAGE_KEY = "spark_window_surface_blur_px";
 
 function getInitialWindowSurfaceStyle(): WindowSurfaceStyle {
   if (typeof safeStorage === "undefined") return DEFAULT_WINDOW_SURFACE_STYLE;
@@ -376,7 +376,7 @@ const settingsCategories: SettingsCategory[] = [
 
 function getInitialSettingsCategory(): SettingsCategory {
   if (typeof safeStorage === "undefined") return "appearance_layout";
-  const saved = safeStorage.getItem("veloce_settings_category");
+  const saved = safeStorage.getItem("spark_settings_category");
   return settingsCategories.includes(saved as SettingsCategory)
     ? (saved as SettingsCategory)
     : "appearance_layout";
@@ -389,14 +389,14 @@ export const activeSettingsCategory = writable<SettingsCategory>(
 export function setActiveSettingsCategory(category: SettingsCategory): void {
   activeSettingsCategory.set(category);
   if (typeof safeStorage !== "undefined") {
-    safeStorage.setItem("veloce_settings_category", category);
+    safeStorage.setItem("spark_settings_category", category);
   }
 }
 
 export type TabLayout = "horizontal" | "vertical";
 
 export type WorkspaceSwitcherDisplay = "toolbar" | "popup";
-const WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY = "veloce_workspace_switcher_display";
+const WORKSPACE_SWITCHER_DISPLAY_STORAGE_KEY = "spark_workspace_switcher_display";
 
 function getInitialWorkspaceSwitcherDisplay(): WorkspaceSwitcherDisplay {
   if (typeof safeStorage === "undefined") return "toolbar";
@@ -425,7 +425,7 @@ export function setWorkspaceSwitcherDisplay(display: WorkspaceSwitcherDisplay): 
 }
 
 export type WhatsAppDisplayMode = "popover" | "side_panel";
-const WHATSAPP_DISPLAY_MODE_STORAGE_KEY = "veloce_whatsapp_display_mode";
+const WHATSAPP_DISPLAY_MODE_STORAGE_KEY = "spark_whatsapp_display_mode";
 
 function getInitialWhatsAppDisplayMode(): WhatsAppDisplayMode {
   const saved = safeStorage.getItem(WHATSAPP_DISPLAY_MODE_STORAGE_KEY);
@@ -442,10 +442,10 @@ export function setWhatsAppDisplayMode(mode: WhatsAppDisplayMode): void {
 
 const initialTabLayout: TabLayout = (() => {
   if (typeof safeStorage === "undefined") return "horizontal";
-  const saved = safeStorage.getItem("veloce_tab_layout");
+  const saved = safeStorage.getItem("spark_tab_layout");
   if (saved === "vertical" || saved === "sidebar") {
     if (saved === "sidebar") {
-      safeStorage.setItem("veloce_tab_layout", "vertical");
+      safeStorage.setItem("spark_tab_layout", "vertical");
     }
     return "vertical";
   }
@@ -455,7 +455,7 @@ const initialTabLayout: TabLayout = (() => {
     saved === "below_omnibox"
   ) {
     if (saved !== "horizontal") {
-      safeStorage.setItem("veloce_tab_layout", "horizontal");
+      safeStorage.setItem("spark_tab_layout", "horizontal");
     }
     return "horizontal";
   }
@@ -467,7 +467,7 @@ export const tabLayout = writable<TabLayout>(initialTabLayout);
 export function setTabLayout(layout: TabLayout): void {
   tabLayout.set(layout);
   if (typeof safeStorage !== "undefined") {
-    safeStorage.setItem("veloce_tab_layout", layout);
+    safeStorage.setItem("spark_tab_layout", layout);
   }
 }
 
@@ -506,13 +506,13 @@ export function toggleZenMode(): void {
 }
 
 
-const savedResidentLimit = Number(safeStorage.getItem("veloce_resident_limit"));
+const savedResidentLimit = Number(safeStorage.getItem("spark_resident_limit"));
 export const residentTabLimit = writable(Number.isInteger(savedResidentLimit) && savedResidentLimit >= 1 && savedResidentLimit <= 100 ? savedResidentLimit : 8);
 export async function setResidentTabLimit(limit: number): Promise<void> {
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) return;
   applyTabsSnapshot(await setResidentLimit(limit));
   residentTabLimit.set(limit);
-  safeStorage.setItem("veloce_resident_limit", String(limit));
+  safeStorage.setItem("spark_resident_limit", String(limit));
 }
 
 /**

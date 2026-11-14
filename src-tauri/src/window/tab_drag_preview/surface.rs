@@ -78,7 +78,7 @@ pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String>
             .join("/tab-drag-preview.html")
             .map_err(|e| e.to_string())?;
         let window = WindowBuilder::new(app, LABEL)
-            .title("Veloce split preview")
+            .title("Spark split preview")
             .parent(&main)
             .map_err(|e| e.to_string())?
             .decorations(false)

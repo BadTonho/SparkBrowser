@@ -52,7 +52,7 @@ pub fn build_workspace_switcher_update_script(
     }))
     .map_err(|error| format!("Failed to serialize workspace switcher: {error}"))?;
     Ok(format!(
-        "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__veloceSetWorkspaceSwitcher === 'function') {{ window.__veloceSetWorkspaceSwitcher(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
+        "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__sparkSetWorkspaceSwitcher === 'function') {{ window.__sparkSetWorkspaceSwitcher(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
     ))
 }
 
@@ -76,12 +76,12 @@ pub fn build_bookmark_context_menu_script(
     }))
     .map_err(|error| format!("Failed to serialize bookmark context menu: {error}"))?;
     Ok(format!(
-        "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__veloceSetBookmarkContextMenu === 'function') {{ window.__veloceSetBookmarkContextMenu(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
+        "(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (typeof window.__sparkSetBookmarkContextMenu === 'function') {{ window.__sparkSetBookmarkContextMenu(payload); return; }} if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();"
     ))
 }
 
 pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Url) {
-    if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("workspace-switcher") {
+    if nav_url.scheme() != "spark-internal" || nav_url.host_str() != Some("workspace-switcher") {
         return;
     }
 
@@ -156,8 +156,7 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
     if crate::security::bridge::query(nav_url, &["token"]).is_none() {
         return;
     }
-    if nav_url.scheme() != "veloce-internal" || nav_url.host_str() != Some("bookmark-context-menu")
-    {
+    if nav_url.scheme() != "spark-internal" || nav_url.host_str() != Some("bookmark-context-menu") {
         return;
     }
 
@@ -237,7 +236,7 @@ pub(super) fn spawn_workspace_switcher_webview(
     .transparent(true)
     .focused(false)
     .on_navigation(move |nav_url| {
-        if nav_url.scheme() == "veloce-internal" {
+        if nav_url.scheme() == "spark-internal" {
             handle_workspace_switcher_navigation(&app_for_navigation, nav_url);
             return false;
         }
@@ -293,7 +292,7 @@ pub(super) fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(),
     .transparent(true)
     .focused(false)
     .on_navigation(move |nav_url| {
-        if nav_url.scheme() == "veloce-internal"
+        if nav_url.scheme() == "spark-internal"
             && nav_url.host_str() == Some("bookmark-context-menu")
         {
             handle_bookmark_context_menu_navigation(&app_for_navigation, nav_url);

@@ -10,13 +10,17 @@ pub fn fold(value: &str) -> String {
         .collect()
 }
 pub fn register(conn: &Connection) -> Result<(), String> {
-    conn.create_scalar_function(
-        "veloce_search_fold",
-        1,
-        FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
-        |ctx| Ok(fold(&ctx.get::<String>(0)?)),
-    )
-    .map_err(|e| e.to_string())?;
+    // Triggers created before the rename call the old function name and live in the database file,
+    // so both names stay registered. New schemas only use the first.
+    for name in ["spark_search_fold", "veloce_search_fold"] {
+        conn.create_scalar_function(
+            name,
+            1,
+            FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
+            |ctx| Ok(fold(&ctx.get::<String>(0)?)),
+        )
+        .map_err(|e| e.to_string())?;
+    }
     super::search_index::migrate(conn)
 }
 #[derive(Serialize)]

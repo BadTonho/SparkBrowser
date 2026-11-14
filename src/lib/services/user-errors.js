@@ -6,7 +6,7 @@ export class UserError extends Error {
 /** @param {unknown} error @param {string} [fallback] */
 export function describeError(error, fallback = 'operation.failed') {
   const code = error instanceof UserError ? error.code : fallback;
-  return JSON.stringify({ veloceError: true, code, detail: error instanceof Error ? error.message : String(error) });
+  return JSON.stringify({ sparkError: true, code, detail: error instanceof Error ? error.message : String(error) });
 }
 /** @param {unknown} value */
 export function errorDetails(value) {
@@ -14,7 +14,7 @@ export function errorDetails(value) {
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value);
-      if (parsed?.veloceError === true && typeof parsed.code === 'string' && typeof parsed.detail === 'string') return { code: parsed.code, detail: parsed.detail };
+      if (parsed?.sparkError === true && typeof parsed.code === 'string' && typeof parsed.detail === 'string') return { code: parsed.code, detail: parsed.detail };
     } catch { /* Native diagnostic text has no user-facing semantics. */ }
   }
   return { code: 'operation.failed', detail: String(value) };

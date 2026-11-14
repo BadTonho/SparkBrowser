@@ -42,14 +42,14 @@ test('floating volume opens on hover, focus and click; hides after leaving and p
 test('percentage is immediate at 0, 100 and 200 and stale acknowledgments cannot overwrite edits',()=>{
   const f=fixture(),slider=f.find('pip-volume'),percent=f.find('pip-volume-percentage');
   for(const value of [0,100,200]){slider.value=String(value);slider.fire('input');assert.equal(percent.textContent,`${value}%`);assert.equal(slider.style['--volume-progress'],`${value/2}%`);}
-  f.popup.__velocePipState({session:'wrong',sequence:99,volume:20});assert.equal(slider.value,'200');
-  f.popup.__velocePipState({session:'test',sequence:1,volume:20});assert.equal(slider.value,'200');
-  f.popup.__velocePipState({session:'test',sequence:f.sent.length,volume:100});assert.equal(slider.value,'100');assert.equal(percent.textContent,'100%');assert.equal(slider.style['--volume-progress'],'50%');
+  f.popup.__sparkPipState({session:'wrong',sequence:99,volume:20});assert.equal(slider.value,'200');
+  f.popup.__sparkPipState({session:'test',sequence:1,volume:20});assert.equal(slider.value,'200');
+  f.popup.__sparkPipState({session:'test',sequence:f.sent.length,volume:100});assert.equal(slider.value,'100');assert.equal(percent.textContent,'100%');assert.equal(slider.style['--volume-progress'],'50%');
   slider.fire('pointerdown');slider.value='51';slider.fire('input');
-  f.popup.__velocePipState({session:'test',sequence:99,volume:100});assert.equal(slider.value,'51');
+  f.popup.__sparkPipState({session:'test',sequence:99,volume:100});assert.equal(slider.value,'51');
   f.popup.fire('pointerup');assert.deepEqual(f.sent.at(-1),{action:'flush',value:51});
-  f.popup.__velocePipState({session:'test',sequence:99,volume:50});assert.equal(slider.value,'50');
-  f.popup.__velocePipState({session:'test',sequence:99,volume:50,disabled:true});
+  f.popup.__sparkPipState({session:'test',sequence:99,volume:50});assert.equal(slider.value,'50');
+  f.popup.__sparkPipState({session:'test',sequence:99,volume:50,disabled:true});
   const count=f.sent.length;slider.fire('input');assert.equal(f.sent.length,count);
 });
 
@@ -90,7 +90,7 @@ test('pause, seek drag, window drag and the volume panel keep minimal controls v
   f.popup.fire('pointerup');f.advance(2000);assert.equal(chrome.getAttribute('data-visible'),'false');
   f.find('pip-drag').fire('pointerdown',{button:0,preventDefault(){}});assert.equal(f.sent.at(-1).action,'drag');
   f.advance(4000);assert.equal(chrome.getAttribute('data-visible'),'true');
-  f.popup.__velocePipDragFinished();f.advance(2000);assert.equal(chrome.getAttribute('data-visible'),'false');
+  f.popup.__sparkPipDragFinished();f.advance(2000);assert.equal(chrome.getAttribute('data-visible'),'false');
   f.find('pip-speaker').parent.fire('pointerenter');f.advance(4000);assert.equal(chrome.getAttribute('data-visible'),'true');
 });
 

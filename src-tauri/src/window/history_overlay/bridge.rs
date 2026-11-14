@@ -28,7 +28,7 @@ fn action_event(session: &super::Session, payload: ActionPayload) -> Option<Acti
 }
 
 pub(super) fn navigation(app: &AppHandle, url: &Url) {
-    if url.scheme() != "veloce-internal"
+    if url.scheme() != "spark-internal"
         || url.host_str() != Some("history-overlay")
         || url.path() != "/action"
     {

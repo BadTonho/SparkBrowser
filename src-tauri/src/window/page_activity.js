@@ -14,8 +14,8 @@
     if (key === last) return;
     last = key;
     const query = new URLSearchParams({ token, document: documentId, sequence: String(++sequence), dirty: String(dirty), media: String(media) });
-    const url = `veloce-internal://page-activity/state?${query}`;
-    if (window.__velocePostContent) window.__velocePostContent(url);
+    const url = `spark-internal://page-activity/state?${query}`;
+    if (window.__sparkPostContent) window.__sparkPostContent(url);
     else window.location.href = url;
   }
   function schedule() {

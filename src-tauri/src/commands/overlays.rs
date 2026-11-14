@@ -182,7 +182,7 @@ pub async fn set_workspace_switcher_overlay(
     }
 
     if let Some(content_webview) = active_content_webview(&app) {
-        let _ = content_webview.eval(format!("window.__veloceWorkspaceSwitcherOpen = {visible};"));
+        let _ = content_webview.eval(format!("window.__sparkWorkspaceSwitcherOpen = {visible};"));
     }
 
     if let Err(error) = webview.eval(&script) {
@@ -193,7 +193,7 @@ pub async fn set_workspace_switcher_overlay(
             *open = false;
         }
         if let Some(content_webview) = active_content_webview(&app) {
-            let _ = content_webview.eval("window.__veloceWorkspaceSwitcherOpen = false;");
+            let _ = content_webview.eval("window.__sparkWorkspaceSwitcherOpen = false;");
         }
         let _ = sync_all_webviews(&app, &state);
         return Err(format!("Failed to show workspace switcher: {error}"));

@@ -1,5 +1,5 @@
 {
-  "name": "@veloce/deepmerge",
+  "name": "@spark/deepmerge",
   "version": "4.3.1-patched.1",
   "private": true,
   "main": "index.cjs",

@@ -31,8 +31,8 @@ if (!existsSync(sigPath)) {
 }
 
 const signature = readFileSync(sigPath, 'utf8').trim();
-const targetFileName = `VeloceBrowser_${version}_x64-setup.exe`;
-const notes = process.env.RELEASE_NOTES || `Veloce Browser ${version}`;
+const targetFileName = `SparkBrowser_${version}_x64-setup.exe`;
+const notes = process.env.RELEASE_NOTES || `Spark Browser ${version}`;
 
 const manifest = createManifest(tag, targetFileName, signature, notes);
 

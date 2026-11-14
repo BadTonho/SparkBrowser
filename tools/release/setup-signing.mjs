@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { signingKeyPath } from './shared.mjs';
 import { dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 const root = resolve('.');
 const file = 'src-tauri/tauri.conf.json';
 const config = JSON.parse(readFileSync(file, 'utf8'));
-const key = resolve(process.env.VELOCE_SIGNING_KEY_PATH ?? resolve(homedir(), '.veloce-signing', 'updater.key'));
+const key = signingKeyPath();
 const inside = relative(root, key);
 if (inside !== '..' && !inside.startsWith('..' + sep) && !isAbsolute(inside)) throw new Error('Choose a signing-key path outside the repository.');
 if (config.plugins?.updater?.pubkey && !existsSync(key)) {

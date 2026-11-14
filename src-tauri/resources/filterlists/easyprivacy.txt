@@ -20506,7 +20506,7 @@ search.rakuten.co.jp##+js(aeld, mouseup, sendClickEvent)
 ||stats.lstfnd.de^
 ||stats.ltdhunt.com^
 ||stats.luieremmer.net^
-||stats.lussoveloce.com^
+||stats.lussospark.com^
 ||stats.lyricall.cz^
 ||stats.macosicons.com^
 ||stats.madethis.gallery^

@@ -10,7 +10,7 @@
   }
   function send(action, value = {}, reason = '') {
     if (!state || closing || (pending && action !== 'dismiss')) return;
-    const url = new URL('veloce-internal://permission-popover/action');
+    const url = new URL('spark-internal://permission-popover/action');
     url.searchParams.set('token', state.token);
     url.searchParams.set('sequence', String(++sequence));
     url.searchParams.set('payload', JSON.stringify({ action, ...value, reason }));
@@ -52,7 +52,7 @@
     $('remember').checked = false;
     ['block','allow-once','allow-always','remember','close'].forEach(id => $(id).disabled = !!payload.busy);
   }
-  window.__veloceSetPermissionPopover = payload => {
+  window.__sparkSetPermissionPopover = payload => {
     if (!payload.visible) { state = null; panel.hidden = true; closing = pending = false; return; }
     if (state && state.token !== payload.token && closing) return;
     const opening = state?.token !== payload.token;

@@ -6,7 +6,7 @@
   let { surface }: { surface: "tools" | "downloads" | "settings-quick" } = $props();
   const downloads = $derived(surface === "downloads");
   const quickSettings = $derived(surface === "settings-quick");
-  const setter = $derived(downloads ? "__veloceSetDownloadsPopover" : quickSettings ? "__veloceSetQuickSettingsPopover" : "__veloceSetToolsPopover");
+  const setter = $derived(downloads ? "__sparkSetDownloadsPopover" : quickSettings ? "__sparkSetQuickSettingsPopover" : "__sparkSetToolsPopover");
   import { panelPosition, isPanelTrigger, type PanelPresentation, type PanelViewAction } from "../../services/panel-presentation";
   import "../tools/tools.css";
   import "../downloads/downloads.css";
@@ -33,7 +33,7 @@
     const next = ++sequence;
     inFlight = next;
     if ("target" in action && ["input", "change"].includes(action.kind) && !outbox.some(queued => "target" in queued && queued.target === action.target && ["input", "change"].includes(queued.kind))) pending.set(action.target, next);
-    const url = new URL(`veloce-internal://${surface}-popover/action`);
+    const url = new URL(`spark-internal://${surface}-popover/action`);
     url.searchParams.set("token", presentation.token);
     url.searchParams.set("sequence", String(next));
     url.searchParams.set("payload", JSON.stringify(action));

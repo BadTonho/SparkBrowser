@@ -34,7 +34,7 @@ fn valid_action(
 }
 
 pub(super) fn navigation(app: &AppHandle, url: &Url) {
-    if url.scheme() != "veloce-internal"
+    if url.scheme() != "spark-internal"
         || url.host_str() != Some("permission-popover")
         || url.path() != "/action"
     {

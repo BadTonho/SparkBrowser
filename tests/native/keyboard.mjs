@@ -7,7 +7,7 @@ export async function checkKeyboard(context) {
   if (process.platform !== 'win32') return;
   const {invoke,until,fixture,wait,script,click,focusWindow}=context;
   const build=JSON.parse(readFileSync('.cache/native-target/test-build.json','utf8'));
-  assert.equal(build.identifier,'org.veloce.browser.native-tests');
+  assert.equal(build.identifier,'org.spark.browser.native-tests');
   const executable=resolve(build.executable);
   assert.ok(executable.startsWith(resolve('.cache/native-target')+'\\'));
   const key=(code,up=false)=>new Promise((resolveKey,reject)=>{

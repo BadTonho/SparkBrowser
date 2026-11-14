@@ -6,7 +6,7 @@ import { validateRunDirectory } from './run-directory.mjs';
 
 export function createNativeKeySender(directory) {
   const build = JSON.parse(readFileSync('.cache/native-target/test-build.json', 'utf8'));
-  assert.equal(build.identifier, 'org.veloce.browser.native-tests');
+  assert.equal(build.identifier, 'org.spark.browser.native-tests');
   const executable = resolve(build.executable);
   assert.ok(executable.startsWith(resolve('.cache/native-target') + '\\'));
   const runDirectory = directory ? validateRunDirectory(directory) : undefined;

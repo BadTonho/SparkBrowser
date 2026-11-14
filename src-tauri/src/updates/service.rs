@@ -51,7 +51,7 @@ impl UpdateService {
             UpdateChannel::initial(&version),
         )?;
         let supported = cfg!(all(windows, target_arch = "x86_64", not(debug_assertions)))
-            && app.config().identifier == "org.veloce.browser";
+            && app.config().identifier == "org.spark.browser";
         Ok(Self {
             inner: Mutex::new(Inner {
                 snapshot: UpdateState {

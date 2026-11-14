@@ -157,7 +157,7 @@ export const scenarios = {
     await until(() => script('return Boolean(document.querySelector("#updates-heading"))'), 'updates settings');
     assert.equal(await script('return document.querySelector("#update-channel").disabled'), true, 'isolated native builds cannot update the production installation');
     assert.equal((await invoke('get_update_state')).supported, false);
-    if (process.env.VELOCE_NATIVE_SCREENSHOTS === '1') {
+    if (process.env.SPARK_NATIVE_SCREENSHOTS === '1') {
       await screenshot('updates');
     }
     await context.closeSettings();

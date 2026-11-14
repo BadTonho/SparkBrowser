@@ -31,7 +31,7 @@
         function sendRequest(action, workspaceId) {
           if (!isOpen || requestSent) return;
           requestSent = true;
-          const url = new URL(`veloce-internal://workspace-switcher/${action}`);
+          const url = new URL(`spark-internal://workspace-switcher/${action}`);
           url.searchParams.set("token", activeToken);
           if (workspaceId) url.searchParams.set("workspace_id", workspaceId);
           window.location.href = url.toString();
@@ -48,7 +48,7 @@
           sendRequest("dismiss");
         }
 
-        window.__veloceSetWorkspaceSwitcher = (payload) => {
+        window.__sparkSetWorkspaceSwitcher = (payload) => {
           if (payload.language) {
             document.documentElement.lang = payload.language.locale === "pt-BR" ? "pt-BR" : "en";
             list.setAttribute("aria-label", payload.language.label);

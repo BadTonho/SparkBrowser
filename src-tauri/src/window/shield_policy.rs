@@ -26,7 +26,7 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
             continue;
         };
         let script = format!(
-            "window.__veloceSetShieldPolicy?.({}, {enabled});",
+            "window.__sparkSetShieldPolicy?.({}, {enabled});",
             serde_json::to_string(&token).map_err(|e| e.to_string())?
         );
         let old = state

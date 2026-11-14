@@ -73,9 +73,9 @@
   const release=()=>{if(dragging){dragging=false;change(true);scheduleVolumeHide();}seeking=false;windowDragging=false;wake();};
   listen(popup,'pointerup',release);listen(popup,'pointercancel',release);
   listen(dragArea,'pointerdown',event=>{if(event.button===0){event.preventDefault();windowDragging=true;wake();send('drag');}});
-  popup.__velocePipDragFinished=()=>{windowDragging=false;wake();};
+  popup.__sparkPipDragFinished=()=>{windowDragging=false;wake();};
   listen(doc,'keydown',event=>{wake();if(event.key==='Escape'&&!panel.hidden){event.preventDefault();event.stopPropagation();hideVolume();suppressFocus=true;speaker.focus();suppressFocus=false;}});
-  popup.__velocePipState=state=>{
+  popup.__sparkPipState=state=>{
     if(disposed||state.session!==config.session)return;
     acknowledged=Math.max(acknowledged,state.sequence??0);volume.disabled=Boolean(state.disabled);
     if(!dragging&&(!editing||acknowledged>=sent)){volume.value=String(state.volume);latest=Number(volume.value);editing=false;renderVolume();}
@@ -101,7 +101,7 @@
   action(play,()=>{if(source.paused)void source.play().catch(()=>{});else source.pause();});
   listen(progress,'input',()=>seek(progress.value));
   action(minimize,()=>send('minimize'));action(returnButton,()=>send('return'));action(closeButton,()=>send('close',latest));
-  popup.__velocePipRequestClose=()=>send('close',latest);
+  popup.__sparkPipRequestClose=()=>send('close',latest);
   for(const event of ['play','pause','ended'])listen(source,event,update);
   for(const event of ['timeupdate','durationchange','progress','loadedmetadata'])listen(source,event,scheduleUpdate);
   function cleanup() {if(disposed)return;disposed=true;clearTimeout(volumeTimer);clearTimeout(idleTimer);clearTimeout(focusTimer);clearTimeout(renderTimer);clearInterval(watch);removers.forEach(stop=>stop());capture?.();closed();}

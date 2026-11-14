@@ -9,7 +9,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 pub const MAX_BYTES: u64 = 32 * 1024 * 1024;
-pub const FORMAT: &str = "veloce-backup";
+pub const FORMAT: &str = "spark-backup";
+/// Format tag of files written before the app was renamed; still accepted when reading.
+pub const LEGACY_FORMAT: &str = "veloce-backup";
+pub fn is_backup_format(tag: &str) -> bool {
+    tag == FORMAT || tag == LEGACY_FORMAT
+}
 /// Format written today. Version 5 adds the integrity `checksum`; versions 1-4 stay readable.
 pub const CURRENT_VERSION: u32 = 5;
 

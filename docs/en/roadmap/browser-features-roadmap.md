@@ -1,4 +1,4 @@
-# Veloce Browser pending features roadmap
+# Spark Browser pending features roadmap
 
 This roadmap organizes the 36 features in Parts 1 and 2 of [pending browser features](../features/browser-missing-features.md) into work stages. The proposed order groups related features and dependencies; it is not a schedule and does not establish that each feature is entirely missing.
 

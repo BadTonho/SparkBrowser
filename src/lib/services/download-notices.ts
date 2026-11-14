@@ -3,7 +3,7 @@ import type { DownloadTask } from "../types/browser";
 export interface DownloadNotices { completed: number; error: number }
 interface Entry { id: string; revision: number; status: string; notice: "completed" | "error" | null }
 interface Storage { getItem(key: string): string | null; setItem(key: string, value: string): unknown }
-const KEY = "veloce_download_notices";
+const KEY = "spark_download_notices";
 const LIMIT = 4096;
 const statuses = new Set(["Queued", "Downloading", "Pausing", "Paused", "Interrupted", "RestartRequired", "Verifying", "VerificationFailed", "Finalizing", "Cancelling", "Completed", "Cancelled", "Failed"]);
 const result = (status: string) => status === "Completed" ? "completed" : ["Failed", "VerificationFailed"].includes(status) ? "error" : null;

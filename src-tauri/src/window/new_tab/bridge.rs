@@ -181,7 +181,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
                 let _ = view.set_focus();
             }
             let _ = view.eval(format!(
-                "window.__veloceNewTabReply?.({}, {}, {});",
+                "window.__sparkNewTabReply?.({}, {}, {});",
                 serde_json::to_string(&document).unwrap(),
                 request,
                 payload

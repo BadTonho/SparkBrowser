@@ -1,8 +1,8 @@
 (() => {
-  if (window.__veloceTrackingPolicy) return;
+  if (window.__sparkTrackingPolicy) return;
   let settings = __SETTINGS__;
   const token = __TOKEN__;
-  Object.defineProperty(window, '__veloceTrackingPolicy', { value: (secret, next) => { if (secret === token) settings = next; } });
+  Object.defineProperty(window, '__sparkTrackingPolicy', { value: (secret, next) => { if (secret === token) settings = next; } });
   document.addEventListener('click', event => {
     if (!settings.enabled || !event.isTrusted || event.defaultPrevented || event.button !== 0) return;
     const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;

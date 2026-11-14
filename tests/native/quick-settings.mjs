@@ -9,8 +9,8 @@ export async function checkQuickSettings(context) {
   await context.focusWindow();
   const initial = await script(`return {
     theme: document.documentElement.dataset.theme,
-    bookmarks: localStorage.getItem('veloce_show_bookmarks_bar'),
-    layout: localStorage.getItem('veloce_tab_layout'),
+    bookmarks: localStorage.getItem('spark_show_bookmarks_bar'),
+    layout: localStorage.getItem('spark_tab_layout'),
   };`);
   const loads = fixture.loads.get('quick-settings');
   await click('[data-testid="open-settings"]');
@@ -30,13 +30,13 @@ export async function checkQuickSettings(context) {
 
   const bookmarksBefore = initial.bookmarks !== 'false';
   await inside(() => click('[data-testid="settings-quick-bookmarks"]'));
-  await until(() => script(`return localStorage.getItem('veloce_show_bookmarks_bar') === '${!bookmarksBefore}'`), 'quick bookmarks toggle');
+  await until(() => script(`return localStorage.getItem('spark_show_bookmarks_bar') === '${!bookmarksBefore}'`), 'quick bookmarks toggle');
   await inside(() => click('[data-testid="settings-quick-bookmarks"]'));
 
   const originalLayout = initial.layout === 'vertical' ? 'vertical' : 'horizontal';
   const nextLayout = originalLayout === 'vertical' ? 'horizontal' : 'vertical';
   await inside(() => click(`[data-testid="settings-quick-layout-${nextLayout}"]`));
-  await until(() => script(`return localStorage.getItem('veloce_tab_layout') === '${nextLayout}'`), 'quick tab layout changes');
+  await until(() => script(`return localStorage.getItem('spark_tab_layout') === '${nextLayout}'`), 'quick tab layout changes');
   await until(() => inside(() => script('return !!document.querySelector("[data-testid=settings-quick-menu]")')), 'menu stays open after layout change');
   await inside(() => click(`[data-testid="settings-quick-layout-${originalLayout}"]`));
 
