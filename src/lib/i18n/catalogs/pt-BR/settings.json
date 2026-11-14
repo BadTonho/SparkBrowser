@@ -316,5 +316,7 @@
   "settings.shield_exceptions": "Exceções do escudo (domínio e subdomínios)",
   "settings.gpc_coverage": "Sinal opcional. O WebView2 adiciona o cabeçalho às requisições interceptadas; no Linux, somente a propriedade da página está disponível. A cobertura de quadros e workers ainda não foi totalmente validada. Exceções abrangem domínios e subdomínios.",
   "settings.gpc_reload_confirm": "Alterar esta configuração recria as páginas abertas e perde o estado vivo e o histórico de navegação. Continuar?",
-  "settings.gpc_unavailable": "Ainda não disponível: o envio do sinal nas requisições de rede e páginas exige integração adicional com a plataforma."
+  "settings.gpc_unavailable": "Ainda não disponível: o envio do sinal nas requisições de rede e páginas exige integração adicional com a plataforma.",
+  "settings.skip_exit_review": "Pular a confirmação ao fechar",
+  "settings.skip_exit_review_description": "Fecha sem perguntar quando só há mídia ou transferências que podem ser retomadas. Formulários alterados e downloads de páginas que não retomam continuam sendo revisados."
 }

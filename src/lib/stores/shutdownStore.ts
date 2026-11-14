@@ -3,6 +3,8 @@ import { get, writable } from "svelte/store";
 import { idleShutdown, fetchShutdown, onShutdown, prepareShutdown, confirmShutdown, cancelShutdown } from "../services/bridge/shutdown";
 import { setOverlayVisibility } from "../services/bridge/overlays";
 import { describeError, UserError } from "../services/user-errors.js";
+import { safeStorage } from "../services/storage.js";
+import { canSkipExitReview } from "../services/shutdown-skip.js";
 import { flushBackupSyncBeforeShutdown } from "./backupStore";
 import { noteWriter } from "./notesStore";
 import type { ShutdownState } from "../types/shutdown";
@@ -10,6 +12,13 @@ import type { ShutdownState } from "../types/shutdown";
 export const shutdownState = writable<ShutdownState>(idleShutdown);
 export const shutdownError = writable("");
 export const shutdownBusy = writable(false);
+const SKIP_EXIT_REVIEW_KEY = "spark_skip_exit_review";
+/** "Don't show again": skips the exit review unless something would be lost for good. */
+export const skipExitReview = writable(safeStorage.getItem(SKIP_EXIT_REVIEW_KEY) === "true");
+export function setSkipExitReview(enabled: boolean): boolean {
+  skipExitReview.set(enabled);
+  return safeStorage.setItem(SKIP_EXIT_REVIEW_KEY, String(enabled));
+}
 let flushing: string | null = null;
 function apply(state: ShutdownState) {
   if (state.revision < get(shutdownState).revision) return;
@@ -32,15 +41,17 @@ export async function retryShutdown() {
     await flushBackupSyncBeforeShutdown();
     const state = await prepareShutdown(attempt);
     apply(state);
-    if (state.review && !state.review.tabs.length && !state.review.downloads.length && !state.review.native_downloads.length) {
+    const empty = state.review && !state.review.tabs.length && !state.review.downloads.length && !state.review.native_downloads.length;
+    if (state.review && (empty || canSkipExitReview(state, get(skipExitReview)))) {
       apply(await confirmShutdown(attempt, state.review.revision));
     }
   } catch (error) { shutdownError.set(describeError(error)); }
   finally { shutdownBusy.set(false); }
 }
-export async function exitAnyway() {
+export async function exitAnyway(dontAskAgain = false) {
   const state = get(shutdownState);
   if (!state.attempt || !state.review || get(shutdownBusy)) return;
+  if (dontAskAgain && state.purpose === "exit" && !state.update_version) setSkipExitReview(true);
   shutdownBusy.set(true); shutdownError.set("");
   try { apply(await confirmShutdown(state.attempt, state.review.revision)); }
   catch (error) { shutdownError.set(describeError(error)); }

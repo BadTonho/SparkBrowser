@@ -2,8 +2,6 @@
   "shutdown.heading": "Close browser?",
   "shutdown.update_heading": "Prepare update",
   "shutdown.review": "Review activity across all workspaces before continuing.",
-  "shutdown.form": "edited form",
-  "shutdown.media": "playing media",
   "shutdown.manual": "{count} transfers or checks will pause. Resume them manually after reopening.",
   "shutdown.native": "{count} page downloads will lose their engine connection and cannot resume after exit. Return to the source page to start again.",
   "shutdown.saving": "Saving the session and stopping transfers…",
@@ -19,5 +17,11 @@
   "shutdown.installer_returned": "The installer returned without closing the browser.",
   "shutdown.details": "Technical details",
   "shutdown.runtime_heading": "Restart browser engine?",
-  "shutdown.restart": "Restart anyway"
+  "shutdown.restart": "Restart anyway",
+  "shutdown.section_pages": "Pages with activity",
+  "shutdown.badge_form": "Edited form",
+  "shutdown.badge_media": "Playing media",
+  "shutdown.badge_download": "Page download",
+  "shutdown.dont_ask": "Don't ask again when I close the browser",
+  "shutdown.dont_ask_hint": "Only skips media and transfers that can resume. Edited forms and page downloads that cannot resume are still reviewed. You can change this in Settings."
 }

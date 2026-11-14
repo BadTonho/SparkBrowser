@@ -2,8 +2,6 @@
   "shutdown.heading": "Fechar o navegador?",
   "shutdown.update_heading": "Preparar atualização",
   "shutdown.review": "Revise as atividades de todos os workspaces antes de continuar.",
-  "shutdown.form": "formulário alterado",
-  "shutdown.media": "mídia em reprodução",
   "shutdown.manual": "{count} transferências ou verificações serão pausadas. Retome manualmente ao reabrir.",
   "shutdown.native": "{count} downloads de páginas perderão a conexão com o motor e não poderão ser retomados após sair. Volte à página de origem para iniciar novamente.",
   "shutdown.saving": "Salvando a sessão e interrompendo transferências…",
@@ -19,5 +17,11 @@
   "shutdown.installer_returned": "O instalador retornou sem fechar o navegador.",
   "shutdown.details": "Detalhes técnicos",
   "shutdown.runtime_heading": "Reiniciar o mecanismo de navegação?",
-  "shutdown.restart": "Reiniciar mesmo assim"
+  "shutdown.restart": "Reiniciar mesmo assim",
+  "shutdown.section_pages": "Páginas com atividade",
+  "shutdown.badge_form": "Formulário alterado",
+  "shutdown.badge_media": "Mídia em reprodução",
+  "shutdown.badge_download": "Download da página",
+  "shutdown.dont_ask": "Não me mostre novamente ao fechar o navegador",
+  "shutdown.dont_ask_hint": "Só ignora mídia e transferências que podem ser retomadas. Formulários alterados e downloads de páginas que não retomam continuam sendo revisados. Você pode mudar isso em Configurações."
 }

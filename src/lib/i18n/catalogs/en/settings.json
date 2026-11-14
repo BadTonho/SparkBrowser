@@ -316,5 +316,7 @@
   "settings.shield_exceptions": "Shield exceptions (domain and subdomains)",
   "settings.gpc_coverage": "Optional signal. WebView2 adds the header to intercepted requests; Linux currently exposes only the page property. Frame and worker coverage is not fully validated. Exceptions apply to hostnames and subdomains.",
   "settings.gpc_reload_confirm": "Changing this setting recreates open pages and loses their live state and navigation history. Continue?",
-  "settings.gpc_unavailable": "Not yet available: sending the signal in network requests and pages requires additional platform integration."
+  "settings.gpc_unavailable": "Not yet available: sending the signal in network requests and pages requires additional platform integration.",
+  "settings.skip_exit_review": "Skip the close confirmation",
+  "settings.skip_exit_review_description": "Close without asking when only media or resumable transfers are open. Edited forms and page downloads that cannot resume are still reviewed."
 }

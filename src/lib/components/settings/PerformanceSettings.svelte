@@ -13,6 +13,7 @@ import {
 } from "../../stores/settingsStore";
 import { addHibernationDomain } from "../../services/hibernation-domains.js";
 import { graphicsBusy, graphicsError, graphicsStatus, refreshGraphics, restartForGraphics, setHardwareAcceleration } from "../../stores/graphicsStore";
+import { skipExitReview, setSkipExitReview } from "../../stores/shutdownStore";
 import ErrorMessage from "../status/ErrorMessage.svelte";
 const autoHibernateOptions = [5, 10, 30, "auto", "off"] as const;
 let domainInput = $state("");
@@ -108,6 +109,11 @@ async function removeDomain(domain: string) {
   <div class="setting-row" id="setting-download-destination" tabindex="-1">
     <div class="row-text"><span class="row-label">{$t("settings.ask_download_destination")}</span><span class="row-desc">{$t("settings.ask_download_destination_description")}</span></div>
     <input type="checkbox" checked={$askDownloadDestination} aria-label={$t("settings.ask_download_destination")} onchange={event => void setAskDownloadDestination(event.currentTarget.checked).catch(() => {})} />
+  </div>
+
+  <div class="setting-row" id="setting-skip-exit-review" tabindex="-1" data-testid="skip-exit-review">
+    <div class="row-text"><span class="row-label">{$t("settings.skip_exit_review")}</span><span class="row-desc">{$t("settings.skip_exit_review_description")}</span></div>
+    <input type="checkbox" checked={$skipExitReview} aria-label={$t("settings.skip_exit_review")} onchange={event => setSkipExitReview(event.currentTarget.checked)} />
   </div>
 </section>
 
