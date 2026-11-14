@@ -25,6 +25,7 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
         .lock()
         .map_err(|e| e.to_string())?
     {
+        #[cfg(target_os = "linux")]
         let bounds = state
             .surfaces()
             .viewport(&super::overlay_host::host_id(
