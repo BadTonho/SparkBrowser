@@ -18,7 +18,9 @@
   const MAX_VERSIONS = 100;
   const INTERVALS: LocalBackupInterval[] = ["six_hours", "daily", "weekly"];
 
+  const MAX_AGE_DAYS = 3650;
   let maxBackups = $state(10);
+  let maxAgeDays = $state<number | null>(null);
   let password = $state("");
   let wantsEncryption = $state(false);
   let confirmDeleteId = $state<string | null>(null);
@@ -28,6 +30,9 @@
 
   $effect(() => {
     maxBackups = $localBackupState.schedule.max_backups;
+  });
+  $effect(() => {
+    maxAgeDays = $localBackupState.schedule.max_age_days;
   });
   $effect(() => {
     wantsEncryption = $localBackupState.encryption_enabled;
@@ -43,6 +48,13 @@
     const value = Math.min(MAX_VERSIONS, Math.max(1, Math.round(Number(maxBackups)) || schedule.max_backups));
     maxBackups = value;
     if (value !== schedule.max_backups) update({ max_backups: value });
+  }
+  /** Empty means "no age limit"; anything else is clamped to a whole number of days. */
+  function commitMaxAge(): void {
+    const raw = Number(maxAgeDays);
+    const value = maxAgeDays === null || !Number.isFinite(raw) || raw <= 0 ? null : Math.min(MAX_AGE_DAYS, Math.max(1, Math.round(raw)));
+    maxAgeDays = value;
+    if (value !== schedule.max_age_days) update({ max_age_days: value });
   }
   function toggleEncryption(): void {
     // Turning it off applies immediately; turning it on waits for a password.
@@ -122,6 +134,20 @@
         onchange={commitMaxBackups}
       />
     </label>
+    <label class="field">
+      <span>{$t("backup.schedule_max_age")}</span>
+      <input
+        type="number"
+        min="1"
+        max={MAX_AGE_DAYS}
+        data-testid="backup-schedule-max-age"
+        bind:value={maxAgeDays}
+        placeholder={$t("backup.schedule_max_age_never")}
+        disabled={busy}
+        onchange={commitMaxAge}
+      />
+    </label>
+    <p class="status">{$t("backup.schedule_retention_note")}</p>
     {#if schedule.enabled && $localBackupState.next_due_at}
       <p class="status" data-testid="backup-schedule-next">
         {$t("backup.schedule_next", { time: when($localBackupState.next_due_at) })}

@@ -68,6 +68,8 @@ export interface LocalBackupSchedule {
   interval: LocalBackupInterval;
   on_exit: boolean;
   max_backups: number;
+  /** Backups older than this many days are deleted; null keeps them until the count limit. */
+  max_age_days: number | null;
 }
 export interface LocalBackupEntry {
   id: string;

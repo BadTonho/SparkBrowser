@@ -31,7 +31,7 @@ A substituição roda na mesma transação SQLite do restante da importação: s
 
 Antes de uma substituição que apagaria algo, o aplicativo salva os dados atuais no histórico de backups locais com o motivo **Antes de substituir** (criptografado quando a criptografia está ativa). Se essa cópia não puder ser gravada, a substituição não acontece. Depois da importação, o resultado mostra **Desfazer substituição…**, que abre a cópia de segurança como uma revisão em modo substituir dos mesmos grupos; confirmar restaura os dados anteriores (e cria uma nova cópia de segurança, então o próprio desfazer pode ser desfeito).
 
-As cópias de segurança contam no limite do histórico e podem ser removidas como qualquer outra entrada, e não reiniciam o agendamento de backup automático. Importações em modo mesclar não apagam nada e não geram cópia.
+As cópias de segurança não contam no limite de versões nem na idade máxima do histórico; têm política própria (as 5 mais recentes, por no máximo 30 dias). Elas não reiniciam o agendamento de backup automático. Importações em modo mesclar não apagam nada e não geram cópia.
 
 ## Ainda não incluído
 

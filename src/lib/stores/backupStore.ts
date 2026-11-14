@@ -82,7 +82,7 @@ export const backupSyncNotice = writable<"pushed" | "unchanged" | "config_saved"
 /** Set while an encrypted file waits for its password; `wrong` after a failed attempt. */
 export const backupLocked = writable<{ wrong: boolean } | null>(null);
 export const localBackupState = writable<LocalBackupState>({
-  schedule: { enabled: false, interval: "daily", on_exit: false, max_backups: 10 },
+  schedule: { enabled: false, interval: "daily", on_exit: false, max_backups: 10, max_age_days: null },
   encryption_enabled: false,
   last_run_at: null,
   next_due_at: null,

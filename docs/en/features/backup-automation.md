@@ -14,6 +14,9 @@ Settings → Data & Backup includes an **Automatic backups** panel built on top 
 
 - Each snapshot is named `backup-<epoch>-<manual|scheduled|exit>.veloce-backup.json`. The panel lists date, origin, size and whether it is encrypted, newest first.
 - **Versions to keep** (1–100, default 10) prunes the oldest snapshots after every backup. Lowering the value prunes immediately.
+- **Delete backups older than (days)** (1–3650, empty = never) adds an age limit on top of the count. Both limits apply together, and the newest backup is always kept so retention can never empty the history. Limits run after every backup (including a scheduled run that finds nothing changed), when the schedule is saved and when the history is first read after startup, so an age limit works even while no backup is due.
+- **“Before replace” safety copies** (see [Selective restore and replace mode](selective-restore.md)) do not count toward the version limit or the age setting. They keep their own policy: the 5 newest, for at most 30 days.
+- Retention covers only the local history. Sync targets (Google Drive, synced folder, WebDAV) hold a single `browser.veloce-backup.json` that is overwritten on each sync, so there are no old versions there to clean up.
 - **Restore…** loads the snapshot into the existing review flow: counts, additions, skipped conflicts, optional preferences and stale-preview protection all apply. Nothing changes until **Confirm import**. Restoring is still a merge: current values win on conflicts.
 - **Delete** needs a second click on the same button to confirm.
 - Snapshot identifiers are validated against the generated name pattern, so a file name from the interface can never reach outside the backup directory. Foreign files and temporary exports in that directory are ignored.

@@ -18,6 +18,11 @@ const SUFFIX: &str = ".veloce-backup.json";
 const SNIFF_BYTES: usize = 160;
 pub const DEFAULT_MAX_BACKUPS: u32 = 10;
 pub const MAX_BACKUPS_LIMIT: u32 = 100;
+pub const MAX_AGE_DAYS_LIMIT: u32 = 3650;
+/// "Before replace" copies are an undo net, so they follow their own limits instead of the
+/// user's version count: the newest few, for a month.
+const PRE_RESTORE_KEEP: usize = 5;
+const PRE_RESTORE_MAX_AGE_SECS: i64 = 30 * 24 * 3600;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -72,6 +77,9 @@ pub struct Schedule {
     pub interval: Interval,
     pub on_exit: bool,
     pub max_backups: u32,
+    /// Backups older than this many days are deleted; `None` keeps them until the count limit.
+    #[serde(default)]
+    pub max_age_days: Option<u32>,
 }
 impl Default for Schedule {
     fn default() -> Self {
@@ -80,17 +88,36 @@ impl Default for Schedule {
             interval: Interval::Daily,
             on_exit: false,
             max_backups: DEFAULT_MAX_BACKUPS,
+            max_age_days: None,
         }
     }
 }
 impl Schedule {
     fn validate(&self) -> Result<(), String> {
-        if (1..=MAX_BACKUPS_LIMIT).contains(&self.max_backups) {
+        if (1..=MAX_BACKUPS_LIMIT).contains(&self.max_backups)
+            && self
+                .max_age_days
+                .map_or(true, |days| (1..=MAX_AGE_DAYS_LIMIT).contains(&days))
+        {
             Ok(())
         } else {
             Err("backup.schedule_invalid".into())
         }
     }
+    fn retention(&self) -> Retention {
+        Retention {
+            keep: self.max_backups,
+            max_age_secs: self.max_age_days.map(|days| i64::from(days) * 24 * 3600),
+        }
+    }
+}
+
+/// What the history keeps. Applied after every backup, when the schedule changes and when the
+/// state is first read, so an age limit also works while no backup is due.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Retention {
+    keep: u32,
+    max_age_secs: Option<i64>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -195,11 +222,30 @@ fn list(dir: &Path) -> Result<Vec<Entry>, String> {
     Ok(entries)
 }
 
-/// Keeps the newest `keep` snapshots and returns how many were removed.
-fn prune(dir: &Path, keep: u32) -> Result<usize, String> {
+/// Ids to delete. Regular snapshots follow the count and age limits but the newest one always
+/// stays, so retention can never leave the history empty. Safety copies follow their own limits.
+fn expired(entries: &[Entry], retention: Retention, now: i64) -> Vec<String> {
+    let too_old = |entry: &Entry, limit: Option<i64>| limit.is_some_and(|l| now - entry.created_at > l);
+    let (safety, regular): (Vec<_>, Vec<_>) = entries
+        .iter()
+        .partition(|entry| entry.reason == Reason::PreRestore);
+    let regular_ids = regular.iter().enumerate().filter(|(index, entry)| {
+        *index >= retention.keep as usize || (*index > 0 && too_old(entry, retention.max_age_secs))
+    });
+    let safety_ids = safety.iter().enumerate().filter(|(index, entry)| {
+        *index >= PRE_RESTORE_KEEP || too_old(entry, Some(PRE_RESTORE_MAX_AGE_SECS))
+    });
+    regular_ids
+        .chain(safety_ids)
+        .map(|(_, entry)| entry.id.clone())
+        .collect()
+}
+
+/// Applies the retention policy and returns how many snapshots were removed.
+fn prune(dir: &Path, retention: Retention, now: i64) -> Result<usize, String> {
     let mut removed = 0;
-    for entry in list(dir)?.into_iter().skip(keep as usize) {
-        if fs::remove_file(dir.join(&entry.id)).is_ok() {
+    for id in expired(&list(dir)?, retention, now) {
+        if fs::remove_file(dir.join(&id)).is_ok() {
             removed += 1;
         }
     }
@@ -254,7 +300,12 @@ fn build_state(conn: &Connection, dir: &Path) -> Result<LocalState, String> {
 
 pub async fn state(app: &AppHandle) -> Result<LocalState, String> {
     let dir = directory(app)?;
-    crate::database::executor::run(app.clone(), move |conn| build_state(conn, &dir)).await
+    crate::database::executor::run(app.clone(), move |conn| {
+        // Reading the history is when an age limit takes effect for users with nothing due.
+        prune(&dir, load_schedule(conn).retention(), now())?;
+        build_state(conn, &dir)
+    })
+    .await
 }
 
 pub async fn set_schedule(app: &AppHandle, schedule: Schedule) -> Result<LocalState, String> {
@@ -264,7 +315,7 @@ pub async fn set_schedule(app: &AppHandle, schedule: Schedule) -> Result<LocalSt
         let raw = serde_json::to_string(&schedule).map_err(|e| e.to_string())?;
         prefs::store(conn, prefs::BACKUP_LOCAL_SCHEDULE_KEY, &raw)?;
         // A lowered limit applies immediately instead of at the next backup.
-        prune(&dir, schedule.max_backups)?;
+        prune(&dir, schedule.retention(), now())?;
         build_state(conn, &dir)
     })
     .await
@@ -300,7 +351,7 @@ pub async fn create(
     let dir = directory(app)?;
 
     let worker = app.clone();
-    let (skip, password, max_backups) = {
+    let (skip, password, retention) = {
         let (dir, fingerprint) = (dir.clone(), fingerprint.clone());
         crate::database::executor::run(app.clone(), move |conn| {
             let schedule = load_schedule(conn);
@@ -310,11 +361,11 @@ pub async fn create(
                 && !list(&dir)?.is_empty();
             if unchanged {
                 prefs::store(conn, prefs::BACKUP_LOCAL_LAST_RUN_KEY, &now().to_string())?;
-                return Ok((true, None, schedule.max_backups));
+                return Ok((true, None, schedule.retention()));
             }
             let credentials = &worker.state::<service::BackupService>().sync.credentials;
             let password = encryption::write_password(conn, credentials)?;
-            Ok((false, password, schedule.max_backups))
+            Ok((false, password, schedule.retention()))
         })
         .await?
     };
@@ -327,12 +378,18 @@ pub async fn create(
                 // Key derivation and fsync stay off the database lock.
                 let bytes = files::encode(&document, password.as_deref())?;
                 let id = write_snapshot(&dir, now(), reason, &bytes)?;
-                prune(&dir, max_backups)?;
+                prune(&dir, retention, now())?;
                 Ok::<_, String>(id)
             })
             .await
             .map_err(|e| e.to_string())??,
         );
+    } else {
+        // Nothing new to store, but an age limit may still have expired older entries.
+        let dir = dir.clone();
+        tauri::async_runtime::spawn_blocking(move || prune(&dir, retention, now()))
+            .await
+            .map_err(|e| e.to_string())??;
     }
     // Safety copies must not postpone the schedule or mask a later unchanged check.
     let record_run = reason != Reason::PreRestore;
@@ -484,7 +541,7 @@ mod tests {
         for at in 1..=5 {
             write_snapshot(dir.path(), at * 10, Reason::Scheduled, b"{}").unwrap();
         }
-        assert_eq!(prune(dir.path(), 2).unwrap(), 3);
+        assert_eq!(prune(dir.path(), keep(2), NOW).unwrap(), 3);
         assert_eq!(
             list(dir.path())
                 .unwrap()
@@ -493,7 +550,110 @@ mod tests {
                 .collect::<Vec<_>>(),
             [50, 40]
         );
-        assert_eq!(prune(dir.path(), 2).unwrap(), 0);
+        assert_eq!(prune(dir.path(), keep(2), NOW).unwrap(), 0);
+    }
+
+    const NOW: i64 = 10_000_000;
+    const DAY: i64 = 24 * 3600;
+    fn keep(count: u32) -> Retention {
+        Retention {
+            keep: count,
+            max_age_secs: None,
+        }
+    }
+    fn entry(age_days: i64, reason: Reason) -> Entry {
+        let created_at = NOW - age_days * DAY;
+        Entry {
+            id: file_name(created_at, reason),
+            created_at,
+            reason,
+            size_bytes: 1,
+            encrypted: false,
+        }
+    }
+    fn expired_ages(entries: &[Entry], retention: Retention) -> Vec<i64> {
+        let ids = expired(entries, retention, NOW);
+        entries
+            .iter()
+            .filter(|e| ids.contains(&e.id))
+            .map(|e| (NOW - e.created_at) / DAY)
+            .collect()
+    }
+
+    #[test]
+    fn age_limit_removes_old_snapshots_but_always_keeps_the_newest() {
+        let aged = Retention {
+            keep: 50,
+            max_age_secs: Some(10 * DAY),
+        };
+        let entries: Vec<_> = [1, 5, 11, 40]
+            .iter()
+            .map(|d| entry(*d, Reason::Scheduled))
+            .collect();
+        assert_eq!(expired_ages(&entries, aged), [11, 40]);
+        // Everything is older than the limit: the newest stays as the last copy.
+        let stale: Vec<_> = [20, 30]
+            .iter()
+            .map(|d| entry(*d, Reason::Scheduled))
+            .collect();
+        assert_eq!(expired_ages(&stale, aged), [30]);
+    }
+
+    #[test]
+    fn count_and_age_limits_combine() {
+        let both = Retention {
+            keep: 2,
+            max_age_secs: Some(10 * DAY),
+        };
+        let entries: Vec<_> = [1, 2, 3, 20]
+            .iter()
+            .map(|d| entry(*d, Reason::Manual))
+            .collect();
+        assert_eq!(expired_ages(&entries, both), [3, 20]);
+    }
+
+    #[test]
+    fn safety_copies_have_their_own_limits_and_do_not_use_the_user_count() {
+        let tight = Retention {
+            keep: 1,
+            max_age_secs: Some(DAY),
+        };
+        let mut entries = vec![entry(0, Reason::Scheduled)];
+        // Seven safety copies, the oldest beyond 30 days: age and the cap of five both apply.
+        entries.extend([0, 1, 2, 3, 4, 5, 40].iter().map(|d| entry(*d, Reason::PreRestore)));
+        // The five newest safety copies survive a one-version, one-day policy.
+        let removed = expired_ages(&entries, tight);
+        assert_eq!(removed, [5, 40]);
+        assert!(!expired(&entries, tight, NOW).contains(&entries[0].id));
+    }
+
+    #[test]
+    fn retention_never_empties_the_history_or_touches_foreign_files() {
+        let dir = temp();
+        write_snapshot(dir.path(), NOW - 99 * DAY, Reason::Scheduled, b"{}").unwrap();
+        fs::write(dir.path().join("keep-me.txt"), "x").unwrap();
+        let aged = Retention {
+            keep: 1,
+            max_age_secs: Some(DAY),
+        };
+        assert_eq!(prune(dir.path(), aged, NOW).unwrap(), 0);
+        assert_eq!(list(dir.path()).unwrap().len(), 1);
+        assert!(dir.path().join("keep-me.txt").exists());
+    }
+
+    #[test]
+    fn schedules_saved_before_the_age_limit_existed_still_load() {
+        let old = r#"{"enabled":true,"interval":"daily","on_exit":false,"max_backups":7}"#;
+        let schedule: Schedule = serde_json::from_str(old).unwrap();
+        assert_eq!(schedule.max_age_days, None);
+        assert!(schedule.validate().is_ok());
+        for days in [0, MAX_AGE_DAYS_LIMIT + 1] {
+            let bad = Schedule {
+                max_age_days: Some(days),
+                ..schedule.clone()
+            };
+            assert!(bad.validate().is_err());
+        }
     }
 
     #[test]
@@ -506,6 +666,7 @@ mod tests {
             interval: Interval::Weekly,
             on_exit: true,
             max_backups: 25,
+            max_age_days: Some(90),
         };
         prefs::store(
             &conn,

@@ -31,7 +31,7 @@ Replacement runs in the same SQLite transaction as the rest of the import: if an
 
 Before a replace that would delete anything, the app saves the current data to the local backup history with the reason **Before replace** (encrypted when encryption is on). If that copy cannot be written, the replace does not happen. After the import, the result shows **Undo replace…**, which opens the safety copy as a replace-mode review of the same groups; confirming it restores the previous data (and takes a new safety copy, so the undo can itself be undone).
 
-Safety copies count toward the history limit and can be pruned like any other entry, and they do not reset the automatic backup schedule. Merge imports delete nothing and take no safety copy.
+Safety copies do not count toward the history version limit or age setting; they keep their own policy (the 5 newest, for at most 30 days). They do not reset the automatic backup schedule. Merge imports delete nothing and take no safety copy.
 
 ## Not included yet
 
