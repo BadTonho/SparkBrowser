@@ -24,9 +24,19 @@
   document.querySelector('#retry').addEventListener('click', () => send({ action:'read' }));
   window.addEventListener('spark-new-tab', event => {
     applyTheme();
-    const { labels, preferences, sites, error, autofocus } = event.detail;
+    const { labels, preferences, sites, error, autofocus, private: isPrivate } = event.detail;
     document.documentElement.lang = preferences.language;
     document.title = labels['newtab.title'];
+    // Private window: say so on the page you see first. Optional elements keep older fixtures working.
+    const notice = document.querySelector('#private-notice');
+    if (notice) {
+      notice.hidden = !isPrivate;
+      if (isPrivate) {
+        document.querySelector('#private-title').textContent = labels['newtab.private_title'];
+        document.querySelector('#private-body').textContent = labels['newtab.private_body'];
+      }
+    }
+    if (isPrivate && typeof document.documentElement.setAttribute === 'function') document.documentElement.setAttribute('data-private', 'true');
     document.querySelector('.content').setAttribute('aria-label', labels['newtab.search']);
     input.placeholder = labels['newtab.placeholder'];
     input.setAttribute('aria-label', labels['newtab.placeholder']);

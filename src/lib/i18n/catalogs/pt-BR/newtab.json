@@ -1,5 +1,7 @@
 {
   "newtab.title": "Nova guia",
+  "newtab.private_title": "Você está em uma janela privada",
+  "newtab.private_body": "O Spark não vai guardar seu histórico, cookies nem logins quando você fechá-la. Os arquivos que você baixar continuam no seu computador. Os sites, seu empregador ou seu provedor de internet ainda podem ver o que você faz.",
   "newtab.search": "Pesquisar",
   "newtab.placeholder": "Pesquisar ou digitar endereço",
   "newtab.recent": "Sites recentes",

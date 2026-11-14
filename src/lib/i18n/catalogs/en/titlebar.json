@@ -1,5 +1,8 @@
 {
   "titlebar.more": "More",
+  "titlebar.private_badge": "Private",
+  "titlebar.private_badge_hint": "Private window: browsing history, cookies and logins are removed when it closes.",
+  "titlebar.new_private_window": "New private window",
   "titlebar.toggle_sidebar_p0_d643": "Toggle Sidebar ({p0})",
   "titlebar.toggle_sidebar_1d4c": "Toggle Sidebar",
   "titlebar.back_p0_f6f0": "Back ({p0})",

@@ -16,7 +16,7 @@ function fixture() {
     contains(node){return this.children.includes(node);}
     focus(){document.activeElement=this;}
   }
-  const nodes=new Map(['#search','#recent','#search-form','#submit','#empty','#error-text','#error','#retry','.content'].map(id=>[id,new Node()]));
+  const nodes=new Map(['#search','#recent','#search-form','#submit','#empty','#error-text','#error','#retry','.content','#private-notice','#private-title','#private-body'].map(id=>[id,new Node()]));
   document.querySelector=id=>nodes.get(id);document.createElement=()=>new Node();
   const window={addEventListener:(t,fn)=>listeners.set(t,fn),dispatchEvent:event=>actions.push(event.detail)};
   runInNewContext(readFileSync('public/new-tab/page.js','utf8'),{window,document,CustomEvent:class {constructor(type,init){this.type=type;this.detail=init.detail;}}});
@@ -88,4 +88,25 @@ test('widget replies reject old documents, old operations and snapshots predatin
   window.__sparkWidgetsReply('current-document',2,{version:4,connected:true});
   assert.equal(received.length,2);assert.equal(received.at(-1).connected,false);
   assert.equal(sent.at(-1).pathname,'/widgets');assert.equal(sent.at(-1).searchParams.get('operation'),'disconnect');
+});
+
+test('a private window says so on the new tab page and a normal one stays quiet',()=>{
+  const f=fixture();const notice=f.nodes.get('#private-notice');
+  f.update({});
+  assert.equal(notice.hidden,true);
+  f.update({private:true});
+  assert.equal(notice.hidden,false);
+  assert.equal(f.nodes.get('#private-title').textContent,JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8'))['newtab.private_title']);
+  assert.ok(f.nodes.get('#private-body').textContent.length>40);
+  f.update({private:false});
+  assert.equal(notice.hidden,true,'switching back hides the notice');
+});
+
+test('both languages describe the private window without overpromising',()=>{
+  for(const language of ['en','pt-BR']){
+    const labels=JSON.parse(readFileSync(`src/lib/i18n/catalogs/${language}/newtab.json`,'utf8'));
+    assert.ok(labels['newtab.private_title'] && labels['newtab.private_body'],language);
+    // Visible to anyone watching: the honest limits are part of the text, not only the docs.
+    assert.match(labels['newtab.private_body'],language==='en'?/internet provider/:/provedor de internet/,language);
+  }
 });

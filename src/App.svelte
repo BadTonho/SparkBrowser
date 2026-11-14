@@ -16,6 +16,7 @@
   import { initializeClosedTabEvents, restoreClosedTab } from "./lib/stores/closedTabsStore";
   import BackupNotice from "./lib/components/status/BackupNotice.svelte";
   import { initializeBackupStatus } from "./lib/stores/backupStore";
+  import { initializePrivateWindow } from "./lib/stores/privateWindowStore";
   import { initializeBrowserSession } from "./lib/stores/browser/lifecycle";
   import { onMount } from "svelte";
   import { initializeUpdates } from "./lib/stores/updatesStore";
@@ -172,6 +173,7 @@
     const stopRuntime = initializeRuntime();
     void initializeRecovery();
     const stopBackup = initializeBackupStatus();
+    const stopPrivateWindow = initializePrivateWindow();
     const stopClosedTabs = initializeClosedTabEvents();
     const stopUpdates = initializeUpdates();
     const stopPermissionEvents = initializePermissionEvents();
@@ -300,6 +302,7 @@
       stopUpdates();
       stopClosedTabs();
       stopBackup();
+      stopPrivateWindow();
       stopDownloadEvents();
       clearInterval(hibernationInterval);
       disposed = true;

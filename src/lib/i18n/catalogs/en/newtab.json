@@ -1,5 +1,7 @@
 {
   "newtab.title": "New tab",
+  "newtab.private_title": "You are in a private window",
+  "newtab.private_body": "Spark will not keep your history, cookies or logins when you close it. Files you download stay on your computer. Websites, your employer or your internet provider can still see what you do.",
   "newtab.search": "Search",
   "newtab.placeholder": "Search or enter address",
   "newtab.recent": "Recent sites",

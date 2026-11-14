@@ -88,6 +88,7 @@
     "allow-create-tab",
     "allow-create-ephemeral-tab",
     "allow-open-private-window",
+    "allow-get-private-window-state",
     "allow-get-reader-article",
     "allow-switch-tab",
     "allow-close-tab",

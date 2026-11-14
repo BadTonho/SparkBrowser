@@ -10,6 +10,9 @@
   import { openCommandBar } from "../../stores/commandBarStore";
   import { showBookmarksBar, toggleBookmarksBar, openSettingsModal, toggleZenMode } from "../../stores/settingsStore";
   import { openPrivacy } from "../../stores/privacyPopoverStore";
+  import { openPrivateWindow } from "../../services/bridge/navigation";
+  import { isPrivateWindow } from "../../stores/privateWindowStore";
+  import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
 
   let menu: HTMLDivElement | undefined = $state();
   let position = $state({ top: 40, right: 8 });
@@ -20,7 +23,7 @@
     if (anchor) position = { top: anchor.bottom + 6, right: Math.max(8, window.innerWidth - anchor.right) };
   }
 
-  async function run(action: "tools" | "bookmarks" | "commands" | "history" | "downloads" | "privacy" | "settings" | "zen") {
+  async function run(action: "private" | "tools" | "bookmarks" | "commands" | "history" | "downloads" | "privacy" | "settings" | "zen") {
     const session = get(titlebarMenu);
     if (!session || busy) return;
     busy = true;
@@ -28,6 +31,7 @@
     session.anchor.focus({ preventScroll: true });
     try {
       switch (action) {
+        case "private": await closeTitlebarMenu(); await openPrivateWindow(); break;
         case "tools": await closeTitlebarMenu(); await openTools("sessions", session.anchor); break;
         case "bookmarks": toggleBookmarksBar(); break;
         case "commands": await openCommandBar(); break;
@@ -95,6 +99,9 @@
   <div class="menu-dismiss" role="presentation" onclick={() => closeTitlebarMenu(true)}>
     <div class="titlebar-menu" data-testid="titlebar-menu" role="menu" aria-label={$t("titlebar.more")} tabindex="-1" bind:this={menu}
       style:top="{position.top}px" style:right="{position.right}px" onclick={event => event.stopPropagation()} onkeydown={keys}>
+      {#if !$isPrivateWindow}
+        <button role="menuitem" data-testid="open-private-window" disabled={busy} onclick={() => run("private")}>{$t("titlebar.new_private_window")}<small> · {$keyboardShortcuts && shortcutLabel("private-window")}</small></button>
+      {/if}
       <button role="menuitem" data-testid="open-tools" disabled={busy} onclick={() => run("tools")}>{$t("titlebar.tools_ea93")}</button>
       <button role="menuitemcheckbox" data-testid="toggle-bookmarks" aria-checked={$showBookmarksBar} disabled={busy} onclick={() => run("bookmarks")}>{$showBookmarksBar ? $t("titlebar.hide_bookmarks_bar_31b5") : $t("titlebar.show_bookmarks_bar_570b")}</button>
       <button role="menuitem" data-testid="open-command-bar" disabled={busy} onclick={() => run("commands")}>{$t("titlebar.command_bar_1356")}</button>

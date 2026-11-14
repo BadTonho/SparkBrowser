@@ -175,7 +175,10 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
                 .is_overlay_open()
                 .lock()
                 .map_or(true, |v| *v);
-        let payload = serde_json::json!({"preferences":prefs,"labels":text,"sites":rows.as_ref().ok(),"error":rows.is_err(),"autofocus":autofocus});
+        let private = app
+            .try_state::<crate::private_session::PrivateRole>()
+            .is_some_and(|role| role.is_private());
+        let payload = serde_json::json!({"preferences":prefs,"labels":text,"sites":rows.as_ref().ok(),"error":rows.is_err(),"autofocus":autofocus,"private":private});
         if let Some(view) = app.get_webview(&label) {
             if autofocus {
                 let _ = view.set_focus();

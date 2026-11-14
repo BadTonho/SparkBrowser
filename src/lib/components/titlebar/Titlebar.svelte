@@ -43,6 +43,7 @@
   import { suspiciousHost } from "../../services/suspicious-host.js";
   import { workspaces, activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
+  import PrivateBadge from "./PrivateBadge.svelte";
   import { defaultSearchEngine } from "../../stores/searchEngineStore";
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import WindowControls from "./WindowControls.svelte";
@@ -105,6 +106,7 @@
 {#if !$isZenMode}
   <header class="titlebar" class:split-horizontal={splitHorizontal} class:responsive-compact={responsiveCompact} class:density-compact={$compactToolbar} class:wide-address-bar={$wideAddressBar} data-tauri-drag-region={$tabLayout === "vertical" || splitHorizontal ? "" : undefined}>
     <div class="titlebar-left">
+      <PrivateBadge />
       {#if $tabLayout === "vertical"}
         <button
           class="icon-btn sidebar-toggle"
@@ -256,6 +258,13 @@
     z-index: 20;
     gap: 10px;
   }
+
+  /* A private window gets a purple wash and a bottom line: with no native title bar, this is what says so. */
+  :global(html[data-private="true"]) .titlebar {
+    background-image: linear-gradient(90deg, rgba(124, 58, 237, 0.26), rgba(124, 58, 237, 0.06) 55%, transparent);
+    border-bottom: 2px solid rgba(167, 139, 250, 0.55);
+  }
+  :global(html[data-private="true"]) .brand-dot { background: #a78bfa; box-shadow: 0 0 10px #a78bfa; }
 
   .titlebar-left {
     display: flex;

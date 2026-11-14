@@ -17,7 +17,7 @@ use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::graphics::{get_graphics_status, restart_for_graphics, set_hardware_acceleration};
 use commands::new_tab::set_new_tab_preferences;
-use commands::private_session::open_private_window;
+use commands::private_session::{get_private_window_state, open_private_window};
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
@@ -257,7 +257,7 @@ pub fn run() {
             if app.state::<private_session::PrivateRole>().is_private() {
                 if let Some(window) = app.get_webview_window("main") {
                     window
-                        .set_title("Spark - Privada")
+                        .set_title("Spark (Private)")
                         .map_err(std::io::Error::other)?;
                 }
                 private_session::seed_profile(app.handle()).map_err(std::io::Error::other)?;
@@ -526,6 +526,7 @@ pub fn run() {
             create_tab,
             create_ephemeral_tab,
             open_private_window,
+            get_private_window_state,
             get_reader_article,
             switch_tab,
             close_tab,
