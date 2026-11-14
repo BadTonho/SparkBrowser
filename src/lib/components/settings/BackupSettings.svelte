@@ -21,6 +21,7 @@
     undoLastReplace,
   } from "../../stores/backupStore";
   import GoogleDriveIcon from "../icons/GoogleDriveIcon.svelte";
+  import BackupCard from "./backup/BackupCard.svelte";
   import BackupLocalPanel from "./BackupLocalPanel.svelte";
   import BookmarkExportCard from "./BookmarkExportCard.svelte";
   import BackupPreviewPanel from "./BackupPreviewPanel.svelte";
@@ -141,13 +142,12 @@
   {#if !desktop}<p role="status">{$t("common.desktop_required")}</p>
   {:else}
     <div class="backup-cards">
-      <article class="manual-backup-card" aria-labelledby="backup-manual-heading">
-        <h3 id="backup-manual-heading">{$t("backup.manual_heading")}</h3>
-        <div class="actions manual-backup-actions">
+      <BackupCard id="backup-manual-heading" icon="download" title={$t("backup.manual_heading")} description={$t("backup.manual_description")}>
+        {#snippet actions()}
           <button class="pill-action primary-pill" data-testid="backup-export" disabled={$backupBusy} onclick={saveBackup}>{$t("backup.export")}</button>
           <button class="pill-action" data-testid="backup-select" disabled={$backupBusy} onclick={selectBackup}>{$t("backup.import")}</button>
-        </div>
-      </article>
+        {/snippet}
+      </BackupCard>
 
       <BookmarkExportCard />
 
@@ -440,11 +440,10 @@
   p { color: var(--text-secondary); }
   h3 { margin: 0; color: var(--text-primary); font-size: 16px; line-height: 1.35; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-  article, aside { border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; margin-top: 0; background: var(--bg-glass, rgba(255, 255, 255, 0.025)); }
-  .backup-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 270px)); align-items: start; justify-content: start; gap: 12px; }
-  .manual-backup-card { display: flex; box-sizing: border-box; width: 100%; max-width: 270px; min-width: 0; height: 128px; flex-direction: column; justify-content: center; gap: 8px; }
-  .sync-panel { display: block; box-sizing: border-box; width: 100%; max-width: 270px; height: 128px; min-width: 0; padding: 12px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--bg-glass, rgba(255,255,255,.025)); }
-  .sync-panel[open] { height: auto; min-height: 128px; }
+  aside { border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; margin-top: 0; background: var(--bg-glass, rgba(255, 255, 255, 0.025)); }
+  /* Three equal cards per row; they stretch to the tallest, and buttons stay pinned to the bottom. */
+  .backup-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 280px)); align-items: stretch; justify-content: start; gap: 12px; }
+  .sync-panel { display: block; box-sizing: border-box; width: 100%; min-width: 0; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255,255,255,.025)); }
   .sync-compact-row { display: flex; box-sizing: border-box; min-height: 102px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 2px; text-align: center; cursor: pointer; list-style: none; }
   .sync-compact-row::-webkit-details-marker, .sync-compact-row::marker { display: none; }
   .sync-compact-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 8px; }
@@ -456,8 +455,6 @@
   .sync-state-chip.busy { border-color: rgba(66, 133, 244, .4); background: rgba(66, 133, 244, .12); color: #93c5fd; }
   .sync-state-chip.error { border-color: rgba(248, 113, 113, .42); background: rgba(248, 113, 113, .12); color: #fca5a5; }
   .sync-state-chip.neutral { color: var(--text-secondary); }
-  .manual-backup-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
-  .manual-backup-actions button { white-space: normal; }
   .sync-panel-heading p { margin: 3px 0 0; font-size: 11.5px; }
   .preference-choice { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 12.5px; color: var(--text-primary); cursor: pointer; }
   .sync-field { display: flex; flex-direction: column; gap: 5px; margin: 10px 0; font-size: 11.5px; font-weight: 600; color: var(--text-primary); }
@@ -560,8 +557,7 @@
     border-top: 1px solid var(--border-subtle);
   }
   @media (max-width: 520px) {
-    article, aside { padding: 14px; border-radius: 12px; }
-    .manual-backup-card, .sync-panel { height: auto; min-height: 128px; }
+    aside { padding: 14px; border-radius: 12px; }
     .gdrive-account-card { align-items: flex-start; }
     .gdrive-account-actions { width: 100%; }
     .gdrive-account-actions :global(button) { max-width: 100%; white-space: normal; text-align: left; }
