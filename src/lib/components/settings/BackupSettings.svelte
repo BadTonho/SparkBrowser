@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t, formatDate } from "../../i18n";
+  import { t, formatDate, type MessageKey } from "../../i18n";
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import {
     backupBusy,
@@ -28,6 +28,7 @@
   import BackupUnlockPrompt from "./BackupUnlockPrompt.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { errorDetails } from "../../services/user-errors.js";
+  import { gdriveFix } from "../../services/backup/gdrive-fix.js";
 
   const desktop = isTauriRuntime();
   let syncExpanded = $state(false);
@@ -74,8 +75,11 @@
   let syncActionBusy = $state(false);
   let syncActionError = $state<string | null>(null);
   const syncProblem = $derived(syncActionError || $backupSyncState.last_error);
-  /** The account is not linked yet: a step to take, not a failure, so it is shown as guidance. */
-  const linkNeeded = $derived(Boolean(syncProblem) && errorDetails(syncProblem).code === "backup.sync_gdrive_login_required");
+  const driveLogin = $derived(Boolean(syncProblem) && errorDetails(syncProblem).code === "backup.sync_gdrive_login_required");
+  /** What to do about a Drive login error, chosen from the reason the native side attached. */
+  const driveFix = $derived(driveLogin ? gdriveFix(errorDetails(syncProblem).detail) : null);
+  /** Only a missing link is guidance rather than a failure; every other reason is shown as an error. */
+  const linkNeeded = $derived(driveFix === "link");
 
   let selectedMode = $state<"disabled" | "google_drive_web" | "folder" | "direct_webdav">("disabled");
   let folderPath = $state("");
@@ -473,6 +477,7 @@
         </div>
         {#if syncProblem}
           <div class="sync-error" class:notice={linkNeeded} data-testid="backup-sync-error">
+            {#if driveFix}<p class="fix" data-testid="backup-sync-fix">{$t(`backup.fix_${driveFix}` as MessageKey)}</p>{/if}
             <ErrorMessage error={syncProblem} />
           </div>
         {/if}
@@ -523,6 +528,7 @@
   .sync-panel { container-type: inline-size; --text-secondary: color-mix(in srgb, var(--text-primary) 82%, transparent); --sync-error-text: color-mix(in srgb, #ef4444 52%, var(--text-primary)); }
   .sync-panel .pill-action { font-size: 12.5px; }
   .sync-state-chip.warn { border-color: rgba(251, 191, 36, 0.45); background: rgba(251, 191, 36, 0.12); color: #fcd34d; }
+  .sync-error .fix { margin: 0 0 8px; color: var(--text-primary); font-size: 13px; font-weight: 600; line-height: 1.55; }
   .sync-error.notice { border-color: rgba(251, 191, 36, 0.45); background: rgba(251, 191, 36, 0.08); }
   .sync-error.notice :global(.error-message) { color: color-mix(in srgb, #f59e0b 50%, var(--text-primary)); }
   .sync-error { margin-top: 12px; padding: 12px 14px; border: 1px solid rgba(248, 113, 113, 0.45); border-radius: 10px; background: rgba(248, 113, 113, 0.1); }

@@ -78,7 +78,7 @@ pub fn build_sapisidhash_authorization(
         tokens.push(format!("SAPISID3PHASH {timestamp}_{hash}"));
     }
     if tokens.is_empty() {
-        return Err("backup.sync_gdrive_login_required".into());
+        return Err(super::session::login("no-sapisid-cookie"));
     }
     Ok(tokens.join(" "))
 }

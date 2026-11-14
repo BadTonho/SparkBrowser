@@ -5,6 +5,8 @@
   const FOLDER_NAME = "Spark Backup";
   const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
   const FILE_NAME = "browser.spark-backup.json";
+  // Name used before the app was renamed. Lookups match either, so an existing file is found and updated in place.
+  const LEGACY_FILE_NAME = "browser.veloce-backup.json";
   const CHUNK_SIZE = 400000;
   const nativeFetch = window.fetch.bind(window);
 
@@ -446,7 +448,7 @@
   async function waitForDriveSession() {
     for (let i = 0; i < 45; i++) {
       if (isLoginScreen()) {
-        throw new Error("backup.sync_gdrive_login_required");
+        throw new Error("backup.sync_gdrive_login_required: drive-page-shows-sign-in");
       }
       extractAccountEmail();
       const headers = await buildAuthHeaders();
@@ -457,12 +459,12 @@
       await sleep(200);
     }
     if (isLoginScreen()) {
-      throw new Error("backup.sync_gdrive_login_required");
+      throw new Error("backup.sync_gdrive_login_required: drive-page-shows-sign-in");
     }
     const headers = await buildAuthHeaders();
     const apiKeys = collectApiKeyCandidates();
     if (!headers) {
-      throw new Error("backup.sync_gdrive_login_required");
+      throw new Error("backup.sync_gdrive_login_required: no-sapisid-cookie-readable");
     }
     return { headers, apiKeys };
   }
@@ -527,7 +529,7 @@
           }
           lastStatus = respV2.status;
           if (respV2.status === 401) {
-            throw new Error("backup.sync_gdrive_login_required");
+            throw new Error("backup.sync_gdrive_login_required: drive-api-401-v2");
           }
           try {
             const errTxt = await respV2.text();
@@ -535,7 +537,7 @@
             if (errObj?.error?.message) lastErrDetail = errObj.error.message;
           } catch {}
         } catch (err) {
-          if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
+          if (err instanceof Error && err.message.startsWith("backup.sync_gdrive_login_required")) {
             throw err;
           }
           lastErrDetail = err instanceof Error ? err.message : String(err);
@@ -564,7 +566,7 @@
           } else {
             lastStatus = respV3.status;
             if (respV3.status === 401) {
-              throw new Error("backup.sync_gdrive_login_required");
+              throw new Error("backup.sync_gdrive_login_required: drive-api-401-v3");
             }
             try {
               const errTxt = await respV3.text();
@@ -573,7 +575,7 @@
             } catch {}
           }
         } catch (err) {
-          if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
+          if (err instanceof Error && err.message.startsWith("backup.sync_gdrive_login_required")) {
             throw err;
           }
           lastErrDetail = err instanceof Error ? err.message : String(err);
@@ -585,7 +587,7 @@
 
     if (!workingVerAndKey) {
       if (lastStatus === 401) {
-        throw new Error("backup.sync_gdrive_login_required");
+        throw new Error("backup.sync_gdrive_login_required: drive-api-401");
       }
       throw new Error(
         `backup.sync_network_failed: Drive query failed (HTTP ${lastStatus}${lastErrDetail ? " " + lastErrDetail : ""})`
@@ -630,13 +632,11 @@
 
   async function queryBackupFileInParent(headers, apiVersion, apiKey, parentId) {
     const isV2 = apiVersion !== "v3";
-    const queryStr = isV2
-      ? parentId
-        ? `title = '${FILE_NAME}' and '${parentId}' in parents and trashed = false`
-        : `title = '${FILE_NAME}' and trashed = false`
-      : parentId
-        ? `name = '${FILE_NAME}' and '${parentId}' in parents and trashed = false`
-        : `name = '${FILE_NAME}' and trashed = false`;
+    const field = isV2 ? "title" : "name";
+    const named = `(${field} = '${FILE_NAME}' or ${field} = '${LEGACY_FILE_NAME}')`;
+    const queryStr = parentId
+      ? `${named} and '${parentId}' in parents and trashed = false`
+      : `${named} and trashed = false`;
     const limitParam = isV2 ? "maxResults=1" : "pageSize=1";
     const url = withKey(
       `https://clients6.google.com/drive/${apiVersion}/files?q=${encodeURIComponent(queryStr)}&${limitParam}`,
@@ -644,7 +644,7 @@
     );
     const resp = await smartFetch(url, { method: "GET", headers });
     if (resp.status === 401) {
-      throw new Error("backup.sync_gdrive_login_required");
+      throw new Error("backup.sync_gdrive_login_required: drive-file-lookup-401");
     }
     if (!resp.ok) return null;
     const data = await resp.json();
@@ -787,10 +787,10 @@
         }
         lastStatus = resp.status;
         if (resp.status === 401) {
-          throw new Error("backup.sync_gdrive_login_required");
+          throw new Error("backup.sync_gdrive_login_required: drive-upload-401");
         }
       } catch (err) {
-        if (err instanceof Error && err.message === "backup.sync_gdrive_login_required") {
+        if (err instanceof Error && err.message.startsWith("backup.sync_gdrive_login_required")) {
           throw err;
         }
         lastError = err instanceof Error ? err.message : String(err);
@@ -825,7 +825,7 @@
         return await resp.text();
       }
       if (resp.status === 401) {
-        throw new Error("backup.sync_gdrive_login_required");
+        throw new Error("backup.sync_gdrive_login_required: drive-download-401");
       }
       if (resp.status === 404) {
         throw new Error("backup.sync_file_not_found");
@@ -833,7 +833,7 @@
     } catch (err) {
       if (
         err instanceof Error &&
-        (err.message === "backup.sync_gdrive_login_required" ||
+        (err.message.startsWith("backup.sync_gdrive_login_required") ||
           err.message === "backup.sync_file_not_found")
       ) {
         throw err;

@@ -5,6 +5,11 @@ use std::path::PathBuf;
 
 const KEY: &str = "backup_sync_google_session_v2";
 const LOGIN: &str = "backup.sync_gdrive_login_required";
+/// The code the interface understands, plus which check failed. One code covers many causes, so the
+/// reason after the colon is what tells them apart in the technical details.
+pub(super) fn login(reason: &str) -> String {
+    format!("{LOGIN}: {reason}")
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 struct Binding {
@@ -15,13 +20,15 @@ struct Binding {
 
 impl Binding {
     fn accept_email(&mut self, email: Option<&str>) -> Result<(), String> {
-        let email = email.filter(|value| !value.is_empty()).ok_or(LOGIN)?;
+        let email = email
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| login("account-email-not-detected"))?;
         if self
             .email
             .as_deref()
             .is_some_and(|expected| !expected.eq_ignore_ascii_case(email))
         {
-            return Err(LOGIN.into());
+            return Err(login("account-email-changed"));
         }
         self.email = Some(email.to_owned());
         Ok(())
@@ -51,13 +58,13 @@ pub(crate) fn bind(app: &AppHandle, id: &str) -> Result<(), String> {
         .snapshot_tabs()
         .into_iter()
         .find(|t| t.id == id)
-        .ok_or(LOGIN)?;
+        .ok_or_else(|| login("tab-not-found"))?;
     let authuser = selected_account(&tab)?;
     if app
         .get_webview(&crate::state::tab_model::webview_label_for_tab(id))
         .is_none()
     {
-        return Err(LOGIN.into());
+        return Err(login("tab-webview-missing"));
     }
     let binding = Binding {
         directory: crate::window::workspace_data::content_directory(app, id)?,
@@ -69,11 +76,11 @@ pub(crate) fn bind(app: &AppHandle, id: &str) -> Result<(), String> {
         .db()
         .lock()
         .map_err(|e| e.to_string())?;
-    let conn = db.as_ref().ok_or(LOGIN)?;
+    let conn = db.as_ref().ok_or_else(|| login("database-unavailable"))?;
     preferences_repo::store(
         conn,
         KEY,
-        &serde_json::to_string(&binding).map_err(|_| LOGIN)?,
+        &serde_json::to_string(&binding).map_err(|_| login("binding-not-saved"))?,
     )?;
     preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY)?;
     preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
@@ -83,21 +90,21 @@ pub(crate) fn bind(app: &AppHandle, id: &str) -> Result<(), String> {
         .gdrive
         .connected_email
         .lock()
-        .map_err(|_| LOGIN)? = None;
+        .map_err(|_| login("state-unavailable"))? = None;
     Ok(())
 }
 
 fn selected_account(tab: &crate::state::tab_model::TabInfo) -> Result<String, String> {
-    let url = Url::parse(&tab.url).map_err(|_| LOGIN)?;
+    let url = Url::parse(&tab.url).map_err(|_| login("tab-url-invalid"))?;
     if tab.is_ephemeral
         || url.scheme() != "https"
         || url.port_or_known_default() != Some(443)
         || !url.username().is_empty()
         || url.password().is_some()
     {
-        return Err(LOGIN.into());
+        return Err(login("tab-is-not-a-drive-page"));
     }
-    extract_authuser_from_url(url.as_str()).ok_or(LOGIN.into())
+    extract_authuser_from_url(url.as_str()).ok_or_else(|| login("account-index-not-found"))
 }
 
 fn load(app: &AppHandle) -> Result<Binding, String> {
@@ -107,8 +114,12 @@ fn load(app: &AppHandle) -> Result<Binding, String> {
         .db()
         .lock()
         .map_err(|e| e.to_string())?;
-    let raw = preferences_repo::load(db.as_ref().ok_or(LOGIN)?, KEY)?.ok_or(LOGIN)?;
-    serde_json::from_str(&raw).map_err(|_| LOGIN.into())
+    let raw = preferences_repo::load(
+        db.as_ref().ok_or_else(|| login("database-unavailable"))?,
+        KEY,
+    )?
+    .ok_or_else(|| login("account-not-linked"))?;
+    serde_json::from_str(&raw).map_err(|_| login("binding-unreadable"))
 }
 
 pub(super) fn resolve_gdrive_session_context(
@@ -127,10 +138,6 @@ pub(super) fn resolve_gdrive_session_context(
                 .is_some()
         },
     );
-    #[cfg(windows)]
-    if id.is_none() {
-        return Err(LOGIN.into());
-    }
     Ok((binding.directory, binding.authuser, id))
 }
 
@@ -146,9 +153,9 @@ pub(super) fn verify_email(app: &AppHandle, email: Option<&str>) -> Result<(), S
         .lock()
         .map_err(|e| e.to_string())?;
     preferences_repo::store(
-        db.as_ref().ok_or(LOGIN)?,
+        db.as_ref().ok_or_else(|| login("database-unavailable"))?,
         KEY,
-        &serde_json::to_string(&binding).map_err(|_| LOGIN)?,
+        &serde_json::to_string(&binding).map_err(|_| login("binding-not-saved"))?,
     )
 }
 
