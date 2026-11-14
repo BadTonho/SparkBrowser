@@ -2,6 +2,7 @@
 name = "spark-browser"
 version = "0.1.0"
 description = "Open-source modern web browser built with Rust (Tauri v2) and Svelte"
+license = "Apache-2.0"
 authors = ["Open-Source Contributors"]
 edition = "2021"
 
