@@ -2,7 +2,7 @@
 
 > 🌍 **Language:** **English** | [Português (pt-BR)](../../pt-BR/contributing/rules-and-standards.md)
 
-To maintain a high-quality, secure, and scalable open-source project, all contributors and automated agents must follow these six core rules:
+To maintain a high-quality, secure, and scalable open-source project, all contributors and automated agents must follow these seven core rules:
 
 ---
 
@@ -30,3 +30,10 @@ To maintain a high-quality, secure, and scalable open-source project, all contri
 - The application must support and run seamlessly on both **Windows** and **Linux**.
 - Architecture choices and implementations must preserve cross-platform compatibility across both operating systems (using conditional compilation `#[cfg(...)]` or platform abstractions where appropriate).
 - **Testing Flexibility:** Executing automated/native tests on both operating systems simultaneously is **not mandatory** for each development run or environment.
+
+## Rule 7: Changelog for Every Release
+- Version **0.1.0** is the initial release and has **no changelog**. Every later version must have one.
+- Changelogs live in the root `changelog/` folder, **one subfolder per version** named exactly like the version (for example `changelog/0.2.0/`). Each subfolder contains one file per language: `en.md` (English) and `pt-BR.md` (Portuguese), kept in sync.
+- Every changelog is split into three categories, in this order: **New features**, **Improvements** and **Fixes** (`Novas funcionalidades`, `Melhorias` and `Correções` in Portuguese). Omit a category that has no entries.
+- **Keep the changelog up to date as you work:** any change a user can notice (new behavior, better behavior or a bug fix) must add an entry to the changelog of the version in progress, in both languages, in the same change. Changelogs of already released versions are never rewritten.
+- The format, writing guidelines and an example are in the [changelog guide](./changelog.md).

@@ -103,6 +103,8 @@ npm run validate   # broader workflow: frontend and Rust checks
 
 See the [validation guide](./docs/en/contributing/validation.md) for platform notes and optional native tests.
 
+Changes that users can notice also need an entry in the [changelog](./changelog/README.md), following the [changelog guide](./docs/en/contributing/changelog.md).
+
 ## Documentation
 
 The documentation is maintained in English and Brazilian Portuguese.

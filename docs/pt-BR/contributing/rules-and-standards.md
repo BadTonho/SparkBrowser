@@ -2,7 +2,7 @@
 
 > 🌍 **Idioma:** [English (Main)](../../en/contributing/rules-and-standards.md) | **Português (pt-BR)**
 
-Para manter um projeto open-source seguro, escalável e impecável, todos os contribuidores e agentes devem seguir estas seis regras fundamentais:
+Para manter um projeto open-source seguro, escalável e impecável, todos os contribuidores e agentes devem seguir estas sete regras fundamentais:
 
 ---
 
@@ -30,3 +30,10 @@ Para manter um projeto open-source seguro, escalável e impecável, todos os con
 - O aplicativo deve funcionar perfeitamente tanto no **Windows** quanto no **Linux**.
 - Implementações de funcionalidades e decisões de arquitetura devem preservar a compatibilidade multiplataforma em ambos os sistemas operacionais (usando compilação condicional `#[cfg(...)]` ou abstrações de plataforma quando necessário).
 - **Flexibilidade nos Testes:** Não é obrigatório executar os testes automatizados/nativos em ambos os sistemas operacionais simultaneamente em cada ciclo de desenvolvimento ou ambiente.
+
+## Regra 7: Changelog em Toda Versão
+- A versão **0.1.0** é o lançamento inicial e **não tem changelog**. Toda versão posterior deve ter um.
+- Os changelogs ficam na pasta `changelog/` na raiz, com **uma subpasta por versão**, nomeada exatamente como a versão (por exemplo `changelog/0.2.0/`). Cada subpasta contém um arquivo por idioma: `en.md` (inglês) e `pt-BR.md` (português), mantidos sincronizados.
+- Todo changelog é dividido em três categorias, nesta ordem: **Novas funcionalidades**, **Melhorias** e **Correções** (`New features`, `Improvements` e `Fixes` em inglês). Omita a categoria que não tiver itens.
+- **Mantenha o changelog atualizado durante o trabalho:** qualquer mudança que o usuário possa perceber (comportamento novo, comportamento melhor ou correção de bug) deve adicionar um item ao changelog da versão em andamento, nos dois idiomas, na mesma alteração. Changelogs de versões já lançadas nunca são reescritos.
+- O formato, as orientações de escrita e um exemplo estão no [guia de changelog](./changelog.md).
