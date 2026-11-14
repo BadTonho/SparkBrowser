@@ -27,6 +27,7 @@
   import BackupPreviewPanel from "./BackupPreviewPanel.svelte";
   import BackupUnlockPrompt from "./BackupUnlockPrompt.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { errorDetails } from "../../services/user-errors.js";
 
   const desktop = isTauriRuntime();
   let syncExpanded = $state(false);
@@ -72,6 +73,9 @@
 
   let syncActionBusy = $state(false);
   let syncActionError = $state<string | null>(null);
+  const syncProblem = $derived(syncActionError || $backupSyncState.last_error);
+  /** The account is not linked yet: a step to take, not a failure, so it is shown as guidance. */
+  const linkNeeded = $derived(Boolean(syncProblem) && errorDetails(syncProblem).code === "backup.sync_gdrive_login_required");
 
   let selectedMode = $state<"disabled" | "google_drive_web" | "folder" | "direct_webdav">("disabled");
   let folderPath = $state("");
@@ -211,8 +215,10 @@
           </span>
           {#if syncActionBusy}
             <span class="sync-state-chip busy" role="status">{$t("backup.sync_status_busy")}</span>
-          {:else if syncActionError || $backupSyncState.last_error}
-            <span class="sync-state-chip error" role="alert" title={syncActionError || $backupSyncState.last_error || undefined}>{$t("backup.sync_status_error")}</span>
+          {:else if linkNeeded}
+            <span class="sync-state-chip warn" role="status">{$t("backup.sync_status_link_needed")}</span>
+          {:else if syncProblem}
+            <span class="sync-state-chip error" role="alert" title={syncProblem || undefined}>{$t("backup.sync_status_error")}</span>
           {:else if $backupSyncState.config.mode === "disabled"}
             <span class="sync-state-chip neutral" role="status">{$t("backup.sync_status_not_configured")}</span>
           {:else if $backupSyncNotice === "pushed"}
@@ -465,9 +471,9 @@
       {/if}
 
         </div>
-        {#if syncActionError || $backupSyncState.last_error}
-          <div class="sync-error" data-testid="backup-sync-error">
-            <ErrorMessage error={syncActionError || $backupSyncState.last_error} />
+        {#if syncProblem}
+          <div class="sync-error" class:notice={linkNeeded} data-testid="backup-sync-error">
+            <ErrorMessage error={syncProblem} />
           </div>
         {/if}
       </details>
@@ -516,6 +522,9 @@
   /* Wide panel: description and mode on the left, the mode's fields on the right, sync buttons under the mode. */
   .sync-panel { container-type: inline-size; --text-secondary: color-mix(in srgb, var(--text-primary) 82%, transparent); --sync-error-text: color-mix(in srgb, #ef4444 52%, var(--text-primary)); }
   .sync-panel .pill-action { font-size: 12.5px; }
+  .sync-state-chip.warn { border-color: rgba(251, 191, 36, 0.45); background: rgba(251, 191, 36, 0.12); color: #fcd34d; }
+  .sync-error.notice { border-color: rgba(251, 191, 36, 0.45); background: rgba(251, 191, 36, 0.08); }
+  .sync-error.notice :global(.error-message) { color: color-mix(in srgb, #f59e0b 50%, var(--text-primary)); }
   .sync-error { margin-top: 12px; padding: 12px 14px; border: 1px solid rgba(248, 113, 113, 0.45); border-radius: 10px; background: rgba(248, 113, 113, 0.1); }
   .sync-error :global(.error-message) { color: var(--sync-error-text); font-size: 13px; line-height: 1.6; }
   .sync-error :global(.error-message p) { margin: 0; }

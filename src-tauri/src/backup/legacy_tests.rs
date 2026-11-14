@@ -106,3 +106,46 @@ fn the_old_new_tab_address_is_recognised_and_rewritten_on_import() {
     assert_eq!(super::validation::tab_url(LEGACY_URL).unwrap(), URL);
     assert_eq!(super::validation::tab_url(URL).unwrap(), URL);
 }
+
+#[test]
+fn an_email_saved_by_an_older_build_is_not_a_connection_without_the_explicit_link() {
+    // Regression: the panel showed "account connected" from the old e-mail key while every sync
+    // failed with "login required", because the explicit profile link was never created.
+    use crate::database::preferences_repo as prefs;
+    let conn = rusqlite::Connection::open_in_memory().unwrap();
+    prefs::initialize_preferences_table(&conn).unwrap();
+    let runtime = sync::SyncRuntime::default();
+    sync::save_config(
+        &conn,
+        &runtime,
+        sync::SyncTargetConfig::GoogleDriveWeb {
+            auto_save: true,
+            apply_preferences_on_direct_pull: false,
+        },
+        None,
+    )
+    .unwrap();
+    prefs::store(
+        &conn,
+        prefs::BACKUP_SYNC_GDRIVE_EMAIL_KEY,
+        "me@example.test",
+    )
+    .unwrap();
+    assert_eq!(
+        sync::snapshot(&conn, &runtime).unwrap().connected_account,
+        None
+    );
+    prefs::store(
+        &conn,
+        "backup_sync_google_session_v2",
+        r#"{"directory":null,"authuser":"0","email":null}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        sync::snapshot(&conn, &runtime)
+            .unwrap()
+            .connected_account
+            .as_deref(),
+        Some("me@example.test")
+    );
+}

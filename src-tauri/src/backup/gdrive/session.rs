@@ -152,6 +152,12 @@ pub(super) fn verify_email(app: &AppHandle, email: Option<&str>) -> Result<(), S
     )
 }
 
+/// Whether the explicit profile/account link exists. Older builds stored only an e-mail and an
+/// account index, which is not enough to sync.
+pub(crate) fn is_bound(conn: &rusqlite::Connection) -> bool {
+    preferences_repo::load(conn, KEY).ok().flatten().is_some()
+}
+
 pub(crate) fn clear(conn: &rusqlite::Connection) -> Result<(), String> {
     preferences_repo::remove(conn, KEY)
 }

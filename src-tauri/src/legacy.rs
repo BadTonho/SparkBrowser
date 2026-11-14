@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const OLD_IDENTIFIER: &str = "org.veloce.browser";
+pub(crate) const OLD_IDENTIFIER: &str = "org.veloce.browser";
 pub const NEW_IDENTIFIER: &str = "org.spark.browser";
 const OLD_DATABASE: &str = "veloce_browser.db";
 const NEW_DATABASE: &str = "spark_browser.db";

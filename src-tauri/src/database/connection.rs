@@ -128,12 +128,48 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
     crate::database::command_search_repo::register(conn)?;
     // After the search functions exist: updating saved session pages fires index triggers that call them.
     migrate_legacy_new_tab_url(conn)?;
+    migrate_legacy_profile_paths(conn)?;
     crate::database::site_zoom_repo::migrate(conn)?;
     crate::database::site_icons_repo::migrate(conn)?;
     crate::database::new_tab_repo::migrate(conn)?;
     crate::database::download_jobs_repo::migrate(conn)?;
     crate::database::extensions_repo::migrate(conn)?;
     Ok(())
+}
+
+/// Absolute paths saved inside the profile folder keep the old identifier in them, but the folder was
+/// renamed with the app. Without this, installed extensions fail to load and the Google Drive
+/// binding never matches a tab again ("login required"), because the saved folder no longer exists.
+fn migrate_legacy_profile_paths(conn: &Connection) -> Result<(), String> {
+    use crate::legacy::{NEW_IDENTIFIER, OLD_IDENTIFIER};
+    crate::database::migrations::apply(conn, "spark-rename-profile-paths-v1", |conn| {
+        let exists = |table: &str| -> Result<bool, String> {
+            conn.query_row(
+                "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1)",
+                [table],
+                |row| row.get(0),
+            )
+            .map_err(|e| e.to_string())
+        };
+        if exists("installed_extensions")? {
+            conn.execute(
+                "UPDATE installed_extensions SET path = replace(path, ?1, ?2) WHERE instr(path, ?1) > 0",
+                [OLD_IDENTIFIER, NEW_IDENTIFIER],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        if exists("app_preferences")? {
+            // The Drive binding is JSON; the identifier has no characters JSON escapes, so a text
+            // replace is exact.
+            conn.execute(
+                "UPDATE app_preferences SET value = replace(value, ?1, ?2)
+                 WHERE key = 'backup_sync_google_session_v2' AND instr(value, ?1) > 0",
+                [OLD_IDENTIFIER, NEW_IDENTIFIER],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    })
 }
 
 /// Saved tabs, sessions and recently closed tabs that still hold the pre-rename new tab address.
@@ -235,6 +271,72 @@ mod rename_tests {
             .query_row("SELECT url FROM saved_session_pages", [], |r| r.get(0))
             .unwrap();
         assert_eq!(url, "spark://newtab");
+    }
+
+    #[test]
+    fn saved_profile_paths_follow_the_renamed_folder_exactly_once() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+        crate::database::preferences_repo::initialize_preferences_table(&conn).unwrap();
+        let old_root = r"C:\Users\me\AppData\Roaming\org.veloce.browser";
+        let new_root = r"C:\Users\me\AppData\Roaming\org.spark.browser";
+        let binding = r#"{"directory":"C:\\Users\\me\\AppData\\Local\\org.veloce.browser\\workspaces\\ws-1","authuser":"0","email":"me@example.test"}"#.to_string();
+        conn.execute(
+            "INSERT INTO installed_extensions(id,name,version,description,path,enabled,manifest_json,installed_at)
+             VALUES('a','A','1','',?1,1,'{}',1), ('b','B','1','',?2,1,'{}',2)",
+            [format!(r"{old_root}\extensions\a"), r"D:\elsewhere\b".to_string()],
+        )
+        .unwrap();
+        crate::database::preferences_repo::store(&conn, "backup_sync_google_session_v2", &binding)
+            .unwrap();
+        crate::database::preferences_repo::store(&conn, "unrelated", &format!("{old_root} stays"))
+            .unwrap();
+        conn.execute(
+            "DELETE FROM app_migrations WHERE name='spark-rename-profile-paths-v1'",
+            [],
+        )
+        .unwrap();
+
+        migrate_legacy_profile_paths(&conn).unwrap();
+
+        let path = |id: &str| -> String {
+            conn.query_row(
+                "SELECT path FROM installed_extensions WHERE id=?1",
+                [id],
+                |r| r.get(0),
+            )
+            .unwrap()
+        };
+        assert_eq!(path("a"), format!(r"{new_root}\extensions\a"));
+        assert_eq!(
+            path("b"),
+            r"D:\elsewhere\b",
+            "paths outside the profile are untouched"
+        );
+        let saved = crate::database::preferences_repo::load(&conn, "backup_sync_google_session_v2")
+            .unwrap()
+            .unwrap();
+        assert!(saved.contains("org.spark.browser") && !saved.contains("org.veloce.browser"));
+        let parsed: serde_json::Value = serde_json::from_str(&saved).unwrap();
+        assert_eq!(
+            parsed["email"], "me@example.test",
+            "the rest of the binding is kept"
+        );
+        let other = crate::database::preferences_repo::load(&conn, "unrelated")
+            .unwrap()
+            .unwrap();
+        assert!(
+            other.contains("org.veloce.browser"),
+            "other preferences are not rewritten"
+        );
+        // The marker makes a second call a no-op.
+        conn.execute(
+            "UPDATE installed_extensions SET path = ?1 WHERE id='a'",
+            [format!(r"{old_root}\extensions\a")],
+        )
+        .unwrap();
+        migrate_legacy_profile_paths(&conn).unwrap();
+        assert_eq!(path("a"), format!(r"{old_root}\extensions\a"));
     }
 
     #[test]

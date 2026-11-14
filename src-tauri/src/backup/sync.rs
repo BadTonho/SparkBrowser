@@ -237,6 +237,9 @@ pub fn snapshot(conn: &Connection, runtime: &SyncRuntime) -> Result<SyncStateSna
         _ => false,
     };
     let connected_account = match &config {
+        // A remembered e-mail without the link (a profile saved by an older build) is not a
+        // connection: showing it would hide that the account still has to be chosen once.
+        SyncTargetConfig::GoogleDriveWeb { .. } if !gdrive_webview::session::is_bound(conn) => None,
         SyncTargetConfig::GoogleDriveWeb { .. } => runtime
             .gdrive
             .connected_email
