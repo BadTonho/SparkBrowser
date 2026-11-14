@@ -68,6 +68,7 @@
   "backup.sync_description": "Sync with Google Drive, your own folder or WebDAV, with no Spark servers.",
   "backup.sync_gdrive_heading": "Google Drive backup",
   "backup.sync_settings": "Sync settings",
+  "backup.sync_close": "Close sync settings",
   "backup.sync_not_configured": "Sync destination not configured",
   "backup.sync_connection_connected": "Account connected",
   "backup.sync_connection_disconnected": "Not connected",

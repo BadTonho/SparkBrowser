@@ -67,6 +67,7 @@
   "backup.sync_heading": "Sincronização automática",
   "backup.sync_description": "Sincronize com o Google Drive, uma pasta sua ou WebDAV, sem servidores Spark.",
   "backup.sync_gdrive_heading": "Backup com Google Drive",
+  "backup.sync_close": "Fechar configurações de sincronização",
   "backup.sync_settings": "Configurações de sincronização",
   "backup.sync_not_configured": "Destino de sincronização não configurado",
   "backup.sync_connection_connected": "Conta conectada",

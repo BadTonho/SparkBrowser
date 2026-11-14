@@ -39,9 +39,37 @@
     syncExpanded = false;
     syncPanel?.querySelector<HTMLElement>("summary")?.focus();
   }
-  function closeSyncOnOutsidePress(event: PointerEvent): void {
-    if (syncExpanded && syncPanel && !syncPanel.contains(event.target as Node)) syncExpanded = false;
+  const SYNC_OPEN_WIDTH = 580;
+  const SYNC_EDGE = 12;
+  function scrollParent(element: HTMLElement): HTMLElement {
+    for (let node = element.parentElement; node; node = node.parentElement) {
+      const overflow = getComputedStyle(node).overflowY;
+      if (overflow === "auto" || overflow === "scroll") return node;
+    }
+    return document.documentElement;
   }
+  /**
+   * Opens the panel centered on its card and nudged to stay inside the visible settings area, so it
+   * grows left, right, up and down as far as there is room. Offsets are relative to the card's slot.
+   */
+  function placeSyncPanel(): void {
+    const slot = syncPanel?.parentElement;
+    if (!syncPanel || !slot) return;
+    const area = scrollParent(slot).getBoundingClientRect();
+    const card = slot.getBoundingClientRect();
+    const width = Math.min(SYNC_OPEN_WIDTH, area.width - SYNC_EDGE * 2);
+    const left = Math.min(Math.max(card.left + (card.width - width) / 2, area.left + SYNC_EDGE), area.right - SYNC_EDGE - width);
+    const top = Math.max(card.top - 28, area.top + SYNC_EDGE);
+    const style = syncPanel.style;
+    style.setProperty("--sync-left", `${left - card.left}px`);
+    style.setProperty("--sync-right", `${card.right - (left + width)}px`);
+    style.setProperty("--sync-top", `${top - card.top}px`);
+    style.setProperty("--sync-max-height", `${Math.max(240, area.bottom - SYNC_EDGE - top)}px`);
+  }
+  $effect(() => {
+    if (syncExpanded) placeSyncPanel();
+  });
+
   let syncActionBusy = $state(false);
   let syncActionError = $state<string | null>(null);
 
@@ -149,7 +177,7 @@
   }
 </script>
 
-<svelte:window onpointerdown={closeSyncOnOutsidePress} />
+<svelte:window onresize={() => syncExpanded && placeSyncPanel()} />
 
 <section class="setting-group backup-settings" aria-labelledby="backup-heading">
   <h2 class="group-title" id="backup-heading">{$t("backup.heading")}</h2>
@@ -167,6 +195,13 @@
 
       <!-- The slot keeps the closed card's place in the row; the panel floats over it when open. -->
       <div class="sync-slot">
+      <!--
+        Click-outside is a real (invisible) button, not a window listener: the settings are shown in a separate
+        native surface that only forwards clicks on buttons, so a pointer listener here would never fire.
+      -->
+      {#if syncExpanded}
+        <button type="button" class="sync-scrim" tabindex="-1" aria-label={$t("backup.sync_close")} data-testid="backup-sync-scrim" onclick={() => (syncExpanded = false)}></button>
+      {/if}
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <details class="sync-panel" bind:this={syncPanel} bind:open={syncExpanded} onkeydown={closeSyncOnEscape} data-testid="backup-sync-panel">
         <summary class="sync-compact-row" data-testid="backup-sync-settings-toggle" title={$t("backup.sync_settings")}>
@@ -430,7 +465,11 @@
       {/if}
 
         </div>
-        <ErrorMessage error={syncActionError || $backupSyncState.last_error} />
+        {#if syncActionError || $backupSyncState.last_error}
+          <div class="sync-error" data-testid="backup-sync-error">
+            <ErrorMessage error={syncActionError || $backupSyncState.last_error} />
+          </div>
+        {/if}
       </details>
       </div>
     </div>
@@ -462,9 +501,10 @@
   /* Three cards of the same closed height. Rows do not stretch, so opening the Drive card grows only that card. */
   .backup-cards { --backup-card-min-height: 148px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 280px)); align-items: start; justify-content: start; gap: 12px; }
   /* Closed: exactly the size of its neighbours. Open: grows on every side over the page without moving anything. */
+  .sync-scrim { position: fixed; inset: 0; z-index: 29; padding: 0; border: 0; background: transparent; cursor: default; }
   .sync-slot { position: relative; min-width: 0; height: var(--backup-card-min-height, 148px); }
   .sync-panel { position: absolute; top: 0; right: 0; left: 0; display: block; box-sizing: border-box; height: var(--backup-card-min-height, 148px); padding: 16px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255,255,255,.025)); interpolate-size: allow-keywords; transition: top 0.28s ease, right 0.28s ease, left 0.28s ease, height 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease; }
-  .sync-panel[open] { top: -14px; right: -34px; left: -34px; z-index: 30; height: auto; max-height: min(740px, calc(100vh - 150px)); overflow-y: auto; background: var(--bg-permission-popover, #1c1c1c); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55); }
+  .sync-panel[open] { top: var(--sync-top, -28px); right: var(--sync-right, -150px); left: var(--sync-left, -150px); z-index: 30; height: auto; max-height: var(--sync-max-height, 640px); overflow-y: auto; background: var(--bg-permission-popover, #1c1c1c); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55); }
   /* Keeps the content visible while the panel shrinks back (Chromium/WebView2; elsewhere it just snaps). */
   .sync-panel::details-content { transition: content-visibility 0.28s allow-discrete; }
   @media (prefers-reduced-motion: reduce) { .sync-panel, .sync-panel::details-content { transition: none; } }
@@ -472,18 +512,33 @@
   .sync-compact-row { display: flex; box-sizing: border-box; min-height: 102px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 2px; text-align: center; cursor: pointer; list-style: none; }
   .sync-compact-row::-webkit-details-marker, .sync-compact-row::marker { display: none; }
   .sync-compact-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 8px; }
-  .sync-panel[open] > .sync-compact-row { min-height: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+  .sync-panel[open] > .sync-compact-row { min-height: 0; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 8px 10px; padding-bottom: 12px; text-align: left; border-bottom: 1px solid var(--border-subtle); }
+  /* Wide panel: description and mode on the left, the mode's fields on the right, sync buttons under the mode. */
+  .sync-panel { container-type: inline-size; --text-secondary: color-mix(in srgb, var(--text-primary) 82%, transparent); --sync-error-text: color-mix(in srgb, #ef4444 52%, var(--text-primary)); }
+  .sync-panel .pill-action { font-size: 12.5px; }
+  .sync-error { margin-top: 12px; padding: 12px 14px; border: 1px solid rgba(248, 113, 113, 0.45); border-radius: 10px; background: rgba(248, 113, 113, 0.1); }
+  .sync-error :global(.error-message) { color: var(--sync-error-text); font-size: 13px; line-height: 1.6; }
+  .sync-error :global(.error-message p) { margin: 0; }
+  .sync-error :global(.error-message summary) { margin-top: 8px; width: fit-content; cursor: pointer; font-size: 12.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  .sync-error :global(.error-message pre) { margin: 8px 0 0; padding: 10px 12px; border-radius: 8px; background: rgba(0, 0, 0, 0.3); color: var(--text-primary); font-size: 12px; line-height: 1.5; }
+  @container (min-width: 520px) {
+    .sync-settings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: "head box" "mode box" "acts box"; grid-template-rows: auto auto 1fr; align-items: start; gap: 12px 20px; }
+    .sync-panel-heading { grid-area: head; }
+    .sync-mode-field { grid-area: mode; }
+    .sync-mode-box { grid-area: box; }
+    .sync-actions-bar { grid-area: acts; align-self: end; }
+  }
   .sync-settings { display: flex; width: 100%; min-width: 0; flex-direction: column; gap: 9px; padding-top: 12px; }
-  .sync-state-chip { display: inline-flex; max-width: 100%; align-items: center; justify-content: center; padding: 4px 10px; border: 1px solid var(--border-subtle); border-radius: 999px; background: rgba(255,255,255,.04); color: var(--text-secondary); font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
+  .sync-state-chip { display: inline-flex; max-width: 100%; align-items: center; justify-content: center; padding: 5px 11px; border: 1px solid var(--border-subtle); border-radius: 999px; background: rgba(255,255,255,.04); color: var(--text-secondary); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
   .sync-state-chip.connection.connected, .sync-state-chip.synced { border-color: rgba(34, 197, 94, .35); background: rgba(34, 197, 94, .1); color: #86efac; }
   .sync-state-chip.connection:not(.connected) { border-color: rgba(255,255,255,.12); }
   .sync-state-chip.busy { border-color: rgba(66, 133, 244, .4); background: rgba(66, 133, 244, .12); color: #93c5fd; }
   .sync-state-chip.error { border-color: rgba(248, 113, 113, .42); background: rgba(248, 113, 113, .12); color: #fca5a5; }
   .sync-state-chip.neutral { color: var(--text-secondary); }
-  .sync-panel-heading p { margin: 3px 0 0; font-size: 11.5px; }
+  .sync-panel-heading p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.55; }
   .preference-choice { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 12.5px; color: var(--text-primary); cursor: pointer; }
-  .sync-field { display: flex; flex-direction: column; gap: 5px; margin: 10px 0; font-size: 11.5px; font-weight: 600; color: var(--text-primary); }
-  .sync-field input, .sync-field select { min-width: 0; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border-subtle); background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 11.5px; }
+  .sync-field { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+  .sync-field input, .sync-field select { min-width: 0; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border-subtle); background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 12.5px; }
   .sync-path { font-family: monospace; color: var(--text-primary); padding: 8px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); }
   .sync-mode-box { display: flex; flex-direction: column; gap: 8px; margin-top: 0; }
   .gdrive-account-card {
@@ -537,18 +592,20 @@
     min-width: 0;
   }
   .gdrive-account-label {
-    font-size: 11px;
+    font-size: 11.5px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--text-secondary);
   }
   .gdrive-account-email {
-    font-size: 12.5px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
   }
   .gdrive-account-sub {
-    font-size: 11.5px;
+    font-size: 12.5px;
+    line-height: 1.5;
     color: var(--text-secondary);
   }
   .gdrive-account-actions {
@@ -558,7 +615,8 @@
   }
   .sync-hint {
     margin: 2px 0;
-    font-size: 11.5px;
+    font-size: 12.5px;
+    line-height: 1.6;
     color: var(--text-secondary);
   }
   .sync-options-group {
