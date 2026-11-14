@@ -123,11 +123,11 @@ fn geometry(
         .map(|side| {
             let layout =
                 split_docking::plan(state, &presentation.context, &presentation.tab_id, side)?;
-            let bounds = *state
-                .surfaces()
-                .bounds()
-                .lock()
-                .map_err(|e| e.to_string())?;
+            let bounds = state.surfaces().viewport(
+                &state
+                    .window_of_tab(&presentation.context.active_tab_id)
+                    .unwrap_or_else(|_| crate::state::tab_model::MAIN_WINDOW_ID.to_string()),
+            )?;
             Ok(geometry::DockGeometry::new(bounds, &layout, side))
         })
         .transpose()

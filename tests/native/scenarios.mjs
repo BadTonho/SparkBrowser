@@ -12,6 +12,7 @@ import { checkSplitTabGroups } from './split-tab-groups.mjs';
 import { checkPrivacy } from './privacy.mjs';
 import { checkMediaMute, checkMediaVolume, checkMediaPip } from "./media.mjs";
 import { checkMediaLinux } from "./media-linux.mjs";
+import { checkBrowserWindows } from "./windows.mjs";
 import { checkPipContinuity } from './pip-continuity.mjs';
 import { checkPipPerformance } from './pip-performance.mjs';
 import {checkPipShadow} from './pip-shadow.mjs';
@@ -88,6 +89,7 @@ export const scenarios = {
   "media-volume": checkMediaVolume,
   "media-pip": checkMediaPip,
   "media-linux": checkMediaLinux,
+  "browser-windows": checkBrowserWindows,
   "media-pip-continuity": checkPipContinuity,
   "media-pip-fps": checkPipPerformance,
   "media-pip-shadow":checkPipShadow,

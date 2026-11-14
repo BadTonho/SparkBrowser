@@ -12,7 +12,8 @@ test('every application command is ACL covered and only the local shell receives
   assert.equal(capability.windows, undefined);
   assert.equal(capability.remote, undefined);
   assert.equal(capability.local, true);
-  assert.deepEqual(capability.webviews, ['main']);
+  // The first window and every window opened later are local shells.
+  assert.deepEqual(capability.webviews, ['main', 'window-*']);
   const testOnly = ['set_dark_mode_probe_scheme', 'set_minimum_font_probe_size'];
   assert.deepEqual(capability.permissions.filter(p => p.startsWith('allow-')).sort(), commands.filter(c => !testOnly.includes(c)).map(c => `allow-${c.replaceAll('_', '-')}`).sort());
   for (const command of testOnly) assert.ok(!capability.permissions.includes(`allow-${command.replaceAll('_', '-')}`));

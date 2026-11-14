@@ -16,7 +16,7 @@ test('the WhatsApp child WebView is an external page without IPC that hides inst
   assert.match(popover, /crate::security::harden\(app, &view, false\)/);
   assert.match(popover, /on_new_window\(\|_, _\| NewWindowResponse::Deny\)/);
   assert.match(popover, /view\.hide\(\)/);
-  assert.match(read('src-tauri/capabilities/default.json'), /"webviews":\s*\[\s*"main"\s*\]/);
+  assert.match(read('src-tauri/capabilities/default.json'), /"webviews":\s*\[\s*"main",\s*"window-\*"\s*\]/);
 });
 
 test('the popover module is Windows only and the command reports unsupported platforms', () => {

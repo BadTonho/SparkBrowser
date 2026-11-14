@@ -1,3 +1,4 @@
+pub mod browser_windows;
 #[cfg(target_os = "linux")]
 mod caret_browsing;
 pub(crate) mod content_bridge;

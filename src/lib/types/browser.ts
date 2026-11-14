@@ -120,7 +120,7 @@ export interface CommandItem {
 }
 
 /** Browser preview uses arrays; the native runtime sends revisioned snapshots. */
-export type TabSnapshot = TabItem[] | { revision: number; tabs: TabItem[]; split_layout?: SplitLayout | null };
+export type TabSnapshot = TabItem[] | { revision: number; window_id?: string; tabs: TabItem[]; split_layout?: SplitLayout | null };
 
 export interface NavigationState {
   revision: number;

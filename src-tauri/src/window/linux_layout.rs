@@ -7,13 +7,29 @@ use tauri::{AppHandle, Manager, WebviewWindow};
 
 #[cfg(target_os = "linux")]
 struct LinuxLayoutState {
+    /// The GTK window that owns this layout; a child belongs to the layout of its toplevel.
+    window: gtk::Widget,
     overlay: gtk::Overlay,
     vbox: gtk::Box,
 }
 
+/// The overlay and box of the window a widget sits in.
+#[cfg(target_os = "linux")]
+fn layout_of(widget: &gtk::Widget) -> Option<(gtk::Box, gtk::Overlay)> {
+    use gtk::prelude::*;
+    let toplevel = widget.toplevel()?;
+    LAYOUT_CONTAINERS.with(|c| {
+        c.borrow()
+            .values()
+            .find(|state| state.window == toplevel)
+            .map(|state| (state.vbox.clone(), state.overlay.clone()))
+    })
+}
+
 #[cfg(target_os = "linux")]
 thread_local! {
-    static LAYOUT_CONTAINER: RefCell<Option<LinuxLayoutState>> = const { RefCell::new(None) };
+    /// One layout per browser window, by window id.
+    static LAYOUT_CONTAINERS: RefCell<HashMap<String, LinuxLayoutState>> = RefCell::new(HashMap::new());
     static LAYOUT_BOUNDS: RefCell<HashMap<String, gtk::gdk::Rectangle>> = RefCell::new(HashMap::new());
 }
 
@@ -43,8 +59,16 @@ pub fn setup(window: &WebviewWindow) -> Result<(), String> {
 
     overlay.show_all();
 
-    LAYOUT_CONTAINER.with(|cell| {
-        *cell.borrow_mut() = Some(LinuxLayoutState { overlay, vbox });
+    let window_widget = gtk_window.upcast::<gtk::Widget>();
+    LAYOUT_CONTAINERS.with(|cell| {
+        cell.borrow_mut().insert(
+            window.label().to_string(),
+            LinuxLayoutState {
+                window: window_widget,
+                overlay,
+                vbox,
+            },
+        );
     });
 
     Ok(())
@@ -82,11 +106,7 @@ pub fn update_bounds(
             });
 
             // 2. Retrieve containers (short-lived borrow)
-            let containers = LAYOUT_CONTAINER.with(|c| {
-                c.borrow()
-                    .as_ref()
-                    .map(|s| (s.vbox.clone(), s.overlay.clone()))
-            });
+            let containers = layout_of(&widget);
 
             // 3. Perform GTK widget tree modifications without holding any RefCell borrow
             if let Some((vbox, overlay)) = containers {
@@ -127,13 +147,17 @@ pub fn set_visible(app: &AppHandle, label: &str, visible: bool) -> Result<(), St
                 widget.hide();
             }
 
-            let overlay = LAYOUT_CONTAINER.with(|c| c.borrow().as_ref().map(|s| s.overlay.clone()));
-
-            if let Some(overlay) = overlay {
+            if let Some((_, overlay)) = layout_of(&widget) {
                 overlay.queue_resize();
             }
         })
         .map_err(|e| e.to_string())
+}
+
+/// Drops the layout of a closed window.
+#[cfg(target_os = "linux")]
+pub fn forget_window(window_id: &str) {
+    LAYOUT_CONTAINERS.with(|c| c.borrow_mut().remove(window_id));
 }
 
 #[cfg(target_os = "linux")]

@@ -23,9 +23,13 @@ pub(super) fn create_tab_webview(
         return Ok(());
     }
 
+    let window_id = app
+        .try_state::<BrowserState>()
+        .and_then(|state| state.window_of_tab(tab_id).ok())
+        .unwrap_or_else(|| crate::state::tab_model::MAIN_WINDOW_ID.to_string());
     let main_window = app
-        .get_window("main")
-        .ok_or_else(|| "Main window not found".to_string())?;
+        .get_window(&window_id)
+        .ok_or_else(|| format!("Window {window_id} not found"))?;
 
     let logical_target = resolve_input_to_url_with_search_engine(initial_url_str, "google")?;
     let initial_url = super::new_tab::physical_url(app, logical_target.as_str())?;

@@ -5,4 +5,5 @@ mod selection;
 pub(crate) mod split_view;
 pub(crate) mod tab_organizer;
 pub(crate) mod tabs;
+pub(crate) mod windows;
 pub(crate) mod workspaces;

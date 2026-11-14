@@ -26,6 +26,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_webview_runtime_status",
     "restart_webview_runtime",
     "set_pip_window_shadow",
+    "open_browser_window",
+    "get_browser_windows",
     "exit_video_pip",
     "enter_video_pip",
     "set_tab_volume",

@@ -52,6 +52,7 @@ pub async fn reload_page(app: AppHandle, webview: tauri::Webview) -> Result<(), 
 #[tauri::command]
 pub async fn sync_viewport_bounds(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     bounds: ViewportBounds,
     split_ratio: Option<f64>,
@@ -69,16 +70,9 @@ pub async fn sync_viewport_bounds(
         (Some(ratio), Some(key)) => state.preview_split_ratio(&key, ratio).is_ok(),
         _ => false,
     };
-    {
-        let mut stored_bounds = state
-            .surfaces()
-            .bounds()
-            .lock()
-            .map_err(|e| e.to_string())?;
-        if *stored_bounds == bounds && !ratio_changed {
-            return Ok(());
-        }
-        *stored_bounds = bounds;
+    let window_id = super::access::caller_window(&webview);
+    if !state.surfaces().set_viewport(&window_id, bounds)? && !ratio_changed {
+        return Ok(());
     }
     let mut span = state.infrastructure().diagnostics().span("viewport.resize");
     let result = resize_visible_webviews(&app, &state);

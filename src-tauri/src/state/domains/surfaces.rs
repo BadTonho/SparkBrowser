@@ -1,12 +1,17 @@
 use super::super::browser_state::ViewportBounds;
-use std::sync::{atomic::AtomicBool, Mutex};
+use crate::state::tab_model::MAIN_WINDOW_ID;
+use std::{
+    collections::HashMap,
+    sync::{atomic::AtomicBool, Mutex},
+};
 
 /// Domain-owned state. Storage cannot be accessed through BrowserState fields.
 pub(crate) struct Surfaces {
     content_profiles: super::content_profiles::ContentProfiles,
     #[cfg(windows)]
     content_bootstrap: super::content_bootstrap::ContentBootstrap,
-    bounds: Mutex<ViewportBounds>,
+    /// The page area of each window, in that window's own coordinates.
+    bounds: Mutex<HashMap<String, ViewportBounds>>,
     is_overlay_open: Mutex<bool>,
     workspace_alt_pressed: AtomicBool,
     workspace_switcher_token: Mutex<Option<String>>,
@@ -24,8 +29,33 @@ impl Surfaces {
     pub(crate) fn content_bootstrap(&self) -> &super::content_bootstrap::ContentBootstrap {
         &self.content_bootstrap
     }
-    pub(crate) fn bounds(&self) -> &Mutex<ViewportBounds> {
-        &self.bounds
+    /// The page area of a window; the default size until its shell reports one.
+    pub(crate) fn viewport(&self, window_id: &str) -> Result<ViewportBounds, String> {
+        Ok(self
+            .bounds
+            .lock()
+            .map_err(|e| e.to_string())?
+            .get(window_id)
+            .copied()
+            .unwrap_or_default())
+    }
+    /// Stores a window's page area and says whether it changed.
+    pub(crate) fn set_viewport(
+        &self,
+        window_id: &str,
+        bounds: ViewportBounds,
+    ) -> Result<bool, String> {
+        let mut all = self.bounds.lock().map_err(|e| e.to_string())?;
+        Ok(all.insert(window_id.to_string(), bounds) != Some(bounds))
+    }
+    pub(crate) fn forget_viewport(&self, window_id: &str) {
+        if let Ok(mut all) = self.bounds.lock() {
+            all.remove(window_id);
+        }
+    }
+    /// The main window's page area, for surfaces that have no window of their own yet.
+    pub(crate) fn main_viewport(&self) -> Result<ViewportBounds, String> {
+        self.viewport(MAIN_WINDOW_ID)
     }
     pub(crate) fn is_overlay_open(&self) -> &Mutex<bool> {
         &self.is_overlay_open
@@ -56,7 +86,7 @@ impl Default for Surfaces {
             content_profiles: super::content_profiles::ContentProfiles::default(),
             #[cfg(windows)]
             content_bootstrap: super::content_bootstrap::ContentBootstrap::default(),
-            bounds: Mutex::new(ViewportBounds::default()),
+            bounds: Mutex::new(HashMap::new()),
             is_overlay_open: Mutex::new(false),
             workspace_alt_pressed: AtomicBool::new(false),
             workspace_switcher_token: Mutex::new(None),

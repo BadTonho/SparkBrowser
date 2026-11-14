@@ -7,7 +7,7 @@ use windows_core::Interface;
 
 pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result<(), String> {
     let app = app.clone();
-    let shell = view.label() == "main";
+    let shell = crate::state::tab_model::is_window_label(view.label());
     view.with_webview(move |platform| {
         let result = (|| -> windows_core::Result<()> {
             let core = unsafe { platform.controller().CoreWebView2()? };

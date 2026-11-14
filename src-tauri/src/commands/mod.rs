@@ -15,6 +15,7 @@ pub mod split_view;
 pub mod tab_organizer;
 pub mod tabs;
 pub mod updates;
+pub mod windows;
 pub mod workspaces;
 
 pub mod access;

@@ -70,7 +70,11 @@ pub fn pane_bounds(bounds: ViewportBounds, layout: &SplitLayout) -> [(String, Vi
 impl BrowserState {
     /// Live geometry only. Session snapshots and persistence always use current_split().
     pub fn display_split(&self) -> Option<SplitLayout> {
-        let mut layout = self.current_split()?;
+        self.display_split_in(crate::state::tab_model::MAIN_WINDOW_ID)
+    }
+    /// The split one window shows, with the ratio being dragged.
+    pub fn display_split_in(&self, window_id: &str) -> Option<SplitLayout> {
+        let mut layout = self.current_split_in(window_id)?;
         if let Some((key, ratio)) = self.session().edit_split_preview().lock().ok()?.as_ref() {
             if *key == layout.key() {
                 layout.ratio = *ratio;

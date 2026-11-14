@@ -56,5 +56,6 @@
   "qr_code.saved": "Imagem do QR Code salva.",
   "qr_code.invalid_png": "A imagem gerada para o QR Code é inválida.",
   "qr_code.invalid_extension": "Escolha um nome de arquivo PNG.",
-  "whatsapp.open": "Abrir WhatsApp"
+  "whatsapp.open": "Abrir WhatsApp",
+  "titlebar.new_window": "Nova janela"
 }

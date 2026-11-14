@@ -28,6 +28,7 @@ import {
   moveTabToWorkspace,
   isTauriRuntime,
   setTabPinned,
+  currentWindowId,
 } from "../../services/tauri-bridge";
 
 import { tabs, currentUrl, addressInput, isAddressEditing, isSidebarOpen,
@@ -85,6 +86,8 @@ export function applyNavigationPatch(patch: NavigationPatch): void {
 }
 
 export function applyTabsSnapshot(packet: TabSnapshot): void {
+  // Every window is sent its own tabs; ignore what another window shows.
+  if (!Array.isArray(packet) && packet.window_id && packet.window_id !== currentWindowId()) return;
   const incoming = acceptSnapshot(packet);
   if (!incoming?.length) return;
   applyConfirmedSplit(Array.isArray(packet) ? null : packet.split_layout ?? null);

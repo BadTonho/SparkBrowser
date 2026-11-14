@@ -3,6 +3,7 @@
   import { initializeRuntime } from "./lib/stores/webviewRuntimeStore";
   import { initializeNewTab } from "./lib/services/new-tab";
   import { focusAddressBar } from "./lib/services/bridge/navigation";
+  import { openBrowserWindow } from "./lib/services/bridge/windows";
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
   import { initializeTabDrag } from "./lib/stores/tabDragStore";
@@ -356,6 +357,7 @@
       case "move-tab-down":
       case "move-tab-down-ctrl-shift": moveActiveTabDown(get(activeWorkspaceId)); break;
       case "new-tab": addTab(undefined, get(activeWorkspaceId)); break;
+      case "new-window": openBrowserWindow().catch((error) => console.warn(error)); break;
       case "private-window": openPrivateWindow().catch((error) => console.warn(error)); break;
       case "navigate-back": void triggerBack(); break;
       case "navigate-forward": void triggerForward(); break;

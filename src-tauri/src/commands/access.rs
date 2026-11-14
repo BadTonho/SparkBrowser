@@ -2,7 +2,7 @@
 /// its window. Anything else (an internal overlay, for instance) acts for the main window.
 pub fn caller_window(webview: &tauri::Webview) -> String {
     let label = webview.label();
-    if label == crate::state::tab_model::MAIN_WINDOW_ID || label.starts_with("window-") {
+    if crate::state::tab_model::is_window_label(label) {
         label.to_string()
     } else {
         crate::state::tab_model::MAIN_WINDOW_ID.to_string()
@@ -15,7 +15,7 @@ pub fn shell_only(
 ) -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static {
     move |invoke| {
         use tauri::Manager;
-        if invoke.message.webview_ref().label() != "main"
+        if !crate::state::tab_model::is_window_label(invoke.message.webview_ref().label())
             || !invoke.message.webview_ref().url().is_ok_and(|url| {
                 crate::security::documents::is_shell(
                     invoke.message.webview_ref().app_handle(),

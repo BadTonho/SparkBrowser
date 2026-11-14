@@ -143,12 +143,7 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
         ensure_tab_webview(app, id, &tab.url, *bounds)?;
     }
     state.enforce_resident_policy()?;
-    let bounds = state
-        .surfaces()
-        .bounds()
-        .lock()
-        .map(|b| *b)
-        .unwrap_or_default();
+    let bounds = state.surfaces().main_viewport().unwrap_or_default();
     let workspace_switcher_open = state
         .surfaces()
         .workspace_switcher_open()

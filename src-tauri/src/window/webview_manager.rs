@@ -55,22 +55,13 @@ pub fn ensure_active_content_webview(app: &AppHandle) -> Result<(), String> {
         .find(|tab| tab.id == id)
         .cloned()
         .ok_or("Active tab was not found")?;
-    let bounds = *state
-        .surfaces()
-        .bounds()
-        .lock()
-        .map_err(|e| e.to_string())?;
+    let bounds = state.surfaces().viewport(&tab.window_id)?;
     ensure_tab_webview(app, &tab.id, &tab.url, bounds)
 }
 
 pub fn spawn_content_webview(app: &AppHandle) -> Result<(), String> {
     ensure_active_content_webview(app)?;
-    let bounds = *app
-        .state::<BrowserState>()
-        .surfaces()
-        .bounds()
-        .lock()
-        .map_err(|e| e.to_string())?;
+    let bounds = app.state::<BrowserState>().surfaces().main_viewport()?;
     spawn_workspace_switcher_webview(app, bounds)?;
     spawn_bookmark_context_menu_webview(app)?;
     sync_all_webviews(app, &app.state::<BrowserState>())?;

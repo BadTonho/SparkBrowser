@@ -50,6 +50,7 @@ use commands::media::{
     set_tab_muted, set_tab_volume,
 };
 use commands::minimum_font_probe::set_minimum_font_probe_size;
+use commands::windows::{get_browser_windows, open_browser_window};
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
@@ -187,6 +188,20 @@ pub fn run() {
                 let app = window.app_handle();
                 if let Some(state) = app.try_state::<BrowserState>() {
                     let _ = window::viewport::sync_content_geometry(app, &state);
+                }
+            }
+            if window.label() != "main" && crate::state::tab_model::is_window_label(window.label())
+            {
+                // Another browser window: its tabs move to the recently closed list.
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let (app, id) = (window.app_handle().clone(), window.label().to_string());
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(error) = window::browser_windows::closed(&app, &id).await {
+                            let _ = crate::security::emit_shell(&app, "browser-error", error);
+                        }
+                    });
+                    return;
                 }
             }
             if window.label() == "main" {
@@ -449,6 +464,8 @@ pub fn run() {
             set_tab_volume,
             enter_video_pip,
             set_pip_window_shadow,
+            open_browser_window,
+            get_browser_windows,
             exit_video_pip,
             get_tab_media,
             set_tab_muted,

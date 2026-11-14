@@ -29,6 +29,8 @@
     "allow-focus-address-bar",
     "allow-set-new-tab-preferences",
     "allow-set-pip-window-shadow",
+    "allow-open-browser-window",
+    "allow-get-browser-windows",
     "allow-exit-video-pip",
     "allow-enter-video-pip",
     "allow-set-tab-volume",
@@ -188,7 +190,8 @@
     "allow-toggle-whatsapp-popover"
   ],
   "webviews": [
-    "main"
+    "main",
+    "window-*"
   ],
   "local": true
 }

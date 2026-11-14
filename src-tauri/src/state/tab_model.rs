@@ -6,6 +6,14 @@ use tauri::Url;
 /// The first window. Tabs saved before windows existed belong to it.
 pub const MAIN_WINDOW_ID: &str = "main";
 
+/// Whether a webview label names the shell of a browser window (`main` or `window-<n>`).
+pub fn is_window_label(label: &str) -> bool {
+    label == MAIN_WINDOW_ID
+        || label
+            .strip_prefix("window-")
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+}
+
 fn main_window_id() -> String {
     MAIN_WINDOW_ID.to_string()
 }

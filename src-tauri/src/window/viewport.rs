@@ -10,11 +10,7 @@ use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect};
 
 /// Geometry updates do not reconcile the tab lifecycle or acquire the database/operation lock.
 pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
-    let bounds = *state
-        .surfaces()
-        .bounds()
-        .lock()
-        .map_err(|e| e.to_string())?;
+    let bounds = state.surfaces().main_viewport()?;
     #[cfg(not(target_os = "linux"))]
     let rect = Rect {
         position: LogicalPosition::new(bounds.x, bounds.y).into(),
@@ -190,24 +186,34 @@ pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<()
     Ok(())
 }
 
+/// Where every window shows its pages: the panes of all windows, in each window's coordinates.
 pub fn visible_bounds(
     state: &BrowserState,
 ) -> Result<Vec<(String, crate::state::browser_state::ViewportBounds)>, String> {
-    let bounds = *state
-        .surfaces()
-        .bounds()
-        .lock()
-        .map_err(|e| e.to_string())?;
-    if let Some(layout) = state.display_split() {
+    let mut panes = Vec::new();
+    for window_id in state.session().window_ids() {
+        panes.extend(visible_bounds_in(state, &window_id)?);
+    }
+    Ok(panes)
+}
+
+/// The panes one window shows.
+pub fn visible_bounds_in(
+    state: &BrowserState,
+    window_id: &str,
+) -> Result<Vec<(String, crate::state::browser_state::ViewportBounds)>, String> {
+    let bounds = state.surfaces().viewport(window_id)?;
+    if let Some(layout) = state.display_split_in(window_id) {
         return Ok(crate::state::split_layout::pane_bounds(bounds, &layout).into());
     }
-    Ok(vec![(
-        state
-            .session()
-            .active_tab_id()
-            .lock()
-            .map_err(|e| e.to_string())?
-            .clone(),
-        bounds,
-    )])
+    let window = state
+        .session()
+        .window(window_id)
+        .ok_or("windows.not_found")?;
+    let active = window
+        .active_tab_id()
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
+    Ok(vec![(active, bounds)])
 }

@@ -7,7 +7,8 @@ use tauri::{plugin::TauriPlugin, AppHandle, Manager, Webview, Wry};
 pub(crate) fn shell_navigation_guard() -> TauriPlugin<Wry> {
     tauri::plugin::Builder::<Wry>::new("spark-shell-navigation")
         .on_navigation(|webview, url| {
-            webview.label() != "main" || super::documents::is_shell(webview.app_handle(), url)
+            !crate::state::tab_model::is_window_label(webview.label())
+                || super::documents::is_shell(webview.app_handle(), url)
         })
         .build()
 }
