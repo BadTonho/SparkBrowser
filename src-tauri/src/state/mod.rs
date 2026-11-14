@@ -2,6 +2,7 @@ pub mod browser_state;
 pub mod diagnostics;
 pub mod memory_policy;
 pub mod protection;
+pub mod publish;
 pub mod split_docking;
 pub mod split_layout;
 pub mod split_transfer;

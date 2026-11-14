@@ -73,6 +73,7 @@ pub fn open_user_link(app: AppHandle, source_tab: String, generation: String, ur
                 tab.container_id = source.container_id.clone();
             }
             tab.is_hibernated = true;
+            tab.window_id.clone_from(&source.window_id);
             state
                 .session()
                 .edit_tabs()
@@ -83,7 +84,7 @@ pub fn open_user_link(app: AppHandle, source_tab: String, generation: String, ur
         });
         if result.is_ok() {
             reconcile_committed(&app, &state);
-            let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+            crate::state::publish::publish_tabs(&app, &state, &source.window_id);
         }
     });
 }
@@ -120,6 +121,7 @@ pub fn open_popup_url(app: AppHandle, source_tab: String, generation: String, ur
                     is_ephemeral: source.is_ephemeral,
                     container_id: source.container_id,
                     workspace_id: Some(source.workspace_id),
+                    window_id: Some(source.window_id),
                 },
             );
         }
@@ -127,9 +129,12 @@ pub fn open_popup_url(app: AppHandle, source_tab: String, generation: String, ur
 }
 
 #[tauri::command]
-pub async fn get_tabs(state: State<'_, BrowserState>) -> Result<TabSnapshot, String> {
+pub async fn get_tabs(
+    webview: tauri::Webview,
+    state: State<'_, BrowserState>,
+) -> Result<TabSnapshot, String> {
     let _operation = state.session().operation().await;
-    Ok(state.snapshot_packet())
+    Ok(state.snapshot_packet_for(&crate::commands::access::caller_window(&webview)))
 }
 
 #[tauri::command]
@@ -202,6 +207,7 @@ pub async fn get_tabs_memory(
 #[tauri::command]
 pub async fn create_tab(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     url: Option<String>,
     search_engine: Option<String>,
@@ -209,7 +215,8 @@ pub async fn create_tab(
 ) -> Result<TabSnapshot, String> {
     let mut span = state.infrastructure().diagnostics().span("tabs.create");
     let _operation = state.session().operation().await;
-    let result = create_tab_inner(&app, &state, url, search_engine, side);
+    let window_id = crate::commands::access::caller_window(&webview);
+    let result = create_tab_inner(&app, &state, url, search_engine, side, &window_id);
     span.finish(result.is_ok(), 0);
     result
 }
@@ -217,6 +224,7 @@ pub async fn create_tab(
 #[tauri::command]
 pub async fn create_ephemeral_tab(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     url: Option<String>,
     search_engine: Option<String>,
@@ -234,6 +242,7 @@ pub async fn create_ephemeral_tab(
         None,
         TabProfile {
             is_ephemeral: true,
+            window_id: Some(crate::commands::access::caller_window(&webview)),
             ..Default::default()
         },
     );
@@ -247,8 +256,19 @@ pub(super) fn create_tab_inner(
     url: Option<String>,
     search_engine: Option<String>,
     side: Option<crate::state::split_docking::DockSide>,
+    window_id: &str,
 ) -> Result<TabSnapshot, String> {
-    create_tab_inner_ext(app, state, url, search_engine, side, TabProfile::default())
+    create_tab_inner_ext(
+        app,
+        state,
+        url,
+        search_engine,
+        side,
+        TabProfile {
+            window_id: Some(window_id.to_string()),
+            ..Default::default()
+        },
+    )
 }
 
 #[derive(Default)]
@@ -256,6 +276,8 @@ pub(super) struct TabProfile {
     pub is_ephemeral: bool,
     pub container_id: Option<String>,
     pub workspace_id: Option<String>,
+    /// The window that opens the tab; the main window when not given.
+    pub window_id: Option<String>,
 }
 
 pub(super) fn create_tab_inner_ext(
@@ -270,7 +292,14 @@ pub(super) fn create_tab_inner_ext(
         is_ephemeral,
         container_id,
         workspace_id,
+        window_id,
     } = profile;
+    let window_id =
+        window_id.unwrap_or_else(|| crate::state::tab_model::MAIN_WINDOW_ID.to_string());
+    let window = state
+        .session()
+        .window(&window_id)
+        .ok_or("windows.not_found")?;
     let raw_target = url.unwrap_or_else(|| DEFAULT_HOME_URL.to_string());
     let resolved_url = crate::window::url_input::resolve_browser_input(
         app,
@@ -301,8 +330,7 @@ pub(super) fn create_tab_inner_ext(
     };
 
     let active_ws_id = workspace_id.unwrap_or_else(|| {
-        state
-            .session()
+        window
             .edit_active_workspace_id()
             .lock()
             .map(|ws| ws.clone())
@@ -318,6 +346,7 @@ pub(super) fn create_tab_inner_ext(
         if !is_ephemeral {
             tab_info.container_id = container_id;
         }
+        tab_info.window_id.clone_from(&window_id);
         state
             .session()
             .edit_tabs()
@@ -331,8 +360,7 @@ pub(super) fn create_tab_inner_ext(
                 .lock()
                 .map_err(|e| e.to_string())?
                 .get_mut(
-                    &*state
-                        .session()
+                    &*window
                         .edit_active_workspace_id()
                         .lock()
                         .map_err(|e| e.to_string())?,
@@ -346,9 +374,8 @@ pub(super) fn create_tab_inner_ext(
     })?;
     reconcile_committed(app, state);
 
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(app, "tabs-updated", &snapshot);
-    let _ = crate::security::emit_shell(app, "content-url-changed", &resolved_url);
+    let snapshot = crate::state::publish::publish_tabs(app, state, &window_id);
+    let _ = crate::security::emit_shell_to(app, &window_id, "content-url-changed", &resolved_url);
 
     Ok(snapshot)
 }
@@ -371,8 +398,11 @@ pub(super) fn switch_tab_inner(
     state: &BrowserState,
     tab_id: String,
 ) -> Result<TabSnapshot, String> {
+    let window_id = state.window_of_tab(&tab_id)?;
     let previous_active_id = state
         .session()
+        .window(&window_id)
+        .ok_or("windows.not_found")?
         .edit_active_tab_id()
         .lock()
         .map_err(|e| e.to_string())?
@@ -389,12 +419,11 @@ pub(super) fn switch_tab_inner(
     })?;
     reconcile_committed(app, state);
 
-    let snapshot = state.snapshot_packet();
+    let snapshot = crate::state::publish::publish_tabs(app, state, &window_id);
     let stats = state.snapshot_privacy_stats();
-    let _ = crate::security::emit_shell(app, "tabs-updated", &snapshot);
-    let _ = crate::security::emit_shell(app, "privacy-stats-updated", &stats);
+    crate::security::emit_shell_all(app, "privacy-stats-updated", &stats);
     if !active_url.is_empty() {
-        let _ = crate::security::emit_shell(app, "content-url-changed", &active_url);
+        let _ = crate::security::emit_shell_to(app, &window_id, "content-url-changed", &active_url);
     }
 
     Ok(snapshot)
@@ -411,10 +440,15 @@ pub async fn close_tab(
     let _operation = state.session().operation().await;
     let restore_focus = focus_content.unwrap_or(false)
         && state
-            .session()
-            .edit_active_tab_id()
-            .lock()
-            .is_ok_and(|id| *id == tab_id);
+            .window_of_tab(&tab_id)
+            .ok()
+            .and_then(|window| state.session().window(&window))
+            .is_some_and(|window| {
+                window
+                    .edit_active_tab_id()
+                    .lock()
+                    .is_ok_and(|id| *id == tab_id)
+            });
     let snapshot = super::closed_tabs::close_one(&app, &state, &tab_id, search_engine.as_deref())?;
     if restore_focus {
         crate::window::webview_manager::focus_active_content_webview(&app)?;
@@ -425,20 +459,15 @@ pub async fn close_tab(
 #[tauri::command]
 pub async fn hibernate_tab(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     tab_id: String,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     let before = TabCheckpoint::capture(&state)?;
     let changed = (|| -> Result<bool, String> {
-        let active_id = state
-            .session()
-            .edit_active_tab_id()
-            .lock()
-            .map(|id| id.clone())
-            .unwrap_or_default();
-
-        if tab_id == active_id {
+        if state.active_tab_ids().contains(&tab_id) {
             return Err("Cannot hibernate the currently active tab".to_string());
         }
 
@@ -455,10 +484,12 @@ pub async fn hibernate_tab(
     })();
     finish_change(&app, &state, before, changed)?;
 
-    let snapshot = state.snapshot_packet();
-    let stats = state.snapshot_privacy_stats();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
+    let snapshot = crate::state::publish::publish_tabs(&app, &state, &window_id);
+    crate::security::emit_shell_all(
+        &app,
+        "privacy-stats-updated",
+        state.snapshot_privacy_stats(),
+    );
 
     Ok(snapshot)
 }
@@ -466,25 +497,22 @@ pub async fn hibernate_tab(
 #[tauri::command]
 pub async fn hibernate_inactive_tabs(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     min_idle_secs: Option<u64>,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     let before = TabCheckpoint::capture(&state)?;
     let changed = (|| -> Result<bool, String> {
         let threshold = min_idle_secs.unwrap_or(0);
         let now = TabInfo::current_epoch_secs();
-        let active_id = state
-            .session()
-            .edit_active_tab_id()
-            .lock()
-            .map(|id| id.clone())
-            .unwrap_or_default();
+        let active_ids = state.active_tab_ids();
 
         let mut changed = false;
         if let Ok(mut tabs) = state.session().edit_tabs().lock() {
             for tab in tabs.iter_mut() {
-                if tab.id != active_id
+                if !active_ids.contains(&tab.id)
                     && !tab.protected_from_hibernation()
                     && !tab.is_hibernated
                     && now.saturating_sub(tab.last_active_epoch) >= threshold
@@ -511,10 +539,12 @@ pub async fn hibernate_inactive_tabs(
         Ok(changed)
     })();
     finish_change(&app, &state, before, changed)?;
-    let snapshot = state.snapshot_packet();
-    let stats = state.snapshot_privacy_stats();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
+    let snapshot = crate::state::publish::publish_tabs(&app, &state, &window_id);
+    crate::security::emit_shell_all(
+        &app,
+        "privacy-stats-updated",
+        state.snapshot_privacy_stats(),
+    );
 
     Ok(snapshot)
 }
@@ -522,9 +552,11 @@ pub async fn hibernate_inactive_tabs(
 #[tauri::command]
 pub async fn auto_hibernate_inactive_tabs(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     mode: String,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     let before = TabCheckpoint::capture(&state)?;
     let changed = (|| -> Result<bool, String> {
@@ -562,12 +594,7 @@ pub async fn auto_hibernate_inactive_tabs(
             .lock()
             .map_err(|e| e.to_string())?
             .clone();
-        let active_id = state
-            .session()
-            .edit_active_tab_id()
-            .lock()
-            .map(|id| id.clone())
-            .unwrap_or_default();
+        let active_ids = state.active_tab_ids();
         let mut frequent_tabs = std::collections::HashSet::new();
 
         if adaptive {
@@ -582,7 +609,7 @@ pub async fn auto_hibernate_inactive_tabs(
         let mut changed = false;
         if let Ok(mut tabs) = state.session().edit_tabs().lock() {
             for tab in tabs.iter_mut() {
-                if tab.id == active_id
+                if active_ids.contains(&tab.id)
                     || tab.is_hibernated
                     || tab.protected_from_hibernation()
                     || crate::state::tab_model::hibernation_domain_matches(&tab.url, &exemptions)
@@ -613,19 +640,23 @@ pub async fn auto_hibernate_inactive_tabs(
         Ok(changed)
     })();
     finish_change(&app, &state, before, changed)?;
-    let snapshot = state.snapshot_packet();
-    let stats = state.snapshot_privacy_stats();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
+    let snapshot = crate::state::publish::publish_tabs(&app, &state, &window_id);
+    crate::security::emit_shell_all(
+        &app,
+        "privacy-stats-updated",
+        state.snapshot_privacy_stats(),
+    );
     Ok(snapshot)
 }
 
 #[tauri::command]
 pub async fn reorder_tabs(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     tab_ids: Vec<String>,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     TabCheckpoint::commit(&state, || {
         {
@@ -649,18 +680,20 @@ pub async fn reorder_tabs(
         Ok(())
     })?;
     reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }
 
 #[tauri::command]
 pub async fn move_tab_to_workspace(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     tab_id: String,
     workspace_id: String,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     TabCheckpoint::commit(&state, || {
         state.move_tab(&tab_id, &workspace_id)?;
@@ -669,18 +702,20 @@ pub async fn move_tab_to_workspace(
     })?;
     // Reconciliation compares the actual resident profile with committed metadata.
     reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }
 
 #[tauri::command]
 pub async fn set_resident_limit(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     limit: usize,
     enforce: Option<bool>,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     if !(1..=100).contains(&limit) {
         return Err("Resident limit must be between 1 and 100".into());
     }
@@ -693,17 +728,19 @@ pub async fn set_resident_limit(
         Ok(())
     })?;
     reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }
 
 #[tauri::command]
 pub async fn set_hibernation_exemptions(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     domains: Vec<String>,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     if domains.len() > 256 {
         return Err("settings.invalid_hibernation_domain".into());
     }
@@ -737,9 +774,9 @@ pub async fn set_hibernation_exemptions(
         return Err(error);
     }
     reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }
 
 #[tauri::command]
@@ -750,10 +787,12 @@ pub fn set_ask_download_destination(state: State<'_, BrowserState>, enabled: boo
 #[tauri::command]
 pub async fn set_tab_pinned(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     tab_id: String,
     pinned: bool,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     TabCheckpoint::commit(&state, || {
         state
@@ -768,9 +807,9 @@ pub async fn set_tab_pinned(
         Ok(())
     })?;
     reconcile_committed(&app, &state);
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &snapshot);
-    Ok(snapshot)
+    Ok(crate::state::publish::publish_tabs(
+        &app, &state, &window_id,
+    ))
 }
 
 /// A committed session remains authoritative if native reconciliation fails.

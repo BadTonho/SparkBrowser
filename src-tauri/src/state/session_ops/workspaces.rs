@@ -30,13 +30,21 @@ pub async fn get_workspaces(state: State<'_, BrowserState>) -> Result<Vec<Worksp
 }
 
 #[tauri::command]
-pub async fn get_active_workspace(state: State<'_, BrowserState>) -> Result<String, String> {
+pub async fn get_active_workspace(
+    webview: tauri::Webview,
+    state: State<'_, BrowserState>,
+) -> Result<String, String> {
     Ok(state
         .session()
-        .edit_active_workspace_id()
-        .lock()
-        .map(|id| id.clone())
-        .unwrap_or_else(|_| "ws-personal".to_string()))
+        .window(&crate::commands::access::caller_window(&webview))
+        .and_then(|window| {
+            window
+                .edit_active_workspace_id()
+                .lock()
+                .ok()
+                .map(|id| id.clone())
+        })
+        .unwrap_or_else(|| "ws-personal".to_string()))
 }
 
 /// Reports the durable per-workspace content isolation preference.
@@ -89,16 +97,22 @@ pub async fn set_workspace_isolation(
         "browser-error",
         "Pages were reloaded to apply per-workspace isolation",
     );
-    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
     Ok(())
 }
 
 #[tauri::command]
 pub async fn switch_workspace(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     workspace_id: String,
 ) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
+    let window = state
+        .session()
+        .window(&window_id)
+        .ok_or("windows.not_found")?;
     let _operation = state.session().operation().await;
     let exists = state
         .session()
@@ -116,7 +130,7 @@ pub async fn switch_workspace(
         .lock()
         .map_err(|e| e.to_string())?
         .iter()
-        .find(|tab| tab.workspace_id == workspace_id)
+        .find(|tab| tab.window_id == window_id && tab.workspace_id == workspace_id)
         .map(|tab| tab.id.clone());
     let existing_tab_id = state
         .session()
@@ -125,18 +139,29 @@ pub async fn switch_workspace(
         .map_err(|e| e.to_string())?
         .get(&workspace_id)
         .map(|layout| layout.focused_tab_id.clone())
+        .filter(|tab| {
+            state
+                .window_of_tab(tab)
+                .is_ok_and(|window| window == window_id)
+        })
         .or(existing_tab_id);
     if let Some(tab_id) = existing_tab_id {
         return switch_tab_inner(&app, &state, tab_id);
     }
     let before = crate::state::tab_checkpoint::TabCheckpoint::capture(&state)?;
-    *state
-        .session()
+    *window
         .edit_active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())? = workspace_id;
 
-    let result = create_tab_inner(&app, &state, Some(DEFAULT_HOME_URL.to_string()), None, None);
+    let result = create_tab_inner(
+        &app,
+        &state,
+        Some(DEFAULT_HOME_URL.to_string()),
+        None,
+        None,
+        &window_id,
+    );
     if result.is_err() {
         before.restore(&state)?;
     }
@@ -216,11 +241,13 @@ pub async fn update_workspace(
 #[tauri::command]
 pub async fn delete_workspace(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     workspace_id: String,
     action: String,
     target_workspace_id: Option<String>,
 ) -> Result<WorkspaceDeleteResult, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
     let _operation = state.session().operation().await;
     if workspace_id == "ws-personal" {
         return Err("The Personal workspace cannot be deleted".to_string());
@@ -256,19 +283,7 @@ pub async fn delete_workspace(
         None
     };
 
-    let active_workspace = state
-        .session()
-        .edit_active_workspace_id()
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clone();
-    let was_active = active_workspace == workspace_id;
-    let previous_active_tab = state
-        .session()
-        .edit_active_tab_id()
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clone();
+    let window_ids = state.session().window_ids();
     let mut next_tabs = state
         .session()
         .edit_tabs()
@@ -291,11 +306,6 @@ pub async fn delete_workspace(
         next_tabs.retain(|tab| tab.workspace_id != workspace_id);
     }
 
-    let next_active_workspace = if was_active {
-        target_id.unwrap_or_else(|| "ws-personal".to_string())
-    } else {
-        active_workspace
-    };
     let mut next_layouts = state
         .session()
         .edit_split_layouts()
@@ -306,75 +316,126 @@ pub async fn delete_workspace(
         layout.normalize(&next_tabs);
         workspace != &workspace_id && layout.valid(&next_tabs)
     });
-    let mut next_active_tab = if was_active && action == "close" {
-        next_layouts
-            .get(&next_active_workspace)
-            .map(|layout| layout.focused_tab_id.clone())
-            .or_else(|| {
-                next_tabs
-                    .iter()
-                    .rev()
-                    .find(|tab| tab.workspace_id == next_active_workspace)
-                    .map(|tab| tab.id.clone())
-            })
-            .unwrap_or_default()
-    } else if next_tabs.iter().any(|tab| {
-        tab.id == previous_active_tab && (!was_active || tab.workspace_id == next_active_workspace)
-    }) {
-        previous_active_tab.clone()
-    } else {
-        next_tabs
-            .iter()
-            .rev()
-            .find(|tab| tab.workspace_id == next_active_workspace)
-            .map(|tab| tab.id.clone())
-            .unwrap_or_default()
-    };
 
     let mut next_counter = *state
         .session()
         .edit_next_tab_counter()
         .lock()
         .map_err(|e| e.to_string())?;
-    let mut created_active_tab = false;
-    if next_active_tab.is_empty() {
-        let new_id = format!("tab-{next_counter}");
-        next_counter += 1;
-        next_tabs.push(TabInfo::new(
-            new_id.clone(),
-            DEFAULT_HOME_URL.to_string(),
-            next_active_workspace.clone(),
-            true,
-        ));
-        next_active_tab = new_id;
-        created_active_tab = true;
+    // Every window keeps its own selection: only windows showing the deleted workspace move.
+    struct WindowPlan {
+        id: String,
+        was_active: bool,
+        workspace: String,
+        tab: String,
+        previous_tab: String,
+        created: bool,
+    }
+    let mut plans: Vec<WindowPlan> = Vec::new();
+    for window_id in &window_ids {
+        let window = state
+            .session()
+            .window(window_id)
+            .ok_or("windows.not_found")?;
+        let active_workspace = window
+            .edit_active_workspace_id()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
+        let previous_tab = window
+            .edit_active_tab_id()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
+        let was_active = active_workspace == workspace_id;
+        let next_workspace = if was_active {
+            target_id
+                .clone()
+                .unwrap_or_else(|| "ws-personal".to_string())
+        } else {
+            active_workspace
+        };
+        let in_window = |tab: &&TabInfo| tab.window_id == *window_id;
+        let mut next_tab = if was_active && action == "close" {
+            next_layouts
+                .get(&next_workspace)
+                .map(|layout| layout.focused_tab_id.clone())
+                .filter(|id| next_tabs.iter().filter(in_window).any(|tab| tab.id == *id))
+                .or_else(|| {
+                    next_tabs
+                        .iter()
+                        .filter(in_window)
+                        .rev()
+                        .find(|tab| tab.workspace_id == next_workspace)
+                        .map(|tab| tab.id.clone())
+                })
+                .unwrap_or_default()
+        } else if next_tabs.iter().any(|tab| {
+            tab.id == previous_tab && (!was_active || tab.workspace_id == next_workspace)
+        }) {
+            previous_tab.clone()
+        } else {
+            next_tabs
+                .iter()
+                .filter(in_window)
+                .rev()
+                .find(|tab| tab.workspace_id == next_workspace)
+                .map(|tab| tab.id.clone())
+                .unwrap_or_default()
+        };
+        let mut created = false;
+        if next_tab.is_empty() {
+            let new_id = format!("tab-{next_counter}");
+            next_counter += 1;
+            let mut tab = TabInfo::new(
+                new_id.clone(),
+                DEFAULT_HOME_URL.to_string(),
+                next_workspace.clone(),
+                true,
+            );
+            tab.window_id.clone_from(window_id);
+            next_tabs.push(tab);
+            next_tab = new_id;
+            created = true;
+        }
+        plans.push(WindowPlan {
+            id: window_id.clone(),
+            was_active,
+            workspace: next_workspace,
+            tab: next_tab,
+            previous_tab,
+            created,
+        });
     }
     for tab in &mut next_tabs {
-        tab.is_active = tab.id == next_active_tab;
+        tab.is_active = plans.iter().any(|plan| plan.tab == tab.id);
         if tab.is_active {
             tab.is_hibernated = false;
             tab.last_active_epoch = TabInfo::current_epoch_secs();
         }
     }
-    let active_url = next_tabs
-        .iter()
-        .find(|tab| tab.id == next_active_tab)
-        .map(|tab| tab.url.clone())
-        .ok_or_else(|| "Could not select an active tab".to_string())?;
-
-    if let Some(layout) = next_layouts.get_mut(&next_active_workspace) {
-        layout.focus_tab(&next_active_tab);
+    for plan in &plans {
+        if let Some(layout) = next_layouts.get_mut(&plan.workspace) {
+            layout.focus_tab(&plan.tab);
+        }
     }
     for tab in &mut next_tabs {
         tab.is_visible = tab.is_active
-            || next_layouts
-                .get(&next_active_workspace)
-                .is_some_and(|l| l.contains(&tab.id));
+            || plans.iter().any(|plan| {
+                plan.id == tab.window_id
+                    && next_layouts
+                        .get(&plan.workspace)
+                        .is_some_and(|l| l.contains(&tab.id))
+            });
         if tab.is_visible {
             tab.is_hibernated = false;
         }
     }
-    let should_record_activation = was_active && previous_active_tab != next_active_tab;
+    let caller_plan = plans
+        .iter()
+        .find(|plan| plan.id == window_id)
+        .ok_or("windows.not_found")?;
+    let next_active_workspace = caller_plan.workspace.clone();
 
     let (updated_workspaces, mut committed_tabs) = {
         let mut db_guard = state
@@ -389,13 +450,16 @@ pub async fn delete_workspace(
         save_session_tabs(&transaction, &next_tabs)?;
         split_repo::save(&transaction, &next_layouts)?;
         workspace_repo::delete_workspace(&transaction, &workspace_id)?;
-        if should_record_activation {
-            if created_active_tab {
-                tab_usage_repo::reset_tab_history(&transaction, &next_active_tab)?;
+        for plan in plans
+            .iter()
+            .filter(|plan| plan.was_active && plan.previous_tab != plan.tab)
+        {
+            if plan.created {
+                tab_usage_repo::reset_tab_history(&transaction, &plan.tab)?;
             }
             tab_usage_repo::record_activation(
                 &transaction,
-                &next_active_tab,
+                &plan.tab,
                 TabInfo::current_epoch_secs(),
             )?;
         }
@@ -436,24 +500,35 @@ pub async fn delete_workspace(
         .edit_split_preview()
         .lock()
         .map_err(|e| e.to_string())? = None;
-    *state
-        .session()
-        .edit_active_workspace_id()
-        .lock()
-        .map_err(|e| e.to_string())? = next_active_workspace.clone();
-    *state
-        .session()
-        .edit_active_tab_id()
-        .lock()
-        .map_err(|e| e.to_string())? = next_active_tab;
+    for plan in &plans {
+        let window = state
+            .session()
+            .window(&plan.id)
+            .ok_or("windows.not_found")?;
+        *window
+            .edit_active_workspace_id()
+            .lock()
+            .map_err(|e| e.to_string())? = plan.workspace.clone();
+        *window
+            .edit_active_tab_id()
+            .lock()
+            .map_err(|e| e.to_string())? = plan.tab.clone();
+    }
     *state
         .session()
         .edit_next_tab_counter()
         .lock()
         .map_err(|e| e.to_string())? = next_counter;
 
-    if was_active {
-        let _ = crate::security::emit_shell(&app, "content-url-changed", &active_url);
+    for plan in plans.iter().filter(|plan| plan.was_active) {
+        let url = state.session().edit_tabs().lock().ok().and_then(|tabs| {
+            tabs.iter()
+                .find(|tab| tab.id == plan.tab)
+                .map(|tab| tab.url.clone())
+        });
+        if let Some(url) = url {
+            let _ = crate::security::emit_shell_to(&app, &plan.id, "content-url-changed", &url);
+        }
     }
     for id in removed_ephemeral {
         if let Err(error) = crate::window::webview_manager::close_tab_webview(&app, &id) {
@@ -466,8 +541,7 @@ pub async fn delete_workspace(
     // The workspace no longer exists; reclaim its isolated data folder when
     // isolation is on. Live document teardown finished during reconciliation.
     crate::window::workspace_data::remove(&app, &workspace_id);
-    let tabs = state.snapshot_packet();
-    let _ = crate::security::emit_shell(&app, "tabs-updated", &tabs);
+    let tabs = crate::state::publish::publish_tabs(&app, &state, &window_id);
 
     Ok(WorkspaceDeleteResult {
         workspaces: updated_workspaces,

@@ -5,8 +5,8 @@ use std::collections::HashMap;
 pub struct TabCheckpoint {
     pub tabs: Vec<TabInfo>,
     pub layouts: HashMap<String, SplitLayout>,
-    pub active_tab: String,
-    pub active_workspace: String,
+    /// `(window, active tab, active workspace)` for every open window.
+    pub windows: Vec<(String, String, String)>,
     resident_limit: usize,
     resident_limit_enforced: bool,
 }
@@ -22,35 +22,68 @@ impl TabCheckpoint {
                 .lock()
                 .map_err(|e| e.to_string())?
                 .clone(),
-            active_tab: state
-                .session()
-                .edit_active_tab_id()
-                .lock()
-                .map_err(|e| e.to_string())?
-                .clone(),
-            active_workspace: state
-                .session()
-                .edit_active_workspace_id()
-                .lock()
-                .map_err(|e| e.to_string())?
-                .clone(),
+            windows: {
+                let mut windows = Vec::new();
+                for id in state.session().window_ids() {
+                    if let Some(window) = state.session().window(&id) {
+                        windows.push((
+                            id,
+                            window
+                                .edit_active_tab_id()
+                                .lock()
+                                .map_err(|e| e.to_string())?
+                                .clone(),
+                            window
+                                .edit_active_workspace_id()
+                                .lock()
+                                .map_err(|e| e.to_string())?
+                                .clone(),
+                        ));
+                    }
+                }
+                windows
+            },
         })
+    }
+
+    /// The tab a window had selected when the checkpoint was taken.
+    pub fn active_tab_of(&self, window_id: &str) -> Option<&str> {
+        self.windows
+            .iter()
+            .find(|(id, _, _)| id == window_id)
+            .map(|(_, tab, _)| tab.as_str())
+    }
+    /// The workspace a window had selected when the checkpoint was taken.
+    pub fn active_workspace_of(&self, window_id: &str) -> Option<&str> {
+        self.windows
+            .iter()
+            .find(|(id, _, _)| id == window_id)
+            .map(|(_, _, workspace)| workspace.as_str())
     }
     pub fn restore(mut self, state: &BrowserState) -> Result<(), String> {
         state.session().set_resident_limit(self.resident_limit);
         state
             .session()
             .set_resident_limit_enforced(self.resident_limit_enforced);
-        *state
-            .session()
-            .edit_active_tab_id()
-            .lock()
-            .map_err(|e| e.to_string())? = self.active_tab;
-        *state
-            .session()
-            .edit_active_workspace_id()
-            .lock()
-            .map_err(|e| e.to_string())? = self.active_workspace;
+        // Windows opened by the failed change go away again; windows it closed come back.
+        for id in state.session().window_ids() {
+            if !self.windows.iter().any(|(window, _, _)| *window == id) {
+                state.session().close_window(&id)?;
+            }
+        }
+        for (id, tab, workspace) in &self.windows {
+            let window = state
+                .session()
+                .open_window(id, tab.clone(), workspace.clone())?;
+            *window
+                .edit_active_tab_id()
+                .lock()
+                .map_err(|e| e.to_string())? = tab.clone();
+            *window
+                .edit_active_workspace_id()
+                .lock()
+                .map_err(|e| e.to_string())? = workspace.clone();
+        }
         let mut tabs = state
             .session()
             .edit_tabs()

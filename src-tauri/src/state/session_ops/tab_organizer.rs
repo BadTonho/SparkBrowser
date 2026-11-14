@@ -36,6 +36,7 @@ pub fn close_candidates(tabs: &[TabInfo], ids: &[String]) -> (Vec<String>, Vec<P
 #[tauri::command]
 pub async fn close_tabs_reviewed(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     tab_ids: Vec<String>,
 ) -> Result<BulkCloseResult, String> {
@@ -85,7 +86,11 @@ pub async fn close_tabs_reviewed(
             crate::window::ephemeral::purge_ephemeral_tab_data(&app, &tab.id);
         }
     }
-    let snapshot = super::closed_tabs::publish(&app, &state);
+    let snapshot = super::closed_tabs::publish(
+        &app,
+        &state,
+        &crate::commands::access::caller_window(&webview),
+    );
     Ok(BulkCloseResult {
         snapshot,
         closed,

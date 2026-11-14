@@ -1,3 +1,14 @@
+/// The browser window a shell command came from: the shell webview that invoked it is named after
+/// its window. Anything else (an internal overlay, for instance) acts for the main window.
+pub fn caller_window(webview: &tauri::Webview) -> String {
+    let label = webview.label();
+    if label == crate::state::tab_model::MAIN_WINDOW_ID || label.starts_with("window-") {
+        label.to_string()
+    } else {
+        crate::state::tab_model::MAIN_WINDOW_ID.to_string()
+    }
+}
+
 /// Child WebViews cannot invoke application commands, including after navigation to a local URL.
 pub fn shell_only(
     handler: impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static,

@@ -321,7 +321,11 @@ pub(super) fn navigate(
                 &id,
                 physical_url(&app, target.as_str())?,
             )?;
-            let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+            crate::state::publish::publish_tabs(
+                &app,
+                &state,
+                crate::state::tab_model::MAIN_WINDOW_ID,
+            );
             Ok::<_, String>(())
         })();
         if let Err(error) = result {

@@ -179,6 +179,16 @@ impl BrowserState {
         Ok(())
     }
 
+    /// The tab every open window has selected.
+    pub(crate) fn active_tab_ids(&self) -> Vec<String> {
+        self.session()
+            .window_ids()
+            .iter()
+            .filter_map(|id| self.session().window(id))
+            .filter_map(|window| window.edit_active_tab_id().lock().ok().map(|id| id.clone()))
+            .collect()
+    }
+
     /// The window that shows a tab.
     pub(crate) fn window_of_tab(&self, tab_id: &str) -> Result<String, String> {
         self.session()

@@ -35,14 +35,11 @@ pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
                 .map(|v| *v)
                 .unwrap_or(true)
             || !state
-                .current_split()
+                .window_of_tab(&id)
+                .ok()
+                .and_then(|window| state.current_split_in(&window))
                 .is_some_and(|layout| layout.contains(&id))
-            || state
-                .session()
-                .active_tab_id()
-                .lock()
-                .map(|active| *active == id)
-                .unwrap_or(true)
+            || state.active_tab_ids().contains(&id)
         {
             return;
         }
@@ -54,7 +51,9 @@ pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
             );
             return;
         }
-        let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+        if let Ok(window) = state.window_of_tab(&id) {
+            crate::state::publish::publish_tabs(&app, &state, &window);
+        }
     });
 }
 #[cfg(windows)]

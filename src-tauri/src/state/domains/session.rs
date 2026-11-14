@@ -131,8 +131,6 @@ impl Session {
             .map(|windows| windows.iter().map(|(id, _)| id.clone()).collect())
             .unwrap_or_else(|_| vec![MAIN_WINDOW_ID.to_string()])
     }
-    // Called by the window commands (next step); exercised by the state tests until then.
-    #[cfg_attr(not(test), allow(dead_code))]
     pub(in crate::state) fn open_window(
         &self,
         id: &str,
@@ -147,7 +145,6 @@ impl Session {
         windows.push((id.to_string(), state.clone()));
         Ok(state)
     }
-    #[cfg_attr(not(test), allow(dead_code))]
     pub(in crate::state) fn close_window(&self, id: &str) -> Result<(), String> {
         if id == MAIN_WINDOW_ID {
             return Err("windows.cannot_close_main".into());

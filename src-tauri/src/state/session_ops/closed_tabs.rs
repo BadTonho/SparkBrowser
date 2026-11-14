@@ -32,7 +32,7 @@ pub fn notify(app: &AppHandle, state: &BrowserState) {
         let _ = crate::security::emit_shell(app, "closed-tabs-updated", rows);
     }
 }
-pub(super) fn publish(app: &AppHandle, state: &BrowserState) -> TabSnapshot {
+pub(super) fn publish(app: &AppHandle, state: &BrowserState, window_id: &str) -> TabSnapshot {
     if let Err(error) = sync_all_webviews(app, state) {
         let _ = crate::security::emit_shell(
             app,
@@ -40,10 +40,8 @@ pub(super) fn publish(app: &AppHandle, state: &BrowserState) -> TabSnapshot {
             format!("The session was saved, but a page could not be displayed: {error}"),
         );
     }
-    let snapshot = state.snapshot_packet();
-    let _ = crate::security::emit_shell(app, "tabs-updated", &snapshot);
-    let _ =
-        crate::security::emit_shell(app, "privacy-stats-updated", state.snapshot_privacy_stats());
+    let snapshot = crate::state::publish::publish_tabs(app, state, window_id);
+    crate::security::emit_shell_all(app, "privacy-stats-updated", state.snapshot_privacy_stats());
     notify(app, state);
     snapshot
 }
@@ -56,9 +54,21 @@ pub(super) fn close_one(
 ) -> Result<TabSnapshot, String> {
     state.refresh_visible_tabs()?;
     let before = TabCheckpoint::capture(state)?;
-    if !before.tabs.iter().any(|tab| tab.id == id) {
-        return Err("closed_tabs.not_found".into());
-    }
+    let window_id = before
+        .tabs
+        .iter()
+        .find(|tab| tab.id == id)
+        .map(|tab| tab.window_id.clone())
+        .ok_or("closed_tabs.not_found")?;
+    // What the window showing this tab had selected, so closing it picks that window's next tab.
+    let active_tab = before
+        .active_tab_of(&window_id)
+        .unwrap_or_default()
+        .to_string();
+    let active_workspace = before
+        .active_workspace_of(&window_id)
+        .unwrap_or(crate::state::workspace_model::DEFAULT_WORKSPACE_ID)
+        .to_string();
     let workspaces = state
         .session()
         .edit_workspaces()
@@ -69,13 +79,13 @@ pub(super) fn close_one(
     let mut remaining_layouts = before.layouts.clone();
     remaining_layouts.retain(|_, layout| layout.remove_member(id));
     let partner = remaining_layouts
-        .get(&before.active_workspace)
-        .filter(|_| before.active_tab == id)
+        .get(&active_workspace)
+        .filter(|_| active_tab == id)
         .map(|layout| layout.focused_tab_id.clone())
         .or_else(|| {
             before
                 .layouts
-                .get(&before.active_workspace)
+                .get(&active_workspace)
                 .filter(|layout| layout.contains(id))
                 .map(|layout| {
                     if layout.left_tab_id == id {
@@ -97,7 +107,7 @@ pub(super) fn close_one(
             .edit_split_layouts()
             .lock()
             .map_err(|e| e.to_string())? = remaining_layouts;
-        if before.active_tab == id {
+        if active_tab == id {
             let target = {
                 let tabs = state
                     .session()
@@ -107,7 +117,9 @@ pub(super) fn close_one(
                 partner.or_else(|| {
                     tabs.iter()
                         .rev()
-                        .find(|tab| tab.workspace_id == before.active_workspace)
+                        .find(|tab| {
+                            tab.window_id == window_id && tab.workspace_id == active_workspace
+                        })
                         .map(|tab| tab.id.clone())
                 })
             };
@@ -120,12 +132,16 @@ pub(super) fn close_one(
                     .edit_tabs()
                     .lock()
                     .map_err(|e| e.to_string())?
-                    .push(TabInfo::new(
-                        target.clone(),
-                        crate::window::new_tab::URL.into(),
-                        before.active_workspace.clone(),
-                        false,
-                    ));
+                    .push({
+                        let mut tab = TabInfo::new(
+                            target.clone(),
+                            crate::window::new_tab::URL.into(),
+                            active_workspace.clone(),
+                            false,
+                        );
+                        tab.window_id = window_id.clone();
+                        tab
+                    });
                 target
             };
             state.select_tab(&target)?;
@@ -147,7 +163,7 @@ pub(super) fn close_one(
             crate::window::ephemeral::purge_ephemeral_tab_data(app, id);
         }
     }
-    Ok(publish(app, state))
+    Ok(publish(app, state, &window_id))
 }
 
 #[tauri::command]
@@ -201,6 +217,7 @@ pub fn insertion_index(tabs: &[TabInfo], workspace: &str, position: usize) -> us
 #[tauri::command]
 pub async fn reopen_closed_tab(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     id: Option<i64>,
 ) -> Result<Option<ReopenClosedTabResult>, String> {
@@ -243,6 +260,7 @@ pub async fn reopen_closed_tab(
     if !crate::window::new_tab::valid_tab_url(&row.url) {
         return Err("closed_tabs.invalid_url".into());
     }
+    let window_id = crate::commands::access::caller_window(&webview);
     let before = TabCheckpoint::capture(&state)?;
     let workspace_missing = !state
         .session()
@@ -252,7 +270,10 @@ pub async fn reopen_closed_tab(
         .iter()
         .any(|ws| ws.id == row.workspace_id);
     let workspace = if workspace_missing {
-        before.active_workspace.clone()
+        before
+            .active_workspace_of(&window_id)
+            .unwrap_or(crate::state::workspace_model::DEFAULT_WORKSPACE_ID)
+            .to_string()
     } else {
         row.workspace_id.clone()
     };
@@ -268,6 +289,7 @@ pub async fn reopen_closed_tab(
     let mut tab = TabInfo::new(id.clone(), row.url, workspace.clone(), false);
     tab.title = row.title;
     tab.is_pinned = row.is_pinned;
+    tab.window_id.clone_from(&window_id);
     let result = (|| {
         let mut tabs = state
             .session()
@@ -285,7 +307,7 @@ pub async fn reopen_closed_tab(
         return Err(error);
     }
     Ok(Some(ReopenClosedTabResult {
-        snapshot: publish(&app, &state),
+        snapshot: publish(&app, &state, &window_id),
         workspace_missing,
     }))
 }

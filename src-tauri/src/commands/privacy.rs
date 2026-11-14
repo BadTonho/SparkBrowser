@@ -57,7 +57,7 @@ pub async fn set_shield_exceptions(
     state.policies().set_shield_settings(settings.clone())?;
     crate::window::webview_manager::reset_content_webviews(&app, &state)?;
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
-    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
     Ok(settings.exceptions)
 }
 
@@ -106,7 +106,7 @@ pub async fn set_gpc(
     state.policies().set_gpc_settings(settings.clone())?;
     crate::window::webview_manager::reset_content_webviews(&app, &state)?;
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
-    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
     Ok(settings)
 }
 
@@ -161,7 +161,7 @@ pub async fn set_tracking_cleaning(
     state.policies().set_tracking_settings(settings.clone())?;
     crate::window::webview_manager::reset_content_webviews(&app, &state)?;
     crate::window::webview_manager::sync_all_webviews(&app, &state)?;
-    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
     Ok(settings)
 }
 
@@ -278,7 +278,7 @@ pub async fn toggle_adblock_shield(
             "This engine rebuilt WebViews to update the shield; page state and history were reset",
         );
     }
-    let _ = crate::security::emit_shell(&app, "tabs-updated", state.snapshot_packet());
+    crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
 
     let stats = state.snapshot_privacy_stats();
     let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);

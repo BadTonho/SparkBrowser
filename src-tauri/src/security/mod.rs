@@ -22,6 +22,39 @@ pub fn emit_shell<S: serde::Serialize + Clone>(
     )
 }
 
+/// Sends an event to the shell of one browser window (its label is the window id).
+pub fn emit_shell_to<S: serde::Serialize + Clone>(
+    app: &tauri::AppHandle,
+    window_id: &str,
+    event: &str,
+    payload: S,
+) -> tauri::Result<()> {
+    use tauri::Emitter;
+    app.emit_to(
+        tauri::EventTarget::Webview {
+            label: window_id.into(),
+        },
+        event,
+        payload,
+    )
+}
+
+/// Sends an event to the shell of every open window.
+pub fn emit_shell_all<S: serde::Serialize + Clone>(
+    app: &tauri::AppHandle,
+    event: &str,
+    payload: S,
+) {
+    use tauri::Manager;
+    let ids = app
+        .try_state::<crate::state::browser_state::BrowserState>()
+        .map(|state| state.session().window_ids())
+        .unwrap_or_else(|| vec![crate::state::tab_model::MAIN_WINDOW_ID.to_string()]);
+    for id in ids {
+        let _ = emit_shell_to(app, &id, event, payload.clone());
+    }
+}
+
 #[cfg(target_os = "linux")]
 pub fn linux_shell_navigation_guard() -> tauri::plugin::TauriPlugin<tauri::Wry> {
     linux::shell_navigation_guard()
