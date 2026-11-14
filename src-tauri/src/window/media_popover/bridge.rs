@@ -79,5 +79,6 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     drop(inner);
     // The shell hides the WebView after delivery, rather than interrupting its
     // own navigation callback, and flushes the last slider value on dismissal.
-    let _ = crate::security::emit_shell(app, "media-popover-action", event);
+    let _ =
+        crate::window::overlay_host::emit_to_host(app, super::LABEL, "media-popover-action", event);
 }

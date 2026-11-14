@@ -24,10 +24,18 @@ pub fn sync(
 }
 pub fn set(
     app: &AppHandle,
+    window_id: &str,
     visible: bool,
     session_id: u64,
     presentation: Option<Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    panel_popover::set::<QuickSettings>(app, visible, session_id, presentation, restore_focus)
+    panel_popover::set::<QuickSettings>(
+        app,
+        window_id,
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
 }

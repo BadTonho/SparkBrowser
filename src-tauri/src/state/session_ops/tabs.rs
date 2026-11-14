@@ -408,7 +408,7 @@ pub(super) fn switch_tab_inner(
         .map_err(|e| e.to_string())?
         .clone();
     if previous_active_id != tab_id {
-        if let Some(label) = crate::window::fullscreen::active(app) {
+        if let Some(label) = crate::window::fullscreen::active_in(app, &window_id) {
             crate::window::fullscreen::exit(app, &label, true);
         }
     }
@@ -438,6 +438,7 @@ pub async fn close_tab(
     focus_content: Option<bool>,
 ) -> Result<TabSnapshot, String> {
     let _operation = state.session().operation().await;
+    let window_id = state.window_of_tab(&tab_id).unwrap_or_default();
     let restore_focus = focus_content.unwrap_or(false)
         && state
             .window_of_tab(&tab_id)
@@ -451,7 +452,7 @@ pub async fn close_tab(
             });
     let snapshot = super::closed_tabs::close_one(&app, &state, &tab_id, search_engine.as_deref())?;
     if restore_focus {
-        crate::window::webview_manager::focus_active_content_webview(&app)?;
+        crate::window::webview_manager::focus_active_content_webview(&app, &window_id)?;
     }
     Ok(snapshot)
 }
@@ -814,12 +815,11 @@ pub async fn set_tab_pinned(
 
 /// A committed session remains authoritative if native reconciliation fails.
 pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
-    if let Some(owner) = crate::window::fullscreen::active(app) {
+    for (owner, window_id) in crate::window::fullscreen::all(app) {
         let selected = state
             .session()
-            .edit_active_tab_id()
-            .lock()
-            .ok()
+            .window(&window_id)
+            .and_then(|window| window.active_tab_id().lock().ok().map(|id| id.clone()))
             .map(|id| crate::state::tab_model::webview_label_for_tab(&id));
         if selected.as_deref() != Some(owner.as_str()) {
             crate::window::fullscreen::exit(app, &owner, true);

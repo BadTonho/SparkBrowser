@@ -181,9 +181,9 @@ pub fn run() {
         .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
-            if window.label() == "main"
+            if state::tab_model::is_window_label(window.label())
                 && matches!(event, WindowEvent::Resized(_))
-                && window::fullscreen::active(window.app_handle()).is_some()
+                && window::fullscreen::any_active(window.app_handle())
             {
                 let app = window.app_handle();
                 if let Some(state) = app.try_state::<BrowserState>() {
@@ -213,7 +213,9 @@ pub fn run() {
                     return;
                 }
             }
-            if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
+            if state::tab_model::is_window_label(window.label())
+                && matches!(event, WindowEvent::Focused(false))
+            {
                 window::zoom_popover::focus_lost(window.app_handle());
                 window::tools_popover::focus_lost(window.app_handle());
                 window::downloads_popover::focus_lost(window.app_handle());
@@ -240,8 +242,9 @@ pub fn run() {
                         let _ = webview.hide();
                     }
                 }
-                let _ = crate::security::emit_shell(
+                let _ = crate::security::emit_shell_to(
                     window.app_handle(),
+                    window.label(),
                     "workspace-shortcut-cancel",
                     (),
                 );

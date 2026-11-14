@@ -50,6 +50,13 @@ export async function checkBrowserWindows({ invoke, until, fixture, request, ses
   assert.ok(main.tabs.find(tab => tab.id === firstTab)?.is_active, 'main keeps its own selection');
   assert.equal((await invoke('get_browser_windows')).length, 2);
 
+  // Panels are created in the window that asks for them and move when another window asks.
+  for (const panel of ['tools', 'downloads', 'zoom', 'history']) {
+    await invokeIn('prepare_panel', { panel });
+    await invoke('prepare_panel', { panel });
+    await invokeIn('prepare_panel', { panel });
+  }
+
   // Closing the window keeps its tabs reopenable and leaves main untouched.
   await invokeIn('plugin:window|close', { label: 'window-2' });
   await until(async () => (await invoke('get_browser_windows')).length === 1, 'second window closed');

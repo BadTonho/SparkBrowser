@@ -6,20 +6,46 @@ pub mod sequence;
 #[cfg(windows)]
 mod windows;
 
-/// Internal events have an explicit recipient, independently of listener permissions.
+/// Internal events have an explicit recipient, independently of listener permissions. Events that
+/// are not about one window go to the shell of every open window.
 pub fn emit_shell<S: serde::Serialize + Clone>(
     app: &tauri::AppHandle,
     event: &str,
     payload: S,
 ) -> tauri::Result<()> {
-    use tauri::Emitter;
-    app.emit_to(
-        tauri::EventTarget::Webview {
-            label: "main".into(),
-        },
-        event,
-        payload,
-    )
+    emit_shell_all(app, event, payload);
+    Ok(())
+}
+
+/// Sends an event to the shell of the window that shows a tab.
+pub fn emit_shell_for_tab<S: serde::Serialize + Clone>(
+    app: &tauri::AppHandle,
+    tab_id: &str,
+    event: &str,
+    payload: S,
+) -> tauri::Result<()> {
+    use tauri::Manager;
+    let window = app
+        .try_state::<crate::state::browser_state::BrowserState>()
+        .and_then(|state| state.window_of_tab(tab_id).ok())
+        .unwrap_or_else(|| crate::state::tab_model::MAIN_WINDOW_ID.to_string());
+    emit_shell_to(app, &window, event, payload)
+}
+
+/// Sends an event to the shell of the window that contains a web view (a page or an overlay).
+pub fn emit_shell_for_webview<S: serde::Serialize + Clone>(
+    app: &tauri::AppHandle,
+    label: &str,
+    event: &str,
+    payload: S,
+) -> tauri::Result<()> {
+    use tauri::Manager;
+    let window = app
+        .get_webview(label)
+        .map(|view| view.window().label().to_string())
+        .filter(|id| crate::state::tab_model::is_window_label(id))
+        .unwrap_or_else(|| crate::state::tab_model::MAIN_WINDOW_ID.to_string());
+    emit_shell_to(app, &window, event, payload)
 }
 
 /// Sends an event to the shell of one browser window (its label is the window id).

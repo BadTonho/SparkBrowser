@@ -185,8 +185,12 @@ pub fn paint(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
         .ok()
         .and_then(|url| url.host_str().map(str::to_owned))
         .unwrap_or_default();
+    let window_id = state
+        .window_of_tab(&presentation.context.active_tab_id)
+        .unwrap_or_else(|_| crate::state::tab_model::MAIN_WINDOW_ID.to_string());
     surface::paint(
         app,
+        &window_id,
         &serde_json::json!({
             "revision": revision, "label": presentation.label, "locale": presentation.locale,
             "pointer": presentation.pointer, "title": tab.title, "host": host, "pane": pane,

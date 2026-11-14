@@ -117,6 +117,7 @@ fn escape_html(value: &str) -> String {
 
 pub async fn extract_article(
     app: &AppHandle,
+    window_id: &str,
     tab_id: Option<String>,
 ) -> Result<ReaderArticle, String> {
     let state = app.state::<crate::state::browser_state::BrowserState>();
@@ -124,6 +125,8 @@ pub async fn extract_article(
         Some(id) => id,
         None => state
             .session()
+            .window(window_id)
+            .ok_or("windows.not_found")?
             .active_tab_id()
             .lock()
             .map_err(|e| e.to_string())?

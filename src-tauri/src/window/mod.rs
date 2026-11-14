@@ -13,6 +13,7 @@ mod link_context_menu;
 pub mod media_popover;
 pub(crate) mod navigation_state;
 pub mod new_tab;
+pub(crate) mod overlay_host;
 pub mod permission_popover;
 pub mod privacy_popover;
 pub mod reader;
@@ -38,8 +39,8 @@ pub mod linux_layout;
 mod panel_popover;
 
 /// Prepares one panel's web view ahead of the click. See `panel_popover::prepare`.
-pub fn prepare_panel(app: &tauri::AppHandle, panel: &str) -> Result<(), String> {
-    panel_popover::prepare(app, panel)
+pub fn prepare_panel(app: &tauri::AppHandle, window_id: &str, panel: &str) -> Result<(), String> {
+    panel_popover::prepare(app, window_id, panel)
 }
 pub mod quick_settings_popover;
 pub mod settings_overlay;

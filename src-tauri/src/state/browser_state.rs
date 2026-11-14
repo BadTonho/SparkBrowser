@@ -189,6 +189,32 @@ impl BrowserState {
             .collect()
     }
 
+    /// True when the tab is the one its own window has selected.
+    pub(crate) fn is_active_tab(&self, tab_id: &str) -> bool {
+        self.window_of_tab(tab_id)
+            .ok()
+            .and_then(|window| self.session().window(&window))
+            .is_some_and(|window| {
+                window
+                    .edit_active_tab_id()
+                    .lock()
+                    .is_ok_and(|id| *id == tab_id)
+            })
+    }
+
+    /// The workspace selected in the window that shows the tab.
+    pub(crate) fn active_workspace_of_tab(&self, tab_id: &str) -> Option<String> {
+        let window = self.window_of_tab(tab_id).ok()?;
+        let id = self
+            .session()
+            .window(&window)?
+            .edit_active_workspace_id()
+            .lock()
+            .ok()?
+            .clone();
+        Some(id)
+    }
+
     /// The window that shows a tab.
     pub(crate) fn window_of_tab(&self, tab_id: &str) -> Result<String, String> {
         self.session()

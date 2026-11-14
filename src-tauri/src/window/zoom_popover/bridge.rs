@@ -49,7 +49,8 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     session.closing = name == "dismiss";
     let event = action(session, name, value, &reason);
     drop(inner);
-    let _ = crate::security::emit_shell(app, "zoom-popover-action", event);
+    let _ =
+        crate::window::overlay_host::emit_to_host(app, super::LABEL, "zoom-popover-action", event);
 }
 
 fn valid_value(value: f64, levels: &[f64]) -> bool {

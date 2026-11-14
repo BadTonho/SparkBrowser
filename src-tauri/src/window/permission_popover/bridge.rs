@@ -99,7 +99,12 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
         reason: payload.reason,
     };
     drop(inner);
-    let _ = crate::security::emit_shell(app, "site-permission-popover-action", event);
+    let _ = crate::window::overlay_host::emit_to_host(
+        app,
+        super::LABEL,
+        "site-permission-popover-action",
+        event,
+    );
 }
 
 #[cfg(test)]

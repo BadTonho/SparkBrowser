@@ -30,6 +30,7 @@ pub async fn get_download_tasks(
 #[tauri::command]
 pub async fn enqueue_download(
     app: AppHandle,
+    webview: tauri::Webview,
     manager: State<'_, DownloadManager>,
     state: State<'_, BrowserState>,
     url: String,
@@ -56,7 +57,13 @@ pub async fn enqueue_download(
         None
     };
     manager
-        .enqueue(&app, &url, expected_sha256, target)
+        .enqueue(
+            &app,
+            &crate::commands::access::caller_window(&webview),
+            &url,
+            expected_sha256,
+            target,
+        )
         .map(Some)
 }
 #[tauri::command]

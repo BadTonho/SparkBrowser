@@ -206,9 +206,11 @@ pub(super) fn install_workspace_shortcut_accelerator(
     };
 
     let app_for_registration = app.clone();
+    let label_for_registration = webview.label().to_string();
     webview
         .with_webview(move |platform: PlatformWebview| {
             let app_for_handler = app_for_registration.clone();
+            let label_for_handler = label_for_registration.clone();
             let handler =
                 AcceleratorKeyPressedEventHandler::create(Box::new(move |_sender, args| {
                     let Some(args) = args else {
@@ -294,8 +296,9 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                 if let Some(key) = key {
                                     payload["key"] = serde_json::json!(key);
                                 }
-                                let _ = crate::security::emit_shell(
+                                let _ = crate::security::emit_shell_for_webview(
                                     &app_for_handler,
+                                    &label_for_handler,
                                     "browser-shortcut-action",
                                     payload,
                                 );
@@ -305,11 +308,14 @@ pub(super) fn install_workspace_shortcut_accelerator(
                     }
 
                     if is_key_down && virtual_key == 0x1B {
-                        if let Some(owner) = super::fullscreen::active(&app_for_handler) {
+                        let owners = super::fullscreen::all(&app_for_handler);
+                        if !owners.is_empty() {
                             unsafe {
                                 args.SetHandled(true)?;
                             }
-                            super::fullscreen::exit(&app_for_handler, &owner, true);
+                            for (owner, _) in owners {
+                                super::fullscreen::exit(&app_for_handler, &owner, true);
+                            }
                             return Ok(());
                         }
                     }
@@ -326,8 +332,9 @@ pub(super) fn install_workspace_shortcut_accelerator(
                         unsafe {
                             args.SetHandled(true)?;
                         }
-                        let _ = crate::security::emit_shell(
+                        let _ = crate::security::emit_shell_for_webview(
                             &app_for_handler,
+                            &label_for_handler,
                             "workspace-switcher-dismissed",
                             (),
                         );
@@ -412,8 +419,9 @@ pub(super) fn install_workspace_shortcut_accelerator(
                         }
 
                         if let Some(payload) = payload {
-                            let _ = crate::security::emit_shell(
+                            let _ = crate::security::emit_shell_for_webview(
                                 &app_for_handler,
+                                &label_for_handler,
                                 "workspace-shortcut-event",
                                 payload,
                             );
@@ -438,8 +446,9 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                 args.SetHandled(true)?;
                             }
                             if !is_repeat {
-                                let _ = crate::security::emit_shell(
+                                let _ = crate::security::emit_shell_for_webview(
                                     &app_for_handler,
+                                    &label_for_handler,
                                     "browser-shortcut-action",
                                     serde_json::json!({
                                         "action": "switch-workspaces",
@@ -601,12 +610,7 @@ pub(super) fn handle_keyboard_navigation(
     let token_matches = app_handle_for_nav
         .try_state::<BrowserState>()
         .and_then(|state| {
-            let is_active = state
-                .session()
-                .active_tab_id()
-                .lock()
-                .map(|id| *id == tab_for_nav)
-                .unwrap_or(false);
+            let is_active = state.is_active_tab(tab_for_nav);
             state
                 .security()
                 .keyboard_bridge_tokens()
@@ -620,7 +624,9 @@ pub(super) fn handle_keyboard_navigation(
         })
         .unwrap_or(false);
     let focused = app_handle_for_nav
-        .get_webview_window("main")
+        .try_state::<BrowserState>()
+        .and_then(|state| state.window_of_tab(tab_for_nav).ok())
+        .and_then(|window_id| app_handle_for_nav.get_webview_window(&window_id))
         .and_then(|window| window.is_focused().ok())
         .unwrap_or(false);
 
@@ -661,8 +667,9 @@ pub(super) fn handle_keyboard_navigation(
                 }
             }
             "alt-down" | "alt-up" | "alt-cancel" => {
-                let _ = crate::security::emit_shell(
+                let _ = crate::security::emit_shell_for_webview(
                     app_handle_for_nav,
+                    label_for_nav,
                     "workspace-shortcut-event",
                     serde_json::json!({ "type": event_type }),
                 );
@@ -685,8 +692,9 @@ pub(super) fn handle_keyboard_navigation(
                             eprintln!("Unable to toggle native caret browsing: {error}");
                         }
                     } else {
-                        let _ = crate::security::emit_shell(
+                        let _ = crate::security::emit_shell_for_webview(
                             app_handle_for_nav,
+                            label_for_nav,
                             "browser-shortcut-action",
                             serde_json::json!({ "action": action, "key": key }),
                         );
@@ -696,7 +704,12 @@ pub(super) fn handle_keyboard_navigation(
             _ => {}
         }
     } else if !focused {
-        let _ = crate::security::emit_shell(app_handle_for_nav, "workspace-shortcut-cancel", ());
+        let _ = crate::security::emit_shell_for_webview(
+            app_handle_for_nav,
+            label_for_nav,
+            "workspace-shortcut-cancel",
+            (),
+        );
     }
 
     if let Some(sequence) = sequence {

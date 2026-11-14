@@ -139,9 +139,11 @@ fn visible(app: &AppHandle) -> bool {
             .is_overlay_open()
             .lock()
             .map_or(true, |v| *v)
-        && app
-            .get_window("main")
-            .is_some_and(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(true))
+        && app.windows().into_iter().any(|(label, w)| {
+            crate::state::tab_model::is_window_label(&label)
+                && w.is_visible().unwrap_or(false)
+                && !w.is_minimized().unwrap_or(true)
+        })
         && !app.state::<crate::shutdown::ShutdownService>().blocked()
 }
 pub fn initialize(app: &AppHandle) {
@@ -249,9 +251,9 @@ fn schedule(app: &AppHandle) {
     if !visible(app) {
         return;
     }
-    let focused = app
-        .get_window("main")
-        .is_some_and(|w| w.is_focused().unwrap_or(false));
+    let focused = app.windows().into_iter().any(|(label, w)| {
+        crate::state::tab_model::is_window_label(&label) && w.is_focused().unwrap_or(false)
+    });
     let service = app.state::<Widgets>();
     let mut state = service.runtime.lock().unwrap();
     let time = now();

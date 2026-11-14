@@ -91,8 +91,7 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
     };
     let action = nav_url.path().trim_matches('/');
     let request_token = parameters.get("token").cloned();
-    let window_is_focused = app
-        .get_webview_window("main")
+    let window_is_focused = super::overlay_host::window_of(app, WORKSPACE_SWITCHER_WEBVIEW_LABEL)
         .and_then(|window| window.is_focused().ok())
         .unwrap_or(false);
     if !window_is_focused {
@@ -132,7 +131,12 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
             if let Ok(mut token) = state.surfaces().workspace_switcher_token().lock() {
                 *token = None;
             }
-            let _ = crate::security::emit_shell(app, "workspace-switcher-selected", workspace_id);
+            let _ = super::overlay_host::emit_to_host(
+                app,
+                WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+                "workspace-switcher-selected",
+                workspace_id,
+            );
         }
         "dismiss" if token_matches && !parameters.contains_key("workspace_id") => {
             let is_open = state
@@ -145,7 +149,12 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
                 if let Ok(mut token) = state.surfaces().workspace_switcher_token().lock() {
                     *token = None;
                 }
-                let _ = crate::security::emit_shell(app, "workspace-switcher-dismissed", ());
+                let _ = super::overlay_host::emit_to_host(
+                    app,
+                    WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+                    "workspace-switcher-dismissed",
+                    (),
+                );
             }
         }
         _ => {}
@@ -211,19 +220,25 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
     }
     // Let the frontend close the overlay after it receives the action. Hiding
     // this WebView inside its own navigation callback can interrupt delivery.
-    let _ = crate::security::emit_shell(app, "bookmark-context-menu-action", action);
+    let _ = super::overlay_host::emit_to_host(
+        app,
+        BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
+        "bookmark-context-menu-action",
+        action,
+    );
 }
 
 pub(super) fn spawn_workspace_switcher_webview(
     app: &AppHandle,
+    window_id: &str,
     bounds: ViewportBounds,
 ) -> Result<(), String> {
-    if app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL).is_some() {
+    if super::overlay_host::reuse(app, WORKSPACE_SWITCHER_WEBVIEW_LABEL, window_id) {
         return Ok(());
     }
 
     let main_window = app
-        .get_window("main")
+        .get_window(window_id)
         .ok_or_else(|| "Main window not found".to_string())?;
     let app_for_navigation = app.clone();
     let document = crate::security::documents::asset_base(app)
@@ -270,16 +285,16 @@ pub(super) fn spawn_workspace_switcher_webview(
     Ok(())
 }
 
-pub(super) fn spawn_bookmark_context_menu_webview(app: &AppHandle) -> Result<(), String> {
-    if app
-        .get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL)
-        .is_some()
-    {
+pub(super) fn spawn_bookmark_context_menu_webview(
+    app: &AppHandle,
+    window_id: &str,
+) -> Result<(), String> {
+    if super::overlay_host::reuse(app, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL, window_id) {
         return Ok(());
     }
 
     let main_window = app
-        .get_window("main")
+        .get_window(window_id)
         .ok_or_else(|| "Main window not found".to_string())?;
     let app_for_navigation = app.clone();
     let document = crate::security::documents::asset_base(app)

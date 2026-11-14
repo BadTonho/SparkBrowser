@@ -124,7 +124,7 @@ pub(super) fn navigation<P: Panel>(app: &AppHandle, url: &Url) {
         action: value,
     };
     drop(inner);
-    let _ = crate::security::emit_shell(app, P::EVENT, event);
+    let _ = crate::window::overlay_host::emit_to_host(app, P::LABEL, P::EVENT, event);
 }
 
 #[cfg(test)]

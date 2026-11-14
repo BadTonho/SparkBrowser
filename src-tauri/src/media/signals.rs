@@ -67,6 +67,6 @@ pub fn sync_activity(app: &AppHandle, id: &str) {
         tab.activity.picture_in_picture = media.frames.iter().any(|f| f.picture_in_picture);
         tab.activity.refresh_media();
     }) {
-        let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
+        let _ = crate::security::emit_shell_for_tab(app, id, "tab-navigation-updated", payload);
     }
 }

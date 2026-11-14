@@ -17,10 +17,14 @@ pub fn sync(
 }
 pub fn set(
     app: &AppHandle,
+    window_id: &str,
     visible: bool,
     session: u64,
     presentation: Option<Presentation>,
     focus: bool,
 ) -> Result<(), String> {
-    panel_popover::set::<Settings>(app, visible, session, presentation, focus)
+    panel_popover::set::<Settings>(app, window_id, visible, session, presentation, focus)
+}
+pub fn dismiss(app: &AppHandle) {
+    panel_popover::dismiss::<Settings>(app)
 }

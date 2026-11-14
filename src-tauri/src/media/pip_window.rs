@@ -238,8 +238,9 @@ fn emit(app: &AppHandle, id: &str, action: &str, value: Option<u16>) {
     if !current(app, &webview_label_for_tab(&s.tab), &s.token) {
         return;
     }
-    let _ = crate::security::emit_shell(
+    let _ = crate::security::emit_shell_for_tab(
         app,
+        &s.tab,
         "media-pip-action",
         json!({"session":s.id,"sequence":s.sequence,"tabId":s.tab,"documentKey":s.document_key,"action":action,"value":value}),
     );

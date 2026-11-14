@@ -115,16 +115,10 @@ fn valid_context(app: &AppHandle, state: &BrowserState, session: &Session) -> bo
     {
         return false;
     }
-    let active = state
-        .session()
-        .active_tab_id()
-        .lock()
-        .is_ok_and(|id| *id == session.presentation.tab_id);
+    let active = state.is_active_tab(&session.presentation.tab_id);
     let workspace = state
-        .session()
-        .active_workspace_id()
-        .lock()
-        .is_ok_and(|id| *id == session.workspace);
+        .active_workspace_of_tab(&session.presentation.tab_id)
+        .is_some_and(|id| id == session.workspace);
     let page = state.session().tabs().lock().is_ok_and(|tabs| {
         tabs.iter()
             .any(|tab| tab.id == session.presentation.tab_id && tab.url == session.presentation.url)
@@ -153,13 +147,13 @@ fn valid_context(app: &AppHandle, state: &BrowserState, session: &Session) -> bo
     }
 }
 
-fn ensure_webview(app: &AppHandle) -> Result<(), String> {
-    if app.get_webview(LABEL).is_some() {
+fn ensure_webview(app: &AppHandle, window_id: &str) -> Result<(), String> {
+    if super::overlay_host::reuse(app, LABEL, window_id) {
         return Ok(());
     }
-    let main = app.get_window("main").ok_or("Main window not found")?;
+    let main = app.get_window(window_id).ok_or("Main window not found")?;
     let document = app
-        .get_webview("main")
+        .get_webview(window_id)
         .ok_or("Browser shell not found")?
         .url()
         .map_err(|e| e.to_string())?
@@ -192,7 +186,10 @@ fn ensure_webview(app: &AppHandle) -> Result<(), String> {
 }
 
 pub fn resize(app: &AppHandle) -> Result<(), String> {
-    if let (Some(_view), Some(window)) = (app.get_webview(LABEL), app.get_window("main")) {
+    if let (Some(_view), Some(window)) = (
+        app.get_webview(LABEL),
+        super::overlay_host::window_of(app, LABEL),
+    ) {
         let size = window
             .inner_size()
             .map_err(|e| e.to_string())?
@@ -253,6 +250,7 @@ pub fn sync(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
 }
 pub fn set(
     app: &AppHandle,
+    window_id: &str,
     visible: bool,
     session_id: u64,
     presentation: Option<Presentation>,
@@ -276,7 +274,10 @@ pub fn set(
             ));
             view.hide().map_err(|e| e.to_string())?;
         }
-        super::content_focus::focus_active_content_webview(app)?;
+        super::content_focus::focus_active_content_webview(
+            app,
+            &super::overlay_host::host_id(app, LABEL),
+        )?;
         return Ok(());
     }
     if session_id <= inner.closed_session
@@ -300,6 +301,8 @@ pub fn set(
     let state = app.state::<BrowserState>();
     let workspace = state
         .session()
+        .window(window_id)
+        .ok_or("windows.not_found")?
         .active_workspace_id()
         .lock()
         .map_err(|e| e.to_string())?
@@ -345,7 +348,7 @@ pub fn set(
     super::zoom_popover::dismiss(app);
     super::media_popover::dismiss(app);
     let result = (|| {
-        ensure_webview(app)?;
+        ensure_webview(app, window_id)?;
         resize(app)?;
         let view = app
             .get_webview(LABEL)

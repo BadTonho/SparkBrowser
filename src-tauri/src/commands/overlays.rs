@@ -1,7 +1,7 @@
 use crate::state::browser_state::BrowserState;
 use crate::state::workspace_model::WorkspaceItem;
 use crate::window::webview_manager::{
-    active_content_webview, build_bookmark_context_menu_script,
+    active_content_webview_in, build_bookmark_context_menu_script,
     build_workspace_switcher_update_script, create_internal_bridge_token, sync_all_webviews,
     BookmarkContextMenuAction, OverlayLanguage, OverlayPresentation,
     BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL, WORKSPACE_SWITCHER_WEBVIEW_LABEL,
@@ -12,6 +12,7 @@ use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect, State};
 #[tauri::command]
 pub async fn set_downloads_popover(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
@@ -19,12 +20,20 @@ pub async fn set_downloads_popover(
     restore_focus: bool,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::downloads_popover::set(&app, visible, session_id, presentation, restore_focus)
+    crate::window::downloads_popover::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
 }
 
 #[tauri::command]
 pub async fn set_tools_popover(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
@@ -32,12 +41,20 @@ pub async fn set_tools_popover(
     restore_focus: bool,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::tools_popover::set(&app, visible, session_id, presentation, restore_focus)
+    crate::window::tools_popover::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
 }
 
 #[tauri::command]
 pub async fn set_quick_settings_popover(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
@@ -47,6 +64,7 @@ pub async fn set_quick_settings_popover(
     let _operation = state.session().operation().await;
     crate::window::quick_settings_popover::set(
         &app,
+        &crate::commands::access::caller_window(&webview),
         visible,
         session_id,
         presentation,
@@ -57,6 +75,7 @@ pub async fn set_quick_settings_popover(
 #[tauri::command]
 pub async fn set_zoom_popover(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
@@ -64,7 +83,14 @@ pub async fn set_zoom_popover(
     restore_focus: bool,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::zoom_popover::set(&app, visible, session_id, presentation, restore_focus)
+    crate::window::zoom_popover::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
 }
 
 const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
@@ -72,6 +98,7 @@ const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
 #[tauri::command]
 pub async fn set_settings_overlay(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
@@ -79,12 +106,20 @@ pub async fn set_settings_overlay(
     restore_focus: bool,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::settings_overlay::set(&app, visible, session_id, presentation, restore_focus)
+    crate::window::settings_overlay::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
 }
 
 #[tauri::command]
 pub async fn set_privacy_popover(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
@@ -92,36 +127,58 @@ pub async fn set_privacy_popover(
     restore_focus: bool,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::privacy_popover::set(&app, visible, session_id, presentation, restore_focus)
+    crate::window::privacy_popover::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
 }
 
 #[tauri::command]
 pub async fn set_permission_popover(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
     presentation: Option<crate::window::permission_popover::Presentation>,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::permission_popover::set(&app, visible, session_id, presentation)
+    crate::window::permission_popover::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+    )
 }
 
 #[tauri::command]
 pub async fn set_history_overlay(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
     presentation: Option<crate::window::history_overlay::Presentation>,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::history_overlay::set(&app, visible, session_id, presentation)
+    crate::window::history_overlay::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+    )
 }
 
 #[tauri::command]
 pub async fn set_media_popover(
     app: AppHandle,
+    webview: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     session_id: u64,
@@ -129,7 +186,14 @@ pub async fn set_media_popover(
     restore_focus: bool,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
-    crate::window::media_popover::set(&app, visible, session_id, presentation, restore_focus)
+    crate::window::media_popover::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
 }
 
 #[tauri::command]
@@ -147,8 +211,10 @@ pub async fn set_overlay_visibility(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn set_workspace_switcher_overlay(
     app: AppHandle,
+    caller: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     workspaces: Vec<WorkspaceItem>,
@@ -157,6 +223,10 @@ pub async fn set_workspace_switcher_overlay(
     language: Option<OverlayLanguage>,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
+    let window_id = crate::commands::access::caller_window(&caller);
+    if visible {
+        crate::window::webview_manager::host_workspace_switcher(&app, &window_id)?;
+    }
     let webview = app
         .get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL)
         .ok_or_else(|| "Workspace switcher WebView was not found".to_string())?;
@@ -181,7 +251,7 @@ pub async fn set_workspace_switcher_overlay(
         *open = true;
     }
 
-    if let Some(content_webview) = active_content_webview(&app) {
+    if let Some(content_webview) = active_content_webview_in(&app, &window_id) {
         let _ = content_webview.eval(format!("window.__sparkWorkspaceSwitcherOpen = {visible};"));
     }
 
@@ -192,7 +262,7 @@ pub async fn set_workspace_switcher_overlay(
         if let Ok(mut open) = state.surfaces().workspace_switcher_open().lock() {
             *open = false;
         }
-        if let Some(content_webview) = active_content_webview(&app) {
+        if let Some(content_webview) = active_content_webview_in(&app, &window_id) {
             let _ = content_webview.eval("window.__sparkWorkspaceSwitcherOpen = false;");
         }
         let _ = sync_all_webviews(&app, &state);
@@ -201,6 +271,7 @@ pub async fn set_workspace_switcher_overlay(
 
     if !visible {
         let app_for_hide = app.clone();
+        let hide_window = window_id.clone();
         let closing_token = token;
         std::thread::spawn(move || {
             std::thread::sleep(WORKSPACE_SWITCHER_CLOSE_ANIMATION);
@@ -232,15 +303,17 @@ pub async fn set_workspace_switcher_overlay(
                 .map(|overlay| *overlay)
                 .unwrap_or(true);
             let app_is_focused = app_for_hide
-                .get_webview_window("main")
+                .get_webview_window(&hide_window)
                 .and_then(|window| window.is_focused().ok())
                 .unwrap_or(false);
             if app_is_focused {
                 if another_overlay_open {
-                    if let Some(main_window) = app_for_hide.get_webview_window("main") {
+                    if let Some(main_window) = app_for_hide.get_webview_window(&hide_window) {
                         let _ = main_window.set_focus();
                     }
-                } else if let Some(content_webview) = active_content_webview(&app_for_hide) {
+                } else if let Some(content_webview) =
+                    active_content_webview_in(&app_for_hide, &hide_window)
+                {
                     let _ = content_webview.set_focus();
                 }
             }
@@ -253,8 +326,10 @@ pub async fn set_workspace_switcher_overlay(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn set_bookmark_context_menu_overlay(
     app: AppHandle,
+    caller: tauri::Webview,
     state: State<'_, BrowserState>,
     visible: bool,
     x: Option<f64>,
@@ -263,6 +338,10 @@ pub async fn set_bookmark_context_menu_overlay(
     presentation: Option<OverlayPresentation>,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
+    let window_id = crate::commands::access::caller_window(&caller);
+    if visible {
+        crate::window::webview_manager::host_bookmark_context_menu(&app, &window_id)?;
+    }
     let webview = app
         .get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL)
         .ok_or_else(|| "Bookmark context menu WebView was not found".to_string())?;
@@ -305,7 +384,7 @@ pub async fn set_bookmark_context_menu_overlay(
         *open = true;
     }
 
-    if let Some(window) = app.get_webview_window("main") {
+    if let Some(window) = app.get_webview_window(&window_id) {
         let scale_factor = window.scale_factor().unwrap_or(1.0);
         let logical_size = window
             .inner_size()

@@ -85,7 +85,12 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     session.sequence = sequence;
     session.closing = event.action == "close" || event.action == "open";
     drop(inner);
-    let _ = crate::security::emit_shell(app, "history-overlay-action", event);
+    let _ = crate::window::overlay_host::emit_to_host(
+        app,
+        super::LABEL,
+        "history-overlay-action",
+        event,
+    );
 }
 
 #[cfg(test)]

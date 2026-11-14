@@ -326,12 +326,14 @@ impl DownloadManager {
         if let Ok(Some(payload)) = app.state::<BrowserState>().observe_document(tab_id, |tab| {
             tab.activity.downloading = protected;
         }) {
-            let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
+            let _ =
+                crate::security::emit_shell_for_tab(app, tab_id, "tab-navigation-updated", payload);
         }
     }
     pub fn enqueue(
         &self,
         app: &AppHandle,
+        window_id: &str,
         url: &str,
         expected: Option<String>,
         target: Option<std::path::PathBuf>,
@@ -340,6 +342,8 @@ impl DownloadManager {
         let id = app
             .state::<BrowserState>()
             .session()
+            .window(window_id)
+            .ok_or("windows.not_found")?
             .active_tab_id()
             .lock()
             .map_err(|e| e.to_string())?

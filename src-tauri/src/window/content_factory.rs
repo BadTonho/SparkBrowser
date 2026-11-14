@@ -60,13 +60,7 @@ pub(super) fn create_tab_webview(
 
     let app_handle_for_nav = app.clone();
 
-    let focused = app
-        .state::<BrowserState>()
-        .session()
-        .active_tab_id()
-        .lock()
-        .map(|id| *id == tab_id)
-        .unwrap_or(false);
+    let focused = app.state::<BrowserState>().is_active_tab(tab_id);
     #[cfg(windows)]
     let initial_target = initial_url.to_string();
     #[cfg(windows)]
@@ -228,14 +222,7 @@ pub(super) fn create_tab_webview(
 
         let is_active = app_handle_for_nav
             .try_state::<BrowserState>()
-            .and_then(|state| {
-                state
-                    .session()
-                    .active_tab_id()
-                    .lock()
-                    .ok()
-                    .map(|id| *id == tab_for_nav)
-            })
+            .map(|state| state.is_active_tab(&tab_for_nav))
             .unwrap_or(false);
         // Background pages must not cancel a picker held over the active tab.
         if is_active && !workspace_picker_is_open {
@@ -251,10 +238,15 @@ pub(super) fn create_tab_webview(
                     *open = false;
                 }
             }
-            let _ =
-                crate::security::emit_shell(&app_handle_for_nav, "workspace-shortcut-cancel", ());
-            let _ = crate::security::emit_shell(
+            let _ = crate::security::emit_shell_for_tab(
                 &app_handle_for_nav,
+                &tab_for_nav,
+                "workspace-shortcut-cancel",
+                (),
+            );
+            let _ = crate::security::emit_shell_for_tab(
+                &app_handle_for_nav,
+                &tab_for_nav,
                 "workspace-switcher-dismissed",
                 (),
             );

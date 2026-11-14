@@ -190,6 +190,13 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
     super::viewport::sync_content_geometry(app, state)?;
 
     if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
+        let bounds = state
+            .surfaces()
+            .viewport(&super::overlay_host::host_id(
+                app,
+                WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+            ))
+            .unwrap_or(bounds);
         if workspace_switcher_open {
             let _ = webview.set_bounds(Rect {
                 position: LogicalPosition::new(bounds.x, bounds.y).into(),
@@ -203,7 +210,9 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
 
     if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
         if bookmark_context_menu_open {
-            if let Some(window) = app.get_webview_window("main") {
+            if let Some(window) =
+                super::overlay_host::window_of(app, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL)
+            {
                 let scale_factor = window.scale_factor().unwrap_or(1.0);
                 let logical_size = window
                     .inner_size()

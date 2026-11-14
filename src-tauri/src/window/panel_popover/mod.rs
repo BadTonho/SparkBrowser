@@ -8,6 +8,11 @@ use std::sync::Mutex;
 #[cfg_attr(target_os = "linux", allow(unused_imports))]
 use tauri::{AppHandle, LogicalPosition, Manager, Rect, WebviewUrl};
 
+pub(super) const TOOLS_LABEL: &str = <Tools as Panel>::LABEL;
+pub(super) const DOWNLOADS_LABEL: &str = <Downloads as Panel>::LABEL;
+pub(super) const QUICK_SETTINGS_LABEL: &str = <QuickSettings as Panel>::LABEL;
+pub(super) const SETTINGS_LABEL: &str = <Settings as Panel>::LABEL;
+
 pub trait Panel: Send + Sync + 'static {
     const LABEL: &'static str;
     const SURFACE: &'static str;
@@ -136,14 +141,14 @@ pub(super) fn creation_guard() -> Result<std::sync::MutexGuard<'static, ()>, Str
     CREATING.lock().map_err(|e| e.to_string())
 }
 
-fn ensure_webview<P: Panel>(app: &AppHandle) -> Result<(), String> {
+fn ensure_webview<P: Panel>(app: &AppHandle, window_id: &str) -> Result<(), String> {
     let _creating = CREATING.lock().map_err(|e| e.to_string())?;
-    if app.get_webview(P::LABEL).is_some() {
+    if super::overlay_host::reuse(app, P::LABEL, window_id) {
         return Ok(());
     }
-    let main = app.get_window("main").ok_or("Main window not found")?;
+    let main = app.get_window(window_id).ok_or("Main window not found")?;
     let document = app
-        .get_webview("main")
+        .get_webview(window_id)
         .ok_or("Browser shell not found")?
         .url()
         .map_err(|e| e.to_string())?
@@ -179,8 +184,8 @@ fn warm_overlay(result: Result<(), String>) {
     }
 }
 
-fn warm<P: Panel>(app: &AppHandle) {
-    if let Err(error) = ensure_webview::<P>(app) {
+fn warm<P: Panel>(app: &AppHandle, window_id: &str) {
+    if let Err(error) = ensure_webview::<P>(app, window_id) {
         eprintln!("Could not prepare {}: {error}", P::LABEL);
     }
 }
@@ -190,23 +195,26 @@ fn warm<P: Panel>(app: &AppHandle) {
 /// The interface calls this when the pointer reaches a panel's button or the button gets focus, which
 /// typically happens well before the click. Doing it only on demand matters: preparing all four panels
 /// at startup measured at about +100 MB of private memory for everyone, used or not.
-pub fn prepare(app: &AppHandle, panel: &str) -> Result<(), String> {
+pub fn prepare(app: &AppHandle, window_id: &str, panel: &str) -> Result<(), String> {
     match panel {
-        "quick-settings" => warm::<QuickSettings>(app),
-        "tools" => warm::<Tools>(app),
-        "downloads" => warm::<Downloads>(app),
-        "settings" => warm::<Settings>(app),
-        "history" => warm_overlay(super::history_overlay::prepare(app)),
-        "zoom" => warm_overlay(super::zoom_popover::prepare(app)),
-        "privacy" => warm_overlay(super::privacy_popover::prepare(app)),
-        "media" => warm_overlay(super::media_popover::prepare(app)),
+        "quick-settings" => warm::<QuickSettings>(app, window_id),
+        "tools" => warm::<Tools>(app, window_id),
+        "downloads" => warm::<Downloads>(app, window_id),
+        "settings" => warm::<Settings>(app, window_id),
+        "history" => warm_overlay(super::history_overlay::prepare(app, window_id)),
+        "zoom" => warm_overlay(super::zoom_popover::prepare(app, window_id)),
+        "privacy" => warm_overlay(super::privacy_popover::prepare(app, window_id)),
+        "media" => warm_overlay(super::media_popover::prepare(app, window_id)),
         _ => return Err("panel.unknown".into()),
     }
     Ok(())
 }
 
 pub fn resize<P: Panel>(app: &AppHandle) -> Result<(), String> {
-    if let (Some(_view), Some(window)) = (app.get_webview(P::LABEL), app.get_window("main")) {
+    if let (Some(_view), Some(window)) = (
+        app.get_webview(P::LABEL),
+        super::overlay_host::window_of(app, P::LABEL),
+    ) {
         let size = window
             .inner_size()
             .map_err(|e| e.to_string())?
@@ -253,8 +261,9 @@ pub fn dismiss<P: Panel>(app: &AppHandle) {
     };
     inner.closed_session = inner.closed_session.max(session.id);
     drop(inner);
-    let _ = crate::security::emit_shell(
+    let _ = super::overlay_host::emit_to_host(
         app,
+        P::LABEL,
         P::EVENT,
         action(
             &session,
@@ -288,6 +297,7 @@ pub fn sync<P: Panel>(app: &AppHandle, state: &BrowserState) -> Result<(), Strin
 
 pub fn set<P: Panel>(
     app: &AppHandle,
+    window_id: &str,
     visible: bool,
     session_id: u64,
     presentation: Option<Presentation>,
@@ -314,7 +324,7 @@ pub fn set<P: Panel>(
             view.hide().map_err(|e| e.to_string())?;
         }
         if restore_focus {
-            if let Some(main) = app.get_webview("main") {
+            if let Some(main) = app.get_webview(&super::overlay_host::host_id(app, P::LABEL)) {
                 main.set_focus().map_err(|e| e.to_string())?;
             }
         }
@@ -394,7 +404,7 @@ pub fn set<P: Panel>(
     super::media_popover::dismiss(app);
     super::privacy_popover::dismiss(app);
     let result = (|| {
-        ensure_webview::<P>(app)?;
+        ensure_webview::<P>(app, window_id)?;
         resize::<P>(app)?;
         let view = app.get_webview(P::LABEL).ok_or("Panel WebView not found")?;
         view.eval(format!("(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (window.{setter}) window.{setter}(payload); else if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();", setter = P::SETTER)).map_err(|e| e.to_string())?;

@@ -29,7 +29,7 @@ pub(super) fn update_navigation(
         return;
     }
     if let Ok(Some(payload)) = state.observe_document(tab_id, update) {
-        let _ = crate::security::emit_shell(app, "tab-navigation-updated", payload);
+        let _ = crate::security::emit_shell_for_tab(app, tab_id, "tab-navigation-updated", payload);
     }
 }
 

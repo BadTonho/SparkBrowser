@@ -77,7 +77,9 @@ pub async fn dock_tab_to_split(
         state.snapshot_privacy_stats(),
     );
     let _ = crate::security::emit_shell_to(&app, &window_id, "content-url-changed", url);
-    if let Err(error) = crate::window::webview_manager::focus_active_content_webview(&app) {
+    if let Err(error) =
+        crate::window::webview_manager::focus_active_content_webview(&app, &window_id)
+    {
         let _ = crate::security::emit_shell(&app, "browser-error", error);
     }
     Ok(snapshot)

@@ -25,6 +25,13 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
         .lock()
         .map_err(|e| e.to_string())?
     {
+        let bounds = state
+            .surfaces()
+            .viewport(&super::overlay_host::host_id(
+                app,
+                WORKSPACE_SWITCHER_WEBVIEW_LABEL,
+            ))
+            .unwrap_or(bounds);
         #[cfg(target_os = "linux")]
         super::linux_layout::update_bounds(
             app,
@@ -48,7 +55,7 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
     {
         if let (Some(_view), Some(window)) = (
             app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL),
-            app.get_window("main"),
+            super::overlay_host::window_of(app, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL),
         ) {
             let size = window
                 .inner_size()
@@ -97,46 +104,24 @@ pub fn content_bounds(
 
 /// Presentation changes reuse resident documents and never change tab lifecycle metadata.
 pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
-    if let Some(owner) = super::fullscreen::active(app) {
-        let window = app.get_window("main").ok_or("Main window unavailable")?;
+    let mut panes = content_bounds(app, state)?;
+    // A page in fullscreen fills its window and hides the other pages of that window.
+    let fullscreen = super::fullscreen::all(app);
+    let mut full_sizes = Vec::new();
+    for (owner, window_id) in &fullscreen {
+        let Some(window) = app.get_window(window_id) else {
+            continue;
+        };
         let size = window
             .inner_size()
             .map_err(|e| e.to_string())?
             .to_logical::<f64>(window.scale_factor().map_err(|e| e.to_string())?);
-        #[cfg_attr(target_os = "linux", allow(unused_variables))]
-        for (label, view) in app.webviews() {
-            if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
-                continue;
-            }
-            #[cfg(target_os = "linux")]
-            if label == owner {
-                super::linux_layout::update_bounds(
-                    app,
-                    &label,
-                    0,
-                    0,
-                    size.width as i32,
-                    size.height as i32,
-                    true,
-                )?;
-            } else {
-                super::linux_layout::set_visible(app, &label, false)?;
-            }
-            #[cfg(not(target_os = "linux"))]
-            if label == owner {
-                view.set_bounds(Rect {
-                    position: LogicalPosition::new(0.0, 0.0).into(),
-                    size: LogicalSize::new(size.width, size.height).into(),
-                })
-                .map_err(|e| e.to_string())?;
-                view.show().map_err(|e| e.to_string())?;
-            } else {
-                view.hide().map_err(|e| e.to_string())?;
-            }
-        }
-        return Ok(());
+        full_sizes.push((owner.clone(), window_id.clone(), size));
     }
-    let panes = content_bounds(app, state)?;
+    panes.retain(|(id, _)| {
+        let window = state.window_of_tab(id).unwrap_or_default();
+        !full_sizes.iter().any(|(_, full, _)| full == &window)
+    });
     let hidden = *state
         .surfaces()
         .is_overlay_open()
@@ -151,10 +136,21 @@ pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<()
         if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
             continue;
         }
+        let full = full_sizes.iter().find(|(owner, _, _)| owner == &label);
         let pane = panes
             .iter()
-            .find(|(id, _)| webview_label_for_tab(id) == label);
-        if let Some((_, bounds)) = pane.filter(|_| !hidden) {
+            .find(|(id, _)| webview_label_for_tab(id) == label)
+            .map(|(_, bounds)| *bounds);
+        let pane = match full {
+            Some((_, _, size)) => Some(crate::state::browser_state::ViewportBounds {
+                x: 0.0,
+                y: 0.0,
+                width: size.width,
+                height: size.height,
+            }),
+            None => pane.filter(|_| !hidden),
+        };
+        if let Some(bounds) = pane {
             #[cfg(target_os = "linux")]
             super::linux_layout::update_bounds(
                 app,

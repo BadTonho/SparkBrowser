@@ -163,12 +163,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
             first
         };
         let autofocus = first
-            && app
-                .state::<BrowserState>()
-                .session()
-                .active_tab_id()
-                .lock()
-                .is_ok_and(|active| *active == id)
+            && app.state::<BrowserState>().is_active_tab(&id)
             && !app
                 .state::<BrowserState>()
                 .surfaces()

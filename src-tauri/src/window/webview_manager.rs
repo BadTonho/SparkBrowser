@@ -38,6 +38,17 @@ pub fn active_content_webview_in(app: &AppHandle, window_id: &str) -> Option<Web
     app.get_webview(&webview_label_for_tab(&id))
 }
 
+/// Makes sure the workspace switcher lives in the given window, creating it there when needed.
+pub fn host_workspace_switcher(app: &AppHandle, window_id: &str) -> Result<(), String> {
+    let bounds = app.state::<BrowserState>().surfaces().viewport(window_id)?;
+    spawn_workspace_switcher_webview(app, window_id, bounds)
+}
+
+/// Makes sure the bookmark context menu lives in the given window, creating it there when needed.
+pub fn host_bookmark_context_menu(app: &AppHandle, window_id: &str) -> Result<(), String> {
+    spawn_bookmark_context_menu_webview(app, window_id)
+}
+
 pub fn ensure_active_content_webview(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<BrowserState>();
     let id = state
@@ -62,8 +73,9 @@ pub fn ensure_active_content_webview(app: &AppHandle) -> Result<(), String> {
 pub fn spawn_content_webview(app: &AppHandle) -> Result<(), String> {
     ensure_active_content_webview(app)?;
     let bounds = app.state::<BrowserState>().surfaces().main_viewport()?;
-    spawn_workspace_switcher_webview(app, bounds)?;
-    spawn_bookmark_context_menu_webview(app)?;
+    let main = crate::state::tab_model::MAIN_WINDOW_ID;
+    spawn_workspace_switcher_webview(app, main, bounds)?;
+    spawn_bookmark_context_menu_webview(app, main)?;
     sync_all_webviews(app, &app.state::<BrowserState>())?;
     Ok(())
 }

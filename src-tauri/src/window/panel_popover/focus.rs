@@ -1,12 +1,11 @@
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 pub(super) fn lost<P: super::Panel>(app: &AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         // Let focus settle when moving between the shell and an auxiliary child.
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-        if app
-            .get_window("main")
+        if crate::window::overlay_host::window_of(&app, <P as super::Panel>::LABEL)
             .is_none_or(|window| !focused(&window))
         {
             super::dismiss::<P>(&app);

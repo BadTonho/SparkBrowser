@@ -76,6 +76,7 @@ pub async fn open(app: &AppHandle, from_window: &str) -> Result<String, String> 
 pub async fn closed(app: &AppHandle, window_id: &str) -> Result<(), String> {
     let state = app.state::<BrowserState>();
     let _operation = state.session().operation().await;
+    super::overlay_host::release_window(app, window_id);
     let closed = close_window(&state, window_id)?;
     for tab in &closed.tab_ids {
         if let Err(error) = super::webview_manager::close_tab_webview(app, tab) {

@@ -25,7 +25,7 @@ test('internal browser events have an explicit WebView recipient and Windows use
     if (file.replaceAll('\\', '/') === 'security/mod.rs') continue;
     assert.doesNotMatch(read(`src-tauri/src/${file}`), /\.emit\(|\.emit_to\(\s*"main"/, `unscoped event in ${file}`);
   }
-  assert.match(read('src-tauri/src/security/mod.rs'), /EventTarget::Webview\s*\{\s*label: "main"/);
+  assert.match(read('src-tauri/src/security/mod.rs'), /EventTarget::Webview\s*\{\s*label: window_id\.into\(\)/);
   assert.deepEqual(JSON.parse(read('src-tauri/tauri.conf.json')).bundle.windows.webviewInstallMode, { type: 'downloadBootstrapper', silent: true });
 });
 

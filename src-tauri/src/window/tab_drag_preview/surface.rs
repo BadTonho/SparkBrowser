@@ -2,6 +2,18 @@ use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect, WebviewUrl, 
 
 const LABEL: &str = "tab-drag-preview";
 
+static OWNER: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+
+fn owner_of(_app: &AppHandle) -> String {
+    OWNER.lock().map(|owner| owner.clone()).unwrap_or_default()
+}
+
+fn set_owner(_app: &AppHandle, window_id: &str) {
+    if let Ok(mut owner) = OWNER.lock() {
+        *owner = window_id.to_string();
+    }
+}
+
 pub fn hide(app: &AppHandle) {
     if let Some(window) = app.get_window(LABEL) {
         let _ = visibility(&window, None);
@@ -51,14 +63,23 @@ fn visibility(window: &tauri::Window, revision: Option<u64>) -> Result<(), Strin
         .map_err(|e| e.to_string())
 }
 
-pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String> {
+pub fn paint(app: &AppHandle, window_id: &str, payload: &serde_json::Value) -> Result<(), String> {
     let revision = payload["revision"]
         .as_u64()
         .ok_or("Missing preview paint revision")?;
     if !super::paint_is_current(app, revision) {
         return Ok(());
     }
-    let main = app.get_window("main").ok_or("Main window not found")?;
+    let main = app
+        .get_window(window_id)
+        .ok_or("Browser window not found")?;
+    // The preview is owned by the window it is drawn over; dragging in another window moves it.
+    if let Some(existing) = app.get_window(LABEL) {
+        if existing.is_visible().is_ok() && owner_of(app) != window_id {
+            let _ = existing.destroy();
+        }
+    }
+    set_owner(app, window_id);
     if main.is_minimized().map_err(|e| e.to_string())? {
         hide(app);
         return Ok(());
@@ -71,7 +92,7 @@ pub fn paint(app: &AppHandle, payload: &serde_json::Value) -> Result<(), String>
         window
     } else {
         let document = app
-            .get_webview("main")
+            .get_webview(window_id)
             .ok_or("Browser shell not found")?
             .url()
             .map_err(|e| e.to_string())?

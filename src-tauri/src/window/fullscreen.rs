@@ -2,43 +2,80 @@
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, Webview};
 
+/// One entry per window showing a fullscreen page: (page label, window id, was fullscreen before).
 #[derive(Default)]
-pub struct FullscreenState(Mutex<Option<(String, bool)>>);
+pub struct FullscreenState(Mutex<Vec<(String, String, bool)>>);
 
-pub fn active(app: &AppHandle) -> Option<String> {
+/// The fullscreen page of every window, as (page label, window id).
+pub fn all(app: &AppHandle) -> Vec<(String, String)> {
     app.state::<FullscreenState>()
         .0
         .lock()
-        .ok()?
-        .as_ref()
-        .map(|item| item.0.clone())
+        .map(|items| {
+            items
+                .iter()
+                .map(|(label, window, _)| (label.clone(), window.clone()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The page that is fullscreen in one window.
+pub fn active_in(app: &AppHandle, window_id: &str) -> Option<String> {
+    all(app)
+        .into_iter()
+        .find(|(_, window)| window == window_id)
+        .map(|(label, _)| label)
+}
+
+pub fn any_active(app: &AppHandle) -> bool {
+    !all(app).is_empty()
 }
 
 fn enter(app: &AppHandle, label: &str) -> Result<(), String> {
     let browser = app.state::<crate::state::browser_state::BrowserState>();
+    let tab_id = browser
+        .session()
+        .tabs()
+        .lock()
+        .map_err(|e| e.to_string())?
+        .iter()
+        .find(|tab| crate::state::tab_model::webview_label_for_tab(&tab.id) == label)
+        .map(|tab| (tab.id.clone(), tab.window_id.clone()));
+    let Some((tab_id, window_id)) = tab_id else {
+        return Err("Fullscreen requested by an unknown tab".into());
+    };
     let selected = browser
         .session()
+        .window(&window_id)
+        .ok_or("windows.not_found")?
         .active_tab_id()
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
-    if crate::state::tab_model::webview_label_for_tab(&selected) != label {
+    if selected != tab_id {
         if let Some(view) = app.get_webview(label) {
             let _ = view.eval("if (document.fullscreenElement) void document.exitFullscreen();");
         }
         return Err("Fullscreen requested by an inactive tab".into());
     }
-    let window = app.get_window("main").ok_or("Main window unavailable")?;
+    let window = app
+        .get_window(&window_id)
+        .ok_or("Browser window unavailable")?;
     let state = app.state::<FullscreenState>();
     let mut current = state.0.lock().map_err(|e| e.to_string())?;
-    if current.is_some() {
+    if current.iter().any(|(_, window, _)| window == &window_id) {
         return Ok(());
     }
     let was_fullscreen = window.is_fullscreen().map_err(|e| e.to_string())?;
-    *current = Some((label.to_string(), was_fullscreen));
+    current.push((label.to_string(), window_id.clone(), was_fullscreen));
     drop(current);
     if let Err(error) = window.set_fullscreen(true) {
-        *state.0.lock().map_err(|e| e.to_string())? = None;
+        state
+            .0
+            .lock()
+            .map_err(|e| e.to_string())?
+            .retain(|(owner, _, _)| owner != label);
         return Err(error.to_string());
     }
     super::viewport::sync_content_geometry(
@@ -50,20 +87,17 @@ fn enter(app: &AppHandle, label: &str) -> Result<(), String> {
 pub fn exit(app: &AppHandle, label: &str, request_document_exit: bool) {
     let state = app.state::<FullscreenState>();
     let previous = state.0.lock().ok().and_then(|mut current| {
-        if current.as_ref().is_some_and(|(owner, _)| owner == label) {
-            current.take()
-        } else {
-            None
-        }
+        let index = current.iter().position(|(owner, _, _)| owner == label)?;
+        Some(current.remove(index))
     });
-    if let Some((_, was_fullscreen)) = previous {
+    if let Some((_, window_id, was_fullscreen)) = previous {
         if request_document_exit {
             if let Some(view) = app.get_webview(label) {
                 let _ =
                     view.eval("if (document.fullscreenElement) void document.exitFullscreen();");
             }
         }
-        if let Some(window) = app.get_window("main") {
+        if let Some(window) = app.get_window(&window_id) {
             let _ = window.set_fullscreen(was_fullscreen);
         }
         let _ = super::viewport::sync_content_geometry(
