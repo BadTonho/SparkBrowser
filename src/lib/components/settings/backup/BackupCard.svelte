@@ -39,7 +39,7 @@
 </article>
 
 <style>
-  .card { display: flex; box-sizing: border-box; width: 100%; min-width: 0; flex-direction: column; gap: 14px; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255, 255, 255, 0.025)); }
+  .card { display: flex; box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--backup-card-min-height, 0); flex-direction: column; gap: 14px; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255, 255, 255, 0.025)); }
   header { display: flex; align-items: flex-start; gap: 11px; min-width: 0; }
   .tile { display: grid; flex: 0 0 auto; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: color-mix(in srgb, var(--accent-primary) 16%, transparent); color: var(--accent-primary); }
   .titles { min-width: 0; }

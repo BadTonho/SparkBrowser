@@ -30,6 +30,18 @@
 
   const desktop = isTauriRuntime();
   let syncExpanded = $state(false);
+  let syncPanel = $state<HTMLDetailsElement | null>(null);
+
+  /** The open panel floats above the page, so Escape or a click outside closes it like a popover. */
+  function closeSyncOnEscape(event: KeyboardEvent): void {
+    if (event.key !== "Escape" || !syncExpanded) return;
+    event.stopPropagation();
+    syncExpanded = false;
+    syncPanel?.querySelector<HTMLElement>("summary")?.focus();
+  }
+  function closeSyncOnOutsidePress(event: PointerEvent): void {
+    if (syncExpanded && syncPanel && !syncPanel.contains(event.target as Node)) syncExpanded = false;
+  }
   let syncActionBusy = $state(false);
   let syncActionError = $state<string | null>(null);
 
@@ -137,6 +149,8 @@
   }
 </script>
 
+<svelte:window onpointerdown={closeSyncOnOutsidePress} />
+
 <section class="setting-group backup-settings" aria-labelledby="backup-heading">
   <h2 class="group-title" id="backup-heading">{$t("backup.heading")}</h2>
   {#if !desktop}<p role="status">{$t("common.desktop_required")}</p>
@@ -151,7 +165,10 @@
 
       <BookmarkExportCard />
 
-      <details class="sync-panel" bind:open={syncExpanded} data-testid="backup-sync-panel">
+      <!-- The slot keeps the closed card's place in the row; the panel floats over it when open. -->
+      <div class="sync-slot">
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <details class="sync-panel" bind:this={syncPanel} bind:open={syncExpanded} onkeydown={closeSyncOnEscape} data-testid="backup-sync-panel">
         <summary class="sync-compact-row" data-testid="backup-sync-settings-toggle" title={$t("backup.sync_settings")}>
           <GoogleDriveIcon size={38} />
           <span class="sync-state-chip connection" class:connected={Boolean($backupSyncState.connected_account)} role="status">
@@ -415,6 +432,7 @@
         </div>
         <ErrorMessage error={syncActionError || $backupSyncState.last_error} />
       </details>
+      </div>
     </div>
 
     <BackupUnlockPrompt />
@@ -441,9 +459,16 @@
   h3 { margin: 0; color: var(--text-primary); font-size: 16px; line-height: 1.35; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   aside { border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; margin-top: 0; background: var(--bg-glass, rgba(255, 255, 255, 0.025)); }
-  /* Three equal cards per row; they stretch to the tallest, and buttons stay pinned to the bottom. */
-  .backup-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 280px)); align-items: stretch; justify-content: start; gap: 12px; }
-  .sync-panel { display: block; box-sizing: border-box; width: 100%; min-width: 0; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255,255,255,.025)); }
+  /* Three cards of the same closed height. Rows do not stretch, so opening the Drive card grows only that card. */
+  .backup-cards { --backup-card-min-height: 148px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 280px)); align-items: start; justify-content: start; gap: 12px; }
+  /* Closed: exactly the size of its neighbours. Open: grows on every side over the page without moving anything. */
+  .sync-slot { position: relative; min-width: 0; height: var(--backup-card-min-height, 148px); }
+  .sync-panel { position: absolute; top: 0; right: 0; left: 0; display: block; box-sizing: border-box; height: var(--backup-card-min-height, 148px); padding: 16px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255,255,255,.025)); interpolate-size: allow-keywords; transition: top 0.28s ease, right 0.28s ease, left 0.28s ease, height 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease; }
+  .sync-panel[open] { top: -14px; right: -34px; left: -34px; z-index: 30; height: auto; max-height: min(740px, calc(100vh - 150px)); overflow-y: auto; background: var(--bg-permission-popover, #1c1c1c); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55); }
+  /* Keeps the content visible while the panel shrinks back (Chromium/WebView2; elsewhere it just snaps). */
+  .sync-panel::details-content { transition: content-visibility 0.28s allow-discrete; }
+  @media (prefers-reduced-motion: reduce) { .sync-panel, .sync-panel::details-content { transition: none; } }
+  /* Closed: exactly the size of its neighbours. Open: grows on every side over the page without moving anything. */
   .sync-compact-row { display: flex; box-sizing: border-box; min-height: 102px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 2px; text-align: center; cursor: pointer; list-style: none; }
   .sync-compact-row::-webkit-details-marker, .sync-compact-row::marker { display: none; }
   .sync-compact-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 8px; }
