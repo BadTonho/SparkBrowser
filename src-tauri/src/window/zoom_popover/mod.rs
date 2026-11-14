@@ -125,7 +125,13 @@ fn action(session: &Session, name: &str, value: Option<f64>, reason: &str) -> Ac
     }
 }
 
+/// Creates the web view, hidden, ahead of the click. See `panel_popover::prepare`.
+pub fn prepare(app: &AppHandle) -> Result<(), String> {
+    ensure_webview(app)
+}
+
 fn ensure_webview(app: &AppHandle) -> Result<(), String> {
+    let _creating = super::panel_popover::creation_guard()?;
     if app.get_webview(LABEL).is_some() {
         return Ok(());
     }

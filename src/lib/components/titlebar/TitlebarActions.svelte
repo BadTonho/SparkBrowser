@@ -171,6 +171,7 @@ import { invoke } from "../../services/tauri-bridge";
         class:dragging={preview?.id === "history"}
         style:translate={preview?.id === "history" ? `${preview.offset}px 0` : undefined}
         class="icon-btn"
+        use:prepares={"history"}
         onclick={openHistoryDrawer}
         title={($t("titlebar.browsing_history_p0_cf44", { p0: $keyboardShortcuts && shortcutLabel("history") })) + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-history" aria-label={$t("titlebar.browsing_history_13cc")}
@@ -203,6 +204,7 @@ import { invoke } from "../../services/tauri-bridge";
         style:translate={preview?.id === "privacy" ? `${preview.offset}px 0` : undefined}
         class="icon-btn shield-btn"
         class:shield-on={$privacyStats.shield_enabled}
+        use:prepares={"privacy"}
         onclick={event => openPrivacy(event.currentTarget)}
         title={($t("privacy.controls")) + " · " + $t("titlebar.reorder_hint")}
         aria-label={$t("privacy.controls")}

@@ -130,6 +130,12 @@ fn action(session: &Session, value: bridge::UiAction) -> Action {
 /// user opening the panel and the warm-up below), so the check and the creation are one step.
 static CREATING: Mutex<()> = Mutex::new(());
 
+/// The same guard for the single-purpose overlays (history, zoom, privacy, media), which are created
+/// from the same two places: the click and the preparation ahead of it.
+pub(super) fn creation_guard() -> Result<std::sync::MutexGuard<'static, ()>, String> {
+    CREATING.lock().map_err(|e| e.to_string())
+}
+
 fn ensure_webview<P: Panel>(app: &AppHandle) -> Result<(), String> {
     let _creating = CREATING.lock().map_err(|e| e.to_string())?;
     if app.get_webview(P::LABEL).is_some() {
@@ -167,6 +173,12 @@ fn ensure_webview<P: Panel>(app: &AppHandle) -> Result<(), String> {
     view.hide().map_err(|e| e.to_string())
 }
 
+fn warm_overlay(result: Result<(), String>) {
+    if let Err(error) = result {
+        eprintln!("Could not prepare overlay: {error}");
+    }
+}
+
 fn warm<P: Panel>(app: &AppHandle) {
     if let Err(error) = ensure_webview::<P>(app) {
         eprintln!("Could not prepare {}: {error}", P::LABEL);
@@ -184,6 +196,10 @@ pub fn prepare(app: &AppHandle, panel: &str) -> Result<(), String> {
         "tools" => warm::<Tools>(app),
         "downloads" => warm::<Downloads>(app),
         "settings" => warm::<Settings>(app),
+        "history" => warm_overlay(super::history_overlay::prepare(app)),
+        "zoom" => warm_overlay(super::zoom_popover::prepare(app)),
+        "privacy" => warm_overlay(super::privacy_popover::prepare(app)),
+        "media" => warm_overlay(super::media_popover::prepare(app)),
         _ => return Err("panel.unknown".into()),
     }
     Ok(())
