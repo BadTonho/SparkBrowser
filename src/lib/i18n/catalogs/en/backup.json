@@ -166,6 +166,8 @@
   "backup.error_history_not_found": "That backup no longer exists.",
   "backup.error_schedule_invalid": "The backup schedule is invalid.",
   "backup.error_nothing_selected": "Select at least one item to restore.",
+  "backup.error_checksum": "The backup file is damaged or was edited after it was saved. No data was imported.",
+  "backup.error_newer_version": "This backup was created by a newer version of Spark. Update the app to restore it.",
   "backup.preview_meta": "Backup created {date} · file format v{version}",
   "backup.restore_what": "What to restore",
   "backup.restore_how": "How to restore",

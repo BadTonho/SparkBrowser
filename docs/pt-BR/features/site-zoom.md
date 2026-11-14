@@ -10,6 +10,6 @@ O zoom pertence à origem HTTP/HTTPS: protocolo, domínio e porta. Workspaces co
 
 No Windows, os observadores descartam gerações antigas de WebViews e callbacks de navegação. A navegação aplica o valor salvo, sem persistir os padrões automáticos do motor. Os atalhos configurados usam a ponte do navegador; os atalhos de zoom do motor ficam desabilitados para evitar ações duplicadas. Consulte a [referência do controlador WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2controller).
 
-A exportação de backup usa a versão 4 e inclui preferências de zoom. As versões 1–3 continuam importáveis. O zoom só é aplicado pela tarefa persistente de preferências quando **Aplicar preferências do backup** estiver marcado. Origens locais existentes prevalecem nos conflitos; repetir a tarefa não as sobrescreve nem importa dados novamente. Transferências, parciais e marcadores de execução continuam excluídos.
+A exportação de backup inclui preferências de zoom (adicionadas na versão 2); arquivos antigos continuam importáveis. O zoom só é aplicado pela tarefa persistente de preferências quando **Aplicar preferências do backup** estiver marcado. Origens locais existentes prevalecem nos conflitos; repetir a tarefa não as sobrescreve nem importa dados novamente. Transferências, parciais e marcadores de execução continuam excluídos.
 
 Validação: `node tools/testing/native-smoke.mjs --case zoom`, além do cenário existente `backup`, com a build nativa isolada.

@@ -166,6 +166,8 @@
   "backup.error_history_not_found": "Esse backup não existe mais.",
   "backup.error_schedule_invalid": "O agendamento de backup é inválido.",
   "backup.error_nothing_selected": "Selecione pelo menos um item para restaurar.",
+  "backup.error_checksum": "O arquivo de backup está danificado ou foi alterado depois de salvo. Nenhum dado foi importado.",
+  "backup.error_newer_version": "Este backup foi criado por uma versão mais nova do Spark. Atualize o aplicativo para restaurá-lo.",
   "backup.preview_meta": "Backup criado em {date} · formato do arquivo v{version}",
   "backup.restore_what": "O que restaurar",
   "backup.restore_how": "Como restaurar",

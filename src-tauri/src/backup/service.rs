@@ -57,7 +57,8 @@ pub(crate) fn fingerprint(
     Ok(writer.0.finalize().into())
 }
 impl BackupService {
-    pub fn select(&self, document: BackupDocument) -> Result<String, String> {
+    pub fn select(&self, mut document: BackupDocument) -> Result<String, String> {
+        super::migrate::upgrade(&mut document);
         let token = crate::window::webview_manager::create_internal_bridge_token();
         *self.source.lock().map_err(|e| e.to_string())? = Some((token.clone(), Arc::new(document)));
         *self.preview.lock().map_err(|e| e.to_string())? = None;
@@ -117,7 +118,7 @@ pub async fn capture(app: &AppHandle, prefs: BackupPreferences) -> Result<Backup
     let conn = db.as_ref().ok_or("backup.database_unavailable")?;
     Ok(BackupDocument {
         format: FORMAT.into(),
-        version: 4,
+        version: CURRENT_VERSION,
         created_at: crate::state::tab_model::TabInfo::current_epoch_secs() as i64,
         data: backup_repo::collect(conn)?,
         preferences: current_preferences(conn, prefs)?,
@@ -143,8 +144,9 @@ pub async fn preview_with(
     let _serial = service.operation.lock().await;
     // Structured imports remain supported; file selections never round-trip through JS.
     let doc = match (document, source_token) {
-        (Some(doc), None) => {
+        (Some(mut doc), None) => {
             validation::document(&doc)?;
+            super::migrate::upgrade(&mut doc);
             if serde_json::to_vec(&doc).map_err(|e| e.to_string())?.len() as u64 > MAX_BYTES {
                 return Err("backup.file_too_large".into());
             }

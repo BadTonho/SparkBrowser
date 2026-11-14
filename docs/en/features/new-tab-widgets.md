@@ -60,6 +60,6 @@ The customizable clock widget provides local, offline time presentation on the n
 
 ## Data and validation
 
-An idempotent SQLite migration stores only widget preferences and the manually selected city. Backups remain version 4 and exclude these settings, OAuth configuration, coordinates, credentials and mail. The local document keeps `connect-src 'none'`: Rust performs remote requests and sends safe display data through the existing authenticated document bridge. Old responses cannot restore disabled widgets or disconnected mail. Opening settings cancels tab-drag previews without hiding or reloading pages.
+An idempotent SQLite migration stores only widget preferences and the manually selected city. Backups exclude these settings, OAuth configuration, coordinates, credentials and mail. The local document keeps `connect-src 'none'`: Rust performs remote requests and sends safe display data through the existing authenticated document bridge. Old responses cannot restore disabled widgets or disconnected mail. Opening settings cancels tab-drag previews without hiding or reloading pages.
 
 Run `npm run validate` and the isolated `new-tab`, `keyboard`, `split-tab-groups`, `workspace-switcher` and `backup` scenarios. Widget tests use generated loopback weather/Gmail/OAuth fixtures with artificial accounts, never real authorization or the user's credential vault. Real Windows location consent and authorization with an owner-provided Google test account remain manual checks. See [native tests](../contributing/native-tests.md).

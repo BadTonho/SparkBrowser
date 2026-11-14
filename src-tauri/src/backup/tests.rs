@@ -139,7 +139,7 @@ fn backup_file_roundtrip_rejects_invalid_versions_sizes_and_references_without_r
         serde_json::to_value(restored).unwrap()
     );
     let mut invalid = doc.clone();
-    invalid.version = 5;
+    invalid.version = CURRENT_VERSION + 1;
     assert!(files::write(&path, &invalid).is_err());
     assert_eq!(std::fs::read(&path).unwrap(), original);
     assert!(files::decode(b"not json").is_err());

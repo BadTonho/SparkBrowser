@@ -41,6 +41,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Backup local e importação com revisão](./features/backup.md)
 - [Backups automáticos, histórico e criptografia](./features/backup-automation.md)
 - [Restauração seletiva e modo substituir](./features/selective-restore.md)
+- [Integridade e versões do backup](./features/backup-integrity.md)
 - [Abas fechadas recentemente](./features/closed-tabs.md)
 - [Recuperação automática de sessão](./features/recovery.md)
 - [Downloads retomáveis e hashes](./features/downloads.md)

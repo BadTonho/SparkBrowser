@@ -16,7 +16,7 @@ export interface BackupPreferences {
 }
 export interface BackupTab { id: string; title: string; url: string; workspace_id: string; is_pinned: boolean; is_active: boolean; }
 export interface BackupDocument {
-  format: "veloce-backup"; version: 1 | 2 | 3; created_at: number;
+  format: "veloce-backup"; version: 1 | 2 | 3 | 4 | 5; created_at: number;
   data: { bookmarks: BookmarkData; workspaces: WorkspaceItem[]; sessions: SavedSession[]; notes: PageNote[]; site_search: SiteSearchShortcut[]; tabs: BackupTab[]; split_layouts: SplitLayout[] };
   preferences: BackupPreferences;
 }

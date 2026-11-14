@@ -89,6 +89,9 @@ const messages: Record<string, MessageKey> = {
   "backup.history_not_found": "backup.error_history_not_found",
   "backup.schedule_invalid": "backup.error_schedule_invalid",
   "backup.nothing_selected": "backup.error_nothing_selected",
+  "backup.checksum_mismatch": "backup.error_checksum",
+  "backup.checksum_missing": "backup.error_checksum",
+  "backup.newer_version": "backup.error_newer_version",
 
   "storage.failed": "common.storage_failed",
   "desktop.required": "common.desktop_required",

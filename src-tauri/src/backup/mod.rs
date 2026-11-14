@@ -5,11 +5,14 @@ pub mod files;
 pub mod gdrive_webview;
 pub mod local;
 pub mod merge;
+pub mod migrate;
 pub mod model;
 pub mod service;
 pub mod sync;
 pub mod validation;
 
+#[cfg(test)]
+mod integrity_tests;
 #[cfg(test)]
 mod regression_tests;
 #[cfg(test)]

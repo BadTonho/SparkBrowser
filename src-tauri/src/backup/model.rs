@@ -10,6 +10,8 @@ use std::collections::BTreeMap;
 
 pub const MAX_BYTES: u64 = 32 * 1024 * 1024;
 pub const FORMAT: &str = "veloce-backup";
+/// Format written today. Version 5 adds the integrity `checksum`; versions 1-4 stay readable.
+pub const CURRENT_VERSION: u32 = 5;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
