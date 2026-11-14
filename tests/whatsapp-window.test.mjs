@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 test('the WhatsApp command is registered in the handler, the ACL manifest and the shell capability', () => {
   assert.match(read('src-tauri/src/lib.rs'), /toggle_whatsapp_popover\n\s*\]\)\)/);
