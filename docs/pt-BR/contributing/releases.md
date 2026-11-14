@@ -1,6 +1,6 @@
 # Releases assinadas e GitHub Actions automatizado
 
-As releases são publicadas automaticamente pelo **GitHub Actions** ao enviar tags de versão (por exemplo `v1.0.0` ou `v1.1.0-beta.1`), ou geradas localmente. As releases públicas ficam em `BadTonho/navegador`. Há suporte tanto para pacotes Windows (instalador NSIS) quanto para uma ampla variedade de distribuições Linux (.AppImage, .deb, .rpm e .tar.gz portátil). Os dois canais mantêm o identificador `org.spark.browser` e compartilham o perfil/banco existente.
+As releases são publicadas automaticamente pelo **GitHub Actions** ao enviar tags de versão (por exemplo `v1.0.0` ou `v1.1.0-beta.1`), ou geradas localmente. As releases públicas ficam em `BadTonho/SparkBrowser`. Há suporte tanto para pacotes Windows (instalador NSIS) quanto para uma ampla variedade de distribuições Linux (.AppImage, .deb, .rpm e .tar.gz portátil). Os dois canais mantêm o identificador `org.spark.browser` e compartilham o perfil/banco existente.
 
 ## 1. Releases Automatizadas (GitHub Actions)
 
@@ -11,7 +11,8 @@ Quando você envia uma tag iniciada em `v*`, o workflow `.github/workflows/relea
    - **`.deb` (Debian / Ubuntu):** Pacote nativo para Debian, Ubuntu, Pop!_OS, Linux Mint, Elementary OS e Zorin OS.
    - **`.rpm` (Red Hat / SUSE):** Pacote nativo para Fedora, openSUSE, RHEL, CentOS Stream, AlmaLinux e Rocky Linux.
    - **`portable.tar.gz` (Arquivo Portátil):** Tarball contendo o binário compilado portátil, ideal para empacotadores do Arch Linux (AUR) e ambientes customizados.
-3. **Publicação (Modo Rascunho / Draft):** Cria a Release no GitHub como **Draft (Rascunho)**, anexa todos os instaladores compilados, assinaturas e manifestos, e marca automaticamente tags `-beta.*` como **Pre-release**. O modo rascunho permite revisar as notas da versão geradas e inspecionar todos os arquivos anexados privadamente antes de liberar a release para o público.
+3. **Flatpak para Linux (experimental):** Um job separado empacota o mesmo binário Linux como `SparkBrowser_<tag>_x86_64.flatpak` (manifesto em `packaging/linux/flatpak/`). Ele usa o runtime GNOME, inclui o `secret-tool` para o armazenamento de credenciais e não precisa de root. Se esse job falhar, os outros pacotes são publicados normalmente, sem o arquivo `.flatpak`. Por ser novo, teste-o em uma máquina Linux real enquanto a release ainda é um rascunho.
+4. **Publicação (Modo Rascunho / Draft):** Cria a Release no GitHub como **Draft (Rascunho)**, anexa todos os instaladores compilados, assinaturas e manifestos, e marca automaticamente tags `-beta.*` como **Pre-release**. O modo rascunho permite revisar as notas da versão geradas e inspecionar todos os arquivos anexados privadamente antes de liberar a release para o público.
 
 ### Comandos de Instalação no Linux
 
@@ -32,6 +33,19 @@ Quando você envia uma tag iniciada em `v*`, o workflow `.github/workflows/relea
   ```bash
   sudo zypper install ./spark-browser-*.rpm
   ```
+- **Flatpak (qualquer distribuição com Flatpak, experimental):**
+  ```bash
+  flatpak install --user ./SparkBrowser_*_x86_64.flatpak
+  flatpak run org.spark.browser
+  ```
+
+### Antes de criar a tag
+
+O workflow de release compila e publica; ele não executa a suíte de regressões nativas (essa suíte é um workflow separado e manual, o `native.yml`, e ainda não passou nos runners do GitHub). Valide primeiro na sua máquina:
+
+1. Execute `npm run validate` e os cenários nativos críticos com `npm run test:native:critical` (veja [testes nativos](native-tests.md)).
+2. Confirme que o repositório está limpo e segue a [política de zero vazamentos](rules-and-standards.md#regra-1-zero-arquivos-sensíveis-no-github).
+3. A partir da versão 0.2.0, garanta que `changelog/<versão>/` existe com `en.md` e `pt-BR.md` (veja o [guia de changelog](changelog.md)). A versão 0.1.0 não tem changelog.
 
 ### Passo a passo para lançar uma atualização:
 
@@ -48,13 +62,18 @@ git tag v0.2.0
 git push origin main --tags
 ```
 
-O GitHub Actions compilará, assinará e publicará a atualização de forma totalmente automatizada.
+O GitHub Actions compila e assina os pacotes e cria a release como **rascunho**. Nada fica público até você publicar:
+
+1. Abra o rascunho em **Releases** e confira se ele tem o instalador do Windows (`.exe`, `.sig`, `updater.json`) e todos os pacotes Linux (`.AppImage`, `.deb`, `.rpm`, `.tar.gz` e, se foi gerado, `.flatpak`).
+2. Revise as notas da versão geradas e edite se precisar.
+3. Baixe e teste pelo menos o instalador do Windows e um pacote Linux.
+4. Clique em **Publish release**. Tags beta (`-beta.N`) já saem marcadas como **Pre-release**.
 
 ## 2. Identidade de assinatura
 
 As assinaturas do atualizador utilizam chaves Minisign Ed25519 pelo plugin oficial do Tauri.
 - A **Chave Pública** fica incorporada em `src-tauri/tauri.conf.json` no campo `plugins.updater.pubkey`.
-- A **Chave Privada** deve ser guardada estritamente nos Secrets do GitHub como `TAURI_SIGNING_PRIVATE_KEY` (e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` se tiver senha). Nunca inclua a chave privada em commits no git!
+- A **Chave Privada** deve ser guardada estritamente nos Secrets do GitHub como `TAURI_SIGNING_PRIVATE_KEY` (e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` somente se a chave tiver senha; chaves criadas com `npm run release:setup-signing` não têm). Nunca inclua a chave privada em commits no git!
 
 ## 3. Builds manuais locais (Alternativa)
 

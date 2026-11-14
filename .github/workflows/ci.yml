@@ -1,9 +1,9 @@
 name: Continuous validation
 
+# Manual only, to save GitHub Actions minutes. Run it from the Actions tab or with
+# `gh workflow run ci.yml` before releases and larger changes.
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read

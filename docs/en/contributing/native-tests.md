@@ -2,7 +2,7 @@
 
 The `new-tab` widget checks use loopback weather, city-search and Gmail/OAuth fixtures. They verify PKCE, rejection of an incorrect OAuth state, cancellation, late inbox responses after disconnect, shared requests across split panes, unit conversion without refetching, minimum-width stacking, safe message text, draft/focus preservation, settings-write rollback and persistence after restart. Fixture endpoints are accepted only by the isolated test application and never access the production credential vault. Real Windows location consent, secure credential persistence and Google test-account authorization require manual checks; follow [widget setup](../features/new-tab-widgets.md). Widget preferences, locations and account data stay outside version-4 backups.
 
-Validation runs locally using the commands in [validation](validation.md). Windows native critical scenarios run on every pull request; the complete suite runs daily, manually and before release publication. See the [regression workflow](regression-workflow.md). The isolated application is exercised through [Tauri WebDriver](https://v2.tauri.app/develop/tests/webdriver/).
+Validation runs locally using the commands in [validation](validation.md). In CI the native suites run only manually (`native.yml`); run them locally before a release. See the [regression workflow](regression-workflow.md). The isolated application is exercised through [Tauri WebDriver](https://v2.tauri.app/develop/tests/webdriver/).
 
 ## Isolated Windows run
 

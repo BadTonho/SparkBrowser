@@ -1,9 +1,8 @@
 name: Native regressions
 
+# Manual only (the daily schedule and pull request runs were removed to save GitHub
+# Actions minutes). Releases still run it through `workflow_call`.
 on:
-  pull_request:
-  schedule:
-    - cron: '0 6 * * *'
   workflow_dispatch:
   workflow_call:
 

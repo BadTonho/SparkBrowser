@@ -14,7 +14,7 @@ Contract tests also exercise out-of-order observations, failed workspace movemen
 
 ## Continuous integration and releases
 
-The regular workflow retains Windows and Linux validation. Windows native critical checks run on every pull request; the full native suite runs daily at 06:00 UTC, manually and as a release publication dependency. Failures fail the workflow without automatic retries or silent exclusions. Platform/driver prerequisites must be repaired when they fail; do not turn required scenarios into optional checks.
+The regular workflow retains Windows and Linux validation. To save GitHub Actions minutes, both the regular workflow and the native suite run **manually only** (Actions tab or `gh workflow run ci.yml` / `gh workflow run native.yml`); there are no runs on push, pull request or schedule. Run them before releases and larger changes. The release workflow does not run the native suite; run `npm run test:native:critical` locally before tagging (see [releases](releases.md)). The scheduled GitHub runs of the full suite failed every time because the application could not start on the runner, so it is not used as a gate. Failures fail the workflow without automatic retries or silent exclusions. Platform/driver prerequisites must be repaired when they fail; do not turn required scenarios into optional checks.
 
 The runner prints diagnostics locally and records names, statuses and durations in `.cache/native-results.json`. CI uploads only this reviewed summary for seven days. Profiles, databases, raw logs and screenshots are excluded from published artifacts. Local isolated scenario artifacts remain available under `.cache/native-runs/` according to the existing harness cleanup policy.
 

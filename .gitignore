@@ -96,3 +96,9 @@ browser-feature-comparison.md
 itens/
 # Notas locais (nao vao para o GitHub)
 notas-locais/
+
+# Flatpak: the release workflow copies the built binary next to the manifest
+packaging/linux/flatpak/spark-browser
+packaging/linux/flatpak/.flatpak-builder/
+packaging/linux/flatpak/build-dir/
+*.flatpak

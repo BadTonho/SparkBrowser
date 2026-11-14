@@ -1,6 +1,6 @@
 # Signed Releases & Automated GitHub Actions
 
-Releases are published automatically via **GitHub Actions** upon pushing version tags (e.g. `v1.0.0` or `v1.1.0-beta.1`), or built locally. Public releases live in `BadTonho/navegador`. Both Windows (NSIS installer) and broad Linux distributions (.AppImage, .deb, .rpm, and portable .tar.gz) packages are supported. Both channels retain identifier `org.spark.browser` and share the existing profile/database.
+Releases are published automatically via **GitHub Actions** upon pushing version tags (e.g. `v1.0.0` or `v1.1.0-beta.1`), or built locally. Public releases live in `BadTonho/SparkBrowser`. Both Windows (NSIS installer) and broad Linux distributions (.AppImage, .deb, .rpm, and portable .tar.gz) packages are supported. Both channels retain identifier `org.spark.browser` and share the existing profile/database.
 
 ## 1. Automated Releases (GitHub Actions)
 
@@ -11,7 +11,8 @@ When you push a tag matching `v*`, the `.github/workflows/release.yml` workflow 
    - **`.deb` (Debian / Ubuntu):** Native package for Debian, Ubuntu, Pop!_OS, Linux Mint, Elementary OS, and Zorin OS.
    - **`.rpm` (Red Hat / SUSE):** Native package for Fedora, openSUSE, RHEL, CentOS Stream, AlmaLinux, and Rocky Linux.
    - **`portable.tar.gz` (Standalone Archive):** Standalone portable binary tarball ideal for Arch Linux (AUR packaging) and custom environments.
-3. **Publication (Draft Mode):** Creates the GitHub Release as a **Draft**, attaches all compiled installers, signatures, and manifests, and automatically marks `-beta.*` tags as **Pre-release**. Being created in draft mode allows you to review the generated release notes and inspect all attached packages privately before publishing them to the public.
+3. **Linux Flatpak (experimental):** A separate job packs the same Linux binary as `SparkBrowser_<tag>_x86_64.flatpak` (manifest in `packaging/linux/flatpak/`). It runs on the GNOME runtime, includes `secret-tool` for credential storage and needs no root. If this job fails, the other packages are still published, without the `.flatpak` file. Because it is new, test it on a real Linux machine while the release is still a draft.
+4. **Publication (Draft Mode):** Creates the GitHub Release as a **Draft**, attaches all compiled installers, signatures, and manifests, and automatically marks `-beta.*` tags as **Pre-release**. Being created in draft mode allows you to review the generated release notes and inspect all attached packages privately before publishing them to the public.
 
 ### Linux Installation Commands
 
@@ -32,6 +33,19 @@ When you push a tag matching `v*`, the `.github/workflows/release.yml` workflow 
   ```bash
   sudo zypper install ./spark-browser-*.rpm
   ```
+- **Flatpak (any distribution with Flatpak, experimental):**
+  ```bash
+  flatpak install --user ./SparkBrowser_*_x86_64.flatpak
+  flatpak run org.spark.browser
+  ```
+
+### Before creating the tag
+
+The release workflow builds and publishes; it does not run the native regression suite (that suite is a separate, manual workflow, `native.yml`, and has not run successfully on GitHub runners). Validate on your own machine first:
+
+1. Run `npm run validate` and the critical native scenarios with `npm run test:native:critical` (see [native tests](native-tests.md)).
+2. Check that the repository is clean and follows the [Zero-Leak policy](rules-and-standards.md#rule-1-zero-sensitive-data-in-version-control).
+3. From version 0.2.0 on, make sure `changelog/<version>/` exists with `en.md` and `pt-BR.md` (see the [changelog guide](changelog.md)). Version 0.1.0 has no changelog.
 
 ### Step-by-step to publish an update:
 
@@ -48,13 +62,18 @@ git tag v0.2.0
 git push origin main --tags
 ```
 
-GitHub Actions will build, sign, and publish the update automatically.
+GitHub Actions will build and sign the packages and create the release as a **draft**. Nothing is public until you publish it:
+
+1. Open the draft in **Releases** and check that it has the Windows installer (`.exe`, `.sig`, `updater.json`) and every Linux package (`.AppImage`, `.deb`, `.rpm`, `.tar.gz` and, if it built, `.flatpak`).
+2. Review the generated release notes and edit them if needed.
+3. Download and try at least the Windows installer and one Linux package.
+4. Click **Publish release**. Beta tags (`-beta.N`) are already marked **Pre-release**.
 
 ## 2. Signing identity
 
 Updater signatures use Minisign Ed25519 keys via Tauri's official updater plugin.
 - The **Public Key** is embedded into `src-tauri/tauri.conf.json` under `plugins.updater.pubkey`.
-- The **Private Key** must be stored strictly in GitHub Secrets as `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` if password-protected). Never commit or expose private keys in git!
+- The **Private Key** must be stored strictly in GitHub Secrets as `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` only if the key has a password; keys created with `npm run release:setup-signing` have none). Never commit or expose private keys in git!
 
 ## 3. Local manual builds (Fallback)
 

@@ -2,7 +2,7 @@
 
 As verificações de widgets em `new-tab` usam fixtures de clima, busca de cidades e Gmail/OAuth em loopback. Elas verificam PKCE, rejeição de estado OAuth incorreto, cancelamento, respostas da caixa atrasadas após desconectar, requisições compartilhadas entre painéis do split, conversão de unidade sem nova consulta, empilhamento na largura mínima, texto seguro das mensagens, preservação de rascunho/foco, rollback de falha na gravação e persistência após reiniciar. Endpoints de fixture são aceitos somente pelo aplicativo isolado de testes e nunca acessam o cofre de credenciais de produção. Consentimento real de localização no Windows, persistência segura de credenciais e autorização de uma conta de teste Google exigem verificações manuais; consulte a [configuração dos widgets](../features/new-tab-widgets.md). Preferências dos widgets, localizações e dados de conta ficam fora dos backups de versão 4.
 
-A validação local usa os comandos em [validação](validation.md). Os cenários nativos críticos do Windows executam em cada pull request; a suíte completa executa diariamente, manualmente e antes da publicação de releases. Consulte o [fluxo de regressões](regression-workflow.md). O aplicativo isolado é exercitado pelo [WebDriver do Tauri](https://v2.tauri.app/develop/tests/webdriver/).
+A validação local usa os comandos em [validação](validation.md). No CI as suítes nativas executam apenas manualmente (`native.yml`); rode-as localmente antes de uma release. Consulte o [fluxo de regressões](regression-workflow.md). O aplicativo isolado é exercitado pelo [WebDriver do Tauri](https://v2.tauri.app/develop/tests/webdriver/).
 
 ## Execução isolada no Windows
 

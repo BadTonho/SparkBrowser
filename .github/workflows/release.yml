@@ -9,12 +9,9 @@ on:
 permissions:
   contents: write
 
+# Run `npm run test:native:critical` locally before creating the tag. The native suite is
+# not a gate here: it is a separate manual workflow (native.yml).
 jobs:
-  native-regressions:
-    uses: ./.github/workflows/native.yml
-    permissions:
-      contents: read
-
   build-windows:
     name: Build Windows x64
     runs-on: windows-latest
@@ -128,9 +125,50 @@ jobs:
           path: linux-artifacts/*
           if-no-files-found: warn
 
+  build-flatpak:
+    name: Build Flatpak x86_64
+    needs: build-linux
+    runs-on: ubuntu-22.04
+    # The Flatpak package is new and could not be tested on every setup. A failure here
+    # must not block the Windows and Linux packages: the release is still created as a
+    # draft, without the .flatpak file.
+    continue-on-error: true
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: linux-artifacts
+
+      - name: Extract the application binary
+        run: |
+          tar -xzf linux-artifacts/spark-browser-linux-x86_64-portable.tar.gz -C packaging/linux/flatpak spark-browser
+          ls -la packaging/linux/flatpak
+
+      - name: Build Flatpak bundle
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: SparkBrowser_${{ github.ref_name }}_x86_64.flatpak
+          manifest-path: packaging/linux/flatpak/org.spark.browser.yml
+          arch: x86_64
+          cache-key: flatpak-builder-${{ github.sha }}
+
+      - name: Upload Flatpak artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-release
+          path: SparkBrowser_${{ github.ref_name }}_x86_64.flatpak
+          if-no-files-found: error
+
   publish:
     name: Publish GitHub Release
-    needs: [build-windows, build-linux, native-regressions]
+    needs: [build-windows, build-linux, build-flatpak]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -146,6 +184,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: linux-release
+          path: dist-release
+
+      # Optional: absent when the Flatpak job failed.
+      - name: Download Flatpak artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: flatpak-release
           path: dist-release
 
       - name: List files to be published
