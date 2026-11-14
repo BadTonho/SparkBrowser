@@ -423,6 +423,12 @@
           "markdownDescription": "Enables the export_backup command without any pre-configured scope."
         },
         {
+          "description": "Enables the export_bookmarks command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-export-bookmarks",
+          "markdownDescription": "Enables the export_bookmarks command without any pre-configured scope."
+        },
+        {
           "description": "Enables the finish_backup_preferences command without any pre-configured scope.",
           "type": "string",
           "const": "allow-finish-backup-preferences",
@@ -1465,6 +1471,12 @@
           "type": "string",
           "const": "deny-export-backup",
           "markdownDescription": "Denies the export_backup command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the export_bookmarks command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-export-bookmarks",
+          "markdownDescription": "Denies the export_bookmarks command without any pre-configured scope."
         },
         {
           "description": "Denies the finish_backup_preferences command without any pre-configured scope.",

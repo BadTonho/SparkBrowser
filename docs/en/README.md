@@ -42,6 +42,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Automatic backups, history and encryption](./features/backup-automation.md)
 - [Selective restore and replace mode](./features/selective-restore.md)
 - [Backup integrity and versions](./features/backup-integrity.md)
+- [Bookmark export for other browsers](./features/bookmark-export.md)
 - [Recently closed tabs](./features/closed-tabs.md)
 - [Automatic session recovery](./features/recovery.md)
 - [Resumable downloads and checksums](./features/downloads.md)

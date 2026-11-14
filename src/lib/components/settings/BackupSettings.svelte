@@ -22,6 +22,7 @@
   } from "../../stores/backupStore";
   import GoogleDriveIcon from "../icons/GoogleDriveIcon.svelte";
   import BackupLocalPanel from "./BackupLocalPanel.svelte";
+  import BookmarkExportCard from "./BookmarkExportCard.svelte";
   import BackupPreviewPanel from "./BackupPreviewPanel.svelte";
   import BackupUnlockPrompt from "./BackupUnlockPrompt.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
@@ -147,6 +148,8 @@
           <button class="pill-action" data-testid="backup-select" disabled={$backupBusy} onclick={selectBackup}>{$t("backup.import")}</button>
         </div>
       </article>
+
+      <BookmarkExportCard />
 
       <details class="sync-panel" bind:open={syncExpanded} data-testid="backup-sync-panel">
         <summary class="sync-compact-row" data-testid="backup-sync-settings-toggle" title={$t("backup.sync_settings")}>

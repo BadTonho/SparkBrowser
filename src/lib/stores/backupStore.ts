@@ -13,6 +13,7 @@ import {
   deleteLocalBackup,
   discardBackupImport,
   exportBackup,
+  exportBookmarks,
   fetchBackupSyncState,
   fetchLocalBackupState,
   fetchPendingBackupPreferences,
@@ -54,6 +55,8 @@ import type {
   BackupImportResult,
   BackupPreferenceTask,
   BackupPreview,
+  BookmarkExportFormat,
+  BookmarkExportResult,
   LocalBackupReason,
   LocalBackupSchedule,
   LocalBackupState,
@@ -70,6 +73,7 @@ export const backupResult = writable<BackupImportResult | null>(null);
 export const DEFAULT_RESTORE_GROUPS: RestoreGroup[] = ["workspaces", "bookmarks", "sessions", "notes", "site_search"];
 export const restoreOptions = writable<RestoreOptions>({ groups: [...DEFAULT_RESTORE_GROUPS], mode: "merge" });
 export const backupExported = writable(false);
+export const bookmarkExportResult = writable<BookmarkExportResult | null>(null);
 export const pendingBackupPreferences = writable<BackupPreferenceTask | null>(null);
 export const backupSyncState = writable<SyncStateSnapshot>({
   config: { mode: "disabled" },
@@ -125,6 +129,13 @@ export const saveBackup = () =>
   action(async () => {
     await noteWriter.flushAll();
     backupExported.set(await exportBackup(capturePreferences()));
+  });
+
+export const exportBookmarksAs = (format: BookmarkExportFormat) =>
+  action(async () => {
+    bookmarkExportResult.set(null);
+    // A cancelled dialog returns null and leaves no notice.
+    bookmarkExportResult.set(await exportBookmarks(format));
   });
 
 export const selectBackup = () =>

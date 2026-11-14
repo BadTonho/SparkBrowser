@@ -23,6 +23,7 @@ pub mod extensions;
 pub mod overlays;
 
 pub mod backup;
+pub mod bookmark_export;
 pub mod capture_probe;
 pub mod dark_mode_probe;
 

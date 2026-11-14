@@ -48,6 +48,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "reopen_closed_tab",
     "clear_closed_tabs",
     "export_backup",
+    "export_bookmarks",
     "choose_backup_file",
     "discard_backup_import",
     "preview_backup_import",

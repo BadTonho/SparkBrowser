@@ -36,6 +36,9 @@ export interface BackupPreview {
 export interface BackupPreferenceTask { id: string; preferences: BackupPreferences; error: string | null; }
 export interface BackupImportResult { added: Record<BackupKind, number>; removed: Partial<Record<BackupKind, number>>; replaced: RestoreGroup[]; safety_snapshot: string | null; skipped: BackupConflict[]; pending_preferences: BackupPreferenceTask | null; snapshot: TabSnapshot; workspaces: WorkspaceItem[]; }
 
+export type BookmarkExportFormat = "html" | "csv";
+export interface BookmarkExportResult { count: number; skipped: number; }
+
 export type SyncTargetConfig =
   | { mode: "disabled" }
   | { mode: "google_drive_web"; auto_save: boolean; apply_preferences_on_direct_pull: boolean }

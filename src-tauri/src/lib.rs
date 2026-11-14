@@ -10,6 +10,7 @@ use commands::backup::{
     restore_local_backup, set_backup_encryption, set_backup_sync_config, set_local_backup_schedule,
     unlock_backup_file,
 };
+use commands::bookmark_export::export_bookmarks;
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
@@ -437,6 +438,7 @@ pub fn run() {
             reopen_closed_tab,
             clear_closed_tabs,
             export_backup,
+            export_bookmarks,
             choose_backup_file,
             discard_backup_import,
             preview_backup_import,

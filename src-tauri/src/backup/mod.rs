@@ -1,4 +1,5 @@
 mod credentials;
+pub mod bookmark_export;
 pub mod crypto;
 pub mod encryption;
 pub mod files;

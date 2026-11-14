@@ -138,6 +138,7 @@
     "allow-enqueue-download",
     "allow-clear-all-downloads",
     "allow-export-backup",
+    "allow-export-bookmarks",
     "allow-choose-backup-file",
     "allow-discard-backup-import",
     "allow-preview-backup-import",

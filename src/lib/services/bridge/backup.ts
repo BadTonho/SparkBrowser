@@ -1,6 +1,7 @@
 import { invoke } from "./runtime";
-import type { BackupImportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, LocalBackupOutcome, LocalBackupReason, LocalBackupSchedule, LocalBackupState, RestoreOptions, SyncPullResponse, SyncPushResult, SyncStateSnapshot, SyncTargetConfig } from "../../types/backup";
+import type { BackupImportResult, BookmarkExportFormat, BookmarkExportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, LocalBackupOutcome, LocalBackupReason, LocalBackupSchedule, LocalBackupState, RestoreOptions, SyncPullResponse, SyncPushResult, SyncStateSnapshot, SyncTargetConfig } from "../../types/backup";
 export const exportBackup = (preferences: BackupPreferences) => invoke<boolean>("export_backup", { preferences });
+export const exportBookmarks = (format: BookmarkExportFormat) => invoke<BookmarkExportResult | null>("export_bookmarks", { format });
 export const chooseBackupFile = () => invoke<string | null>("choose_backup_file");
 export const previewBackupImport = (sourceToken: string, currentPreferences: BackupPreferences, options: RestoreOptions) => invoke<BackupPreview>("preview_backup_import", { sourceToken, currentPreferences, options });
 export const commitBackupImport = (token: string, applyPreferences: boolean, currentPreferences: BackupPreferences) => invoke<BackupImportResult>("commit_backup_import", { token, applyPreferences, currentPreferences });
