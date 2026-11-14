@@ -765,6 +765,12 @@
           "markdownDescription": "Enables the open_whatsapp_window command without any pre-configured scope."
         },
         {
+          "description": "Enables the prepare_panel command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-prepare-panel",
+          "markdownDescription": "Enables the prepare_panel command without any pre-configured scope."
+        },
+        {
           "description": "Enables the prepare_shutdown command without any pre-configured scope.",
           "type": "string",
           "const": "allow-prepare-shutdown",
@@ -1837,6 +1843,12 @@
           "type": "string",
           "const": "deny-open-whatsapp-window",
           "markdownDescription": "Denies the open_whatsapp_window command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the prepare_panel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-prepare-panel",
+          "markdownDescription": "Denies the prepare_panel command without any pre-configured scope."
         },
         {
           "description": "Denies the prepare_shutdown command without any pre-configured scope.",

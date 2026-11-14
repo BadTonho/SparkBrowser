@@ -11,6 +11,7 @@
   import "../tools/tools.css";
   import "../downloads/downloads.css";
   import "../settings/settings-quick.css";
+  import "./popover-motion.css";
 
   type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number };
   let presentation = $state<Payload | null>(null);
@@ -121,7 +122,7 @@
   <div class={downloads ? "downloads-dismiss" : quickSettings ? "settings-quick-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
     if (event.target === event.currentTarget) send({ kind: "dismiss", reason: (downloads || quickSettings) && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
   }}>
-    <div class={downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : "tools-surface"} bind:this={root} use:downloadFocus style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
+    <div class="popover-enter {downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : "tools-surface"}" bind:this={root} use:downloadFocus style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
       <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
     </div>
   </div>

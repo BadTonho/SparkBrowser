@@ -48,6 +48,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "reopen_closed_tab",
     "clear_closed_tabs",
     "export_backup",
+    "prepare_panel",
     "get_graphics_status",
     "set_hardware_acceleration",
     "restart_for_graphics",

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { prepares } from "../../actions/preparePanel";
   import { tick } from "svelte";
   import { get } from "svelte/store";
   import { onMount } from "svelte";
@@ -124,6 +125,7 @@ import { invoke } from "../../services/tauri-bridge";
         class:dragging={preview?.id === "tools"}
         style:translate={preview?.id === "tools" ? `${preview.offset}px 0` : undefined}
         class="icon-btn"
+        use:prepares={"tools"}
         onclick={event => openTools("sessions", event.currentTarget)}
         aria-haspopup="dialog" aria-expanded={$isToolsOpen}
         title={$t("titlebar.tools_ea93") + " · " + $t("titlebar.reorder_hint")}
@@ -183,6 +185,7 @@ import { invoke } from "../../services/tauri-bridge";
         class:dragging={preview?.id === "downloads"}
         style:translate={preview?.id === "downloads" ? `${preview.offset}px 0` : undefined}
         class="icon-btn"
+        use:prepares={"downloads"}
         onclick={event => openDownloadsDrawer(event.currentTarget)}
         aria-haspopup="dialog" aria-expanded={$isDownloadsDrawerOpen}
         title={($t("titlebar.download_manager_p0_8620", { p0: $keyboardShortcuts && shortcutLabel("downloads") })) + ($downloadProgressText ? " · " + $downloadProgressText : "") + " · " + $t("titlebar.reorder_hint")}
@@ -231,6 +234,7 @@ import { invoke } from "../../services/tauri-bridge";
         class:dragging={preview?.id === "settings"}
         style:translate={preview?.id === "settings" ? `${preview.offset}px 0` : undefined}
         class="icon-btn"
+        use:prepares={["quick-settings", "settings"]}
         onclick={event => openSettingsQuickMenu(event.currentTarget)}
         title={($t("titlebar.settings_shortcuts_p0_82b9", { p0: $keyboardShortcuts && shortcutLabel("settings") })) + " · " + $t("titlebar.reorder_hint")}
         data-testid="open-settings" aria-label={$t("titlebar.settings_74a8")} aria-haspopup="dialog" aria-expanded={$isSettingsQuickOpen}

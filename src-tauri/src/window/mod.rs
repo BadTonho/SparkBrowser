@@ -35,6 +35,11 @@ pub mod ephemeral;
 #[cfg(target_os = "linux")]
 pub mod linux_layout;
 mod panel_popover;
+
+/// Prepares one panel's web view ahead of the click. See `panel_popover::prepare`.
+pub fn prepare_panel(app: &tauri::AppHandle, panel: &str) -> Result<(), String> {
+    panel_popover::prepare(app, panel)
+}
 pub mod quick_settings_popover;
 pub mod settings_overlay;
 

@@ -3,6 +3,7 @@
   import PanelViewNode from "../panels/PanelViewNode.svelte";
   import type { PanelPresentation, PanelViewAction } from "../../services/panel-presentation";
   import "./settings.css";
+  import "../panels/popover-motion.css";
   import "./SettingsModal.svelte";
 
   type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number };
@@ -87,7 +88,7 @@
   });
 </script>
 {#if presentation}
-  <div class="settings-backdrop" role="presentation" onclick={event => { if (event.target === event.currentTarget) send({ kind: "dismiss", reason: "outside" }); }} bind:this={root}>
+  <div class="settings-backdrop popover-enter-dialog" role="presentation" onclick={event => { if (event.target === event.currentTarget) send({ kind: "dismiss", reason: "outside" }); }} bind:this={root}>
     <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
   </div>
 {/if}

@@ -1,0 +1,24 @@
+/*
+ * How the native popovers appear. They used to snap in; a short fade reads as smooth without adding
+ * wait, because it starts on the first frame and only animates opacity, which the compositor handles
+ * even while the page is busy.
+ *
+ * Opacity only, on purpose: a lift or scale changes the element's bounding box while it plays, so
+ * anything that measures a popover right after it opens (positioning checks, tests) would read a size
+ * or position that is not the final one.
+ *
+ * Panels are rebuilt each time they open, so the animation replays on every open. The full settings
+ * dialog fades the dialog only: fading its backdrop would re-blur a full-window layer every frame.
+ */
+@keyframes popover-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.popover-enter { animation: popover-fade-in 120ms ease-out both; }
+.popover-enter-dialog > .settings-modal { animation: popover-fade-in 150ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .popover-enter,
+  .popover-enter-dialog > .settings-modal { animation: none; }
+}

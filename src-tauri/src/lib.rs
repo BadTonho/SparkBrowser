@@ -17,6 +17,7 @@ use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::graphics::{get_graphics_status, restart_for_graphics, set_hardware_acceleration};
 use commands::new_tab::set_new_tab_preferences;
+use commands::panels::prepare_panel;
 use commands::private_session::{get_private_window_state, open_private_window};
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
@@ -462,6 +463,7 @@ pub fn run() {
             reopen_closed_tab,
             clear_closed_tabs,
             export_backup,
+            prepare_panel,
             get_graphics_status,
             set_hardware_acceleration,
             restart_for_graphics,

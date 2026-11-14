@@ -126,7 +126,12 @@ fn action(session: &Session, value: bridge::UiAction) -> Action {
     }
 }
 
+/// Creating a panel's web view is check-then-create, and it can now start from two places (the
+/// user opening the panel and the warm-up below), so the check and the creation are one step.
+static CREATING: Mutex<()> = Mutex::new(());
+
 fn ensure_webview<P: Panel>(app: &AppHandle) -> Result<(), String> {
+    let _creating = CREATING.lock().map_err(|e| e.to_string())?;
     if app.get_webview(P::LABEL).is_some() {
         return Ok(());
     }
@@ -160,6 +165,28 @@ fn ensure_webview<P: Panel>(app: &AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     crate::security::harden(app, &view, true)?;
     view.hide().map_err(|e| e.to_string())
+}
+
+fn warm<P: Panel>(app: &AppHandle) {
+    if let Err(error) = ensure_webview::<P>(app) {
+        eprintln!("Could not prepare {}: {error}", P::LABEL);
+    }
+}
+
+/// Creates a panel's web view, hidden, ahead of the click. The first open of each panel used to pay for
+/// creating the web view and loading its page (about 300 ms on top of the roughly 80 ms a reopen takes).
+/// The interface calls this when the pointer reaches a panel's button or the button gets focus, which
+/// typically happens well before the click. Doing it only on demand matters: preparing all four panels
+/// at startup measured at about +100 MB of private memory for everyone, used or not.
+pub fn prepare(app: &AppHandle, panel: &str) -> Result<(), String> {
+    match panel {
+        "quick-settings" => warm::<QuickSettings>(app),
+        "tools" => warm::<Tools>(app),
+        "downloads" => warm::<Downloads>(app),
+        "settings" => warm::<Settings>(app),
+        _ => return Err("panel.unknown".into()),
+    }
+    Ok(())
 }
 
 pub fn resize<P: Panel>(app: &AppHandle) -> Result<(), String> {
