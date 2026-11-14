@@ -84,3 +84,27 @@ pub fn install(
     })
     .map_err(|e| e.to_string())
 }
+
+/// GTK counterpart: a pane becomes active when its WebView receives keyboard focus.
+#[cfg(target_os = "linux")]
+pub fn install(
+    app: &AppHandle,
+    view: &tauri::Webview,
+    tab_id: &str,
+    token: &str,
+) -> Result<(), String> {
+    let (app, id, label, token) = (
+        app.clone(),
+        tab_id.to_owned(),
+        view.label().to_owned(),
+        token.to_owned(),
+    );
+    view.with_webview(move |platform| {
+        use gtk::prelude::WidgetExt;
+        platform.inner().connect_focus_in_event(move |_, _| {
+            focus_pane(&app, &id, &label, &token);
+            gtk::glib::Propagation::Proceed
+        });
+    })
+    .map_err(|e| e.to_string())
+}

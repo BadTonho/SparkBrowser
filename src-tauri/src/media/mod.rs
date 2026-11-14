@@ -1,5 +1,7 @@
 #[cfg(windows)]
 pub mod contexts;
+#[cfg(target_os = "linux")]
+pub mod linux;
 pub mod pip;
 #[cfg(windows)]
 pub mod pip_window;
@@ -164,7 +166,18 @@ impl MediaService {
             });
             self.snapshot(app)
         }
-        #[cfg(not(windows))]
+        #[cfg(target_os = "linux")]
+        {
+            if let Some(view) = app.get_webview(&webview_label_for_tab(id)) {
+                linux::set_muted(app, &view, muted || self.tab(id).volume == 0).await?;
+            }
+            self.update(app, id, |t| {
+                t.muted = muted;
+                t.mute_available = true;
+            });
+            self.snapshot(app)
+        }
+        #[cfg(not(any(windows, target_os = "linux")))]
         {
             let _ = (muted, webview_label_for_tab(id));
             Err("media.unavailable".into())

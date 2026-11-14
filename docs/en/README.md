@@ -37,6 +37,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Feed reader](./features/feed-reader.md)
 - [Tab organizer](./features/tab-organizer.md)
 - [Split view](./features/split-view.md)
+- [Linux support](./features/linux-support.md)
 - [Site permissions](./features/site-permissions.md)
 - [Dependency notes](./security/dependency-notes.md)
 - [Release channels and updates](./features/updates.md)

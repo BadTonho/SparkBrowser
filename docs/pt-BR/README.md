@@ -37,6 +37,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Leitor de feeds](./features/feed-reader.md)
 - [Organizador de abas](./features/tab-organizer.md)
 - [Visualização dividida](./features/split-view.md)
+- [Suporte ao Linux](./features/linux-support.md)
 - [Permissões por site](./features/site-permissions.md)
 - [Dependencias](./security/dependency-notes.md)
 - [Canais de versão e atualizações](./features/updates.md)

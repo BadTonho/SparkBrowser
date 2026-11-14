@@ -346,7 +346,7 @@ pub(super) fn create_tab_webview(
         &navigation_registration_token,
     )?;
 
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     super::split_focus::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
@@ -370,6 +370,13 @@ pub(super) fn create_tab_webview(
     crate::media::protocol::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
+        &navigation_registration_token,
+    )?;
+    #[cfg(target_os = "linux")]
+    crate::media::linux::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
         &navigation_registration_token,
     )?;
     #[cfg(windows)]
