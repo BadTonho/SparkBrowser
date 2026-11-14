@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 
-// A second browser window has its own shell, tabs and selection; the profile is shared.
-export async function checkBrowserWindows({ invoke, until, fixture, request, sessionId, wait }) {
+// Opens a second browser window and returns a function that runs commands from its shell.
+async function openSecondWindow({ invoke, until, request, sessionId }) {
   const base = () => `/session/${sessionId()}`;
   const handles = () => request('GET', `${base()}/window/handles`);
   const before = await handles();
-  const firstTab = (await invoke('get_tabs')).tabs.find(tab => tab.is_active).id;
   const id = await invoke('open_browser_window');
   assert.equal(id, 'window-2');
   const previous = await request('GET', `${base()}/window`);
@@ -21,7 +20,6 @@ export async function checkBrowserWindows({ invoke, until, fixture, request, ses
     }
     return null;
   }, 'second shell appears');
-  // Runs a command from the shell of the second window.
   const invokeIn = async (command, args = {}) => {
     await request('POST', `${base()}/window`, { handle: second });
     try {
@@ -35,6 +33,14 @@ export async function checkBrowserWindows({ invoke, until, fixture, request, ses
   };
   let lastError = '';
   try { await until(async () => { try { return (await invokeIn('get_tabs')).tabs.length === 1; } catch (error) { lastError = String(error); return false; } }, 'second shell is ready'); } catch (error) { throw new Error(`${error.message}: ${lastError}`); }
+  return invokeIn;
+}
+
+// A second browser window has its own shell, tabs and selection; the profile is shared.
+export async function checkBrowserWindows(context) {
+  const { invoke, until, fixture, wait } = context;
+  const firstTab = (await invoke('get_tabs')).tabs.find(tab => tab.is_active).id;
+  const invokeIn = await openSecondWindow(context);
   const other = await invokeIn('get_tabs');
   assert.equal(other.window_id, 'window-2');
   assert.notEqual(other.tabs[0].id, firstTab);
@@ -63,4 +69,28 @@ export async function checkBrowserWindows({ invoke, until, fixture, request, ses
   assert.ok((await invoke('get_closed_tabs')).length >= 2, 'its tabs can be reopened');
   assert.ok((await invoke('get_tabs')).tabs.some(tab => tab.id === firstTab));
   await wait(200);
+}
+
+// Every window of the last session comes back with its own tabs, also after a crash.
+export async function checkWindowRestore(context) {
+  const { invoke, until, fixture, restart } = context;
+  const invokeIn = await openSecondWindow(context);
+  await invokeIn('create_tab', { url: fixture.origin + '/page/b' });
+  const mainTabs = (await invoke('get_tabs')).tabs.map(tab => tab.id);
+  const secondTabs = (await invokeIn('get_tabs')).tabs.map(tab => tab.id);
+  assert.equal(secondTabs.length, 2);
+  const windowsBack = async count => until(async () => (await invoke('get_browser_windows')).length === count, `${count} windows open`);
+  for (const crash of [true, false]) {
+    await restart({ crash });
+    await windowsBack(2);
+    const windows = await invoke('get_browser_windows');
+    assert.deepEqual(windows.map(window => window.id).sort(), ['main', 'window-2']);
+    assert.equal(windows.find(window => window.id === 'window-2').tab_count, 2);
+    assert.equal(windows.find(window => window.id === 'main').tab_count, mainTabs.length, 'main keeps its own tabs');
+    // The test driver may talk to either shell, so the tabs it sees belong to one of the two windows.
+    const seen = (await invoke('get_tabs')).tabs.map(tab => tab.id);
+    assert.ok(seen.every(id => (mainTabs.includes(id) || secondTabs.includes(id))), 'tab ids survive the restart');
+    assert.equal((await invoke('get_closed_tabs')).length, 0, 'nothing was sent to recently closed');
+  }
+  assert.equal(secondTabs.length, 2);
 }

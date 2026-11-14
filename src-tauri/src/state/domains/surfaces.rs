@@ -1,4 +1,5 @@
 use super::super::browser_state::ViewportBounds;
+use crate::database::session_windows_repo::WindowRecord;
 use crate::state::tab_model::MAIN_WINDOW_ID;
 use std::{
     collections::HashMap,
@@ -12,6 +13,8 @@ pub(crate) struct Surfaces {
     content_bootstrap: super::content_bootstrap::ContentBootstrap,
     /// The page area of each window, in that window's own coordinates.
     bounds: Mutex<HashMap<String, ViewportBounds>>,
+    /// Where each window sits on screen, kept so the session can reopen it in the same place.
+    geometry: Mutex<HashMap<String, WindowRecord>>,
     is_overlay_open: Mutex<bool>,
     workspace_alt_pressed: AtomicBool,
     workspace_switcher_token: Mutex<Option<String>>,
@@ -47,6 +50,20 @@ impl Surfaces {
     ) -> Result<bool, String> {
         let mut all = self.bounds.lock().map_err(|e| e.to_string())?;
         Ok(all.insert(window_id.to_string(), bounds) != Some(bounds))
+    }
+    /// The last known position and size of a window (the active tab fields are not used here).
+    pub(crate) fn window_geometry(&self, window_id: &str) -> Option<WindowRecord> {
+        self.geometry.lock().ok()?.get(window_id).cloned()
+    }
+    pub(crate) fn set_window_geometry(&self, window_id: &str, record: WindowRecord) {
+        if let Ok(mut all) = self.geometry.lock() {
+            all.insert(window_id.to_string(), record);
+        }
+    }
+    pub(crate) fn forget_window_geometry(&self, window_id: &str) {
+        if let Ok(mut all) = self.geometry.lock() {
+            all.remove(window_id);
+        }
     }
     pub(crate) fn forget_viewport(&self, window_id: &str) {
         if let Ok(mut all) = self.bounds.lock() {
@@ -87,6 +104,7 @@ impl Default for Surfaces {
             #[cfg(windows)]
             content_bootstrap: super::content_bootstrap::ContentBootstrap::default(),
             bounds: Mutex::new(HashMap::new()),
+            geometry: Mutex::new(HashMap::new()),
             is_overlay_open: Mutex::new(false),
             workspace_alt_pressed: AtomicBool::new(false),
             workspace_switcher_token: Mutex::new(None),

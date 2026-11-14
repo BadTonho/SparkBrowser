@@ -23,6 +23,7 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
     let mut tabs = session_repo::load_session_tabs(&conn)?;
     let restored_tabs = tabs.len();
     let layouts = split_repo::load(&conn)?;
+    let windows = session_windows_repo::load_session_windows(&conn)?;
     if !tabs.is_empty() {
         let ids: HashSet<_> = tabs.iter().map(|tab| tab.id.as_str()).collect();
         if ids.len() != tabs.len()
@@ -37,12 +38,9 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
                 tab.workspace_id = "ws-personal".into();
             }
         }
-        assign_windows(
-            &mut tabs,
-            &session_windows_repo::load_session_windows(&conn)?,
-        );
+        assign_windows(&mut tabs, &windows);
     }
-    state.install_restored_session(tabs, workspaces, layouts)?;
+    state.install_restored_session(tabs, workspaces, layouts, &windows)?;
     *state
         .infrastructure()
         .db()
@@ -64,6 +62,14 @@ fn assign_windows(tabs: &mut [TabInfo], windows: &[WindowRecord]) {
             && !windows.iter().any(|window| window.id == tab.window_id)
         {
             tab.window_id = MAIN_WINDOW_ID.into();
+        }
+    }
+    // The main window always exists: when only other windows have tabs, the first one becomes main.
+    if !tabs.iter().any(|tab| tab.window_id == MAIN_WINDOW_ID) {
+        if let Some(first) = tabs.first().map(|tab| tab.window_id.clone()) {
+            for tab in tabs.iter_mut().filter(|tab| tab.window_id == first) {
+                tab.window_id = MAIN_WINDOW_ID.into();
+            }
         }
     }
     let mut ids: Vec<String> = Vec::new();
@@ -150,8 +156,56 @@ mod tests {
                 .count(),
             1
         );
-        // Which tab is shown per window needs the per-window session state of the next stage;
-        // `assign_windows` above already keeps one active tab per window in the saved data.
+        assert_eq!(state.session().window_ids(), vec!["main", "window-2"]);
+        let second = state.session().window("window-2").unwrap();
+        assert_eq!(*second.active_tab_id().lock().unwrap(), "c");
+    }
+
+    #[test]
+    fn windows_are_saved_with_their_place_and_come_back_on_the_next_run() {
+        let conn = database();
+        let tabs = vec![tab("a", "main", true), tab("c", "window-2", true)];
+        session_repo::save_session_tabs(&conn, &tabs).unwrap();
+        session_windows_repo::save_session_windows(
+            &conn,
+            &[
+                WindowRecord {
+                    width: Some(1200),
+                    height: Some(800),
+                    ..record("main")
+                },
+                WindowRecord {
+                    x: Some(2000),
+                    y: Some(40),
+                    width: Some(900),
+                    height: Some(700),
+                    maximized: true,
+                    monitor: Some("DP-2".into()),
+                    ..record("window-2")
+                },
+            ],
+        )
+        .unwrap();
+        let state = BrowserState::default();
+        restore(&state, conn).unwrap();
+        state.persist_session().unwrap();
+        let guard = state.infrastructure().db().lock().unwrap();
+        let saved = session_windows_repo::load_session_windows(guard.as_ref().unwrap()).unwrap();
+        assert_eq!(saved.len(), 2);
+        assert_eq!(saved[1].id, "window-2");
+        assert_eq!((saved[1].x, saved[1].y), (Some(2000), Some(40)));
+        assert!(saved[1].maximized);
+        assert_eq!(saved[1].monitor.as_deref(), Some("DP-2"));
+        assert_eq!(saved[1].active_tab_id.as_deref(), Some("c"));
+        assert_eq!(saved[0].width, Some(1200));
+    }
+
+    #[test]
+    fn a_session_with_only_a_second_window_becomes_the_main_window() {
+        let mut tabs = vec![tab("c", "window-2", true), tab("d", "window-2", false)];
+        assign_windows(&mut tabs, &[record("window-2")]);
+        assert!(tabs.iter().all(|t| t.window_id == "main"));
+        assert_eq!(tabs.iter().filter(|t| t.is_active).count(), 1);
     }
 
     fn database() -> Connection {

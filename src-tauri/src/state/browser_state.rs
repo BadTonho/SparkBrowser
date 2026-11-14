@@ -179,6 +179,28 @@ impl BrowserState {
         Ok(())
     }
 
+    /// Every open window with where it sits and what it shows, in creation order.
+    pub(crate) fn window_records(
+        &self,
+    ) -> Vec<crate::database::session_windows_repo::WindowRecord> {
+        self.session()
+            .window_ids()
+            .into_iter()
+            .filter_map(|id| {
+                let window = self.session().window(&id)?;
+                let mut record = self.surfaces().window_geometry(&id).unwrap_or_default();
+                record.id = id;
+                record.active_tab_id = window.edit_active_tab_id().lock().ok().map(|v| v.clone());
+                record.active_workspace_id = window
+                    .edit_active_workspace_id()
+                    .lock()
+                    .ok()
+                    .map(|v| v.clone());
+                Some(record)
+            })
+            .collect()
+    }
+
     /// The tab every open window has selected.
     pub(crate) fn active_tab_ids(&self) -> Vec<String> {
         self.session()
@@ -322,10 +344,13 @@ impl BrowserState {
         self.refresh_visible_tabs()?;
         let snapshot = self.snapshot_tabs();
         if checkpoint.is_some()
-            && (snapshot.is_empty() || snapshot.iter().filter(|tab| tab.is_active).count() != 1)
+            && (snapshot.is_empty()
+                || snapshot.iter().filter(|tab| tab.is_active).count()
+                    != self.session().window_ids().len())
         {
             return Err("recovery.invalid_session: Missing active tab".into());
         }
+        let windows = self.window_records();
         let layouts = self
             .session()
             .edit_split_layouts()
@@ -342,6 +367,7 @@ impl BrowserState {
         let result = (|| {
             let transaction = conn.unchecked_transaction().map_err(|e| e.to_string())?;
             save_session_tabs(&transaction, &snapshot)?;
+            crate::database::session_windows_repo::save_session_windows(&transaction, &windows)?;
             crate::database::split_repo::save(&transaction, &layouts)?;
             if let Some((tab_id, reset)) = activation {
                 if reset {

@@ -277,6 +277,7 @@ fn persist(app: &AppHandle, approved: &ShutdownState) -> Result<Option<ShutdownR
         writer.resume();
         return Ok(Some(final_review));
     }
+    crate::window::browser_windows::capture_all(app);
     browser.persist_run_checkpoint(crate::database::recovery_repo::RunCheckpoint::CleanExit)?;
     Ok(None)
 }

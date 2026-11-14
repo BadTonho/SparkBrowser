@@ -181,6 +181,14 @@ pub fn run() {
         .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
         .on_window_event(|window, event| {
+            if matches!(
+                event,
+                WindowEvent::Moved(_)
+                    | WindowEvent::Resized(_)
+                    | WindowEvent::ScaleFactorChanged { .. }
+            ) {
+                window::browser_windows::capture_geometry(window);
+            }
             if state::tab_model::is_window_label(window.label())
                 && matches!(event, WindowEvent::Resized(_))
                 && window::fullscreen::any_active(window.app_handle())
@@ -427,6 +435,11 @@ pub fn run() {
                 .map_err(std::io::Error::other)?;
             window::new_tab::widgets::initialize(app.handle());
             spawn_content_webview(app.handle())?;
+            // The other windows of the last session come back once the first one is up.
+            let reopening = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                window::browser_windows::restore_saved(&reopening).await;
+            });
             state
                 .infrastructure()
                 .startup_ready()

@@ -61,11 +61,23 @@ impl BrowserState {
         tabs: Vec<TabInfo>,
         workspaces: Vec<WorkspaceItem>,
         layouts: HashMap<String, SplitLayout>,
+        windows: &[crate::database::session_windows_repo::WindowRecord],
     ) -> Result<(), String> {
+        let mut others = Vec::new();
         if !tabs.is_empty() {
+            // Every saved window comes back with the tab it had selected.
+            for tab in tabs.iter().filter(|tab| tab.is_active) {
+                if tab.window_id != super::tab_model::MAIN_WINDOW_ID {
+                    others.push((
+                        tab.window_id.clone(),
+                        tab.id.clone(),
+                        tab.workspace_id.clone(),
+                    ));
+                }
+            }
             let active = tabs
                 .iter()
-                .find(|tab| tab.is_active)
+                .find(|tab| tab.is_active && tab.window_id == super::tab_model::MAIN_WINDOW_ID)
                 .ok_or("recovery.invalid_session: Missing active tab")?;
             let next = tabs
                 .iter()
@@ -94,6 +106,21 @@ impl BrowserState {
                 .edit_tabs()
                 .lock()
                 .map_err(|e| e.to_string())? = tabs;
+            others.sort_by_key(|(id, _, _)| {
+                windows
+                    .iter()
+                    .position(|window| &window.id == id)
+                    .unwrap_or(usize::MAX)
+            });
+            for (id, tab, workspace) in others {
+                self.session().open_window(&id, tab, workspace)?;
+            }
+        }
+        for window in windows {
+            if self.session().window(&window.id).is_some() {
+                self.surfaces()
+                    .set_window_geometry(&window.id, window.clone());
+            }
         }
         *self
             .session()

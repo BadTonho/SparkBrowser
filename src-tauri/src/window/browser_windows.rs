@@ -87,6 +87,7 @@ pub async fn closed(app: &AppHandle, window_id: &str) -> Result<(), String> {
     }
     #[cfg(target_os = "linux")]
     super::linux_layout::forget_window(window_id);
+    state.surfaces().forget_window_geometry(window_id);
     if let Some(window) = app.get_webview_window(window_id) {
         let _ = window.destroy();
     }
@@ -106,4 +107,139 @@ pub fn summaries(state: &BrowserState) -> Vec<WindowSummary> {
             id,
         })
         .collect()
+}
+
+/// Remembers where a window sits so the next launch can put it back. A minimized window keeps its
+/// previous place, and a maximized one keeps the size it had before.
+pub fn capture_geometry(window: &tauri::Window) {
+    if !crate::state::tab_model::is_window_label(window.label()) {
+        return;
+    }
+    let app = window.app_handle();
+    let Some(state) = app.try_state::<BrowserState>() else {
+        return;
+    };
+    if window.is_minimized().unwrap_or(false) || state.session().window(window.label()).is_none() {
+        return;
+    }
+    let mut record = state
+        .surfaces()
+        .window_geometry(window.label())
+        .unwrap_or_default();
+    let maximized = window.is_maximized().unwrap_or(false);
+    record.maximized = maximized;
+    if !maximized && !window.is_fullscreen().unwrap_or(false) {
+        if let (Ok(position), Ok(size)) = (window.outer_position(), window.inner_size()) {
+            record.x = Some(position.x);
+            record.y = Some(position.y);
+            record.width = Some(size.width);
+            record.height = Some(size.height);
+        }
+    }
+    record.monitor = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .and_then(|monitor| monitor.name().cloned());
+    state.surfaces().set_window_geometry(window.label(), record);
+}
+
+/// Refreshes the remembered place of every window, so the final save is exact.
+pub fn capture_all(app: &AppHandle) {
+    for (label, window) in app.windows() {
+        if crate::state::tab_model::is_window_label(&label) {
+            capture_geometry(&window);
+        }
+    }
+}
+
+/// True where an application may choose where its windows go. Wayland compositors decide that
+/// themselves, so there only the size and the maximized state come back.
+fn can_place_windows() -> bool {
+    #[cfg(windows)]
+    {
+        true
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::env::var_os("WAYLAND_DISPLAY").is_none()
+            || std::env::var("GDK_BACKEND").is_ok_and(|value| value.contains("x11"))
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
+    {
+        false
+    }
+}
+
+/// Puts a window back where it was. A place that no monitor shows any more is ignored, so the
+/// window never reopens out of reach.
+pub fn apply_geometry(
+    window: &WebviewWindow,
+    record: &crate::database::session_windows_repo::WindowRecord,
+) {
+    use tauri::{PhysicalPosition, PhysicalSize};
+    if let (Some(width), Some(height)) = (record.width, record.height) {
+        if width >= 400 && height >= 300 {
+            let _ = window.set_size(PhysicalSize::new(width, height));
+        }
+    }
+    if can_place_windows() {
+        if let (Some(x), Some(y)) = (record.x, record.y) {
+            let visible = window.available_monitors().is_ok_and(|monitors| {
+                monitors.iter().any(|monitor| {
+                    let (origin, size) = (monitor.position(), monitor.size());
+                    x >= origin.x - 50
+                        && y >= origin.y - 50
+                        && x < origin.x + size.width as i32 - 100
+                        && y < origin.y + size.height as i32 - 100
+                })
+            });
+            if visible {
+                let _ = window.set_position(PhysicalPosition::new(x, y));
+            }
+        }
+    }
+    if record.maximized {
+        let _ = window.maximize();
+    }
+}
+
+/// Opens the windows the last session had, each with its own tabs, and puts every window back where
+/// it was. A window that cannot open keeps its tabs: they go to the recently closed list.
+pub async fn restore_saved(app: &AppHandle) {
+    let state = app.state::<BrowserState>();
+    let _operation = state.session().operation().await;
+    let ids = state.session().window_ids();
+    for id in ids {
+        let record = state.surfaces().window_geometry(&id);
+        if id == MAIN_WINDOW_ID {
+            if let (Some(window), Some(record)) = (app.get_webview_window(&id), record) {
+                apply_geometry(&window, &record);
+            }
+            continue;
+        }
+        match build(app, &id) {
+            Ok(window) => {
+                if let Some(record) = record {
+                    apply_geometry(&window, &record);
+                }
+            }
+            Err(error) => {
+                eprintln!("Could not reopen {id}: {error}");
+                if let Ok(closed) = close_window(&state, &id) {
+                    for tab in &closed.tab_ids {
+                        let _ = super::webview_manager::close_tab_webview(app, tab);
+                    }
+                }
+                let _ = crate::security::emit_shell(app, "browser-error", error);
+            }
+        }
+    }
+    if let Err(error) = super::webview_manager::sync_all_webviews(app, &state) {
+        let _ = crate::security::emit_shell(app, "browser-error", error);
+    }
+    crate::state::session_ops::closed_tabs::notify(app, &state);
+    for id in state.session().window_ids() {
+        crate::state::publish::publish_tabs(app, &state, &id);
+    }
 }

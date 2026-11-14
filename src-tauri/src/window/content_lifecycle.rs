@@ -135,6 +135,13 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
     // Only committed pages may be created; drag companions must already be resident.
     let pane_bounds = super::viewport::visible_bounds(state)?;
     for (id, bounds) in &pane_bounds {
+        // A window of the last session that has not reopened yet gets its pages when it does.
+        if state
+            .window_of_tab(id)
+            .is_ok_and(|window| app.get_window(&window).is_none())
+        {
+            continue;
+        }
         let tab = state
             .snapshot_tabs()
             .into_iter()
