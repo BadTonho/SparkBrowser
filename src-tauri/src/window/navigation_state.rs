@@ -33,6 +33,67 @@ pub(super) fn update_navigation(
     }
 }
 
+#[cfg(target_os = "linux")]
+pub(super) fn install_native_navigation(
+    app: &AppHandle,
+    view: &tauri::Webview,
+    tab_id: &str,
+    token: &str,
+) -> Result<(), String> {
+    let app = app.clone();
+    let tab_id = tab_id.to_owned();
+    let label = view.label().to_owned();
+    let token = token.to_owned();
+    view.with_webview(move |platform| {
+        use gtk::glib::ObjectExt;
+        use webkit2gtk::WebViewExt;
+        let webview = platform.inner();
+        // Same-document navigations (pushState, hash changes) only surface as a URI change.
+        let (a, t, l, secret) = (app.clone(), tab_id.clone(), label.clone(), token.clone());
+        webview.connect_uri_notify(move |webview| {
+            let url = webview
+                .uri()
+                .and_then(|uri| url::Url::parse(uri.as_str()).ok())
+                .and_then(|url| super::new_tab::logical_url(&a, &url));
+            if let Some(url) = url {
+                update_navigation(&a, &t, &l, &secret, |tab| tab.url = url);
+            }
+        });
+        let (a, t, l, secret) = (app.clone(), tab_id.clone(), label.clone(), token.clone());
+        let report_history = move |webview: &webkit2gtk::WebView| {
+            let (back, forward) = (webview.can_go_back(), webview.can_go_forward());
+            update_navigation(&a, &t, &l, &secret, |tab| {
+                tab.navigation.can_go_back = Some(back);
+                tab.navigation.can_go_forward = Some(forward);
+            });
+        };
+        let report = std::rc::Rc::new(report_history);
+        if let Some(list) = webview.back_forward_list() {
+            let (report, webview) = (report.clone(), webview.clone());
+            list.connect_local("changed", false, move |_| {
+                report(&webview);
+                None
+            });
+        }
+        let report_loaded = report.clone();
+        webview.connect_load_changed(move |webview, event| {
+            if event == webkit2gtk::LoadEvent::Committed {
+                report_loaded(webview);
+            }
+        });
+        let (a, t, l, secret) = (app.clone(), tab_id.clone(), label.clone(), token.clone());
+        webview.connect_load_failed(move |_, _, uri, error| {
+            let message = format!("Navigation failed ({}: {})", uri, error);
+            update_navigation(&a, &t, &l, &secret, |tab| {
+                tab.navigation.loading = false;
+                tab.navigation.error = Some(message);
+            });
+            false
+        });
+    })
+    .map_err(|e| e.to_string())
+}
+
 #[cfg(windows)]
 pub(super) fn install_native_navigation(
     app: &AppHandle,

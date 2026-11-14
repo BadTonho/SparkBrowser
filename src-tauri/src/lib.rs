@@ -151,7 +151,10 @@ pub fn run() {
     let graphics_service = graphics::GraphicsService::new(graphics::running_accelerated());
     let role = private_session::PrivateRole::from_mode(mode);
     private_session::configure(&mut context, role.launch());
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "linux")]
+    let builder = builder.plugin(security::linux_shell_navigation_guard());
+    builder
         .plugin(tauri_plugin_dialog::init())
         .manage(role)
         .manage(graphics_service)

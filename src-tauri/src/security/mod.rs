@@ -1,5 +1,7 @@
 pub mod bridge;
 pub mod documents;
+#[cfg(target_os = "linux")]
+mod linux;
 pub mod sequence;
 #[cfg(windows)]
 mod windows;
@@ -20,10 +22,17 @@ pub fn emit_shell<S: serde::Serialize + Clone>(
     )
 }
 
+#[cfg(target_os = "linux")]
+pub fn linux_shell_navigation_guard() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    linux::shell_navigation_guard()
+}
+
 pub fn harden(app: &tauri::AppHandle, view: &tauri::Webview, internal: bool) -> Result<(), String> {
     #[cfg(windows)]
     windows::install(app, view, internal)?;
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    linux::install(app, view, internal)?;
+    #[cfg(not(any(windows, target_os = "linux")))]
     let _ = (app, view, internal);
     Ok(())
 }

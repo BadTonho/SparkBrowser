@@ -358,7 +358,7 @@ pub(super) fn create_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         false,
     )?;
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     super::navigation_state::install_native_navigation(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
