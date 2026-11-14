@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 
-export const repository = 'BadTonho/navegador';
+export const repository = 'BadTonho/SparkBrowser';
 /**
  * Where the updater's private signing key lives. An explicit SPARK_SIGNING_KEY_PATH wins, then the
  * pre-rename VELOCE_SIGNING_KEY_PATH. Without either, ~/.spark-signing is used, except that an

@@ -2,7 +2,7 @@ use super::model::{UpdateChannel, UpdateInfo};
 use semver::Version;
 use serde::Deserialize;
 
-pub const REPOSITORY: &str = "BadTonho/navegador";
+pub const REPOSITORY: &str = "BadTonho/SparkBrowser";
 pub const TARGET: &str = "windows-x86_64";
 
 #[derive(Debug, Clone, Deserialize)]

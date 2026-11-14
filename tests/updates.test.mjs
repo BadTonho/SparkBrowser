@@ -50,7 +50,7 @@ test('release tooling synchronizes version files and requires a version-bound ma
     for (const invalid of ['1.0.0', 'v1.0.0\n', 'v1.0.0-beta.01', 'v1.0.0-beta.0', 'v1.0.0-rc.1', 'v1.0.0+test']) assert.throws(() => parseTag(invalid));
     const signature = Buffer.from('untrusted comment: fixture\nabc\ntrusted comment: timestamp:1\tfile:fixture.exe\tversion:1.1.0-beta.10\nxyz').toString('base64');
     const manifest = createManifest(tag, 'SparkBrowser_1.1.0-beta.10_x64-setup.exe', signature, '<script>plain text</script>');
-    assert.equal(manifest.platforms['windows-x86_64'].url, `https://github.com/BadTonho/navegador/releases/download/${tag}/SparkBrowser_1.1.0-beta.10_x64-setup.exe`);
+    assert.equal(manifest.platforms['windows-x86_64'].url, `https://github.com/BadTonho/SparkBrowser/releases/download/${tag}/SparkBrowser_1.1.0-beta.10_x64-setup.exe`);
     assert.throws(() => createManifest('v1.2.0', 'SparkBrowser_1.2.0_x64-setup.exe', signature, ''), /bound/);
     const capability = JSON.parse(readFileSync('src-tauri/capabilities/default.json', 'utf8'));
     assert.ok(!capability.permissions.some(permission => permission.startsWith('updater:')), 'plugin commands cannot bypass our native release checks');
