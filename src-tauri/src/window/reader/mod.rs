@@ -13,6 +13,7 @@ pub struct ReaderArticle {
     pub url: String,
 }
 
+#[cfg(windows)]
 const EXTRACT_SCRIPT: &str = r#"
 (() => {
   try {
@@ -130,6 +131,7 @@ pub async fn extract_article(
     };
 
     let label = crate::state::tab_model::webview_label_for_tab(&id);
+    #[cfg_attr(not(windows), allow(unused_variables))]
     let view = app
         .get_webview(&label)
         .ok_or_else(|| "Content webview not found".to_string())?;

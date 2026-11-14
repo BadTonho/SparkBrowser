@@ -41,6 +41,7 @@ impl Policies {
         self.caret_browsing_enabled
             .store(value, std::sync::atomic::Ordering::Release);
     }
+    #[allow(dead_code)]
     pub(crate) fn workspace_picker_hold_key(&self) -> super::read_port::ReadPort<'_, String> {
         super::read_port::ReadPort::new(&self.workspace_picker_hold_key)
     }
@@ -95,6 +96,7 @@ impl Policies {
         self.smart_screen_supported
             .load(std::sync::atomic::Ordering::Acquire)
     }
+    #[cfg(windows)]
     pub(crate) fn set_smart_screen_supported(&self, value: bool) {
         self.smart_screen_supported
             .store(value, std::sync::atomic::Ordering::Release);

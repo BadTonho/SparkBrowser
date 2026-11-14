@@ -101,8 +101,7 @@ pub fn install(
     generation: &str,
 ) -> Result<(), String> {
     use gtk::gio;
-    use gtk::prelude::*;
-    use webkit2gtk::prelude::*;
+    use webkit2gtk::{ContextMenuExt, ContextMenuItemExt, HitTestResultExt, WebViewExt};
     let app = app.clone();
     let tab = tab.to_owned();
     let generation = generation.to_owned();

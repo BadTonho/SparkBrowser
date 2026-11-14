@@ -110,7 +110,7 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
 
 #[cfg(target_os = "linux")]
 pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
-    use webkit2gtk::prelude::WebViewExt;
+    use webkit2gtk::WebViewExt;
     let app = app.clone();
     let label = view.label().to_string();
     view.with_webview(move |platform| {

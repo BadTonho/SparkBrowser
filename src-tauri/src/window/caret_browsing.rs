@@ -7,14 +7,14 @@ pub(super) fn toggle(app: &AppHandle) -> Result<(), String> {
     let enabled = !previous;
     let labels = app
         .webviews()
-        .into_iter()
-        .filter_map(|(label, _)| {
+        .into_keys()
+        .filter_map(|label| {
             label
                 .starts_with(crate::window::webview_manager::CONTENT_WEBVIEW_PREFIX)
                 .then_some(label)
         })
         .collect::<Vec<_>>();
-    let mut applied = Vec::new();
+    let mut applied: Vec<String> = Vec::new();
 
     for label in labels {
         if let Err(error) = apply_to_webview(app, &label, enabled) {
@@ -37,11 +37,10 @@ pub(super) fn apply_to_webview(app: &AppHandle, label: &str, enabled: bool) -> R
 
     webview
         .with_webview(move |platform| {
-            use webkit2gtk::prelude::{SettingsExt, WebViewExt};
-            platform
-                .inner()
-                .settings()
-                .set_enable_caret_browsing(enabled);
+            use webkit2gtk::{SettingsExt, WebViewExt};
+            if let Some(settings) = platform.inner().settings() {
+                settings.set_enable_caret_browsing(enabled);
+            }
         })
         .map_err(|error| error.to_string())
 }

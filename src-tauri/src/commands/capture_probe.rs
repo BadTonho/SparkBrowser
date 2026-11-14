@@ -1,5 +1,6 @@
 //! Native-only feasibility probe for full-document PNG capture.
 //! The command is restricted to the isolated native test application.
+#[cfg(windows)]
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::Serialize;
 use std::{io::Cursor, path::PathBuf, time::Instant};
@@ -145,7 +146,7 @@ async fn capture_webview2(view: &tauri::Webview) -> Result<Vec<u8>, String> {
 async fn capture_webkitgtk(view: &tauri::Webview) -> Result<Vec<u8>, String> {
     use std::{sync::mpsc, time::Duration};
     use tauri::webview::PlatformWebview;
-    use webkit2gtk::{prelude::WebViewExt, SnapshotOptions, SnapshotRegion};
+    use webkit2gtk::{SnapshotOptions, SnapshotRegion, WebViewExt};
 
     let (send, receive) = mpsc::channel();
     view.with_webview(move |platform: PlatformWebview| {
@@ -158,10 +159,14 @@ async fn capture_webkitgtk(view: &tauri::Webview) -> Result<Vec<u8>, String> {
                     Err(error) => Err(error.to_string()),
                     Ok(surface) => {
                         let mut bytes = Vec::new();
-                        surface
-                            .write_to_png(&mut bytes)
-                            .map(|()| bytes)
-                            .map_err(|error| error.to_string())
+                        cairo::ImageSurface::try_from(surface)
+                            .map_err(|_| "capture.surface_not_image".to_string())
+                            .and_then(|image| {
+                                image
+                                    .write_to_png(&mut bytes)
+                                    .map(|()| bytes)
+                                    .map_err(|error| error.to_string())
+                            })
                     }
                 };
                 let _ = send.send(png);

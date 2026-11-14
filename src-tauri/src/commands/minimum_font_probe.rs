@@ -16,16 +16,18 @@ pub async fn set_minimum_font_probe_size(app: AppHandle, size: u32) -> Result<u3
     {
         let (send, receive) = std::sync::mpsc::channel();
         view.with_webview(move |platform| {
-            use webkit2gtk::prelude::{SettingsExt, WebViewExt};
-            let settings = platform.inner().settings();
+            use webkit2gtk::{SettingsExt, WebViewExt};
+            let Some(settings) = platform.inner().settings() else {
+                return;
+            };
             let previous = settings.minimum_font_size();
             settings.set_minimum_font_size(size);
             let _ = send.send(previous);
         })
         .map_err(|error| error.to_string())?;
-        return receive
+        receive
             .recv_timeout(std::time::Duration::from_secs(10))
-            .map_err(|error| error.to_string());
+            .map_err(|error| error.to_string())
     }
 
     #[cfg(not(target_os = "linux"))]

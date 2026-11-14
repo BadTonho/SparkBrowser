@@ -107,6 +107,7 @@ pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<()
             .inner_size()
             .map_err(|e| e.to_string())?
             .to_logical::<f64>(window.scale_factor().map_err(|e| e.to_string())?);
+        #[cfg_attr(target_os = "linux", allow(unused_variables))]
         for (label, view) in app.webviews() {
             if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
                 continue;

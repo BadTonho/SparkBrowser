@@ -16,6 +16,7 @@ const FILE: &str = "graphics.json";
 const MARKER: &str = "SPARK_GRAPHICS_FLAGS";
 #[cfg(windows)]
 const ARGUMENTS_VARIABLE: &str = "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS";
+#[cfg(any(windows, test))]
 const GPU_FLAG: &str = "--disable-gpu";
 /// WebKitGTK: software compositing, and no DMA-BUF renderer (the usual cause of blank windows).
 #[cfg(not(windows))]
@@ -68,6 +69,7 @@ pub fn save(directory: &Path, enabled: bool) -> Result<(), String> {
 
 /// Returns the argument string with our flag removed (when we put it there) or added (when
 /// disabling), plus whether this call added it.
+#[cfg(any(windows, test))]
 fn merge_arguments(existing: &str, ours_inherited: bool, disable: bool) -> (String, bool) {
     let mut tokens: Vec<&str> = existing.split_whitespace().collect();
     if ours_inherited {
@@ -217,6 +219,7 @@ mod tests {
     #[test]
     fn the_environment_gets_the_flags_when_off_and_gives_them_back_when_on() {
         // The only test that touches these process-wide variables.
+        #[cfg_attr(not(windows), allow(unused_variables))]
         let own = "--remote-debugging-port=9222";
         #[cfg(windows)]
         std::env::set_var(ARGUMENTS_VARIABLE, own);
