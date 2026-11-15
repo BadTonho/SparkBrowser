@@ -10,6 +10,20 @@
     padding: 24px;
   }
 
+  @keyframes settings-enter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes settings-exit {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(8px); }
+  }
+  .settings-motion > .settings-modal { animation: settings-enter 180ms ease-out both; }
+  .settings-motion.settings-closing > .settings-modal { animation: settings-exit 130ms ease-in both; }
+  @media (prefers-reduced-motion: reduce) {
+    .settings-motion > .settings-modal, .settings-motion.settings-closing > .settings-modal { animation: none; }
+  }
+
   .settings-controller { left: -200vw; right: auto; width: 100vw; visibility: hidden; pointer-events: none; }
 
   .settings-modal {

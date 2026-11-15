@@ -58,6 +58,7 @@ export async function checkQuickSettings(context) {
   await until(() => settings(() => script('return !document.querySelector(".sc-keys.recording") && !!document.querySelector("#settings-search-input")')), 'Escape cancels recording without closing settings');
   await settings(() => script('document.querySelector("#settings-search-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}))'));
   await until(() => script('return !document.querySelector("#settings-search-input")'), 'Escape closes full settings');
+  await until(() => settings(() => script('return !document.querySelector(".settings-modal")')), 'settings exit completes');
   await until(() => script('return document.querySelector(".browser-preview-fallback") === null'), 'page preview returns after closing settings');
 
   await click('[data-testid="open-settings"]');

@@ -4,6 +4,7 @@ In progress — not released.
 
 ## Improvements
 
+- Settings open and close with a subtle animation that respects reduced-motion preferences.
 - Tab dragging groups pointer updates to reduce repeated work.
 - Idle settings, tools and downloads panels release their native views after use.
 - Local diagnostics show recent native timing percentiles and separate tab-switch wait and execution times.

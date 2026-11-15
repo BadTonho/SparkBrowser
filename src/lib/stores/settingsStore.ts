@@ -17,6 +17,7 @@ import { setAskDownloadDestination as setNativeAskDownloadDestination } from "..
 import { normalizeHibernationDomain } from "../services/hibernation-domains.js";
 import { closeSettingsQuickMenu } from "./settingsQuickPopoverStore";
 import { setSettingsOverlay } from "../services/bridge/settings-overlay";
+import { onOverlayOpening } from "../services/bridge/overlays";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import type { PanelSession } from "../components/panels/panel-host";
 import { fetchWorkspaceIsolation, setWorkspaceIsolation } from "../services/bridge/workspaces";
@@ -27,6 +28,8 @@ import {
 export const isSettingsModalOpen = writable<boolean>(false);
 export const settingsOverlaySession = writable<PanelSession | null>(null);
 let settingsSessionId = 0;
+let closingSettingsSession: number | null = null;
+let closingSettingsTimer: ReturnType<typeof setTimeout> | undefined;
 export const isZenMode = writable<boolean>(false);
 
 const initialVisualPreferences = readVisualPreferences(safeStorage);
@@ -493,18 +496,30 @@ export function setTabLayout(layout: TabLayout): void {
 
 export async function openSettingsModal(): Promise<void> {
   await closeSettingsQuickMenu(false);
+  clearTimeout(closingSettingsTimer);
+  closingSettingsSession = null;
   if (isTauriRuntime() && !get(settingsOverlaySession)) settingsOverlaySession.set({ id: ++settingsSessionId, anchor: document.body as unknown as HTMLButtonElement });
   isSettingsModalOpen.set(true);
   await setOverlayVisibility(true, "settings");
 }
 
-export async function closeSettingsModal(): Promise<void> {
+export async function closeSettingsModal(immediate = false): Promise<void> {
   const session = get(settingsOverlaySession);
+  const closingId = session?.id ?? (immediate ? closingSettingsSession : null);
   settingsOverlaySession.set(null);
   isSettingsModalOpen.set(false);
-  if (session) await setSettingsOverlay(false, session.id, undefined, true);
+  if (closingId !== null && closingId !== undefined) {
+    clearTimeout(closingSettingsTimer);
+    closingSettingsSession = immediate ? null : closingId;
+    if (!immediate) closingSettingsTimer = setTimeout(() => { if (closingSettingsSession === closingId) closingSettingsSession = null; }, 250);
+    await setSettingsOverlay(false, closingId, undefined, !immediate, !immediate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
   await setOverlayVisibility(false, "settings");
 }
+
+onOverlayOpening(opening => {
+  if (opening !== "settings" && closingSettingsSession !== null && !get(isSettingsModalOpen)) void closeSettingsModal(true);
+});
 
 export async function toggleSettingsModal(): Promise<void> {
   if (get(isSettingsModalOpen)) {

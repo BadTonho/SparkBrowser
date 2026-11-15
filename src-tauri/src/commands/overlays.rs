@@ -104,8 +104,12 @@ pub async fn set_settings_overlay(
     session_id: u64,
     presentation: Option<crate::window::settings_overlay::Presentation>,
     restore_focus: bool,
+    animate_close: Option<bool>,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
+    if !visible && animate_close.unwrap_or(false) {
+        return crate::window::settings_overlay::close_animated(&app, session_id, restore_focus);
+    }
     crate::window::settings_overlay::set(
         &app,
         &crate::commands::access::caller_window(&webview),

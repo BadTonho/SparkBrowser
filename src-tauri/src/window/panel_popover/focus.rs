@@ -14,7 +14,7 @@ pub(super) fn lost<P: super::Panel>(app: &AppHandle) {
 }
 
 #[cfg(windows)]
-fn focused(window: &tauri::Window) -> bool {
+pub(super) fn focused(window: &tauri::Window) -> bool {
     use std::ffi::c_void;
     #[link(name = "user32")]
     unsafe extern "system" {
@@ -30,6 +30,6 @@ fn focused(window: &tauri::Window) -> bool {
 }
 
 #[cfg(not(windows))]
-fn focused(window: &tauri::Window) -> bool {
+pub(super) fn focused(window: &tauri::Window) -> bool {
     window.is_focused().unwrap_or(false)
 }

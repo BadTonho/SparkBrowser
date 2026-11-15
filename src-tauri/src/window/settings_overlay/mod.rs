@@ -28,3 +28,7 @@ pub fn set(
 pub fn dismiss(app: &AppHandle) {
     panel_popover::dismiss::<Settings>(app)
 }
+
+pub fn close_animated(app: &AppHandle, session: u64, focus: bool) -> Result<(), String> {
+    panel_popover::close_animated::<Settings>(app, session, focus)
+}

@@ -6,8 +6,9 @@
   import "../panels/popover-motion.css";
   import "./SettingsModal.svelte";
 
-  type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number };
+  type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number; animate?: boolean };
   let presentation = $state<Payload | null>(null);
+  let closing = $state(false);
   let root = $state<HTMLDivElement>();
   const pending = new Map<number, number>();
   let sequence = 0, closedSession = 0, inFlight: number | null = null;
@@ -25,13 +26,20 @@
     url.searchParams.set("payload", JSON.stringify(action));
     location.href = url.toString();
   }
-  function send(action: PanelViewAction) { if (!presentation) return; if (action.kind === "input" || action.kind === "change") pending.set(action.target, Infinity); outbox.push(action); pump(); }
+  function send(action: PanelViewAction) { if (!presentation || closing) return; if (action.kind === "input" || action.kind === "change") pending.set(action.target, Infinity); outbox.push(action); pump(); }
   onMount(() => {
     const set = async (value: Payload) => {
-      if (!value.visible) { closedSession = Math.max(closedSession, value.sessionId); presentation = null; outbox.length = 0; inFlight = null; return; }
+      if (!value.visible) {
+        closedSession = Math.max(closedSession, value.sessionId);
+        if (presentation && presentation.sessionId > value.sessionId) return;
+        outbox.length = 0; inFlight = null;
+        if (value.animate && presentation?.sessionId === value.sessionId) closing = true;
+        else { closing = false; presentation = null; }
+        return;
+      }
       if (value.sessionId <= closedSession || (presentation?.sessionId === value.sessionId && value.revision < presentation.revision)) return;
       const opening = presentation?.sessionId !== value.sessionId;
-      if (opening) { sequence = 0; highlighted = ""; pending.clear(); outbox.length = 0; inFlight = null; }
+      if (opening) { closing = false; sequence = 0; highlighted = ""; pending.clear(); outbox.length = 0; inFlight = null; }
       presentation = value;
       if (inFlight !== null && value.ack >= inFlight) inFlight = null;
       document.documentElement.lang = value.locale;
@@ -88,7 +96,7 @@
   });
 </script>
 {#if presentation}
-  <div class="settings-backdrop popover-enter-dialog" role="presentation" onclick={event => { if (event.target === event.currentTarget) send({ kind: "dismiss", reason: "outside" }); }} bind:this={root}>
+  <div class="settings-backdrop settings-motion" class:settings-closing={closing} inert={closing} role="presentation" onclick={event => { if (event.target === event.currentTarget) send({ kind: "dismiss", reason: "outside" }); }} bind:this={root}>
     <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
   </div>
 {/if}

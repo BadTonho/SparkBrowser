@@ -89,12 +89,17 @@ struct Session {
 struct Inner {
     session: Option<Session>,
     closed_session: u64,
+    close_generation: u64,
     idle_generation: u64,
     release_pending: bool,
 }
 
 #[derive(Default)]
 pub struct Popover<P: Panel>(Mutex<Inner>, std::marker::PhantomData<P>);
+
+fn can_finish_animated_close(inner: &Inner, session_id: u64, generation: u64) -> bool {
+    inner.session.is_none() && inner.closed_session == session_id && inner.close_generation == generation
+}
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -303,6 +308,42 @@ pub fn sync<P: Panel>(app: &AppHandle, state: &BrowserState) -> Result<(), Strin
     Ok(())
 }
 
+/// Close a settings session after its exit animation, without hiding a newer session.
+pub fn close_animated<P: Panel>(app: &AppHandle, session_id: u64, restore_focus: bool) -> Result<(), String> {
+    let service = app.state::<Popover<P>>();
+    let mut inner = service.0.lock().map_err(|e| e.to_string())?;
+    if inner.session.as_ref().is_some_and(|session| session.id > session_id) {
+        return Ok(());
+    }
+    inner.closed_session = inner.closed_session.max(session_id);
+    inner.close_generation += 1;
+    let generation = inner.close_generation;
+    inner.session = None;
+    if let Some(view) = app.get_webview(P::LABEL) {
+        let _ = view.eval(format!("window.{}?.({{visible:false,sessionId:{session_id},animate:true}});", P::SETTER));
+    }
+    drop(inner);
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+        let service = app.state::<Popover<P>>();
+        let Ok(inner) = service.0.lock() else { return; };
+        if !can_finish_animated_close(&inner, session_id, generation) { return; }
+        if let Some(view) = app.get_webview(P::LABEL) {
+            let _ = view.eval(format!("window.{}?.({{visible:false,sessionId:{session_id}}});", P::SETTER));
+            let _ = view.hide();
+        }
+        if restore_focus && super::overlay_host::window_of(&app, P::LABEL).is_some_and(|window| focus::focused(&window)) {
+            if let Some(main) = app.get_webview(&super::overlay_host::host_id(&app, P::LABEL)) {
+                let _ = main.set_focus();
+            }
+        }
+        drop(inner);
+        idle::schedule::<P>(&app);
+    });
+    Ok(())
+}
+
 pub fn set<P: Panel>(
     app: &AppHandle,
     window_id: &str,
@@ -322,6 +363,7 @@ pub fn set<P: Panel>(
         {
             return Ok(());
         }
+        inner.close_generation += 1;
         inner.session = None;
         drop(inner);
         if let Some(view) = app.get_webview(P::LABEL) {
@@ -394,6 +436,7 @@ pub fn set<P: Panel>(
     payload["sessionId"] = session_id.into();
     payload["token"] = session.token.clone().into();
     inner.session = Some(session);
+    inner.close_generation += 1;
     inner.release_pending = false;
     drop(inner);
     if P::HOST == "tools-popover" {
@@ -432,12 +475,31 @@ pub fn set<P: Panel>(
 
 #[cfg(test)]
 mod tests {
-    use super::{Downloads, Panel, QuickSettings, Tools};
+    use super::{can_finish_animated_close, Downloads, Inner, Panel, Presentation, QuickSettings, Session, Tools};
 
     #[test]
     fn quick_settings_action_host_matches_its_surface_route() {
         assert_eq!(Tools::HOST, "tools-popover");
         assert_eq!(Downloads::HOST, "downloads-popover");
         assert_eq!(QuickSettings::HOST, "settings-quick-popover");
+    }
+
+    #[test]
+    fn stale_animated_close_cannot_hide_a_later_session() {
+        let mut inner = Inner::default();
+        inner.closed_session = 4;
+        inner.close_generation = 1;
+        assert!(can_finish_animated_close(&inner, 4, 1));
+        inner.close_generation = 2;
+        assert!(!can_finish_animated_close(&inner, 4, 1));
+        let presentation: Presentation = serde_json::from_value(serde_json::json!({
+            "anchor": {"left": 0.0, "top": 0.0, "width": 1.0, "height": 1.0},
+            "tree": {}, "theme": {}, "locale": "en", "ack": 0, "revision": 1
+        })).unwrap();
+        inner.session = Some(Session { id: 5, token: String::new(), presentation, sequence: 0, closing: false });
+        assert!(!can_finish_animated_close(&inner, 4, 2));
+        inner.session = None;
+        inner.closed_session = 5;
+        assert!(!can_finish_animated_close(&inner, 4, 2));
     }
 }

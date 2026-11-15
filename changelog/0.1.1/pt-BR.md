@@ -4,6 +4,7 @@ Em andamento — não lançada.
 
 ## Melhorias
 
+- As configurações abrem e fecham com uma animação suave que respeita a preferência por movimento reduzido.
 - O arraste de abas agrupa atualizações do ponteiro para reduzir trabalho repetido.
 - Os painéis nativos de configurações, ferramentas e downloads são liberados após um período de inatividade.
 - O diagnóstico local mostra percentis recentes de operações nativas e separa os tempos de espera e execução da troca de abas.

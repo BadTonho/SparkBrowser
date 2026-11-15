@@ -19,8 +19,8 @@ import { settingsOverlaySession } from "../../stores/settingsStore";
 import { setSettingsOverlay, onSettingsOverlayAction } from "../../services/bridge/settings-overlay";
 const native = isTauriRuntime();
 function host(node: HTMLElement) {
-  if (!native) return focusDialog(node, { onEscape: closeSettingsModal, ignoreEscape: () => Boolean($recordingShortcutId) });
-  const stop = mountPanelHost(node, true, { id: "settings", sessionStore: settingsOverlaySession, close: closeSettingsModal, set: setSettingsOverlay, listen: onSettingsOverlayAction });
+  if (!native) return focusDialog(node, { onEscape: () => closeSettingsModal(), ignoreEscape: () => Boolean($recordingShortcutId) });
+  const stop = mountPanelHost(node, true, { id: "settings", sessionStore: settingsOverlaySession, close: (_restore, immediate) => closeSettingsModal(immediate), set: setSettingsOverlay, listen: onSettingsOverlayAction });
   return { destroy: stop };
 }
 import { onDestroy, tick } from "svelte";
@@ -164,14 +164,14 @@ function handleWindowMousedown(event: MouseEvent): void {
   <div
     class="settings-backdrop"
     class:settings-controller={native}
-    transition:fade={{ duration: 150 }}
+    transition:fade={{ duration: native || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 130 }}
     onclick={() => closeSettingsModal()}
     role="presentation"
   >
     <div
       class="settings-modal"
-      in:fly={{ y: 16, duration: 220, easing: cubicOut }}
-      out:fade={{ duration: 130 }}
+      in:fly={{ y: 12, duration: native || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180, easing: cubicOut }}
+      out:fly={{ y: 8, duration: native || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 130 }}
       onclick={(event) => event.stopPropagation()}
       onkeydown={handleDialogKeydown}
       use:host

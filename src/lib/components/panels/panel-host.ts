@@ -8,7 +8,7 @@ import { onOverlayOpening } from "../../services/bridge/overlays";
 import { locale } from "../../i18n";
 
 export interface PanelSession { id: number; anchor: HTMLButtonElement }
-interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings"; sessionStore: Readable<PanelSession | null>; onTrigger?: () => void; close: (restore?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
+interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings"; sessionStore: Readable<PanelSession | null>; onTrigger?: () => void; close: (restore?: boolean, immediate?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
 export function mountPanelHost(root: HTMLElement, native: boolean, options: HostOptions) {
   const { id, sessionStore, close, set, listen } = options;
   const projection = createPanelProjection(root);
@@ -18,7 +18,7 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
   observer.observe(root, { subtree: true, attributes: true, childList: true, characterData: true });
   let stopActions: (() => void) | undefined;
   let listening = !native;
-  const stopOverlay = onOverlayOpening(opening => { if (opening !== id) void close(); });
+  const stopOverlay = onOverlayOpening(opening => { if (opening !== id) void close(false, true); });
   const keys = (event: KeyboardEvent) => {
     if (id !== "settings" && event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); void close(true); }
   };
@@ -63,7 +63,7 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     ack = event.sequence;
     if (event.action.kind === "dismiss") {
       if (event.action.reason === "trigger") options.onTrigger?.();
-      await close(["escape", "trigger"].includes(event.action.reason)); return;
+      await close(["escape", "trigger"].includes(event.action.reason), event.action.reason === "blur"); return;
     }
     projection.dispatch(event.action);
     dirty = true;
