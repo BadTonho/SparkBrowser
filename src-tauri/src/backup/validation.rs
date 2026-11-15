@@ -17,6 +17,8 @@ pub fn tab_url(raw: &str) -> Result<String, String> {
     if crate::window::new_tab::is_new_tab(raw) {
         // The old address is rewritten, so imported tabs never keep it.
         Ok(crate::window::new_tab::URL.into())
+    } else if crate::window::settings_tab::is_settings_url(raw) {
+        Ok(crate::window::settings_tab::URL.into())
     } else {
         page_url(raw)
     }
@@ -76,7 +78,8 @@ pub fn preferences(p: &BackupPreferences) -> Result<(), String> {
             return Err("backup.invalid_preferences".into());
         }
     }
-    if !["horizontal", "vertical"].contains(&p.tab_layout.as_str())
+    if !["popup", "tab"].contains(&p.settings_display.as_str())
+        || !["horizontal", "vertical"].contains(&p.tab_layout.as_str())
         || p.overlay_blur_px > 24
         || !["toolbar", "popup"].contains(&p.workspace_switcher_display.as_str())
         || !crate::search_engines::is_valid(&p.default_search_engine)

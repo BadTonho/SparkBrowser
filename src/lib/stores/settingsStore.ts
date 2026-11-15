@@ -23,11 +23,25 @@ import type { PanelSession } from "../components/panels/panel-host";
 import { fetchWorkspaceIsolation, setWorkspaceIsolation } from "../services/bridge/workspaces";
 import {
   applyTabsSnapshot,
+  tabs,
+  addTab,
+  selectTab,
+  removeTab,
 } from "./browserStore";
+import { activeWorkspaceId } from "./workspaceSelectionStore";
+import { createSettingsDisplayController, findSettingsTab } from "../services/settings-display.js";
 
 export const isSettingsModalOpen = writable<boolean>(false);
 export const settingsOverlaySession = writable<PanelSession | null>(null);
+export const settingsTabSession = writable<(PanelSession & { tabId: string }) | null>(null);
+export type SettingsDisplayMode = "popup" | "tab";
+const SETTINGS_DISPLAY_KEY = "spark_settings_display";
+export const settingsDisplayMode = writable<SettingsDisplayMode>(safeStorage.getItem(SETTINGS_DISPLAY_KEY) === "tab" ? "tab" : "popup");
+if (typeof window !== "undefined") window.addEventListener("storage", event => {
+  if (event.key === SETTINGS_DISPLAY_KEY) settingsDisplayMode.set(event.newValue === "tab" ? "tab" : "popup");
+});
 let settingsSessionId = 0;
+let settingsTabSessionId = Date.now() * 1000;
 let closingSettingsSession: number | null = null;
 let closingSettingsTimer: ReturnType<typeof setTimeout> | undefined;
 export const isZenMode = writable<boolean>(false);
@@ -494,13 +508,57 @@ export function setTabLayout(layout: TabLayout): void {
   }
 }
 
-export async function openSettingsModal(): Promise<void> {
+export function syncSettingsTabSession(tabId: string | null, force = false): void {
+  if (!force && get(settingsTabSession)?.tabId === tabId) return;
+  settingsTabSession.set(tabId ? { id: ++settingsTabSessionId, tabId, anchor: document.body as unknown as HTMLButtonElement } : null);
+}
+
+async function openSettingsTab(): Promise<string> {
+  const workspace = get(activeWorkspaceId);
+  const previousIds = new Set(get(tabs).map(tab => tab.id));
+  const existing = findSettingsTab(get(tabs), workspace);
+  if (existing) { await selectTab(existing.id); return existing.id; }
+  await addTab("spark://settings", workspace);
+  const created = get(tabs).find(tab => !previousIds.has(tab.id) && tab.url === "spark://settings");
+  if (!created) throw new Error("Could not open settings tab");
+  if (created.workspace_id !== workspace) {
+    await removeTab(created.id);
+    throw new Error("Settings workspace changed while opening");
+  }
+  return created.id;
+}
+
+const settingsDisplayController = createSettingsDisplayController({
+  getMode: () => get(settingsDisplayMode), tabs: () => get(tabs), workspace: () => get(activeWorkspaceId),
+  save: mode => safeStorage.setItem(SETTINGS_DISPLAY_KEY, mode), set: mode => settingsDisplayMode.set(mode),
+  openTab: openSettingsTab, closeTab: removeTab, selectTab,
+  popupOpen: () => get(isSettingsModalOpen), closePopup: () => closeSettingsModal(), openPopup: openSettingsPopup,
+});
+export const setSettingsDisplayMode = (mode: SettingsDisplayMode): Promise<void> => settingsDisplayController.change(mode);
+
+export function restoreSettingsDisplayMode(mode: SettingsDisplayMode): void {
+  settingsDisplayMode.set(mode);
+}
+
+export async function closeSettingsTab(): Promise<void> {
+  const tab = get(settingsTabSession);
+  if (tab) await removeTab(tab.tabId);
+}
+
+async function openSettingsPopup(): Promise<void> {
   await closeSettingsQuickMenu(false);
   clearTimeout(closingSettingsTimer);
   closingSettingsSession = null;
   if (isTauriRuntime() && !get(settingsOverlaySession)) settingsOverlaySession.set({ id: ++settingsSessionId, anchor: document.body as unknown as HTMLButtonElement });
   isSettingsModalOpen.set(true);
   await setOverlayVisibility(true, "settings");
+}
+
+export async function openSettingsModal(): Promise<void> {
+  if (get(settingsDisplayMode) === "tab" && isTauriRuntime()) {
+    await closeSettingsQuickMenu(false);
+    await openSettingsTab();
+  } else await openSettingsPopup();
 }
 
 export async function closeSettingsModal(immediate = false): Promise<void> {

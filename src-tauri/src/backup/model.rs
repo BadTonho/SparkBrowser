@@ -15,8 +15,8 @@ pub const LEGACY_FORMAT: &str = "veloce-backup";
 pub fn is_backup_format(tag: &str) -> bool {
     tag == FORMAT || tag == LEGACY_FORMAT
 }
-/// Format written today. Version 5 adds the integrity `checksum`; versions 1-4 stay readable.
-pub const CURRENT_VERSION: u32 = 5;
+/// Format 6 adds the settings display preference; versions 1–5 stay readable.
+pub const CURRENT_VERSION: u32 = 6;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -27,6 +27,8 @@ pub struct BackupPreferences {
     pub pip_window_shadow: bool,
     #[serde(default)]
     pub workspace_isolation: bool,
+    #[serde(default = "default_settings_display")]
+    pub settings_display: String,
     pub tab_layout: String,
     pub show_bookmarks_bar: bool,
     pub overlay_blur_px: u8,
@@ -47,6 +49,7 @@ pub struct BackupPreferences {
 fn default_ask_download_destination() -> bool {
     true
 }
+fn default_settings_display() -> String { "popup".into() }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ShortcutBinding {

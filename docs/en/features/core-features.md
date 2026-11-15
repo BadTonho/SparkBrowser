@@ -55,6 +55,7 @@ The toolbar shield opens an anchored [Protection pop-up](auto-skip-ads.md) with 
 - New installations start without sample bookmarks. Existing databases remove only the original DuckDuckGo, GitHub, Rust Lang, and Wikipedia starter entries once; other saved bookmarks are preserved.
 
 ## 8. Organized Browser Settings
+- In **Appearance & Layout**, choose whether settings open as a pop-up or in a tab. Changing the choice moves the current settings view immediately; opening settings again reuses the existing tab in the current workspace.
 - Settings are split into **Appearance & Layout**, **Search & Navigation**, **Workspaces & Theme**, **Performance & Privacy**, and **Keyboard Shortcuts**.
 - Search all categories, settings, and keyboard shortcuts from the field beside the Browser Settings title; selecting a result opens its category and highlights the destination.
 - Choose Google or DuckDuckGo as the default search engine in **Search & Navigation**. Google is selected by default; the choice applies to Omnibox and Command Bar searches and to newly opened tabs.

@@ -39,6 +39,7 @@ fn preferences() -> BackupPreferences {
         auto_skip_ads_enabled: false,
         pip_window_shadow: false,
         workspace_isolation: false,
+        settings_display: "popup".into(),
         tab_layout: "horizontal".into(),
         show_bookmarks_bar: true,
         overlay_blur_px: 16,

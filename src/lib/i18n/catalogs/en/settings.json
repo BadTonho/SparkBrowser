@@ -1,4 +1,12 @@
 {
+  "settings.display_mode": "Settings display",
+  "settings.display_mode_description": "Choose whether settings open in a pop-up or a browser tab.",
+  "settings.display_popup": "Pop-up",
+  "settings.display_tab": "Tab",
+  "settings.display_mode_error": "Could not change how settings are displayed.",
+  "settings.display_tab_loading": "Loading settings…",
+  "settings.display_tab_load_error": "Settings could not be loaded. Reload this tab to try again.",
+  "settings.display_tab_retry": "Reload tab",
   "settings.retention_never": "Never save",
   "settings.experiments_heading": "Experimental features",
   "settings.experiments_description": "Experimental features may change. They are off by default and cannot disable required security protections. Changes apply when reopening the feeds panel.",

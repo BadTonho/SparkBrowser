@@ -4,6 +4,7 @@ import { resolve, toNamespacedPath } from 'node:path';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createFixture } from './fixture.mjs';
 import { cleanRunData, createRunDirectory } from './run-directory.mjs';
+import { nativeDriverPath } from './driver-path.mjs';
 
 export async function runScenario(name, scenario) {
   if (!['win32', 'linux'].includes(process.platform)) throw new Error('This direct tauri-driver suite supports Windows/Linux. Use an embedded WebDriver service on macOS.');
@@ -15,11 +16,12 @@ export async function runScenario(name, scenario) {
   const port = Number(process.env.SPARK_DRIVER_PORT ?? 4444);
   const endpoint = `http://127.0.0.1:${port}`;
   const driverPath = process.env.SPARK_TAURI_DRIVER ?? resolve('.cache/native-tools/bin', process.platform === 'win32' ? 'tauri-driver.exe' : 'tauri-driver');
-  const nativePath = process.env.SPARK_NATIVE_DRIVER;
+  const nativePath = nativeDriverPath(process.platform, process.env.SPARK_NATIVE_DRIVER);
   const args = ['--port', String(port), '--native-port', String(port + 1)];
   if (nativePath) args.push('--native-driver', resolve(nativePath));
   let driver;
   let driverError;
+  let driverStderr = '';
 
   let session;
   let shellWebview;
@@ -221,9 +223,11 @@ export async function runScenario(name, scenario) {
   }
   async function startDriver() {
     driverError = undefined;
-    driver = spawn(driverPath, args, { stdio: 'ignore', windowsHide: true, env: { ...process.env, SPARK_NATIVE_TEST_RUN_DIR: directory, SPARK_NATIVE_REAL_PROFILES: name === 'account-containers' ? '1' : '0' }, detached: process.platform !== 'win32' });
+    driverStderr = '';
+    driver = spawn(driverPath, args, { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: { ...process.env, SPARK_NATIVE_TEST_RUN_DIR: directory, SPARK_NATIVE_REAL_PROFILES: name === 'account-containers' ? '1' : '0' }, detached: process.platform !== 'win32' });
+    driver.stderr.on('data', chunk => { driverStderr = (driverStderr + chunk.toString()).slice(-8192); });
     driver.on('error', error => { driverError = error; });
-    driver.on('exit', (code, signal) => { driverError = new Error(`Scenario driver exited (${code ?? signal})`); });
+    driver.on('exit', (code, signal) => { const hint = /cannotfindbinarypath|can not find binary/i.test(driverStderr) ? '; native WebDriver not found: install the matching driver or set SPARK_NATIVE_DRIVER' : ''; driverError = new Error(`Scenario driver exited (${code ?? signal})${hint}`); });
     await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'driver ready');
   }
   async function stopDriver() {

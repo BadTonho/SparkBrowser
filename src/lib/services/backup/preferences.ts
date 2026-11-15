@@ -10,10 +10,11 @@ import {pipWindowShadow,setPipWindowShadow} from "../../stores/pipAppearanceStor
 import {setAutoSkipAds,privacyStats} from "../../stores/privacyStore";
 import {AUTO_SKIP_STORAGE_KEY} from "../auto-skip-preference.js";
 import { workspaceIsolation, setWorkspaceIsolationEnabled } from "../../stores/settingsStore";
+import { settingsDisplayMode, restoreSettingsDisplayMode } from "../../stores/settingsStore";
 import {PIP_SHADOW_STORAGE_KEY} from "../pip-shadow-preference.js";
 
 export function capturePreferences(): BackupPreferences {
-  return { auto_skip_ads_enabled:get(privacyStats).auto_skip_ads_enabled,pip_window_shadow:get(pipWindowShadow),workspace_isolation:get(workspaceIsolation),tab_layout: get(tabLayout), show_bookmarks_bar: get(showBookmarksBar), overlay_blur_px: get(overlayBlurPx), workspace_switcher_display: get(workspaceSwitcherDisplay), default_search_engine: get(defaultSearchEngine), auto_hibernate_mode: get(autoHibernateMode), resident_limit: get(residentTabLimit), hibernation_exemptions:get(hibernationExemptions), ask_download_destination:get(askDownloadDestination), language: get(languagePreference), keyboard_shortcuts: get(keyboardShortcuts), update_channel: get(updateState).channel };
+  return { auto_skip_ads_enabled:get(privacyStats).auto_skip_ads_enabled,pip_window_shadow:get(pipWindowShadow),workspace_isolation:get(workspaceIsolation),settings_display:get(settingsDisplayMode),tab_layout: get(tabLayout), show_bookmarks_bar: get(showBookmarksBar), overlay_blur_px: get(overlayBlurPx), workspace_switcher_display: get(workspaceSwitcherDisplay), default_search_engine: get(defaultSearchEngine), auto_hibernate_mode: get(autoHibernateMode), resident_limit: get(residentTabLimit), hibernation_exemptions:get(hibernationExemptions), ask_download_destination:get(askDownloadDestination), language: get(languagePreference), keyboard_shortcuts: get(keyboardShortcuts), update_channel: get(updateState).channel };
 }
 export async function applyBackupPreferences(p: BackupPreferences): Promise<void> {
   // Verify durable writes explicitly; existing setters intentionally tolerate storage failures.
@@ -23,8 +24,10 @@ export async function applyBackupPreferences(p: BackupPreferences): Promise<void
     ["spark_auto_hibernate_mode", String(p.auto_hibernate_mode)], ["spark_resident_limit", String(p.resident_limit)],
     ["spark_hibernation_exemptions", JSON.stringify(p.hibernation_exemptions ?? [])], ["spark_ask_download_destination", String(p.ask_download_destination ?? true)],
     ["spark_language", p.language], ["spark_keyboard_shortcuts", JSON.stringify(p.keyboard_shortcuts)],
+    ["spark_settings_display", p.settings_display ?? "popup"],
   ];
   for (const [key, value] of entries) if (!safeStorage.setItem(key, value)) throw new UserError("storage.failed", "Backup preference writes remain pending");
+  restoreSettingsDisplayMode(p.settings_display ?? "popup");
   setTabLayout(p.tab_layout); setShowBookmarksBar(p.show_bookmarks_bar); setOverlayBlurPx(p.overlay_blur_px);
   setWorkspaceSwitcherDisplay(p.workspace_switcher_display); setDefaultSearchEngine(p.default_search_engine); setAutoHibernateMode(p.auto_hibernate_mode);
   await setHibernationExemptions(p.hibernation_exemptions ?? []); await setAskDownloadDestination(p.ask_download_destination ?? true);

@@ -10,6 +10,10 @@
     padding: 24px;
   }
 
+  .settings-tab-surface { width: 100vw; height: 100dvh; background: var(--modal-surface-bg); }
+  .settings-tab-surface > .settings-modal { width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; }
+  .settings-tab-loading { padding: 24px; color: var(--text-primary); }
+
   @keyframes settings-enter {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }

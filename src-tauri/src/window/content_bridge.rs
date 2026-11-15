@@ -10,6 +10,10 @@ pub(super) fn handle(
     token: &str,
     nav_url: &Url,
 ) -> bool {
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("settings-tab") {
+        super::settings_tab::handle(app, tab_id, label, token, nav_url);
+        return false;
+    }
     if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("new-tab") {
         super::new_tab::handle(app, tab_id, label, token, nav_url);
         return false;
@@ -90,8 +94,8 @@ pub(super) fn handle(
 }
 
 #[cfg(any(windows, test))]
-fn message_url(json: &str, source: &str, current: &str) -> Option<Url> {
-    if source != current || json.len() > 262_144 {
+fn message_url(json: &str, source: &str, current: &str, settings_document: bool) -> Option<Url> {
+    if source != current || json.len() > if settings_document { 2_000_000 } else { 262_144 } {
         return None;
     }
     let value: serde_json::Value = serde_json::from_str(json).ok()?;
@@ -100,7 +104,9 @@ fn message_url(json: &str, source: &str, current: &str) -> Option<Url> {
     }
     let url = Url::parse(value.get("sparkContent")?.as_str()?).ok()?;
     (url.scheme() == "spark-internal"
-        && matches!(url.host_str(), Some("new-tab" | "page-activity")))
+        && (matches!(url.host_str(), Some("new-tab" | "page-activity"))
+            || (settings_document && url.host_str() == Some("settings-tab")))
+        && (url.host_str() == Some("settings-tab") || json.len() <= 262_144))
     .then_some(url)
 }
 
@@ -116,9 +122,11 @@ pub(crate) fn receive(
     if !super::navigation_state::is_current_generation(app, label, token) {
         return;
     }
+    use tauri::Manager;
+    let settings_document = app.get_webview(label).and_then(|view| view.url().ok()).is_some_and(|url| super::settings_tab::is_document(app, &url));
     if let (Some(id), Some(url)) = (
         label.strip_prefix("content-webview-"),
-        message_url(json, origin, current_origin),
+        message_url(json, origin, current_origin, settings_document),
     ) {
         handle(app, id, label, token, &url);
     }
@@ -130,8 +138,12 @@ mod tests {
     #[test]
     fn messages_are_bounded_and_bound_to_the_current_document_and_allowed_channels() {
         let valid = r#"{"sparkContent":"spark-internal://page-activity/state?token=fixture"}"#;
-        assert!(message_url(valid, "https://site.test/a", "https://site.test/a").is_some());
-        assert!(message_url(valid, "https://site.test/old", "https://site.test/current").is_none());
+        assert!(message_url(valid, "https://site.test/a", "https://site.test/a", false).is_some());
+        let settings = r#"{"sparkContent":"spark-internal://settings-tab/action?token=fixture"}"#;
+        assert!(message_url(settings, "http://tauri.localhost", "http://tauri.localhost", true).is_some());
+        assert!(message_url(settings, "http://tauri.localhost", "http://tauri.localhost", false).is_none());
+        assert!(message_url(settings, "https://evil.test", "http://tauri.localhost", true).is_none());
+        assert!(message_url(valid, "https://site.test/old", "https://site.test/current", false).is_none());
         for invalid in [
             "null",
             "[]",
@@ -140,8 +152,8 @@ mod tests {
             r#"{"sparkContent":"spark-internal://keyboard-shortcut/action"}"#,
             r#"{"sparkContent":"spark-internal://new-tab/read","other":true}"#,
         ] {
-            assert!(message_url(invalid, "same", "same").is_none());
+            assert!(message_url(invalid, "same", "same", false).is_none());
         }
-        assert!(message_url(&" ".repeat(262_145), "same", "same").is_none());
+        assert!(message_url(&" ".repeat(262_145), "same", "same", false).is_none());
     }
 }

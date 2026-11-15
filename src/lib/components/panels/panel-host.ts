@@ -8,7 +8,7 @@ import { onOverlayOpening } from "../../services/bridge/overlays";
 import { locale } from "../../i18n";
 
 export interface PanelSession { id: number; anchor: HTMLButtonElement }
-interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings"; sessionStore: Readable<PanelSession | null>; onTrigger?: () => void; close: (restore?: boolean, immediate?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
+interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings"; sessionStore: Readable<PanelSession | null>; independent?: boolean; onTrigger?: () => void; close: (restore?: boolean, immediate?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
 export function mountPanelHost(root: HTMLElement, native: boolean, options: HostOptions) {
   const { id, sessionStore, close, set, listen } = options;
   const projection = createPanelProjection(root);
@@ -18,7 +18,7 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
   observer.observe(root, { subtree: true, attributes: true, childList: true, characterData: true });
   let stopActions: (() => void) | undefined;
   let listening = !native;
-  const stopOverlay = onOverlayOpening(opening => { if (opening !== id) void close(false, true); });
+  const stopOverlay = onOverlayOpening(opening => { if (!options.independent && opening !== id) void close(false, true); });
   const keys = (event: KeyboardEvent) => {
     if (id !== "settings" && event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); void close(true); }
   };
@@ -54,7 +54,7 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     last = encoded;
     const payload: Omit<PanelPresentation, "revision"> = { ...meta, tree: projection.snapshot() };
     if (native) void set(true, session.id, { ...payload, revision: ++revision }).catch(() => {
-      console.error("Panel presentation failed"); if (get(sessionStore) === session) void close(true);
+      console.error("Panel presentation failed"); if (!options.independent && get(sessionStore) === session) void close(true);
     });
   };
   const follow = () => { publish(); if (!disposed) frame = requestAnimationFrame(follow); };

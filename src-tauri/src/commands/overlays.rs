@@ -105,8 +105,13 @@ pub async fn set_settings_overlay(
     presentation: Option<crate::window::settings_overlay::Presentation>,
     restore_focus: bool,
     animate_close: Option<bool>,
+    tab_id: Option<String>,
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
+    if let Some(tab_id) = tab_id {
+        if !visible { return Ok(()); }
+        return crate::window::settings_tab::present(&app, &crate::commands::access::caller_window(&webview), &tab_id, session_id, presentation.ok_or("settings_tab.missing_presentation")?);
+    }
     if !visible && animate_close.unwrap_or(false) {
         return crate::window::settings_overlay::close_animated(&app, session_id, restore_focus);
     }

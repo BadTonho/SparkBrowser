@@ -15,11 +15,16 @@ import ShortcutSettings from "./ShortcutSettings.svelte";
 import { focusDialog } from "../../actions/focusDialog";
 import { isTauriRuntime } from "../../services/bridge/runtime";
 import { mountPanelHost } from "../panels/panel-host";
-import { settingsOverlaySession } from "../../stores/settingsStore";
-import { setSettingsOverlay, onSettingsOverlayAction } from "../../services/bridge/settings-overlay";
+import { settingsOverlaySession, settingsTabSession, closeSettingsTab } from "../../stores/settingsStore";
+import { setSettingsOverlay, onSettingsOverlayAction, setSettingsTab, onSettingsTabAction } from "../../services/bridge/settings-overlay";
 const native = isTauriRuntime();
 function host(node: HTMLElement) {
   if (!native) return focusDialog(node, { onEscape: () => closeSettingsModal(), ignoreEscape: () => Boolean($recordingShortcutId) });
+  const tab = $isSettingsModalOpen ? null : $settingsTabSession;
+  if (tab) {
+    const stop = mountPanelHost(node, true, { id: "settings", independent: true, sessionStore: settingsTabSession, close: () => closeSettingsTab(), set: (visible, session, presentation) => setSettingsTab(tab.tabId, visible, session, presentation, () => !$isSettingsModalOpen && $settingsTabSession?.id === session), listen: callback => onSettingsTabAction(tab.tabId, callback) });
+    return { destroy: stop };
+  }
   const stop = mountPanelHost(node, true, { id: "settings", sessionStore: settingsOverlaySession, close: (_restore, immediate) => closeSettingsModal(immediate), set: setSettingsOverlay, listen: onSettingsOverlayAction });
   return { destroy: stop };
 }
@@ -49,7 +54,7 @@ let highlightedTargetTimer: ReturnType<typeof setTimeout> | undefined;
 let highlightedTarget: HTMLElement | undefined;
 const hasSearchQuery = $derived(searchQuery.trim().length > 0);
 const searchResults = $derived.by(() => {
-  if(!$isSettingsModalOpen) return [];
+  if(!$isSettingsModalOpen && !$settingsTabSession) return [];
   const tokens = normalizeSearchText(searchQuery).trim().split(/\s+/).filter(Boolean);
   if(tokens.length === 0) return [];
 
@@ -123,7 +128,7 @@ async function selectSearchResult(entry: SearchEntry): Promise<void> {
 }
 
 $effect(() => {
-  if($isSettingsModalOpen) searchQuery = "";
+  if($isSettingsModalOpen || $settingsTabSession) searchQuery = "";
   else recordingShortcutId.set(null);
 });
 
@@ -136,7 +141,7 @@ onDestroy(() => {
 const recorder = createShortcutRecorder();
 function handleDialogKeydown(event: KeyboardEvent): void {
   if(recorder.keyboard(event)) return;
-  if(event.key === "Escape") {
+  if(event.key === "Escape" && $isSettingsModalOpen) {
     event.preventDefault();
     event.stopPropagation();
     closeSettingsModal();
@@ -160,7 +165,8 @@ function handleWindowMousedown(event: MouseEvent): void {
 
 <svelte:window onkeydown={handleWindowKeydown} onmousedown={handleWindowMousedown} />
 
-{#if $isSettingsModalOpen}
+{#if $isSettingsModalOpen || $settingsTabSession}
+  {#key $isSettingsModalOpen ? "popup" : $settingsTabSession?.id}
   <div
     class="settings-backdrop"
     class:settings-controller={native}
@@ -175,8 +181,8 @@ function handleWindowMousedown(event: MouseEvent): void {
       onclick={(event) => event.stopPropagation()}
       onkeydown={handleDialogKeydown}
       use:host
-      role="dialog"
-      aria-modal="true"
+      role={$isSettingsModalOpen ? "dialog" : "main"}
+      aria-modal={$isSettingsModalOpen ? "true" : undefined}
       aria-label={$t("settings.browser_settings_6c1e")}
       tabindex="-1"
     >
@@ -208,7 +214,7 @@ function handleWindowMousedown(event: MouseEvent): void {
         <button
           class="close-btn"
           aria-label={$t("settings.close_settings_0ccf")}
-          onclick={() => closeSettingsModal()}
+          onclick={() => $isSettingsModalOpen ? closeSettingsModal() : closeSettingsTab()}
         >
           ×
         </button>
@@ -284,4 +290,5 @@ function handleWindowMousedown(event: MouseEvent): void {
       </div>
     </div>
   </div>
+  {/key}
 {/if}

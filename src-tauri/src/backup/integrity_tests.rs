@@ -75,12 +75,28 @@ fn a_current_file_without_checksum_or_with_a_bad_one_is_rejected() {
 }
 
 #[test]
-fn older_versions_stay_readable_without_a_checksum() {
+fn older_versions_stay_readable_with_their_original_checksum_rules() {
     for version in 1..CURRENT_VERSION {
         let (bytes, _) = encoded(version);
-        assert!(as_value(&bytes).get("checksum").is_none(), "v{version}");
+        assert_eq!(as_value(&bytes).get("checksum").is_some(), version >= 5, "v{version}");
         assert_eq!(files::decode(&bytes).unwrap().version, version);
     }
+}
+
+#[test]
+fn legacy_v5_without_settings_display_keeps_its_checksum_and_defaults_to_popup() {
+    use sha2::{Digest, Sha256};
+    let (_, mut doc) = setup();
+    doc.version = 5;
+    let mut value = serde_json::to_value(doc).unwrap();
+    value["preferences"].as_object_mut().unwrap().remove("settings_display");
+    let hash = Sha256::digest(serde_json::to_vec(&value).unwrap());
+    let checksum: String = hash.iter().map(|byte| format!("{byte:02x}")).collect();
+    value["checksum"] = checksum.into();
+    let restored = files::decode(&serde_json::to_vec(&value).unwrap()).unwrap();
+    assert_eq!(restored.preferences.settings_display, "popup");
+    value["preferences"]["settings_display"] = "tab".into();
+    assert_eq!(files::decode(&serde_json::to_vec(&value).unwrap()).err().unwrap(), "backup.checksum_mismatch");
 }
 
 #[test]

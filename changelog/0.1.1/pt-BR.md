@@ -2,8 +2,11 @@
 
 Em andamento — não lançada.
 
-## Melhorias
+## Novas funcionalidades
 
+- Escolha se as configurações do navegador abrem em um pop-up ou em uma guia.
+
+## Melhorias
 - As configurações abrem e fecham com uma animação suave que respeita a preferência por movimento reduzido.
 - O arraste de abas agrupa atualizações do ponteiro para reduzir trabalho repetido.
 - Os painéis nativos de configurações, ferramentas e downloads são liberados após um período de inatividade.

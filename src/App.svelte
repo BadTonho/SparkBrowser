@@ -44,7 +44,8 @@
   import { refreshExtensions, isExtensionsModalOpen, activeExtensionPopup } from "./lib/stores/extensionsStore";
   import { isHistoryDrawerOpen, bookmarkEditorState } from "./lib/stores/persistenceStore";
   import { isDownloadsDrawerOpen } from "./lib/stores/downloadsStore";
-  import { isSettingsModalOpen } from "./lib/stores/settingsStore";
+  import { isSettingsModalOpen, settingsTabSession, syncSettingsTabSession } from "./lib/stores/settingsStore";
+  import { onSettingsTabLoaded } from "./lib/services/bridge/settings-overlay";
   import { isSettingsQuickOpen } from "./lib/stores/settingsQuickPopoverStore";
   import { isToolsOpen } from "./lib/stores/toolsStore";
   import { isSitePermissionsOpen } from "./lib/stores/sitePermissionsStore";
@@ -156,7 +157,7 @@
   $effect(() => {
     if ($isHistoryDrawerOpen) void loadSurface("HistoryDrawer");
     if ($isDownloadsDrawerOpen) void loadSurface("DownloadsDrawer");
-    if ($isSettingsModalOpen) void loadSurface("SettingsModal");
+    if ($isSettingsModalOpen || $settingsTabSession) void loadSurface("SettingsModal");
     if ($isSettingsQuickOpen) void loadSurface("SettingsQuickMenu");
     if ($isToolsOpen) void loadSurface("ToolsPanel");
     if ($isSitePermissionsOpen) void loadSurface("SitePermissionsPanel");
@@ -164,6 +165,11 @@
     if ($isExtensionsModalOpen) void loadSurface("ExtensionsModal");
     if ($activeExtensionPopup) void loadSurface("ExtensionActionPopover");
     if ($isReaderOpen) void loadSurface("ReaderOverlay");
+  });
+
+  $effect(() => {
+    const tab = $tabs.find(item => item.url === "spark://settings" && (item.is_active || item.is_visible));
+    syncSettingsTabSession(tab?.id ?? null);
   });
 
   onMount(() => {
@@ -190,10 +196,14 @@
 
     let unlistenPrivacy: (() => void) | undefined;
     let unlistenBrowserShortcut: (() => void) | undefined;
+    let unlistenSettingsTab: (() => void) | undefined;
     const stopWorkspaceShortcutBridge = initializeWorkspaceShortcutBridge();
 
     let disposed = false;
     const session = initializeBrowserSession();
+    void onSettingsTabLoaded(tabId => {
+      if (get(settingsTabSession)?.tabId === tabId) syncSettingsTabSession(tabId, true);
+    }).then(stop => { if (disposed) stop(); else unlistenSettingsTab = stop; });
 
     const privacyListener = onPrivacyStatsUpdated((stats) => {
       applyPrivacyStats(stats);
@@ -312,6 +322,7 @@
       session.stop();
       if (unlistenPrivacy) unlistenPrivacy();
       if (unlistenBrowserShortcut) unlistenBrowserShortcut();
+      if (unlistenSettingsTab) unlistenSettingsTab();
       stopWorkspaceShortcutBridge();
       motionPreference.removeEventListener("change", updateMotionPreference);
       window.removeEventListener("keydown", handleGlobalShortcuts, true);

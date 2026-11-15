@@ -252,7 +252,7 @@ pub(super) fn create_tab_webview(
             );
         }
 
-        if super::new_tab::is_document(&app_handle_for_nav, nav_url) {
+        if super::new_tab::is_document(&app_handle_for_nav, nav_url) || super::settings_tab::is_document(&app_handle_for_nav, nav_url) {
             return true;
         }
         if !matches!(nav_url.scheme(), "http" | "https")

@@ -6,6 +6,8 @@ Validation runs locally using the commands in [validation](validation.md). In CI
 
 ## Isolated Windows run
 
+The runner automatically finds the locally installed Edge driver under `.cache/native-tools/edge/`. Set `SPARK_NATIVE_DRIVER` to override it; otherwise, if it is missing, the driver must be on `PATH`.
+
 Install Node 24, stable Rust and the normal Tauri prerequisites, then run from the repository root:
 
 ```powershell

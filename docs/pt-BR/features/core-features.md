@@ -55,6 +55,7 @@ O escudo da barra abre um [pop-up de Proteção](auto-skip-ads.md) ancorado ao b
 - Instalações novas começam sem bookmarks de exemplo. Bancos existentes removem uma única vez somente as entradas padrão originais do DuckDuckGo, GitHub, Rust Lang e Wikipedia; os demais bookmarks são preservados.
 
 ## 8. Configurações do Navegador Organizadas
+- Em **Aparência e Layout**, escolha se as configurações abrem em pop-up ou em uma guia. A mudança transfere a visualização atual imediatamente; ao abrir novamente, a guia existente no workspace atual é reutilizada.
 - As configurações são divididas em **Aparência e Layout**, **Pesquisa e Navegação**, **Espaços de Trabalho e Tema**, **Desempenho e Privacidade** e **Atalhos de Teclado**.
 - Pesquise em todas as categorias, configurações e atalhos pelo campo ao lado do título Browser Settings; selecionar um resultado abre a categoria e destaca o destino.
 - Escolha Google ou DuckDuckGo como mecanismo de busca padrão em **Pesquisa e Navegação**. Google vem selecionado por padrão; a escolha vale para buscas na barra de endereço, na Command Bar e para novas guias.

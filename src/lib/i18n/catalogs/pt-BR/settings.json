@@ -1,4 +1,12 @@
 {
+  "settings.display_mode": "Exibição das configurações",
+  "settings.display_mode_description": "Escolha se as configurações abrem em um pop-up ou em uma guia do navegador.",
+  "settings.display_popup": "Pop-up",
+  "settings.display_tab": "Guia",
+  "settings.display_mode_error": "Não foi possível mudar a exibição das configurações.",
+  "settings.display_tab_loading": "Carregando configurações…",
+  "settings.display_tab_load_error": "Não foi possível carregar as configurações. Recarregue esta guia para tentar novamente.",
+  "settings.display_tab_retry": "Recarregar guia",
   "settings.retention_never": "Nunca salvar",
   "settings.experiments_heading": "Recursos experimentais",
   "settings.experiments_description": "Recursos experimentais podem mudar. Começam desligados e não podem desativar proteções obrigatórias. As alterações valem ao reabrir o painel de feeds.",

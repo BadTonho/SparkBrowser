@@ -2,8 +2,11 @@
 
 In progress — not released.
 
-## Improvements
+## New features
 
+- Choose whether browser settings open in a pop-up or in a tab.
+
+## Improvements
 - Settings open and close with a subtle animation that respects reduced-motion preferences.
 - Tab dragging groups pointer updates to reduce repeated work.
 - Idle settings, tools and downloads panels release their native views after use.

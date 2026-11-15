@@ -3,6 +3,11 @@
   import LanguageSettings from "./LanguageSettings.svelte";
   import PipAppearanceSettings from "./PipAppearanceSettings.svelte";
   import { t } from "../../i18n";
+  import ErrorMessage from "../status/ErrorMessage.svelte";
+  import { describeError } from "../../services/user-errors.js";
+  import { isTauriRuntime } from "../../services/bridge/runtime";
+  import { showToast } from "../../stores/notificationStore";
+  import { tr } from "../../i18n";
 import {
   isZenMode,
   toggleZenMode,
@@ -10,6 +15,8 @@ import {
   setOverlayBlurPx,
   tabLayout,
   setTabLayout,
+  settingsDisplayMode,
+  setSettingsDisplayMode,
   showBookmarksBar,
   setShowBookmarksBar,
   workspaceSwitcherDisplay,
@@ -41,6 +48,15 @@ import {
 import { formatShortcut, getShortcutBinding, keyboardShortcuts } from "../../stores/shortcutsStore";
 
 const supportsWhatsApp = typeof navigator !== "undefined" && navigator.userAgent.includes("Windows");
+let settingsDisplayError = $state("");
+let settingsDisplayBusy = $state(false);
+async function changeSettingsDisplay(mode: "popup" | "tab") {
+  if (settingsDisplayBusy) return;
+  settingsDisplayBusy = true; settingsDisplayError = "";
+  try { await setSettingsDisplayMode(mode); }
+  catch (error) { settingsDisplayError = describeError(error); showToast({ type: "error", message: tr("settings.display_mode_error") }); }
+  finally { settingsDisplayBusy = false; }
+}
 </script>
 
 <section class="setting-group" aria-labelledby="appearance-heading">
@@ -48,6 +64,15 @@ const supportsWhatsApp = typeof navigator !== "undefined" && navigator.userAgent
 
   <LanguageSettings />
   <PipAppearanceSettings />
+
+  <div class="setting-row" id="setting-settings-display" tabindex="-1">
+    <div class="row-text"><span class="row-label">{$t("settings.display_mode")}</span><span class="row-desc">{$t("settings.display_mode_description")}</span></div>
+    <div class="timer-pills">
+      <button data-testid="settings-display-popup" class="mini-pill" class:selected={$settingsDisplayMode === "popup"} aria-pressed={$settingsDisplayMode === "popup"} disabled={settingsDisplayBusy} onclick={() => changeSettingsDisplay("popup")}>{$t("settings.display_popup")}</button>
+      <button data-testid="settings-display-tab" class="mini-pill" class:selected={$settingsDisplayMode === "tab"} aria-pressed={$settingsDisplayMode === "tab"} disabled={settingsDisplayBusy || !isTauriRuntime()} onclick={() => changeSettingsDisplay("tab")}>{$t("settings.display_tab")}</button>
+    </div>
+  </div>
+  {#if settingsDisplayError}<ErrorMessage error={settingsDisplayError} />{/if}
 
   <div class="setting-row" id="setting-theme-mode" tabindex="-1">
     <div class="row-text">

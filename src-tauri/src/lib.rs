@@ -163,6 +163,7 @@ pub fn run() {
         .manage(window::fullscreen::FullscreenState::default())
         .manage(webview_runtime::RuntimeService::default())
         .manage(window::new_tab::NewTabService::default())
+        .manage(window::settings_tab::SettingsTabSessions::default())
         .manage(window::new_tab::widgets::Widgets::default())
         .manage(window::tab_drag_preview::DragPreview::default())
         .manage(zoom::ZoomService::default())

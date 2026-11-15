@@ -5,14 +5,14 @@ use tauri::{AppHandle, Manager, Url};
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub(super) enum DismissReason {
+pub(crate) enum DismissReason {
     Escape,
     Outside,
     Trigger,
     Blur,
 }
 #[derive(Clone, Deserialize, Serialize)]
-pub(super) enum TabKey {
+pub(crate) enum TabKey {
     ArrowLeft,
     ArrowRight,
     Home,
@@ -20,7 +20,7 @@ pub(super) enum TabKey {
 }
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "lowercase", deny_unknown_fields)]
-pub(super) enum UiAction {
+pub(crate) enum UiAction {
     Click {
         target: u32,
     },
@@ -62,7 +62,7 @@ pub(super) enum UiAction {
     },
 }
 impl UiAction {
-    fn valid(&self) -> bool {
+    pub(crate) fn valid(&self) -> bool {
         match self {
             Self::Click { target } | Self::Submit { target } | Self::Key { target, .. } => {
                 *target > 0

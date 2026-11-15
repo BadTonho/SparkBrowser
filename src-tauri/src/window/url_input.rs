@@ -10,6 +10,9 @@ pub fn resolve_input_to_url_with_search_engine(
     if super::new_tab::is_new_tab(trimmed) {
         return Url::parse(super::new_tab::URL).map_err(|e| e.to_string());
     }
+    if super::settings_tab::is_settings_url(trimmed) {
+        return Url::parse(super::settings_tab::URL).map_err(|e| e.to_string());
+    }
     if trimmed.is_empty() {
         return Url::parse(DEFAULT_HOME_URL).map_err(|e| e.to_string());
     }

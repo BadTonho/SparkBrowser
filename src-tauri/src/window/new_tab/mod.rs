@@ -17,7 +17,7 @@ pub fn is_new_tab(raw: &str) -> bool {
     raw == URL || raw == LEGACY_URL
 }
 pub fn valid_tab_url(raw: &str) -> bool {
-    is_new_tab(raw)
+    is_new_tab(raw) || super::settings_tab::is_settings_url(raw)
         || Url::parse(raw)
             .is_ok_and(|url| matches!(url.scheme(), "http" | "https") && url.host_str().is_some())
 }
@@ -80,6 +80,8 @@ pub fn is_document(app: &AppHandle, url: &Url) -> bool {
 pub fn logical_url(app: &AppHandle, url: &Url) -> Option<String> {
     if is_document(app, url) {
         Some(URL.into())
+    } else if super::settings_tab::is_document(app, url) {
+        Some(super::settings_tab::URL.into())
     } else if matches!(url.scheme(), "http" | "https") && url.host_str() != Some("tauri.localhost")
     {
         Some(url.to_string())
@@ -90,6 +92,8 @@ pub fn logical_url(app: &AppHandle, url: &Url) -> Option<String> {
 pub fn physical_url(app: &AppHandle, raw: &str) -> Result<Url, String> {
     if is_new_tab(raw) {
         document_url(app)
+    } else if super::settings_tab::is_settings_url(raw) {
+        super::settings_tab::document_url(app)
     } else {
         Url::parse(raw).map_err(|e| e.to_string())
     }
@@ -102,6 +106,10 @@ pub fn title(app: &AppHandle) -> String {
         .map(|p| p.language == "pt-BR")
         .unwrap_or(false);
     if pt { "Nova guia" } else { "New tab" }.into()
+}
+pub fn settings_title(app: &AppHandle) -> String {
+    let pt = app.state::<NewTabService>().preferences.lock().map(|p| p.language == "pt-BR").unwrap_or(false);
+    if pt { "Configurações" } else { "Settings" }.into()
 }
 pub fn initializer(app: &AppHandle, token: &str, id: &str) -> Result<String, String> {
     Ok(include_str!("bridge.js")
@@ -165,10 +173,11 @@ mod tests {
     #[test]
     fn only_the_exact_internal_address_is_supported() {
         assert!(super::valid_tab_url(super::URL));
+        assert!(super::valid_tab_url(super::super::settings_tab::URL));
         for raw in [
             "spark://newtab/",
             "spark://newtab?x=1",
-            "spark://settings",
+            "spark://settings?x=1",
             "file:///tmp/x",
             "javascript:alert(1)",
         ] {
@@ -176,5 +185,8 @@ mod tests {
         }
         assert!(crate::backup::validation::tab_url(super::URL).is_ok());
         assert!(crate::backup::validation::page_url(super::URL).is_err());
+        assert_eq!(crate::backup::validation::tab_url(super::super::settings_tab::URL).unwrap(), super::super::settings_tab::URL);
+        assert!(crate::backup::validation::page_url(super::super::settings_tab::URL).is_err());
+        assert_eq!(super::super::url_input::resolve_input_to_url_with_search_engine(super::super::settings_tab::URL, "google").unwrap().as_str(), super::super::settings_tab::URL);
     }
 }

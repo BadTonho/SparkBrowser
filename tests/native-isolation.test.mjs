@@ -3,6 +3,14 @@ import { test } from 'node:test';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { cleanRunData, createRunDirectory, runsRoot, validateRunDirectory } from './native/run-directory.mjs';
+import { nativeDriverPath } from './native/driver-path.mjs';
+
+test('native driver selection uses an explicit path or the installed Windows fixture', () => {
+  assert.equal(nativeDriverPath('win32', 'custom/driver.exe', () => false), resolve('custom/driver.exe'));
+  assert.equal(nativeDriverPath('win32', '', () => true), resolve('.cache/native-tools/edge/msedgedriver.exe'));
+  assert.equal(nativeDriverPath('win32', '', () => false), undefined);
+  assert.equal(nativeDriverPath('linux', '', () => true), undefined);
+});
 
 test('native cleanup removes scenario data while retaining reports and rejects unsafe paths', async () => {
   const directory = createRunDirectory('cleanup-test');

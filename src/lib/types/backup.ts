@@ -1,13 +1,14 @@
 import type { BookmarkData, PageNote, SavedSession, SiteSearchShortcut, SplitLayout, TabSnapshot, WorkspaceItem } from "./browser";
 import type { LanguagePreference } from "../i18n";
 import type { ShortcutMap } from "../stores/shortcutsStore";
-import type { AutoHibernateMode, TabLayout, WorkspaceSwitcherDisplay } from "../stores/settingsStore";
+import type { AutoHibernateMode, TabLayout, WorkspaceSwitcherDisplay, SettingsDisplayMode } from "../stores/settingsStore";
 import type { UpdateChannel } from "./updates";
 import type { SearchEngine } from "../stores/searchEngineStore";
 export interface BackupPreferences {
   auto_skip_ads_enabled: boolean;
   pip_window_shadow?: boolean;
   workspace_isolation?: boolean;
+  settings_display?: SettingsDisplayMode;
   tab_layout: TabLayout; show_bookmarks_bar: boolean; overlay_blur_px: number;
   workspace_switcher_display: WorkspaceSwitcherDisplay; default_search_engine: SearchEngine;
   auto_hibernate_mode: AutoHibernateMode; resident_limit: number; language: LanguagePreference;
@@ -17,7 +18,7 @@ export interface BackupPreferences {
 }
 export interface BackupTab { id: string; title: string; url: string; workspace_id: string; is_pinned: boolean; is_active: boolean; }
 export interface BackupDocument {
-  format: "spark-backup" | "veloce-backup"; version: 1 | 2 | 3 | 4 | 5; created_at: number;
+  format: "spark-backup" | "veloce-backup"; version: 1 | 2 | 3 | 4 | 5 | 6; created_at: number;
   data: { bookmarks: BookmarkData; workspaces: WorkspaceItem[]; sessions: SavedSession[]; notes: PageNote[]; site_search: SiteSearchShortcut[]; tabs: BackupTab[]; split_layouts: SplitLayout[] };
   preferences: BackupPreferences;
 }

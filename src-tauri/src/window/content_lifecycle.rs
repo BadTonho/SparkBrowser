@@ -34,6 +34,7 @@ pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String
         webview.close().map_err(|e| e.to_string())?;
     }
     super::new_tab::revoke(app, label);
+    app.state::<super::settings_tab::SettingsTabSessions>().revoke(label);
     state.surfaces().content_profiles().forget(label)?;
     state
         .security()
