@@ -1,0 +1,15 @@
+#audio-background {
+  position:fixed; inset:auto 0 0; width:100%; height:25vh;
+  z-index:-1; pointer-events:none; opacity:.55; contain:strict;
+}
+#audio-background[hidden] { display:none; }
+#audio-background-settings { border:0; padding:0 0 16px; margin:0 0 16px; border-bottom:1px solid #ffffff20; }
+#audio-background-settings legend { font-weight:600; font-size:13px; padding:0; }
+#audio-background-options > label { display:block; margin-top:12px; }
+#audio-background-color { width:48px; height:32px; margin-top:6px; padding:2px; }
+#audio-background-intensity { width:100%; margin-top:8px; accent-color:#1db954; }
+#audio-background-status { font-size:12px; color:#a1a1aa; }
+html[data-theme="light"] #audio-background { opacity:.35; }
+html[data-theme="light"] #audio-background-settings { border-color:#00000020; }
+html[data-theme="light"] #audio-background-status { color:#62626b; }
+html[data-private="true"] :is(#audio-background,#audio-background-settings) { display:none !important; }

@@ -29,7 +29,9 @@ fn widget(operation: &str, data: &str) -> bool {
         "read" | "panel" | "open_gmail" | "locate" | "refresh_weather" | "refresh_gmail"
         | "connect" | "cancel_connect" | "disconnect" | "spotify_connect" | "spotify_cancel"
         | "spotify_disconnect" | "spotify_open" | "spotify_play" | "spotify_pause"
-        | "spotify_next" | "spotify_previous" => serde_json::from_str::<Empty>(data).is_ok(),
+        | "spotify_next" | "spotify_previous" | "audio_subscribe" | "audio_unsubscribe" => {
+            serde_json::from_str::<Empty>(data).is_ok()
+        }
         _ => false,
     }
 }

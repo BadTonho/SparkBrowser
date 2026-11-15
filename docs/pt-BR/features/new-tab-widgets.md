@@ -37,6 +37,8 @@ O modo de testes do Google pode [expirar refresh tokens após sete dias](https:/
 
 ## Plano de fundo (Imagens e Vídeos)
 
+Ative o [plano de fundo que reage ao áudio](audio-background.md) nesta categoria para mostrar barras reais de frequência sobre o fundo atual, com controles de cor e intensidade visual.
+
 Você pode definir uma imagem ou vídeo em loop personalizado a partir do seu dispositivo pelo painel **Personalizar nova guia** (`⚙️`).
 - **Escolher imagem ou vídeo**: Abre o seletor de arquivos do sistema para escolher uma imagem (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`) ou vídeo (`.mp4`, `.webm`, `.ogg`).
 - **Reprodução de vídeo**: Vídeos são reproduzidos automaticamente em loop contínuo, sem som (*muted*) e ajustados para cobrir a tela (`object-fit: cover`) sob a busca e os widgets. Há suporte para arquivos de até 50 MB.

@@ -168,6 +168,7 @@ pub fn run() {
         .manage(window::tab_drag_preview::DragPreview::default())
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
+        .manage(media::visualizer::Visualizer::default())
         .manage(window::media_popover::MediaPopover::default())
         .manage(window::tools_popover::ToolsPopover::default())
         .manage(window::downloads_popover::DownloadsPopover::default())
@@ -439,6 +440,7 @@ pub fn run() {
                 .initialize(app.handle())
                 .map_err(std::io::Error::other)?;
             window::new_tab::widgets::initialize(app.handle());
+            media::visualizer::start(app.handle());
             profile_startup.finish(true, 0);
             drop(profile_startup);
             // Prepare the database and the filter engine in parallel. The first
@@ -446,7 +448,12 @@ pub fn run() {
             let (lists, filter_duration) = prepare_filters
                 .join()
                 .map_err(|_| std::io::Error::other("Filter-list initialization failed"))?;
-            state.infrastructure().diagnostics().record("startup.filters", filter_duration, 0, true);
+            state.infrastructure().diagnostics().record(
+                "startup.filters",
+                filter_duration,
+                0,
+                true,
+            );
             let lists = std::sync::Arc::new(lists);
             app.manage(lists.clone());
             spawn_content_webview(app.handle())?;

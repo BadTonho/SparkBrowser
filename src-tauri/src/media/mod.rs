@@ -12,6 +12,7 @@ pub mod protocol;
 pub mod protocol;
 mod signal_message;
 pub mod signals;
+pub mod visualizer;
 pub mod volume;
 #[cfg(windows)]
 pub mod windows;

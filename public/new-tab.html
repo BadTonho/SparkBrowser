@@ -13,6 +13,8 @@
   <script src="/new-tab/spotify.js" defer></script>
   <link rel="stylesheet" href="/new-tab/wallpaper.css">
   <script src="/new-tab/wallpaper.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/audio-background.css">
+  <script src="/new-tab/audio-background.js" defer></script>
   <link rel="stylesheet" href="/new-tab/clock.css">
   <script src="/new-tab/clock.js" defer></script>
 </head>
@@ -22,6 +24,7 @@
     <video id="wallpaper-video" autoplay loop muted playsinline hidden></video>
     <div id="wallpaper-overlay"></div>
   </div>
+  <canvas id="audio-background" aria-hidden="true" hidden></canvas>
   <div id="widgets" hidden>
     <section id="clock-card-widget" class="widget clock-widget clock-card" aria-labelledby="clock-card-heading" hidden>
       <div class="widget-heading"><h2 id="clock-card-heading" data-label="clock"></h2></div>
@@ -172,6 +175,18 @@
       </div>
     </section>
     <section id="wallpaper-section" class="settings-view" aria-labelledby="settings-heading" hidden>
+      <fieldset id="audio-background-settings">
+        <legend data-label="audioBackground"></legend>
+        <label class="toggle"><span data-label="audioBackgroundEnabled"></span><input id="audio-background-enabled" type="checkbox"></label>
+        <div id="audio-background-options" hidden>
+          <label for="audio-background-color" data-label="audioBackgroundColor"></label>
+          <input id="audio-background-color" type="color" value="#1db954">
+          <label for="audio-background-intensity" data-label="audioBackgroundIntensity"></label>
+          <input id="audio-background-intensity" type="range" min="0.5" max="2" step="0.1" value="1">
+          <p data-label="audioBackgroundHint"></p>
+          <p id="audio-background-status" role="status"></p>
+        </div>
+      </fieldset>
       <label class="toggle"><span data-label="showWallpaper"></span><input id="wallpaper-enabled" type="checkbox"></label>
       <div id="wallpaper-options" hidden>
         <div class="wallpaper-actions">

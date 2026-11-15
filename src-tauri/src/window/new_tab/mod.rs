@@ -1,3 +1,4 @@
+pub(crate) mod audio;
 mod bridge;
 mod message;
 mod recent;
@@ -17,7 +18,8 @@ pub fn is_new_tab(raw: &str) -> bool {
     raw == URL || raw == LEGACY_URL
 }
 pub fn valid_tab_url(raw: &str) -> bool {
-    is_new_tab(raw) || super::settings_tab::is_settings_url(raw)
+    is_new_tab(raw)
+        || super::settings_tab::is_settings_url(raw)
         || Url::parse(raw)
             .is_ok_and(|url| matches!(url.scheme(), "http" | "https") && url.host_str().is_some())
 }
@@ -64,6 +66,7 @@ impl Session {
 }
 
 pub fn revoke(app: &AppHandle, label: &str) {
+    crate::media::visualizer::unsubscribe(app, label);
     widgets::revoke(app, label);
     if let Ok(mut sessions) = app.state::<NewTabService>().sessions.lock() {
         sessions.remove(label);
@@ -108,7 +111,12 @@ pub fn title(app: &AppHandle) -> String {
     if pt { "Nova guia" } else { "New tab" }.into()
 }
 pub fn settings_title(app: &AppHandle) -> String {
-    let pt = app.state::<NewTabService>().preferences.lock().map(|p| p.language == "pt-BR").unwrap_or(false);
+    let pt = app
+        .state::<NewTabService>()
+        .preferences
+        .lock()
+        .map(|p| p.language == "pt-BR")
+        .unwrap_or(false);
     if pt { "Configurações" } else { "Settings" }.into()
 }
 pub fn initializer(app: &AppHandle, token: &str, id: &str) -> Result<String, String> {
@@ -185,8 +193,19 @@ mod tests {
         }
         assert!(crate::backup::validation::tab_url(super::URL).is_ok());
         assert!(crate::backup::validation::page_url(super::URL).is_err());
-        assert_eq!(crate::backup::validation::tab_url(super::super::settings_tab::URL).unwrap(), super::super::settings_tab::URL);
+        assert_eq!(
+            crate::backup::validation::tab_url(super::super::settings_tab::URL).unwrap(),
+            super::super::settings_tab::URL
+        );
         assert!(crate::backup::validation::page_url(super::super::settings_tab::URL).is_err());
-        assert_eq!(super::super::url_input::resolve_input_to_url_with_search_engine(super::super::settings_tab::URL, "google").unwrap().as_str(), super::super::settings_tab::URL);
+        assert_eq!(
+            super::super::url_input::resolve_input_to_url_with_search_engine(
+                super::super::settings_tab::URL,
+                "google"
+            )
+            .unwrap()
+            .as_str(),
+            super::super::settings_tab::URL
+        );
     }
 }

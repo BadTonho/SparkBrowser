@@ -4,6 +4,8 @@ In progress — not released.
 
 ## New features
 
+- Add an optional audio-reactive background with frequency bars, custom colors and visual intensity, driven by normal browser-tab audio.
+
 - Add a Spotify new-tab widget with account connection, playback information and controls for the active device.
 
 - Choose whether browser settings open in a pop-up or in a tab.

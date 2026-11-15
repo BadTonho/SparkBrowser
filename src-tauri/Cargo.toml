@@ -39,17 +39,19 @@ tokio = { version = "1", features = ["sync", "macros", "time", "fs", "io-util"] 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39"
 windows-core = "0.62"
-windows = { version = "0.62", features = ["Devices_Geolocation", "Foundation", "Win32_Security_Credentials", "Win32_Foundation", "Win32_Graphics_Imaging", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_Storage_FileSystem"] }
+windows = { version = "0.62", features = ["Devices_Geolocation", "Foundation", "Win32_Security_Credentials", "Win32_Foundation", "Win32_Graphics_Imaging", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Variant", "Win32_Media_Audio", "Win32_Storage_FileSystem"] }
 tauri-plugin-updater = "~2.14.1"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+libloading = "0.8"
 gtk = "0.18"
 javascriptcore-rs = "1.1"
 cairo-rs = { version = "0.18", features = ["png"] }
 webkit2gtk = { version = "2.0", features = ["v2_22"] }
 
 [dev-dependencies]
+libloading = "0.8"
 tauri = { version = "2", features = ["test"] }
 
 # Faster startup and smaller binary: fewer page faults when the executable loads.

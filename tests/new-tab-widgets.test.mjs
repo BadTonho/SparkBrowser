@@ -25,12 +25,20 @@ function fixture(){
   const context={window,document,Intl,Date,CustomEvent:class{constructor(t,o){this.type=t;this.detail=o.detail;}}};
   for(const file of ['widgets','spotify'])runInNewContext(readFileSync(`public/new-tab/${file}.js`,'utf8'),context);
   listeners.get('spark-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'}}});
-  const settings={weather_enabled:false,gmail_enabled:false,spotify_enabled:false,spotify_client_id:'',automatic_location:false,fahrenheit:false,city:null};
+  const settings={audio_background:{enabled:false,color:'#1db954',intensity:1},weather_enabled:false,gmail_enabled:false,spotify_enabled:false,spotify_client_id:'',automatic_location:false,fahrenheit:false,city:null};
   let current={settings,revision:0,weather:{data:null,error:null,busy:false},gmail:{data:null,email:null,error:null,busy:false,connecting:false,configured:true}};
   const update=patch=>{current={...current,...patch};listeners.get('spark-new-tab-widgets')({detail:current});};update({});
-  return {nodes,actions,update,settings,document,preferences:patch=>listeners.get('spark-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'},...patch}})};
+  return {nodes,actions,update,settings,document,audio:patch=>listeners.get('spark-audio-setting')({detail:patch}),preferences:patch=>listeners.get('spark-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'},...patch}})};
 }
 const change=(node,key,value)=>{node[key]=value;node.listeners.change({target:node});};
+test('audio preference edits share the save queue without losing nested fields or other widgets',()=>{
+  const f=fixture();f.audio({enabled:true});f.audio({color:'#abcdef',intensity:1.5});
+  assert.equal(f.actions.filter(a=>a.operation==='save').length,1);
+  f.update({settings:{...f.settings,audio_background:{...f.settings.audio_background,enabled:true}},revision:1});
+  const saved=f.actions.at(-1).data.settings;
+  assert.equal(saved.audio_background.enabled,true);assert.equal(saved.audio_background.color,'#abcdef');assert.equal(saved.audio_background.intensity,1.5);
+  assert.equal(saved.spotify_enabled,false);assert.equal(saved.gmail_enabled,false);
+});
 test('Spotify settings validate Client ID, save through the shared queue and preserve a draft',()=>{
   const f=fixture(),id=f.nodes.get('spotify-client-id');
   f.nodes.get('menu-item-spotify').click();assert.equal(f.nodes.get('spotify-section').hidden,false);

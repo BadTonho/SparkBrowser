@@ -105,6 +105,10 @@
     if (typeof patch.spotify_enabled === 'boolean') change({ spotify_enabled: patch.spotify_enabled });
     else if (typeof patch.spotify_client_id === 'string') change({ spotify_client_id: patch.spotify_client_id });
   });
+  window.addEventListener('spark-audio-setting', event => {
+    if (!settings()) return;
+    change({ audio_background: { ...(settings().audio_background ?? { enabled:false, color:'#1db954', intensity:1 }), ...event.detail } });
+  });
   $('weather-enabled').addEventListener('change', event => { showCategory('weather'); change({ weather_enabled: event.target.checked }); });
   $('gmail-enabled').addEventListener('change', event => { showCategory('gmail'); change({ gmail_enabled: event.target.checked }); });
   $('temperature-unit').addEventListener('change', event => change({ fahrenheit: event.target.value === 'fahrenheit' }));
@@ -191,6 +195,7 @@
     $('widgets').hidden = !config.weather_enabled && !config.gmail_enabled && !config.spotify_enabled && $('clock-card-widget').hidden;
     $('widgets-left').hidden = !config.weather_enabled && !config.spotify_enabled;
     window.__sparkSpotifyRender?.(config, snapshot.spotify, saving);
+    window.__sparkAudioRender?.(config.audio_background, saving);
     $('weather-enabled').checked = config.weather_enabled; $('gmail-enabled').checked = config.gmail_enabled;
     $('weather-options').hidden = !config.weather_enabled; $('gmail-options').hidden = !config.gmail_enabled;
     $('location-mode').value = config.automatic_location ? 'automatic' : 'manual';

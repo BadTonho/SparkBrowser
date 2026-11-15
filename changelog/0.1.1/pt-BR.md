@@ -4,6 +4,8 @@ Em andamento — não lançada.
 
 ## Novas funcionalidades
 
+- Adiciona um plano de fundo opcional que reage ao áudio das guias normais, com barras de frequência, cores personalizadas e intensidade visual.
+
 - Adiciona um widget do Spotify na nova guia com conexão da conta, informações de reprodução e controles do dispositivo ativo.
 
 - Escolha se as configurações do navegador abrem em um pop-up ou em uma guia.

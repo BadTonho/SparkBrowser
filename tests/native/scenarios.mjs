@@ -9,6 +9,7 @@ import { checkWebviewRuntime } from './webview-runtime.mjs';
 import { checkNewTab } from './new-tab.mjs';
 import {checkNewTabWidgets} from './new-tab-widgets.mjs';
 import {newTabDriver} from './new-tab-driver.mjs';
+import {checkAudioBackground} from './audio-background.mjs';
 import { checkSplitTabGroups } from './split-tab-groups.mjs';
 import { checkPrivacy } from './privacy.mjs';
 import { checkMediaMute, checkMediaVolume, checkMediaPip } from "./media.mjs";
@@ -80,6 +81,7 @@ export const scenarios = {
   'titlebar-actions': checkTitlebarActions,
   'new-tab': checkNewTab,
   'new-tab-widgets': context=>checkNewTabWidgets(context,newTabDriver(context)),
+  'audio-background': checkAudioBackground,
   'split-tab-groups': checkSplitTabGroups,
   'tab-docking': checkTabDocking,
   'privacy': checkPrivacy,

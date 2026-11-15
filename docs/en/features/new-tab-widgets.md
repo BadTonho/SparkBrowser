@@ -37,6 +37,8 @@ Google's testing mode can [expire refresh tokens after seven days](https://devel
 
 ## Wallpaper (Images and Videos)
 
+Enable the optional [audio-reactive background](audio-background.md) in this category to show real frequency bars over the current background, with color and visual-intensity controls.
+
 You can set a custom background image or looping video from your device through the **Customize new tab** panel (`⚙️`).
 - **Choose image or video**: Opens the system file picker to select an image (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`) or video (`.mp4`, `.webm`, `.ogg`).
 - **Video Playback**: Videos play automatically on loop, muted, and scaled to fill the viewport (`object-fit: cover`) behind the central search area and widgets. Files up to 50 MB are supported.

@@ -198,6 +198,7 @@ pub fn copy_profile(conn: &Connection, source_db: &Path) -> Result<(), String> {
     let mut settings = crate::database::new_tab_repo::load(conn)?;
     settings.spotify_enabled = false;
     settings.spotify_client_id.clear();
+    settings.audio_background = Default::default();
     crate::database::new_tab_repo::save(conn, &settings)
 }
 
@@ -346,6 +347,11 @@ mod tests {
             &crate::database::new_tab_repo::Settings {
                 spotify_enabled: true,
                 spotify_client_id: "a".repeat(32),
+                audio_background: crate::database::new_tab_repo::AudioBackground {
+                    enabled: true,
+                    color: "#112233".into(),
+                    intensity: 1.5,
+                },
                 ..Default::default()
             },
         )
@@ -375,6 +381,7 @@ mod tests {
         let settings = crate::database::new_tab_repo::load(&target).unwrap();
         assert!(!settings.spotify_enabled);
         assert!(settings.spotify_client_id.is_empty());
+        assert_eq!(settings.audio_background, Default::default());
 
         let keys: Vec<String> = target
             .prepare("SELECT key FROM app_preferences ORDER BY key")

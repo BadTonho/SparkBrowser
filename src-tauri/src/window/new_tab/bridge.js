@@ -5,6 +5,7 @@
   let sequence = 0, request = 0;
   let widgetsRequest = 0, widgetsVersion = -1;
   const widgetRequests = new Map();
+  let audioSubscribed = false, audioGeneration = -1, audioSequence = -1;
   const send = (action, values = {}) => {
     const params = new URLSearchParams({ token, document: documentId, sequence: String(++sequence), ...values });
     const url = `spark-internal://new-tab/${action}?${params}`;
@@ -18,11 +19,21 @@
     if (document.querySelector?.('#widget-settings')) window.__sparkRefreshWidgets();
   };
   const widgets = (operation, data = {}) => {
+    if (operation === 'audio_subscribe') audioSubscribed = true;
+    if (operation === 'audio_unsubscribe') audioSubscribed = false;
     const number = ++widgetsRequest;
     widgetRequests.set(operation, number);
     send('widgets', { operation, data: JSON.stringify(data), request: String(number) });
   };
   window.__sparkRefreshWidgets = () => widgets('read');
+  window.__sparkAudioFrame = (id, payload) => {
+    if (id !== documentId || location.href !== __NEW_TAB_URL__ || !audioSubscribed) return;
+    if (!Number.isSafeInteger(payload.generation) || !Number.isSafeInteger(payload.sequence)
+        || payload.generation < audioGeneration || (payload.generation === audioGeneration && payload.sequence <= audioSequence)) return;
+    if (!Array.isArray(payload.bands) || payload.bands.length !== 32 || payload.bands.some(v => !Number.isFinite(v) || v < 0 || v > 1)) return;
+    audioGeneration = payload.generation; audioSequence = payload.sequence;
+    window.dispatchEvent(new CustomEvent('spark-audio-frame', { detail: payload }));
+  };
   window.__sparkWidgetsReply = (id, number, payload) => {
     if (id !== documentId || location.href !== __NEW_TAB_URL__ || ![...widgetRequests.values()].includes(number)) return;
     if (payload.version < widgetsVersion) return;

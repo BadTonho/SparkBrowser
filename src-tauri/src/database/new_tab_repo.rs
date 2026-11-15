@@ -14,6 +14,7 @@ pub struct City {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 #[serde(default, deny_unknown_fields)]
 pub struct Settings {
+    pub audio_background: AudioBackground,
     pub weather_enabled: bool,
     pub gmail_enabled: bool,
     pub spotify_enabled: bool,
@@ -22,8 +23,38 @@ pub struct Settings {
     pub fahrenheit: bool,
     pub city: Option<City>,
 }
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(default, deny_unknown_fields)]
+pub struct AudioBackground {
+    pub enabled: bool,
+    pub color: String,
+    pub intensity: f32,
+}
+impl Default for AudioBackground {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            color: "#1db954".into(),
+            intensity: 1.0,
+        }
+    }
+}
+impl AudioBackground {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.color.len() != 7
+            || !self.color.starts_with('#')
+            || !self.color.as_bytes()[1..].iter().all(u8::is_ascii_hexdigit)
+            || !self.intensity.is_finite()
+            || !(0.5..=2.0).contains(&self.intensity)
+        {
+            return Err("invalid_settings".into());
+        }
+        Ok(())
+    }
+}
 impl Settings {
     pub fn validate(&self) -> Result<(), String> {
+        self.audio_background.validate()?;
         if !self.spotify_client_id.is_empty()
             && (self.spotify_client_id.len() != 32
                 || !self
@@ -111,6 +142,26 @@ pub fn save(conn: &Connection, settings: &Settings) -> Result<(), String> {
 mod tests {
     use super::*;
     #[test]
+    fn audio_preferences_are_bounded_and_old_settings_keep_the_effect_disabled() {
+        let mut s: Settings = serde_json::from_str("{}").unwrap();
+        assert_eq!(s.audio_background, AudioBackground::default());
+        s.audio_background.enabled = true;
+        for color in ["red", "#12345", "#1234567", "#gggggg"] {
+            s.audio_background.color = color.into();
+            assert!(s.validate().is_err());
+        }
+        s.audio_background.color = "#Ab12ef".into();
+        for intensity in [f32::NAN, f32::INFINITY, 0.0, 2.1] {
+            s.audio_background.intensity = intensity;
+            assert!(s.validate().is_err());
+        }
+        s.audio_background.intensity = 1.5;
+        let db = Connection::open_in_memory().unwrap();
+        migrate(&db).unwrap();
+        save(&db, &s).unwrap();
+        assert_eq!(load(&db).unwrap(), s);
+    }
+    #[test]
     fn spotify_defaults_client_validation_and_disconnection_are_independent() {
         let mut s: Settings = serde_json::from_str(r#"{"weather_enabled":true}"#).unwrap();
         assert!(!s.spotify_enabled);
@@ -178,6 +229,7 @@ mod tests {
         assert!(!exported.contains("private city marker"));
         assert!(!exported.contains("weather_enabled"));
         assert!(!exported.contains("spotify_"));
+        assert!(!exported.contains("audio_background"));
         assert!(!exported.contains(&"0123456789abcdef".repeat(2)));
     }
 }

@@ -164,6 +164,7 @@ pub fn initialize(app: &AppHandle) {
         }
         state.endpoints = Endpoints::for_app(app);
         spotify::initialize(app, &state.settings, state.endpoints.fixture.clone());
+        crate::media::visualizer::configure(app, &state.settings.audio_background);
         let oauth_configured = oauth::config(app).is_ok();
         state.gmail.configured = true;
         // Native fixtures never read the user's Windows credential vault.

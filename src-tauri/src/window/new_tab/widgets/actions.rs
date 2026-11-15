@@ -81,6 +81,11 @@ pub fn handle(
         schedule(app);
         return;
     }
+    if operation == "audio_unsubscribe" && source.valid() {
+        crate::media::visualizer::unsubscribe(app, label);
+        source.reply(serde_json::json!({}));
+        return;
+    }
     if !source.active() {
         return;
     }
@@ -136,6 +141,22 @@ async fn perform(
         return Err("cancelled".into());
     }
     match operation {
+        "audio_subscribe" => {
+            crate::media::visualizer::subscribe(
+                app,
+                super::super::audio::Consumer {
+                    id: source.id.clone(),
+                    label: source.label.clone(),
+                    token: source.token.clone(),
+                    document: source.document.clone(),
+                },
+            );
+            Ok(serde_json::json!({}))
+        }
+        "audio_unsubscribe" => {
+            crate::media::visualizer::unsubscribe(app, &source.label);
+            Ok(serde_json::json!({}))
+        }
         "spotify_connect" => {
             spotify::connect(app, source.label.clone()).await?;
             Ok(serde_json::json!({}))
@@ -201,6 +222,7 @@ async fn perform(
                 state.gmail.connecting = false;
             }
             spotify::configure(app, &settings);
+            crate::media::visualizer::configure(app, &settings.audio_background);
             state.settings = settings;
             state.settings_error = None;
             state.revision += 1;
