@@ -26,6 +26,7 @@ const get = store => { let value; store.subscribe(next => { value = next; })(); 
 
 function fixture({ failDrop = false } = {}) {
   const calls = [], listeners = new Map();
+  let frame;
   let acknowledge;
   const pending = new Promise(resolve => { acknowledge = resolve; });
   const runtime = { isTauriRuntime: () => true, invoke: async (command, args) => {
@@ -78,15 +79,30 @@ function fixture({ failDrop = false } = {}) {
       querySelectorAll: () => [], elementFromPoint: () => ({ closest: () => null }),
     },
     innerWidth: 800, innerHeight: 600,
-    requestAnimationFrame: () => 1, cancelAnimationFrame() {},
+    requestAnimationFrame: callback => { frame = callback; return 1; }, cancelAnimationFrame() { frame = undefined; },
   });
   const event = (x, y) => ({ clientX: x, clientY: y, pointerId: 1, button: 0, isPrimary: true,
     target: { closest: () => null }, preventDefault() {} });
   store.startTabDrag(event(100, 20), 'b');
   listeners.get('pointermove')(event(790, 300));
   return { calls, acknowledge, bridge, store, captured: () => captured,
+    move: (x, y) => listeners.get('pointermove')(event(x, y)), frame: () => frame?.(),
     release: () => listeners.get('pointerup')(event(790, 300)) };
 }
+
+test('pointer movements are coalesced until the next frame and release flushes the latest position', async () => {
+  const f = fixture();
+  f.move(700, 300); f.move(750, 300);
+  assert.equal(f.calls.filter(c => c.command === 'set_tab_drag_preview').length, 0);
+  f.frame();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.calls.filter(c => c.command === 'set_tab_drag_preview').length, 1);
+  const release = f.release();
+  f.acknowledge();
+  await release;
+  const previews = f.calls.filter(c => c.command === 'set_tab_drag_preview' && c.args.presentation);
+  assert.equal(previews.at(-1).args.presentation.pointer.x, 790);
+});
 
 test('drop drains the pending preview and commits before removing its geometry', async () => {
   const f = fixture();

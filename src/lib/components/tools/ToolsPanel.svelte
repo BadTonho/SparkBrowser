@@ -28,7 +28,7 @@
       if (r && (anchor.left !== r.left || anchor.top !== r.top || anchor.width !== r.width || anchor.height !== r.height)) anchor = { left:r.left, top:r.top, width:r.width, height:r.height };
       frame = requestAnimationFrame(measure);
     };
-    measure();
+    if (!native) measure();
     return { destroy() { cancelAnimationFrame(frame); stop(); focus?.destroy(); } };
   }
   function tabKeys(event: KeyboardEvent) {

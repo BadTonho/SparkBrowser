@@ -386,8 +386,13 @@ pub async fn switch_tab(
     tab_id: String,
 ) -> Result<TabSnapshot, String> {
     let mut span = state.infrastructure().diagnostics().span("tabs.switch");
+    let mut wait = state.infrastructure().diagnostics().span("tabs.switch.wait");
     let _operation = state.session().operation().await;
+    wait.finish(true, 0);
+    drop(wait);
+    let mut execution = state.infrastructure().diagnostics().span("tabs.switch.execute");
     let result = switch_tab_inner(&app, &state, tab_id);
+    execution.finish(result.is_ok(), 0);
     span.finish(result.is_ok(), 0);
     result
 }

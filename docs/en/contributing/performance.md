@@ -1,5 +1,9 @@
 # Performance validation
 
+For tab switching, `tabs.switch.wait` records time waiting for the session operation lock and `tabs.switch.execute` records the subsequent backend work. The native diagnostics table shows p95 from the shared 256-sample buffer; infrequent operations may have few retained samples. Neither value measures first paint.
+
+For list scaling, compare 100, 500 and 1,000 tabs in the same workspace, including scroll, selection and drag. Record frame times and click-to-paint, and compare against the same profile and hardware before considering virtualization. Check keyboard selection, screen reader access and drag destinations when testing any virtualization change.
+
 Open **Settings → Local Diagnostics** to inspect IPC counts, failures, session mean duration and recent p95, plus native session-write counts and actual resident WebViews. Refresh is manual. Counters stay in memory, retain at most 256 timing samples and contain no URLs, titles, command arguments or tokens. The p95 covers retained samples, not the entire session.
 
 The separate `get_diagnostics.tab_details` inventory includes local tab URLs/titles and workspace IDs. The response also includes the application data directory; remove these fields before sharing it. `native_resources` contains resource counts only: bridge tokens, shield scripts, media entries and Windows media views/runtime contexts. Windows context counts are `null` when unavailable. Compare settled counts with resident views when investigating tab creation/closure; bounded counts do not prove bounded WebView2 heaps.

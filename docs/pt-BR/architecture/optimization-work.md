@@ -1,5 +1,7 @@
 # Trabalho de otimização
 
+Movimentos do ponteiro no arraste de abas são agrupados em uma atualização por quadro, e a posição final é processada antes de confirmar. Os painéis nativos de ferramentas, downloads e configurações rápidas evitam um segundo ciclo de acompanhamento da âncora; o host nativo continua acompanhando a geometria, inclusive transformações CSS. O diagnóstico de troca de abas registra separadamente a espera pelo bloqueio e a execução.
+
 As mudanças exigem validação local antes da release. O comportamento nativo também deve ser verificado nos sistemas operacionais de destino; verificações automatizadas sozinhas não comprovam latência da interface ou economia de memória.
 
 ## Geometria e IPC

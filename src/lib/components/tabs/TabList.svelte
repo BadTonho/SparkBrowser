@@ -34,6 +34,7 @@
   let currentWorkspaceName = $derived(
     $workspaces.find((w) => w.id === $activeWorkspaceId)?.name ?? "Workspace"
   );
+  let activeTabId = $derived(workspaceTabs.find((tab) => tab.is_active)?.id);
 
   function getTabHost(rawUrl: string): string {
     try {
@@ -90,10 +91,10 @@
   }
 
   $effect(() => {
-    const activeTab = workspaceTabs.find((tab) => tab.is_active);
-    if (!activeTab || !listEl) return;
+    const id = activeTabId;
+    if (!id || !listEl) return;
     requestAnimationFrame(() => {
-      const row = [...(listEl?.querySelectorAll<HTMLElement>("[data-tab-id]") ?? [])].find((element) => element.dataset.tabId === activeTab.id);
+      const row = [...(listEl?.querySelectorAll<HTMLElement>("[data-tab-id]") ?? [])].find((element) => element.dataset.tabId === id);
       row?.scrollIntoView({ block: "nearest" });
     });
   });

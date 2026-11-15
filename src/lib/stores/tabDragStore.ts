@@ -21,13 +21,14 @@ interface Drag {
   cursor: string; userSelect: string; original: import("../types/browser").TabItem[];
 }
 export const tabDrag = writable<{ id: string; dragging: boolean; side: DockSide | null } | null>(null);
-let drag: Drag | null = null, busy = false, frame = 0, lastPreview = "";
+let drag: Drag | null = null, busy = false, frame = 0, lastPreview = "", pendingMove = false;
+let hoveredWorkspace: Element | null = null;
+let lastReorderTarget: string | null = null;
 
 function publish() { tabDrag.set(drag ? { id: drag.id, dragging: drag.moved, side: drag.side } : null); }
-function preview(side: DockSide | null) {
+function preview(side: DockSide | null, bounds: DOMRect | undefined) {
   if (!drag) return;
   const gesture = drag;
-  const bounds = document.querySelector('.viewport-frame')?.getBoundingClientRect();
   const pointer = { x: Math.round(drag.x), y: Math.round(drag.y) };
   const signature = JSON.stringify([side, pointer, bounds?.x, bounds?.y, bounds?.width, bounds?.height, get(splitLayout)?.ratio, get(locale)]);
   if (signature === lastPreview) return;
@@ -46,7 +47,7 @@ function contextValid() {
 }
 function cleanup(keepDockPreview = false) {
   const previous = drag;
-  drag = null; lastPreview = ""; cancelAnimationFrame(frame); frame = 0;
+  drag = null; lastPreview = ""; pendingMove = false; cancelAnimationFrame(frame); frame = 0;
   window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', release);
   window.removeEventListener('pointercancel', cancelTabDrag); window.removeEventListener('blur', cancelTabDrag);
   window.removeEventListener('keydown', key, true);
@@ -54,6 +55,7 @@ function cleanup(keepDockPreview = false) {
   if (previous?.root.hasPointerCapture(previous.pointerId)) previous.root.releasePointerCapture(previous.pointerId);
   document.body.style.cursor = previous?.cursor ?? ''; document.body.style.userSelect = previous?.userSelect ?? '';
   document.querySelectorAll('.drop-hover').forEach(element => element.classList.remove('drop-hover'));
+  hoveredWorkspace = null; lastReorderTarget = null;
   tabDrag.set(null);
   const hidden = keepDockPreview ? flushDragPreview() : setDragPreview(null);
   void hidden.catch(() => {});
@@ -72,7 +74,7 @@ function updateDestination() {
   const eligible = drag.original.filter(tab => tab.workspace_id === drag!.context.workspaceId).length > 1;
   const side = bounds && eligible ? splitDropSide(bounds, drag.x, drag.y) : null;
   if (drag.side !== side) { drag.side = side; publish(); }
-  preview(side);
+  preview(side, bounds);
 }
 function move(event: PointerEvent) {
   if (!drag || event.pointerId !== drag.pointerId) return;
@@ -80,30 +82,41 @@ function move(event: PointerEvent) {
   if (!drag.moved && crossedDragThreshold(drag.startX, drag.startY, event.clientX, event.clientY)) {
     drag.moved = true; document.body.style.cursor = 'grabbing'; document.body.style.userSelect = 'none';
     void closeMedia(); void closePrivacy(); void closeZoom();
+    publish();
   }
   if (!drag.moved) return;
   drag.x = event.clientX; drag.y = event.clientY;
+  pendingMove = true;
+}
+function processMove() {
+  if (!drag || !pendingMove) return;
+  pendingMove = false;
   updateDestination();
-  const target = document.elementFromPoint(event.clientX, event.clientY);
+  const target = document.elementFromPoint(drag.x, drag.y);
   const pill = target?.closest<HTMLElement>('.ws-pill');
-  document.querySelectorAll('.ws-pill').forEach(element => element.classList.toggle('drop-hover', element === pill));
+  if (hoveredWorkspace !== pill) {
+    hoveredWorkspace?.classList.remove('drop-hover');
+    pill?.classList.add('drop-hover');
+    hoveredWorkspace = pill ?? null;
+  }
   const over = target?.closest<HTMLElement>('.h-tab,.tab-row')?.dataset.tabId;
-  if (!drag.side && over && over !== drag.id) {
+  if (drag.side || !over || over === drag.id) lastReorderTarget = null;
+  if (!drag.side && over && over !== drag.id && over !== lastReorderTarget) {
     const split = get(splitLayout);
     const membership = split && drag.layout === 'horizontal' ? (split.left_tab_ids.includes(drag.id) ? split.left_tab_ids : split.right_tab_ids) : null;
     if (membership && !membership.includes(over)) return;
     const ids = get(tabs).filter(tab => tab.workspace_id === drag!.context.workspaceId && (!membership || membership.includes(tab.id))).map(tab => tab.id);
     const from = ids.indexOf(drag.id), to = ids.indexOf(over);
-    if (from >= 0 && to >= 0) { ids.splice(to, 0, ids.splice(from, 1)[0]); previewTabReorder(membership ? replaceGroupOrder(get(tabs), ids) : ids); }
+    if (from >= 0 && to >= 0) { lastReorderTarget = over; ids.splice(to, 0, ids.splice(from, 1)[0]); previewTabReorder(membership ? replaceGroupOrder(get(tabs), ids) : ids); }
   }
-  publish();
 }
 async function release(event: PointerEvent) {
   if (!drag || event.pointerId !== drag.pointerId) return;
   if (!contextValid() || event.clientX < 0 || event.clientY < 0 || event.clientX > innerWidth || event.clientY > innerHeight) { cancelTabDrag(); return; }
   // Re-evaluate docking at release without repeating the last provisional reorder.
-  if (!drag.moved) move(event);
-  else { drag.x = event.clientX; drag.y = event.clientY; updateDestination(); }
+  move(event);
+  processMove();
+  if (drag?.moved) updateDestination();
   if (!drag) return;
   const target = document.elementFromPoint(event.clientX, event.clientY);
   const targetWorkspace = target?.closest<HTMLElement>('.ws-pill')?.dataset.wsId;
@@ -154,7 +167,7 @@ export function startTabDrag(event: PointerEvent, id: string) {
   root.addEventListener('lostpointercapture', cancelTabDrag);
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', release);
   window.addEventListener('pointercancel', cancelTabDrag); window.addEventListener('blur', cancelTabDrag); window.addEventListener('keydown', key, true);
-  const follow = () => { if (!drag) return; if (!contextValid()) { cancelTabDrag(); return; } if (drag.moved) updateDestination(); frame = requestAnimationFrame(follow); };
+  const follow = () => { if (!drag) return; if (!contextValid()) { cancelTabDrag(); return; } if (pendingMove) processMove(); else if (drag.moved) updateDestination(); frame = requestAnimationFrame(follow); };
   frame = requestAnimationFrame(follow);
 }
 function startTabDragLifecycle() {

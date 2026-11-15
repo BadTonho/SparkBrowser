@@ -1,5 +1,7 @@
 # Optimization work
 
+Tab pointer moves are grouped into one update per animation frame, and release processes the final position before committing. Native tools, downloads and quick-settings panels avoid a second anchor-tracking loop; the native panel host continues tracking geometry, including CSS transforms. Tab-switch diagnostics separately record lock wait and execution.
+
 Changes require local validation before release. Native behavior must also be checked on the target operating systems; automated checks alone do not establish user-interface latency or memory savings.
 
 ## Geometry and IPC

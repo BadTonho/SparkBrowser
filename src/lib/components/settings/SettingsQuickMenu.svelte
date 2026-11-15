@@ -37,7 +37,7 @@
       }
       frame = requestAnimationFrame(measure);
     };
-    measure();
+    if (!native) measure();
     return { destroy() { cancelAnimationFrame(frame); stop(); focus?.destroy(); } };
   }
 

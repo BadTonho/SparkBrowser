@@ -1,5 +1,9 @@
 # Validação de desempenho
 
+Na troca de abas, `tabs.switch.wait` registra a espera pelo bloqueio de operações da sessão e `tabs.switch.execute` registra o trabalho posterior no backend. A tabela de diagnóstico nativo mostra o p95 do buffer compartilhado de 256 amostras; operações pouco frequentes podem ter poucas amostras retidas. Esses valores não medem a primeira pintura.
+
+Para avaliar a escala da lista, compare 100, 500 e 1.000 abas no mesmo workspace, incluindo rolagem, seleção e arraste. Registre os tempos de quadro e do clique à pintura e compare com o mesmo perfil e hardware antes de considerar virtualização. Verifique seleção por teclado, acesso por leitor de tela e destinos de arraste ao testar qualquer virtualização.
+
 Abra **Settings → Local Diagnostics** para inspecionar as contagens de IPC, falhas, duração média e p95 recente da sessão, além das contagens nativas de gravação de sessão e das WebViews realmente residentes. A atualização é manual. Os contadores ficam em memória, retêm no máximo 256 amostras de tempo e não contêm URLs, títulos, argumentos de comandos ou tokens. O p95 cobre as amostras ainda retidas, não toda a sessão.
 
 O inventário separado `get_diagnostics.tab_details` inclui URLs/títulos de abas locais e IDs de workspace. A resposta também inclui o diretório de dados da aplicação; remova esses campos antes de compartilhá-la. `native_resources` contém somente contagens de recursos: tokens de bridge, scripts do escudo, entradas de mídia e views/contextos de execução de mídia do Windows. As contagens de contexto do Windows são `null` quando indisponíveis. Compare contagens estabilizadas com as views residentes ao investigar criação/fechamento de abas; contagens limitadas não comprovam heaps limitados do WebView2.

@@ -12,6 +12,10 @@
   let disposed = false;
   let compactFeeds = $state(false);
   let experimentError = $state("");
+  function nativeP95(operation: string): string {
+    const values = (native?.metrics.samples ?? []).filter(sample => sample.operation === operation).map(sample => sample.duration_ms).sort((a, b) => a - b);
+    return values.length ? values[Math.ceil(values.length * 0.95) - 1].toFixed(2) : "—";
+  }
   async function setCompact(enabled: boolean) {
     try { await invoke("set_experimental_flag", { name: "compact_feed_cards", enabled }); compactFeeds = enabled; experimentError = ""; }
     catch { experimentError = $t("settings.experiments_error"); }
@@ -48,9 +52,9 @@
     <p>{native.tabs} {$t("settings.tabs_9dcf")} {native.resident_webviews} {$t("settings.resident_webviews_f20f")} {native.protected_tabs} {$t("settings.protected_tabs_d119")}</p>
     <table>
       <caption>{$t("settings.native_work_05cc")}</caption>
-      <thead><tr><th>{$t("settings.operation_0f04")}</th><th>{$t("settings.calls_b73a")}</th><th>{$t("settings.failures_7bd3")}</th><th>{$t("settings.rows_written_4bd0")}</th></tr></thead>
+      <thead><tr><th>{$t("settings.operation_0f04")}</th><th>{$t("settings.calls_b73a")}</th><th>{$t("settings.failures_7bd3")}</th><th>{$t("settings.rows_written_4bd0")}</th><th>{$t("settings.recent_p95_ms_337e")}</th></tr></thead>
       <tbody>{#each Object.entries(native.metrics.totals) as [operation, total]}
-        <tr><td>{operation}</td><td>{total.calls}</td><td>{total.failures}</td><td>{total.affected_rows}</td></tr>
+        <tr><td>{operation}</td><td>{total.calls}</td><td>{total.failures}</td><td>{total.affected_rows}</td><td>{nativeP95(operation)}</td></tr>
       {/each}</tbody>
     </table>
   {/if}
