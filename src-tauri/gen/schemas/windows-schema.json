@@ -477,6 +477,12 @@
           "markdownDescription": "Enables the get_bookmark_data command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_browser_windows command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-browser-windows",
+          "markdownDescription": "Enables the get_browser_windows command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_closed_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-closed-tabs",
@@ -741,6 +747,12 @@
           "markdownDescription": "Enables the move_tab_in_split command without any pre-configured scope."
         },
         {
+          "description": "Enables the move_tab_to_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-move-tab-to-window",
+          "markdownDescription": "Enables the move_tab_to_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the move_tab_to_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "allow-move-tab-to-workspace",
@@ -751,6 +763,12 @@
           "type": "string",
           "const": "allow-navigate-to",
           "markdownDescription": "Enables the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_browser_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-browser-window",
+          "markdownDescription": "Enables the open_browser_window command without any pre-configured scope."
         },
         {
           "description": "Enables the open_private_window command without any pre-configured scope.",
@@ -1569,6 +1587,12 @@
           "markdownDescription": "Denies the get_bookmark_data command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_browser_windows command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-browser-windows",
+          "markdownDescription": "Denies the get_browser_windows command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_closed_tabs command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-closed-tabs",
@@ -1833,6 +1857,12 @@
           "markdownDescription": "Denies the move_tab_in_split command without any pre-configured scope."
         },
         {
+          "description": "Denies the move_tab_to_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-move-tab-to-window",
+          "markdownDescription": "Denies the move_tab_to_window command without any pre-configured scope."
+        },
+        {
           "description": "Denies the move_tab_to_workspace command without any pre-configured scope.",
           "type": "string",
           "const": "deny-move-tab-to-workspace",
@@ -1843,6 +1873,12 @@
           "type": "string",
           "const": "deny-navigate-to",
           "markdownDescription": "Denies the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_browser_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-browser-window",
+          "markdownDescription": "Denies the open_browser_window command without any pre-configured scope."
         },
         {
           "description": "Denies the open_private_window command without any pre-configured scope.",

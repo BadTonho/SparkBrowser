@@ -2,7 +2,6 @@ use crate::database::tab_usage_repo;
 use crate::state::browser_state::{BrowserState, TabSnapshot, DEFAULT_HOME_URL};
 use crate::state::workspace_model::DEFAULT_WORKSPACE_ID;
 use crate::state::{tab_checkpoint::TabCheckpoint, tab_model::TabInfo};
-use crate::window::webview_manager::sync_all_webviews;
 use tauri::{AppHandle, Manager, State};
 
 pub fn popup_target_allowed(enabled: bool, url: &tauri::Url) -> bool {
@@ -407,6 +406,11 @@ pub(super) fn switch_tab_inner(
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
+    let previous_bounds = if crate::window::fullscreen::all(app).is_empty() {
+        crate::window::viewport::content_bounds(app, state).ok()
+    } else {
+        None
+    };
     if previous_active_id != tab_id {
         if let Some(label) = crate::window::fullscreen::active_in(app, &window_id) {
             crate::window::fullscreen::exit(app, &label, true);
@@ -417,7 +421,7 @@ pub(super) fn switch_tab_inner(
         let selected = state.select_tab(&tab_id)?;
         Ok(selected.url)
     })?;
-    reconcile_committed(app, state);
+    reconcile_committed_with_bounds(app, state, previous_bounds.as_deref());
 
     let snapshot = crate::state::publish::publish_tabs(app, state, &window_id);
     let stats = state.snapshot_privacy_stats();
@@ -815,6 +819,14 @@ pub async fn set_tab_pinned(
 
 /// A committed session remains authoritative if native reconciliation fails.
 pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
+    reconcile_committed_with_bounds(app, state, None);
+}
+
+fn reconcile_committed_with_bounds(
+    app: &AppHandle,
+    state: &BrowserState,
+    previous: Option<&[(String, crate::state::browser_state::ViewportBounds)]>,
+) {
     for (owner, window_id) in crate::window::fullscreen::all(app) {
         let selected = state
             .session()
@@ -825,7 +837,7 @@ pub(super) fn reconcile_committed(app: &AppHandle, state: &BrowserState) {
             crate::window::fullscreen::exit(app, &owner, true);
         }
     }
-    if let Err(error) = sync_all_webviews(app, state) {
+    if let Err(error) = crate::window::sync_webviews_after_selection(app, state, previous) {
         let _ = crate::security::emit_shell(
             app,
             "browser-error",

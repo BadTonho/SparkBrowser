@@ -275,11 +275,6 @@ pub fn run() {
             let state = app.state::<BrowserState>();
 
             let data_directory = app.path().app_data_dir()?;
-            let lists = privacy::filter_lists::FilterLists::start(
-                &data_directory.join("filter-lists").join("last-valid.json"),
-                !cfg!(test) && app.config().identifier != "org.spark.browser.native-tests",
-            );
-            app.manage(lists);
             app.manage(
                 recovery::profile_lock::ProfileLock::acquire(&data_directory)
                     .map_err(std::io::Error::other)?,
@@ -297,6 +292,15 @@ pub fn run() {
                 private_session::purge_stale_sessions(app.handle())
                     .map_err(std::io::Error::other)?;
             }
+            let filter_cache = data_directory.join("filter-lists").join("last-valid.json");
+            let prepare_filters = std::thread::Builder::new()
+                .name("spark-filter-startup".into())
+                .spawn(move || {
+                    let started = std::time::Instant::now();
+                    let lists = privacy::filter_lists::FilterLists::new(filter_cache);
+                    (lists, started.elapsed())
+                })?;
+            let mut profile_startup = state.infrastructure().diagnostics().span("startup.profile");
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
@@ -434,7 +438,20 @@ pub fn run() {
                 .initialize(app.handle())
                 .map_err(std::io::Error::other)?;
             window::new_tab::widgets::initialize(app.handle());
+            profile_startup.finish(true, 0);
+            drop(profile_startup);
+            // Prepare the database and the filter engine in parallel. The first
+            // content view still starts with the complete blocking rules.
+            let (lists, filter_duration) = prepare_filters
+                .join()
+                .map_err(|_| std::io::Error::other("Filter-list initialization failed"))?;
+            state.infrastructure().diagnostics().record("startup.filters", filter_duration, 0, true);
+            let lists = std::sync::Arc::new(lists);
+            app.manage(lists.clone());
             spawn_content_webview(app.handle())?;
+            if !cfg!(test) && app.config().identifier != "org.spark.browser.native-tests" {
+                lists.start_updates();
+            }
             // The other windows of the last session come back once the first one is up.
             let reopening = app.handle().clone();
             tauri::async_runtime::spawn(async move {

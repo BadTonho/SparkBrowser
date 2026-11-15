@@ -1,6 +1,7 @@
 import { checkTabDocking } from './tab-docking.mjs';
 import { checkTitlebarActions } from './titlebar-actions.mjs';
 import { checkToolsPopover } from './tools-popover.mjs';
+import { checkPanelIdleRelease } from './panel-idle-release.mjs';
 import { checkDownloadsPopover } from './downloads-popover.mjs';
 import { checkDownloadsList } from './downloads-list.mjs';
 import { checkSecurityBoundaries } from './security-boundaries.mjs';
@@ -72,6 +73,7 @@ export const scenarios = {
   'security-boundaries': checkSecurityBoundaries,
   'webview-runtime': checkWebviewRuntime,
   'tools-popover': checkToolsPopover,
+  'panel-idle-release': checkPanelIdleRelease,
   'downloads-popover': checkDownloadsPopover,
   'quick-settings': checkQuickSettings,
   'downloads-list': checkDownloadsList,

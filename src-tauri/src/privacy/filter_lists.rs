@@ -73,11 +73,11 @@ impl Snapshots {
         }
         Ok(())
     }
-    fn compile(&self) -> Engine {
+    fn compile(self) -> Engine {
         let mut set = FilterSet::new(false);
-        for list in &self.lists {
+        for list in self.lists {
             set.add_filter_list(
-                list.clone(),
+                list,
                 ParseOptions {
                     rule_types: RuleTypes::NetworkOnly,
                     ..Default::default()
@@ -117,11 +117,11 @@ impl FilterLists {
     }
     fn install(&self, snapshots: Snapshots) -> Result<(), String> {
         snapshots.validate()?;
-        let engine = snapshots.compile();
         let parent = self.cache.parent().ok_or("Invalid cache path")?;
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         let mut file = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
         serde_json::to_writer(&mut file, &snapshots).map_err(|e| e.to_string())?;
+        let engine = snapshots.compile();
         file.flush().map_err(|e| e.to_string())?;
         file.as_file().sync_all().map_err(|e| e.to_string())?;
         file.persist(&self.cache).map_err(|e| e.to_string())?;
@@ -156,21 +156,17 @@ impl FilterLists {
             lists: lists.try_into().map_err(|_| "Missing filter list")?,
         })
     }
-    pub fn start(cache: &Path, update: bool) -> Arc<Self> {
-        let service = Arc::new(Self::new(cache.to_owned()));
-        if update {
-            let service = Arc::clone(&service);
-            std::thread::spawn(move || {
-                std::thread::sleep(refresh_delay(&service.cache));
-                loop {
-                    if let Err(error) = service.refresh() {
-                        eprintln!("Filter-list refresh failed: {error}");
-                    }
-                    std::thread::sleep(REFRESH_INTERVAL);
+    pub fn start_updates(self: &Arc<Self>) {
+        let service = Arc::clone(self);
+        std::thread::spawn(move || {
+            std::thread::sleep(refresh_delay(&service.cache));
+            loop {
+                if let Err(error) = service.refresh() {
+                    eprintln!("Filter-list refresh failed: {error}");
                 }
-            });
-        }
-        service
+                std::thread::sleep(REFRESH_INTERVAL);
+            }
+        });
     }
 }
 

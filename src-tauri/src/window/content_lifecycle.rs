@@ -108,7 +108,7 @@ pub(super) fn ensure_tab_webview(
     id: &str,
     url: &str,
     bounds: crate::state::browser_state::ViewportBounds,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let label = webview_label_for_tab(id);
     let profile = super::workspace_data::content_directory(app, id)?;
     let state = app.state::<BrowserState>();
@@ -118,7 +118,7 @@ pub(super) fn ensure_tab_webview(
             .content_profiles()
             .matches(&label, &profile)?
         {
-            return Ok(());
+            return Ok(false);
         }
         close_and_clean(app, &label)?;
     }
@@ -126,30 +126,42 @@ pub(super) fn ensure_tab_webview(
     state
         .surfaces()
         .content_profiles()
-        .remember(&label, profile)
+        .remember(&label, profile)?;
+    Ok(true)
 }
 
 /// Synchronizes visibility and bounds of the child WebView.
 pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
+    sync_webviews_after_selection(app, state, None)
+}
+
+pub(crate) fn sync_webviews_after_selection(
+    app: &AppHandle,
+    state: &BrowserState,
+    mut previous: Option<&[(String, crate::state::browser_state::ViewportBounds)]>,
+) -> Result<(), String> {
     state.refresh_visible_tabs()?;
     // Only committed pages may be created; drag companions must already be resident.
     let pane_bounds = super::viewport::visible_bounds(state)?;
+    let tabs = state.snapshot_tabs();
     for (id, bounds) in &pane_bounds {
+        let tab = tabs
+            .iter()
+            .find(|tab| &tab.id == id)
+            .ok_or("Visible tab not found")?;
         // A window of the last session that has not reopened yet gets its pages when it does.
-        if state
-            .window_of_tab(id)
-            .is_ok_and(|window| app.get_window(&window).is_none())
-        {
+        if app.get_window(&tab.window_id).is_none() {
             continue;
         }
-        let tab = state
-            .snapshot_tabs()
-            .into_iter()
-            .find(|t| &t.id == id)
-            .ok_or("Visible tab not found")?;
-        ensure_tab_webview(app, id, &tab.url, *bounds)?;
+        if ensure_tab_webview(app, id, &tab.url, *bounds)? {
+            previous = None;
+        }
     }
-    state.enforce_resident_policy()?;
+    let tabs = if state.enforce_resident_policy()? == 0 {
+        tabs
+    } else {
+        state.snapshot_tabs()
+    };
     let bounds = state.surfaces().main_viewport().unwrap_or_default();
     let workspace_switcher_open = state
         .surfaces()
@@ -164,16 +176,13 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
         .map(|open| *open)
         .unwrap_or(false);
 
-    let tabs: std::collections::HashMap<_, _> = state
-        .snapshot_tabs()
-        .into_iter()
-        .map(|tab| (webview_label_for_tab(&tab.id), tab))
-        .collect();
+    let tabs: std::collections::HashMap<_, _> =
+        tabs.iter().map(|tab| (tab.id.as_str(), tab)).collect();
     for (label, _webview) in app.webviews() {
-        if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
+        let Some(id) = label.strip_prefix(CONTENT_WEBVIEW_PREFIX) else {
             continue;
-        }
-        let tab = tabs.get(&label);
+        };
+        let tab = tabs.get(id).copied();
         match tab {
             None
             | Some(crate::state::tab_model::TabInfo {
@@ -194,7 +203,12 @@ pub fn sync_all_webviews(app: &AppHandle, state: &BrowserState) -> Result<(), St
             }
         }
     }
-    super::viewport::sync_content_geometry(app, state)?;
+    let geometry = super::viewport::sync_changed_content_geometry(app, state, previous);
+    if geometry.is_err() && previous.is_some() {
+        super::viewport::sync_content_geometry(app, state)?;
+    } else {
+        geometry?;
+    }
 
     if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
         let bounds = state

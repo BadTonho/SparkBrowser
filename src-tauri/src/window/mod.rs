@@ -4,6 +4,7 @@ mod caret_browsing;
 pub(crate) mod content_bridge;
 mod content_focus;
 mod content_lifecycle;
+pub(crate) use content_lifecycle::sync_webviews_after_selection;
 pub mod favicon;
 pub mod fullscreen;
 pub mod history_overlay;

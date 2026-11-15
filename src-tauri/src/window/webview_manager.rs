@@ -86,7 +86,7 @@ pub(super) fn ensure_tab_webview(
     url: &str,
     bounds: ViewportBounds,
 ) -> Result<(), String> {
-    super::content_lifecycle::ensure_tab_webview(app, tab_id, url, bounds)
+    super::content_lifecycle::ensure_tab_webview(app, tab_id, url, bounds).map(|_| ())
 }
 
 pub fn navigate_content_webview(app: &AppHandle, target_url_str: &str) -> Result<String, String> {

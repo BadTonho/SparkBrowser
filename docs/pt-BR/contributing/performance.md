@@ -13,7 +13,9 @@ Use o mesmo build de release, computador, escala da tela e páginas locais de te
 | Recolher/expandir a barra lateral repetidamente | Chamadas de `sync_viewport_bounds` e duração recente | No máximo um resize em andamento; limites idênticos já aplicados são descartados |
 | Arrastar uma aba sobre várias vizinhas | Chamadas de `session.persist` e linhas gravadas | Um comando de reordenação ao soltar, nenhum por movimento do ponteiro |
 | Selecionar a mesma aba novamente | Linhas de sessão gravadas | Nenhuma linha inalterada é regravada |
-| Alternar entre abas carregadas | Duração de IPC e tempo nativo de `tabs.switch` | Sem nova navegação de uma view residente existente |
+| Alternar entre abas carregadas | Duração de IPC, tempo nativo de `tabs.switch` e tempo do clique à primeira pintura | As views existentes conservam seus documentos; na troca entre abas residentes, só os painéis de conteúdo que mudaram recebem atualizações de geometria ou visibilidade |
+| Abrir e fechar Configurações, Configurações rápidas, Ferramentas e Downloads | Contagem de WebViews auxiliares e memória da árvore de processos antes de abrir, logo após fechar e após pelo menos 30 segundos de inatividade | As views auxiliares ociosas são liberadas e podem reabrir com o estado atual da interface principal |
+| Abrir com um perfil novo e com um perfil existente | Tempo até a janela ficar utilizável e durações nativas de `startup.filters` e `startup.profile` | A compilação dos filtros ocorre em paralelo à inicialização do perfil; a primeira navegação externa é protegida |
 | Abrir 10, 50 e 100 abas | Views residentes e memória da árvore de processos | Limite flexível respeitado, salvo quando abas protegidas exigem mais views |
 | Buscar em mais de 60 visitas do histórico | Continuidade dos resultados e latência | Páginas do cursor sem duplicatas ou perda de visitas com o mesmo timestamp |
 | Buscar uma coleção grande de notas/sessões | Duração da consulta, tamanho dos índices e custo de gravação | Mesmos resultados literais/Unicode; prévias limitadas; `2+` para correspondências adicionais |

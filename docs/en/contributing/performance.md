@@ -13,7 +13,9 @@ Use the same release build, computer, display scale and local fixture pages for 
 | Repeatedly collapse/expand the sidebar | `sync_viewport_bounds` calls and recent duration | At most one resize in flight; identical applied bounds are skipped |
 | Drag a tab across several neighbors | `session.persist` calls and rows written | One reorder command on drop, none per pointer movement |
 | Select the same tab again | Session rows written | No unchanged row is rewritten |
-| Switch between loaded tabs | IPC duration and native `tabs.switch` time | No new navigation for an existing resident view |
+| Switch between loaded tabs | IPC duration, native `tabs.switch` time and click-to-first-paint | Existing views keep their documents; only changed panes receive geometry or visibility updates on a resident switch |
+| Open and close Settings, Quick Settings, Tools and Downloads | Auxiliary WebView count and process-tree memory before opening, immediately after closing and after at least 30 seconds idle | Idle panel views are released and can reopen from the shell's current state |
+| Launch with a cold profile and with an existing profile | Time to usable window and native `startup.filters` and `startup.profile` durations | Filter compilation overlaps profile initialization; the first external navigation is protected |
 | Open 10, 50 and 100 tabs | Resident views and process-tree memory | Soft cap respected unless protected tabs require more views |
 | Search more than 60 history visits | Result continuity and latency | Cursor pages without duplicates or lost visits sharing a timestamp |
 | Search a large notes/sessions collection | Query duration, index size and write cost | Same literal/Unicode results; bounded previews; `2+` for additional matches |

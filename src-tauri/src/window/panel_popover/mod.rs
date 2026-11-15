@@ -1,5 +1,6 @@
 mod bridge;
 mod focus;
+mod idle;
 
 use super::webview_manager::create_internal_bridge_token;
 use crate::state::browser_state::BrowserState;
@@ -88,6 +89,8 @@ struct Session {
 struct Inner {
     session: Option<Session>,
     closed_session: u64,
+    idle_generation: u64,
+    release_pending: bool,
 }
 
 #[derive(Default)]
@@ -185,8 +188,12 @@ fn warm_overlay(result: Result<(), String>) {
 }
 
 fn warm<P: Panel>(app: &AppHandle, window_id: &str) {
-    if let Err(error) = ensure_webview::<P>(app, window_id) {
-        eprintln!("Could not prepare {}: {error}", P::LABEL);
+    if is_open::<P>(app) {
+        return;
+    }
+    match ensure_webview::<P>(app, window_id) {
+        Ok(()) => idle::schedule::<P>(app),
+        Err(error) => eprintln!("Could not prepare {}: {error}", P::LABEL),
     }
 }
 
@@ -274,6 +281,7 @@ pub fn dismiss<P: Panel>(app: &AppHandle) {
     );
     if let Some(view) = app.get_webview(P::LABEL) {
         let _ = view.hide();
+        idle::schedule::<P>(app);
     }
 }
 
@@ -322,6 +330,7 @@ pub fn set<P: Panel>(
                 P::SETTER
             ));
             view.hide().map_err(|e| e.to_string())?;
+            idle::schedule::<P>(app);
         }
         if restore_focus {
             if let Some(main) = app.get_webview(&super::overlay_host::host_id(app, P::LABEL)) {
@@ -385,6 +394,7 @@ pub fn set<P: Panel>(
     payload["sessionId"] = session_id.into();
     payload["token"] = session.token.clone().into();
     inner.session = Some(session);
+    inner.release_pending = false;
     drop(inner);
     if P::HOST == "tools-popover" {
         super::downloads_popover::dismiss(app);

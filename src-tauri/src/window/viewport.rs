@@ -1,10 +1,7 @@
 use super::webview_manager::{
     BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL, CONTENT_WEBVIEW_PREFIX, WORKSPACE_SWITCHER_WEBVIEW_LABEL,
 };
-use crate::state::{
-    browser_state::{BrowserState, ViewportBounds},
-    tab_model::webview_label_for_tab,
-};
+use crate::state::browser_state::{BrowserState, ViewportBounds};
 #[cfg_attr(target_os = "linux", allow(unused_imports))]
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect};
 
@@ -105,6 +102,14 @@ pub fn content_bounds(
 
 /// Presentation changes reuse resident documents and never change tab lifecycle metadata.
 pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
+    sync_changed_content_geometry(app, state, None)
+}
+
+pub(super) fn sync_changed_content_geometry(
+    app: &AppHandle,
+    state: &BrowserState,
+    previous: Option<&[(String, ViewportBounds)]>,
+) -> Result<(), String> {
     let mut panes = content_bounds(app, state)?;
     // A page in fullscreen fills its window and hides the other pages of that window.
     let fullscreen = super::fullscreen::all(app);
@@ -133,14 +138,15 @@ pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<()
             .bookmark_context_menu_open()
             .lock()
             .map_err(|e| e.to_string())?;
+    let previous = previous.filter(|_| fullscreen.is_empty() && !hidden);
     for (label, _view) in app.webviews() {
-        if !label.starts_with(CONTENT_WEBVIEW_PREFIX) {
+        let Some(tab_id) = label.strip_prefix(CONTENT_WEBVIEW_PREFIX) else {
             continue;
-        }
+        };
         let full = full_sizes.iter().find(|(owner, _, _)| owner == &label);
         let pane = panes
             .iter()
-            .find(|(id, _)| webview_label_for_tab(id) == label)
+            .find(|(id, _)| id == tab_id)
             .map(|(_, bounds)| *bounds);
         let pane = match full {
             Some((_, _, size)) => Some(crate::state::browser_state::ViewportBounds {
@@ -151,6 +157,15 @@ pub fn sync_content_geometry(app: &AppHandle, state: &BrowserState) -> Result<()
             }),
             None => pane.filter(|_| !hidden),
         };
+        if let Some(previous) = previous {
+            let old_bounds = previous
+                .iter()
+                .find(|(id, _)| id == tab_id)
+                .map(|(_, bounds)| *bounds);
+            if old_bounds == pane {
+                continue;
+            }
+        }
         if let Some(bounds) = pane {
             #[cfg(target_os = "linux")]
             super::linux_layout::update_bounds(
