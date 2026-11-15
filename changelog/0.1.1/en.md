@@ -1,0 +1,13 @@
+# Spark 0.1.1
+
+In progress — not released.
+
+## Improvements
+
+- Tab dragging groups pointer updates to reduce repeated work.
+- Idle settings, tools and downloads panels release their native views after use.
+- Local diagnostics show recent native timing percentiles and separate tab-switch wait and execution times.
+
+## Fixes
+
+- Fixed the update channel selector being disabled in native builds where automatic updates are unavailable.

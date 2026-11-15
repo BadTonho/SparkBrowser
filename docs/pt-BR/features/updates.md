@@ -1,6 +1,6 @@
 # Canais de versão e atualizações
 
-Abra **Settings → About & Updates** para consultar a versão em execução, escolher **Stable** ou **Beta**, verificar atualizações e ler as notas. Instalações de release Windows x64 consultam uma vez ao abrir. Falhas na inicialização aparecem nesse painel sem interromper a navegação. Preview, desenvolvimento, builds de teste isolados e outras plataformas apresentam o recurso como indisponível.
+Abra **Settings → About & Updates** para consultar a versão em execução, escolher **Stable** ou **Beta**, verificar atualizações e ler as notas. Instalações de release Windows x64 consultam uma vez ao abrir. Falhas na inicialização aparecem nesse painel sem interromper a navegação. Builds nativos de desenvolvimento e teste isolados e outras plataformas podem salvar a preferência de canal, mas não podem verificar nem instalar atualizações. A prévia no navegador não pode salvar a preferência.
 
 Stable aceita tags publicadas como `v1.0.0`. Beta também aceita `v1.1.0-beta.1`, marcada como pré-lançamento no GitHub, e versões estáveis mais novas. A ordenação SemVer coloca `beta.10` depois de `beta.2`, e `1.1.0` depois de `1.1.0-beta.10`. Rascunhos, tags não suportadas e marcações de pré-lançamento inconsistentes são excluídos. Erros de paginação e limites da API são informados em vez de indicar que a instalação está atualizada.
 

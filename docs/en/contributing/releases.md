@@ -39,7 +39,7 @@ The release workflow builds and publishes; it does not run the native regression
 
 1. Run `npm run validate` and the critical native scenarios with `npm run test:native:critical` (see [native tests](native-tests.md)).
 2. Check that the repository is clean and follows the [Zero-Leak policy](rules-and-standards.md#rule-1-zero-sensitive-data-in-version-control).
-3. From version 0.2.0 on, make sure `changelog/<version>/` exists with `en.md` and `pt-BR.md` (see the [changelog guide](changelog.md)). Version 0.1.0 has no changelog.
+3. From version 0.1.1 on, make sure `changelog/<version>/` exists with `en.md` and `pt-BR.md` (see the [changelog guide](changelog.md)). Version 0.1.0 has no changelog.
 
 ### Step-by-step to publish an update:
 

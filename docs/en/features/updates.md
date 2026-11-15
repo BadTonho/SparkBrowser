@@ -1,6 +1,6 @@
 # Release channels and updates
 
-Open **Settings → About & Updates** to see the running version, choose **Stable** or **Beta**, check for updates and read release notes. Windows x64 release installations check once when opened. Startup failures appear in this panel without interrupting browsing. Preview, development, isolated test builds and other platforms show the feature as unavailable.
+Open **Settings → About & Updates** to see the running version, choose **Stable** or **Beta**, check for updates and read release notes. Windows x64 release installations check once when opened. Startup failures appear in this panel without interrupting browsing. Development and isolated native builds and other platforms can save a channel preference, but cannot check or install updates. Browser preview cannot save the preference.
 
 Stable accepts published tags such as `v1.0.0`. Beta also accepts `v1.1.0-beta.1`, marked as a GitHub pre-release, and newer stable versions. SemVer ordering places `beta.10` after `beta.2`, and `1.1.0` after `1.1.0-beta.10`. Drafts, unsupported tags and inconsistent pre-release flags are excluded. Pagination errors and rate limits are reported instead of claiming the installation is current.
 

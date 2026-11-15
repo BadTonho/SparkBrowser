@@ -4,6 +4,7 @@
   import { t, formatDate, formatNumber } from "../../i18n";
   import { updateState, updateBusy, updateActionError, checkUpdates, selectUpdateChannel, startUpdateDownload, startUpdateInstall } from "../../stores/updatesStore";
   import type { UpdateChannel } from "../../types/updates";
+  import { isTauriRuntime } from "../../services/bridge/runtime";
   const active = $derived($updateBusy || ["checking", "downloading", "installing"].includes($updateState.status));
   const status = $derived.by(() => {
     switch ($updateState.status) {
@@ -29,7 +30,7 @@
       <label for="update-channel" class="row-label">{$t("settings.release_channel_d89b")}</label>
       <span class="row-desc">{$t("settings.beta_includes_previews_and_newer_stable_releases_both_channels_share_you_f02b")}</span>
     </div>
-    <select id="update-channel" class="engine-select" value={$updateState.channel} disabled={!$updateState.supported || active}
+    <select id="update-channel" class="engine-select" value={$updateState.channel} disabled={!isTauriRuntime() || active}
       onchange={event => { void selectUpdateChannel(event.currentTarget.value as UpdateChannel); }}>
       <option value="stable">{$t("settings.stable_90ee")}</option><option value="beta">{$t("settings.beta_7033")}</option>
     </select>
@@ -42,7 +43,7 @@
   {#if $updateState.error || $updateActionError}<ErrorMessage error={$updateActionError || $updateState.error} />{/if}
   {#if $updateState.retry_after}<p>{$t("settings.try_again_after_41f4")} {date($updateState.retry_after)}.</p>{/if}
   <div class="actions">
-    <button class="pill-action" disabled={!$updateState.supported || active} onclick={() => { void checkUpdates(); }}>{$t("settings.check_for_updates_f26f")}</button>
+    <button data-testid="check-for-updates" class="pill-action" disabled={!$updateState.supported || active} onclick={() => { void checkUpdates(); }}>{$t("settings.check_for_updates_f26f")}</button>
     {#if $updateState.update}
       {#if $updateState.status === "ready"}
         <button class="pill-action" disabled={active} onclick={() => { void startUpdateInstall(); }}>{$t("settings.install_and_restart_1b99")}</button>

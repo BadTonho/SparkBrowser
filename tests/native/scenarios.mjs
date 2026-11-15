@@ -164,8 +164,12 @@ export const scenarios = {
     }
     await context.openSettings(); await click('[data-testid="settings-updates"]');
     await until(() => script('return Boolean(document.querySelector("#updates-heading"))'), 'updates settings');
-    assert.equal(await script('return document.querySelector("#update-channel").disabled'), true, 'isolated native builds cannot update the production installation');
+    assert.equal(await script('return document.querySelector("#update-channel").disabled'), false, 'the preference remains editable in isolated native builds');
+    assert.equal(await script('return document.querySelector("[data-testid=check-for-updates]").disabled'), true, 'isolated native builds cannot update the production installation');
     assert.equal((await invoke('get_update_state')).supported, false);
+    await script('const select = document.querySelector("#update-channel"); select.value = "beta"; select.dispatchEvent(new Event("change", { bubbles: true }));');
+    await until(async () => (await invoke('get_update_state')).channel === 'beta', 'update channel preference saved');
+    assert.equal(await script('return document.querySelector("#update-channel").value'), 'beta');
     if (process.env.SPARK_NATIVE_SCREENSHOTS === '1') {
       await screenshot('updates');
     }

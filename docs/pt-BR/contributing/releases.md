@@ -39,7 +39,7 @@ O workflow de release compila e publica; ele não executa a suíte de regressõe
 
 1. Execute `npm run validate` e os cenários nativos críticos com `npm run test:native:critical` (veja [testes nativos](native-tests.md)).
 2. Confirme que o repositório está limpo e segue a [política de zero vazamentos](rules-and-standards.md#regra-1-zero-arquivos-sensíveis-no-github).
-3. A partir da versão 0.2.0, garanta que `changelog/<versão>/` existe com `en.md` e `pt-BR.md` (veja o [guia de changelog](changelog.md)). A versão 0.1.0 não tem changelog.
+3. A partir da versão 0.1.1, garanta que `changelog/<versão>/` existe com `en.md` e `pt-BR.md` (veja o [guia de changelog](changelog.md)). A versão 0.1.0 não tem changelog.
 
 ### Passo a passo para lançar uma atualização:
 
