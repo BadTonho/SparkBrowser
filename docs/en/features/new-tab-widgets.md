@@ -1,6 +1,8 @@
 # New-tab widgets
 
-Open **Customize new tab** in the bottom-right corner to configure **Weather**, **Gmail**, **Wallpaper**, and **Clock**. It opens as a compact popover above the button, with SVG icons and a vertical category menu. The panel keeps a stable responsive size as you switch categories; longer settings scroll inside the panel. Selecting a category slides its options in from left to right, and the back button reverses the transition. Motion is reduced when the operating system requests it. Preferences are local to the device, shared across workspaces and restored after restart. Weather sits in the upper-left corner and Gmail in the upper-right; narrow panes stack them above search. The settings dialog supports Tab, Escape and outside clicks, returning focus to its button when closed. Search drafts and recent sites remain intact while widgets update.
+Open **Customize new tab** in the bottom-right corner to configure **Weather**, **Gmail**, **Spotify**, **Wallpaper**, and **Clock**. It opens as a compact popover above the button, with SVG icons and a vertical category menu. The panel keeps a stable responsive size as you switch categories; longer settings scroll inside the panel. Selecting a category slides its options in from left to right, and the back button reverses the transition. Motion is reduced when the operating system requests it. Preferences are local to the device, shared across workspaces and restored after restart. Weather sits in the upper-left corner and Gmail in the upper-right; narrow panes stack them above search. The settings dialog supports Tab, Escape and outside clicks, returning focus to its button when closed. Search drafts and recent sites remain intact while widgets update.
+
+Spotify is also available in the customization menu. See [Spotify widget](spotify-widget.md) for setup, playback controls and platform requirements.
 
 ## Weather
 

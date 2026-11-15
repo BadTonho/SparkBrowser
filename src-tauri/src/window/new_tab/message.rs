@@ -27,9 +27,9 @@ fn widget(operation: &str, data: &str) -> bool {
         "cities" => serde_json::from_str::<Cities>(data)
             .is_ok_and(|value| value.query.trim().chars().count() >= 2 && value.query.len() <= 200),
         "read" | "panel" | "open_gmail" | "locate" | "refresh_weather" | "refresh_gmail"
-        | "connect" | "cancel_connect" | "disconnect" => {
-            serde_json::from_str::<Empty>(data).is_ok()
-        }
+        | "connect" | "cancel_connect" | "disconnect" | "spotify_connect" | "spotify_cancel"
+        | "spotify_disconnect" | "spotify_open" | "spotify_play" | "spotify_pause"
+        | "spotify_next" | "spotify_previous" => serde_json::from_str::<Empty>(data).is_ok(),
         _ => false,
     }
 }

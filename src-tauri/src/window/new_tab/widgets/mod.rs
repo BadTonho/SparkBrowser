@@ -5,6 +5,7 @@ mod gmail;
 mod http;
 mod oauth;
 mod platform;
+mod spotify;
 mod weather;
 use crate::{
     database::{
@@ -118,6 +119,7 @@ struct Runtime {
 }
 #[derive(Default)]
 pub struct Widgets {
+    spotify: spotify::Service,
     runtime: Mutex<Runtime>,
     mutations: tauri::async_runtime::Mutex<()>,
     version: std::sync::atomic::AtomicU64,
@@ -161,6 +163,7 @@ pub fn initialize(app: &AppHandle) {
             _ => state.settings_error = Some("settings_unavailable".into()),
         }
         state.endpoints = Endpoints::for_app(app);
+        spotify::initialize(app, &state.settings, state.endpoints.fixture.clone());
         let oauth_configured = oauth::config(app).is_ok();
         state.gmail.configured = true;
         // Native fixtures never read the user's Windows credential vault.
@@ -212,6 +215,7 @@ pub fn initialize(app: &AppHandle) {
     });
 }
 pub fn revoke(app: &AppHandle, label: &str) {
+    spotify::revoke(app, label);
     if let Ok(mut state) = app.state::<Widgets>().runtime.lock() {
         if state
             .connection
@@ -229,7 +233,7 @@ pub fn revoke(app: &AppHandle, label: &str) {
 fn snapshot(app: &AppHandle) -> serde_json::Value {
     let service = app.state::<Widgets>();
     let state = service.runtime.lock().unwrap();
-    serde_json::json!({"version":service.version.fetch_add(1,Ordering::SeqCst),"settings":state.settings,"revision":state.revision,"settings_error":state.settings_error,"weather":state.weather,"gmail":if state.settings.gmail_enabled {state.gmail.clone()}else{GmailState {configured:state.gmail.configured,email:state.gmail.email.clone(),..Default::default()}},"location_busy":state.location_busy})
+    serde_json::json!({"version":service.version.fetch_add(1,Ordering::SeqCst),"settings":state.settings,"revision":state.revision,"settings_error":state.settings_error,"weather":state.weather,"spotify":spotify::snapshot(app),"gmail":if state.settings.gmail_enabled {state.gmail.clone()}else{GmailState {configured:state.gmail.configured,email:state.gmail.email.clone(),..Default::default()}},"location_busy":state.location_busy})
 }
 fn broadcast(app: &AppHandle) {
     for tab in app.state::<BrowserState>().snapshot_tabs() {
@@ -251,6 +255,7 @@ fn schedule(app: &AppHandle) {
     if !visible(app) {
         return;
     }
+    spotify::schedule(app, None);
     let focused = app.windows().into_iter().any(|(label, w)| {
         crate::state::tab_model::is_window_label(&label) && w.is_focused().unwrap_or(false)
     });

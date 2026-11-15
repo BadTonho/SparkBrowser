@@ -66,9 +66,9 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
                 &document,
                 sequence,
                 matches!(url.path(), "/navigate" | "/visit")
-                    || values
-                        .get("operation")
-                        .is_some_and(|op| op == "open_gmail" || op == "connect"),
+                    || values.get("operation").is_some_and(|op| {
+                        op == "open_gmail" || op == "connect" || op == "spotify_open"
+                    }),
             ) {
                 return;
             }

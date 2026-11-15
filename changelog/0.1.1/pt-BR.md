@@ -4,6 +4,8 @@ Em andamento — não lançada.
 
 ## Novas funcionalidades
 
+- Adiciona um widget do Spotify na nova guia com conexão da conta, informações de reprodução e controles do dispositivo ativo.
+
 - Escolha se as configurações do navegador abrem em um pop-up ou em uma guia.
 
 ## Melhorias

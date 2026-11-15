@@ -6,7 +6,7 @@
   const text = key => labels[`newtab.widgets.${key}`] ?? key;
   const send = (operation, data = {}) => window.dispatchEvent(new CustomEvent('spark-new-tab-action', { detail: { action: 'widgets', operation, data } }));
   const settings = () => desired ?? snapshot?.settings;
-  const errorText = code => labels[`newtab.widgets.error.${code}`] ?? text('error');
+  const errorText = (code, operation = '') => (operation.startsWith('spotify_') ? labels[`newtab.widgets.error.spotify_${code}`] : null) ?? labels[`newtab.widgets.error.${code}`] ?? text('error');
   const cityName = city => city ? [city.name, city.region, city.country].filter(Boolean).join(', ') : text('noCity');
   const temperature = value => `${Math.round(settings().fahrenheit ? value * 9 / 5 + 32 : value)}°${settings().fahrenheit ? 'F' : 'C'}`;
   const date = (value, options) => new Intl.DateTimeFormat(language, options).format(value);
@@ -46,7 +46,7 @@
   });
   panel.addEventListener('close', () => gear.setAttribute('aria-expanded', 'false'));
 
-  const categories = ['weather', 'gmail', 'wallpaper', 'clock'];
+  const categories = ['weather', 'gmail', 'spotify', 'wallpaper', 'clock'];
   let currentCategory = null;
 
   function showCategory(cat, direction = null) {
@@ -100,6 +100,11 @@
     desired = { ...settings(), ...patch }; $('settings-status').textContent = '';
     render(); flush();
   }
+  window.addEventListener('spark-spotify-setting', event => {
+    const patch = event.detail;
+    if (typeof patch.spotify_enabled === 'boolean') change({ spotify_enabled: patch.spotify_enabled });
+    else if (typeof patch.spotify_client_id === 'string') change({ spotify_client_id: patch.spotify_client_id });
+  });
   $('weather-enabled').addEventListener('change', event => { showCategory('weather'); change({ weather_enabled: event.target.checked }); });
   $('gmail-enabled').addEventListener('change', event => { showCategory('gmail'); change({ gmail_enabled: event.target.checked }); });
   $('temperature-unit').addEventListener('change', event => change({ fahrenheit: event.target.value === 'fahrenheit' }));
@@ -183,7 +188,9 @@
     if (!snapshot) return;
     const config = settings();
     gear.disabled = false;
-    $('widgets').hidden = !config.weather_enabled && !config.gmail_enabled;
+    $('widgets').hidden = !config.weather_enabled && !config.gmail_enabled && !config.spotify_enabled && $('clock-card-widget').hidden;
+    $('widgets-left').hidden = !config.weather_enabled && !config.spotify_enabled;
+    window.__sparkSpotifyRender?.(config, snapshot.spotify, saving);
     $('weather-enabled').checked = config.weather_enabled; $('gmail-enabled').checked = config.gmail_enabled;
     $('weather-options').hidden = !config.weather_enabled; $('gmail-options').hidden = !config.gmail_enabled;
     $('location-mode').value = config.automatic_location ? 'automatic' : 'manual';
@@ -208,7 +215,7 @@
   window.addEventListener('spark-new-tab-widgets', event => {
     snapshot = event.detail;
     if (snapshot.action_error || snapshot.settings_error) {
-      $('settings-status').textContent = errorText(snapshot.action_error ?? snapshot.settings_error);
+      $('settings-status').textContent = errorText(snapshot.action_error ?? snapshot.settings_error, snapshot.operation);
       if (saving && (snapshot.operation === 'save' || snapshot.settings_error)) { saving = false; desired = null; }
       if (cityPending && snapshot.operation === 'cities') { cityPending = false; $('city-status').textContent = errorText(snapshot.action_error); }
     } else if (saving && snapshot.revision > saveRevision) {

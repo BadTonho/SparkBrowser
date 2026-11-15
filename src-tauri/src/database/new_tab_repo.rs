@@ -16,12 +16,23 @@ pub struct City {
 pub struct Settings {
     pub weather_enabled: bool,
     pub gmail_enabled: bool,
+    pub spotify_enabled: bool,
+    pub spotify_client_id: String,
     pub automatic_location: bool,
     pub fahrenheit: bool,
     pub city: Option<City>,
 }
 impl Settings {
     pub fn validate(&self) -> Result<(), String> {
+        if !self.spotify_client_id.is_empty()
+            && (self.spotify_client_id.len() != 32
+                || !self
+                    .spotify_client_id
+                    .bytes()
+                    .all(|b| b.is_ascii_hexdigit()))
+        {
+            return Err("invalid_settings".into());
+        }
         if let Some(city) = &self.city {
             if city.name.trim().is_empty()
                 || [&city.name, &city.region, &city.country]
@@ -42,9 +53,26 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
     super::migrations::apply(conn, "new-tab-widgets-v1", |conn| {
         conn.execute_batch("CREATE TABLE IF NOT EXISTS new_tab_settings (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL)").map_err(|_| "settings_unavailable".into())
     })?;
+    super::migrations::apply(conn, "new-tab-spotify-account-v1", |conn| {
+        conn.execute_batch("CREATE TABLE IF NOT EXISTS new_tab_spotify_account (id INTEGER PRIMARY KEY CHECK(id=1), disconnected INTEGER NOT NULL)").map_err(|_| "settings_unavailable".into())
+    })?;
     super::migrations::apply(conn, "new-tab-account-revocation-v1", |conn| {
         conn.execute_batch("CREATE TABLE IF NOT EXISTS new_tab_account_state (id INTEGER PRIMARY KEY CHECK(id=1), disconnected INTEGER NOT NULL)").map_err(|_|"settings_unavailable".into())
     })
+}
+pub fn spotify_disconnected(conn: &Connection) -> Result<bool, String> {
+    conn.query_row(
+        "SELECT disconnected FROM new_tab_spotify_account WHERE id=1",
+        [],
+        |r| r.get(0),
+    )
+    .optional()
+    .map(|v| v.unwrap_or(true))
+    .map_err(|_| "settings_unavailable".into())
+}
+pub fn set_spotify_disconnected(conn: &Connection, value: bool) -> Result<(), String> {
+    conn.execute("INSERT INTO new_tab_spotify_account(id,disconnected) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET disconnected=excluded.disconnected", [value])
+        .map(|_| ()).map_err(|_| "settings_unavailable".into())
 }
 pub fn account_disconnected(conn: &Connection) -> Result<bool, String> {
     conn.query_row(
@@ -83,6 +111,25 @@ pub fn save(conn: &Connection, settings: &Settings) -> Result<(), String> {
 mod tests {
     use super::*;
     #[test]
+    fn spotify_defaults_client_validation_and_disconnection_are_independent() {
+        let mut s: Settings = serde_json::from_str(r#"{"weather_enabled":true}"#).unwrap();
+        assert!(!s.spotify_enabled);
+        assert!(s.spotify_client_id.is_empty());
+        s.spotify_client_id = "a".repeat(32);
+        assert!(s.validate().is_ok());
+        s.spotify_client_id = "g".repeat(32);
+        assert!(s.validate().is_err());
+        let db = Connection::open_in_memory().unwrap();
+        migrate(&db).unwrap();
+        assert!(spotify_disconnected(&db).unwrap());
+        set_spotify_disconnected(&db, false).unwrap();
+        assert!(!spotify_disconnected(&db).unwrap());
+        set_account_disconnected(&db, true).unwrap();
+        assert!(!spotify_disconnected(&db).unwrap());
+        set_spotify_disconnected(&db, true).unwrap();
+        assert!(spotify_disconnected(&db).unwrap());
+    }
+    #[test]
     fn migration_defaults_roundtrip_and_validation() {
         let db = Connection::open_in_memory().unwrap();
         migrate(&db).unwrap();
@@ -113,6 +160,8 @@ mod tests {
             &db,
             &Settings {
                 weather_enabled: true,
+                spotify_enabled: true,
+                spotify_client_id: "0123456789abcdef".repeat(2),
                 city: Some(City {
                     name: "private city marker".into(),
                     region: "region".into(),
@@ -128,5 +177,7 @@ mod tests {
             serde_json::to_string(&crate::database::backup_repo::collect(&db).unwrap()).unwrap();
         assert!(!exported.contains("private city marker"));
         assert!(!exported.contains("weather_enabled"));
+        assert!(!exported.contains("spotify_"));
+        assert!(!exported.contains(&"0123456789abcdef".repeat(2)));
     }
 }

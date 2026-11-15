@@ -84,6 +84,12 @@ pub fn handle(
     if !source.active() {
         return;
     }
+    if operation == "spotify_open" {
+        let mut values = values.clone();
+        values.insert("input".into(), "https://open.spotify.com/".into());
+        super::super::bridge::navigate(app, id, label, token, &values, false);
+        return;
+    }
     if operation == "open_gmail" || (operation == "connect" && oauth::config(app).is_err()) {
         let email = app.state::<Widgets>().runtime.lock().ok().and_then(|s| {
             s.gmail
@@ -126,7 +132,30 @@ async fn perform(
         return Err("cancelled".into());
     }
     let app = &source.app;
+    if operation.starts_with("spotify_") && spotify::private(app) {
+        return Err("cancelled".into());
+    }
     match operation {
+        "spotify_connect" => {
+            spotify::connect(app, source.label.clone()).await?;
+            Ok(serde_json::json!({}))
+        }
+        "spotify_cancel" => {
+            spotify::revoke(app, &source.label);
+            broadcast(app);
+            Ok(serde_json::json!({}))
+        }
+        "spotify_disconnect" => {
+            let app = app.clone();
+            tauri::async_runtime::spawn_blocking(move || spotify::disconnect(&app))
+                .await
+                .map_err(|_| "secure_storage")??;
+            Ok(serde_json::json!({}))
+        }
+        "spotify_play" | "spotify_pause" | "spotify_next" | "spotify_previous" => {
+            spotify::schedule(app, Some(operation));
+            Ok(serde_json::json!({}))
+        }
         "panel" => {
             crate::window::tab_drag_preview::cancel(app, &app.state::<BrowserState>())?;
             Ok(serde_json::json!({}))
@@ -171,6 +200,7 @@ async fn perform(
                 }
                 state.gmail.connecting = false;
             }
+            spotify::configure(app, &settings);
             state.settings = settings;
             state.settings_error = None;
             state.revision += 1;

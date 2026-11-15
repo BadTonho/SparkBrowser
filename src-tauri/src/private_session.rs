@@ -194,7 +194,11 @@ pub fn copy_profile(conn: &Connection, source_db: &Path) -> Result<(), String> {
     let detached = conn
         .execute_batch("DETACH DATABASE source")
         .map_err(|e| format!("private.detach_failed: {e}"));
-    copied.and(detached)
+    copied.and(detached)?;
+    let mut settings = crate::database::new_tab_repo::load(conn)?;
+    settings.spotify_enabled = false;
+    settings.spotify_client_id.clear();
+    crate::database::new_tab_repo::save(conn, &settings)
 }
 
 fn copy_table(conn: &Connection, table: &str) -> Result<(), String> {
@@ -337,6 +341,15 @@ mod tests {
         let source = Connection::open(&source_path).unwrap();
         initialize_schema(&source).unwrap();
         initialize_preferences_table(&source).unwrap();
+        crate::database::new_tab_repo::save(
+            &source,
+            &crate::database::new_tab_repo::Settings {
+                spotify_enabled: true,
+                spotify_client_id: "a".repeat(32),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         source
             .execute(
                 "INSERT INTO app_preferences (key, value) VALUES
@@ -359,6 +372,9 @@ mod tests {
         initialize_schema(&target).unwrap();
         initialize_preferences_table(&target).unwrap();
         copy_profile(&target, &source_path).unwrap();
+        let settings = crate::database::new_tab_repo::load(&target).unwrap();
+        assert!(!settings.spotify_enabled);
+        assert!(settings.spotify_client_id.is_empty());
 
         let keys: Vec<String> = target
             .prepare("SELECT key FROM app_preferences ORDER BY key")

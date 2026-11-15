@@ -76,6 +76,21 @@ pub fn connect(
     endpoints: &super::Endpoints,
     cancel: Arc<AtomicBool>,
 ) -> Result<Grant, String> {
+    connect_scoped(
+        config,
+        endpoints,
+        cancel,
+        SCOPE,
+        platform::open_authorization,
+    )
+}
+pub(super) fn connect_scoped(
+    config: &Config,
+    endpoints: &super::Endpoints,
+    cancel: Arc<AtomicBool>,
+    scope: &str,
+    open: fn(&url::Url) -> Result<(), String>,
+) -> Result<Grant, String> {
     let listener =
         TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)).map_err(|_| "oauth_error")?;
     listener.set_nonblocking(true).map_err(|_| "oauth_error")?;
@@ -90,16 +105,23 @@ pub fn connect(
         ("client_id", config.client_id.as_str()),
         ("redirect_uri", &redirect),
         ("response_type", "code"),
-        ("scope", SCOPE),
+        ("scope", scope),
         (
             "code_challenge",
             &URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes())),
         ),
         ("code_challenge_method", "S256"),
         ("state", &state),
-        ("access_type", "offline"),
-        ("prompt", "consent"),
     ]);
+    if scope == SCOPE {
+        authorize
+            .query_pairs_mut()
+            .extend_pairs([("access_type", "offline"), ("prompt", "consent")]);
+    } else {
+        authorize
+            .query_pairs_mut()
+            .append_pair("show_dialog", "true");
+    }
     if let Some(base) = &endpoints.fixture {
         http::send(
             http::client()?
@@ -109,7 +131,7 @@ pub fn connect(
         .error_for_status()
         .map_err(|_| "oauth_error")?;
     } else {
-        platform::open_authorization(&authorize)?;
+        open(&authorize)?;
     }
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
@@ -159,6 +181,7 @@ pub fn connect(
                 }
                 return grant(
                     &endpoints.token,
+                    scope,
                     &[
                         ("client_id", &config.client_id),
                         ("client_secret", &config.client_secret),
@@ -208,6 +231,7 @@ pub fn refresh(
 ) -> Result<Grant, String> {
     grant(
         &endpoints.token,
+        SCOPE,
         &[
             ("client_id", &config.client_id),
             ("client_secret", &config.client_secret),
@@ -216,8 +240,22 @@ pub fn refresh(
         ],
     )
 }
-fn grant(endpoint: &str, params: &[(&str, &str)]) -> Result<Grant, String> {
-    let response = http::send(http::client()?.post(endpoint).form(params))?;
+pub(super) fn grant(endpoint: &str, scope: &str, params: &[(&str, &str)]) -> Result<Grant, String> {
+    let params: Vec<_> = params
+        .iter()
+        .filter(|(key, value)| *key != "client_secret" || !value.is_empty())
+        .collect();
+    let response = http::send(http::client()?.post(endpoint).form(&params))?;
+    if scope != SCOPE && response.status().as_u16() == 429 {
+        let retry = response
+            .headers()
+            .get("retry-after")
+            .and_then(|h| h.to_str().ok())
+            .and_then(|h| h.parse::<u64>().ok())
+            .unwrap_or(30)
+            .max(1);
+        return Err(format!("spotify_rate_limited:{retry}"));
+    }
     if response.status().as_u16() == 400 {
         let value: serde_json::Value =
             serde_json::from_reader(response.take(8192)).map_err(|_| "oauth_error")?;
@@ -242,10 +280,11 @@ fn grant(endpoint: &str, params: &[(&str, &str)]) -> Result<Grant, String> {
             .refresh_token
             .as_ref()
             .is_some_and(|s| s.is_empty() || s.len() > 2048)
-        || token
-            .scope
-            .as_ref()
-            .is_some_and(|s| !s.split_whitespace().any(|v| v == SCOPE))
+        || token.scope.as_ref().is_some_and(|s| {
+            scope
+                .split_whitespace()
+                .any(|required| !s.split_whitespace().any(|v| v == required))
+        })
     {
         return Err("access_denied".into());
     }

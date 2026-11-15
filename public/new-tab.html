@@ -9,6 +9,8 @@
   <script src="/new-tab/page.js" defer></script>
   <link rel="stylesheet" href="/new-tab/widgets.css">
   <script src="/new-tab/widgets.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/spotify.css">
+  <script src="/new-tab/spotify.js" defer></script>
   <link rel="stylesheet" href="/new-tab/wallpaper.css">
   <script src="/new-tab/wallpaper.js" defer></script>
   <link rel="stylesheet" href="/new-tab/clock.css">
@@ -27,6 +29,7 @@
       <div id="clock-card-time" class="clock-time" aria-live="off"></div>
       <p id="clock-card-date" class="clock-date"></p>
     </section>
+    <div id="widgets-left" hidden>
     <section id="weather-widget" class="widget" aria-labelledby="weather-heading" hidden>
       <div class="widget-heading"><h2 id="weather-heading"></h2><button id="weather-refresh" type="button" class="icon-button" data-label="refresh">↻</button></div>
       <p id="weather-place"></p>
@@ -36,6 +39,24 @@
       <button id="weather-configure" type="button" data-label="configure" hidden></button>
       <button id="weather-attribution" class="text-button" type="button">Open-Meteo</button>
     </section>
+    <section id="spotify-widget" class="widget" aria-labelledby="spotify-heading" hidden>
+      <div class="widget-heading"><h2 id="spotify-heading">Spotify</h2><svg class="spotify-brand" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M6 9c4-2 8-2 12 0M7 12c3-1.5 7-1.5 10 0M8 15c2-1 5-1 8 0"/></svg></div>
+      <div id="spotify-content" hidden>
+        <img id="spotify-cover" width="64" height="64" alt="" hidden>
+        <div><p id="spotify-title"></p><p id="spotify-artist"></p></div>
+      </div>
+      <p id="spotify-device"></p>
+      <progress id="spotify-progress" max="1" value="0" data-label="spotifyProgress" hidden></progress>
+      <div id="spotify-controls" hidden>
+        <button id="spotify-previous" type="button" class="icon-button" data-label="spotifyPrevious">⏮</button>
+        <button id="spotify-toggle" type="button" class="icon-button">▶</button>
+        <button id="spotify-next" type="button" class="icon-button" data-label="spotifyNext">⏭</button>
+      </div>
+      <p id="spotify-status" role="status"></p>
+      <button id="spotify-widget-connect" type="button" data-label="spotifyConnect"></button>
+      <button id="spotify-open" type="button" data-label="spotifyOpen"></button>
+    </section>
+    </div>
     <section id="gmail-widget" class="widget" aria-labelledby="gmail-heading" hidden>
       <div class="widget-heading"><h2 id="gmail-heading">Gmail</h2><button id="gmail-refresh" type="button" class="icon-button" data-label="refresh">↻</button></div>
       <p id="gmail-account"></p>
@@ -82,6 +103,22 @@
     </div>
     <div id="settings-content">
       <p id="settings-status" role="status"></p>
+      <section id="spotify-section" class="settings-view" hidden>
+        <label class="toggle"><input id="spotify-enabled" type="checkbox"><span data-label="showSpotify"></span></label>
+        <div id="spotify-options" hidden>
+          <p data-label="spotifySetup"></p>
+          <p><code>http://127.0.0.1/callback</code></p>
+          <button id="spotify-dashboard" type="button" data-label="spotifyDashboard"></button>
+          <label for="spotify-client-id">Client ID</label>
+          <input id="spotify-client-id" type="text" maxlength="32" autocomplete="off" spellcheck="false">
+          <button id="spotify-save-client" type="button" data-label="spotifySaveClient"></button>
+          <p id="spotify-config-status" role="status"></p>
+          <button id="spotify-connect" type="button" data-label="spotifyConnect"></button>
+          <button id="spotify-cancel" type="button" data-label="cancel" hidden></button>
+          <button id="spotify-disconnect" type="button" data-label="disconnect" hidden></button>
+          <p data-label="spotifyStorage"></p>
+        </div>
+      </section>
       <div id="settings-main-view" class="settings-view">
       <nav class="settings-menu-list" role="menu">
         <button id="menu-item-weather" type="button" class="settings-menu-item" data-category="weather" role="menuitem">
@@ -93,6 +130,11 @@
           <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span>
           <span class="menu-item-label">Gmail</span>
           <span class="menu-item-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+        </button>
+        <button id="menu-item-spotify" type="button" class="settings-menu-item" data-category="spotify" role="menuitem">
+          <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M6 9c4-2 8-2 12 0M7 12c3-1.5 7-1.5 10 0M8 15c2-1 5-1 8 0"/></svg></span>
+          <span class="menu-item-label">Spotify</span>
+          <span class="menu-item-chevron" aria-hidden="true">›</span>
         </button>
         <button id="menu-item-wallpaper" type="button" class="settings-menu-item" data-category="wallpaper" role="menuitem">
           <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg></span>

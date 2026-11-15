@@ -4,6 +4,7 @@ import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {widgetFixture} from './new-tab-widgets-fixture.mjs';
 import {withScenarioDatabase} from './persistence/database.mjs';
+import {checkSpotifyWidget} from './spotify-widget.mjs';
 
 export async function checkNewTabWidgets(context,{inside,ready,active}){
   const {restart,script,click,until,invoke,resizeWindow,wait}=context;
@@ -124,6 +125,7 @@ export async function checkNewTabWidgets(context,{inside,ready,active}){
     await restart();await ready();await open();
     await inside(async()=>{assert.equal(await script('return document.querySelector("#temperature-unit").value'),'fahrenheit');assert.match(await script('return document.querySelector("#selected-city").textContent'),/Illinois/);});
     await closed();
+    await checkSpotifyWidget(context,{inside,ready,active},provider);
   }catch(error){
     const page=await inside(()=>script('return {reply:window.widgetLastReply,error:window.widgetLastError,status:document.querySelector("#settings-status").textContent,cityStatus:document.querySelector("#city-status").textContent,query:document.querySelector("#city-query").value,results:document.querySelector("#city-results").textContent}')).catch(()=>null);
     writeFileSync(resolve(context.directory,'artifacts/widget-debug.json'),JSON.stringify({page,requests:provider.requests,tabs:await invoke('get_tabs')},null,2));
