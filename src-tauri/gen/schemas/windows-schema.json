@@ -999,6 +999,12 @@
           "markdownDescription": "Enables the set_auto_skip_ads command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_auto_update command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-auto-update",
+          "markdownDescription": "Enables the set_auto_update command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_backup_encryption command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-backup-encryption",
@@ -2125,6 +2131,12 @@
           "type": "string",
           "const": "deny-set-auto-skip-ads",
           "markdownDescription": "Denies the set_auto_skip_ads command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_auto_update command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-auto-update",
+          "markdownDescription": "Denies the set_auto_update command without any pre-configured scope."
         },
         {
           "description": "Denies the set_backup_encryption command without any pre-configured scope.",

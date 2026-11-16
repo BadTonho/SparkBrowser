@@ -3,11 +3,48 @@ pub mod model;
 #[cfg(any(windows, test))]
 mod releases;
 mod service;
+pub(crate) mod staged;
 #[cfg(windows)]
 mod windows;
 pub use service::UpdateService;
 #[cfg(windows)]
 pub use windows::{download, install};
+
+/// Updates only exist for the installed Windows x64 release of the normal profile.
+pub(crate) fn platform_supported(app: &tauri::AppHandle) -> bool {
+    cfg!(all(windows, target_arch = "x86_64", not(debug_assertions)))
+        && app.config().identifier == "org.spark.browser"
+}
+
+/// Installs an update that was downloaded in the background, before the previous session is restored.
+/// Returns when there is nothing to install (or it could not be installed); on success the installer
+/// takes over and the process exits.
+pub fn install_staged_at_startup(app: &tauri::AppHandle, conn: &rusqlite::Connection) {
+    #[cfg(windows)]
+    {
+        use tauri::Manager;
+        if !platform_supported(app)
+            || app
+                .try_state::<crate::private_session::PrivateRole>()
+                .is_some_and(|role| role.is_private())
+        {
+            return;
+        }
+        let version = app.package_info().version.to_string();
+        let Ok((channel, _)) = crate::database::updates_repo::load(
+            conn,
+            model::UpdateChannel::initial(&version),
+        ) else {
+            return;
+        };
+        let auto_update = crate::database::updates_repo::load_auto_update(conn).unwrap_or(true);
+        if let Err(error) = staged::install_pending(app, &version, channel, auto_update) {
+            eprintln!("Staged update was not installed: {error}");
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = (app, conn);
+}
 
 pub fn initialize_crypto() {
     #[cfg(windows)]

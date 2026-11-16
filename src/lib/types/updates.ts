@@ -13,6 +13,10 @@ export interface UpdateState {
   channel: UpdateChannel;
   last_checked: number | null;
   status: "idle" | "unavailable" | "checking" | "available" | "up_to_date" | "downloading" | "ready" | "installing" | "error";
+  /** Download in the background and install at the next start without asking. */
+  auto_update: boolean;
+  /** The downloaded update is saved on disk and installs the next time Spark opens. */
+  staged: boolean;
   update: UpdateInfo | null;
   received: number;
   total: number | null;

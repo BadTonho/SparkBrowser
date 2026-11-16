@@ -2,7 +2,7 @@ import { createSharedLifecycle } from "../services/lifecycle.js";
 import { tr } from "../i18n";
 import { describeError } from "../services/user-errors.js";
 import { get, writable } from "svelte/store";
-import { changeUpdateChannel, checkForUpdates, downloadUpdate, fetchUpdateState, installUpdate, onUpdateState, previewUpdateState } from "../services/bridge/updates";
+import { changeAutoUpdate, changeUpdateChannel, checkForUpdates, downloadUpdate, fetchUpdateState, installUpdate, onUpdateState, previewUpdateState } from "../services/bridge/updates";
 import { createUpdateGate } from "../services/update-snapshots.js";
 import type { UpdateChannel, UpdateState } from "../types/updates";
 
@@ -39,10 +39,14 @@ export const startUpdateDownload = () => action(async () => {
   const version = get(updateState).update?.version;
   if (version) apply(await downloadUpdate(version));
 });
+export const setAutoUpdateEnabled = (enabled: boolean) => action(async () => { apply(await changeAutoUpdate(enabled)); });
 export const startUpdateInstall = () => action(async () => {
-  const version = get(updateState).update?.version;
-  if (!version || get(updateState).status !== "ready") return;
-  if (!window.confirm(tr("common.install_confirm", { version }))) return;
+  const state = get(updateState);
+  const version = state.update?.version;
+  if (!version || state.status !== "ready") return;
+  // With automatic updates the button is an explicit "Restart to update"; the close review still asks
+  // about edited forms, media and downloads. The manual flow keeps its confirmation.
+  if (!state.auto_update && !window.confirm(tr("common.install_confirm", { version }))) return;
   await installUpdate(version, false);
 });
 

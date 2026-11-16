@@ -16,5 +16,6 @@
   "runtime.unavailable": "Could not check the WebView2 runtime.",
   "runtime.no_update": "No browser engine update is awaiting restart.",
   "runtime.restart_failed": "Could not restart the browser. Your browser remains open; try again.",
-  "security.initialization_failed": "Could not establish the browser security boundaries."
+  "security.initialization_failed": "Could not establish the browser security boundaries.",
+  "status.restart_to_update": "Restart to update"
 }

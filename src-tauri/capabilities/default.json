@@ -46,6 +46,7 @@
     "allow-get-update-state",
     "allow-set-update-channel",
     "allow-check-for-updates",
+    "allow-set-auto-update",
     "allow-download-update",
     "allow-install-update",
     "allow-get-saved-sessions",

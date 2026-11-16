@@ -16,5 +16,6 @@
   "runtime.unavailable": "Não foi possível verificar o mecanismo WebView2.",
   "runtime.no_update": "Não há atualização do mecanismo aguardando reinício.",
   "runtime.restart_failed": "Não foi possível reiniciar o navegador. Ele continua aberto; tente novamente.",
-  "security.initialization_failed": "Não foi possível estabelecer as fronteiras de segurança do navegador."
+  "security.initialization_failed": "Não foi possível estabelecer as fronteiras de segurança do navegador.",
+  "status.restart_to_update": "Reiniciar para atualizar"
 }

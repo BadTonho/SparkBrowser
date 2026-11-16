@@ -4,6 +4,8 @@ In progress — not released.
 
 ## New features
 
+- Add **Update automatically** to Settings, on by default: updates download in the background, a **Restart to update** button appears, and an update nobody restarted for installs the next time Spark opens.
+
 - Add **Hibernate other workspaces** to Performance settings, on by default: a few seconds after you switch workspace, the tabs of the other workspaces are put to sleep (playing, edited, downloading and pinned tabs stay awake).
 
 - Add a **Changelog** category to Settings that lists the release notes of every version, newest first, in your language.

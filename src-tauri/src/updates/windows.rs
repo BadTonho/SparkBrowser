@@ -101,6 +101,7 @@ pub async fn download(app: &AppHandle, expected_version: &str) -> Result<UpdateS
         result = download => result,
         _ = changed => return service.snapshot(),
     };
+    let mut to_stage = None;
     {
         let mut inner = service.inner.lock().map_err(|e| e.to_string())?;
         if inner.generation != generation {
@@ -108,13 +109,46 @@ pub async fn download(app: &AppHandle, expected_version: &str) -> Result<UpdateS
         }
         match result {
             Ok(bytes) => {
-                inner.bytes = Some(Arc::new(bytes));
+                let bytes = Arc::new(bytes);
+                if inner.snapshot.auto_update {
+                    to_stage = Some((
+                        super::staged::Staged {
+                            version: candidate.version.clone(),
+                            channel: inner.snapshot.channel.as_str().into(),
+                            manifest: candidate.raw_json.clone(),
+                        },
+                        bytes.clone(),
+                    ));
+                }
+                inner.bytes = Some(bytes);
                 inner.snapshot.status = "ready".into();
             }
             Err(_) => {
                 inner.bytes = None;
                 inner.snapshot.status = "error".into();
                 inner.snapshot.error = Some("Download or signature verification failed. No update was installed. Try downloading again.".into());
+            }
+        }
+    }
+    // The verified installer is also kept on disk, so that an update nobody restarted for installs the next
+    // time Spark opens. A failure here leaves the in-memory update usable with the restart button.
+    if let Some((staged, bytes)) = to_stage {
+        let directory = super::staged::directory(app)?;
+        let saved = tauri::async_runtime::spawn_blocking(move || {
+            super::staged::write(&directory, &staged, bytes.as_slice())
+        })
+        .await
+        .map_err(|e| e.to_string())
+        .and_then(|saved| saved);
+        let mut inner = service.inner.lock().map_err(|e| e.to_string())?;
+        if inner.generation == generation {
+            match saved {
+                Ok(()) => inner.snapshot.staged = true,
+                Err(error) => {
+                    inner.snapshot.error = Some(format!(
+                        "The update could not be saved for the next start: {error}"
+                    ))
+                }
             }
         }
     }
@@ -154,6 +188,8 @@ pub async fn install(
             (candidate, bytes)
         };
         service.publish(&app)?;
+        // The restart installs it now; a copy kept for the next start would only run it twice.
+        super::staged::clear_for(&app);
         // The shared shutdown coordinator already froze writers and committed the clean marker.
         let result = candidate
             .install(bytes.as_slice())

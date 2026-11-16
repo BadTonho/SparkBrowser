@@ -40,6 +40,10 @@ pub struct UpdateState {
     pub channel: UpdateChannel,
     pub last_checked: Option<i64>,
     pub status: String,
+    /// Download in the background and install at the next start without asking.
+    pub auto_update: bool,
+    /// The downloaded update is saved on disk and installs the next time Spark opens.
+    pub staged: bool,
     pub update: Option<UpdateInfo>,
     pub received: u64,
     pub total: Option<u64>,

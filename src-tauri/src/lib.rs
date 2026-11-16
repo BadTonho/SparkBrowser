@@ -114,7 +114,8 @@ use commands::tabs::{
     switch_tab,
 };
 use commands::updates::{
-    check_for_updates, download_update, get_update_state, install_update, set_update_channel,
+    check_for_updates, download_update, get_update_state, install_update, set_auto_update,
+    set_update_channel,
 };
 use commands::whatsapp::toggle_whatsapp_popover;
 use commands::workspaces::{
@@ -427,6 +428,9 @@ pub fn run() {
                 crate::database::history_repo::current_unix_timestamp(),
             )
             .map_err(std::io::Error::other)?;
+            // A background-downloaded update installs here, before the session is restored, so the
+            // restart it causes leaves the previous run's clean-exit marker untouched.
+            updates::install_staged_at_startup(app.handle(), &conn);
             let recovery_status =
                 recovery::startup::restore(&state, conn).map_err(std::io::Error::other)?;
             app.manage(recovery::RecoveryService::new(recovery_status));
@@ -559,6 +563,7 @@ pub fn run() {
             get_update_state,
             set_update_channel,
             check_for_updates,
+            set_auto_update,
             download_update,
             install_update,
             get_saved_sessions,

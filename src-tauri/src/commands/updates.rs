@@ -17,12 +17,38 @@ pub fn set_update_channel(
     state.set_channel(&app, channel)
 }
 #[tauri::command]
+pub fn set_auto_update(
+    app: AppHandle,
+    state: State<'_, UpdateService>,
+    enabled: bool,
+) -> Result<UpdateState, String> {
+    let snapshot = state.set_auto_update(&app, enabled)?;
+    download_in_background(&app, &snapshot);
+    Ok(snapshot)
+}
+/// With automatic updates on, an update that was just found is downloaded and verified without asking.
+fn download_in_background(app: &AppHandle, snapshot: &UpdateState) {
+    #[cfg(windows)]
+    if snapshot.supported && snapshot.auto_update && snapshot.status == "available" {
+        if let Some(update) = &snapshot.update {
+            let (app, version) = (app.clone(), update.version.clone());
+            tauri::async_runtime::spawn(async move {
+                let _ = crate::updates::download(&app, &version).await;
+            });
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = (app, snapshot);
+}
+#[tauri::command]
 pub async fn check_for_updates(
     app: AppHandle,
     state: State<'_, UpdateService>,
     startup: bool,
 ) -> Result<UpdateState, String> {
-    state.check(&app, startup).await
+    let snapshot = state.check(&app, startup).await?;
+    download_in_background(&app, &snapshot);
+    Ok(snapshot)
 }
 #[tauri::command]
 pub async fn download_update(

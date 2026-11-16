@@ -2,7 +2,7 @@
   import RuntimeSettings from "./RuntimeSettings.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { t, formatDate, formatNumber } from "../../i18n";
-  import { updateState, updateBusy, updateActionError, checkUpdates, selectUpdateChannel, startUpdateDownload, startUpdateInstall } from "../../stores/updatesStore";
+  import { updateState, updateBusy, updateActionError, checkUpdates, selectUpdateChannel, startUpdateDownload, startUpdateInstall, setAutoUpdateEnabled } from "../../stores/updatesStore";
   import type { UpdateChannel } from "../../types/updates";
   import { isTauriRuntime } from "../../services/bridge/runtime";
   const active = $derived($updateBusy || ["checking", "downloading", "installing"].includes($updateState.status));
@@ -12,7 +12,7 @@
       case "up_to_date": return $t("settings.no_newer_version_is_available_for_this_channel_d0ae");
       case "available": return $t("settings.an_update_is_available_da18");
       case "downloading": return $t("settings.downloading_and_verifying_the_update_9dbf");
-      case "ready": return $t("settings.the_signed_update_is_ready_to_install_5e30");
+      case "ready": return $updateState.auto_update && $updateState.staged ? $t("settings.update_ready_next_start") : $t("settings.the_signed_update_is_ready_to_install_5e30");
       case "installing": return $t("settings.saving_your_session_and_starting_the_installer_028b");
       case "error": return $t("settings.the_update_could_not_be_completed_5ba6");
       case "unavailable": return $t("common.updates_unavailable");
@@ -35,6 +35,14 @@
       <option value="stable">{$t("settings.stable_90ee")}</option><option value="beta">{$t("settings.beta_7033")}</option>
     </select>
   </div>
+  <div class="setting-row" id="setting-auto-update" tabindex="-1">
+    <div class="row-text">
+      <label for="auto-update" class="row-label">{$t("settings.auto_update")}</label>
+      <span class="row-desc">{$t("settings.auto_update_description")}</span>
+    </div>
+    <input id="auto-update" type="checkbox" checked={$updateState.auto_update} disabled={!isTauriRuntime() || $updateBusy || $updateState.status === "installing"}
+      onchange={event => { void setAutoUpdateEnabled(event.currentTarget.checked); }} />
+  </div>
   {#if $updateState.channel === "stable" && $updateState.current_version.includes("-beta.")}
     <p>{$t("settings.you_will_stay_on_this_beta_until_a_newer_stable_release_is_available_cha_2ff7")}</p>
   {/if}
@@ -46,7 +54,7 @@
     <button data-testid="check-for-updates" class="pill-action" disabled={!$updateState.supported || active} onclick={() => { void checkUpdates(); }}>{$t("settings.check_for_updates_f26f")}</button>
     {#if $updateState.update}
       {#if $updateState.status === "ready"}
-        <button class="pill-action" disabled={active} onclick={() => { void startUpdateInstall(); }}>{$t("settings.install_and_restart_1b99")}</button>
+        <button class="pill-action" disabled={active} onclick={() => { void startUpdateInstall(); }}>{$updateState.auto_update ? $t("settings.restart_to_update") : $t("settings.install_and_restart_1b99")}</button>
       {:else}
         <button class="pill-action" disabled={active} onclick={() => { void startUpdateDownload(); }}>{$t("settings.download_update_4f49")}</button>
       {/if}

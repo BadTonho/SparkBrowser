@@ -4,6 +4,8 @@ Em andamento — não lançada.
 
 ## Novas funcionalidades
 
+- Adiciona **Atualizar automaticamente** às Configurações, ativada por padrão: as atualizações são baixadas em segundo plano, aparece um botão **Reiniciar para atualizar**, e uma atualização que ninguém reiniciou é instalada na próxima vez que o Spark abrir.
+
 - Adiciona **Hibernar outros workspaces** às configurações de Desempenho, ativada por padrão: alguns segundos depois de trocar de workspace, as abas dos outros workspaces são colocadas para dormir (abas tocando, editadas, baixando ou fixadas continuam acordadas).
 
 - Adiciona a categoria **Changelog** às Configurações, que lista as notas de versão de cada versão, da mais recente para a mais antiga, no seu idioma.

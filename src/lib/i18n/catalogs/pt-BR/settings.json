@@ -336,5 +336,11 @@
   "settings.hibernate_other_workspaces_description": "Coloca para dormir as abas dos workspaces em que você não está, alguns segundos depois de trocar. Abas tocando, editadas, baixando ou fixadas, e domínios com exceção, continuam acordados.",
   "settings.content_isolation_on": "Isolado",
   "settings.content_isolation_off": "Compartilhado",
-  "settings.hibernate_other_workspaces_search": "Coloca para dormir as abas dos workspaces em que você não está, alguns segundos depois de trocar. Abas tocando, editadas e fixadas continuam acordadas."
+  "settings.hibernate_other_workspaces_search": "Coloca para dormir as abas dos workspaces em que você não está, alguns segundos depois de trocar. Abas tocando, editadas e fixadas continuam acordadas.",
+  "settings.auto_update": "Atualizar automaticamente",
+  "settings.auto_update_description": "Baixa as atualizações em segundo plano. Reinicie para atualizar na hora, ou a atualização é instalada na próxima vez que o Spark abrir.",
+  "settings.restart_to_update": "Reiniciar para atualizar",
+  "settings.update_downloading_automatically": "Há uma atualização disponível e ela está sendo baixada em segundo plano.",
+  "settings.update_ready_next_start": "A atualização foi baixada e verificada. Reinicie para instalá-la agora; senão, ela é instalada na próxima vez que o Spark abrir.",
+  "settings.auto_update_search": "Baixa as atualizações em segundo plano e as instala na próxima vez que o Spark abrir."
 }

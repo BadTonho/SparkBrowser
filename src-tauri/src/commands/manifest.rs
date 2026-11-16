@@ -81,6 +81,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_update_state",
     "set_update_channel",
     "check_for_updates",
+    "set_auto_update",
     "download_update",
     "install_update",
     "get_saved_sessions",

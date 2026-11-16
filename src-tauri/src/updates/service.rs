@@ -21,6 +21,7 @@ impl Inner {
     pub fn invalidate(&mut self) {
         self.generation += 1;
         self.snapshot.update = None;
+        self.snapshot.staged = false;
         self.snapshot.received = 0;
         self.snapshot.total = None;
         self.snapshot.error = None;
@@ -50,8 +51,8 @@ impl UpdateService {
             db.as_ref().ok_or("Database is not ready")?,
             UpdateChannel::initial(&version),
         )?;
-        let supported = cfg!(all(windows, target_arch = "x86_64", not(debug_assertions)))
-            && app.config().identifier == "org.spark.browser";
+        let auto_update = updates_repo::load_auto_update(db.as_ref().ok_or("Database is not ready")?)?;
+        let supported = super::platform_supported(app);
         Ok(Self {
             inner: Mutex::new(Inner {
                 snapshot: UpdateState {
@@ -66,6 +67,8 @@ impl UpdateService {
                     channel,
                     last_checked,
                     status: if supported { "idle" } else { "unavailable" }.into(),
+                    auto_update,
+                    staged: false,
                     update: None,
                     received: 0,
                     total: None,
@@ -132,6 +135,7 @@ impl UpdateService {
             .lock()
             .map_err(|e| e.to_string())?;
         updates_repo::set_channel(db.as_ref().ok_or("Database is not ready")?, channel)?;
+        super::staged::clear_for(app);
         inner.invalidate();
         inner.snapshot.channel = channel;
         inner.snapshot.status = if inner.snapshot.supported {
@@ -142,6 +146,28 @@ impl UpdateService {
         .into();
         drop(inner);
         self.changed.notify_waiters();
+        self.publish(app)
+    }
+    /// Turning it off also drops a downloaded update that was waiting for the next start.
+    pub fn set_auto_update(&self, app: &AppHandle, enabled: bool) -> Result<UpdateState, String> {
+        {
+            let mut inner = self.inner.lock().map_err(|e| e.to_string())?;
+            if inner.snapshot.status == "installing" {
+                return Err("Installation is already starting".into());
+            }
+            let browser = app.state::<BrowserState>();
+            let db = browser
+                .infrastructure()
+                .db()
+                .lock()
+                .map_err(|e| e.to_string())?;
+            updates_repo::set_auto_update(db.as_ref().ok_or("Database is not ready")?, enabled)?;
+            inner.snapshot.auto_update = enabled;
+            if !enabled {
+                super::staged::clear_for(app);
+                inner.snapshot.staged = false;
+            }
+        }
         self.publish(app)
     }
     pub async fn check(&self, app: &AppHandle, startup: bool) -> Result<UpdateState, String> {
@@ -246,6 +272,8 @@ mod tests {
                 channel: UpdateChannel::Stable,
                 last_checked: None,
                 status: "downloading".into(),
+                auto_update: true,
+                staged: false,
                 update: None,
                 received: 10,
                 total: Some(20),
