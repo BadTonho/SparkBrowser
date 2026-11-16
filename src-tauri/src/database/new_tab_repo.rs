@@ -47,7 +47,7 @@ impl Default for Settings {
 pub struct AudioBackground {
     pub enabled: bool,
     pub color: String,
-    pub intensity: f32,
+    pub intensity: f64,
     pub style: String,
 }
 /// Visual styles the new-tab canvas knows how to draw (see `public/new-tab/audio-styles.js`).
@@ -196,7 +196,7 @@ mod tests {
             assert!(s.validate().is_err());
         }
         s.audio_background.color = "#Ab12ef".into();
-        for intensity in [f32::NAN, f32::INFINITY, 0.0, 2.1] {
+        for intensity in [f64::NAN, f64::INFINITY, 0.0, 2.1] {
             s.audio_background.intensity = intensity;
             assert!(s.validate().is_err());
         }
