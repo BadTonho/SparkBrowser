@@ -10,6 +10,8 @@ In progress — not released.
 
 - Add a Spotify new-tab widget with account connection, playback information and controls for the active device, using the same minimal card as YouTube: logo that opens Spotify, a single scrolling title line, a progress bar and a small or full-card cover.
 
+- Choose whether the Spotify and YouTube widgets stay in the new-tab left column or sit centered along the bottom of the page.
+
 - Choose whether the new-tab customization panel opens as a compact corner panel or as a wide one centered on the screen with the categories as blocks.
 
 - Choose whether browser settings open in a pop-up or in a tab.

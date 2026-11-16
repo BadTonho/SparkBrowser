@@ -39,15 +39,20 @@
   }
   const position = () => sample ? Math.min(sample.duration, sample.position + (sample.playing ? (Date.now() - sample.at) / 1000 : 0)) : null;
   const fitTitle = () => card.fitTitle($('youtube-marquee'), $('youtube-title'));
-  // Over the whole widget the 16:9 player is scaled up to cover it, like a CSS object-fit: cover.
+  // The player is scaled up past its box (like object-fit: cover, then ZOOM further) so the title bar at
+  // the top and the logo at the bottom that YouTube draws over every embed fall outside the visible area.
+  const ZOOM = 1.4;
   function fitFrame() {
-    const widget = $('youtube-widget'), frame = $('youtube-frame');
-    const width = widget.clientWidth, height = widget.clientHeight;
-    if (!frame.style || !width || !height || widget.getAttribute('data-thumb') !== 'cover') { frame.style?.removeProperty('width'); frame.style?.removeProperty('height'); return; }
+    const media = $('youtube-media'), frame = $('youtube-frame');
+    const width = media.clientWidth, height = media.clientHeight;
+    if (!frame.style || !width || !height) { frame.style?.removeProperty('width'); frame.style?.removeProperty('height'); return; }
     const wide = width / height > 16 / 9;
-    frame.style.setProperty('width', `${Math.ceil(wide ? width : height * 16 / 9)}px`);
-    frame.style.setProperty('height', `${Math.ceil(wide ? width * 9 / 16 : height)}px`);
+    frame.style.setProperty('width', `${Math.ceil((wide ? width : height * 16 / 9) * ZOOM)}px`);
+    frame.style.setProperty('height', `${Math.ceil((wide ? width * 9 / 16 : height) * ZOOM)}px`);
   }
+  // The player is only shown while it is really playing; loading, paused, ended and refused videos
+  // (which YouTube covers with a big play button or an error message) show the thumbnail instead.
+  function setReady(ready) { $('youtube-frame').setAttribute('data-ready', String(ready)); }
   function paintProgress() {
     if (!sample) return;
     const elapsed = position();
@@ -67,11 +72,13 @@
     const usable = wanted && video && /^[A-Za-z0-9_-]{11}$/.test(video.video_id) && !document.hidden;
     if (!usable) {
       if (frameVideo) { frame.removeAttribute('src'); frameVideo = null; embedTime = null; framePlaying = null; }
+      setReady(false);
       frame.hidden = true;
       return false;
     }
     if (frameVideo !== video.video_id) {
       frameVideo = video.video_id; embedTime = null; framePlaying = Boolean(video.playing);
+      setReady(false);
       const start = Math.max(0, Math.floor(position() ?? 0));
       const origin = encodeURIComponent(window.location?.origin ?? '');
       frame.src = `${EMBED}/embed/${video.video_id}?autoplay=${video.playing ? 1 : 0}&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&modestbranding=1&playsinline=1&rel=0&enablejsapi=1&start=${start}&origin=${origin}`;
@@ -94,7 +101,11 @@
     const frame = $('youtube-frame');
     if (event.origin !== EMBED || !frame.contentWindow || event.source !== frame.contentWindow) return;
     let data; try { data = JSON.parse(event.data); } catch { return; }
-    if (data?.event === 'infoDelivery' && Number.isFinite(data.info?.currentTime)) { embedTime = data.info.currentTime; correctDrift(); }
+    if (data?.event !== 'infoDelivery' || !data.info || typeof data.info !== 'object') return;
+    // playerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued (buffering keeps the last view).
+    if (data.info.playerState === 1) setReady(true);
+    else if ([-1, 0, 2, 5].includes(data.info.playerState)) setReady(false);
+    if (Number.isFinite(data.info.currentTime)) { embedTime = data.info.currentTime; correctDrift(); }
   });
   function render(config, video = null, saving = false) {
     current = { config, video, saving };

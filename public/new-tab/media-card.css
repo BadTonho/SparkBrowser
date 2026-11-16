@@ -32,7 +32,6 @@
 /* The thumbnail (or muted video) can cover the whole card behind a dark scrim. */
 .media-card[data-thumb="cover"][data-media="true"] .mc-media { position:absolute; inset:0; z-index:-1; width:auto; height:auto; border-radius:0; }
 .media-card[data-thumb="cover"][data-media="true"] .mc-media::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.8)); }
-.media-card[data-thumb="cover"][data-media="true"] .mc-media > iframe { inset:auto; top:50%; left:50%; transform:translate(-50%, -50%); }
 html .media-card[data-thumb="cover"][data-media="true"] { color:#fff; }
 html .media-card[data-thumb="cover"][data-media="true"] :is(.mc-times, .mc-status, .mc-sub) { color:rgba(255, 255, 255, 0.78); }
 html .media-card[data-thumb="cover"][data-media="true"] .icon-button { color:#fff; border-color:rgba(255, 255, 255, 0.28); background:rgba(0, 0, 0, 0.4); }

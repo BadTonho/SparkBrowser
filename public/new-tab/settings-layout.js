@@ -1,15 +1,23 @@
-// Lets the user place the customization panel in the corner (default) or centered and larger.
-// The choice is a per-device convenience kept in localStorage, like the clock preferences.
+// Layout choices for the new tab, kept per device in localStorage like the clock preferences:
+//  - where the customization panel opens (corner, the default, or centered and larger);
+//  - where the widgets sit (at the sides, the default, or centered along the bottom).
 (() => {
-  const KEY = 'spark_settings_panel_layout', LAYOUTS = ['corner', 'center'];
-  const panel = document.getElementById('settings-panel'), select = document.getElementById('settings-layout');
-  if (!panel || !select) return;
-  const read = () => { try { const value = localStorage.getItem(KEY); return LAYOUTS.includes(value) ? value : 'corner'; } catch { return 'corner'; } };
-  const apply = layout => { panel.dataset.layout = layout; select.value = layout; };
-  select.addEventListener('change', () => {
-    const layout = LAYOUTS.includes(select.value) ? select.value : 'corner';
-    apply(layout);
-    try { localStorage.setItem(KEY, layout); } catch {}
-  });
-  apply(read());
+  const choices = [
+    { key: 'spark_settings_panel_layout', values: ['corner', 'center'], target: 'settings-panel', select: 'settings-layout' },
+    { key: 'spark_widgets_layout', values: ['sides', 'bottom'], target: 'widgets', select: 'widgets-layout' },
+  ];
+  const read = ({ key, values }) => { try { const value = localStorage.getItem(key); return values.includes(value) ? value : values[0]; } catch { return values[0]; } };
+  for (const choice of choices) {
+    const target = document.getElementById(choice.target), select = document.getElementById(choice.select);
+    if (!target || !select) continue;
+    const apply = value => { target.dataset.layout = value; select.value = value; };
+    select.addEventListener('change', () => {
+      const value = choice.values.includes(select.value) ? select.value : choice.values[0];
+      apply(value);
+      try { localStorage.setItem(choice.key, value); } catch {}
+    });
+    // Another new tab changed the choice.
+    window.addEventListener('storage', event => { if (event.key === choice.key) apply(read(choice)); });
+    apply(read(choice));
+  }
 })();

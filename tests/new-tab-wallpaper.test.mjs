@@ -357,17 +357,36 @@ test('video file size limit rejects files larger than 50MB', async () => {
   assert.equal(f.idbStore.has('current'), false);
 });
 
-test('settings panel layout choice is validated, persisted locally and defaults to the corner',async()=>{
+test('panel and widget layout choices are validated, persisted locally and default to corner and sides',async()=>{
   const {readFileSync}=await import('node:fs');const {runInNewContext}=await import('node:vm');
   const run=stored=>{
-    const store=new Map(stored?[['spark_settings_panel_layout',stored]]:[]);
-    const panel={dataset:{}},select={value:'corner',addEventListener(n,f){this.fn=f;}};
-    runInNewContext(readFileSync('public/new-tab/settings-layout.js','utf8'),{document:{getElementById:id=>id==='settings-panel'?panel:select},localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)}});
-    return {panel,select,store};
+    const store=new Map(Object.entries(stored??{})),listeners=new Map();
+    const element=()=>({dataset:{},value:'',addEventListener(n,f){this.fn=f;}});
+    const nodes={'settings-panel':element(),'settings-layout':element(),widgets:element(),'widgets-layout':element()};
+    runInNewContext(readFileSync('public/new-tab/settings-layout.js','utf8'),{document:{getElementById:id=>nodes[id]},window:{addEventListener:(n,f)=>listeners.set(n,[...(listeners.get(n)??[]),f])},localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)}});
+    return {nodes,store,listeners};
   };
-  assert.equal(run().panel.dataset.layout,'corner');
-  assert.equal(run('center').panel.dataset.layout,'center');
-  assert.equal(run('<script>').panel.dataset.layout,'corner');
-  const f=run();f.select.value='center';f.select.fn();
-  assert.equal(f.panel.dataset.layout,'center');assert.equal(f.store.get('spark_settings_panel_layout'),'center');
+  let f=run();
+  assert.equal(f.nodes['settings-panel'].dataset.layout,'corner');assert.equal(f.nodes.widgets.dataset.layout,'sides');
+  f=run({spark_settings_panel_layout:'center',spark_widgets_layout:'bottom'});
+  assert.equal(f.nodes['settings-panel'].dataset.layout,'center');assert.equal(f.nodes.widgets.dataset.layout,'bottom');
+  assert.equal(f.nodes['widgets-layout'].value,'bottom');
+  f=run({spark_settings_panel_layout:'<script>',spark_widgets_layout:'top'});
+  assert.equal(f.nodes['settings-panel'].dataset.layout,'corner');assert.equal(f.nodes.widgets.dataset.layout,'sides');
+  f=run();f.nodes['widgets-layout'].value='bottom';f.nodes['widgets-layout'].fn();
+  assert.equal(f.nodes.widgets.dataset.layout,'bottom');assert.equal(f.store.get('spark_widgets_layout'),'bottom');
+  assert.equal(f.store.get('spark_settings_panel_layout'),undefined,'only the changed choice is stored');
+  f.nodes['widgets-layout'].value='nonsense';f.nodes['widgets-layout'].fn();
+  assert.equal(f.nodes.widgets.dataset.layout,'sides');
+  f.store.set('spark_widgets_layout','bottom');for(const fn of f.listeners.get('storage'))fn({key:'spark_widgets_layout'});
+  assert.equal(f.nodes.widgets.dataset.layout,'bottom','another new tab changed it');
+  const css=readFileSync('public/new-tab/settings-layout.css','utf8');
+  assert.match(css,/#widgets\[data-layout="bottom"\] #media-widgets\s*\{[^}]*position:fixed[^}]*bottom:20px/);
+  assert.match(css,/#media-widgets\s*\{\s*display:contents/,'transparent in the default layout');
+  assert.doesNotMatch(css,/#widgets\[data-layout="bottom"\]\s*\{/,'the whole widget area is not moved');
+  const html=readFileSync('public/new-tab.html','utf8');
+  const start=html.indexOf('id="media-widgets"');
+  const group=html.slice(start,html.indexOf('</section>',html.indexOf('id="youtube-widget"')));
+  assert.ok(start>0&&group.includes('id="spotify-widget"')&&group.includes('id="youtube-widget"'),'both music cards are grouped');
+  assert.ok(!group.includes('weather-widget')&&!group.includes('gmail-widget')&&!group.includes('clock-card-widget'),'other widgets stay put');
 });

@@ -49,6 +49,7 @@
       <button id="weather-configure" type="button" data-label="configure" hidden></button>
       <button id="weather-attribution" class="text-button" type="button">Open-Meteo</button>
     </section>
+    <div id="media-widgets">
     <section id="spotify-widget" class="widget media-card" aria-labelledby="spotify-heading" data-thumb="small" data-media="false" hidden>
       <div class="widget-heading">
         <h2 id="spotify-heading" class="mc-sr">Spotify</h2>
@@ -99,6 +100,7 @@
       </div>
       <p id="youtube-status" class="mc-status" role="status"></p>
     </section>
+    </div>
     </div>
     <section id="gmail-widget" class="widget" aria-labelledby="gmail-heading" hidden>
       <div class="widget-heading"><h2 id="gmail-heading">Gmail</h2><button id="gmail-refresh" type="button" class="icon-button" data-label="refresh">↻</button></div>
@@ -224,6 +226,11 @@
         <select id="settings-layout">
           <option value="corner" data-label="settingsLayoutCorner"></option>
           <option value="center" data-label="settingsLayoutCenter"></option>
+        </select>
+        <label for="widgets-layout" data-label="widgetsLayout"></label>
+        <select id="widgets-layout">
+          <option value="sides" data-label="widgetsLayoutSides"></option>
+          <option value="bottom" data-label="widgetsLayoutBottom"></option>
         </select>
       </div>
       </div>

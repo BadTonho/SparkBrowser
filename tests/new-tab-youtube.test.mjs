@@ -186,14 +186,39 @@ test('the player is removed for bad IDs, other preview kinds, hidden pages and d
   assert.equal(frame.hidden, true);
 });
 
-test('the player is scaled to cover the whole widget only in cover mode', () => {
+test('the player is zoomed past its box so YouTube\'s title bar and logo are cropped away', () => {
   const f = fixture({spark_youtube_preview: 'video', spark_youtube_thumbnail: 'cover'});
-  f.node('youtube-widget').clientWidth = 320; f.node('youtube-widget').clientHeight = 300;
+  f.node('youtube-media').clientWidth = 320; f.node('youtube-media').clientHeight = 300;
   f.window.__sparkYoutubeRender({youtube_enabled: true}, video, false);
-  assert.equal(f.node('youtube-frame').style.height, '300px');
-  assert.equal(f.node('youtube-frame').style.width, `${Math.ceil(300 * 16 / 9)}px`);
+  assert.equal(f.node('youtube-frame').style.height, `${Math.ceil(300 * 1.4)}px`);
+  assert.equal(f.node('youtube-frame').style.width, `${Math.ceil(300 * 16 / 9 * 1.4)}px`);
+  f.node('youtube-media').clientWidth = 96; f.node('youtube-media').clientHeight = 54;
   f.node('youtube-thumb').listeners.change({target: {value: 'small'}});
-  assert.equal(f.node('youtube-frame').style.width, undefined);
+  assert.equal(f.node('youtube-frame').style.width, `${Math.ceil(96 * 1.4)}px`, 'the small slot is zoomed too');
+  assert.ok(Number(f.node('youtube-frame').style.height.replace('px', '')) > 54, 'taller than the slot, so the edges are cut');
+});
+
+test('the player is shown only while it plays; loading, paused and refused videos show the thumbnail', () => {
+  const f = fixture({spark_youtube_preview: 'video'});
+  const frame = f.node('youtube-frame');
+  const message = info => f.events.get('message')({origin: EMBED, source: frame.contentWindow, data: JSON.stringify({event: 'infoDelivery', info})});
+  f.window.__sparkYoutubeRender({youtube_enabled: true}, {...video, image: jpeg, position: 5, duration: 100}, false);
+  assert.equal(frame.attrs['data-ready'], 'false', 'hidden while loading');
+  message({playerState: 3});
+  assert.equal(frame.attrs['data-ready'], 'false', 'buffering does not reveal it');
+  message({playerState: 1, currentTime: 5});
+  assert.equal(frame.attrs['data-ready'], 'true');
+  message({playerState: 3});
+  assert.equal(frame.attrs['data-ready'], 'true', 'buffering keeps the last view');
+  message({playerState: 2});
+  assert.equal(frame.attrs['data-ready'], 'false', 'paused: YouTube would draw a big play button');
+  message({playerState: 1});
+  f.window.__sparkYoutubeRender({youtube_enabled: true}, {...video, video_id: 'abcdefghijk', image: jpeg}, false);
+  assert.equal(frame.attrs['data-ready'], 'false', 'a new video starts hidden');
+  assert.equal(f.node('youtube-cover').hidden, false, 'the thumbnail is underneath');
+  const css = readFileSync('public/new-tab/youtube.css', 'utf8');
+  assert.match(css, /#youtube-media > iframe\[data-ready="true"\]\s*\{\s*opacity:1/);
+  assert.match(css, /#youtube-media > iframe \{[^}]*opacity:0/);
 });
 
 test('controls send native operations and the setting is emitted as a widget preference', () => {

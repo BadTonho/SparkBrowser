@@ -1,4 +1,4 @@
-#settings-layout { width:100%; }
+#settings-layout, #widgets-layout { width:100%; }
 #settings-layout-field { margin-top:14px; }
 /* Centered, larger panel. The corner layout keeps the base rules from widgets.css. */
 #settings-panel[data-layout="center"] {
@@ -18,3 +18,9 @@ html[data-theme="light"] #settings-panel[data-layout="center"]::backdrop { backg
 #settings-panel[data-layout="center"] #settings-layout-field { max-width:320px; }
 #settings-panel[data-layout="center"] #settings-content { font-size:14px; padding-right:8px; }
 #settings-panel[data-layout="center"] .settings-view > .toggle { min-height:54px; }
+
+/* The music cards (Spotify, YouTube) can sit centered along the bottom while Weather, Gmail and the clock
+   card stay where they are. In the default "sides" layout the wrapper is transparent to the column. */
+#media-widgets { display:contents; }
+#widgets[data-layout="bottom"] #media-widgets { position:fixed; bottom:20px; left:72px; right:72px; display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; gap:20px; max-height:calc(100vh - 150px); overflow:hidden; pointer-events:none; }
+#widgets[data-layout="bottom"] #media-widgets > .widget { flex:0 0 auto; width:280px; pointer-events:auto; }

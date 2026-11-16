@@ -7,6 +7,10 @@
 #media-tabs ~ div select { width:100%; }
 #youtube-options p { color:#a1a1aa; font-size:12px; }
 #youtube-widget[data-preview="video"][data-thumb="small"] .mc-media { width:96px; height:54px; }
+/* The player is oversized and centered by youtube.js; it fades in only while it is playing, over the thumbnail. */
+#youtube-media > iframe { inset:auto; top:50%; left:50%; width:auto; height:auto; transform:translate(-50%, -50%); opacity:0; transition:opacity 250ms ease; }
+#youtube-media > iframe[data-ready="true"] { opacity:1; }
+@media (prefers-reduced-motion:reduce) { #youtube-media > iframe { transition:none; } }
 html[data-theme="light"] #media-tabs { border-color:rgba(0, 0, 0, 0.08); background:rgba(0, 0, 0, 0.03); }
 html[data-theme="light"] #media-tabs button[aria-selected="true"] { background:rgba(0, 0, 0, 0.08); }
 html[data-theme="light"] #youtube-options p { color:#62626b; }

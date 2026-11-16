@@ -10,6 +10,8 @@ Em andamento — não lançada.
 
 - Adiciona um widget do Spotify na nova guia com conexão da conta, informações de reprodução e controles do dispositivo ativo, no mesmo cartão minimalista do YouTube: logotipo que abre o Spotify, título em uma linha que rola, barra de progresso e capa pequena ou cobrindo o cartão inteiro.
 
+- Escolha se os widgets do Spotify e do YouTube ficam na coluna esquerda da nova guia ou centralizados na parte de baixo da página.
+
 - Escolha se o painel de personalização da nova guia abre como um painel compacto no canto ou como um painel largo no centro da tela, com as categorias em blocos.
 
 - Escolha se as configurações do navegador abrem em um pop-up ou em uma guia.
