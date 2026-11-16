@@ -679,16 +679,14 @@ pub fn run() {
         ]))
         .build(context)
         .expect("error while building Spark")
-        .run(|app, event| {
-            match event {
-                tauri::RunEvent::ExitRequested {
-                    code: None, api, ..
-                } => {
-                    api.prevent_exit();
-                    let _ = app.state::<shutdown::ShutdownService>().request(app, None);
-                }
-                tauri::RunEvent::Exit => error_log::clean_exit(),
-                _ => {}
+        .run(|app, event| match event {
+            tauri::RunEvent::ExitRequested {
+                code: None, api, ..
+            } => {
+                api.prevent_exit();
+                let _ = app.state::<shutdown::ShutdownService>().request(app, None);
             }
+            tauri::RunEvent::Exit => error_log::clean_exit(),
+            _ => {}
         });
 }

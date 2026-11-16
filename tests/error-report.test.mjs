@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { buildIssueUrl, ISSUES_URL } from '../src/lib/services/error-report.js';
 
 const report = {
-  id: 'error-1', kind: 'panic', summary: 'Internal error in thread main: boom',
+  id: 'error-1', level: 'critical', kind: 'panic', summary: 'Internal error in thread main: boom',
   details: 'at src/lib.rs:1\nstack', version: '0.1.2', os: 'windows', time: '2026-11-16 20:00:00',
 };
 
@@ -13,7 +13,7 @@ test('the issue address points at the repository and carries the error', () => {
   assert.equal(`${url.origin}${url.pathname}`, ISSUES_URL);
   assert.match(url.searchParams.get('title'), /^\[panic\] Internal error/);
   const body = url.searchParams.get('body');
-  for (const text of ['0.1.2', 'windows', report.summary, 'at src/lib.rs:1']) assert.ok(body.includes(text), text);
+  for (const text of ['0.1.2', 'windows', 'critical', report.summary, 'at src/lib.rs:1']) assert.ok(body.includes(text), text);
 });
 
 test('a huge error is cut so the address stays short enough for GitHub', () => {

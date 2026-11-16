@@ -17,7 +17,7 @@ pub fn emit_shell<S: serde::Serialize + Clone>(
         // Every error the browser shows is also logged and offered for reporting.
         if let Ok(serde_json::Value::String(message)) = serde_json::to_value(&payload) {
             if message != "Navigation blocked" {
-                crate::error_log::report("native", &message, "");
+                crate::error_log::report(crate::error_log::Level::Error, "native", &message, "");
             }
         }
     }

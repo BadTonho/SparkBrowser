@@ -37,8 +37,10 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     if values.get("token").map(String::as_str) != Some(token) || !valid(app, id, label, token) {
         return;
     }
-    if !matches!(url.path(), "/read" | "/navigate" | "/visit" | "/widgets" | "/error")
-        || (url.path() == "/visit" && !values.get("site_key").is_some_and(|key| !key.is_empty()))
+    if !matches!(
+        url.path(),
+        "/read" | "/navigate" | "/visit" | "/widgets" | "/error"
+    ) || (url.path() == "/visit" && !values.get("site_key").is_some_and(|key| !key.is_empty()))
     {
         return;
     }
@@ -92,6 +94,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     }
     if url.path() == "/error" {
         crate::error_log::report(
+            crate::error_log::Level::Error,
             "new-tab",
             values.get("message").map_or("", String::as_str),
             values.get("details").map_or("", String::as_str),

@@ -24,5 +24,6 @@
   "status.error_report_hide": "Ocultar erro",
   "status.error_report_send": "Enviar erro",
   "status.error_report_send_failed": "Não foi possível abrir a página de envio. Copie o erro acima e envie para as issues do projeto.",
-  "status.error_report_more": "+{count} outros erros"
+  "status.error_report_more": "+{count} outros erros",
+  "status.error_report_title_critical": "O Spark encontrou um erro crítico"
 }

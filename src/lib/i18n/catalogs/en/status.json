@@ -24,5 +24,6 @@
   "status.error_report_hide": "Hide error",
   "status.error_report_send": "Send error",
   "status.error_report_send_failed": "Could not open the report page. Copy the error above and send it to the project issues.",
-  "status.error_report_more": "+{count} more errors"
+  "status.error_report_more": "+{count} more errors",
+  "status.error_report_title_critical": "Spark hit a critical error"
 }

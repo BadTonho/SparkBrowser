@@ -1,7 +1,10 @@
 import { writable } from "svelte/store";
 
+export type ErrorLevel = "info" | "warning" | "error" | "critical";
+
 export interface ErrorReport {
   id: string;
+  level: ErrorLevel;
   kind: string;
   summary: string;
   details: string;

@@ -116,6 +116,9 @@ mod tests {
         let error = HashMap::from([("message".into(), "x is not defined".into())]);
         assert!(valid("/error", &error));
         assert!(!valid("/error", &HashMap::new()));
-        assert!(!valid("/error", &HashMap::from([("message".into(), "x".repeat(2_001))])));
+        assert!(!valid(
+            "/error",
+            &HashMap::from([("message".into(), "x".repeat(2_001))])
+        ));
     }
 }

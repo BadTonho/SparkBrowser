@@ -1,16 +1,25 @@
-//! Local error log and error notifications.
+//! Local log and error notifications, with four severity levels.
 //!
-//! Every problem that reaches [`report`] (a panic, a window that stopped responding, a native
-//! error, a script error from the interface or the new-tab page, or a run that did not end
-//! cleanly) is appended to `<data directory>/logs/spark-errors.log` and sent to the browser shell,
-//! which shows a notification with buttons to view the error and to send it as a GitHub issue.
+//! Everything that goes wrong is appended to `<data directory>/logs/spark-errors.log`, each entry
+//! tagged with its [`Level`]:
 //!
-//! Nothing is sent by Spark itself. Entries are redacted first: the user's home folder becomes `~`
-//! and page addresses lose their path and query.
+//! | Level | Meaning | Examples | Notification |
+//! | --- | --- | --- | --- |
+//! | `Info` | Notable events that are not problems | start, normal close, a freeze that ended | no |
+//! | `Warning` | A failure Spark ignored and recovered from | a discarded `Result` (see [`ignored`]) | no |
+//! | `Error` | Something failed and the user may notice | native errors, script errors | yes |
+//! | `Critical` | The app itself is in trouble | a panic, a freeze, a run that did not end cleanly | yes |
+//!
+//! `Error` and `Critical` also reach the browser shell, which shows a card with buttons to view the
+//! error and to send it as a GitHub issue. Nothing is sent by Spark itself. Entries are redacted
+//! first: the user's home folder becomes `~` and page addresses lose their path and query.
 use serde::Serialize;
 use std::{
+    collections::HashMap,
+    fmt::Debug,
     fs::{self, OpenOptions},
     io::Write,
+    panic::Location,
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -25,11 +34,14 @@ const FILE_NAME: &str = "spark-errors.log";
 const MAX_BYTES: u64 = 512 * 1024;
 /// The window is reported as not responding after this many seconds without answering.
 const HANG_AFTER_SECONDS: u64 = 10;
-
-/// Same error shown at most once in this many seconds, so a loop cannot flood the screen.
+/// The same entry is written to the log at most once in this many seconds (never for `Critical`).
+const LOG_REPEAT_SECONDS: u64 = 10;
+/// The same error is shown at most once in this many seconds, so a loop cannot flood the screen.
 const REPEAT_SECONDS: u64 = 60;
 /// Notifications per minute, across all errors.
 const MAX_PER_MINUTE: usize = 5;
+/// Distinct entries remembered for de-duplication before the table is emptied.
+const MAX_REMEMBERED: usize = 500;
 const MAX_SUMMARY: usize = 300;
 const MAX_DETAILS: usize = 6_000;
 const SESSION_MARKER: &str = "session.running";
@@ -38,14 +50,44 @@ static LOG_FILE: OnceLock<PathBuf> = OnceLock::new();
 static HANDLE: OnceLock<AppHandle> = OnceLock::new();
 static HEARTBEAT: AtomicU64 = AtomicU64::new(0);
 static COUNTER: AtomicU64 = AtomicU64::new(0);
-static RECENT: Mutex<Vec<(u64, String)>> = Mutex::new(Vec::new());
+/// Notifications shown in the last minute: (time, key).
+static SHOWN: Mutex<Vec<(u64, String)>> = Mutex::new(Vec::new());
+/// Last time each entry was written to the log: key -> time.
+static WRITTEN: Mutex<Option<HashMap<String, u64>>> = Mutex::new(None);
 /// Set when the previous run left its marker behind, which means it did not close normally.
 static PREVIOUS_RUN_ENDED_BADLY: OnceLock<bool> = OnceLock::new();
+
+/// How serious an entry is. See the module documentation for what each level means.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Level {
+    Info,
+    Warning,
+    Error,
+    Critical,
+}
+
+impl Level {
+    fn label(self) -> &'static str {
+        match self {
+            Level::Info => "INFO",
+            Level::Warning => "WARN",
+            Level::Error => "ERROR",
+            Level::Critical => "CRITICAL",
+        }
+    }
+
+    /// Only the two serious levels interrupt the user with a card.
+    fn notifies(self) -> bool {
+        matches!(self, Level::Error | Level::Critical)
+    }
+}
 
 /// What the shell shows in the error notification.
 #[derive(Clone, Serialize)]
 pub struct ErrorReport {
     pub id: String,
+    pub level: Level,
     /// `panic`, `hang`, `native`, `interface`, `new-tab` or `unclean-exit`.
     pub kind: String,
     pub summary: String,
@@ -70,10 +112,12 @@ pub fn install(data_directory: &Path) {
     let marker = directory.join(SESSION_MARKER);
     let _ = PREVIOUS_RUN_ENDED_BADLY.set(marker.exists());
     let _ = fs::write(&marker, unix_seconds().to_string());
-    record(&format!(
-        "---- Spark {} started ----",
-        env!("CARGO_PKG_VERSION")
-    ));
+    report(
+        Level::Info,
+        "lifecycle",
+        &format!("Spark {} started", env!("CARGO_PKG_VERSION")),
+        "",
+    );
     let previous = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let thread = std::thread::current();
@@ -92,21 +136,19 @@ pub fn install(data_directory: &Path) {
             "Internal error in thread '{}': {message}",
             thread.name().unwrap_or("unnamed")
         );
-        let details = format!(
-            "at {location}
-{backtrace}"
-        );
+        let details = format!("at {location}\n{backtrace}");
         let _ = std::thread::Builder::new()
             .name("error-log-panic".into())
-            .spawn(move || report("panic", &summary, &details))
+            .spawn(move || report(Level::Critical, "panic", &summary, &details))
             .map(|handle| handle.join());
         previous(info);
     }));
 }
 
 /// Watches the main thread: every second it asks the event loop to update a counter, and a counter
-/// that stops moving for `HANG_AFTER_SECONDS` is written to the log, followed by a note when the
-/// window answers again. That tells a freeze apart from a crash and shows how long it lasted.
+/// that stops moving for `HANG_AFTER_SECONDS` is a freeze. It is logged when it starts and
+/// reported, with its duration, when the window answers again. That tells a freeze apart from a
+/// crash and shows how long it lasted.
 pub fn watch(app: &AppHandle) {
     if LOG_FILE.get().is_none() {
         return;
@@ -119,9 +161,11 @@ pub fn watch(app: &AppHandle) {
             .spawn(|| {
                 std::thread::sleep(Duration::from_secs(6));
                 report(
+                    Level::Critical,
                     "unclean-exit",
                     "Spark did not close normally the last time it ran",
-                    "The previous run left its running marker behind, so it ended without a clean                      shutdown: a crash, a freeze that was force-closed, or the computer losing power.",
+                    "The previous run left its running marker behind, so it ended without a clean \
+                     shutdown: a crash, a freeze that was force-closed, or the computer losing power.",
                 );
             });
     }
@@ -134,25 +178,31 @@ pub fn watch(app: &AppHandle) {
                 std::thread::sleep(Duration::from_secs(1));
                 let now = unix_seconds();
                 let beat = HEARTBEAT.load(Ordering::Relaxed);
-                let _ =
-                    app.run_on_main_thread(|| HEARTBEAT.store(unix_seconds(), Ordering::Relaxed));
+                ignored(
+                    app.run_on_main_thread(|| HEARTBEAT.store(unix_seconds(), Ordering::Relaxed)),
+                );
                 if beat == 0 {
                     continue;
                 }
                 let stalled = now.saturating_sub(beat);
                 match reported {
                     None if stalled >= HANG_AFTER_SECONDS => {
-                        record(&format!(
-                            "HANG: the main thread has not answered for {stalled} s"
-                        ));
+                        report(
+                            Level::Warning,
+                            "hang",
+                            &format!("The main thread has not answered for {stalled} s"),
+                            "",
+                        );
                         reported = Some(now);
                     }
                     Some(since) if stalled < HANG_AFTER_SECONDS => {
                         let seconds = now.saturating_sub(since) + HANG_AFTER_SECONDS;
                         report(
+                            Level::Critical,
                             "hang",
                             &format!("Spark stopped responding for about {seconds} seconds"),
-                            "The main thread did not answer the watchdog. See the lines above                              this one in spark-errors.log for what the app was doing.",
+                            "The main thread did not answer the watchdog. The lines above this \
+                             one in spark-errors.log show what the app was doing.",
                         );
                         reported = None;
                     }
@@ -163,31 +213,32 @@ pub fn watch(app: &AppHandle) {
     HEARTBEAT.store(unix_seconds(), Ordering::Relaxed);
 }
 
-/// Logs the problem and tells the shell to show the notification. Safe to call from any thread.
-pub fn report(kind: &str, summary: &str, details: &str) {
+/// Logs a problem at `level`. `Error` and `Critical` are also shown to the user. Safe to call from
+/// any thread.
+pub fn report(level: Level, kind: &str, summary: &str, details: &str) {
     let summary = truncate(&redact(summary), MAX_SUMMARY);
     let details = truncate(&redact(details), MAX_DETAILS);
-    record(&format!(
-        "{} {kind}: {summary}
-{details}",
-        if kind == "panic" { "PANIC" } else { "ERROR" }
-    ));
-    let now = unix_seconds();
-    let allowed = RECENT.lock().is_ok_and(|mut recent| {
-        recent.retain(|(at, _)| now.saturating_sub(*at) < REPEAT_SECONDS);
-        let key = format!("{kind}:{summary}");
-        if recent.iter().any(|(_, seen)| *seen == key) || recent.len() >= MAX_PER_MINUTE {
-            false
-        } else {
-            recent.push((now, key));
-            true
-        }
-    });
-    let Some(app) = HANDLE.get().filter(|_| allowed) else {
+    let key = format!("{kind}:{summary}:{details}");
+    if level == Level::Critical || first_in(&WRITTEN, &key, LOG_REPEAT_SECONDS) {
+        record(&format!(
+            "[{}] {kind}: {summary}{}",
+            level.label(),
+            if details.is_empty() {
+                String::new()
+            } else {
+                format!("\n{details}")
+            }
+        ));
+    }
+    if !level.notifies() || !may_notify(&format!("{kind}:{summary}")) {
+        return;
+    }
+    let Some(app) = HANDLE.get() else {
         return;
     };
     let report = ErrorReport {
         id: format!("error-{}", COUNTER.fetch_add(1, Ordering::Relaxed)),
+        level,
         kind: kind.into(),
         summary,
         details,
@@ -195,15 +246,66 @@ pub fn report(kind: &str, summary: &str, details: &str) {
         os: std::env::consts::OS,
         time: timestamp(),
     };
-    let _ = crate::security::emit_shell(app, "error-report", report);
+    ignored(crate::security::emit_shell(app, "error-report", report));
+}
+
+/// Use instead of `let _ = result;`: the failure is still ignored, but it is written to the log as
+/// a `Warning` with the place in the code that ignored it, so nothing fails invisibly.
+#[track_caller]
+pub fn ignored<T, E: Debug>(result: Result<T, E>) {
+    if let Err(error) = result {
+        let place = Location::caller();
+        report(
+            Level::Warning,
+            "ignored",
+            &format!("{error:?}"),
+            &format!("ignored at {}:{}", place.file(), place.line()),
+        );
+    }
 }
 
 /// Removes the running marker so the next start knows this run ended normally.
 pub fn clean_exit() {
     if let Some(path) = LOG_FILE.get() {
-        record("---- Spark closed normally ----");
-        let _ = fs::remove_file(path.with_file_name(SESSION_MARKER));
+        report(Level::Info, "lifecycle", "Spark closed normally", "");
+        ignored(fs::remove_file(path.with_file_name(SESSION_MARKER)));
     }
+}
+
+/// `true` when `key` was not written in the last `within` seconds. Remembers it for next time.
+fn first_in(table: &Mutex<Option<HashMap<String, u64>>>, key: &str, within: u64) -> bool {
+    let now = unix_seconds();
+    let Ok(mut guard) = table.lock() else {
+        return true;
+    };
+    let seen = guard.get_or_insert_with(HashMap::new);
+    if seen.len() >= MAX_REMEMBERED {
+        seen.retain(|_, at| now.saturating_sub(*at) < within);
+        if seen.len() >= MAX_REMEMBERED {
+            seen.clear();
+        }
+    }
+    match seen.get(key) {
+        Some(at) if now.saturating_sub(*at) < within => false,
+        _ => {
+            seen.insert(key.to_owned(), now);
+            true
+        }
+    }
+}
+
+/// Applies the repeat window and the per-minute cap to notifications.
+fn may_notify(key: &str) -> bool {
+    let now = unix_seconds();
+    SHOWN.lock().is_ok_and(|mut shown| {
+        shown.retain(|(at, _)| now.saturating_sub(*at) < REPEAT_SECONDS);
+        if shown.iter().any(|(_, seen)| seen == key) || shown.len() >= MAX_PER_MINUTE {
+            false
+        } else {
+            shown.push((now, key.to_owned()));
+            true
+        }
+    })
 }
 
 /// Keeps the user's name and the addresses they visited out of the report: the home folder
@@ -256,8 +358,8 @@ fn truncate(text: &str, max: usize) -> String {
     cut
 }
 
-/// Appends one entry. Failures are ignored: logging must never make a problem worse.
-pub fn record(entry: &str) {
+/// Appends one line. Failures are ignored: logging must never make a problem worse.
+fn record(entry: &str) {
     let Some(path) = LOG_FILE.get() else {
         return;
     };
@@ -308,6 +410,36 @@ fn format_utc(seconds: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_error_and_critical_interrupt_the_user() {
+        assert!(!Level::Info.notifies());
+        assert!(!Level::Warning.notifies());
+        assert!(Level::Error.notifies());
+        assert!(Level::Critical.notifies());
+        assert_eq!(
+            serde_json::to_string(&Level::Critical).unwrap(),
+            "\"critical\""
+        );
+    }
+
+    #[test]
+    fn repeats_inside_the_window_are_skipped_and_the_table_stays_bounded() {
+        let table = Mutex::new(None);
+        assert!(first_in(&table, "a", 60));
+        assert!(!first_in(&table, "a", 60));
+        assert!(first_in(&table, "b", 60));
+        for n in 0..MAX_REMEMBERED * 2 {
+            first_in(&table, &n.to_string(), 60);
+        }
+        assert!(table.lock().unwrap().as_ref().unwrap().len() <= MAX_REMEMBERED);
+    }
+
+    #[test]
+    fn ignoring_a_success_or_a_failure_never_panics() {
+        ignored(Ok::<_, String>(1));
+        ignored(Err::<(), _>("boom"));
+    }
 
     #[test]
     fn redact_cuts_addresses_after_the_host_and_hides_the_home_folder() {

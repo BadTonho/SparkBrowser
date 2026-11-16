@@ -35,9 +35,9 @@
 {#if $errorReports.length > 0}
   <div class="reports" role="region" aria-label={$t("status.error_report_region")}>
     {#each $errorReports.slice(0, visible) as report (report.id)}
-      <div class="card" role="alert">
+      <div class="card" class:critical={report.level === "critical"} role="alert">
         <div class="head">
-          <strong>{$t("status.error_report_title")}</strong>
+          <strong>{report.level === "critical" ? $t("status.error_report_title_critical") : $t("status.error_report_title")}</strong>
           <button type="button" class="close" aria-label={$t("status.dismiss_error_2db0")} onclick={() => dismissErrorReport(report.id)}>×</button>
         </div>
         <p class="summary">{report.summary}</p>
@@ -64,6 +64,7 @@
 <style>
   .reports { position: fixed; right: 16px; bottom: 16px; z-index: 9998; display: flex; flex-direction: column; gap: 8px; width: min(380px, calc(100vw - 32px)); }
   .card { background: rgba(32, 20, 22, 0.96); color: #f4eded; border: 1px solid rgba(255, 69, 58, 0.5); border-radius: 10px; padding: 10px 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); font-size: 12px; animation: rise 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+  .card.critical { border-color: #ff3b30; background: rgba(48, 14, 14, 0.97); }
   .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .head strong { color: #ff6b61; font-size: 13px; }
   .summary { margin: 6px 0 8px; line-height: 1.4; overflow-wrap: anywhere; max-height: 4.2em; overflow: hidden; }
