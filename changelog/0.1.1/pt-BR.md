@@ -17,6 +17,7 @@ Em andamento — não lançada.
 - Escolha se as configurações do navegador abrem em um pop-up ou em uma guia.
 
 ## Melhorias
+- As abas horizontais ficaram mais largas (até 240 px em vez de 180 px) e continuam encolhendo aos poucos, até 120 px, conforme mais abas são abertas.
 - Fechar o navegador não mostra mais uma caixa de "salvando" quando não há nada a decidir: ela aparece na hora apenas para atividade que exige uma escolha ou para um erro, e só depois de um instante enquanto salva. O envio final do backup na nuvem é pulado quando nada mudou.
 - As configurações abrem e fecham com uma animação suave que respeita a preferência por movimento reduzido.
 - O arraste de abas agrupa atualizações do ponteiro para reduzir trabalho repetido.
