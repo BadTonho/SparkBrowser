@@ -1,0 +1,5 @@
+#!/bin/sh
+# Spark managed pre-push hook v1
+set -eu
+root=$(git rev-parse --show-toplevel)
+exec node "$root/tools/git/pre-push.mjs" "$@"

@@ -40,8 +40,8 @@ jobs:
 
       - name: Run checks & unit tests
         run: |
-          npm run check
-          npm run test
+          npm run validate:quick
+          npm run security:check
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
           cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
           cargo test --manifest-path src-tauri/Cargo.toml
@@ -107,8 +107,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Linux Rust tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Run Linux checks and tests
+        run: |
+          npm run validate:quick
+          npm run security:check
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: Build Linux packages (deb, AppImage & rpm)
         env:

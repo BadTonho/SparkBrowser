@@ -41,10 +41,9 @@ pub fn install_staged_at_startup(app: &tauri::AppHandle, conn: &rusqlite::Connec
             return;
         }
         let version = app.package_info().version.to_string();
-        let Ok((channel, _)) = crate::database::updates_repo::load(
-            conn,
-            model::UpdateChannel::initial(&version),
-        ) else {
+        let Ok((channel, _)) =
+            crate::database::updates_repo::load(conn, model::UpdateChannel::initial(&version))
+        else {
             return;
         };
         let auto_update = crate::database::updates_repo::load_auto_update(conn).unwrap_or(true);

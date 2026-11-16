@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createFixture } from './fixture.mjs';
 import { cleanRunData, createRunDirectory } from './run-directory.mjs';
 import { nativeDriverPath } from './driver-path.mjs';
+import { stopDriverProcess } from './driver-cleanup.mjs';
 
 export async function runScenario(name, scenario) {
   if (!['win32', 'linux'].includes(process.platform)) throw new Error('This direct tauri-driver suite supports Windows/Linux. Use an embedded WebDriver service on macOS.');
@@ -231,17 +232,13 @@ export async function runScenario(name, scenario) {
     await until(async () => { try { await request('GET', '/status'); return true; } catch { return false; } }, 'driver ready');
   }
   async function stopDriver() {
-    if (driver?.pid) {
-      const stopped = driver.exitCode !== null || driver.signalCode !== null ? Promise.resolve() : new Promise(resolve => driver.once('exit', resolve));
-      if (process.platform === 'win32') {
-        // Terminate only the child tree created for this scenario.
-        await new Promise(resolve => { const kill = spawn('taskkill', ['/PID', String(driver.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }); kill.on('error', resolve); kill.on('close', resolve); });
-      } else { try { process.kill(-driver.pid, 'SIGKILL'); } catch { /* Already exited. */ } }
-      await stopped;
+    const currentDriver = driver;
+    driver = undefined;
+    if (currentDriver?.pid) {
+      await stopDriverProcess(currentDriver);
       // Windows can retain WebView profile/WAL handles briefly after process termination.
       await wait(250);
     }
-    driver = undefined;
   }
   async function restart({ crash = false, beforeStart, expectFailure = false } = {}) {
     if (session && !crash) {
@@ -312,7 +309,7 @@ export async function runScenario(name, scenario) {
     }
     if (session) await request('DELETE', `/session/${session}/actions`).catch(error => cleanupErrors.push(`Input release: ${error}`));
     await closeSession().catch(error => cleanupErrors.push(String(error)));
-    await stopDriver();
+    await stopDriver().catch(error => cleanupErrors.push(String(error)));
     await fixture?.close().catch(error => cleanupErrors.push(String(error)));
     await cleanRunData(directory).catch(error => cleanupErrors.push(String(error)));
     try {

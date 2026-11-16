@@ -94,3 +94,33 @@ test('initial snapshot returned after disposal cannot replace the current sessio
   await loading;
   assert.deepEqual(ids(app.tabs), ['current']);
 });
+
+test('late close and navigation replies cannot resurrect tabs after a workspace switch', async () => {
+  let complete;
+  const app = domain({ closeExistingTab: () => new Promise(done => { complete = done; }) });
+  app.applyTabsSnapshot(packet(1, [tab('a', true), tab('b')]));
+  const closing = app.removeTab('b');
+  app.applyTabsSnapshot(packet(3, [{ ...tab('work', true), workspace_id: 'ws-work' }]));
+  complete(packet(2, [tab('a', true)]));
+  await closing;
+  app.applyNavigationPatch({ id: 'b', url: 'https://example.test/stale', title: 'stale', navigation: { revision: 9 } });
+  assert.deepEqual(ids(app.tabs), ['work']);
+  assert.equal(stores.get(app.tabs)[0].workspace_id, 'ws-work');
+  assert.equal(stores.get(app.currentUrl), 'https://example.test/work');
+});
+
+test('reordering can retry after persistence failure without losing newer navigation', async () => {
+  let attempts = 0;
+  const app = domain({ reorderTabs: async () => {
+    if (++attempts === 1) throw new Error('disk full');
+    return packet(2, [tab('b'), tab('a', true)]);
+  } });
+  app.applyTabsSnapshot(packet(1, [tab('a', true), tab('b')]));
+  await assert.rejects(app.reorderTabsList(['b', 'a']), /disk full/);
+  assert.deepEqual(ids(app.tabs), ['a', 'b']);
+  app.applyNavigationPatch({ id: 'a', url: 'https://example.test/latest', title: 'latest', navigation: { revision: 5 } });
+  await app.reorderTabsList(['b', 'a']);
+  assert.deepEqual(ids(app.tabs), ['b', 'a']);
+  assert.equal(stores.get(app.currentUrl), 'https://example.test/latest');
+  assert.equal(attempts, 2);
+});

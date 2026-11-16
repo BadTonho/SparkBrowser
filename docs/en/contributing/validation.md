@@ -6,6 +6,8 @@
 
 Run from the repository root:
 
+`npm run validate:quick` runs JavaScript tests (including architecture checks) and Svelte/TypeScript checks. The [local pre-push hook](local-hooks.md) installs through npm's `prepare` lifecycle and runs these checks on ordinary pushes. Release-tag pushes run full validation and fresh critical native checks; `npm run validate -- --critical` runs those steps explicitly.
+
 `npm run validate` runs JavaScript tests, Svelte/TypeScript checks, rustfmt, Clippy, Rust tests, the frontend build and the repository security check, stopping on the first failure. `npm run validate -- --native` additionally builds the isolated native app and runs its complete WebDriver suite. Configure the [native tools](native-tests.md) first; Rust dependencies must be cached for the offline steps. Audit and isolated installer-signature checks remain separate.
 
 ```sh
@@ -45,4 +47,4 @@ Finish by checking `git status`, `git diff`, `git diff --cached`, and sensitive-
 
 ## Architecture and cross-feature contracts
 
-`npm run architecture:check` is part of consolidated validation. Run `npm run test:native:critical` after building the isolated native application to check the mandatory cross-feature scenarios. CI runs this set on pull requests and the full suite daily and before release publication. See [regression workflow](regression-workflow.md) and [state ownership](../architecture/state-ownership.md).
+`npm run architecture:check` is included through the JavaScript tests in consolidated validation. Run `npm run test:native:critical` after building the isolated native application to check the mandatory cross-feature scenarios. CI and native workflows are manual; the local pre-push hook requires the critical scenarios for release tags. The release workflow checks both platforms before packaging but does not execute native scenarios. See [regression workflow](regression-workflow.md) and [state ownership](../architecture/state-ownership.md).

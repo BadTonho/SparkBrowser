@@ -1,10 +1,9 @@
 name: Native regressions
 
 # Manual only (the daily schedule and pull request runs were removed to save GitHub
-# Actions minutes). Releases still run it through `workflow_call`.
+# Actions minutes). Release tags are checked locally by the pre-push hook.
 on:
   workflow_dispatch:
-  workflow_call:
 
 permissions:
   contents: read
@@ -32,12 +31,7 @@ jobs:
       - name: Run native regressions
         env:
           SPARK_NATIVE_DRIVER: .cache/native-tools/edge/msedgedriver.exe
-        run: |
-          if ('${{ github.event_name }}' -eq 'pull_request') {
-            npm run test:native:critical
-          } else {
-            npm run test:native
-          }
+        run: npm run test:native
       # Only the machine-readable outcome is published. Browser profiles, raw logs,
       # databases and screenshots may contain page content and stay off CI artifacts.
       - uses: actions/upload-artifact@v4

@@ -87,7 +87,12 @@ mod tests {
     }
     #[test]
     fn youtube_controls_are_allowed_but_carry_no_data() {
-        for op in ["youtube_toggle", "youtube_next", "youtube_previous", "youtube_open"] {
+        for op in [
+            "youtube_toggle",
+            "youtube_next",
+            "youtube_previous",
+            "youtube_open",
+        ] {
             assert!(widget(op, "{}"), "{op}");
             assert!(!widget(op, r#"{"script":"alert(1)"}"#), "{op}");
         }

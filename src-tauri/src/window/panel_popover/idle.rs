@@ -36,7 +36,8 @@ fn release<P: Panel>(app: &AppHandle, generation: u64) {
         let Ok(mut inner) = service.0.lock() else {
             return;
         };
-        if !inner.release_pending || inner.idle_generation != generation || inner.session.is_some() {
+        if !inner.release_pending || inner.idle_generation != generation || inner.session.is_some()
+        {
             return;
         }
         inner.release_pending = false;

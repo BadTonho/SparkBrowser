@@ -110,11 +110,23 @@ mod tests {
              INSERT INTO app_migrations (name) VALUES ('update-preferences-v1');",
         )
         .unwrap();
-        assert_eq!(load(&conn, UpdateChannel::Stable).unwrap().0, UpdateChannel::Beta);
-        assert!(load_auto_update(&conn).unwrap(), "existing profiles get the default");
+        assert_eq!(
+            load(&conn, UpdateChannel::Stable).unwrap().0,
+            UpdateChannel::Beta
+        );
+        assert!(
+            load_auto_update(&conn).unwrap(),
+            "existing profiles get the default"
+        );
         set_auto_update(&conn, false).unwrap();
-        assert_eq!(load(&conn, UpdateChannel::Stable).unwrap().0, UpdateChannel::Beta);
-        assert!(!load_auto_update(&conn).unwrap(), "the choice survives later loads");
+        assert_eq!(
+            load(&conn, UpdateChannel::Stable).unwrap().0,
+            UpdateChannel::Beta
+        );
+        assert!(
+            !load_auto_update(&conn).unwrap(),
+            "the choice survives later loads"
+        );
         set_auto_update(&conn, true).unwrap();
         assert!(load_auto_update(&conn).unwrap());
     }

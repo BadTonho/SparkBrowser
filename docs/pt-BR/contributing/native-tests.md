@@ -6,6 +6,8 @@ A validação local usa os comandos em [validação](validation.md). No CI as su
 
 ## Execução isolada no Windows
 
+A limpeza do driver tem limite de dez segundos. Uma falha ao encerrar informa o PID do driver isolado e reprova o cenário, preservando a falha original e continuando a limpeza das fixtures. Se o SO negar o encerramento, resolva o erro informado e encerre o processo de teste restante antes de outra execução. Sandboxes restritos podem impedir a inicialização do aplicativo ou o `taskkill`; execute esses testes isolados com as permissões necessárias de desktop/processos. Falhas de permissão nunca contam como cenários aprovados.
+
 O executor encontra automaticamente o driver Edge instalado em `.cache/native-tools/edge/`. Use `SPARK_NATIVE_DRIVER` para escolher outro; se o driver local não estiver instalado, ele deve estar no `PATH`.
 
 Instale Node 24, Rust estável e os pré-requisitos normais do Tauri; depois execute na raiz do repositório:

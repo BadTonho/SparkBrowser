@@ -4,6 +4,8 @@ Antes de alterar um comportamento compartilhado, identifique o domínio respons�
 
 ## Validação local
 
+O [hook local de push](local-hooks.md) executa `validate:quick` nos pushes comuns e validação completa com nova compilação nativa e cenários críticos nos pushes de tags de release. O npm o instala automaticamente fora da CI, preservando hooks personalizados. Essas verificações locais não consomem minutos do Actions e podem ser ignoradas por clientes Git; não são uma imposição no servidor.
+
 - `npm run architecture:check` rejeita ciclos de imports estáticos de execução entre serviços/stores do frontend, imports privados do estado do navegador, imports de mutação de sessão não autorizados e acesso à fábrica de conteúdo fora do serviço responsável. A visibilidade do Rust também impede guards mutáveis de sessão fora do módulo de estado.
 - `npm run validate` inclui arquitetura, contratos JavaScript, verificação Svelte, formatação Rust, Clippy estrito, testes Rust, build do frontend e verificações de segurança do repositório.
 - Compile o aplicativo isolado com `npm run test:native:build:fast` e execute `npm run test:native:critical`. Use `npm run test:native` para a suíte completa. Consulte a [configuração nativa](native-tests.md).
@@ -11,6 +13,8 @@ Antes de alterar um comportamento compartilhado, identifique o domínio respons�
 A suíte crítica contém explicitamente `backup-identities`, `persistence-split`, `persistence-workspaces`, `workspace-switcher`, `recovery`, `shutdown` e `security-boundaries`. Cada cenário usa seu próprio perfil e fixtures locais. O cenário de backup combina containers, abas descartáveis, layout dividido, formulário residente e reinício após encerramento forçado. Os cenários de persistência injetam falhas no banco e repetem operações sem descartar documentos residentes.
 
 Os contratos também exercitam observações fora de ordem, falha ao mover de workspace, cancelamento de arraste após fechar abas, descarte durante a inicialização, assinaturas compartilhadas e aberturas concorrentes de painéis. Os testes de proteção existentes cobrem formulários, mídia, downloads, abas fixadas e painéis visíveis. Os cenários nativos de permissão cobrem cancelamento de pedidos e decisões lembradas; não introduza uma nova política de hibernação durante uma refatoração.
+
+Testes de comportamento também concluem respostas atrasadas de fechamento após trocar de workspace e repetem reordenações com falha preservando navegação mais recente. Mantenha inspeções do código para contratos estruturais, como registro de ACL e fronteiras de módulos; elas não comprovam comportamento em execução. O Rust já exercita isolamento das pastas de workspace e rejeição de mensagens repetidas, portanto preserve esses testes executáveis em vez de substituí-los por comparação de texto.
 
 ## Integração contínua e releases
 

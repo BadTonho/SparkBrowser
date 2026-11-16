@@ -4,6 +4,8 @@ Before changing shared behavior, identify its owning domain and write a behavior
 
 ## Local validation
 
+The [local push hook](local-hooks.md) runs `validate:quick` on ordinary pushes and full validation plus a fresh native build and critical scenarios on release-tag pushes. npm installs it automatically outside CI, preserving custom hooks. These local checks consume no Actions minutes and can be bypassed by Git clients; they are not server-side enforcement.
+
 - `npm run architecture:check` rejects static runtime import cycles in frontend services/stores, private browser state imports, unauthorized session mutation imports and bypasses of the content factory boundary. Rust visibility also prevents mutable session guards outside the state module.
 - `npm run validate` includes architecture checks, JavaScript contracts, Svelte checks, Rust formatting, strict Clippy, Rust tests, frontend build and repository security checks.
 - Build the isolated application with `npm run test:native:build:fast`, then run `npm run test:native:critical`. Use `npm run test:native` for the complete suite. See [native setup](native-tests.md).
@@ -11,6 +13,8 @@ Before changing shared behavior, identify its owning domain and write a behavior
 The critical suite explicitly contains `backup-identities`, `persistence-split`, `persistence-workspaces`, `workspace-switcher`, `recovery`, `shutdown` and `security-boundaries`. Each scenario uses its own profile and loopback fixtures. The backup scenario combines containers, disposable tabs, split layout, a resident form and crash restart. Persistence scenarios inject database failures and retry operations without discarding resident documents.
 
 Contract tests also exercise out-of-order observations, failed workspace movement, drag cancellation after tab closure, disposal during initialization, shared subscriptions and competing panel openings. Existing protection tests cover forms, media, downloads, pinned tabs and visible panes. Native permission scenarios cover request cancellation and remembered decisions; do not invent a new hibernation policy as part of a refactor.
+
+Behavior tests also complete delayed close replies after a workspace switch and retry failed reorders while preserving newer navigation. Keep source inspections for structural contracts such as ACL registration and module boundaries; they do not prove runtime behavior. Rust already exercises workspace-folder isolation and replay rejection, so preserve those executable tests rather than replacing them with text matching.
 
 ## Continuous integration and releases
 

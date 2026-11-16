@@ -49,7 +49,9 @@ pub struct BackupPreferences {
 fn default_ask_download_destination() -> bool {
     true
 }
-fn default_settings_display() -> String { "popup".into() }
+fn default_settings_display() -> String {
+    "popup".into()
+}
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ShortcutBinding {

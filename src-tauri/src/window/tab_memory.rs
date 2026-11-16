@@ -271,7 +271,10 @@ fn web_process_resident_bytes() -> Option<u64> {
     let mut found = false;
     for entry in std::fs::read_dir("/proc").ok()?.flatten() {
         let name = entry.file_name();
-        let Some(pid) = name.to_str().filter(|n| n.bytes().all(|b| b.is_ascii_digit())) else {
+        let Some(pid) = name
+            .to_str()
+            .filter(|n| n.bytes().all(|b| b.is_ascii_digit()))
+        else {
             continue;
         };
         let Ok(stat) = std::fs::read_to_string(format!("/proc/{pid}/stat")) else {

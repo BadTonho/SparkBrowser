@@ -144,7 +144,10 @@ impl MediaService {
         } else {
             0.0
         };
-        Some(((sample.position + elapsed).min(sample.duration), sample.duration))
+        Some((
+            (sample.position + elapsed).min(sample.duration),
+            sample.duration,
+        ))
     }
     pub fn snapshot(&self, app: &AppHandle) -> Result<MediaSnapshot, String> {
         let ids: Vec<_> = app

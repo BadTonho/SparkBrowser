@@ -51,7 +51,8 @@ impl UpdateService {
             db.as_ref().ok_or("Database is not ready")?,
             UpdateChannel::initial(&version),
         )?;
-        let auto_update = updates_repo::load_auto_update(db.as_ref().ok_or("Database is not ready")?)?;
+        let auto_update =
+            updates_repo::load_auto_update(db.as_ref().ok_or("Database is not ready")?)?;
         let supported = super::platform_supported(app);
         Ok(Self {
             inner: Mutex::new(Inner {

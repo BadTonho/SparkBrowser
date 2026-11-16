@@ -6,6 +6,8 @@ Validation runs locally using the commands in [validation](validation.md). In CI
 
 ## Isolated Windows run
 
+Driver cleanup is limited to ten seconds. Failed termination reports the isolated driver PID and fails the scenario while preserving the original failure and continuing fixture cleanup. If the OS denies termination, the report must be addressed and the surviving test process stopped before another run. Restricted sandboxes may prevent application startup or `taskkill`; run these isolated tests with the necessary desktop/process permissions. Permission failures are never treated as passing scenarios.
+
 The runner automatically finds the locally installed Edge driver under `.cache/native-tools/edge/`. Set `SPARK_NATIVE_DRIVER` to override it; otherwise, if it is missing, the driver must be on `PATH`.
 
 Install Node 24, stable Rust and the normal Tauri prerequisites, then run from the repository root:

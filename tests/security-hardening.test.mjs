@@ -23,11 +23,8 @@ test('workspace isolation is opt-in, durable and scoped to content WebViews', ()
   assert.equal(read('src-tauri/src/window/content_factory.rs').match(/\.data_directory\(/g)?.length, 1);
 });
 
-test('isolated data folders are never derived from untrusted workspace ids', () => {
-  const workspace_data = read('src-tauri/src/window/workspace_data.rs');
-  assert.match(workspace_data, /is_ascii_lowercase\(\)/);
-  assert.match(workspace_data, /sha2::\{Digest, Sha256\}|use sha2/);
-  assert.match(workspace_data, /format!\("h-\{:x\}", Sha256::digest/);
+test('workspace deletion is wired to reclaim its isolated folder', () => {
+  // Folder safety and identity separation are executed by workspace_data Rust tests.
   // Workspace deletion reclaims its folder on a best-effort basis.
   assert.match(read('src-tauri/src/state/session_ops/workspaces.rs'), /workspace_data::remove\(&app, &workspace_id\)/);
 });
@@ -44,10 +41,7 @@ test('per-navigation and per-close token revocation stays in place', () => {
   assert.match(lifecycle, /keyboard_bridge_tokens/);
   assert.match(lifecycle, /keyboard_bridge_sequences/);
   assert.match(lifecycle, /super::new_tab::revoke\(app, label\)/);
-  // Every committed navigation admits only growing sequences from one document.
-  const sequence = read('src-tauri/src/security/sequence.rs');
-  assert.match(sequence, /if sequence <= state\.last \{/);
-  assert.match(sequence, /state\.retired\.insert/);
+  // Replay/retired-document rejection is executed by security::sequence Rust tests.
 });
 
 test('isolation preferences flow through backups and the settings UI', () => {

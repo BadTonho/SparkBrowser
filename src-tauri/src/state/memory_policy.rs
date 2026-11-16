@@ -101,11 +101,20 @@ mod tests {
         tabs[5].activity.downloading = true;
         tabs[7].window_id = "second".into();
         tabs[8].is_hibernated = true;
-        let hibernated = hibernate_other_workspaces(&mut tabs, "main", "ws-a", &["keep.test".to_string()]);
+        let hibernated =
+            hibernate_other_workspaces(&mut tabs, "main", "ws-a", &["keep.test".to_string()]);
         assert_eq!(hibernated, 1);
-        let asleep: Vec<_> = tabs.iter().filter(|tab| tab.is_hibernated).map(|tab| tab.id.as_str()).collect();
+        let asleep: Vec<_> = tabs
+            .iter()
+            .filter(|tab| tab.is_hibernated)
+            .map(|tab| tab.id.as_str())
+            .collect();
         assert_eq!(asleep, ["plain", "already"]);
-        assert_eq!(hibernate_other_workspaces(&mut tabs, "main", "ws-a", &[]), 1, "the exempt tab is eligible without the exemption");
+        assert_eq!(
+            hibernate_other_workspaces(&mut tabs, "main", "ws-a", &[]),
+            1,
+            "the exempt tab is eligible without the exemption"
+        );
         assert!(tabs[6].is_hibernated && !tabs[0].is_hibernated);
     }
 }

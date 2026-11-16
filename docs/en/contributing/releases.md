@@ -37,6 +37,8 @@ When you push a tag matching `v*`, the `.github/workflows/release.yml` workflow 
 
 The release workflow builds and publishes; it does not run the native regression suite (that suite is a separate, manual workflow, `native.yml`, and has not run successfully on GitHub runners). Validate on your own machine first:
 
+The [local pre-push hook](local-hooks.md) enforces full validation, a fresh isolated release-profile native build and the critical native suite when pushing a version tag. Install it with `npm run hooks:install` in existing checkouts; npm installation also installs it outside CI. It requires a clean checkout, matching versions and tags pointing to `HEAD`. Both GitHub release jobs run architecture/security checks before packaging, but cannot attest to local native execution. Hooks can be bypassed; always review native evidence before publishing the draft.
+
 1. Run `npm run validate` and the critical native scenarios with `npm run test:native:critical` (see [native tests](native-tests.md)).
 2. Check that the repository is clean and follows the [Zero-Leak policy](rules-and-standards.md#rule-1-zero-sensitive-data-in-version-control).
 3. From version 0.1.1 on, make sure `changelog/<version>/` exists with `en.md` and `pt-BR.md` (see the [changelog guide](changelog.md)). Version 0.1.0 has no changelog.

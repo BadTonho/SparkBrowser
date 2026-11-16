@@ -96,6 +96,8 @@ pub async fn set_zoom_popover(
 const WORKSPACE_SWITCHER_CLOSE_ANIMATION: Duration = Duration::from_millis(140);
 
 #[tauri::command]
+// Preserve the existing IPC arguments, including Tauri-injected app/webview/state.
+#[allow(clippy::too_many_arguments)]
 pub async fn set_settings_overlay(
     app: AppHandle,
     webview: tauri::Webview,
@@ -109,8 +111,16 @@ pub async fn set_settings_overlay(
 ) -> Result<(), String> {
     let _operation = state.session().operation().await;
     if let Some(tab_id) = tab_id {
-        if !visible { return Ok(()); }
-        return crate::window::settings_tab::present(&app, &crate::commands::access::caller_window(&webview), &tab_id, session_id, presentation.ok_or("settings_tab.missing_presentation")?);
+        if !visible {
+            return Ok(());
+        }
+        return crate::window::settings_tab::present(
+            &app,
+            &crate::commands::access::caller_window(&webview),
+            &tab_id,
+            session_id,
+            presentation.ok_or("settings_tab.missing_presentation")?,
+        );
     }
     if !visible && animate_close.unwrap_or(false) {
         return crate::window::settings_overlay::close_animated(&app, session_id, restore_focus);

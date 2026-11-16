@@ -240,9 +240,13 @@ pub(super) fn with_page_events(
         let started = payload.event() == tauri::webview::PageLoadEvent::Started;
         if started {
             super::new_tab::revoke(&app_for_page_load, &label_for_load);
-            app_for_page_load.state::<super::settings_tab::SettingsTabSessions>().revoke(&label_for_load);
+            app_for_page_load
+                .state::<super::settings_tab::SettingsTabSessions>()
+                .revoke(&label_for_load);
         }
-        if super::new_tab::is_document(&app_for_page_load, payload.url()) || super::settings_tab::is_document(&app_for_page_load, payload.url()) {
+        if super::new_tab::is_document(&app_for_page_load, payload.url())
+            || super::settings_tab::is_document(&app_for_page_load, payload.url())
+        {
             let _ = webview.set_zoom(1.0);
         }
         update_navigation(
@@ -281,7 +285,12 @@ pub(super) fn with_page_events(
             return;
         }
         if super::settings_tab::is_document(&app_for_page_load, payload.url()) {
-            let _ = crate::security::emit_shell_for_tab(&app_for_page_load, &tab_for_load, "settings-tab-loaded", tab_for_load.clone());
+            let _ = crate::security::emit_shell_for_tab(
+                &app_for_page_load,
+                &tab_for_load,
+                "settings-tab-loaded",
+                tab_for_load.clone(),
+            );
         }
         let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
             return;
@@ -299,7 +308,9 @@ pub(super) fn with_page_events(
                     .map(|tab| (tab.title.clone(), tab.is_ephemeral))
             })
             .unwrap_or_default();
-        if super::new_tab::is_document(&app_for_page_load, payload.url()) || super::settings_tab::is_document(&app_for_page_load, payload.url()) {
+        if super::new_tab::is_document(&app_for_page_load, payload.url())
+            || super::settings_tab::is_document(&app_for_page_load, payload.url())
+        {
             if let Some(writer) = app_for_page_load
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
             ) {

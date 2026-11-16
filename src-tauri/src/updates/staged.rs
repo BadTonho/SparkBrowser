@@ -134,9 +134,16 @@ mod tests {
         assert!(read(&path).is_none());
         write(&path, &staged("1.2.0", "stable"), b"installer").unwrap();
         let (meta, bytes) = read(&path).unwrap();
-        assert_eq!((meta, bytes), (staged("1.2.0", "stable"), b"installer".to_vec()));
+        assert_eq!(
+            (meta, bytes),
+            (staged("1.2.0", "stable"), b"installer".to_vec())
+        );
         write(&path, &staged("1.3.0", "stable"), b"newer").unwrap();
-        assert_eq!(read(&path).unwrap().0.version, "1.3.0", "a newer download replaces the older one");
+        assert_eq!(
+            read(&path).unwrap().0.version,
+            "1.3.0",
+            "a newer download replaces the older one"
+        );
         std::fs::remove_file(path.join(META)).unwrap();
         assert!(read(&path).is_none(), "no metadata means not staged");
         write(&path, &staged("1.3.0", "stable"), b"x").unwrap();
@@ -152,11 +159,31 @@ mod tests {
     fn only_a_newer_update_of_the_same_channel_with_auto_update_on_is_installable() {
         let update = staged("1.2.0", "stable");
         assert!(installable(&update, "1.1.0", "stable", true));
-        assert!(!installable(&update, "1.2.0", "stable", true), "already running it");
-        assert!(!installable(&update, "1.3.0", "stable", true), "never a downgrade");
-        assert!(!installable(&update, "1.1.0", "beta", true), "another channel");
-        assert!(!installable(&update, "1.1.0", "stable", false), "auto update turned off");
-        assert!(!installable(&staged("not-semver", "stable"), "1.1.0", "stable", true));
-        assert!(installable(&staged("1.2.0", "stable"), "1.2.0-beta.4", "stable", true), "a beta is older than its release");
+        assert!(
+            !installable(&update, "1.2.0", "stable", true),
+            "already running it"
+        );
+        assert!(
+            !installable(&update, "1.3.0", "stable", true),
+            "never a downgrade"
+        );
+        assert!(
+            !installable(&update, "1.1.0", "beta", true),
+            "another channel"
+        );
+        assert!(
+            !installable(&update, "1.1.0", "stable", false),
+            "auto update turned off"
+        );
+        assert!(!installable(
+            &staged("not-semver", "stable"),
+            "1.1.0",
+            "stable",
+            true
+        ));
+        assert!(
+            installable(&staged("1.2.0", "stable"), "1.2.0-beta.4", "stable", true),
+            "a beta is older than its release"
+        );
     }
 }
