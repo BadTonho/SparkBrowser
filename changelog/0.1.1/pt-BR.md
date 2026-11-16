@@ -4,6 +4,8 @@ Em andamento — não lançada.
 
 ## Novas funcionalidades
 
+- Adiciona a categoria **Changelog** às Configurações, que lista as notas de versão de cada versão, da mais recente para a mais antiga, no seu idioma.
+
 - Adiciona um plano de fundo opcional que reage ao áudio das guias normais, com 20 estilos visuais (barras, ondas, formas circulares, partículas, brilhos, aurora, terreno 3D e mais), cores personalizadas e intensidade visual.
 
 - Adiciona um widget do YouTube com o que está tocando nas abas do YouTube e do YouTube Music já abertas, com miniatura, título em uma linha que rola, barra de progresso e controles de reprodução, miniatura pequena ou cobrindo o cartão inteiro e uma pré-visualização opcional em vídeo sem som e uma versão compacta do cartão na parte de baixo da barra lateral de guias verticais; Spotify e YouTube agora dividem uma única entrada **Música e vídeo** no menu de personalização da nova guia.

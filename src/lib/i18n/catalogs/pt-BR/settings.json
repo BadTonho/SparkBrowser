@@ -326,5 +326,10 @@
   "settings.gpc_reload_confirm": "Alterar esta configuração recria as páginas abertas e perde o estado vivo e o histórico de navegação. Continuar?",
   "settings.gpc_unavailable": "Ainda não disponível: o envio do sinal nas requisições de rede e páginas exige integração adicional com a plataforma.",
   "settings.skip_exit_review": "Pular a confirmação ao fechar",
-  "settings.skip_exit_review_description": "Fecha sem perguntar quando só há mídia ou transferências que podem ser retomadas. Formulários alterados e downloads de páginas que não retomam continuam sendo revisados."
+  "settings.skip_exit_review_description": "Fecha sem perguntar quando só há mídia ou transferências que podem ser retomadas. Formulários alterados e downloads de páginas que não retomam continuam sendo revisados.",
+  "settings.changelog_5f3a": "Changelog",
+  "settings.changelog_intro_8c1d": "O que há de novo, melhorado e corrigido em cada versão do Spark, da mais recente para a mais antiga.",
+  "settings.changelog_empty_2e7b": "Nenhuma nota de versão disponível.",
+  "settings.changelog_running_a94c": "Versão em uso",
+  "settings.changelog_search_d41e": "Leia o que há de novo e o que foi corrigido em cada versão do Spark."
 }

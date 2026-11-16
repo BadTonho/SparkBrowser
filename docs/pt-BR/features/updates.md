@@ -2,6 +2,8 @@
 
 Abra **Settings → About & Updates** para consultar a versão em execução, escolher **Stable** ou **Beta**, verificar atualizações e ler as notas. Instalações de release Windows x64 consultam uma vez ao abrir. Falhas na inicialização aparecem nesse painel sem interromper a navegação. Builds nativos de desenvolvimento e teste isolados e outras plataformas podem salvar a preferência de canal, mas não podem verificar nem instalar atualizações. A prévia no navegador não pode salvar a preferência.
 
+Abra **Configurações → Changelog** para ler as notas de versão de cada versão, da mais recente para a mais antiga, no idioma da interface (inglês se a versão não tiver tradução). A versão mais recente começa expandida e a versão em uso é destacada. As notas vêm dentro do app, a partir da pasta `changelog/` na raiz, então funcionam offline, não fazem nenhuma requisição de rede e são exibidas como texto simples. A categoria também aparece ao pesquisar nas configurações por "changelog", "notas de versão" ou "novidades".
+
 Stable aceita tags publicadas como `v1.0.0`. Beta também aceita `v1.1.0-beta.1`, marcada como pré-lançamento no GitHub, e versões estáveis mais novas. A ordenação SemVer coloca `beta.10` depois de `beta.2`, e `1.1.0` depois de `1.1.0-beta.10`. Rascunhos, tags não suportadas e marcações de pré-lançamento inconsistentes são excluídos. Erros de paginação e limites da API são informados em vez de indicar que a instalação está atualizada.
 
 Os canais compartilham a instalação e os dados locais. A primeira execução adota o canal da versão instalada; depois, a preferência é preservada. Trocar de uma beta mais nova para Stable aguarda uma estável superior e nunca rebaixa o aplicativo nem o banco. Não há sincronização em nuvem nem login no GitHub.

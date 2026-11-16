@@ -8,6 +8,7 @@ export const categories: {
 }[] = [
     { id: "data_backup", icon: "⇩", label: "Data & Backup" },
     { id: "updates", icon: "↻", label: "About & Updates" },
+    { id: "changelog", icon: "books", label: "Changelog" },
     { id: "diagnostics", icon: "◷", label: "Local Diagnostics" },
     { id: "appearance_layout", icon: "monitor", label: "Appearance & Layout" },
     { id: "search_navigation", icon: "search", label: "Search & Navigation" },
@@ -38,6 +39,7 @@ export const searchableSettings: SearchEntry[] = [
   { id: "rounded-content-frame", title: "Rounded Content Corners", description: "Show or hide the frame around the main WebView area.", category: "appearance_layout", targetId: "setting-rounded-content-frame", keywords: "rounded corners border frame webview cantos arredondados borda moldura" },
   { id: "data-backup", title: "Data & Backup", description: "Export or merge a local backup.", category: "data_backup", targetId: "backup-heading", keywords: "backup import export restore data dados importar exportar restaurar sync sincronizacao google drive onedrive mega pendrive webdav" },
   { id: "updates", title: "About & Updates", description: "Check for signed releases and choose Stable or Beta.", category: "updates", targetId: "updates-heading", keywords: "version upgrade update github release channel stable beta" },
+  { id: "changelog", title: "Changelog", description: "Read what is new and what was fixed in each version of Spark.", category: "changelog", targetId: "changelog-heading", keywords: "changelog release notes what is new novelties novidades notas de versão versions history histórico changes mudanças" },
   { id: "site-permissions", title: "Site Permissions", description: "Control saved camera, microphone, location and notification decisions.", category: "privacy_security", targetId: "site-permissions-heading", keywords: "origin camera microphone location notifications allow block ask" },
   { id: "clear-local-history", title: "Clear local browsing history", description: "Delete the browser's local navigation history without changing site data.", category: "privacy_security", targetId: "clear-local-history", keywords: "history delete clear visited sites recently closed" },
   { id: "history-retention", title: "Local history retention", description: "Choose how long local browsing history is kept.", category: "privacy_security", targetId: "setting-history-retention", keywords: "history retention expire month months forever" },

@@ -7,6 +7,7 @@ import { createShortcutRecorder } from "./shortcut-recorder.svelte";
 import AppearanceSettings from "./AppearanceSettings.svelte";
 import BackupSettings from "./BackupSettings.svelte";
 import UpdateSettings from "./UpdateSettings.svelte";
+import ChangelogSettings from "./ChangelogSettings.svelte";
 import NavigationSettings from "./NavigationSettings.svelte";
 import PerformanceSettings from "./PerformanceSettings.svelte";
 import PrivacySecuritySettings from "./PrivacySecuritySettings.svelte";
@@ -285,6 +286,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             <BackupSettings />
           {:else if $activeSettingsCategory === "updates"}
             <UpdateSettings />
+          {:else if $activeSettingsCategory === "changelog"}
+            <ChangelogSettings />
           {/if}
         </main>
       </div>

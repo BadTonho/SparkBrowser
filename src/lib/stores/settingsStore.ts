@@ -397,7 +397,8 @@ export type SettingsCategory =
   | "performance_privacy"
   | "privacy_security"
   | "shortcuts"
-  | "diagnostics";
+  | "diagnostics"
+  | "changelog";
 
 const settingsCategories: SettingsCategory[] = [
   "data_backup",
@@ -409,6 +410,7 @@ const settingsCategories: SettingsCategory[] = [
   "privacy_security",
   "shortcuts",
   "diagnostics",
+  "changelog",
 ];
 
 function getInitialSettingsCategory(): SettingsCategory {

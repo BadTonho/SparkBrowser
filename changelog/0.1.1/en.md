@@ -4,6 +4,8 @@ In progress — not released.
 
 ## New features
 
+- Add a **Changelog** category to Settings that lists the release notes of every version, newest first, in your language.
+
 - Add an optional audio-reactive background with 20 visual styles (bars, waves, circular shapes, particles, glows, aurora, 3D terrain and more), custom colors and visual intensity, driven by normal browser-tab audio.
 
 - Add a YouTube now-playing widget for the YouTube and YouTube Music tabs you already have open, with thumbnail, a single scrolling title line, a progress bar and playback controls, a thumbnail that is either small or covers the whole card, an optional muted video preview, and a compact version of the card at the bottom of the vertical tabs sidebar; Spotify and YouTube now share a single **Music and video** entry in the new-tab customization menu.

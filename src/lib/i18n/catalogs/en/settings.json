@@ -326,5 +326,10 @@
   "settings.gpc_reload_confirm": "Changing this setting recreates open pages and loses their live state and navigation history. Continue?",
   "settings.gpc_unavailable": "Not yet available: sending the signal in network requests and pages requires additional platform integration.",
   "settings.skip_exit_review": "Skip the close confirmation",
-  "settings.skip_exit_review_description": "Close without asking when only media or resumable transfers are open. Edited forms and page downloads that cannot resume are still reviewed."
+  "settings.skip_exit_review_description": "Close without asking when only media or resumable transfers are open. Edited forms and page downloads that cannot resume are still reviewed.",
+  "settings.changelog_5f3a": "Changelog",
+  "settings.changelog_intro_8c1d": "What is new, improved and fixed in each version of Spark, newest first.",
+  "settings.changelog_empty_2e7b": "No release notes are available.",
+  "settings.changelog_running_a94c": "Running version",
+  "settings.changelog_search_d41e": "Read what is new and what was fixed in each version of Spark."
 }
