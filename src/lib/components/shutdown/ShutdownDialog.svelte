@@ -3,12 +3,14 @@
   import { errorText, technicalError } from "../../i18n/errors";
   import { t } from "../../i18n";
   import { focusDialog } from "../../actions/focusDialog";
-  import { hasIrreversibleRisk } from "../../services/shutdown-skip.js";
-  import { shutdownState, shutdownBusy, shutdownError, continueBrowsing, retryShutdown, exitAnyway } from "../../stores/shutdownStore";
+  import { hasIrreversibleRisk, reviewNeedsAttention } from "../../services/shutdown-skip.js";
+  import { shutdownState, shutdownBusy, shutdownError, shutdownVisible, skipExitReview, continueBrowsing, retryShutdown, exitAnyway } from "../../stores/shutdownStore";
   let continueButton: HTMLButtonElement | undefined = $state();
   let dontAskAgain = $state(false);
   const exiting = $derived($shutdownState.purpose === "exit" && !$shutdownState.update_version);
   const risky = $derived(hasIrreversibleRisk($shutdownState.review));
+  // A review that is confirmed automatically is only "working"; it never shows its (empty) list.
+  const asking = $derived($shutdownState.phase === "review" && reviewNeedsAttention($shutdownState, $skipExitReview));
   $effect(() => {
     const phase = $shutdownState.phase;
     if (!$shutdownBusy && phase !== "idle" && phase !== "committing") {
@@ -20,17 +22,17 @@
     try { return new URL(url).hostname; } catch { return ""; }
   }
 </script>
-{#if $shutdownState.phase !== "idle"}
+{#if $shutdownVisible && $shutdownState.phase !== "idle"}
   <div class="shutdown-backdrop">
     <div class="shutdown-dialog" role="dialog" aria-modal="true" aria-label={$t($shutdownState.purpose === "restart_runtime" ? "shutdown.runtime_heading" : "shutdown.heading")} tabindex="-1" use:focusDialog={{ onEscape: continueBrowsing }} data-testid="shutdown-dialog">
       <header>
         <span class="mark" class:alert={risky} aria-hidden="true">!</span>
         <div class="titles">
           <h2>{$t($shutdownState.purpose === "restart_runtime" ? "shutdown.runtime_heading" : $shutdownState.update_version ? "shutdown.update_heading" : "shutdown.heading")}</h2>
-          {#if $shutdownState.phase === "review" && $shutdownState.review}<p class="lede">{$t("shutdown.review")}</p>{/if}
+          {#if asking && $shutdownState.review}<p class="lede">{$t("shutdown.review")}</p>{/if}
         </div>
       </header>
-      {#if $shutdownState.phase === "review" && $shutdownState.review}
+      {#if asking && $shutdownState.review}
         {#if $shutdownState.review.tabs.length}
           <section aria-labelledby="shutdown-pages">
             <h3 id="shutdown-pages">{$t("shutdown.section_pages")}</h3>
@@ -63,7 +65,7 @@
       {#if $shutdownError}<p role="alert" class="error">{$errorText($shutdownError)}</p><details><summary>{$t("shutdown.details")}</summary><pre>{technicalError($shutdownError)}</pre></details>{/if}
       <footer>
         <button class="primary" bind:this={continueButton} data-testid="shutdown-continue" disabled={$shutdownBusy || $shutdownState.phase === "committing"} onclick={continueBrowsing}>{$t("shutdown.continue")}</button>
-        {#if $shutdownState.phase === "review" && !$shutdownError}<button class="danger" data-testid="shutdown-confirm" disabled={$shutdownBusy} onclick={() => exitAnyway(dontAskAgain)}>{$t($shutdownState.purpose === "restart_runtime" ? "shutdown.restart" : $shutdownState.update_version ? "shutdown.install" : "shutdown.exit")}</button>{/if}
+        {#if asking && !$shutdownError}<button class="danger" data-testid="shutdown-confirm" disabled={$shutdownBusy} onclick={() => exitAnyway(dontAskAgain)}>{$t($shutdownState.purpose === "restart_runtime" ? "shutdown.restart" : $shutdownState.update_version ? "shutdown.install" : "shutdown.exit")}</button>{/if}
         {#if $shutdownError}<button data-testid="shutdown-retry" disabled={$shutdownBusy} onclick={retryShutdown}>{$t("shutdown.retry")}</button>{/if}
       </footer>
     </div>

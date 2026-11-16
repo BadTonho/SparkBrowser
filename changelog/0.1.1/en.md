@@ -17,6 +17,7 @@ In progress — not released.
 - Choose whether browser settings open in a pop-up or in a tab.
 
 ## Improvements
+- Closing the browser no longer shows a "saving" dialog when there is nothing to decide: it appears at once only for activity that needs a choice or an error, and only after a moment while saving. The final cloud backup upload is skipped when nothing changed.
 - Settings open and close with a subtle animation that respects reduced-motion preferences.
 - Tab dragging groups pointer updates to reduce repeated work.
 - Idle settings, tools and downloads panels release their native views after use.

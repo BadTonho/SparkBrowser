@@ -30,7 +30,7 @@ import {
 } from "../services/bridge/backup";
 import { applyBackupPreferences, capturePreferences } from "../services/backup/preferences";
 import { UserError, describeError } from "../services/user-errors.js";
-import { noteWriter } from "./notesStore";
+import { noteWriter, notesRevision } from "./notesStore";
 import { addTab, applyTabsSnapshot, tabs } from "./browserStore";
 import { reloadCurrentPage } from "../services/tauri-bridge";
 import { workspaces } from "./workspaceStore";
@@ -557,6 +557,9 @@ export async function flushBackupSyncBeforeShutdown(): Promise<void> {
   }
   const cfg = get(backupSyncState).config;
   if (cfg.mode === "disabled" || !cfg.auto_save) return;
+  // Nothing changed since the last successful sync (the automatic sync already ran): closing must not
+  // wait for a network round trip that has nothing to upload.
+  if (!hasPendingChangesForCloud) return;
   const pushed = await settleWithin(pushBackupSync(capturePreferences(), true), EXIT_SYNC_WAIT_MS);
   if ("value" in pushed) {
     backupSyncState.set(pushed.value.state);
@@ -596,6 +599,7 @@ function startBackupStatus(scope: import("../services/lifecycle.js").LifecycleSc
   for (const unsub of autoSyncUnsubscribes) unsub();
   autoSyncUnsubscribes = [
     bookmarks.subscribe(notifyPersistentDataChanged),
+    notesRevision.subscribe(notifyPersistentDataChanged),
     bookmarkFolders.subscribe(notifyPersistentDataChanged),
     workspaces.subscribe(notifyPersistentDataChanged),
     tabs.subscribe((items) => {
