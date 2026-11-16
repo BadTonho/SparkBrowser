@@ -29,7 +29,8 @@ fn widget(operation: &str, data: &str) -> bool {
         "read" | "panel" | "open_gmail" | "locate" | "refresh_weather" | "refresh_gmail"
         | "connect" | "cancel_connect" | "disconnect" | "spotify_connect" | "spotify_cancel"
         | "spotify_disconnect" | "spotify_open" | "spotify_play" | "spotify_pause"
-        | "spotify_next" | "spotify_previous" | "audio_subscribe" | "audio_unsubscribe" => {
+        | "spotify_next" | "spotify_previous" | "audio_subscribe" | "audio_unsubscribe"
+        | "youtube_toggle" | "youtube_next" | "youtube_previous" | "youtube_open" => {
             serde_json::from_str::<Empty>(data).is_ok()
         }
         _ => false,
@@ -83,6 +84,14 @@ mod tests {
         ] {
             assert!(!widget(op, data));
         }
+    }
+    #[test]
+    fn youtube_controls_are_allowed_but_carry_no_data() {
+        for op in ["youtube_toggle", "youtube_next", "youtube_previous", "youtube_open"] {
+            assert!(widget(op, "{}"), "{op}");
+            assert!(!widget(op, r#"{"script":"alert(1)"}"#), "{op}");
+        }
+        assert!(!widget("youtube_eval", "{}"));
     }
     #[test]
     fn required_fields_and_cross_action_parameters_are_checked_before_session_changes() {

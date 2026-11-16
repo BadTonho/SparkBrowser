@@ -23,7 +23,7 @@ pub(crate) use windows as native_audio;
 
 use crate::state::{browser_state::BrowserState, tab_model::webview_label_for_tab};
 use serde::Serialize;
-use std::sync::Mutex;
+use std::{collections::HashMap, sync::Mutex, time::Instant};
 use tauri::{AppHandle, Manager};
 
 #[derive(Clone, PartialEq, Serialize)]
@@ -100,14 +100,52 @@ impl MediaSnapshot {
         true
     }
 }
+/// Last playback position a tab reported. Kept outside `MediaSnapshot` so it never wakes the shell.
+struct ProgressSample {
+    position: f64,
+    duration: f64,
+    playing: bool,
+    at: Instant,
+}
 #[derive(Default)]
 pub struct MediaService {
+    progress: Mutex<HashMap<String, ProgressSample>>,
     pub operations: tokio::sync::Mutex<()>,
     #[cfg(any(windows, target_os = "linux"))]
     pub(crate) pip_window_shadow: std::sync::atomic::AtomicBool,
     inner: Mutex<MediaSnapshot>,
 }
 impl MediaService {
+    pub fn record_progress(&self, id: &str, position: f64, duration: f64, playing: bool) {
+        if let Ok(mut samples) = self.progress.lock() {
+            if samples.len() > 64 {
+                samples.clear();
+            }
+            samples.insert(
+                id.into(),
+                ProgressSample {
+                    position,
+                    duration,
+                    playing,
+                    at: Instant::now(),
+                },
+            );
+        }
+    }
+    /// `(position, duration)` in seconds, advanced by the time elapsed since the sample while playing.
+    pub fn progress(&self, id: &str) -> Option<(f64, f64)> {
+        let samples = self.progress.lock().ok()?;
+        let sample = samples.get(id)?;
+        if sample.duration <= 0.0 {
+            return None;
+        }
+        let elapsed = if sample.playing {
+            sample.at.elapsed().as_secs_f64()
+        } else {
+            0.0
+        };
+        Some(((sample.position + elapsed).min(sample.duration), sample.duration))
+    }
     pub fn snapshot(&self, app: &AppHandle) -> Result<MediaSnapshot, String> {
         let ids: Vec<_> = app
             .state::<BrowserState>()

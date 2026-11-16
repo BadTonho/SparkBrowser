@@ -1,0 +1,13 @@
+/* Shared card styles live in media-card.css; this file holds the YouTube-only parts. */
+#media-tabs { display:flex; gap:6px; margin:0 0 14px; padding:4px; border:1px solid rgba(255, 255, 255, 0.085); border-radius:12px; background:rgba(255, 255, 255, 0.035); }
+#media-tabs button { flex:1; min-height:34px; border:0; border-radius:9px; background:transparent; color:inherit; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+#media-tabs button[aria-selected="true"] { background:rgba(255, 255, 255, 0.11); }
+#media-tabs button:focus-visible { outline:2px solid #e5e5e5; outline-offset:1px; }
+#youtube-panel[hidden], #spotify-panel[hidden] { display:none; }
+#media-tabs ~ div select { width:100%; }
+#youtube-options p { color:#a1a1aa; font-size:12px; }
+#youtube-widget[data-preview="video"][data-thumb="small"] .mc-media { width:96px; height:54px; }
+html[data-theme="light"] #media-tabs { border-color:rgba(0, 0, 0, 0.08); background:rgba(0, 0, 0, 0.03); }
+html[data-theme="light"] #media-tabs button[aria-selected="true"] { background:rgba(0, 0, 0, 0.08); }
+html[data-theme="light"] #youtube-options p { color:#62626b; }
+html[data-private="true"] :is(#youtube-widget, #youtube-panel, #media-tabs) { display:none !important; }

@@ -19,6 +19,7 @@ pub struct Settings {
     pub gmail_enabled: bool,
     pub spotify_enabled: bool,
     pub spotify_client_id: String,
+    pub youtube_enabled: bool,
     pub automatic_location: bool,
     pub fahrenheit: bool,
     pub city: Option<City>,
@@ -33,8 +34,26 @@ pub struct AudioBackground {
 }
 /// Visual styles the new-tab canvas knows how to draw (see `public/new-tab/audio-styles.js`).
 pub const AUDIO_STYLES: [&str; 20] = [
-    "bars", "wave", "area", "lines", "pulse", "radial", "ring", "concentric", "spiral", "vinyl", "dots",
-    "particles", "bubbles", "fireflies", "glow", "orbs", "spectrogram", "aurora", "polygon", "terrain",
+    "bars",
+    "wave",
+    "area",
+    "lines",
+    "pulse",
+    "radial",
+    "ring",
+    "concentric",
+    "spiral",
+    "vinyl",
+    "dots",
+    "particles",
+    "bubbles",
+    "fireflies",
+    "glow",
+    "orbs",
+    "spectrogram",
+    "aurora",
+    "polygon",
+    "terrain",
 ];
 impl Default for AudioBackground {
     fn default() -> Self {

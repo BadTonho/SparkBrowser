@@ -2,9 +2,11 @@
 
 [English](../../en/features/spotify-widget.md)
 
-Abra **Personalizar nova guia → Spotify**, ative **Mostrar Spotify** e conecte uma conta do Spotify. O cartão aparece abaixo do Clima à esquerda, ou no início dessa coluna quando o Clima está desativado. Janelas estreitas empilham a coluna esquerda antes do Gmail e da pesquisa.
+Abra **Personalizar nova guia → Música e vídeo → Spotify**, ative **Mostrar Spotify** e conecte uma conta do Spotify. O cartão aparece abaixo do Clima à esquerda, ou no início dessa coluna quando o Clima está desativado. Janelas estreitas empilham a coluna esquerda antes do Gmail e da pesquisa.
 
-O cartão mostra capa, título, artista ou podcast, dispositivo ativo e uma amostra do progresso da reprodução. Anterior, reproduzir/pausar e próxima controlam o dispositivo ativo da conta. Abra o Spotify no computador ou celular e inicie a reprodução primeiro. **Abrir Spotify** abre o Web Player no painel atual. O widget não transmite áudio, escolhe dispositivos, muda o volume, pesquisa faixas ou edita playlists. O Spotify pode restringir controles em determinados dispositivos ou conteúdos.
+O cartão é propositalmente minimalista e tem o mesmo visual do [widget do YouTube](youtube-widget.md). O cabeçalho é apenas o logotipo do Spotify; clicar nele abre o Web Player no painel atual. Abaixo ficam a capa, o título em uma única linha, o artista ou podcast, uma barra de progresso fina com o tempo decorrido e o total, e os controles de anterior, reproduzir/pausar e próxima do dispositivo ativo da conta. Um título que não cabe rola devagar de um lado para o outro, com uma pausa em cada ponta; com movimento reduzido ativado, ele é abreviado com reticências. O nome do dispositivo ativo aparece ao passar o mouse sobre o título. Abra o Spotify no computador ou celular e inicie a reprodução primeiro.
+
+Em **Miniatura**, nas configurações do Spotify, escolha **Pequena, ao lado do título** (padrão) ou **Cobrir o widget inteiro**, que preenche o cartão com a capa atrás de um degradê escuro. A escolha é local ao dispositivo e fica fora dos backups. A API do Spotify não oferece vídeo, então não há opção de pré-visualização em vídeo aqui. O widget não transmite áudio, escolhe dispositivos, muda o volume, pesquisa faixas ou edita playlists. O Spotify pode restringir controles em determinados dispositivos ou conteúdos.
 
 ## Conectar sua conta
 

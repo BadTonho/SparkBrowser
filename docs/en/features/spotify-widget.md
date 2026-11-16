@@ -2,9 +2,11 @@
 
 [Português](../../pt-BR/features/spotify-widget.md)
 
-Open **Customize new tab → Spotify**, enable **Show Spotify**, and connect one Spotify account. The card appears below Weather on the left, or at the top of that column when Weather is disabled. Narrow windows stack the left column before Gmail and search.
+Open **Customize new tab → Music and video → Spotify**, enable **Show Spotify**, and connect one Spotify account. The card appears below Weather on the left, or at the top of that column when Weather is disabled. Narrow windows stack the left column before Gmail and search.
 
-The card shows artwork, title, artist or podcast, active device and sampled playback progress. Previous, play/pause and next control the account's active Spotify device. Open Spotify on your computer or phone and start playback first. **Open Spotify** opens the Web Player in the current pane. The widget does not stream audio, choose devices, change volume, search tracks or edit playlists. Spotify can restrict individual controls on some devices or content.
+The card is deliberately minimal and shares its look with the [YouTube widget](youtube-widget.md). Its heading is just the Spotify logo; clicking it opens the Web Player in the current pane. Below it are the artwork, the title on a single line, the artist or podcast, a thin progress bar with the elapsed and total time, and previous, play/pause and next controls for the account's active Spotify device. A title that does not fit scrolls slowly from side to side, pausing at each end; with reduced motion enabled it is shortened with an ellipsis. The active device name is shown when you hover the title. Open Spotify on your computer or phone and start playback first.
+
+Under **Thumbnail** in the Spotify settings, choose **Small, beside the title** (default) or **Cover the whole widget**, which fills the card with the artwork behind a dark gradient. The choice is local to the device and excluded from backups. Spotify's API offers no video, so there is no video preview option here. The widget does not stream audio, choose devices, change volume, search tracks or edit playlists. Spotify can restrict individual controls on some devices or content.
 
 ## Connect your account
 
@@ -18,7 +20,7 @@ On Windows, authorization opens Microsoft Edge and refresh tokens use Windows Cr
 
 ## Refresh, disconnect and privacy
 
-Playback is fetched every ten seconds while a normal new-tab page is visible, with shared requests across tabs and workspaces. Controls trigger an immediate refresh. Updates stop while disabled or hidden. Progress reflects the last server sample. Failed updates preserve the last display and temporarily disable controls; rate limits respect `Retry-After`. Expired authorization requests reconnection. Access-denied errors can indicate missing Premium, an account outside the allowed users, or device restrictions.
+Playback is fetched every ten seconds while a normal new-tab page is visible, with shared requests across tabs and workspaces. Controls trigger an immediate refresh. Updates stop while disabled or hidden. Progress reflects the last server sample and advances on its own between samples while playing. Failed updates preserve the last display and temporarily disable controls; rate limits respect `Retry-After`. Expired authorization requests reconnection. Access-denied errors can indicate missing Premium, an account outside the allowed users, or device restrictions.
 
 Disabling the widget preserves the connection. **Disconnect** clears local account data, removes the stored credential and records a durable disconnection marker so failed deletion cannot restore it. To revoke Spotify-side consent too, remove Spark's configured application from your Spotify account's Apps page. Changing Client ID requires reconnecting.
 

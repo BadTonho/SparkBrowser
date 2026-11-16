@@ -7,6 +7,7 @@ mod oauth;
 mod platform;
 mod spotify;
 mod weather;
+mod youtube;
 use crate::{
     database::{
         executor,
@@ -120,6 +121,7 @@ struct Runtime {
 #[derive(Default)]
 pub struct Widgets {
     spotify: spotify::Service,
+    youtube: youtube::Service,
     runtime: Mutex<Runtime>,
     mutations: tauri::async_runtime::Mutex<()>,
     version: std::sync::atomic::AtomicU64,
@@ -234,7 +236,7 @@ pub fn revoke(app: &AppHandle, label: &str) {
 fn snapshot(app: &AppHandle) -> serde_json::Value {
     let service = app.state::<Widgets>();
     let state = service.runtime.lock().unwrap();
-    serde_json::json!({"version":service.version.fetch_add(1,Ordering::SeqCst),"settings":state.settings,"revision":state.revision,"settings_error":state.settings_error,"weather":state.weather,"spotify":spotify::snapshot(app),"gmail":if state.settings.gmail_enabled {state.gmail.clone()}else{GmailState {configured:state.gmail.configured,email:state.gmail.email.clone(),..Default::default()}},"location_busy":state.location_busy})
+    serde_json::json!({"version":service.version.fetch_add(1,Ordering::SeqCst),"settings":state.settings,"revision":state.revision,"settings_error":state.settings_error,"weather":state.weather,"spotify":spotify::snapshot(app),"youtube":if state.settings.youtube_enabled {youtube::snapshot(app)}else{None},"gmail":if state.settings.gmail_enabled {state.gmail.clone()}else{GmailState {configured:state.gmail.configured,email:state.gmail.email.clone(),..Default::default()}},"location_busy":state.location_busy})
 }
 fn broadcast(app: &AppHandle) {
     for tab in app.state::<BrowserState>().snapshot_tabs() {
@@ -257,6 +259,7 @@ fn schedule(app: &AppHandle) {
         return;
     }
     spotify::schedule(app, None);
+    youtube::refresh(app);
     let focused = app.windows().into_iter().any(|(label, w)| {
         crate::state::tab_model::is_window_label(&label) && w.is_focused().unwrap_or(false)
     });

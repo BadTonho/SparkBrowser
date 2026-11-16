@@ -34,9 +34,14 @@
     }
   }
   function candidates() {return [...document.querySelectorAll('video')].slice(0,64).map(el=>({id:videoId(el),label:(el.title||el.getAttribute('aria-label')||document.title||'').slice(0,160),width:el.videoWidth,height:el.videoHeight,eligible:Boolean((document.pictureInPictureEnabled||mirrorByCanvas) && !el.disablePictureInPicture && !el.mediaKeys && el.readyState>=2 && el.videoWidth>0)}));}
+  function progress() {
+    const el=media().find(m=>!m.paused&&!m.ended)??media()[0];
+    if(!el||!Number.isFinite(el.duration)||el.duration<=0||!Number.isFinite(el.currentTime))return {};
+    return {position:Math.round(el.currentTime*10)/10,duration:Math.round(el.duration*10)/10};
+  }
   function signal() {
     if(typeof window.__sparkMediaSignal!=='function')return;
-    window.__sparkMediaSignal(JSON.stringify({token,document:documentId,sequence:++signalSequence,playing:media().some(el=>!el.paused&&!el.ended),picture_in_picture:Boolean(pipElement()),pip_video:pipElement()?videoId(pipElement()):null,pip_mode:floating?'custom':document.pictureInPictureElement?'native':null,pip_session:floating?.session??null}));
+    window.__sparkMediaSignal(JSON.stringify({token,document:documentId,sequence:++signalSequence,playing:media().some(el=>!el.paused&&!el.ended),picture_in_picture:Boolean(pipElement()),pip_video:pipElement()?videoId(pipElement()):null,pip_mode:floating?'custom':document.pictureInPictureElement?'native':null,pip_session:floating?.session??null,...progress()}));
   }
   const volume = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'volume');
   const muted = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');
@@ -160,6 +165,8 @@
   },true);
   for (const event of ['loadedmetadata','playing','emptied','durationchange']) document.addEventListener(event,()=>{if(target!==100)schedule();},true);
   for (const event of ['play','pause','ended','enterpictureinpicture','leavepictureinpicture']) document.addEventListener(event,signal,true);
+  // The new-tab YouTube card asks for a fresh position sample; the answer only describes this document.
+  window.addEventListener('spark-media-probe',signal);
   document.addEventListener('pointerdown',()=>{if(target!==100)schedule();},true);
   document.addEventListener('keydown',()=>{if(target!==100)schedule();},true);
   window.addEventListener('pagehide',()=> {floating?.popup.close();floating?.cleanup();for(const [el,route] of routes)restore(el,route);void context?.close();});

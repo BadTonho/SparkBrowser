@@ -356,3 +356,18 @@ test('video file size limit rejects files larger than 50MB', async () => {
   assert.match(status.textContent, /50 MB/i);
   assert.equal(f.idbStore.has('current'), false);
 });
+
+test('settings panel layout choice is validated, persisted locally and defaults to the corner',async()=>{
+  const {readFileSync}=await import('node:fs');const {runInNewContext}=await import('node:vm');
+  const run=stored=>{
+    const store=new Map(stored?[['spark_settings_panel_layout',stored]]:[]);
+    const panel={dataset:{}},select={value:'corner',addEventListener(n,f){this.fn=f;}};
+    runInNewContext(readFileSync('public/new-tab/settings-layout.js','utf8'),{document:{getElementById:id=>id==='settings-panel'?panel:select},localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)}});
+    return {panel,select,store};
+  };
+  assert.equal(run().panel.dataset.layout,'corner');
+  assert.equal(run('center').panel.dataset.layout,'center');
+  assert.equal(run('<script>').panel.dataset.layout,'corner');
+  const f=run();f.select.value='center';f.select.fn();
+  assert.equal(f.panel.dataset.layout,'center');assert.equal(f.store.get('spark_settings_panel_layout'),'center');
+});

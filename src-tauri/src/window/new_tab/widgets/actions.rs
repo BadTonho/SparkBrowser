@@ -137,7 +137,9 @@ async fn perform(
         return Err("cancelled".into());
     }
     let app = &source.app;
-    if operation.starts_with("spotify_") && spotify::private(app) {
+    if (operation.starts_with("spotify_") || operation.starts_with("youtube_"))
+        && spotify::private(app)
+    {
         return Err("cancelled".into());
     }
     match operation {
@@ -175,6 +177,10 @@ async fn perform(
         }
         "spotify_play" | "spotify_pause" | "spotify_next" | "spotify_previous" => {
             spotify::schedule(app, Some(operation));
+            Ok(serde_json::json!({}))
+        }
+        "youtube_toggle" | "youtube_next" | "youtube_previous" | "youtube_open" => {
+            youtube::control(app, operation).await?;
             Ok(serde_json::json!({}))
         }
         "panel" => {

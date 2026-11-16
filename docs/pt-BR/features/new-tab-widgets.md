@@ -1,6 +1,8 @@
 # Widgets da nova guia
 
-O Spotify também está disponível no menu de personalização. Consulte [Widget do Spotify](spotify-widget.md) para configuração, controles e requisitos de plataforma.
+Abra **Personalizar nova guia** no canto inferior direito. Por padrão o painel abre compacto, acima do botão; o seletor **Posição do painel**, no fim do menu, o troca por um painel largo no centro da tela, com fundo escurecido e as categorias em blocos. A escolha fica salva localmente no dispositivo, como as preferências do relógio.
+
+O Spotify e o YouTube dividem a entrada **Música e vídeo** do menu de personalização, como duas abas. Consulte [Widget do Spotify](spotify-widget.md) para configuração, controles e requisitos de plataforma, e [Widget do YouTube](youtube-widget.md) para o cartão do que está tocando nas suas abas do YouTube.
 
 Abra **Personalizar nova guia** no canto inferior direito para configurar **Clima**, **Gmail**, **Spotify**, **Plano de fundo** e **Relógio**. O painel compacto abre acima do botão, com ícones SVG e um menu vertical de categorias. Seu tamanho responsivo permanece estável ao alternar entre categorias; configurações mais longas rolam dentro do painel. Ao selecionar uma categoria, as opções deslizam da esquerda para a direita; o botão de voltar inverte a transição. O movimento é reduzido quando solicitado pelo sistema operacional. As preferências são locais do dispositivo, compartilhadas entre workspaces e restauradas após reiniciar. O clima fica no canto superior esquerdo e o Gmail no superior direito; painéis estreitos os empilham acima da busca. O diálogo aceita Tab, Escape e clique externo, devolvendo o foco ao botão ao fechar. Rascunhos da busca e sites recentes são preservados durante as atualizações dos widgets.
 

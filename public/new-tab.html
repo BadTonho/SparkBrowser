@@ -3,20 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'none'; object-src 'none'; frame-src https://www.youtube-nocookie.com; base-uri 'none'; form-action 'none'">
   <title>New tab</title>
   <link rel="stylesheet" href="/new-tab/page.css">
   <script src="/new-tab/page.js" defer></script>
   <link rel="stylesheet" href="/new-tab/widgets.css">
   <script src="/new-tab/widgets.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/media-card.css">
+  <script src="/new-tab/media-card.js" defer></script>
   <link rel="stylesheet" href="/new-tab/spotify.css">
   <script src="/new-tab/spotify.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/youtube.css">
+  <script src="/new-tab/youtube.js" defer></script>
   <link rel="stylesheet" href="/new-tab/wallpaper.css">
   <script src="/new-tab/wallpaper.js" defer></script>
   <link rel="stylesheet" href="/new-tab/audio-background.css">
   <script src="/new-tab/audio-styles.js" defer></script>
   <script src="/new-tab/audio-background.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/settings-layout.css">
   <link rel="stylesheet" href="/new-tab/clock.css">
+  <script src="/new-tab/settings-layout.js" defer></script>
   <script src="/new-tab/clock.js" defer></script>
 </head>
 <body>
@@ -43,22 +49,55 @@
       <button id="weather-configure" type="button" data-label="configure" hidden></button>
       <button id="weather-attribution" class="text-button" type="button">Open-Meteo</button>
     </section>
-    <section id="spotify-widget" class="widget" aria-labelledby="spotify-heading" hidden>
-      <div class="widget-heading"><h2 id="spotify-heading">Spotify</h2><svg class="spotify-brand" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M6 9c4-2 8-2 12 0M7 12c3-1.5 7-1.5 10 0M8 15c2-1 5-1 8 0"/></svg></div>
-      <div id="spotify-content" hidden>
-        <img id="spotify-cover" width="64" height="64" alt="" hidden>
-        <div><p id="spotify-title"></p><p id="spotify-artist"></p></div>
+    <section id="spotify-widget" class="widget media-card" aria-labelledby="spotify-heading" data-thumb="small" data-media="false" hidden>
+      <div class="widget-heading">
+        <h2 id="spotify-heading" class="mc-sr">Spotify</h2>
+        <button id="spotify-open" type="button" class="mc-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#1db954"/><path d="M6.2 9.2c3.9-1.1 8.2-.8 11.6 1.1M6.8 12.2c3.3-.9 6.9-.6 9.8 1M7.4 15c2.7-.7 5.4-.4 7.7.9" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
       </div>
-      <p id="spotify-device"></p>
-      <progress id="spotify-progress" max="1" value="0" data-label="spotifyProgress" hidden></progress>
-      <div id="spotify-controls" hidden>
+      <div id="spotify-content" class="mc-content" hidden>
+        <div id="spotify-media" class="mc-media" aria-hidden="true"><img id="spotify-cover" alt="" hidden></div>
+        <div class="mc-meta">
+          <div id="spotify-marquee" class="marquee"><span id="spotify-title"></span></div>
+          <p id="spotify-artist" class="mc-sub"></p>
+          <progress id="spotify-progress" class="mc-progress" max="1" value="0" data-label="spotifyProgress" hidden></progress>
+          <div id="spotify-times" class="mc-times" hidden><span id="spotify-elapsed">0:00</span><span id="spotify-total">0:00</span></div>
+        </div>
+      </div>
+      <div id="spotify-controls" class="mc-controls" hidden>
         <button id="spotify-previous" type="button" class="icon-button" data-label="spotifyPrevious">⏮</button>
         <button id="spotify-toggle" type="button" class="icon-button">▶</button>
         <button id="spotify-next" type="button" class="icon-button" data-label="spotifyNext">⏭</button>
       </div>
-      <p id="spotify-status" role="status"></p>
+      <p id="spotify-status" class="mc-status" role="status"></p>
       <button id="spotify-widget-connect" type="button" data-label="spotifyConnect"></button>
-      <button id="spotify-open" type="button" data-label="spotifyOpen"></button>
+    </section>
+    <section id="youtube-widget" class="widget media-card" aria-labelledby="youtube-heading" data-thumb="small" data-preview="image" hidden>
+      <div class="widget-heading">
+        <h2 id="youtube-heading" class="mc-sr">YouTube</h2>
+        <button id="youtube-open" type="button" class="mc-logo" disabled>
+          <svg id="youtube-logo-video" width="30" height="21" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="5.5" fill="#ff0000"/><path d="M11 5.5 18.5 10 11 14.5Z" fill="#fff"/></svg>
+          <svg id="youtube-logo-music" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" hidden><circle cx="12" cy="12" r="11" fill="#ff0000"/><circle cx="12" cy="12" r="6.3" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M10.2 9v6l5-3Z" fill="#fff"/></svg>
+        </button>
+      </div>
+      <div id="youtube-content" class="mc-content" hidden>
+        <div id="youtube-media" class="mc-media" aria-hidden="true">
+          <img id="youtube-cover" alt="" hidden>
+          <iframe id="youtube-frame" title="" tabindex="-1" sandbox="allow-scripts allow-same-origin" allow="autoplay" referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
+        </div>
+        <div class="mc-meta">
+          <div id="youtube-marquee" class="marquee"><span id="youtube-title"></span></div>
+          <progress id="youtube-progress" class="mc-progress" max="1" value="0" data-label="youtubeProgress" hidden></progress>
+          <div id="youtube-times" class="mc-times" hidden><span id="youtube-elapsed">0:00</span><span id="youtube-total">0:00</span></div>
+        </div>
+      </div>
+      <div id="youtube-controls" class="mc-controls" hidden>
+        <button id="youtube-previous" type="button" class="icon-button" data-label="youtubePrevious">⏮</button>
+        <button id="youtube-toggle" type="button" class="icon-button">▶</button>
+        <button id="youtube-next" type="button" class="icon-button" data-label="youtubeNext">⏭</button>
+      </div>
+      <p id="youtube-status" class="mc-status" role="status"></p>
     </section>
     </div>
     <section id="gmail-widget" class="widget" aria-labelledby="gmail-heading" hidden>
@@ -108,8 +147,35 @@
     <div id="settings-content">
       <p id="settings-status" role="status"></p>
       <section id="spotify-section" class="settings-view" hidden>
+        <div id="media-tabs" role="tablist">
+          <button id="media-tab-spotify" type="button" role="tab" aria-selected="true" aria-controls="spotify-panel">Spotify</button>
+          <button id="media-tab-youtube" type="button" role="tab" aria-selected="false" aria-controls="youtube-panel" tabindex="-1">YouTube</button>
+        </div>
+        <div id="youtube-panel" role="tabpanel" aria-labelledby="media-tab-youtube" hidden>
+          <label class="toggle"><input id="youtube-enabled" type="checkbox"><span data-label="showYoutube"></span></label>
+          <div id="youtube-options" hidden>
+            <p data-label="youtubeHint"></p>
+            <label for="youtube-thumb" data-label="mediaThumb"></label>
+            <select id="youtube-thumb">
+              <option value="small" data-label="mediaThumbSmall"></option>
+              <option value="cover" data-label="mediaThumbCover"></option>
+            </select>
+            <label for="youtube-preview" data-label="youtubePreview"></label>
+            <select id="youtube-preview">
+              <option value="image" data-label="youtubePreviewImage"></option>
+              <option value="video" data-label="youtubePreviewVideo"></option>
+            </select>
+            <p data-label="youtubeVideoNote"></p>
+          </div>
+        </div>
+        <div id="spotify-panel" role="tabpanel" aria-labelledby="media-tab-spotify">
         <label class="toggle"><input id="spotify-enabled" type="checkbox"><span data-label="showSpotify"></span></label>
         <div id="spotify-options" hidden>
+          <label for="spotify-thumb" data-label="mediaThumb"></label>
+          <select id="spotify-thumb">
+            <option value="small" data-label="mediaThumbSmall"></option>
+            <option value="cover" data-label="mediaThumbCover"></option>
+          </select>
           <p data-label="spotifySetup"></p>
           <p><code>http://127.0.0.1/callback</code></p>
           <button id="spotify-dashboard" type="button" data-label="spotifyDashboard"></button>
@@ -121,6 +187,7 @@
           <button id="spotify-cancel" type="button" data-label="cancel" hidden></button>
           <button id="spotify-disconnect" type="button" data-label="disconnect" hidden></button>
           <p data-label="spotifyStorage"></p>
+        </div>
         </div>
       </section>
       <div id="settings-main-view" class="settings-view">
@@ -136,8 +203,8 @@
           <span class="menu-item-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
         </button>
         <button id="menu-item-spotify" type="button" class="settings-menu-item" data-category="spotify" role="menuitem">
-          <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M6 9c4-2 8-2 12 0M7 12c3-1.5 7-1.5 10 0M8 15c2-1 5-1 8 0"/></svg></span>
-          <span class="menu-item-label">Spotify</span>
+          <span class="menu-item-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9.5 5 2.5-5 2.5Z"/></svg></span>
+          <span class="menu-item-label" data-label="mediaCategory"></span>
           <span class="menu-item-chevron" aria-hidden="true">›</span>
         </button>
         <button id="menu-item-wallpaper" type="button" class="settings-menu-item" data-category="wallpaper" role="menuitem">
@@ -151,6 +218,13 @@
           <span class="menu-item-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
         </button>
       </nav>
+      <div id="settings-layout-field">
+        <label for="settings-layout" data-label="settingsLayout"></label>
+        <select id="settings-layout">
+          <option value="corner" data-label="settingsLayoutCorner"></option>
+          <option value="center" data-label="settingsLayoutCenter"></option>
+        </select>
+      </div>
       </div>
     <section id="weather-section" class="settings-view" aria-labelledby="settings-heading" hidden>
       <label class="toggle"><span data-label="showWeather"></span><input id="weather-enabled" type="checkbox"></label>

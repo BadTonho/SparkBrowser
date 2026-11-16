@@ -31,6 +31,10 @@ pub(super) fn receive(app: &AppHandle, id: &str, context: &str, value: &Signal) 
         f.pip_mode = value.pip_mode.clone();
         f.pip_session = value.pip_session.clone();
     });
+    if let (Some(position), Some(duration)) = (value.position, value.duration) {
+        app.state::<MediaService>()
+            .record_progress(id, position, duration, value.playing);
+    }
     sync_activity(app, id);
 }
 pub fn remove(app: &AppHandle, id: &str, context: Option<&str>) {

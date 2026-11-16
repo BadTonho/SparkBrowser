@@ -62,7 +62,7 @@
     if (cat && categories.includes(cat)) {
       if (mainView) mainView.hidden = true;
       if (backBtn) backBtn.hidden = false;
-      if (heading) heading.textContent = cat === 'gmail' ? 'Gmail' : text(cat);
+      if (heading) heading.textContent = cat === 'gmail' ? 'Gmail' : cat === 'spotify' ? text('mediaCategory') : text(cat);
       for (const c of categories) {
         const sec = $(`${c}-section`);
         if (sec) sec.hidden = c !== cat;
@@ -104,6 +104,9 @@
     const patch = event.detail;
     if (typeof patch.spotify_enabled === 'boolean') change({ spotify_enabled: patch.spotify_enabled });
     else if (typeof patch.spotify_client_id === 'string') change({ spotify_client_id: patch.spotify_client_id });
+  });
+  window.addEventListener('spark-youtube-setting', event => {
+    if (typeof event.detail.youtube_enabled === 'boolean') change({ youtube_enabled: event.detail.youtube_enabled });
   });
   window.addEventListener('spark-audio-setting', event => {
     if (!settings()) return;
@@ -192,9 +195,10 @@
     if (!snapshot) return;
     const config = settings();
     gear.disabled = false;
-    $('widgets').hidden = !config.weather_enabled && !config.gmail_enabled && !config.spotify_enabled && $('clock-card-widget').hidden;
-    $('widgets-left').hidden = !config.weather_enabled && !config.spotify_enabled;
+    $('widgets').hidden = !config.weather_enabled && !config.gmail_enabled && !config.spotify_enabled && !config.youtube_enabled && $('clock-card-widget').hidden;
+    $('widgets-left').hidden = !config.weather_enabled && !config.spotify_enabled && !config.youtube_enabled;
     window.__sparkSpotifyRender?.(config, snapshot.spotify, saving);
+    window.__sparkYoutubeRender?.(config, snapshot.youtube, saving);
     window.__sparkAudioRender?.(config.audio_background, saving);
     $('weather-enabled').checked = config.weather_enabled; $('gmail-enabled').checked = config.gmail_enabled;
     $('weather-options').hidden = !config.weather_enabled; $('gmail-options').hidden = !config.gmail_enabled;

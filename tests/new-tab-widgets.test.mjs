@@ -22,8 +22,9 @@ function fixture(){
   for(const [,id] of readFileSync('public/new-tab.html','utf8').matchAll(/id="([^"]+)"/g))nodes.set(id,new Node());
   document.createElement=()=>new Node();
   const window={addEventListener:(t,fn)=>{const previous=listeners.get(t);listeners.set(t,e=>{previous?.(e);fn(e);});},dispatchEvent:e=>{if(e.type==='spark-new-tab-action')actions.push(e.detail);listeners.get(e.type)?.(e);}};
-  const context={window,document,Intl,Date,CustomEvent:class{constructor(t,o){this.type=t;this.detail=o.detail;}}};
-  for(const file of ['widgets','spotify'])runInNewContext(readFileSync(`public/new-tab/${file}.js`,'utf8'),context);
+  const storage=new Map();
+  const context={window,document,Intl,Date,localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},CustomEvent:class{constructor(t,o){this.type=t;this.detail=o.detail;}}};
+  for(const file of ['widgets','media-card','spotify'])runInNewContext(readFileSync(`public/new-tab/${file}.js`,'utf8'),context);
   listeners.get('spark-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'}}});
   const settings={audio_background:{enabled:false,color:'#1db954',intensity:1,style:'bars'},weather_enabled:false,gmail_enabled:false,spotify_enabled:false,spotify_client_id:'',automatic_location:false,fahrenheit:false,city:null};
   let current={settings,revision:0,weather:{data:null,error:null,busy:false},gmail:{data:null,email:null,error:null,busy:false,connecting:false,configured:true}};
@@ -76,6 +77,30 @@ test('Spotify renders safe metadata, toggles playback and honors busy/restricted
   assert.match(f.nodes.get('spotify-status').textContent,/Connect Spotify again/);
   assert.doesNotMatch(f.nodes.get('spotify-status').textContent,/Gmail/);
   f.preferences({private:true});assert.equal(f.nodes.get('spotify-widget').hidden,true);assert.equal(f.nodes.get('menu-item-spotify').hidden,true);
+});
+test('the Spotify card is minimal: logo opens Spotify, progress advances, cover style is a local choice',()=>{
+  const f=fixture();const settings={...f.settings,spotify_enabled:true,spotify_client_id:'b'.repeat(32)};
+  const data={title:'Song',artist:'Artist',device:'Phone',playing:true,progress:75000,duration:225000,can_play:true,can_pause:true,can_next:true,can_previous:true,image:'data:image/png;base64,YQ=='};
+  f.update({settings,spotify:{connected:true,data}});
+  assert.equal(f.nodes.get('spotify-widget').attributes['data-media'],'true');
+  assert.equal(f.nodes.get('spotify-widget').attributes['data-thumb'],'small');
+  assert.equal(f.nodes.get('spotify-artist').textContent,'Artist');
+  assert.equal(f.nodes.get('spotify-elapsed').textContent,'1:15');
+  assert.equal(f.nodes.get('spotify-total').textContent,'3:45');
+  assert.equal(f.nodes.get('spotify-times').hidden,false);
+  assert.match(f.nodes.get('spotify-marquee').attributes.title,/Phone/);
+  f.nodes.get('spotify-open').click();assert.equal(f.actions.at(-1).operation,'spotify_open');
+  assert.equal(f.nodes.get('spotify-open').attributes['aria-label'],'Open Spotify');
+  f.nodes.get('spotify-thumb').value='cover';f.nodes.get('spotify-thumb').listeners.change({target:{value:'cover'}});
+  assert.equal(f.nodes.get('spotify-widget').attributes['data-thumb'],'cover');
+  f.nodes.get('spotify-thumb').listeners.change({target:{value:'<x>'}});
+  assert.equal(f.nodes.get('spotify-widget').attributes['data-thumb'],'small');
+  f.update({spotify:{connected:true,data:{...data,duration:0,image:null}}});
+  assert.equal(f.nodes.get('spotify-progress').hidden,true);assert.equal(f.nodes.get('spotify-times').hidden,true);
+  assert.equal(f.nodes.get('spotify-widget').attributes['data-media'],'false');
+  const html=readFileSync('public/new-tab.html','utf8');
+  assert.match(html,/<script src="\/new-tab\/media-card\.js"[^>]*><\/script>\s*<link rel="stylesheet" href="\/new-tab\/spotify\.css">/);
+  assert.match(html,/id="spotify-widget" class="widget media-card"/);
 });
 test('widget settings use a focus-trapped dialog, close outside/Escape and preserve drafts',()=>{
   const f=fixture(),gear=f.nodes.get('widget-settings'),panel=f.nodes.get('settings-panel');
