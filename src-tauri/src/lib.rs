@@ -50,6 +50,7 @@ use commands::media::{
     set_tab_muted, set_tab_volume,
 };
 use commands::minimum_font_probe::set_minimum_font_probe_size;
+use commands::now_playing::{control_now_playing, get_now_playing};
 use commands::windows::{get_browser_windows, move_tab_to_window, open_browser_window};
 
 use commands::diagnostics::get_diagnostics;
@@ -510,6 +511,8 @@ pub fn run() {
             get_browser_windows,
             exit_video_pip,
             get_tab_media,
+            get_now_playing,
+            control_now_playing,
             set_tab_muted,
             search_command_items,
             get_saved_session,

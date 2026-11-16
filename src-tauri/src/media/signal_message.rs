@@ -63,8 +63,14 @@ mod tests {
             assert!(parse(&VALID.replace(from, to), "secret").is_none());
         }
         assert!(parse(&"a".repeat(2049), "secret").is_none());
-        let with_progress = VALID.replace("\"pip_mode\":null", "\"pip_mode\":null,\"position\":12.5,\"duration\":200.0");
+        let with_progress = VALID.replace(
+            "\"pip_mode\":null",
+            "\"pip_mode\":null,\"position\":12.5,\"duration\":200.0",
+        );
         let signal = parse(&with_progress, "secret").unwrap();
-        assert_eq!((signal.position, signal.duration), (Some(12.5), Some(200.0)));
+        assert_eq!(
+            (signal.position, signal.duration),
+            (Some(12.5), Some(200.0))
+        );
     }
 }

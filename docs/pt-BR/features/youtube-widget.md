@@ -17,6 +17,12 @@ Essas duas escolhas são locais ao dispositivo e compartilhadas por todas as nov
 
 O vídeo sem som é uma segunda cópia, sem áudio, carregada no player com privacidade aprimorada do YouTube (`youtube-nocookie.com`) dentro do cartão; a aba que você assiste continua com o som. Ele acompanha a aba: começa na posição dela, pausa e retoma junto e salta quando você avança ou volta mais do que alguns segundos. Não é clicável, nunca mostra controles e para enquanto a nova guia está oculta. Usa mais dados e pode mostrar anúncios, e vídeos que proíbem incorporação voltam para a miniatura. É o único caso em que a nova guia contata o YouTube: a política da página permite quadros apenas desse host (`frame-src https://www.youtube-nocookie.com`, também listado no `tauri.conf.json` do app) e continua bloqueando qualquer outra conexão.
 
+## Na barra lateral de guias verticais
+
+Com o layout de guias verticais, o mesmo cartão também aparece na parte de baixo da barra lateral, abaixo da lista de guias, sempre que um vídeo do YouTube ou do YouTube Music estiver aberto. É uma versão compacta: o logotipo (clique nele para ir à aba), a miniatura, o título em uma linha que rola, a barra de progresso com o tempo decorrido e o total, e os controles de anterior, reproduzir/pausar e próximo. Ele segue a mesma escolha de **Miniatura** do cartão da nova guia (pequena ou cobrindo o cartão inteiro), mas nunca reproduz a pré-visualização em vídeo sem som. Some quando nenhum vídeo do YouTube está aberto.
+
+Ele exige que o widget esteja ativado (**Mostrar o que está tocando no YouTube**). Desative **Mostrar também na barra lateral de guias verticais** nas mesmas configurações para manter o cartão só na nova guia. Como a barra lateral está sempre à vista, o Spark pede a posição à aba do vídeo a cada poucos segundos enquanto essa opção está ativa, mesmo sem nova guia visível. Esse pedido é o mesmo relatório de mídia local descrito abaixo e não gera tráfego de rede. A opção é salva com as configurações do widget e, como elas, fica no dispositivo e fora dos backups.
+
 ## Como funciona
 
 Não precisa de conta, chave de API ou login. O Spark lê apenas o que já acompanha em cada aba: endereço, título e se está tocando. Uma aba é considerada quando é uma página de vídeo `https` (`/watch?v=…` com um ID de 11 caracteres) em `youtube.com`, `www.youtube.com`, `m.youtube.com` ou `music.youtube.com`. O título perde a contagem de notificações e o sufixo do site.

@@ -285,6 +285,12 @@
           "markdownDescription": "Enables the control_download command without any pre-configured scope."
         },
         {
+          "description": "Enables the control_now_playing command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-control-now-playing",
+          "markdownDescription": "Enables the control_now_playing command without any pre-configured scope."
+        },
+        {
           "description": "Enables the create_account_container command without any pre-configured scope.",
           "type": "string",
           "const": "allow-create-account-container",
@@ -565,6 +571,12 @@
           "type": "string",
           "const": "allow-get-local-backup-state",
           "markdownDescription": "Enables the get_local_backup_state command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_now_playing command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-now-playing",
+          "markdownDescription": "Enables the get_now_playing command without any pre-configured scope."
         },
         {
           "description": "Enables the get_page_note command without any pre-configured scope.",
@@ -1395,6 +1407,12 @@
           "markdownDescription": "Denies the control_download command without any pre-configured scope."
         },
         {
+          "description": "Denies the control_now_playing command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-control-now-playing",
+          "markdownDescription": "Denies the control_now_playing command without any pre-configured scope."
+        },
+        {
           "description": "Denies the create_account_container command without any pre-configured scope.",
           "type": "string",
           "const": "deny-create-account-container",
@@ -1675,6 +1693,12 @@
           "type": "string",
           "const": "deny-get-local-backup-state",
           "markdownDescription": "Denies the get_local_backup_state command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_now_playing command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-now-playing",
+          "markdownDescription": "Denies the get_now_playing command without any pre-configured scope."
         },
         {
           "description": "Denies the get_page_note command without any pre-configured scope.",

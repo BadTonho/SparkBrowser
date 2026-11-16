@@ -23,6 +23,10 @@ use std::sync::{
 };
 use tauri::{AppHandle, Manager};
 
+pub(crate) use youtube::{
+    sidebar_control as now_playing_control, sidebar_snapshot as now_playing, NowPlaying,
+};
+
 #[derive(Clone)]
 struct Endpoints {
     weather: String,
@@ -206,6 +210,7 @@ pub fn initialize(app: &AppHandle) {
             });
         }
     }
+    let app_for_sidebar = app.clone();
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         loop {
@@ -214,6 +219,15 @@ pub fn initialize(app: &AppHandle) {
                 continue;
             }
             schedule(&app);
+        }
+    });
+    let app = app_for_sidebar;
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+            if !app.state::<crate::shutdown::ShutdownService>().blocked() {
+                youtube::tick(&app);
+            }
         }
     });
 }

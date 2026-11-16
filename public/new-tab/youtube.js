@@ -27,6 +27,7 @@
     });
   }
   $('youtube-enabled').addEventListener('change', event => window.dispatchEvent(new CustomEvent('spark-youtube-setting', { detail: { youtube_enabled: event.target.checked } })));
+  $('youtube-sidebar').addEventListener('change', event => window.dispatchEvent(new CustomEvent('spark-youtube-setting', { detail: { youtube_sidebar: event.target.checked } })));
   for (const [id, key] of [['youtube-thumb', 'spark_youtube_thumbnail'], ['youtube-preview', 'spark_youtube_preview']]) {
     $(id).addEventListener('change', event => {
       card.save(key, OPTIONS[key], event.target.value);
@@ -104,6 +105,8 @@
     widget.setAttribute('data-thumb', thumb); widget.setAttribute('data-preview', preview);
     $('youtube-enabled').checked = enabled;
     $('youtube-enabled').disabled = saving;
+    $('youtube-sidebar').checked = config.youtube_sidebar !== false;
+    $('youtube-sidebar').disabled = saving;
     $('youtube-thumb').value = thumb; $('youtube-preview').value = preview;
     $('youtube-options').hidden = !enabled;
     $('youtube-content').hidden = !video;

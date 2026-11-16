@@ -137,17 +137,49 @@ fn probe(app: &AppHandle, tab_id: &str) {
 pub(super) fn refresh(app: &AppHandle) {
     update(app, true);
 }
-fn update(app: &AppHandle, ask: bool) {
-    let service = app.state::<Widgets>();
-    let enabled = service
+/// Called by the background loop: keeps the vertical-tabs sidebar card current even while no new
+/// tab is on screen (a visible new tab is already served by `refresh`).
+pub(super) fn tick(app: &AppHandle) {
+    let (enabled, sidebar) = settings(app);
+    if !enabled || (sidebar && !super::visible(app)) {
+        update(app, enabled);
+    }
+}
+fn settings(app: &AppHandle) -> (bool, bool) {
+    app.state::<Widgets>()
         .runtime
         .lock()
-        .is_ok_and(|state| state.settings.youtube_enabled);
+        .map_or((false, false), |state| {
+            (
+                state.settings.youtube_enabled,
+                state.settings.youtube_sidebar,
+            )
+        })
+}
+/// The card the vertical-tabs sidebar shows: only while the widget and its sidebar option are on.
+pub(crate) fn sidebar_snapshot(app: &AppHandle) -> Option<NowPlaying> {
+    let (enabled, sidebar) = settings(app);
+    if enabled && sidebar {
+        snapshot(app)
+    } else {
+        None
+    }
+}
+fn update(app: &AppHandle, ask: bool) {
+    let service = app.state::<Widgets>();
+    let (enabled, sidebar) = settings(app);
     let Ok(mut inner) = service.youtube.inner.lock() else {
         return;
     };
     if !enabled {
-        inner.last.clear();
+        // One last empty report removes the card from pages and sidebars that still show it.
+        let changed = inner.last != "off";
+        inner.last = "off".into();
+        drop(inner);
+        if changed {
+            let _ = crate::security::emit_shell(app, "youtube-now-playing", None::<NowPlaying>);
+            broadcast(app);
+        }
         return;
     }
     if let Some(video) = candidate(app) {
@@ -177,13 +209,16 @@ fn update(app: &AppHandle, ask: bool) {
         }
     }
     drop(inner);
-    let signature = serde_json::to_string(&snapshot(app)).unwrap_or_default();
+    let current = snapshot(app);
+    let signature = serde_json::to_string(&(&current, sidebar)).unwrap_or_default();
     let Ok(mut inner) = service.youtube.inner.lock() else {
         return;
     };
     if inner.last != signature {
         inner.last = signature;
         drop(inner);
+        let _ =
+            crate::security::emit_shell(app, "youtube-now-playing", current.filter(|_| sidebar));
         broadcast(app);
     }
 }
@@ -234,6 +269,21 @@ pub(super) async fn control(app: &AppHandle, operation: &str) -> Result<(), Stri
         refresh(&app);
     });
     Ok(())
+}
+
+/// Playback controls for the sidebar card: `toggle`, `next`, `previous` or `open`.
+pub(crate) async fn sidebar_control(app: &AppHandle, operation: &str) -> Result<(), String> {
+    let operation = match operation {
+        "toggle" => "youtube_toggle",
+        "next" => "youtube_next",
+        "previous" => "youtube_previous",
+        "open" => "youtube_open",
+        _ => return Err("invalid_action".into()),
+    };
+    if sidebar_snapshot(app).is_none() {
+        return Err("youtube_not_found".into());
+    }
+    control(app, operation).await
 }
 
 #[cfg(test)]

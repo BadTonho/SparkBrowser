@@ -2,5 +2,12 @@
   "sidebar.bookmarks_9631": "Bookmarks",
   "sidebar.bookmarks_0b4a": "BOOKMARKS (",
   "sidebar.no_bookmarks_in_this_folder_3a58": "No bookmarks in this folder",
-  "sidebar.no_bookmarks_yet_dac0": "No bookmarks yet"
+  "sidebar.no_bookmarks_yet_dac0": "No bookmarks yet",
+  "sidebar.now_playing_region": "Now playing",
+  "sidebar.now_playing_open": "Go to tab",
+  "sidebar.now_playing_previous": "Previous",
+  "sidebar.now_playing_next": "Next",
+  "sidebar.now_playing_play": "Play",
+  "sidebar.now_playing_pause": "Pause",
+  "sidebar.now_playing_progress": "Video progress"
 }

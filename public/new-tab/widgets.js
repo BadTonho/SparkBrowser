@@ -107,6 +107,7 @@
   });
   window.addEventListener('spark-youtube-setting', event => {
     if (typeof event.detail.youtube_enabled === 'boolean') change({ youtube_enabled: event.detail.youtube_enabled });
+    if (typeof event.detail.youtube_sidebar === 'boolean') change({ youtube_sidebar: event.detail.youtube_sidebar });
   });
   window.addEventListener('spark-audio-setting', event => {
     if (!settings()) return;

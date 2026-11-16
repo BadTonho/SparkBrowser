@@ -36,6 +36,8 @@
     "allow-set-tab-volume",
     "allow-refresh-tab-media",
     "allow-get-tab-media",
+    "allow-get-now-playing",
+    "allow-control-now-playing",
     "allow-set-tab-muted",
     "allow-control-download",
     "allow-get-download-visual",

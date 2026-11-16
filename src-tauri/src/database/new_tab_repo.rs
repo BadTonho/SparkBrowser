@@ -11,7 +11,7 @@ pub struct City {
     pub latitude: f64,
     pub longitude: f64,
 }
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(default, deny_unknown_fields)]
 pub struct Settings {
     pub audio_background: AudioBackground,
@@ -20,9 +20,27 @@ pub struct Settings {
     pub spotify_enabled: bool,
     pub spotify_client_id: String,
     pub youtube_enabled: bool,
+    /// Also show the now-playing card at the bottom of the vertical-tabs sidebar.
+    pub youtube_sidebar: bool,
     pub automatic_location: bool,
     pub fahrenheit: bool,
     pub city: Option<City>,
+}
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            audio_background: AudioBackground::default(),
+            weather_enabled: false,
+            gmail_enabled: false,
+            spotify_enabled: false,
+            spotify_client_id: String::new(),
+            youtube_enabled: false,
+            youtube_sidebar: true,
+            automatic_location: false,
+            fahrenheit: false,
+            city: None,
+        }
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(default, deny_unknown_fields)]
@@ -196,6 +214,23 @@ mod tests {
         migrate(&db).unwrap();
         save(&db, &s).unwrap();
         assert_eq!(load(&db).unwrap(), s);
+    }
+    #[test]
+    fn youtube_widget_is_off_by_default_and_old_settings_show_it_in_the_sidebar_once_enabled() {
+        let fresh = Settings::default();
+        assert!(!fresh.youtube_enabled);
+        assert!(fresh.youtube_sidebar);
+        let old: Settings = serde_json::from_str(r#"{"weather_enabled":true}"#).unwrap();
+        assert!(!old.youtube_enabled);
+        assert!(old.youtube_sidebar, "missing field keeps the default");
+        let hidden: Settings =
+            serde_json::from_str(r#"{"youtube_enabled":true,"youtube_sidebar":false}"#).unwrap();
+        assert!(hidden.youtube_enabled && !hidden.youtube_sidebar);
+        assert!(serde_json::from_str::<Settings>(r#"{"youtube_sidebar":"yes"}"#).is_err());
+        let db = Connection::open_in_memory().unwrap();
+        migrate(&db).unwrap();
+        save(&db, &hidden).unwrap();
+        assert_eq!(load(&db).unwrap(), hidden);
     }
     #[test]
     fn spotify_defaults_client_validation_and_disconnection_are_independent() {

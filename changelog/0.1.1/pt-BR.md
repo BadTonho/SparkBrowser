@@ -6,7 +6,7 @@ Em andamento — não lançada.
 
 - Adiciona um plano de fundo opcional que reage ao áudio das guias normais, com 20 estilos visuais (barras, ondas, formas circulares, partículas, brilhos, aurora, terreno 3D e mais), cores personalizadas e intensidade visual.
 
-- Adiciona um widget do YouTube com o que está tocando nas abas do YouTube e do YouTube Music já abertas, com miniatura, título em uma linha que rola, barra de progresso e controles de reprodução, miniatura pequena ou cobrindo o cartão inteiro e uma pré-visualização opcional em vídeo sem som; Spotify e YouTube agora dividem uma única entrada **Música e vídeo** no menu de personalização da nova guia.
+- Adiciona um widget do YouTube com o que está tocando nas abas do YouTube e do YouTube Music já abertas, com miniatura, título em uma linha que rola, barra de progresso e controles de reprodução, miniatura pequena ou cobrindo o cartão inteiro e uma pré-visualização opcional em vídeo sem som e uma versão compacta do cartão na parte de baixo da barra lateral de guias verticais; Spotify e YouTube agora dividem uma única entrada **Música e vídeo** no menu de personalização da nova guia.
 
 - Adiciona um widget do Spotify na nova guia com conexão da conta, informações de reprodução e controles do dispositivo ativo, no mesmo cartão minimalista do YouTube: logotipo que abre o Spotify, título em uma linha que rola, barra de progresso e capa pequena ou cobrindo o cartão inteiro.
 

@@ -6,7 +6,7 @@ In progress — not released.
 
 - Add an optional audio-reactive background with 20 visual styles (bars, waves, circular shapes, particles, glows, aurora, 3D terrain and more), custom colors and visual intensity, driven by normal browser-tab audio.
 
-- Add a YouTube now-playing widget for the YouTube and YouTube Music tabs you already have open, with thumbnail, a single scrolling title line, a progress bar and playback controls, a thumbnail that is either small or covers the whole card, and an optional muted video preview; Spotify and YouTube now share a single **Music and video** entry in the new-tab customization menu.
+- Add a YouTube now-playing widget for the YouTube and YouTube Music tabs you already have open, with thumbnail, a single scrolling title line, a progress bar and playback controls, a thumbnail that is either small or covers the whole card, an optional muted video preview, and a compact version of the card at the bottom of the vertical tabs sidebar; Spotify and YouTube now share a single **Music and video** entry in the new-tab customization menu.
 
 - Add a Spotify new-tab widget with account connection, playback information and controls for the active device, using the same minimal card as YouTube: logo that opens Spotify, a single scrolling title line, a progress bar and a small or full-card cover.
 

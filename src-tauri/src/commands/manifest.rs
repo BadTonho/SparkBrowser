@@ -34,6 +34,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_tab_volume",
     "refresh_tab_media",
     "get_tab_media",
+    "get_now_playing",
+    "control_now_playing",
     "set_tab_muted",
     "search_command_items",
     "get_saved_session",

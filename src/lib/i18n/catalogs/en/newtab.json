@@ -44,6 +44,7 @@
   "newtab.widgets.youtubeNext": "Next",
   "newtab.widgets.youtubeOpen": "Go to tab",
   "newtab.widgets.youtubeProgress": "Video progress",
+  "newtab.widgets.youtubeSidebar": "Also show in the vertical tabs sidebar",
   "newtab.widgets.mediaThumb": "Thumbnail",
   "newtab.widgets.mediaThumbSmall": "Small, beside the title",
   "newtab.widgets.mediaThumbCover": "Cover the whole widget",

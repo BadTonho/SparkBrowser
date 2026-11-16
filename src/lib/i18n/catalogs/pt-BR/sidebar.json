@@ -2,5 +2,12 @@
   "sidebar.bookmarks_9631": "Favoritos",
   "sidebar.bookmarks_0b4a": "FAVORITOS (",
   "sidebar.no_bookmarks_in_this_folder_3a58": "Nenhum favorito nesta pasta",
-  "sidebar.no_bookmarks_yet_dac0": "Nenhum favorito ainda"
+  "sidebar.no_bookmarks_yet_dac0": "Nenhum favorito ainda",
+  "sidebar.now_playing_region": "Tocando agora",
+  "sidebar.now_playing_open": "Ir para a aba",
+  "sidebar.now_playing_previous": "Anterior",
+  "sidebar.now_playing_next": "Próximo",
+  "sidebar.now_playing_play": "Reproduzir",
+  "sidebar.now_playing_pause": "Pausar",
+  "sidebar.now_playing_progress": "Progresso do vídeo"
 }

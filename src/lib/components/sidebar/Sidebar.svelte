@@ -3,6 +3,7 @@
   import { t } from "../../i18n";
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import TabList from "../tabs/TabList.svelte";
+  import NowPlaying from "./NowPlaying.svelte";
   import {
     currentUrl,
     sidebarWidth,
@@ -91,6 +92,9 @@
     {#if $tabLayout === "vertical"}
       <TabList />
     {/if}
+
+    <!-- YouTube / YouTube Music video playing in an open tab (Customize new tab → Music and video) -->
+    <NowPlaying />
   </div>
 </aside>
 
