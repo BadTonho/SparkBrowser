@@ -4,7 +4,7 @@ Em andamento — não lançada.
 
 ## Novas funcionalidades
 
-- Adiciona um plano de fundo opcional que reage ao áudio das guias normais, com barras de frequência, cores personalizadas e intensidade visual.
+- Adiciona um plano de fundo opcional que reage ao áudio das guias normais, com 20 estilos visuais (barras, ondas, formas circulares, partículas, brilhos, aurora, terreno 3D e mais), cores personalizadas e intensidade visual.
 
 - Adiciona um widget do Spotify na nova guia com conexão da conta, informações de reprodução e controles do dispositivo ativo.
 

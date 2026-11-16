@@ -8,7 +8,7 @@ function fixture(reduced=false){
   let counter=0;
   const listen=(name,fn)=>{const previous=events.get(name);events.set(name,event=>{previous?.(event);fn(event);});};
   const context={clearRect(){rects.length=0;},fillRect(...r){rects.push(r);},createLinearGradient(){return {addColorStop(){}};}};
-  for(const id of ['audio-background','audio-background-enabled','audio-background-options','audio-background-color','audio-background-intensity','audio-background-settings','audio-background-status'])nodes.set(id,{hidden:true,listeners:{},addEventListener(name,fn){this.listeners[name]=fn;},getContext(){return context;}});
+  for(const id of ['audio-background','audio-background-enabled','audio-background-options','audio-background-color','audio-background-intensity','audio-background-style','audio-background-settings','audio-background-status'])nodes.set(id,{hidden:true,listeners:{},addEventListener(name,fn){this.listeners[name]=fn;},getContext(){return context;}});
   const document={hidden:false,getElementById:id=>nodes.get(id),addEventListener:listen};
   const window={innerWidth:1000,innerHeight:800,devicePixelRatio:1,addEventListener:listen,
     matchMedia:()=>({matches:reduced,addEventListener(){}}),
@@ -64,4 +64,23 @@ test('the document bridge rejects stale generations, replayed frames, wrong docu
   window.__sparkAudioFrame('doc-a',{...payload,generation:3,sequence:1});assert.equal(received.length,2);
   send('audio_unsubscribe');window.__sparkAudioFrame('doc-a',{...payload,generation:4});assert.equal(received.length,2);
   assert.equal(posts.length,2);
+});
+test('every visual style draws finite shapes from real levels and the selector is saved',()=>{
+  const source=readFileSync('public/new-tab/audio-styles.js','utf8');
+  const calls=[];
+  const handler={get:(target,name)=>name in target?target[name]:(...args)=>{if(args.some(v=>typeof v==='number'&&!Number.isFinite(v)))throw new Error(`${String(name)} got a non-finite value`);calls.push(String(name));return {addColorStop(){}};},set:(target,name,value)=>{target[name]=value;return true;}};
+  const window={};runInNewContext(source,{window,Math:Object.create(Math,{random:{value:()=>0.1}}),Float32Array,Array,Object,Number});
+  const ids=Object.keys(window.__sparkAudioStyles);
+  const rust=readFileSync('src-tauri/src/database/new_tab_repo.rs','utf8');
+  for(const id of ['bars',...ids])assert.match(rust,new RegExp(`"${id}"`),`${id} is accepted by the backend`);
+  assert.equal(ids.length,19);
+  const levels=Array.from({length:32},(_,i)=>i/31);
+  for(const id of ids){
+    const style=window.__sparkAudioStyles[id],store={};
+    assert.ok(['band','full'].includes(style.layout));
+    for(let frame=0;frame<3;frame++){calls.length=0;style.draw(new Proxy({},handler),1000,400,levels,{color:'#1db954',t:frame,dt:0.033,store});assert.ok(calls.length>0,`${id} draws`);}
+  }
+  const f=fixture();f.render({style:'wave'});
+  f.nodes.get('audio-background-style').listeners.change({target:{value:'radial'}});
+  assert.equal(JSON.stringify(f.actions.at(-1)),'{"style":"radial"}');
 });

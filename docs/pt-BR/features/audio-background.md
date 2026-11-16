@@ -2,9 +2,23 @@
 
 [English](../../en/features/audio-background.md)
 
-Abra **Personalizar nova guia → Plano de fundo → Equalizador de áudio** e ative **Mostrar barras que reagem ao áudio**. O efeito começa desativado. Escolha a cor das barras e a intensidade visual entre 0,5 e 2,0; esses controles nunca alteram o volume da reprodução.
+Abra **Personalizar nova guia → Plano de fundo → Equalizador de áudio** e ative **Mostrar visualizador que reage ao áudio**. O efeito começa desativado. Escolha um estilo visual, uma cor e a intensidade visual entre 0,5 e 2,0; esses controles nunca alteram o volume da reprodução.
 
-Trinta e duas barras de frequência aparecem sobre a cor, imagem ou vídeo atual, atrás dos controles da página, no quarto inferior da nova guia. Elas reagem ao espectro real do áudio, incluindo Web Audio, das guias normais em todas as janelas e workspaces do mesmo perfil. As barras desaparecem em aproximadamente meio segundo de silêncio. O modo de movimento reduzido usa atualizações discretas e menos frequentes em vez de transições suaves.
+O visualizador aparece sobre a cor, imagem ou vídeo atual, atrás dos controles da página. Os estilos em faixa ficam no quarto inferior da nova guia; os estilos em tela cheia usam a página inteira. Ele reage ao espectro real do áudio, incluindo Web Audio, das guias normais em todas as janelas e workspaces do mesmo perfil. O visual desaparece em aproximadamente meio segundo de silêncio. O modo de movimento reduzido usa atualizações discretas e menos frequentes em vez de transições suaves.
+
+## Estilos visuais
+
+Todos os estilos são desenhados a partir dos mesmos 32 níveis reais de frequência e usam a cor escolhida. **Barras** é o padrão.
+
+| Grupo | Estilos |
+|---|---|
+| Linhas e ondas | Barras, Onda, Área / montanha, Linhas empilhadas, Linha de batimento |
+| Circulares | Barras radiais, Anel pulsante, Anéis concêntricos, Espiral, Disco de vinil |
+| Pontos e partículas | Pontos de LED, Partículas, Bolhas, Vaga-lumes |
+| Ambiente | Brilho nas bordas, Orbes, Espectrograma, Aurora |
+| Geométricos | Polígonos, Terreno 3D |
+
+Barras, Onda, Área / montanha, Linhas empilhadas, Linha de batimento, Pontos de LED e Espectrograma usam o quarto inferior da página. Todos os outros estilos usam a página inteira. O código de desenho fica em `public/new-tab/audio-styles.js`; Barras faz parte de `audio-background.js`. Os nomes de estilo aceitos são validados pelo backend, e um nome desconhecido é rejeitado.
 
 ## Plataformas e captura
 

@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/new-tab/wallpaper.css">
   <script src="/new-tab/wallpaper.js" defer></script>
   <link rel="stylesheet" href="/new-tab/audio-background.css">
+  <script src="/new-tab/audio-styles.js" defer></script>
   <script src="/new-tab/audio-background.js" defer></script>
   <link rel="stylesheet" href="/new-tab/clock.css">
   <script src="/new-tab/clock.js" defer></script>
@@ -179,6 +180,29 @@
         <legend data-label="audioBackground"></legend>
         <label class="toggle"><span data-label="audioBackgroundEnabled"></span><input id="audio-background-enabled" type="checkbox"></label>
         <div id="audio-background-options" hidden>
+          <label for="audio-background-style" data-label="audioBackgroundStyle"></label>
+          <select id="audio-background-style">
+            <option value="bars" data-label="audioStyleBars"></option>
+            <option value="wave" data-label="audioStyleWave"></option>
+            <option value="area" data-label="audioStyleArea"></option>
+            <option value="lines" data-label="audioStyleLines"></option>
+            <option value="pulse" data-label="audioStylePulse"></option>
+            <option value="radial" data-label="audioStyleRadial"></option>
+            <option value="ring" data-label="audioStyleRing"></option>
+            <option value="concentric" data-label="audioStyleConcentric"></option>
+            <option value="spiral" data-label="audioStyleSpiral"></option>
+            <option value="vinyl" data-label="audioStyleVinyl"></option>
+            <option value="dots" data-label="audioStyleDots"></option>
+            <option value="particles" data-label="audioStyleParticles"></option>
+            <option value="bubbles" data-label="audioStyleBubbles"></option>
+            <option value="fireflies" data-label="audioStyleFireflies"></option>
+            <option value="glow" data-label="audioStyleGlow"></option>
+            <option value="orbs" data-label="audioStyleOrbs"></option>
+            <option value="spectrogram" data-label="audioStyleSpectrogram"></option>
+            <option value="aurora" data-label="audioStyleAurora"></option>
+            <option value="polygon" data-label="audioStylePolygon"></option>
+            <option value="terrain" data-label="audioStyleTerrain"></option>
+          </select>
           <label for="audio-background-color" data-label="audioBackgroundColor"></label>
           <input id="audio-background-color" type="color" value="#1db954">
           <label for="audio-background-intensity" data-label="audioBackgroundIntensity"></label>

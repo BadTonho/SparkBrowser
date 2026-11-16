@@ -29,13 +29,20 @@ pub struct AudioBackground {
     pub enabled: bool,
     pub color: String,
     pub intensity: f32,
+    pub style: String,
 }
+/// Visual styles the new-tab canvas knows how to draw (see `public/new-tab/audio-styles.js`).
+pub const AUDIO_STYLES: [&str; 20] = [
+    "bars", "wave", "area", "lines", "pulse", "radial", "ring", "concentric", "spiral", "vinyl", "dots",
+    "particles", "bubbles", "fireflies", "glow", "orbs", "spectrogram", "aurora", "polygon", "terrain",
+];
 impl Default for AudioBackground {
     fn default() -> Self {
         Self {
             enabled: false,
             color: "#1db954".into(),
             intensity: 1.0,
+            style: "bars".into(),
         }
     }
 }
@@ -46,6 +53,7 @@ impl AudioBackground {
             || !self.color.as_bytes()[1..].iter().all(u8::is_ascii_hexdigit)
             || !self.intensity.is_finite()
             || !(0.5..=2.0).contains(&self.intensity)
+            || !AUDIO_STYLES.contains(&self.style.as_str())
         {
             return Err("invalid_settings".into());
         }
@@ -156,6 +164,15 @@ mod tests {
             assert!(s.validate().is_err());
         }
         s.audio_background.intensity = 1.5;
+        for style in ["", "Bars", "unknown", "wave "] {
+            s.audio_background.style = style.into();
+            assert!(s.validate().is_err());
+        }
+        for style in AUDIO_STYLES {
+            s.audio_background.style = style.into();
+            assert!(s.validate().is_ok());
+        }
+        s.audio_background.style = "radial".into();
         let db = Connection::open_in_memory().unwrap();
         migrate(&db).unwrap();
         save(&db, &s).unwrap();

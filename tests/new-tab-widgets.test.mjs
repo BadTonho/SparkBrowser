@@ -25,7 +25,7 @@ function fixture(){
   const context={window,document,Intl,Date,CustomEvent:class{constructor(t,o){this.type=t;this.detail=o.detail;}}};
   for(const file of ['widgets','spotify'])runInNewContext(readFileSync(`public/new-tab/${file}.js`,'utf8'),context);
   listeners.get('spark-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'}}});
-  const settings={audio_background:{enabled:false,color:'#1db954',intensity:1},weather_enabled:false,gmail_enabled:false,spotify_enabled:false,spotify_client_id:'',automatic_location:false,fahrenheit:false,city:null};
+  const settings={audio_background:{enabled:false,color:'#1db954',intensity:1,style:'bars'},weather_enabled:false,gmail_enabled:false,spotify_enabled:false,spotify_client_id:'',automatic_location:false,fahrenheit:false,city:null};
   let current={settings,revision:0,weather:{data:null,error:null,busy:false},gmail:{data:null,email:null,error:null,busy:false,connecting:false,configured:true}};
   const update=patch=>{current={...current,...patch};listeners.get('spark-new-tab-widgets')({detail:current});};update({});
   return {nodes,actions,update,settings,document,audio:patch=>listeners.get('spark-audio-setting')({detail:patch}),preferences:patch=>listeners.get('spark-new-tab')({detail:{labels:JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json','utf8')),preferences:{language:'en'},...patch}})};

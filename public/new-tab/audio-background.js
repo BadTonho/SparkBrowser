@@ -1,10 +1,12 @@
 (() => {
   const $ = id => document.getElementById(id);
   const canvas = $('audio-background'), context = canvas?.getContext('2d');
-  const defaults = { enabled:false, color:'#1db954', intensity:1 };
+  const defaults = { enabled:false, color:'#1db954', intensity:1, style:'bars' };
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   let config = defaults, labels = {}, privateWindow = false, subscribed = false, raf = 0, expiry = 0;
   let target = Array(32).fill(0), displayed = Array(32).fill(0), last = 0, lastPaint = 0, status = 'idle';
+  let styleStore = {}, styleId = 'bars';
+  const styleFor = id => (id === 'bars' ? null : window.__sparkAudioStyles?.[id] ?? null);
   const text = key => labels[`newtab.widgets.${key}`] ?? key;
   const send = operation => window.dispatchEvent(new CustomEvent('spark-new-tab-action', { detail:{ action:'widgets', operation, data:{} } }));
   const change = detail => window.dispatchEvent(new CustomEvent('spark-audio-setting', { detail }));
@@ -12,13 +14,15 @@
   function clear() {
     if (raf) window.cancelAnimationFrame(raf); raf = 0;
     window.clearTimeout(expiry); expiry = 0; last = 0;
-    target.fill(0); displayed.fill(0);
+    target.fill(0); displayed.fill(0); styleStore = {};
     context?.clearRect(0,0,canvas.width,canvas.height); canvas.hidden = true;
   }
   function resize() {
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const full = styleFor(config.style)?.layout === 'full';
     canvas.width = Math.round(window.innerWidth * ratio);
-    canvas.height = Math.round(window.innerHeight * 0.25 * ratio);
+    canvas.height = Math.round(window.innerHeight * (full ? 1 : 0.25) * ratio);
+    if (canvas.style) canvas.style.height = full ? '100vh' : '25vh';
   }
   function statusText() {
     const node = $('audio-background-status');
@@ -41,7 +45,11 @@
     }
     context.clearRect(0,0,canvas.width,canvas.height);
     canvas.hidden = peak === 0;
-    if (peak > 0) {
+    const style = styleFor(config.style);
+    if (peak > 0 && style) {
+      style.draw(context, canvas.width, canvas.height, displayed, { color:config.color, t:now/1000, dt:elapsed/1000, store:styleStore });
+      if (!reduced?.matches) raf = window.requestAnimationFrame(paint);
+    } else if (peak > 0) {
       const gradient = context.createLinearGradient(0,canvas.height,0,0);
       gradient.addColorStop(0,config.color); gradient.addColorStop(1,`${config.color}20`);
       context.fillStyle = gradient;
@@ -64,16 +72,20 @@
   $('audio-background-enabled').addEventListener('change',event=>change({enabled:event.target.checked}));
   $('audio-background-color').addEventListener('change',event=>change({color:event.target.value}));
   $('audio-background-intensity').addEventListener('change',event=>change({intensity:Number(event.target.value)}));
+  $('audio-background-style').addEventListener('change',event=>change({style:event.target.value}));
   window.__sparkAudioRender = (value, saving=false) => {
     config = { ...defaults, ...value };
+    if (config.style !== styleId) { styleId = config.style; styleStore = {}; resize(); }
     $('audio-background-settings').hidden = privateWindow;
     $('audio-background-enabled').checked = config.enabled && !privateWindow;
     $('audio-background-options').hidden = !config.enabled || privateWindow;
     $('audio-background-color').value = config.color;
     $('audio-background-intensity').value = String(config.intensity);
+    $('audio-background-style').value = config.style;
     $('audio-background-enabled').disabled = saving || !context;
     $('audio-background-color').disabled = saving;
     $('audio-background-intensity').disabled = saving;
+    $('audio-background-style').disabled = saving;
     subscription(); statusText(); animate();
   };
   window.addEventListener('spark-new-tab',event=>{
