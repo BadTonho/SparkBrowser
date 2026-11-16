@@ -1,5 +1,21 @@
 import { mount } from "svelte";
 import "./styles/theme.css";
+import { invoke, isTauriRuntime } from "./lib/services/bridge/runtime";
+
+// Script errors in any browser interface (shell, settings, tools, downloads) go to the error log
+// and to the notification in the bottom-right corner.
+let reported = 0;
+function reportScriptError(summary: string, details = ""): void {
+  if (!isTauriRuntime() || ++reported > 10) return;
+  void invoke("report_frontend_error", { summary, details }).catch(() => {});
+}
+window.addEventListener("error", (event) => {
+  reportScriptError(event.message || "Script error", `${event.filename}:${event.lineno}:${event.colno}\n${event.error?.stack ?? ""}`);
+});
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event.reason as { message?: string; stack?: string } | undefined;
+  reportScriptError(`Unhandled rejection: ${reason?.message ?? String(event.reason)}`, reason?.stack ?? "");
+});
 
 if (
   typeof navigator !== "undefined" &&

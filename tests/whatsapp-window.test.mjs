@@ -4,7 +4,7 @@ import { test } from 'node:test';
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 test('the WhatsApp command is registered in the handler, the ACL manifest and the shell capability', () => {
-  assert.match(read('src-tauri/src/lib.rs'), /toggle_whatsapp_popover\n\s*\]\)\)/);
+  assert.match(read('src-tauri/src/lib.rs'), /toggle_whatsapp_popover,?\n[\s\S]*?\]\)\)/);
   assert.match(read('src-tauri/src/commands/manifest.rs'), /"toggle_whatsapp_popover",/);
   assert.match(read('src-tauri/capabilities/default.json'), /"allow-toggle-whatsapp-popover"/);
 });

@@ -903,6 +903,12 @@
           "markdownDescription": "Enables the reorder_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the report_frontend_error command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-report-frontend-error",
+          "markdownDescription": "Enables the report_frontend_error command without any pre-configured scope."
+        },
+        {
           "description": "Enables the reset_experimental_flags command without any pre-configured scope.",
           "type": "string",
           "const": "allow-reset-experimental-flags",
@@ -2035,6 +2041,12 @@
           "type": "string",
           "const": "deny-reorder-tabs",
           "markdownDescription": "Denies the reorder_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the report_frontend_error command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-report-frontend-error",
+          "markdownDescription": "Denies the report_frontend_error command without any pre-configured scope."
         },
         {
           "description": "Denies the reset_experimental_flags command without any pre-configured scope.",

@@ -57,6 +57,13 @@ pub(super) fn valid(path: &str, values: &HashMap<String, String>) -> bool {
         {
             &["request", "operation", "data"]
         }
+        "/error"
+            if required("message")
+                && values.get("message").is_some_and(|v| v.len() <= 2_000)
+                && values.get("details").is_none_or(|v| v.len() <= 6_000) =>
+        {
+            &["message", "details"]
+        }
         _ => return false,
     };
     values.keys().all(|key| {
@@ -106,5 +113,9 @@ mod tests {
         assert!(!valid("/read", &values));
         assert!(!valid("/navigate", &values));
         assert!(!valid("/unknown", &values));
+        let error = HashMap::from([("message".into(), "x is not defined".into())]);
+        assert!(valid("/error", &error));
+        assert!(!valid("/error", &HashMap::new()));
+        assert!(!valid("/error", &HashMap::from([("message".into(), "x".repeat(2_001))])));
     }
 }

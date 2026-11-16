@@ -15,6 +15,7 @@ use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
+use commands::error_report::report_frontend_error;
 use commands::graphics::{get_graphics_status, restart_for_graphics, set_hardware_acceleration};
 use commands::new_tab::set_new_tab_preferences;
 use commands::panels::prepare_panel;
@@ -27,6 +28,7 @@ pub mod backup;
 pub mod commands;
 pub mod database;
 pub mod downloads;
+pub mod error_log;
 pub mod extensions;
 pub mod feeds;
 pub mod graphics;
@@ -150,6 +152,9 @@ pub fn run() {
         let accelerated = graphics::data_directory(context.config())
             .is_none_or(|directory| graphics::load(&directory));
         graphics::apply_environment(accelerated);
+        if let Some(directory) = graphics::data_directory(context.config()) {
+            error_log::install(&directory);
+        }
     }
     let graphics_service = graphics::GraphicsService::new(graphics::running_accelerated());
     let role = private_session::PrivateRole::from_mode(mode);
@@ -277,6 +282,7 @@ pub fn run() {
                 webview_runtime::initialize(app.handle(), &view).map_err(std::io::Error::other)?;
             }
             let state = app.state::<BrowserState>();
+            error_log::watch(app.handle());
 
             let data_directory = app.path().app_data_dir()?;
             app.manage(
@@ -668,17 +674,21 @@ pub fn run() {
             install_extension_from_url,
             install_extension_from_archive,
             save_qr_code_png,
-            toggle_whatsapp_popover
+            toggle_whatsapp_popover,
+            report_frontend_error
         ]))
         .build(context)
         .expect("error while building Spark")
         .run(|app, event| {
-            if let tauri::RunEvent::ExitRequested {
-                code: None, api, ..
-            } = event
-            {
-                api.prevent_exit();
-                let _ = app.state::<shutdown::ShutdownService>().request(app, None);
+            match event {
+                tauri::RunEvent::ExitRequested {
+                    code: None, api, ..
+                } => {
+                    api.prevent_exit();
+                    let _ = app.state::<shutdown::ShutdownService>().request(app, None);
+                }
+                tauri::RunEvent::Exit => error_log::clean_exit(),
+                _ => {}
             }
         });
 }

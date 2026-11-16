@@ -47,6 +47,14 @@
     else if (action === 'visit') send('visit', { input, site_key });
     else if (action === 'widgets') widgets(event.detail.operation, event.detail.data);
   });
+  let errorsSent = 0;
+  const reportError = (message, details) => {
+    if (++errorsSent > 3) return;
+    send('error', { message: String(message).slice(0, 500), details: String(details ?? '').slice(0, 1500) });
+  };
+  window.addEventListener('error', event => reportError(event.message || 'Script error', `${event.filename || ''}:${event.lineno || 0}:${event.colno || 0}
+${event.error?.stack ?? ''}`));
+  window.addEventListener('unhandledrejection', event => reportError(`Unhandled rejection: ${event.reason?.message ?? event.reason}`, event.reason?.stack));
   document.addEventListener('DOMContentLoaded', () => window.__sparkRefreshNewTab(), { once: true });
   window.addEventListener('pageshow', event => { if (event.persisted) window.__sparkRefreshNewTab(); });
 })();

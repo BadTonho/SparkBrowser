@@ -17,5 +17,12 @@
   "runtime.no_update": "No browser engine update is awaiting restart.",
   "runtime.restart_failed": "Could not restart the browser. Your browser remains open; try again.",
   "security.initialization_failed": "Could not establish the browser security boundaries.",
-  "status.restart_to_update": "Restart to update"
+  "status.restart_to_update": "Restart to update",
+  "status.error_report_region": "Error notifications",
+  "status.error_report_title": "Spark found an error",
+  "status.error_report_view": "View error",
+  "status.error_report_hide": "Hide error",
+  "status.error_report_send": "Send error",
+  "status.error_report_send_failed": "Could not open the report page. Copy the error above and send it to the project issues.",
+  "status.error_report_more": "+{count} more errors"
 }

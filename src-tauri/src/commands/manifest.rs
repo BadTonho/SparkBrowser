@@ -184,4 +184,5 @@ pub const APP_COMMANDS: &[&str] = &[
     "install_extension_from_archive",
     "save_qr_code_png",
     "toggle_whatsapp_popover",
+    "report_frontend_error",
 ];

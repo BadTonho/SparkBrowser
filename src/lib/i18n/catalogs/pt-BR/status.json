@@ -17,5 +17,12 @@
   "runtime.no_update": "Não há atualização do mecanismo aguardando reinício.",
   "runtime.restart_failed": "Não foi possível reiniciar o navegador. Ele continua aberto; tente novamente.",
   "security.initialization_failed": "Não foi possível estabelecer as fronteiras de segurança do navegador.",
-  "status.restart_to_update": "Reiniciar para atualizar"
+  "status.restart_to_update": "Reiniciar para atualizar",
+  "status.error_report_region": "Notificações de erro",
+  "status.error_report_title": "O Spark encontrou um erro",
+  "status.error_report_view": "Ver erro",
+  "status.error_report_hide": "Ocultar erro",
+  "status.error_report_send": "Enviar erro",
+  "status.error_report_send_failed": "Não foi possível abrir a página de envio. Copie o erro acima e envie para as issues do projeto.",
+  "status.error_report_more": "+{count} outros erros"
 }

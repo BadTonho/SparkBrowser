@@ -13,6 +13,14 @@ pub fn emit_shell<S: serde::Serialize + Clone>(
     event: &str,
     payload: S,
 ) -> tauri::Result<()> {
+    if event == "browser-error" {
+        // Every error the browser shows is also logged and offered for reporting.
+        if let Ok(serde_json::Value::String(message)) = serde_json::to_value(&payload) {
+            if message != "Navigation blocked" {
+                crate::error_log::report("native", &message, "");
+            }
+        }
+    }
     emit_shell_all(app, event, payload);
     Ok(())
 }
