@@ -1,5 +1,7 @@
 #[cfg(windows)]
 pub mod windows;
+#[cfg(target_os = "linux")]
+pub mod linux;
 use crate::{database::site_zoom_repo as repo, state::browser_state::BrowserState};
 pub use repo::SiteZoom;
 use serde::Serialize;

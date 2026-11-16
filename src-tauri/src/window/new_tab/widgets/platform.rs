@@ -65,15 +65,73 @@ pub fn delete(key: &str) -> Result<(), String> {
             .map_err(|_| "secure_storage".into())
     }
 }
-#[cfg(not(windows))]
+/// The user's Secret Service through libsecret's CLI; never a shell, and the value goes over stdin.
+#[cfg(target_os = "linux")]
+fn secret(operation: &str, key: &str) -> std::process::Command {
+    let mut command = std::process::Command::new("secret-tool");
+    command.arg(operation);
+    if operation == "store" {
+        command.arg("--label=Spark widget");
+    }
+    command.args(["application", "org.spark.browser.widgets", "profile", key]);
+    command
+}
+#[cfg(target_os = "linux")]
+pub fn read(key: &str) -> Result<Option<String>, String> {
+    let output = secret("lookup", key)
+        .output()
+        .map_err(|_| "secure_storage")?;
+    if output.status.success() {
+        let value = String::from_utf8(output.stdout).map_err(|_| "secure_storage")?;
+        Ok(Some(value.trim_end().to_owned()))
+    } else if output.status.code() == Some(1) && output.stderr.is_empty() {
+        Ok(None)
+    } else {
+        Err("secure_storage".into())
+    }
+}
+#[cfg(target_os = "linux")]
+pub fn write(key: &str, value: &str) -> Result<(), String> {
+    use std::{io::Write, process::Stdio};
+    let mut child = secret("store", key)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|_| "secure_storage")?;
+    let written = child
+        .stdin
+        .take()
+        .ok_or("secure_storage")?
+        .write_all(value.as_bytes());
+    let status = child.wait().map_err(|_| "secure_storage")?;
+    written.map_err(|_| "secure_storage")?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err("secure_storage".into())
+    }
+}
+#[cfg(target_os = "linux")]
+pub fn delete(key: &str) -> Result<(), String> {
+    let output = secret("clear", key)
+        .output()
+        .map_err(|_| "secure_storage")?;
+    if output.status.success() || (output.status.code() == Some(1) && output.stderr.is_empty()) {
+        Ok(())
+    } else {
+        Err("secure_storage".into())
+    }
+}
+#[cfg(not(any(windows, target_os = "linux")))]
 pub fn read(_key: &str) -> Result<Option<String>, String> {
     Ok(None)
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "linux")))]
 pub fn write(_key: &str, _value: &str) -> Result<(), String> {
     Err("secure_storage".into())
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "linux")))]
 pub fn delete(_key: &str) -> Result<(), String> {
     Ok(())
 }

@@ -97,7 +97,56 @@ pub async fn get_cookies_for_url(app: &AppHandle, url: &str) -> Result<String, S
     }
 }
 
-#[cfg(not(windows))]
+/// The cookies the page profile holds for `url`, as a `Cookie` header value.
+#[cfg(target_os = "linux")]
+pub async fn get_cookies_for_url(app: &AppHandle, url: &str) -> Result<String, String> {
+    use tauri::Manager;
+    use webkit2gtk::{CookieManagerExt, WebContextExt, WebViewExt};
+    let view = crate::window::webview_manager::active_content_webview(app)
+        .or_else(|| {
+            app.state::<crate::state::browser_state::BrowserState>()
+                .snapshot_tabs()
+                .first()
+                .and_then(|t| {
+                    app.get_webview(&crate::state::tab_model::webview_label_for_tab(&t.id))
+                })
+        })
+        .or_else(|| app.get_webview("main"))
+        .ok_or_else(|| "no_webview_available".to_string())?;
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    let url = url.to_owned();
+    view.with_webview(move |platform| {
+        let manager = platform
+            .inner()
+            .context()
+            .and_then(|context| context.cookie_manager());
+        let Some(manager) = manager else {
+            let _ = sender.send(Err("no_webview_available".to_string()));
+            return;
+        };
+        manager.cookies(&url, None::<&webkit2gtk::gio::Cancellable>, move |result| {
+            let _ = sender.send(result.map_err(|e| e.to_string()).map(|cookies| {
+                cookies
+                    .into_iter()
+                    .filter_map(|mut cookie| {
+                        let name = cookie.name()?;
+                        (!name.is_empty())
+                            .then(|| format!("{name}={}", cookie.value().unwrap_or_default()))
+                    })
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            }));
+        });
+    })
+    .map_err(|e| e.to_string())?;
+    match tokio::time::timeout(std::time::Duration::from_secs(5), receiver).await {
+        Ok(Ok(result)) => result,
+        Ok(Err(_)) => Err("channel_closed".into()),
+        Err(_) => Err("cookie_timeout".into()),
+    }
+}
+
+#[cfg(not(any(windows, target_os = "linux")))]
 pub async fn get_cookies_for_url(_app: &AppHandle, _url: &str) -> Result<String, String> {
     Ok(String::new())
 }

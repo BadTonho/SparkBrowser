@@ -344,6 +344,11 @@ pub(super) fn create_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
     )?;
 
+    #[cfg(target_os = "linux")]
+    crate::privacy::content_filter_linux::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+    )?;
     super::fullscreen::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
@@ -401,12 +406,23 @@ pub(super) fn create_tab_webview(
         tab_id,
         &navigation_registration_token,
     )?;
+    #[cfg(target_os = "linux")]
+    crate::zoom::linux::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        &navigation_registration_token,
+    )?;
     #[cfg(windows)]
     crate::zoom::windows::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         tab_id,
         &navigation_registration_token,
+    )?;
+    #[cfg(target_os = "linux")]
+    crate::downloads::native::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
     )?;
     #[cfg(windows)]
     crate::downloads::native::install(
@@ -422,9 +438,23 @@ pub(super) fn create_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         &navigation_registration_token,
     )?;
+    #[cfg(target_os = "linux")]
+    super::favicon::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
+    )?;
     crate::extensions::platform::sync_new_webview(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
+    )?;
+    #[cfg(target_os = "linux")]
+    crate::site_permissions::linux::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        tab_id,
+        &navigation_registration_token,
     )?;
     #[cfg(windows)]
     crate::site_permissions::requests::install_and_navigate(

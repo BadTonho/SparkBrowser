@@ -2,8 +2,12 @@
 mod windows;
 #[cfg(windows)]
 pub use windows::install;
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "linux")]
+pub use linux::install;
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use crate::{database::site_icons_repo, state::browser_state::BrowserState};
 use tauri::{AppHandle, Manager};
 
@@ -14,7 +18,7 @@ pub fn epoch(app: &AppHandle) -> u64 {
 }
 
 // Called under the database lock, so clearing history and finishing old captures are ordered.
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 pub fn save(
     app: &AppHandle,
     conn: &rusqlite::Connection,
@@ -25,7 +29,7 @@ pub fn save(
     site_icons_repo::store_current(conn, key, bytes, expected_epoch, epoch(app))
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 fn current(app: &AppHandle, label: &str, token: &str, url: &str) -> bool {
     super::navigation_state::is_current_generation(app, label, token)
         && app

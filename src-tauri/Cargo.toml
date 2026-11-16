@@ -14,7 +14,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-adblock = { version = "0.13.5", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
+adblock = { version = "0.13.5", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling", "content-blocking"] }
 quick-xml = "0.42"
 tauri = { version = "2", features = ["unstable", "macos-private-api"] }
 tauri-plugin-dialog = "2"
@@ -48,7 +48,9 @@ libloading = "0.8"
 gtk = "0.18"
 javascriptcore-rs = "1.1"
 cairo-rs = { version = "0.18", features = ["png"] }
-webkit2gtk = { version = "2.0", features = ["v2_22"] }
+webkit2gtk = { version = "2.0", features = ["v2_24"] }
+soup3 = "0.5"
+webkit2gtk-sys = { version = "2.0", features = ["v2_24"] }
 
 [dev-dependencies]
 libloading = "0.8"

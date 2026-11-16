@@ -462,6 +462,12 @@ pub fn run() {
             );
             let lists = std::sync::Arc::new(lists);
             app.manage(lists.clone());
+            #[cfg(target_os = "linux")]
+            {
+                let handle = app.handle().clone();
+                lists.set_on_update(move || privacy::content_filter_linux::refresh(&handle));
+                privacy::content_filter_linux::refresh(app.handle());
+            }
             spawn_content_webview(app.handle())?;
             if !cfg!(test) && app.config().identifier != "org.spark.browser.native-tests" {
                 lists.start_updates();

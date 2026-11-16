@@ -91,6 +91,12 @@ impl Snapshots {
 pub struct FilterLists {
     engine: RwLock<Engine>,
     cache: PathBuf,
+    /// The lists the engine was built from, kept to derive the WebKit content rules.
+    #[cfg(target_os = "linux")]
+    lists: RwLock<Vec<String>>,
+    /// Called after an update replaces the engine.
+    #[cfg(target_os = "linux")]
+    on_update: std::sync::OnceLock<Box<dyn Fn() + Send + Sync>>,
 }
 
 impl FilterLists {
@@ -102,10 +108,49 @@ impl FilterLists {
             .and_then(|data| serde_json::from_slice::<Snapshots>(&data).ok())
             .filter(|s| s.validate().is_ok());
         let snapshots = saved.unwrap_or_else(Snapshots::bundled);
+        #[cfg(target_os = "linux")]
+        let lists = RwLock::new(snapshots.lists.to_vec());
         Self {
             engine: RwLock::new(snapshots.compile()),
             cache,
+            #[cfg(target_os = "linux")]
+            lists,
+            #[cfg(target_os = "linux")]
+            on_update: std::sync::OnceLock::new(),
         }
+    }
+    /// Runs `hook` after every successful list update.
+    #[cfg(target_os = "linux")]
+    pub fn set_on_update(&self, hook: impl Fn() + Send + Sync + 'static) {
+        let _ = self.on_update.set(Box::new(hook));
+    }
+    /// The current network rules in the JSON format of WebKit content rule lists.
+    #[cfg(target_os = "linux")]
+    pub fn content_blocking_json(&self) -> Option<String> {
+        let lists = self.lists.read().ok()?.clone();
+        let mut set = FilterSet::new(true);
+        for list in lists {
+            set.add_filter_list(
+                list,
+                ParseOptions {
+                    rule_types: RuleTypes::NetworkOnly,
+                    ..Default::default()
+                },
+            );
+        }
+        let (mut rules, _) = set.into_content_blocking().ok()?;
+        // WebKit rejects lists above 150000 rules; exceptions stay, they must come last.
+        const LIMIT: usize = 149_000;
+        if rules.len() > LIMIT {
+            use adblock::content_blocking::CbType;
+            let (exceptions, mut others): (Vec<_>, Vec<_>) = rules
+                .into_iter()
+                .partition(|rule| rule.action.typ == CbType::IgnorePreviousRules);
+            others.truncate(LIMIT.saturating_sub(exceptions.len()));
+            others.extend(exceptions);
+            rules = others;
+        }
+        serde_json::to_string(&rules).ok()
     }
     pub fn blocks(&self, url: &str, source: &str, kind: &str, method: &str) -> bool {
         let Ok(request) = Request::new(url, source, kind, method) else {
@@ -117,6 +162,8 @@ impl FilterLists {
     }
     fn install(&self, snapshots: Snapshots) -> Result<(), String> {
         snapshots.validate()?;
+        #[cfg(target_os = "linux")]
+        let lists = snapshots.lists.to_vec();
         let parent = self.cache.parent().ok_or("Invalid cache path")?;
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         let mut file = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
@@ -126,6 +173,15 @@ impl FilterLists {
         file.as_file().sync_all().map_err(|e| e.to_string())?;
         file.persist(&self.cache).map_err(|e| e.to_string())?;
         *self.engine.write().map_err(|e| e.to_string())? = engine;
+        #[cfg(target_os = "linux")]
+        {
+            if let Ok(mut current) = self.lists.write() {
+                *current = lists;
+            }
+            if let Some(hook) = self.on_update.get() {
+                hook();
+            }
+        }
         Ok(())
     }
     fn refresh(&self) -> Result<(), String> {

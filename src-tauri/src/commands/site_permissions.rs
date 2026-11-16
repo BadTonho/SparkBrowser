@@ -6,7 +6,11 @@ pub async fn get_site_permissions(app: AppHandle) -> PermissionSnapshot {
     {
         crate::site_permissions::profile::snapshot(&app).await
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::site_permissions::linux::snapshot(&app).await
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = app;
         PermissionSnapshot {
@@ -28,7 +32,11 @@ pub async fn set_site_permission(
     {
         crate::site_permissions::profile::set(&app, origin, kind, state).await
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::site_permissions::linux::set(&app, origin, kind, state).await
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = (app, origin, kind, state);
         Err("Site permission management is unavailable on this platform".into())
@@ -44,7 +52,11 @@ pub async fn respond_site_permission(
     {
         crate::site_permissions::requests::respond(&app, id, decision).await
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::site_permissions::linux::respond(&app, id, decision).await
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = (app, id, decision);
         Err("Site permission management is unavailable on this platform".into())

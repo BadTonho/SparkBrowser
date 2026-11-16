@@ -1,4 +1,4 @@
-# Site permissions on Windows
+# Site permissions on Windows and Linux
 
 Click the address bar's **Site permissions** indicator to manage camera, microphone, location and notifications for the focused page's origin. **Settings → Performance & Privacy → Site permissions** lists remembered decisions. Origins include scheme, host and port; rules are shared across workspaces. Ask removes a saved rule, Allow permits future requests and Block denies them. Permission rules live in WebView2's native profile, not a separate database.
 
@@ -9,5 +9,7 @@ For iframe requests, the dialog also displays the native frame origin. WebView2 
 New requests show a browser dialog with the requesting origin and, for embedded content, the containing origin. Choose Allow once, Always allow or Block; the checkbox remembers blocking. Escape blocks only the current request. Requests are processed one at a time with at most 16 pending; overflow is denied. Navigation, closing/hibernating the view or a 60-second timeout cancels pending requests. Old request IDs cannot grant permissions to replacement documents or views. Other permission types keep their engine behavior.
 
 Handlers are installed before external navigation. COM request objects remain on the UI thread; only request metadata reaches the local shell. One-time decisions are not saved to the profile. Changing a policy affects new requests and does not stop existing media capture; the current-site panel offers reload and asks for confirmation when detected forms/media/downloads are present. Operating-system permissions and device availability still apply.
+
+On Linux the engine keeps no permission profile, so Spark stores the remembered choices in its own database (`site_permissions` table) and answers WebKitGTK's `permission-request` itself: a saved Allow or Block is applied without a dialog, and anything else shows the same dialog and timeout as on Windows. A request for camera and microphone together asks once and the answer covers both. Screen capture and other request types are denied, and WebKit does not report which frame asked, so the dialog names the page origin.
 
 Controls are unavailable on other platforms, in browser preview or when the required WebView2 APIs are absent. Native tests use an isolated application identifier, controlled loopback pages and Chromium's fake media device flag. See [native tests](../contributing/native-tests.md).

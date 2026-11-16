@@ -11,6 +11,7 @@ pub mod saved_sessions_repo;
 pub mod session_repo;
 pub mod session_windows_repo;
 pub mod site_icons_repo;
+pub mod site_permissions_repo;
 pub mod site_search_repo;
 pub mod split_repo;
 pub mod tab_usage_repo;

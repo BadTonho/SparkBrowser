@@ -11,7 +11,13 @@ O Spark roda no Windows (WebView2) e no Linux (WebKitGTK por meio do `webkit2gtk
 | Barra de endereço e voltar/avançar (inclusive navegação SPA) | Eventos de origem e histórico do WebView2 | `notify::uri`, lista de histórico e eventos de carregamento do WebKitGTK |
 | Foco do painel no split view | WebView2 `GotFocus` | GTK `focus-in-event` |
 | Mudo da aba e indicador de áudio | WebView2 `IsMuted` / `IsDocumentPlayingAudio` | WebKitGTK `is-muted` / `is-playing-audio` |
-| Zoom por site | Zoom da página e rastreamento nativo de mudanças | Zoom aplicado na navegação; mudanças nativas por pinça ou Ctrl+roda não são gravadas |
+| Zoom por site | Zoom da página e rastreamento nativo de mudanças | Zoom salvo aplicado quando a página é confirmada; Ctrl+roda muda o zoom e o grava (`zoom/linux.rs`) |
+| Ícones dos sites (favicons) | WebView2 `FaviconChanged` / `GetFavicon` | WebKitGTK `notify::favicon` com o banco de favicons ativo por perfil; gravado como um PNG pequeno (`window/favicon/linux.rs`) |
+| Bloqueio de rede (escudo) | Manipulador de requisições do WebView2 | Listas de filtros compiladas em uma lista de regras de conteúdo do WebKit por página (`privacy/content_filter_linux.rs`) |
+| Permissões de site (câmera, microfone, localização, notificações) | Lembradas no perfil do WebView2 | `permission-request` do WebKitGTK; escolhas gravadas no banco do perfil (`site_permissions/linux.rs`) |
+| Progresso e cancelamento de downloads | Operações de download do WebView2 | Objeto de download do WebKitGTK acompanhado a partir do evento de download do motor (`downloads/native_linux.rs`) |
+| Credenciais e cookies do widget do Gmail | Gerenciador de Credenciais do Windows, gerenciador de cookies do WebView2 | Secret Service por `secret-tool`, gerenciador de cookies do WebKitGTK |
+| Memória da aba | Lista de quadros por processo do WebView2 | Memória residente dos processos filhos `WebKitWebProcess`, dividida entre as abas residentes |
 | Volume da aba (0-200%) | Chromium DevTools Protocol e captura de stream para amplificação | Script da página por um manipulador de mensagens do WebKit; atenuação pelo volume do elemento, amplificação por WebAudio |
 | Player flutuante Picture-in-Picture | Stream capturado do vídeo, imagem original oculta | Quadros copiados para um canvas no popup; a origem continua visível |
 
@@ -25,6 +31,15 @@ O WebKitGTK não tem `HTMLMediaElement.captureStream()` e, em builds comuns, nã
 - **Eco do motor:** o WebKitGTK informa o volume lembrado do stream de áudio como `volumechange`. O controlador ignora essas mudanças, a menos que o usuário tenha interagido com a página, para que o volume da aba nunca vire o volume próprio da página.
 
 A URL do shell nos builds de release é `tauri://localhost`. Esquemas personalizados têm caminho vazio e origem opaca em `url::Url`, então as verificações do shell comparam esquema, host e porta em vez de `Url::origin`.
+
+### Diferenças que continuam no Linux
+
+- **Contadores do escudo:** o WebKit aplica as regras de conteúdo sem informar cada requisição bloqueada, então o contador só conta navegações bloqueadas. As regras são ligadas à página quando ela começa a carregar e só nas páginas que o escudo protege; uma exceção de site vale a partir do próximo carregamento. A limpeza de parâmetros de rastreamento em `GET` e o cabeçalho `Sec-GPC` exigem reescrever a requisição e não estão disponíveis.
+- **Downloads:** o WebKitGTK não pausa nem retoma uma transferência, então essas ações ficam ocultas; cancelar e o progresso funcionam.
+- **Permissões:** captura de tela e outros tipos de pedido são negados. O WebKit não informa o quadro que pediu, então o diálogo mostra a origem da página.
+- **Atualização automática:** só no Windows. No Linux a instalação vem do gerenciador de pacotes (deb, rpm) ou de um novo AppImage.
+- **Widget de localização:** indisponível; o WebKitGTK não tem API de localização do sistema sem o GeoClue.
+- **Aparência da janela:** Mica/Acrylic não têm equivalente no Linux, e o GTK registra `gtk_window_set_titlebar() called on a realized window`, o que é inofensivo.
 
 ## Requisitos
 

@@ -85,6 +85,8 @@ pub fn handler(
                     let path = files::owned_partial(&manager.record(&task.id)?)?;
                     *destination = path.clone();
                     manager.native_capability(&app, &task.id, false, false);
+                    #[cfg(target_os = "linux")]
+                    super::native_linux::expect(url.as_str(), &task.id);
                     pending.lock().map_err(|e| e.to_string())?.push(Pending {
                         id: task.id,
                         url: url.to_string(),
@@ -123,9 +125,21 @@ pub fn handler(
                             });
                         }
                     } else {
+                        #[cfg(target_os = "linux")]
+                        let cancelled = super::native_linux::take_cancelled(&item.id);
+                        #[cfg(not(target_os = "linux"))]
+                        let cancelled = false;
+                        if cancelled {
+                            let _ = std::fs::remove_file(&item.path);
+                        }
                         let _ = manager.update_saved(&app, &item.id, |t| {
-                            t.status = "Interrupted".into();
-                            t.error = Some("downloads.native_unavailable".into());
+                            if cancelled {
+                                t.status = "Cancelled".into();
+                                t.error = None;
+                            } else {
+                                t.status = "Interrupted".into();
+                                t.error = Some("downloads.native_unavailable".into());
+                            }
                         });
                     }
                 }

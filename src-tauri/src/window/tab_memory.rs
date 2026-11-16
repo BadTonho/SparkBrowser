@@ -104,7 +104,21 @@ pub fn current_webview_source(view: &tauri::Webview) -> Option<String> {
         .flatten()
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
+pub fn current_webview_source(view: &tauri::Webview) -> Option<String> {
+    use webkit2gtk::WebViewExt;
+    let (tx, rx) = std::sync::mpsc::channel();
+    view.with_webview(move |platform| {
+        let _ = tx.send(platform.inner().uri().map(|uri| uri.to_string()));
+    })
+    .ok()?;
+    rx.recv_timeout(std::time::Duration::from_millis(150))
+        .ok()
+        .flatten()
+        .filter(|source| !source.is_empty())
+}
+
+#[cfg(not(any(windows, target_os = "linux")))]
 pub fn current_webview_source(_view: &tauri::Webview) -> Option<String> {
     None
 }
@@ -235,7 +249,53 @@ pub async fn measure_webview_memory(
         .ok()?
 }
 
-#[cfg(not(windows))]
+/// WebKitGTK does not say which process renders a page, and pages share its web processes, so the
+/// resident set of the engine's web processes is split between the resident tabs.
+#[cfg(target_os = "linux")]
+pub async fn measure_webview_memory(
+    _view: &tauri::Webview,
+    _target_source: String,
+    resident_sources: Vec<String>,
+) -> Option<u64> {
+    let total = tokio::task::spawn_blocking(web_process_resident_bytes)
+        .await
+        .ok()??;
+    Some(total / resident_sources.len().max(1) as u64)
+}
+
+/// The resident memory of this process's `WebKitWebProcess` children, read from /proc.
+#[cfg(target_os = "linux")]
+fn web_process_resident_bytes() -> Option<u64> {
+    let own = std::process::id().to_string();
+    let mut total = 0u64;
+    let mut found = false;
+    for entry in std::fs::read_dir("/proc").ok()?.flatten() {
+        let name = entry.file_name();
+        let Some(pid) = name.to_str().filter(|n| n.bytes().all(|b| b.is_ascii_digit())) else {
+            continue;
+        };
+        let Ok(stat) = std::fs::read_to_string(format!("/proc/{pid}/stat")) else {
+            continue;
+        };
+        // "pid (comm) state ppid ..." - the name may contain spaces and parentheses.
+        let Some((head, rest)) = stat.rsplit_once(") ") else {
+            continue;
+        };
+        let parent = rest.split_whitespace().nth(1);
+        if parent != Some(own.as_str()) || !head.contains("WebKitWebProces") {
+            continue;
+        }
+        let Ok(statm) = std::fs::read_to_string(format!("/proc/{pid}/statm")) else {
+            continue;
+        };
+        let resident: u64 = statm.split_whitespace().nth(1)?.parse().ok()?;
+        total += resident * 4096;
+        found = true;
+    }
+    found.then_some(total)
+}
+
+#[cfg(not(any(windows, target_os = "linux")))]
 pub async fn measure_webview_memory(
     _view: &tauri::Webview,
     _target_source: String,
