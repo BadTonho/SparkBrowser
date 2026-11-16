@@ -122,7 +122,7 @@ pub fn new_window(
         Ok(window) => {
             if let Some(view) = app.get_webview(window.label()) {
                 if crate::security::harden(app, &view, true).is_err() {
-                    let _ = window.destroy();
+                    crate::error_log::ignored(window.destroy());
                     return NewWindowResponse::Deny;
                 }
             }
@@ -142,7 +142,9 @@ pub fn new_window(
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     if let Some(window) = a.get_webview_window(&label(&id)) {
-                        let _ = window.eval("window.__sparkPipRequestClose?.();");
+                        crate::error_log::ignored(
+                            window.eval("window.__sparkPipRequestClose?.();"),
+                        );
                     }
                 }
             });
@@ -157,7 +159,7 @@ pub async fn set_shadow(app: &AppHandle, enabled: bool) -> Result<bool, String> 
     let (send, receive) = tokio::sync::oneshot::channel();
     let a = app.clone();
     app.run_on_main_thread(move || {
-        let _ = send.send(apply_shadow(&a, enabled));
+        crate::error_log::ignored(send.send(apply_shadow(&a, enabled)));
     })
     .map_err(|_| "media.error")?;
     receive.await.map_err(|_| "media.error")?
@@ -190,8 +192,8 @@ fn apply_shadow(app: &AppHandle, enabled: bool) -> Result<bool, String> {
                             .state::<MediaService>()
                             .pip_window_shadow
                             .load(std::sync::atomic::Ordering::Relaxed);
-                        let _ = window.set_shadow(previous);
-                        let _ = window.set_size(size);
+                        crate::error_log::ignored(window.set_shadow(previous));
+                        crate::error_log::ignored(window.set_size(size));
                         return Err("media.error".into());
                     }
                 }
@@ -222,7 +224,7 @@ fn remember_size(window: &tauri::WebviewWindow, id: &str, size: tauri::PhysicalS
         restore
     };
     if let Some(size) = restore {
-        let _ = window.set_size(size);
+        crate::error_log::ignored(window.set_size(size));
     }
 }
 
@@ -238,12 +240,12 @@ fn emit(app: &AppHandle, id: &str, action: &str, value: Option<u16>) {
     if !current(app, &webview_label_for_tab(&s.tab), &s.token) {
         return;
     }
-    let _ = crate::security::emit_shell_for_tab(
+    crate::error_log::ignored(crate::security::emit_shell_for_tab(
         app,
         &s.tab,
         "media-pip-action",
         json!({"session":s.id,"sequence":s.sequence,"tabId":s.tab,"documentKey":s.document_key,"action":action,"value":value}),
-    );
+    ));
 }
 
 fn navigation(app: &AppHandle, id: &str, url: &Url) {
@@ -299,9 +301,9 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
         if let Some(window) = app.get_webview_window(&label(id)) {
             // WebView2 attaches the supplied popup after window construction.
             // Reattach Tauri's frameless resize region above that content view.
-            let _ = window.set_resizable(false);
-            let _ = window.set_resizable(true);
-            let _ = window.show();
+            crate::error_log::ignored(window.set_resizable(false));
+            crate::error_log::ignored(window.set_resizable(true));
+            crate::error_log::ignored(window.show());
         }
         let session = SESSION.lock().ok().and_then(|s| s.clone());
         if let Some(s) = session {
@@ -310,10 +312,10 @@ fn navigation(app: &AppHandle, id: &str, url: &Url) {
     } else if matches!(action, "minimize" | "drag") {
         if let Some(window) = app.get_webview_window(&label(id)) {
             if action == "minimize" {
-                let _ = window.minimize();
+                crate::error_log::ignored(window.minimize());
             } else {
-                let _ = window.start_dragging();
-                let _ = window.eval("window.__sparkPipDragFinished?.();");
+                crate::error_log::ignored(window.start_dragging());
+                crate::error_log::ignored(window.eval("window.__sparkPipDragFinished?.();"));
             }
         }
     } else {
@@ -330,7 +332,7 @@ pub fn sync(app: &AppHandle, tab: &TabMediaState) {
     if let Some(s) = session {
         if let Some(window) = app.get_webview_window(&label(&s.id)) {
             let payload = json!({"session":s.id,"sequence":s.acknowledged,"volume":tab.applied_volume,"disabled":tab.volume_status=="unavailable","muted":tab.muted});
-            let _ = window.eval(format!("window.__sparkPipState?.({payload});"));
+            crate::error_log::ignored(window.eval(format!("window.__sparkPipState?.({payload});")));
         }
     }
 }
@@ -381,7 +383,7 @@ pub fn discard(app: &AppHandle, id: &str) {
     };
     if let Some(s) = s {
         if let Some(window) = app.get_webview_window(&label(&s.id)) {
-            let _ = window.destroy();
+            crate::error_log::ignored(window.destroy());
         }
     }
 }

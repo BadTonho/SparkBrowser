@@ -105,7 +105,7 @@ fn attach(context: Context, frame: ICoreWebView2Frame) -> Result<(), String> {
             let child = FrameChildFrameCreatedEventHandler::create(Box::new(move |_, args| {
                 if let Some(args) = args {
                     if let Ok(frame) = args.Frame() {
-                        let _ = attach(context.clone(), frame);
+                        crate::error_log::ignored(attach(context.clone(), frame));
                     }
                 }
                 Ok(())
@@ -135,7 +135,7 @@ pub fn install(
     let handler = FrameCreatedEventHandler::create(Box::new(move |_, args| {
         if let Some(args) = args {
             if let Ok(frame) = unsafe { args.Frame() } {
-                let _ = attach(context.clone(), frame);
+                crate::error_log::ignored(attach(context.clone(), frame));
             }
         }
         Ok(())

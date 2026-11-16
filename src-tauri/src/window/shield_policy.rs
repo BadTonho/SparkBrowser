@@ -53,7 +53,7 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
                         let result = status.map(|()| id).map_err(|e| e.to_string());
                         if let Ok(mut send) = send.lock() {
                             if let Some(send) = send.take() {
-                                let _ = send.send(result);
+                                crate::error_log::ignored(send.send(result));
                             }
                         }
                         Ok(())
@@ -71,7 +71,7 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
             if let Err(error) = result {
                 if let Ok(mut send) = initial_send.lock() {
                     if let Some(send) = send.take() {
-                        let _ = send.send(Err(error.to_string()));
+                        crate::error_log::ignored(send.send(Err(error.to_string())));
                     }
                 }
             }
@@ -94,7 +94,7 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
                     })
                 }
                 .map_err(|e| e.to_string());
-                let _ = send.send(result);
+                crate::error_log::ignored(send.send(result));
             })
             .map_err(|e| e.to_string())?;
             receive.await.map_err(|e| e.to_string())??;

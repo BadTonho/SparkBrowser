@@ -150,11 +150,11 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
         })();
         if let Err(error) = result {
             eprintln!("Could not install WebView request filtering: {error}");
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &error_app,
                 "browser-error",
                 "Network request filtering could not be installed for a page",
-            );
+            ));
         }
     })
     .map_err(|error| error.to_string())

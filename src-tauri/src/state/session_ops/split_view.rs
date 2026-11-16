@@ -31,7 +31,12 @@ pub async fn move_tab_in_split(
         .into_iter()
         .find(|tab| tab.is_active && tab.window_id == window_id)
         .ok_or("Active tab not found")?;
-    let _ = crate::security::emit_shell_to(&app, &window_id, "content-url-changed", active.url);
+    crate::error_log::ignored(crate::security::emit_shell_to(
+        &app,
+        &window_id,
+        "content-url-changed",
+        active.url,
+    ));
     Ok(snapshot)
 }
 
@@ -55,11 +60,11 @@ pub async fn dock_tab_to_split(
     };
     let url = result.inspect_err(|_| {
         if let Err(error) = crate::window::tab_drag_preview::cancel(&app, &state) {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 format!("Could not restore split geometry: {error}"),
-            );
+            ));
         }
     })?;
     crate::window::tab_drag_preview::clear(&app)?;
@@ -76,11 +81,16 @@ pub async fn dock_tab_to_split(
         "privacy-stats-updated",
         state.snapshot_privacy_stats(),
     );
-    let _ = crate::security::emit_shell_to(&app, &window_id, "content-url-changed", url);
+    crate::error_log::ignored(crate::security::emit_shell_to(
+        &app,
+        &window_id,
+        "content-url-changed",
+        url,
+    ));
     if let Err(error) =
         crate::window::webview_manager::focus_active_content_webview(&app, &window_id)
     {
-        let _ = crate::security::emit_shell(&app, "browser-error", error);
+        crate::error_log::ignored(crate::security::emit_shell(&app, "browser-error", error));
     }
     Ok(snapshot)
 }
@@ -196,11 +206,11 @@ pub async fn commit_split_ratio(
     state.clear_split_preview(&key)?;
     if let Err(error) = result {
         if let Err(resize_error) = crate::window::viewport::resize_visible_webviews(&app, &state) {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 format!("Could not restore split geometry: {resize_error}"),
-            );
+            ));
         }
         return Err(error);
     }

@@ -57,7 +57,7 @@ pub fn install_staged_at_startup(app: &tauri::AppHandle, conn: &rusqlite::Connec
 
 pub fn initialize_crypto() {
     #[cfg(windows)]
-    let _ = rustls::crypto::ring::default_provider().install_default();
+    crate::error_log::ignored(rustls::crypto::ring::default_provider().install_default());
 }
 
 pub(crate) fn validate_restart(

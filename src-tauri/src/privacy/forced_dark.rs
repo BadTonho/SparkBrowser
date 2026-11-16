@@ -42,5 +42,9 @@ pub fn apply(app: &AppHandle, enabled: bool) -> Result<(), String> {
 }
 
 pub fn loaded(view: &tauri::Webview, state: &BrowserState, token: &str) {
-    let _ = apply_view(view, token, state.policies().forced_dark_enabled());
+    crate::error_log::ignored(apply_view(
+        view,
+        token,
+        state.policies().forced_dark_enabled(),
+    ));
 }

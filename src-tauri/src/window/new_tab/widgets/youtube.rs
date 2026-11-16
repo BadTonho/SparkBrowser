@@ -130,7 +130,9 @@ fn thumbnail(video_id: &str) -> Option<String> {
 /// Asks the tab to report its playback position; the answer arrives as a media signal.
 fn probe(app: &AppHandle, tab_id: &str) {
     if let Some(view) = app.get_webview(&crate::state::tab_model::webview_label_for_tab(tab_id)) {
-        let _ = view.eval("window.dispatchEvent(new CustomEvent('spark-media-probe'));");
+        crate::error_log::ignored(
+            view.eval("window.dispatchEvent(new CustomEvent('spark-media-probe'));"),
+        );
     }
 }
 /// Called while a new tab is visible: fetches a missing thumbnail and pushes changes to the pages.
@@ -177,7 +179,11 @@ fn update(app: &AppHandle, ask: bool) {
         inner.last = "off".into();
         drop(inner);
         if changed {
-            let _ = crate::security::emit_shell(app, "youtube-now-playing", None::<NowPlaying>);
+            crate::error_log::ignored(crate::security::emit_shell(
+                app,
+                "youtube-now-playing",
+                None::<NowPlaying>,
+            ));
             broadcast(app);
         }
         return;

@@ -43,7 +43,7 @@ fn with_database<T>(
 
 fn generate_extension_id() -> String {
     let mut bytes = [0u8; 16];
-    let _ = getrandom::fill(&mut bytes);
+    crate::error_log::ignored(getrandom::fill(&mut bytes));
     format!(
         "ext-{}",
         bytes.iter().map(|b| format!("{b:02x}")).collect::<String>()
@@ -79,7 +79,7 @@ pub async fn load_unpacked_extension(
             let temp_id = generate_extension_id();
             let target = extensions_base.join(&temp_id);
             if target.exists() {
-                let _ = std::fs::remove_dir_all(&target);
+                crate::error_log::ignored(std::fs::remove_dir_all(&target));
             }
             storage::copy_dir_all(&source_dir, &target)
                 .map_err(|e| format!("Could not create persistent copy of extension: {}", e))?;
@@ -139,7 +139,7 @@ pub async fn install_from_webstore(
     let dest_dir = io::run(move || {
         let dest_dir = storage::extensions_dir(&worker_app)?.join(&id);
         if dest_dir.exists() {
-            let _ = std::fs::remove_dir_all(&dest_dir);
+            crate::error_log::ignored(std::fs::remove_dir_all(&dest_dir));
         }
         std::fs::create_dir_all(&dest_dir)
             .map_err(|e| format!("Failed to create extension directory: {}", e))?;
@@ -204,7 +204,9 @@ pub async fn toggle_extension(app: &AppHandle, id: &str, enabled: bool) -> Resul
         with_database(app, |conn| extensions_repo::get(conn, id))?.ok_or("Extension not found")?;
     platform::set_browser_extension_enabled(app, id.to_string(), enabled).await?;
     if let Err(error) = with_database(app, |conn| extensions_repo::set_enabled(conn, id, enabled)) {
-        let _ = platform::set_browser_extension_enabled(app, id.to_string(), record.enabled).await;
+        crate::error_log::ignored(
+            platform::set_browser_extension_enabled(app, id.to_string(), record.enabled).await,
+        );
         return Err(error);
     }
     Ok(())

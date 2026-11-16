@@ -7,7 +7,10 @@ pub fn apply_native_vibrancy(_window: &WebviewWindow) {
     {
         // Prefer Mica on Windows 11; fall back to dark Acrylic if Mica is unavailable
         if window_vibrancy::apply_mica(_window, Some(true)).is_err() {
-            let _ = window_vibrancy::apply_acrylic(_window, Some((14, 16, 24, 210)));
+            crate::error_log::ignored(window_vibrancy::apply_acrylic(
+                _window,
+                Some((14, 16, 24, 210)),
+            ));
         }
     }
 

@@ -119,7 +119,7 @@ fn create(
         )
         .map_err(|error| error.to_string())?;
     if let Err(error) = crate::security::harden(app, &view, false) {
-        let _ = view.close();
+        crate::error_log::ignored(view.close());
         return Err(error);
     }
     Ok(view)

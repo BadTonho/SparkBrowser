@@ -33,7 +33,7 @@ fn download_in_background(app: &AppHandle, snapshot: &UpdateState) {
         if let Some(update) = &snapshot.update {
             let (app, version) = (app.clone(), update.version.clone());
             tauri::async_runtime::spawn(async move {
-                let _ = crate::updates::download(&app, &version).await;
+                crate::error_log::ignored(crate::updates::download(&app, &version).await);
             });
         }
     }

@@ -278,12 +278,16 @@ impl DownloadManager {
             }
             live.record.task.clone()
         };
-        let _ = crate::security::emit_shell(app, "download-task-updated", &task);
+        crate::error_log::ignored(crate::security::emit_shell(
+            app,
+            "download-task-updated",
+            &task,
+        ));
         self.refresh_protection(app, &self.record(id)?.tab_id);
         Ok(task)
     }
     pub fn update(&self, app: &AppHandle, id: &str, f: impl FnOnce(&mut DownloadTask)) {
-        let _ = self.edit(app, id, false, |r| f(&mut r.task));
+        crate::error_log::ignored(self.edit(app, id, false, |r| f(&mut r.task)));
     }
     pub fn update_saved(
         &self,
@@ -405,8 +409,12 @@ impl DownloadManager {
             v.record = record.clone();
         }
         self.refresh_protection(app, &record.tab_id);
-        let _ = crate::security::emit_shell(app, "download-task-updated", record.task);
-        let _ = crate::security::emit_shell(app, "downloads-updated", ());
+        crate::error_log::ignored(crate::security::emit_shell(
+            app,
+            "download-task-updated",
+            record.task,
+        ));
+        crate::error_log::ignored(crate::security::emit_shell(app, "downloads-updated", ()));
         Ok(())
     }
     pub fn shutdown(&self) {

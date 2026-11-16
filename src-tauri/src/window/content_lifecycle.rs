@@ -221,13 +221,13 @@ pub(crate) fn sync_webviews_after_selection(
             ))
             .unwrap_or(bounds);
         if workspace_switcher_open {
-            let _ = webview.set_bounds(Rect {
+            crate::error_log::ignored(webview.set_bounds(Rect {
                 position: LogicalPosition::new(bounds.x, bounds.y).into(),
                 size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0)).into(),
-            });
-            let _ = crate::window::show_overlay_webview(&webview);
+            }));
+            crate::error_log::ignored(crate::window::show_overlay_webview(&webview));
         } else {
-            let _ = webview.hide();
+            crate::error_log::ignored(webview.hide());
         }
     }
 
@@ -241,14 +241,14 @@ pub(crate) fn sync_webviews_after_selection(
                     .inner_size()
                     .map(|size| size.to_logical::<f64>(scale_factor))
                     .unwrap_or_else(|_| LogicalSize::new(1200.0, 800.0));
-                let _ = webview.set_bounds(Rect {
+                crate::error_log::ignored(webview.set_bounds(Rect {
                     position: LogicalPosition::new(0.0, 0.0).into(),
                     size: logical_size.into(),
-                });
+                }));
             }
-            let _ = crate::window::show_overlay_webview(&webview);
+            crate::error_log::ignored(crate::window::show_overlay_webview(&webview));
         } else {
-            let _ = webview.hide();
+            crate::error_log::ignored(webview.hide());
         }
     }
 

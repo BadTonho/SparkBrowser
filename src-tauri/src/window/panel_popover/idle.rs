@@ -21,7 +21,9 @@ pub(super) fn schedule<P: Panel>(app: &AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(RETAIN_AFTER_USE).await;
-        let _ = tauri::async_runtime::spawn_blocking(move || release::<P>(&app, generation)).await;
+        crate::error_log::ignored(
+            tauri::async_runtime::spawn_blocking(move || release::<P>(&app, generation)).await,
+        );
     });
 }
 
@@ -55,10 +57,10 @@ fn release<P: Panel>(app: &AppHandle, generation: u64) {
                     crate::window::linux_layout::remove_child(&main_app, P::LABEL);
                 }
             }
-            let _ = finished.send(());
+            crate::error_log::ignored(finished.send(()));
         })
         .is_ok()
     {
-        let _ = wait.recv();
+        crate::error_log::ignored(wait.recv());
     }
 }

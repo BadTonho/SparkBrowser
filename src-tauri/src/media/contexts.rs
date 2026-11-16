@@ -32,7 +32,7 @@ pub async fn resource_counts(app: &AppHandle) -> Result<(usize, usize), String> 
             let views = views.borrow();
             (views.len(), views.values().map(|v| v.contexts.len()).sum())
         });
-        let _ = tx.send(counts);
+        crate::error_log::ignored(tx.send(counts));
     })
     .map_err(|e| e.to_string())?;
     tokio::time::timeout(std::time::Duration::from_secs(5), rx)
@@ -100,13 +100,13 @@ fn enable(core: &ICoreWebView2, session: &str) {
             json!({"autoAttach":true,"waitForDebuggerOnStart":false,"flatten":true,"filter":[{"type":"iframe","exclude":false},{"exclude":true}]}),
         ),
     ] {
-        let _ = call(
+        crate::error_log::ignored(call(
             core,
             session,
             method,
             &params,
             &CallDevToolsProtocolMethodCompletedHandler::create(Box::new(|_, _| Ok(()))),
-        );
+        ));
     }
 }
 pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<(), String> {
@@ -137,7 +137,7 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                 continue;
             };
             let (a, l, t) = (app.clone(), label.clone(), token.clone());
-            let _ = receiver.add_DevToolsProtocolEventReceived(
+            crate::error_log::ignored(receiver.add_DevToolsProtocolEventReceived(
                 &DevToolsProtocolEventReceivedEventHandler::create(Box::new(
                     move |sender, args| {
                         if !current(&a, &l, &t) {
@@ -292,7 +292,7 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                     },
                 )),
                 &mut 0,
-            );
+            ));
         }
         enable(&core, "");
     })

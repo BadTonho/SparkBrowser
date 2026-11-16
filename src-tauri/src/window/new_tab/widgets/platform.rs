@@ -141,7 +141,7 @@ pub async fn locate(app: &AppHandle) -> Result<(f64, f64), String> {
     use windows::Devices::Geolocation::{GeolocationAccessStatus, Geolocator};
     let (send, receive) = tokio::sync::oneshot::channel();
     app.run_on_main_thread(move || {
-        let _ = send.send(Geolocator::RequestAccessAsync());
+        crate::error_log::ignored(send.send(Geolocator::RequestAccessAsync()));
     })
     .map_err(|_| "location_error")?;
     let operation = receive

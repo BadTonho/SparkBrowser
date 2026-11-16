@@ -164,7 +164,7 @@ fn ensure_webview(app: &AppHandle, window_id: &str) -> Result<(), String> {
     view.with_webview(|platform| unsafe {
         if let Ok(core) = platform.controller().CoreWebView2() {
             if let Ok(settings) = core.Settings() {
-                let _ = settings.SetIsZoomControlEnabled(false);
+                crate::error_log::ignored(settings.SetIsZoomControlEnabled(false));
             }
         }
     })
@@ -224,14 +224,14 @@ pub fn dismiss(app: &AppHandle) {
     };
     inner.closed_session = inner.closed_session.max(session.id);
     drop(inner);
-    let _ = super::overlay_host::emit_to_host(
+    crate::error_log::ignored(super::overlay_host::emit_to_host(
         app,
         LABEL,
         "zoom-popover-action",
         action(&session, "dismiss", None, "context"),
-    );
+    ));
     if let Some(view) = app.get_webview(LABEL) {
-        let _ = view.hide();
+        crate::error_log::ignored(view.hide());
     }
 }
 
@@ -275,7 +275,9 @@ pub fn set(
         inner.session = None;
         drop(inner);
         if let Some(view) = app.get_webview(LABEL) {
-            let _ = view.eval("window.__sparkSetZoomPopover?.({visible:false});");
+            crate::error_log::ignored(
+                view.eval("window.__sparkSetZoomPopover?.({visible:false});"),
+            );
             view.hide().map_err(|e| e.to_string())?;
         }
         if restore_focus {

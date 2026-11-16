@@ -47,12 +47,12 @@ impl Source {
             }
         }
         if let Some(view) = self.app.get_webview(&self.label) {
-            let _ = view.eval(format!(
+            crate::error_log::ignored(view.eval(format!(
                 "window.__sparkWidgetsReply?.({}, {}, {});",
                 serde_json::to_string(&self.document).unwrap(),
                 self.request,
                 payload
-            ));
+            )));
         }
     }
 }

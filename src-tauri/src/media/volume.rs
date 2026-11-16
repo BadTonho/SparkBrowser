@@ -190,15 +190,17 @@ pub async fn set(
         };
         if result.is_err() || applied != value {
             for f in &frames {
-                let _ = super::protocol::evaluate(
-                    app,
-                    id,
-                    &token,
-                    &f.context,
-                    json!({"kind":"volume","document":f.document,"value":fallback}),
-                    false,
-                )
-                .await;
+                crate::error_log::ignored(
+                    super::protocol::evaluate(
+                        app,
+                        id,
+                        &token,
+                        &f.context,
+                        json!({"kind":"volume","document":f.document,"value":fallback}),
+                        false,
+                    )
+                    .await,
+                );
             }
         }
         result?;

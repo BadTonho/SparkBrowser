@@ -19,7 +19,7 @@ pub fn reuse(app: &AppHandle, label: &str, window_id: &str) -> bool {
     if view.window().label() == window_id {
         return true;
     }
-    let _ = view.close();
+    crate::error_log::ignored(view.close());
     #[cfg(target_os = "linux")]
     super::linux_layout::remove_child(app, label);
     false

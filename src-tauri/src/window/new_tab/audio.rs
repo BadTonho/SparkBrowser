@@ -34,11 +34,11 @@ impl Consumer {
         if let (Some(view), Ok(payload)) =
             (app.get_webview(&self.label), serde_json::to_string(frame))
         {
-            let _ = view.eval(format!(
+            crate::error_log::ignored(view.eval(format!(
                 "window.__sparkAudioFrame?.({},{});",
                 serde_json::to_string(&self.document).unwrap(),
                 payload
-            ));
+            )));
         }
     }
 }

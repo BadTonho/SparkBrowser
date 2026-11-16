@@ -114,11 +114,11 @@ pub async fn set_smart_screen(
             .await
             .is_err()
         {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 "Could not restore SmartScreen settings",
-            );
+            ));
         }
         return Err(error);
     }

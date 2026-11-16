@@ -16,7 +16,7 @@ fn set_owner(_app: &AppHandle, window_id: &str) {
 
 pub fn hide(app: &AppHandle) {
     if let Some(window) = app.get_window(LABEL) {
-        let _ = visibility(&window, None);
+        crate::error_log::ignored(visibility(&window, None));
     }
 }
 
@@ -76,7 +76,7 @@ pub fn paint(app: &AppHandle, window_id: &str, payload: &serde_json::Value) -> R
     // The preview is owned by the window it is drawn over; dragging in another window moves it.
     if let Some(existing) = app.get_window(LABEL) {
         if existing.is_visible().is_ok() && owner_of(app) != window_id {
-            let _ = existing.destroy();
+            crate::error_log::ignored(existing.destroy());
         }
     }
     set_owner(app, window_id);
@@ -124,14 +124,14 @@ pub fn paint(app: &AppHandle, window_id: &str, payload: &serde_json::Value) -> R
             LogicalPosition::new(0.0, 0.0),
             logical,
         ) {
-            let _ = window.destroy();
+            crate::error_log::ignored(window.destroy());
             return Err(error.to_string());
         }
         if let Some(view) = app.get_webview(LABEL) {
             crate::security::harden(app, &view, true)?;
         }
         if let Err(error) = window.set_ignore_cursor_events(true) {
-            let _ = window.destroy();
+            crate::error_log::ignored(window.destroy());
             return Err(error.to_string());
         }
         window

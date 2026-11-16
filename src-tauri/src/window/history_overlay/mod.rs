@@ -215,7 +215,7 @@ pub fn dismiss(app: &AppHandle) {
     if let Some(session) = inner.session.take() {
         inner.closed_session = inner.closed_session.max(session.id);
         if let Some(view) = app.get_webview(LABEL) {
-            let _ = view.hide();
+            crate::error_log::ignored(view.hide());
         }
     }
 }
@@ -257,9 +257,9 @@ pub fn set(
         inner.session = None;
         drop(inner);
         if let Some(view) = app.get_webview(LABEL) {
-            let _ = view.eval(format!(
+            crate::error_log::ignored(view.eval(format!(
                 "window.__sparkSetHistoryOverlay?.({{visible:false,sessionId:{session_id}}});"
-            ));
+            )));
             view.hide().map_err(|e| e.to_string())?;
         }
         super::content_focus::focus_active_content_webview(

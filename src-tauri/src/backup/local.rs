@@ -395,13 +395,15 @@ pub async fn create(
         code: failure_code(error),
     });
     // Bookkeeping must never replace the real outcome of the backup.
-    let _ = crate::database::executor::run(app.clone(), move |conn| match &failure {
-        Some(failure) => serde_json::to_string(failure)
-            .map_err(|e| e.to_string())
-            .and_then(|raw| prefs::store(conn, prefs::BACKUP_LOCAL_FAILURE_KEY, &raw)),
-        None => prefs::remove(conn, prefs::BACKUP_LOCAL_FAILURE_KEY),
-    })
-    .await;
+    crate::error_log::ignored(
+        crate::database::executor::run(app.clone(), move |conn| match &failure {
+            Some(failure) => serde_json::to_string(failure)
+                .map_err(|e| e.to_string())
+                .and_then(|raw| prefs::store(conn, prefs::BACKUP_LOCAL_FAILURE_KEY, &raw)),
+            None => prefs::remove(conn, prefs::BACKUP_LOCAL_FAILURE_KEY),
+        })
+        .await,
+    );
     result
 }
 

@@ -110,7 +110,7 @@ async fn capture_webview2(view: &tauri::Webview) -> Result<Vec<u8>, String> {
         let core = match result {
             Ok(core) => core,
             Err(error) => {
-                let _ = send.send(Err(error.to_string()));
+                crate::error_log::ignored(send.send(Err(error.to_string())));
                 return;
             }
         };
@@ -121,7 +121,7 @@ async fn capture_webview2(view: &tauri::Webview) -> Result<Vec<u8>, String> {
                 let data = json["data"].as_str().ok_or("capture_probe.no_image_data")?;
                 STANDARD.decode(data).map_err(|error| error.to_string())
             });
-            let _ = callback_send.send(output);
+            crate::error_log::ignored(callback_send.send(output));
             Ok(())
         }));
         let method: Vec<u16> = "Page.captureScreenshot".encode_utf16().chain(Some(0)).collect();
@@ -129,7 +129,7 @@ async fn capture_webview2(view: &tauri::Webview) -> Result<Vec<u8>, String> {
             .to_string().encode_utf16().chain(Some(0)).collect();
         let result = unsafe { core.CallDevToolsProtocolMethod(PCWSTR(method.as_ptr()), PCWSTR(params.as_ptr()), &handler) };
         if let Err(error) = result {
-            let _ = send.send(Err(error.to_string()));
+            crate::error_log::ignored(send.send(Err(error.to_string())));
         }
     }).map_err(|error| error.to_string())?;
 

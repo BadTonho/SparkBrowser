@@ -275,7 +275,11 @@ pub async fn import(
     *preview_guard = None;
     drop(preview_guard);
     *service.source.lock().map_err(|e| e.to_string())? = None;
-    let _ = crate::security::emit_shell(app, "tabs-updated", &result.snapshot);
+    crate::error_log::ignored(crate::security::emit_shell(
+        app,
+        "tabs-updated",
+        &result.snapshot,
+    ));
     Ok(result)
 }
 

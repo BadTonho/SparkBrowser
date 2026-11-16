@@ -68,7 +68,9 @@ pub(super) fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
                     watcher.borrow_mut().replace((environment, registration))
                 {
                     unsafe {
-                        let _ = previous.remove_NewBrowserVersionAvailable(token);
+                        crate::error_log::ignored(
+                            previous.remove_NewBrowserVersionAvailable(token),
+                        );
                     }
                 }
             });

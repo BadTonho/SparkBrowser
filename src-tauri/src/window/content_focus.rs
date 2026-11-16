@@ -56,8 +56,8 @@ pub fn focus_active_content_webview(app: &AppHandle, window_id: &str) -> Result<
                 app.get_webview(&webview_label_for_tab(&id)),
             ) {
                 if !window.is_minimized().unwrap_or(true) {
-                    let _ = window.set_focus();
-                    let _ = view.set_focus();
+                    crate::error_log::ignored(window.set_focus());
+                    crate::error_log::ignored(view.set_focus());
                 }
             }
         })

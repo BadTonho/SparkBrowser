@@ -49,7 +49,7 @@ pub fn read(dir: &Path) -> Option<(Staged, Vec<u8>)> {
 }
 
 pub fn clear(dir: &Path) {
-    let _ = std::fs::remove_dir_all(dir);
+    crate::error_log::ignored(std::fs::remove_dir_all(dir));
 }
 
 pub fn clear_for(app: &tauri::AppHandle) {
@@ -112,7 +112,7 @@ pub fn install_pending(
         .verify(&installer)
         .map_err(|_| "Staged update signature verification failed".to_string())?;
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.hide();
+        crate::error_log::ignored(window.hide());
     }
     update.install(&installer).map_err(|e| e.to_string())
 }

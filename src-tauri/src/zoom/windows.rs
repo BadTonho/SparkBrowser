@@ -26,7 +26,7 @@ pub fn apply(view: &tauri::Webview, url: &str, factor: f64) -> Result<(), String
             if core.Source(&mut source).is_ok()
                 && repo::origin(&CoTaskMemPWSTR::from(source).to_string()).ok() == expected
             {
-                let _ = controller.SetZoomFactor(factor);
+                crate::error_log::ignored(controller.SetZoomFactor(factor));
             }
         }
     })
@@ -73,7 +73,7 @@ pub fn install(
                                 let mut source = Default::default();
                                 core.Source(&mut source)?;
                                 let url = CoTaskMemPWSTR::from(source).to_string();
-                                let _ = super::apply(&a, &l, &url);
+                                crate::error_log::ignored(super::apply(&a, &l, &url));
                             }
                         }
                         Ok(())
@@ -97,7 +97,7 @@ pub fn install(
                                     let mut source = Default::default();
                                     core.Source(&mut source)?;
                                     let url = CoTaskMemPWSTR::from(source).to_string();
-                                    let _ = super::apply(&a, &l, &url);
+                                    crate::error_log::ignored(super::apply(&a, &l, &url));
                                     r.store(true, Ordering::Release);
                                 }
                             }
@@ -154,7 +154,9 @@ pub fn install(
                                             && repo::origin(&tab.url).ok().as_ref() == Some(&origin)
                                     })
                                 {
-                                    let _ = service.set(&a, repo::SiteZoom { origin, factor });
+                                    crate::error_log::ignored(
+                                        service.set(&a, repo::SiteZoom { origin, factor }),
+                                    );
                                 }
                             });
                         }
@@ -166,11 +168,11 @@ pub fn install(
             }
         })();
         if let Err(e) = result {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 format!("zoom.unavailable: {e}"),
-            );
+            ));
         }
     })
     .map_err(|e| e.to_string())

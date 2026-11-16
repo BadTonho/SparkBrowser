@@ -184,7 +184,11 @@ impl MediaService {
             }
             #[cfg(any(windows, target_os = "linux"))]
             let changed = inner.tabs.iter().find(|t| t.tab_id == id).unwrap().clone();
-            let _ = crate::security::emit_shell(app, "tab-media-state", inner.clone());
+            crate::error_log::ignored(crate::security::emit_shell(
+                app,
+                "tab-media-state",
+                inner.clone(),
+            ));
             drop(inner);
             #[cfg(any(windows, target_os = "linux"))]
             pip_window::sync(app, &changed);

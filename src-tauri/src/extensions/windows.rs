@@ -332,7 +332,9 @@ pub fn sync_new_webview(app: &AppHandle, view: &Webview) -> Result<(), String> {
                 let handler =
                     ProfileAddBrowserExtensionCompletedHandler::create(Box::new(|_, _| Ok(())));
                 unsafe {
-                    let _ = profile7.AddBrowserExtension(PCWSTR(wide.as_ptr()), &handler);
+                    crate::error_log::ignored(
+                        profile7.AddBrowserExtension(PCWSTR(wide.as_ptr()), &handler),
+                    );
                 }
             }
             Ok(())

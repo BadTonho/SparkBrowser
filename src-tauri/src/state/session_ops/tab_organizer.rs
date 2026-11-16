@@ -81,7 +81,7 @@ pub async fn close_tabs_reviewed(
         .filter(|tab| tab.is_ephemeral && closed.contains(&tab.id))
     {
         if let Err(error) = crate::window::webview_manager::close_tab_webview(&app, &tab.id) {
-            let _ = crate::security::emit_shell(&app, "browser-error", error);
+            crate::error_log::ignored(crate::security::emit_shell(&app, "browser-error", error));
         } else {
             crate::window::ephemeral::purge_ephemeral_tab_data(&app, &tab.id);
         }

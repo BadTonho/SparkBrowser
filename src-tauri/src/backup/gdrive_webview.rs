@@ -174,7 +174,7 @@ pub fn apply_bridge_navigation(runtime: &GDriveWebRuntime, nav_url: &Url) {
                         entry.chunks.concat()
                     };
                     if let Some(tx) = entry.sender.take() {
-                        let _ = tx.send(Ok(final_payload));
+                        crate::error_log::ignored(tx.send(Ok(final_payload)));
                     }
                 }
             }
@@ -190,7 +190,7 @@ pub fn apply_bridge_navigation(runtime: &GDriveWebRuntime, nav_url: &Url) {
             if let Ok(mut pending) = runtime.pending.lock() {
                 if let Some(mut entry) = pending.remove(req_id) {
                     if let Some(tx) = entry.sender.take() {
-                        let _ = tx.send(Err(err_msg));
+                        crate::error_log::ignored(tx.send(Err(err_msg)));
                     }
                 }
             }
@@ -243,7 +243,7 @@ pub fn close_gdrive_sync_webview(app: &AppHandle) {
         }
     }
     if let Some(webview) = app.get_webview(GDRIVE_SYNC_WEBVIEW_LABEL) {
-        let _ = webview.close();
+        crate::error_log::ignored(webview.close());
     }
 }
 
@@ -256,7 +256,7 @@ fn reset_gdrive_webview(app: &AppHandle, webview: &tauri::Webview) {
             *token = None;
         }
     }
-    let _ = webview.close();
+    crate::error_log::ignored(webview.close());
 }
 
 fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, String), String> {
@@ -264,7 +264,7 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
     let (data_dir, authuser, _) = resolve_gdrive_session_context(app)?;
 
     if let Some(existing) = app.get_webview(GDRIVE_SYNC_WEBVIEW_LABEL) {
-        let _ = existing.close();
+        crate::error_log::ignored(existing.close());
     }
 
     let main_window = app
@@ -321,7 +321,7 @@ fn ensure_hidden_gdrive_webview(app: &AppHandle) -> Result<(tauri::Webview, Stri
             LogicalSize::new(1.0, 1.0),
         )
         .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
-    let _ = crate::security::harden(app, &webview, false);
+    crate::error_log::ignored(crate::security::harden(app, &webview, false));
     Ok((webview, token))
 }
 

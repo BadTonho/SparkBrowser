@@ -258,7 +258,7 @@ fn broadcast(app: &AppHandle) {
             if let Some(view) =
                 app.get_webview(&crate::state::tab_model::webview_label_for_tab(&tab.id))
             {
-                let _ = view.eval("window.__sparkRefreshWidgets?.()");
+                crate::error_log::ignored(view.eval("window.__sparkRefreshWidgets?.()"));
             }
         }
     }

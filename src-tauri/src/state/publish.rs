@@ -8,7 +8,12 @@ pub fn publish_tabs(app: &AppHandle, state: &BrowserState, window_id: &str) -> T
     let mut answer = None;
     for id in state.session().window_ids() {
         let snapshot = state.snapshot_packet_for(&id);
-        let _ = crate::security::emit_shell_to(app, &id, "tabs-updated", &snapshot);
+        crate::error_log::ignored(crate::security::emit_shell_to(
+            app,
+            &id,
+            "tabs-updated",
+            &snapshot,
+        ));
         if id == window_id {
             answer = Some(snapshot);
         }

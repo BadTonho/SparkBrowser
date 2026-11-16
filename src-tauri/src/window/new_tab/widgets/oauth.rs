@@ -146,8 +146,8 @@ pub(super) fn connect_scoped(
                 if !peer.ip().is_loopback() {
                     continue;
                 }
-                let _ = stream.set_read_timeout(Some(Duration::from_secs(1)));
-                let _ = stream.set_write_timeout(Some(Duration::from_secs(1)));
+                crate::error_log::ignored(stream.set_read_timeout(Some(Duration::from_secs(1))));
+                crate::error_log::ignored(stream.set_write_timeout(Some(Duration::from_secs(1))));
                 let mut data = Vec::new();
                 let mut chunk = [0u8; 1024];
                 while data.len() <= 8192 && !data.windows(4).any(|v| v == b"\r\n\r\n") {
@@ -174,7 +174,7 @@ pub(super) fn connect_scoped(
                 let body =
                     b"Authorization complete. You can close this window and return to Spark.";
                 let _=write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nContent-Security-Policy: default-src 'none'\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",body.len());
-                let _ = stream.write_all(body);
+                crate::error_log::ignored(stream.write_all(body));
                 let code = result.map_err(str::to_owned)?;
                 if cancel.load(Ordering::SeqCst) {
                     return Err("cancelled".into());
@@ -298,7 +298,7 @@ pub(super) fn grant(endpoint: &str, scope: &str, params: &[(&str, &str)]) -> Res
 }
 pub fn revoke(endpoint: &str, token: &str) {
     if let Ok(client) = http::client() {
-        let _ = client.post(endpoint).form(&[("token", token)]).send();
+        crate::error_log::ignored(client.post(endpoint).form(&[("token", token)]).send());
     }
 }
 #[cfg(test)]

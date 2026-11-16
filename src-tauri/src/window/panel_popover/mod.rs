@@ -275,7 +275,7 @@ pub fn dismiss<P: Panel>(app: &AppHandle) {
     };
     inner.closed_session = inner.closed_session.max(session.id);
     drop(inner);
-    let _ = super::overlay_host::emit_to_host(
+    crate::error_log::ignored(super::overlay_host::emit_to_host(
         app,
         P::LABEL,
         P::EVENT,
@@ -285,9 +285,9 @@ pub fn dismiss<P: Panel>(app: &AppHandle) {
                 reason: bridge::DismissReason::Blur,
             },
         ),
-    );
+    ));
     if let Some(view) = app.get_webview(P::LABEL) {
-        let _ = view.hide();
+        crate::error_log::ignored(view.hide());
         idle::schedule::<P>(app);
     }
 }
@@ -330,10 +330,10 @@ pub fn close_animated<P: Panel>(
     let generation = inner.close_generation;
     inner.session = None;
     if let Some(view) = app.get_webview(P::LABEL) {
-        let _ = view.eval(format!(
+        crate::error_log::ignored(view.eval(format!(
             "window.{}?.({{visible:false,sessionId:{session_id},animate:true}});",
             P::SETTER
-        ));
+        )));
     }
     drop(inner);
     let app = app.clone();
@@ -347,18 +347,18 @@ pub fn close_animated<P: Panel>(
             return;
         }
         if let Some(view) = app.get_webview(P::LABEL) {
-            let _ = view.eval(format!(
+            crate::error_log::ignored(view.eval(format!(
                 "window.{}?.({{visible:false,sessionId:{session_id}}});",
                 P::SETTER
-            ));
-            let _ = view.hide();
+            )));
+            crate::error_log::ignored(view.hide());
         }
         if restore_focus
             && super::overlay_host::window_of(&app, P::LABEL)
                 .is_some_and(|window| focus::focused(&window))
         {
             if let Some(main) = app.get_webview(&super::overlay_host::host_id(&app, P::LABEL)) {
-                let _ = main.set_focus();
+                crate::error_log::ignored(main.set_focus());
             }
         }
         drop(inner);
@@ -390,10 +390,10 @@ pub fn set<P: Panel>(
         inner.session = None;
         drop(inner);
         if let Some(view) = app.get_webview(P::LABEL) {
-            let _ = view.eval(format!(
+            crate::error_log::ignored(view.eval(format!(
                 "window.{}?.({{visible:false,sessionId:{session_id}}});",
                 P::SETTER
-            ));
+            )));
             view.hide().map_err(|e| e.to_string())?;
             idle::schedule::<P>(app);
         }

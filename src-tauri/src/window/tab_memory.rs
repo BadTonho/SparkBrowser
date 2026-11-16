@@ -78,7 +78,7 @@ fn complete_once(
 ) {
     if let Ok(mut slot) = completion.lock() {
         if let Some(sender) = slot.take() {
-            let _ = sender.send(value);
+            crate::error_log::ignored(sender.send(value));
         }
     }
 }
@@ -94,7 +94,7 @@ pub fn current_webview_source(view: &tauri::Webview) -> Option<String> {
                 Ok(CoTaskMemPWSTR::from(raw).to_string())
             })
         };
-        let _ = tx.send(source.ok().filter(|value| !value.is_empty()));
+        crate::error_log::ignored(tx.send(source.ok().filter(|value| !value.is_empty())));
     });
     if result.is_err() {
         return None;

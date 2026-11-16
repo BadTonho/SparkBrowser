@@ -238,18 +238,18 @@ pub(super) fn create_tab_webview(
                     *open = false;
                 }
             }
-            let _ = crate::security::emit_shell_for_tab(
+            crate::error_log::ignored(crate::security::emit_shell_for_tab(
                 &app_handle_for_nav,
                 &tab_for_nav,
                 "workspace-shortcut-cancel",
                 (),
-            );
-            let _ = crate::security::emit_shell_for_tab(
+            ));
+            crate::error_log::ignored(crate::security::emit_shell_for_tab(
                 &app_handle_for_nav,
                 &tab_for_nav,
                 "workspace-switcher-dismissed",
                 (),
-            );
+            ));
         }
 
         if super::new_tab::is_document(&app_handle_for_nav, nav_url)
@@ -290,11 +290,11 @@ pub(super) fn create_tab_webview(
             {
                 state.policies().record_blocked_request();
                 let stats = state.snapshot_privacy_stats();
-                let _ = crate::security::emit_shell(
+                crate::error_log::ignored(crate::security::emit_shell(
                     &app_handle_for_nav,
                     "privacy-stats-updated",
                     &stats,
-                );
+                ));
                 return false;
             }
         }

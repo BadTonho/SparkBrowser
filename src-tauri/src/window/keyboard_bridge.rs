@@ -296,12 +296,12 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                 if let Some(key) = key {
                                     payload["key"] = serde_json::json!(key);
                                 }
-                                let _ = crate::security::emit_shell_for_webview(
+                                crate::error_log::ignored(crate::security::emit_shell_for_webview(
                                     &app_for_handler,
                                     &label_for_handler,
                                     "browser-shortcut-action",
                                     payload,
-                                );
+                                ));
                             }
                             return Ok(());
                         }
@@ -332,12 +332,12 @@ pub(super) fn install_workspace_shortcut_accelerator(
                         unsafe {
                             args.SetHandled(true)?;
                         }
-                        let _ = crate::security::emit_shell_for_webview(
+                        crate::error_log::ignored(crate::security::emit_shell_for_webview(
                             &app_for_handler,
                             &label_for_handler,
                             "workspace-switcher-dismissed",
                             (),
-                        );
+                        ));
                         return Ok(());
                     }
 
@@ -419,12 +419,12 @@ pub(super) fn install_workspace_shortcut_accelerator(
                         }
 
                         if let Some(payload) = payload {
-                            let _ = crate::security::emit_shell_for_webview(
+                            crate::error_log::ignored(crate::security::emit_shell_for_webview(
                                 &app_for_handler,
                                 &label_for_handler,
                                 "workspace-shortcut-event",
                                 payload,
-                            );
+                            ));
                         }
                         return Ok(());
                     }
@@ -446,7 +446,7 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                 args.SetHandled(true)?;
                             }
                             if !is_repeat {
-                                let _ = crate::security::emit_shell_for_webview(
+                                crate::error_log::ignored(crate::security::emit_shell_for_webview(
                                     &app_for_handler,
                                     &label_for_handler,
                                     "browser-shortcut-action",
@@ -454,7 +454,7 @@ pub(super) fn install_workspace_shortcut_accelerator(
                                         "action": "switch-workspaces",
                                         "key": index.to_string()
                                     }),
-                                );
+                                ));
                             }
                             return Ok(());
                         }
@@ -667,12 +667,12 @@ pub(super) fn handle_keyboard_navigation(
                 }
             }
             "alt-down" | "alt-up" | "alt-cancel" => {
-                let _ = crate::security::emit_shell_for_webview(
+                crate::error_log::ignored(crate::security::emit_shell_for_webview(
                     app_handle_for_nav,
                     label_for_nav,
                     "workspace-shortcut-event",
                     serde_json::json!({ "type": event_type }),
-                );
+                ));
             }
             "action" => {
                 let action = params
@@ -692,29 +692,31 @@ pub(super) fn handle_keyboard_navigation(
                             eprintln!("Unable to toggle native caret browsing: {error}");
                         }
                     } else {
-                        let _ = crate::security::emit_shell_for_webview(
+                        crate::error_log::ignored(crate::security::emit_shell_for_webview(
                             app_handle_for_nav,
                             label_for_nav,
                             "browser-shortcut-action",
                             serde_json::json!({ "action": action, "key": key }),
-                        );
+                        ));
                     }
                 }
             }
             _ => {}
         }
     } else if !focused {
-        let _ = crate::security::emit_shell_for_webview(
+        crate::error_log::ignored(crate::security::emit_shell_for_webview(
             app_handle_for_nav,
             label_for_nav,
             "workspace-shortcut-cancel",
             (),
-        );
+        ));
     }
 
     if let Some(sequence) = sequence {
         if let Some(webview) = app_handle_for_nav.get_webview(label_for_nav) {
-            let _ = webview.eval(format!("window.__sparkWorkspaceShortcutAck({sequence});"));
+            crate::error_log::ignored(
+                webview.eval(format!("window.__sparkWorkspaceShortcutAck({sequence});")),
+            );
         }
     }
 }

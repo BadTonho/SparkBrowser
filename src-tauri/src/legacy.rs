@@ -67,7 +67,10 @@ pub fn rename_database_files(directory: &Path) {
     for suffix in ["-wal", "-shm"] {
         let from = directory.join(format!("{OLD_DATABASE}{suffix}"));
         if from.is_file() {
-            let _ = fs::rename(from, directory.join(format!("{NEW_DATABASE}{suffix}")));
+            crate::error_log::ignored(fs::rename(
+                from,
+                directory.join(format!("{NEW_DATABASE}{suffix}")),
+            ));
         }
     }
 }

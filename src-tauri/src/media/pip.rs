@@ -42,15 +42,17 @@ pub fn player_script() -> String {
 #[cfg(any(windows, target_os = "linux"))]
 async fn exit_known(app: &AppHandle) -> Result<(), String> {
     if let Some((session, tab, token, context, document)) = super::pip_window::owner() {
-        let _ = super::protocol::evaluate(
-            app,
-            &tab,
-            &token,
-            &context,
-            json!({"kind":"pip-exit","document":document}),
-            false,
-        )
-        .await;
+        crate::error_log::ignored(
+            super::protocol::evaluate(
+                app,
+                &tab,
+                &token,
+                &context,
+                json!({"kind":"pip-exit","document":document}),
+                false,
+            )
+            .await,
+        );
         super::pip_window::discard(app, &session);
     }
     for tab in app.state::<MediaService>().snapshot(app)?.tabs {
@@ -119,7 +121,7 @@ pub async fn enter(
         }
         let result = result?;
         if result["custom"] == false && result["ok"] == true {
-            let _ = crate::security::emit_shell(app, "media-pip-fallback", ());
+            crate::error_log::ignored(crate::security::emit_shell(app, "media-pip-fallback", ()));
         }
         if let Some(code) = result["error"].as_str() {
             return Err(code.into());

@@ -131,12 +131,12 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
             if let Ok(mut token) = state.surfaces().workspace_switcher_token().lock() {
                 *token = None;
             }
-            let _ = super::overlay_host::emit_to_host(
+            crate::error_log::ignored(super::overlay_host::emit_to_host(
                 app,
                 WORKSPACE_SWITCHER_WEBVIEW_LABEL,
                 "workspace-switcher-selected",
                 workspace_id,
-            );
+            ));
         }
         "dismiss" if token_matches && !parameters.contains_key("workspace_id") => {
             let is_open = state
@@ -149,12 +149,12 @@ pub(super) fn handle_workspace_switcher_navigation(app: &AppHandle, nav_url: &Ur
                 if let Ok(mut token) = state.surfaces().workspace_switcher_token().lock() {
                     *token = None;
                 }
-                let _ = super::overlay_host::emit_to_host(
+                crate::error_log::ignored(super::overlay_host::emit_to_host(
                     app,
                     WORKSPACE_SWITCHER_WEBVIEW_LABEL,
                     "workspace-switcher-dismissed",
                     (),
-                );
+                ));
             }
         }
         _ => {}
@@ -220,12 +220,12 @@ fn handle_bookmark_context_menu_navigation(app: &AppHandle, nav_url: &Url) {
     }
     // Let the frontend close the overlay after it receives the action. Hiding
     // this WebView inside its own navigation callback can interrupt delivery.
-    let _ = super::overlay_host::emit_to_host(
+    crate::error_log::ignored(super::overlay_host::emit_to_host(
         app,
         BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL,
         "bookmark-context-menu-action",
         action,
-    );
+    ));
 }
 
 pub(super) fn spawn_workspace_switcher_webview(
@@ -279,7 +279,7 @@ pub(super) fn spawn_workspace_switcher_webview(
 
     if let Some(webview) = app.get_webview(WORKSPACE_SWITCHER_WEBVIEW_LABEL) {
         crate::security::harden(app, &webview, true)?;
-        let _ = webview.hide();
+        crate::error_log::ignored(webview.hide());
     }
 
     Ok(())
@@ -337,7 +337,7 @@ pub(super) fn spawn_bookmark_context_menu_webview(
 
     if let Some(webview) = app.get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL) {
         crate::security::harden(app, &webview, true)?;
-        let _ = webview.hide();
+        crate::error_log::ignored(webview.hide());
     }
     Ok(())
 }

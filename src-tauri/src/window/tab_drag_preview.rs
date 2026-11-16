@@ -224,7 +224,7 @@ pub async fn set_tab_drag_preview(
     }
     split_docking::validate_context(&state, &presentation.context, &presentation.tab_id)
         .inspect_err(|_| {
-            let _ = cancel(&app, &state);
+            crate::error_log::ignored(cancel(&app, &state));
         })?;
     if !presentation.pointer.x.is_finite() || !presentation.pointer.y.is_finite() {
         cancel(&app, &state)?;
@@ -240,6 +240,6 @@ pub async fn set_tab_drag_preview(
         }
     })();
     result.inspect_err(|_| {
-        let _ = cancel(&app, &state);
+        crate::error_log::ignored(cancel(&app, &state));
     })
 }

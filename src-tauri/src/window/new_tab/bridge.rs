@@ -187,14 +187,14 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
         let payload = serde_json::json!({"preferences":prefs,"labels":text,"sites":rows.as_ref().ok(),"error":rows.is_err(),"autofocus":autofocus,"private":private});
         if let Some(view) = app.get_webview(&label) {
             if autofocus {
-                let _ = view.set_focus();
+                crate::error_log::ignored(view.set_focus());
             }
-            let _ = view.eval(format!(
+            crate::error_log::ignored(view.eval(format!(
                 "window.__sparkNewTabReply?.({}, {}, {});",
                 serde_json::to_string(&document).unwrap(),
                 request,
                 payload
-            ));
+            )));
         }
     });
 }
@@ -335,7 +335,7 @@ pub(super) fn navigate(
             Ok::<_, String>(())
         })();
         if let Err(error) = result {
-            let _ = crate::security::emit_shell(&app, "browser-error", error);
+            crate::error_log::ignored(crate::security::emit_shell(&app, "browser-error", error));
         }
     });
 }

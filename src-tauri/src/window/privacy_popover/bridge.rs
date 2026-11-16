@@ -51,10 +51,10 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     drop(inner);
     // The shell hides the WebView after delivery, rather than interrupting its
     // own navigation callback, and applies only these fixed privacy actions.
-    let _ = crate::window::overlay_host::emit_to_host(
+    crate::error_log::ignored(crate::window::overlay_host::emit_to_host(
         app,
         super::LABEL,
         "privacy-popover-action",
         event,
-    );
+    ));
 }

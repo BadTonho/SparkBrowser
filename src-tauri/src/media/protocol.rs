@@ -50,7 +50,7 @@ pub async fn contexts(app: &AppHandle, id: &str) -> Result<(String, Vec<String>)
     let (tx, rx) = tokio::sync::oneshot::channel();
     view.with_webview(move |_| {
         let value = super::contexts::snapshot(&label);
-        let _ = tx.send(value);
+        crate::error_log::ignored(tx.send(value));
     })
     .map_err(|_| "media.unavailable")?;
     tokio::time::timeout(Duration::from_secs(5), rx)

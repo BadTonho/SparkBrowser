@@ -25,7 +25,7 @@ impl ShutdownService {
     }
     fn publish(&self, app: &AppHandle) -> Result<ShutdownState, String> {
         let state = self.snapshot()?;
-        let _ = crate::security::emit_shell(app, "shutdown-state", &state);
+        crate::error_log::ignored(crate::security::emit_shell(app, "shutdown-state", &state));
         Ok(state)
     }
     pub fn request(
@@ -159,7 +159,7 @@ impl ShutdownService {
             Ok(None) => {
                 if purpose == ShutdownPurpose::RestartRuntime {
                     if let Err(error) = crate::webview_runtime::restart(&app) {
-                        let _ = resume(&app);
+                        crate::error_log::ignored(resume(&app));
                         return self.failed(&app, error);
                     }
                     return self.snapshot();
@@ -173,7 +173,7 @@ impl ShutdownService {
                         let _ = version;
                         Err("shutdown.update_unavailable".into())
                     };
-                    let _ = resume(&app);
+                    crate::error_log::ignored(resume(&app));
                     self.failed(
                         &app,
                         result
@@ -187,7 +187,7 @@ impl ShutdownService {
                 }
             }
             Err(error) => {
-                let _ = resume(&app);
+                crate::error_log::ignored(resume(&app));
                 self.failed(&app, format!("shutdown.save_failed: {error}"))
             }
         }

@@ -89,11 +89,11 @@ impl DownloadManager {
             if cancelled {
                 if let Ok(record) = self.record(id) {
                     if let Ok(path) = files::owned_partial(&record) {
-                        let _ = std::fs::remove_file(path);
+                        crate::error_log::ignored(std::fs::remove_file(path));
                     }
                 }
             }
-            let _ = self.update_saved(app, id, |t| {
+            crate::error_log::ignored(self.update_saved(app, id, |t| {
                 t.status = if cancelled {
                     "Cancelled"
                 } else if requested == 1 {
@@ -110,7 +110,7 @@ impl DownloadManager {
                 }
                 .into();
                 t.error = if requested == 0 { Some(error) } else { None };
-            });
+            }));
         }
         self.refresh_protection(app, &self.record(id).map(|r| r.tab_id).unwrap_or_default());
     }

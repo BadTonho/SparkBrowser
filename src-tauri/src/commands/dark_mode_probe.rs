@@ -47,7 +47,7 @@ pub async fn set_dark_mode_probe_scheme(app: AppHandle, mode: String) -> Result<
             }
             .to_string())
         })();
-        let _ = send.send(result);
+        crate::error_log::ignored(send.send(result));
     })
     .map_err(|error| error.to_string())?;
 

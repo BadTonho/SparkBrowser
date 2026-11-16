@@ -182,16 +182,20 @@ pub async fn set_auto_skip_ads(
     if let Err(error) = crate::privacy::auto_skip::apply(&app, enabled) {
         state.policies().set_auto_skip_ads_enabled(previous);
         if crate::privacy::auto_skip::apply(&app, previous).is_err() {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 "Could not fully restore auto skip policy",
-            );
+            ));
         }
         return Err(error);
     }
     let stats = state.snapshot_privacy_stats();
-    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
+    crate::error_log::ignored(crate::security::emit_shell(
+        &app,
+        "privacy-stats-updated",
+        &stats,
+    ));
     Ok(stats)
 }
 
@@ -230,11 +234,11 @@ pub async fn toggle_adblock_shield(
                 .await
                 .is_err()
             {
-                let _ = crate::security::emit_shell(
+                crate::error_log::ignored(crate::security::emit_shell(
                     &app,
                     "browser-error",
                     "Could not fully restore the shield policy",
-                );
+                ));
             }
             return Err(error);
         }
@@ -281,6 +285,10 @@ pub async fn toggle_adblock_shield(
     crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
 
     let stats = state.snapshot_privacy_stats();
-    let _ = crate::security::emit_shell(&app, "privacy-stats-updated", &stats);
+    crate::error_log::ignored(crate::security::emit_shell(
+        &app,
+        "privacy-stats-updated",
+        &stats,
+    ));
     Ok(stats)
 }

@@ -206,14 +206,14 @@ pub fn dismiss(app: &AppHandle) {
     };
     inner.closed_session = inner.closed_session.max(session.id);
     drop(inner);
-    let _ = super::overlay_host::emit_to_host(
+    crate::error_log::ignored(super::overlay_host::emit_to_host(
         app,
         LABEL,
         "privacy-popover-action",
         action(&session, "dismiss", None, "context"),
-    );
+    ));
     if let Some(view) = app.get_webview(LABEL) {
-        let _ = view.hide();
+        crate::error_log::ignored(view.hide());
     }
 }
 
@@ -257,7 +257,9 @@ pub fn set(
         inner.session = None;
         drop(inner);
         if let Some(view) = app.get_webview(LABEL) {
-            let _ = view.eval("window.__sparkSetPrivacyPopover?.({visible:false});");
+            crate::error_log::ignored(
+                view.eval("window.__sparkSetPrivacyPopover?.({visible:false});"),
+            );
             view.hide().map_err(|e| e.to_string())?;
         }
         if restore_focus {

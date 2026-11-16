@@ -44,11 +44,11 @@ pub fn focus_pane(app: &AppHandle, tab_id: &str, label: &str, token: &str) {
             return;
         }
         if state.select_tab_committed(&id).is_err() {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 "Could not select the focused split pane",
-            );
+            ));
             return;
         }
         if let Ok(window) = state.window_of_tab(&id) {
@@ -76,9 +76,11 @@ pub fn install(
         }));
         let mut registration = 0;
         unsafe {
-            let _ = platform
-                .controller()
-                .add_GotFocus(&handler, &mut registration);
+            crate::error_log::ignored(
+                platform
+                    .controller()
+                    .add_GotFocus(&handler, &mut registration),
+            );
         }
     })
     .map_err(|e| e.to_string())

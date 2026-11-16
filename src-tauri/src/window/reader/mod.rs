@@ -163,7 +163,9 @@ pub async fn extract_article(
                         })();
                         if let Ok(mut lock) = cb.lock() {
                             if let Some(tx) = lock.take() {
-                                let _ = tx.send(result_str.map_err(|e| e.to_string()));
+                                crate::error_log::ignored(
+                                    tx.send(result_str.map_err(|e| e.to_string())),
+                                );
                             }
                         }
                         Ok(())
@@ -176,7 +178,7 @@ pub async fn extract_article(
             if let Err(e) = res {
                 if let Ok(mut lock) = sender.lock() {
                     if let Some(tx) = lock.take() {
-                        let _ = tx.send(Err(e.to_string()));
+                        crate::error_log::ignored(tx.send(Err(e.to_string())));
                     }
                 }
             }

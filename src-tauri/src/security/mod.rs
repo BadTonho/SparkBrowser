@@ -85,7 +85,7 @@ pub fn emit_shell_all<S: serde::Serialize + Clone>(
         .map(|state| state.session().window_ids())
         .unwrap_or_else(|| vec![crate::state::tab_model::MAIN_WINDOW_ID.to_string()]);
     for id in ids {
-        let _ = emit_shell_to(app, &id, event, payload.clone());
+        crate::error_log::ignored(emit_shell_to(app, &id, event, payload.clone()));
     }
 }
 
@@ -133,7 +133,7 @@ pub async fn set_smart_screen(app: &tauri::AppHandle, enabled: bool) -> Result<(
                     .and_then(|settings| settings.SetIsReputationCheckingRequired(enabled))
             }
             .map_err(|error| error.to_string());
-            let _ = send.send(result);
+            crate::error_log::ignored(send.send(result));
         })
         .map_err(|error| error.to_string())?;
         receive.await.map_err(|error| error.to_string())??;

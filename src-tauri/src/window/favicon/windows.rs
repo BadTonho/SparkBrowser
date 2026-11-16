@@ -24,7 +24,7 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
         let n = navigation.clone();
         let (a, e) = (app.clone(), document_epoch.clone());
         unsafe {
-            let _ = core.add_NavigationStarting(
+            crate::error_log::ignored(core.add_NavigationStarting(
                 &NavigationStartingEventHandler::create(Box::new(move |_, args| {
                     let Some(args) = args else {
                         return Ok(());
@@ -42,7 +42,7 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                     Ok(())
                 })),
                 &mut 0,
-            );
+            ));
         }
         let (a, l, t, n, e) = (
             app.clone(),
@@ -52,7 +52,7 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
             document_epoch.clone(),
         );
         unsafe {
-            let _ = icons.add_FaviconChanged(
+            crate::error_log::ignored(icons.add_FaviconChanged(
                 &FaviconChangedEventHandler::create(Box::new(move |sender, _| {
                     if let Some(sender) = sender {
                         capture(&a, &l, &t, &sender, &n, e.load(Ordering::SeqCst));
@@ -60,8 +60,8 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                     Ok(())
                 })),
                 &mut 0,
-            );
-            let _ = core.add_NavigationCompleted(
+            ));
+            crate::error_log::ignored(core.add_NavigationCompleted(
                 &NavigationCompletedEventHandler::create(Box::new(move |sender, _| {
                     if let Some(sender) = sender {
                         capture(
@@ -76,7 +76,7 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                     Ok(())
                 })),
                 &mut 0,
-            );
+            ));
         }
     })
     .map_err(|e| e.to_string())
@@ -156,12 +156,18 @@ fn capture(
             .await;
             if matches!(result, Ok(true)) {
                 super::super::new_tab::invalidate(&app);
-                let _ = crate::security::emit_shell(&app, "site-icons-changed", ());
+                crate::error_log::ignored(crate::security::emit_shell(
+                    &app,
+                    "site-icons-changed",
+                    (),
+                ));
             }
         });
         Ok(())
     }));
     unsafe {
-        let _ = icons.GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, &handler);
+        crate::error_log::ignored(
+            icons.GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, &handler),
+        );
     }
 }

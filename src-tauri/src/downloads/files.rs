@@ -119,11 +119,11 @@ pub fn publish(record: &DownloadRecord) -> Result<PathBuf, String> {
             }
             Err(error) => {
                 let message = error.error.to_string();
-                let _ = error.path.keep();
+                crate::error_log::ignored(error.path.keep());
                 return Err(format!("downloads.publish_failed: {message}"));
             }
         }
     }
-    let _ = path.keep();
+    crate::error_log::ignored(path.keep());
     Err("downloads.too_many_collisions".into())
 }

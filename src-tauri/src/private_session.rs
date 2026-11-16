@@ -154,7 +154,7 @@ pub fn open_window(app: &AppHandle, role: &PrivateRole) -> Result<(), String> {
         .arg(&source)
         .spawn()
     {
-        let _ = std::fs::remove_dir_all(&root);
+        crate::error_log::ignored(std::fs::remove_dir_all(&root));
         return Err(format!("private.spawn_failed: {error}"));
     }
     Ok(())
@@ -275,7 +275,7 @@ pub fn purge_stale_in(sessions: &Path) -> Result<(), String> {
         // A running private window holds its profile lock, so it is kept.
         let idle = ProfileLock::acquire(&root.join("data")).is_ok();
         if idle {
-            let _ = std::fs::remove_dir_all(&root);
+            crate::error_log::ignored(std::fs::remove_dir_all(&root));
         }
     }
     Ok(())
@@ -291,7 +291,7 @@ pub fn schedule_cleanup(app: &AppHandle) {
         return;
     };
     if let Ok(exe) = std::env::current_exe() {
-        let _ = Command::new(exe).arg(CLEANUP_FLAG).arg(&root).spawn();
+        crate::error_log::ignored(Command::new(exe).arg(CLEANUP_FLAG).arg(&root).spawn());
     }
 }
 

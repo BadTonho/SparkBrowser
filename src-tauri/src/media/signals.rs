@@ -47,7 +47,11 @@ pub fn remove(app: &AppHandle, id: &str, context: Option<&str>) {
         .any(|t| t.id == id)
     {
         if let Ok(snapshot) = app.state::<MediaService>().snapshot(app) {
-            let _ = crate::security::emit_shell(app, "tab-media-state", snapshot);
+            crate::error_log::ignored(crate::security::emit_shell(
+                app,
+                "tab-media-state",
+                snapshot,
+            ));
         }
         return;
     }
@@ -71,6 +75,11 @@ pub fn sync_activity(app: &AppHandle, id: &str) {
         tab.activity.picture_in_picture = media.frames.iter().any(|f| f.picture_in_picture);
         tab.activity.refresh_media();
     }) {
-        let _ = crate::security::emit_shell_for_tab(app, id, "tab-navigation-updated", payload);
+        crate::error_log::ignored(crate::security::emit_shell_for_tab(
+            app,
+            id,
+            "tab-navigation-updated",
+            payload,
+        ));
     }
 }

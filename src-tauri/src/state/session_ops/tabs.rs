@@ -110,7 +110,7 @@ pub fn open_popup_url(app: AppHandle, source_tab: String, generation: String, ur
             .ok()
             .and_then(|tabs| tabs.iter().find(|tab| tab.id == source_tab).cloned());
         if let Some(source) = source {
-            let _ = create_tab_inner_ext(
+            crate::error_log::ignored(create_tab_inner_ext(
                 &app,
                 &state,
                 Some(url.to_string()),
@@ -122,7 +122,7 @@ pub fn open_popup_url(app: AppHandle, source_tab: String, generation: String, ur
                     workspace_id: Some(source.workspace_id),
                     window_id: Some(source.window_id),
                 },
-            );
+            ));
         }
     });
 }
@@ -374,7 +374,12 @@ pub(super) fn create_tab_inner_ext(
     reconcile_committed(app, state);
 
     let snapshot = crate::state::publish::publish_tabs(app, state, &window_id);
-    let _ = crate::security::emit_shell_to(app, &window_id, "content-url-changed", &resolved_url);
+    crate::error_log::ignored(crate::security::emit_shell_to(
+        app,
+        &window_id,
+        "content-url-changed",
+        &resolved_url,
+    ));
 
     Ok(snapshot)
 }
@@ -438,7 +443,12 @@ pub(super) fn switch_tab_inner(
     let stats = state.snapshot_privacy_stats();
     crate::security::emit_shell_all(app, "privacy-stats-updated", &stats);
     if !active_url.is_empty() {
-        let _ = crate::security::emit_shell_to(app, &window_id, "content-url-changed", &active_url);
+        crate::error_log::ignored(crate::security::emit_shell_to(
+            app,
+            &window_id,
+            "content-url-changed",
+            &active_url,
+        ));
     }
 
     Ok(snapshot)
@@ -897,11 +907,11 @@ fn reconcile_committed_with_bounds(
         }
     }
     if let Err(error) = crate::window::sync_webviews_after_selection(app, state, previous) {
-        let _ = crate::security::emit_shell(
+        crate::error_log::ignored(crate::security::emit_shell(
             app,
             "browser-error",
             format!("The session was saved, but a page could not be displayed: {error}"),
-        );
+        ));
     }
 }
 

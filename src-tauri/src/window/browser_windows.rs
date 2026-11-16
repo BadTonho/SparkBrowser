@@ -64,7 +64,7 @@ pub async fn open(app: &AppHandle, from_window: &str) -> Result<String, String> 
     open_window(&state, &id, &workspace)?;
     if let Err(error) = build(app, &id) {
         // The window never appeared: take it out of the session again, keeping its tab as closed.
-        let _ = close_window(&state, &id);
+        crate::error_log::ignored(close_window(&state, &id));
         return Err(error);
     }
     super::webview_manager::sync_all_webviews(app, &state)?;
@@ -96,7 +96,7 @@ pub async fn closed(app: &AppHandle, window_id: &str) -> Result<(), String> {
     let closed = close_window(&state, window_id)?;
     for tab in &closed.tab_ids {
         if let Err(error) = super::webview_manager::close_tab_webview(app, tab) {
-            let _ = crate::security::emit_shell(app, "browser-error", error);
+            crate::error_log::ignored(crate::security::emit_shell(app, "browser-error", error));
         } else if closed.ephemeral_tab_ids.contains(tab) {
             super::ephemeral::purge_ephemeral_tab_data(app, tab);
         }
@@ -105,7 +105,7 @@ pub async fn closed(app: &AppHandle, window_id: &str) -> Result<(), String> {
     super::linux_layout::forget_window(window_id);
     state.surfaces().forget_window_geometry(window_id);
     if let Some(window) = app.get_webview_window(window_id) {
-        let _ = window.destroy();
+        crate::error_log::ignored(window.destroy());
     }
     crate::state::session_ops::closed_tabs::notify(app, &state);
     crate::state::publish::publish_tabs(app, &state, MAIN_WINDOW_ID);
@@ -196,7 +196,7 @@ pub fn apply_geometry(
     use tauri::{PhysicalPosition, PhysicalSize};
     if let (Some(width), Some(height)) = (record.width, record.height) {
         if width >= 400 && height >= 300 {
-            let _ = window.set_size(PhysicalSize::new(width, height));
+            crate::error_log::ignored(window.set_size(PhysicalSize::new(width, height)));
         }
     }
     if can_place_windows() {
@@ -211,12 +211,12 @@ pub fn apply_geometry(
                 })
             });
             if visible {
-                let _ = window.set_position(PhysicalPosition::new(x, y));
+                crate::error_log::ignored(window.set_position(PhysicalPosition::new(x, y)));
             }
         }
     }
     if record.maximized {
-        let _ = window.maximize();
+        crate::error_log::ignored(window.maximize());
     }
 }
 
@@ -244,15 +244,17 @@ pub async fn restore_saved(app: &AppHandle) {
                 eprintln!("Could not reopen {id}: {error}");
                 if let Ok(closed) = close_window(&state, &id) {
                     for tab in &closed.tab_ids {
-                        let _ = super::webview_manager::close_tab_webview(app, tab);
+                        crate::error_log::ignored(super::webview_manager::close_tab_webview(
+                            app, tab,
+                        ));
                     }
                 }
-                let _ = crate::security::emit_shell(app, "browser-error", error);
+                crate::error_log::ignored(crate::security::emit_shell(app, "browser-error", error));
             }
         }
     }
     if let Err(error) = super::webview_manager::sync_all_webviews(app, &state) {
-        let _ = crate::security::emit_shell(app, "browser-error", error);
+        crate::error_log::ignored(crate::security::emit_shell(app, "browser-error", error));
     }
     crate::state::session_ops::closed_tabs::notify(app, &state);
     for id in state.session().window_ids() {

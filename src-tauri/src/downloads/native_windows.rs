@@ -58,10 +58,10 @@ fn state_changed(
         });
         manager.native_capability(app, id, false, false);
         if let Err(e) = manager.body_completed(app, id) {
-            let _ = manager.update_saved(app, id, |t| {
+            crate::error_log::ignored(manager.update_saved(app, id, |t| {
                 t.status = "Interrupted".into();
                 t.error = Some(e);
-            });
+            }));
         }
     } else if state == COREWEBVIEW2_DOWNLOAD_STATE_INTERRUPTED {
         let paused = reason == COREWEBVIEW2_DOWNLOAD_INTERRUPT_REASON_USER_PAUSED;
@@ -73,14 +73,14 @@ fn state_changed(
             });
         }
         manager.native_capability(app, id, true, resumable.as_bool());
-        let _ = manager.update_saved(app, id, |t| {
+        crate::error_log::ignored(manager.update_saved(app, id, |t| {
             t.status = if paused { "Paused" } else { "Interrupted" }.into();
             t.error = if paused {
                 None
             } else {
                 Some(format!("downloads.native_interrupted: {}", reason.0))
             };
-        });
+        }));
     } else {
         manager.update(app, id, |t| {
             t.status = "Downloading".into();
@@ -260,28 +260,28 @@ pub fn install(
                                 .await
                                 {
                                     Ok(details) => {
-                                        let _ = crate::security::emit_shell(
+                                        crate::error_log::ignored(crate::security::emit_shell(
                                             &install_app,
                                             "extension-installed",
                                             details,
-                                        );
+                                        ));
                                     }
                                     Err(err) => {
                                         eprintln!(
                                             "Failed to install extension {}: {}",
                                             ext_id, err
                                         );
-                                        let _ = crate::security::emit_shell(
+                                        crate::error_log::ignored(crate::security::emit_shell(
                                             &install_app,
                                             "extension-install-failed",
                                             serde_json::json!({ "id": ext_id, "error": err }),
-                                        );
+                                        ));
                                     }
                                 }
                             });
                             unsafe {
-                                let _ = args.SetCancel(true);
-                                let _ = args.SetHandled(true);
+                                crate::error_log::ignored(args.SetCancel(true));
+                                crate::error_log::ignored(args.SetHandled(true));
                             }
                             return Ok(());
                         }
@@ -311,7 +311,7 @@ pub fn install(
                             .blocking_save_file();
                         let Some(path) = selected else {
                             unsafe {
-                                let _ = args.SetCancel(true);
+                                crate::error_log::ignored(args.SetCancel(true));
                             }
                             return Ok(());
                         };
@@ -428,15 +428,19 @@ pub fn install(
                     if let Some(id) = registered {
                         let manager = a.state::<DownloadManager>();
                         manager.native_capability(&a, &id, false, false);
-                        let _ = manager.update_saved(&a, &id, |t| {
+                        crate::error_log::ignored(manager.update_saved(&a, &id, |t| {
                             t.status = "Interrupted".into();
                             t.error = Some(error.clone());
-                        });
+                        }));
                     }
                     unsafe {
-                        let _ = args.SetCancel(true);
+                        crate::error_log::ignored(args.SetCancel(true));
                     }
-                    let _ = crate::security::emit_shell(&a, "browser-error", error);
+                    crate::error_log::ignored(crate::security::emit_shell(
+                        &a,
+                        "browser-error",
+                        error,
+                    ));
                 }
                 Ok(())
             }));
@@ -446,11 +450,11 @@ pub fn install(
             Ok(())
         })();
         if let Err(e) = result {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 format!("downloads.native_unavailable: {e}"),
-            );
+            ));
         }
     })
     .map_err(|e| e.to_string())
@@ -532,14 +536,14 @@ pub async fn control(app: &AppHandle, id: &str, action: &str) -> Result<(), Stri
                     })?;
                     let record = manager.record(&id)?;
                     if let Ok(path) = files::owned_partial(&record) {
-                        let _ = std::fs::remove_file(path);
+                        crate::error_log::ignored(std::fs::remove_file(path));
                     }
                 }
                 _ => return Err("downloads.not_available".into()),
             }
             Ok(())
         })();
-        let _ = send.send(result);
+        crate::error_log::ignored(send.send(result));
     })
     .map_err(|e| e.to_string())?;
     receive.await.map_err(|e| e.to_string())?
@@ -547,7 +551,7 @@ pub async fn control(app: &AppHandle, id: &str, action: &str) -> Result<(), Stri
 pub fn cancel_view(app: &AppHandle, label: &str) {
     let a = app.clone();
     let label = label.to_owned();
-    let _ = app.run_on_main_thread(move || {
+    crate::error_log::ignored(app.run_on_main_thread(move || {
         let ids = OPERATIONS.with(|map| {
             map.borrow()
                 .iter()
@@ -568,7 +572,7 @@ pub fn cancel_view(app: &AppHandle, label: &str) {
                 });
             }
         }
-    });
+    }));
 }
 
 /// Called off the UI thread, only after explicit shutdown approval.
@@ -591,7 +595,7 @@ pub fn stop_for_exit(app: &AppHandle) -> Result<(), String> {
             }
             Ok(())
         })();
-        let _ = send.send(result);
+        crate::error_log::ignored(send.send(result));
     })
     .map_err(|e| e.to_string())?;
     receive

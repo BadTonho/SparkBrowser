@@ -250,7 +250,7 @@ pub fn start(app: AppHandle) {
     std::thread::spawn(move || loop {
         let ids = app.try_state::<crate::state::browser_state::BrowserState>().and_then(|state| state.infrastructure().db().lock().ok().and_then(|db| db.as_ref().and_then(|c| c.prepare("SELECT id FROM rss_feeds WHERE next_update<=?1 ORDER BY next_update LIMIT 20").ok().and_then(|mut s| s.query_map([now()], |row| row.get::<_,i64>(0)).ok().map(|rows| rows.filter_map(Result::ok).collect::<Vec<_>>()))))).unwrap_or_default();
         refresh_batch(&ids, |id| {
-            let _ = refresh(&app, id);
+            crate::error_log::ignored(refresh(&app, id));
         });
         std::thread::sleep(Duration::from_secs(60));
     });

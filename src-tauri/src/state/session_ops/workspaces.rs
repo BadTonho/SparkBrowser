@@ -86,17 +86,17 @@ pub async fn set_workspace_isolation(
     state.policies().set_workspace_isolation(enabled);
     let result = crate::window::webview_manager::sync_all_webviews(&app, &state);
     if let Err(error) = result {
-        let _ = crate::security::emit_shell(
+        crate::error_log::ignored(crate::security::emit_shell(
             &app,
             "browser-error",
             format!("The isolation setting was saved, but pages could not be rebuilt: {error}"),
-        );
+        ));
     }
-    let _ = crate::security::emit_shell(
+    crate::error_log::ignored(crate::security::emit_shell(
         &app,
         "browser-error",
         "Pages were reloaded to apply per-workspace isolation",
-    );
+    ));
     crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
     Ok(())
 }
@@ -527,12 +527,17 @@ pub async fn delete_workspace(
                 .map(|tab| tab.url.clone())
         });
         if let Some(url) = url {
-            let _ = crate::security::emit_shell_to(&app, &plan.id, "content-url-changed", &url);
+            crate::error_log::ignored(crate::security::emit_shell_to(
+                &app,
+                &plan.id,
+                "content-url-changed",
+                &url,
+            ));
         }
     }
     for id in removed_ephemeral {
         if let Err(error) = crate::window::webview_manager::close_tab_webview(&app, &id) {
-            let _ = crate::security::emit_shell(&app, "browser-error", error);
+            crate::error_log::ignored(crate::security::emit_shell(&app, "browser-error", error));
         } else {
             crate::window::ephemeral::purge_ephemeral_tab_data(&app, &id);
         }

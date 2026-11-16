@@ -36,11 +36,11 @@ impl NavigationWriter {
                             let _operation = state.session().blocking_operation();
                             if let Err(error) = state.persist_session() {
                                 last_error = Some(error);
-                                let _ = crate::security::emit_shell(
+                                crate::error_log::ignored(crate::security::emit_shell(
                                     &app,
                                     "browser-error",
                                     "Could not persist the session",
-                                );
+                                ));
                             }
                         }
                         Write::Visit { title, url } => {
@@ -52,17 +52,19 @@ impl NavigationWriter {
                                 .and_then(|()| state.persist_session());
                             if let Err(error) = result {
                                 last_error = Some(error);
-                                let _ = crate::security::emit_shell(
+                                crate::error_log::ignored(crate::security::emit_shell(
                                     &app,
                                     "browser-error",
                                     "Could not persist navigation data",
-                                );
+                                ));
                             } else {
                                 crate::window::new_tab::invalidate(&app);
                             }
                         }
                         Write::Flush(reply) => {
-                            let _ = reply.send(last_error.take().map_or(Ok(()), Err));
+                            crate::error_log::ignored(
+                                reply.send(last_error.take().map_or(Ok(()), Err)),
+                            );
                         }
                     }
                 }
@@ -122,6 +124,6 @@ impl NavigationWriter {
         if let Ok(mut paused) = self.paused.lock() {
             *paused = false;
         }
-        let _ = self.session();
+        crate::error_log::ignored(self.session());
     }
 }

@@ -42,7 +42,7 @@ impl IActivateAudioInterfaceCompletionHandler_Impl for Completion_Impl {
         })();
         if let Ok(mut slot) = self.sender.lock() {
             if let Some(sender) = slot.take() {
-                let _ = sender.send(result);
+                crate::error_log::ignored(sender.send(result));
             }
         }
         Ok(())
@@ -150,7 +150,7 @@ impl Capture {
                     .GetBuffer(&mut data, &mut frames, &mut flags, None, None)
                     .map_err(|_| "audio_unavailable")?;
                 if frames > 96000 {
-                    let _ = self.reader.ReleaseBuffer(frames);
+                    crate::error_log::ignored(self.reader.ReleaseBuffer(frames));
                     return Err("audio_unavailable");
                 }
                 received = true;
@@ -181,7 +181,7 @@ impl Capture {
 impl Drop for Capture {
     fn drop(&mut self) {
         unsafe {
-            let _ = self.client.Stop();
+            crate::error_log::ignored(self.client.Stop());
         }
     }
 }
@@ -233,7 +233,7 @@ pub fn roots(app: &tauri::AppHandle) -> Vec<u32> {
     let (sender, receiver) = mpsc::channel();
     let app = app.clone();
     let handle = app.clone();
-    let _ = app.run_on_main_thread(move || {
+    crate::error_log::ignored(app.run_on_main_thread(move || {
         let tabs = handle
             .state::<crate::state::browser_state::BrowserState>()
             .snapshot_tabs();
@@ -257,7 +257,7 @@ pub fn roots(app: &tauri::AppHandle) -> Vec<u32> {
                 });
             }
         }
-    });
+    }));
     let deadline = std::time::Instant::now() + Duration::from_millis(500);
     let mut roots = Vec::new();
     while let Ok(pid) =

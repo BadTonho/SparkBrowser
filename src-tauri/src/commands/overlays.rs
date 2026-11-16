@@ -271,7 +271,9 @@ pub async fn set_workspace_switcher_overlay(
     }
 
     if let Some(content_webview) = active_content_webview_in(&app, &window_id) {
-        let _ = content_webview.eval(format!("window.__sparkWorkspaceSwitcherOpen = {visible};"));
+        crate::error_log::ignored(
+            content_webview.eval(format!("window.__sparkWorkspaceSwitcherOpen = {visible};")),
+        );
     }
 
     if let Err(error) = webview.eval(&script) {
@@ -282,9 +284,11 @@ pub async fn set_workspace_switcher_overlay(
             *open = false;
         }
         if let Some(content_webview) = active_content_webview_in(&app, &window_id) {
-            let _ = content_webview.eval("window.__sparkWorkspaceSwitcherOpen = false;");
+            crate::error_log::ignored(
+                content_webview.eval("window.__sparkWorkspaceSwitcherOpen = false;"),
+            );
         }
-        let _ = sync_all_webviews(&app, &state);
+        crate::error_log::ignored(sync_all_webviews(&app, &state));
         return Err(format!("Failed to show workspace switcher: {error}"));
     }
 
@@ -314,7 +318,7 @@ pub async fn set_workspace_switcher_overlay(
             drop(open);
             drop(current_token);
 
-            let _ = sync_all_webviews(&app_for_hide, &state);
+            crate::error_log::ignored(sync_all_webviews(&app_for_hide, &state));
             let another_overlay_open = state
                 .surfaces()
                 .is_overlay_open()
@@ -328,12 +332,12 @@ pub async fn set_workspace_switcher_overlay(
             if app_is_focused {
                 if another_overlay_open {
                     if let Some(main_window) = app_for_hide.get_webview_window(&hide_window) {
-                        let _ = main_window.set_focus();
+                        crate::error_log::ignored(main_window.set_focus());
                     }
                 } else if let Some(content_webview) =
                     active_content_webview_in(&app_for_hide, &hide_window)
                 {
-                    let _ = content_webview.set_focus();
+                    crate::error_log::ignored(content_webview.set_focus());
                 }
             }
         });
@@ -375,7 +379,7 @@ pub async fn set_bookmark_context_menu_overlay(
         if let Ok(mut open) = state.surfaces().bookmark_context_menu_open().lock() {
             *open = false;
         }
-        let _ = webview.hide();
+        crate::error_log::ignored(webview.hide());
         sync_all_webviews(&app, &state)?;
         return Ok(());
     }

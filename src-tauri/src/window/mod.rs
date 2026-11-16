@@ -62,7 +62,7 @@ pub fn create_webview_builder(
 
 #[cfg(windows)]
 pub fn bring_webview_to_front(view: &tauri::Webview) {
-    let _ = view.with_webview(move |platform| {
+    crate::error_log::ignored(view.with_webview(move |platform| {
         #[link(name = "user32")]
         unsafe extern "system" {
             fn SetWindowPos(
@@ -92,7 +92,7 @@ pub fn bring_webview_to_front(view: &tauri::Webview) {
                 );
             }
         }
-    });
+    }));
 }
 
 #[cfg(not(windows))]
@@ -100,7 +100,7 @@ pub fn bring_webview_to_front(_view: &tauri::Webview) {}
 
 #[cfg(windows)]
 pub fn send_webview_to_back(view: &tauri::Webview) {
-    let _ = view.with_webview(move |platform| {
+    crate::error_log::ignored(view.with_webview(move |platform| {
         #[link(name = "user32")]
         unsafe extern "system" {
             fn SetWindowPos(
@@ -130,7 +130,7 @@ pub fn send_webview_to_back(view: &tauri::Webview) {
                 );
             }
         }
-    });
+    }));
 }
 
 #[cfg(not(windows))]

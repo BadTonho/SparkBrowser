@@ -145,7 +145,9 @@ pub async fn set_tab_account_container(
         Ok(())
     });
     if let Err(error) = result {
-        let _ = crate::window::webview_manager::sync_all_webviews(&app, &state);
+        crate::error_log::ignored(crate::window::webview_manager::sync_all_webviews(
+            &app, &state,
+        ));
         return Err(error);
     }
     crate::window::webview_manager::close_tab_webview(&app, &tab_id)?;
@@ -213,12 +215,16 @@ pub async fn delete_account_container(
             Ok(())
         },
     ) {
-        let _ = crate::window::webview_manager::sync_all_webviews(&app, &state);
+        crate::error_log::ignored(crate::window::webview_manager::sync_all_webviews(
+            &app, &state,
+        ));
         return Err(error);
     }
     for tab_id in &ids {
         if let Err(error) = crate::window::webview_manager::close_tab_webview(&app, tab_id) {
-            let _ = crate::window::webview_manager::sync_all_webviews(&app, &state);
+            crate::error_log::ignored(crate::window::webview_manager::sync_all_webviews(
+                &app, &state,
+            ));
             return Err(error);
         }
     }

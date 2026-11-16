@@ -31,7 +31,7 @@ pub async fn set_muted(app: &AppHandle, view: &tauri::Webview, muted: bool) -> R
                 .and_then(|c| c.SetIsMuted(muted))
                 .map_err(|_| "media.unavailable".to_string())
         })();
-        let _ = send.send(result);
+        crate::error_log::ignored(send.send(result));
     })
     .map_err(|_| "media.unavailable")?;
     tokio::time::timeout(std::time::Duration::from_secs(5), receive)
@@ -70,7 +70,7 @@ pub fn install(
             t.mute_available = true;
         });
         let (a, i, l, g) = (app.clone(), id.clone(), label.clone(), token.clone());
-        let _ = core.add_IsDocumentPlayingAudioChanged(
+        crate::error_log::ignored(core.add_IsDocumentPlayingAudioChanged(
             &IsDocumentPlayingAudioChangedEventHandler::create(Box::new(move |sender, _| {
                 if current(&a, &l, &g) {
                     if let Some(c) = sender {
@@ -85,8 +85,8 @@ pub fn install(
                 Ok(())
             })),
             &mut 0,
-        );
-        let _ = core.add_IsMutedChanged(
+        ));
+        crate::error_log::ignored(core.add_IsMutedChanged(
             &IsMutedChangedEventHandler::create(Box::new(move |sender, _| {
                 if current(&app, &label, &token) {
                     if let Some(c) = sender {
@@ -103,7 +103,7 @@ pub fn install(
                 Ok(())
             })),
             &mut 0,
-        );
+        ));
     })
     .map_err(|_| "media.unavailable".into())
 }

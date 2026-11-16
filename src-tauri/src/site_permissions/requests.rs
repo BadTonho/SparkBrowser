@@ -33,7 +33,11 @@ fn emit(app: &AppHandle) {
         .lock()
         .map(|v| v.clone())
         .unwrap_or_default();
-    let _ = crate::security::emit_shell(app, "permission-requests-updated", pending);
+    crate::error_log::ignored(crate::security::emit_shell(
+        app,
+        "permission-requests-updated",
+        pending,
+    ));
 }
 fn valid(app: &AppHandle, pending: &Pending) -> bool {
     let generation_matches = app
@@ -75,10 +79,10 @@ fn finish(app: &AppHandle, id: &str, state: PermissionState, remember: bool) {
                 .args
                 .cast::<ICoreWebView2PermissionRequestedEventArgs3>()
             {
-                let _ = args.SetSavesInProfile(remember && is_valid);
+                crate::error_log::ignored(args.SetSavesInProfile(remember && is_valid));
             }
-            let _ = pending.args.SetState(profile::native_state(&state));
-            let _ = pending.deferral.Complete();
+            crate::error_log::ignored(pending.args.SetState(profile::native_state(&state)));
+            crate::error_log::ignored(pending.deferral.Complete());
         }
     }
     if let Ok(mut items) = app.state::<PermissionRequests>().pending.lock() {
@@ -244,8 +248,8 @@ pub(super) fn enqueue(
     };
     if !registry.admit(request.clone()) {
         unsafe {
-            let _ = args.SetState(COREWEBVIEW2_PERMISSION_STATE_DENY);
-            let _ = deferral.Complete();
+            crate::error_log::ignored(args.SetState(COREWEBVIEW2_PERMISSION_STATE_DENY));
+            crate::error_log::ignored(deferral.Complete());
         }
         return Ok(());
     }
@@ -328,7 +332,9 @@ pub fn install_and_navigate(
                         .is_err()
                     {
                         unsafe {
-                            let _ = args.SetState(COREWEBVIEW2_PERMISSION_STATE_DENY);
+                            crate::error_log::ignored(
+                                args.SetState(COREWEBVIEW2_PERMISSION_STATE_DENY),
+                            );
                         }
                     }
                 }
@@ -343,7 +349,7 @@ pub fn install_and_navigate(
                 Ok(())
             }));
             // Older runtimes still navigate; unsupported managed requests are denied below.
-            let _ = super::frames::install(&app, &core, &label, &tab_id, &token);
+            crate::error_log::ignored(super::frames::install(&app, &core, &label, &tab_id, &token));
             unsafe {
                 core.add_PermissionRequested(&handler, &mut registration)
                     .map_err(|e| e.to_string())?;
@@ -360,11 +366,11 @@ pub fn install_and_navigate(
             Ok(())
         })();
         if result.is_err() {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 "Could not initialize native page permissions",
-            );
+            ));
         }
     })
     .map_err(|e| e.to_string())

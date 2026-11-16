@@ -65,7 +65,7 @@ impl ZoomService {
     }
     pub fn publish(&self, app: &AppHandle) -> Result<ZoomSnapshot, String> {
         let s = self.snapshot()?;
-        let _ = crate::security::emit_shell(app, "site-zoom-state", &s);
+        crate::error_log::ignored(crate::security::emit_shell(app, "site-zoom-state", &s));
         Ok(s)
     }
     pub fn apply_all(&self, app: &AppHandle) -> Result<(), String> {

@@ -64,7 +64,11 @@ impl RuntimeService {
         next.revision += 1;
         *state = next.clone();
         drop(state);
-        let _ = crate::security::emit_shell(app, "webview-runtime-status", next);
+        crate::error_log::ignored(crate::security::emit_shell(
+            app,
+            "webview-runtime-status",
+            next,
+        ));
     }
     pub fn ensure_pending(&self) -> Result<(), String> {
         let status = self.snapshot()?;

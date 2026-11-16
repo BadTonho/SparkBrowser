@@ -78,7 +78,9 @@ pub fn cancel_view(app: &tauri::AppHandle, label: &str) {
     {
         let (app, label) = (app.clone(), label.to_owned());
         let dispatch = app.clone();
-        let _ = dispatch.run_on_main_thread(move || requests::cancel(&app, &label));
+        crate::error_log::ignored(
+            dispatch.run_on_main_thread(move || requests::cancel(&app, &label)),
+        );
     }
     #[cfg(target_os = "linux")]
     {

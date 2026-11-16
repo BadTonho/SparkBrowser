@@ -29,16 +29,20 @@ pub fn notify(app: &AppHandle, state: &BrowserState) {
             .and_then(|conn| closed_tabs_repo::list(conn, now()).ok())
     });
     if let Some(rows) = rows {
-        let _ = crate::security::emit_shell(app, "closed-tabs-updated", rows);
+        crate::error_log::ignored(crate::security::emit_shell(
+            app,
+            "closed-tabs-updated",
+            rows,
+        ));
     }
 }
 pub(super) fn publish(app: &AppHandle, state: &BrowserState, window_id: &str) -> TabSnapshot {
     if let Err(error) = sync_all_webviews(app, state) {
-        let _ = crate::security::emit_shell(
+        crate::error_log::ignored(crate::security::emit_shell(
             app,
             "browser-error",
             format!("The session was saved, but a page could not be displayed: {error}"),
-        );
+        ));
     }
     let snapshot = crate::state::publish::publish_tabs(app, state, window_id);
     crate::security::emit_shell_all(app, "privacy-stats-updated", state.snapshot_privacy_stats());
@@ -158,7 +162,7 @@ pub(super) fn close_one(
         .any(|tab| tab.id == id && tab.is_ephemeral)
     {
         if let Err(error) = crate::window::webview_manager::close_tab_webview(app, id) {
-            let _ = crate::security::emit_shell(app, "browser-error", error);
+            crate::error_log::ignored(crate::security::emit_shell(app, "browser-error", error));
         } else {
             crate::window::ephemeral::purge_ephemeral_tab_data(app, id);
         }

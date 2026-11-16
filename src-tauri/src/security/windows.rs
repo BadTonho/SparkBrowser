@@ -73,7 +73,11 @@ pub(super) fn install(app: &AppHandle, view: &Webview, internal: bool) -> Result
         })();
         if result.is_err() {
             // Fail closed rather than continue with partially installed boundaries.
-            let _ = super::emit_shell(&app, "browser-error", "security.initialization_failed");
+            crate::error_log::ignored(super::emit_shell(
+                &app,
+                "browser-error",
+                "security.initialization_failed",
+            ));
             app.exit(1);
         }
     })

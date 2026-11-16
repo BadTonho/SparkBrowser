@@ -64,7 +64,7 @@ pub async fn get_cookies_for_url(app: &AppHandle, url: &str) -> Result<String, S
 
                 if let Ok(mut lock) = callback_sender.lock() {
                     if let Some(tx) = lock.take() {
-                        let _ = tx.send(parse_result.map_err(|e| e.to_string()));
+                        crate::error_log::ignored(tx.send(parse_result.map_err(|e| e.to_string())));
                     }
                 }
                 Ok(())
@@ -79,7 +79,7 @@ pub async fn get_cookies_for_url(app: &AppHandle, url: &str) -> Result<String, S
         if let Err(e) = op {
             if let Ok(mut lock) = sender_for_webview.lock() {
                 if let Some(tx) = lock.take() {
-                    let _ = tx.send(Err(e.to_string()));
+                    crate::error_log::ignored(tx.send(Err(e.to_string())));
                 }
             }
         }

@@ -29,7 +29,12 @@ pub(super) fn update_navigation(
         return;
     }
     if let Ok(Some(payload)) = state.observe_document(tab_id, update) {
-        let _ = crate::security::emit_shell_for_tab(app, tab_id, "tab-navigation-updated", payload);
+        crate::error_log::ignored(crate::security::emit_shell_for_tab(
+            app,
+            tab_id,
+            "tab-navigation-updated",
+            payload,
+        ));
     }
 }
 
@@ -203,11 +208,11 @@ pub(super) fn install_native_navigation(
             Ok::<(), webview2_com::Error>(())
         })();
         if result.is_err() {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 "Could not attach native navigation observers",
-            );
+            ));
         }
     })
     .map_err(|e| e.to_string())
@@ -247,7 +252,7 @@ pub(super) fn with_page_events(
         if super::new_tab::is_document(&app_for_page_load, payload.url())
             || super::settings_tab::is_document(&app_for_page_load, payload.url())
         {
-            let _ = webview.set_zoom(1.0);
+            crate::error_log::ignored(webview.set_zoom(1.0));
         }
         update_navigation(
             &app_for_page_load,
@@ -279,18 +284,22 @@ pub(super) fn with_page_events(
             && !super::new_tab::is_document(&app_for_page_load, payload.url())
             && !super::settings_tab::is_document(&app_for_page_load, payload.url())
         {
-            let _ = crate::zoom::apply(&app_for_page_load, &label_for_load, payload.url().as_str());
+            crate::error_log::ignored(crate::zoom::apply(
+                &app_for_page_load,
+                &label_for_load,
+                payload.url().as_str(),
+            ));
         }
         if started {
             return;
         }
         if super::settings_tab::is_document(&app_for_page_load, payload.url()) {
-            let _ = crate::security::emit_shell_for_tab(
+            crate::error_log::ignored(crate::security::emit_shell_for_tab(
                 &app_for_page_load,
                 &tab_for_load,
                 "settings-tab-loaded",
                 tab_for_load.clone(),
-            );
+            ));
         }
         let Some(state) = app_for_page_load.try_state::<BrowserState>() else {
             return;
@@ -315,11 +324,11 @@ pub(super) fn with_page_events(
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
             ) {
                 if writer.session().is_err() {
-                    let _ = crate::security::emit_shell(
+                    crate::error_log::ignored(crate::security::emit_shell(
                         &app_for_page_load,
                         "browser-error",
                         "Session persistence queue is unavailable",
-                    );
+                    ));
                 }
             }
         } else if matches!(payload.url().scheme(), "http" | "https")
@@ -331,11 +340,11 @@ pub(super) fn with_page_events(
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
             ) {
                 if writer.visit(title, payload.url().to_string()).is_err() {
-                    let _ = crate::security::emit_shell(
+                    crate::error_log::ignored(crate::security::emit_shell(
                         &app_for_page_load,
                         "browser-error",
                         "Navigation persistence queue is unavailable",
-                    );
+                    ));
                 }
             }
         }
@@ -343,10 +352,10 @@ pub(super) fn with_page_events(
             return;
         };
         if let Ok(serialized) = serde_json::to_string(&*shortcuts) {
-            let _ = webview.eval(format!(
+            crate::error_log::ignored(webview.eval(format!(
                 "window.__sparkSetKeyboardShortcuts?.(\"{}\", {serialized});",
                 keyboard_token_for_load
-            ));
+            )));
         }
     });
 
@@ -369,11 +378,11 @@ pub(super) fn with_page_events(
             title_app.try_state::<crate::database::navigation_writer::NavigationWriter>()
         {
             if writer.session().is_err() {
-                let _ = crate::security::emit_shell(
+                crate::error_log::ignored(crate::security::emit_shell(
                     &title_app,
                     "browser-error",
                     "Session persistence queue is unavailable",
-                );
+                ));
             }
         }
     });

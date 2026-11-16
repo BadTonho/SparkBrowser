@@ -113,11 +113,11 @@ impl UpdateService {
         inner.snapshot.revision += 1;
         let snapshot = inner.snapshot.clone();
         drop(inner);
-        let _ = app.emit_to(
+        crate::error_log::ignored(app.emit_to(
             tauri::EventTarget::webview("main"),
             "update-state",
             &snapshot,
-        );
+        ));
         Ok(snapshot)
     }
     pub fn set_channel(

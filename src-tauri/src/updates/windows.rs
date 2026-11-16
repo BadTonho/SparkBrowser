@@ -91,7 +91,7 @@ pub async fn download(app: &AppHandle, expected_version: &str) -> Result<UpdateS
                 inner.snapshot.total = total;
             }
             if last_progress.elapsed() >= Duration::from_millis(100) {
-                let _ = service.publish(app);
+                crate::error_log::ignored(service.publish(app));
                 last_progress = Instant::now();
             }
         },

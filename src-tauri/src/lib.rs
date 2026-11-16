@@ -134,7 +134,7 @@ use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVI
 pub fn run() {
     let mode = private_session::Mode::from_args().expect("invalid private session arguments");
     if let private_session::Mode::Cleanup(root) = &mode {
-        let _ = private_session::remove_session(root);
+        crate::error_log::ignored(private_session::remove_session(root));
         return;
     }
     webview_runtime::restart::wait_for_parent()
@@ -204,7 +204,7 @@ pub fn run() {
             {
                 let app = window.app_handle();
                 if let Some(state) = app.try_state::<BrowserState>() {
-                    let _ = window::viewport::sync_content_geometry(app, &state);
+                    crate::error_log::ignored(window::viewport::sync_content_geometry(app, &state));
                 }
             }
             if window.label() != "main" && crate::state::tab_model::is_window_label(window.label())
@@ -215,7 +215,11 @@ pub fn run() {
                     let (app, id) = (window.app_handle().clone(), window.label().to_string());
                     tauri::async_runtime::spawn(async move {
                         if let Err(error) = window::browser_windows::closed(&app, &id).await {
-                            let _ = crate::security::emit_shell(&app, "browser-error", error);
+                            crate::error_log::ignored(crate::security::emit_shell(
+                                &app,
+                                "browser-error",
+                                error,
+                            ));
                         }
                     });
                     return;
@@ -225,7 +229,7 @@ pub fn run() {
                 if let WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     if let Some(service) = window.try_state::<shutdown::ShutdownService>() {
-                        let _ = service.request(window.app_handle(), None);
+                        crate::error_log::ignored(service.request(window.app_handle(), None));
                     }
                     return;
                 }
@@ -256,15 +260,15 @@ pub fn run() {
                         .app_handle()
                         .get_webview(BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL)
                     {
-                        let _ = webview.hide();
+                        crate::error_log::ignored(webview.hide());
                     }
                 }
-                let _ = crate::security::emit_shell_to(
+                crate::error_log::ignored(crate::security::emit_shell_to(
                     window.app_handle(),
                     window.label(),
                     "workspace-shortcut-cancel",
                     (),
-                );
+                ));
             }
         })
         .setup(|app| {
@@ -315,12 +319,12 @@ pub fn run() {
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
             // Secrets saved under the pre-rename names follow the profile; a locked keyring just retries next start.
-            let _ = backup::migrate_legacy_secrets(
+            crate::error_log::ignored(backup::migrate_legacy_secrets(
                 &conn,
                 &app.state::<backup::service::BackupService>()
                     .sync
                     .credentials,
-            );
+            ));
             let legacy_credential = database::preferences_repo::load(
                 &conn,
                 database::preferences_repo::BACKUP_SYNC_SECRET_KEY,
@@ -684,7 +688,9 @@ pub fn run() {
                 code: None, api, ..
             } => {
                 api.prevent_exit();
-                let _ = app.state::<shutdown::ShutdownService>().request(app, None);
+                crate::error_log::ignored(
+                    app.state::<shutdown::ShutdownService>().request(app, None),
+                );
             }
             tauri::RunEvent::Exit => error_log::clean_exit(),
             _ => {}

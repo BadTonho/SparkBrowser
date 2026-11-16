@@ -55,7 +55,9 @@ fn enter(app: &AppHandle, label: &str) -> Result<(), String> {
         .clone();
     if selected != tab_id {
         if let Some(view) = app.get_webview(label) {
-            let _ = view.eval("if (document.fullscreenElement) void document.exitFullscreen();");
+            crate::error_log::ignored(
+                view.eval("if (document.fullscreenElement) void document.exitFullscreen();"),
+            );
         }
         return Err("Fullscreen requested by an inactive tab".into());
     }
@@ -98,12 +100,12 @@ pub fn exit(app: &AppHandle, label: &str, request_document_exit: bool) {
             }
         }
         if let Some(window) = app.get_window(&window_id) {
-            let _ = window.set_fullscreen(was_fullscreen);
+            crate::error_log::ignored(window.set_fullscreen(was_fullscreen));
         }
-        let _ = super::viewport::sync_content_geometry(
+        crate::error_log::ignored(super::viewport::sync_content_geometry(
             app,
             &app.state::<crate::state::browser_state::BrowserState>(),
-        );
+        ));
     }
 }
 
@@ -123,7 +125,7 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
                             let mut fullscreen = Default::default();
                             core.ContainsFullScreenElement(&mut fullscreen)?;
                             if fullscreen.as_bool() {
-                                let _ = enter(&app, &label);
+                                crate::error_log::ignored(enter(&app, &label));
                             } else {
                                 exit(&app, &label, false);
                             }
