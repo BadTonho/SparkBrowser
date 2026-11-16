@@ -14,6 +14,16 @@ pub use windows::{download, install};
 pub(crate) fn platform_supported(app: &tauri::AppHandle) -> bool {
     cfg!(all(windows, target_arch = "x86_64", not(debug_assertions)))
         && app.config().identifier == "org.spark.browser"
+        && !is_portable()
+}
+
+/// The portable zip ships a `portable.txt` next to the executable. Updates run the installer, which
+/// would turn a portable copy into an installed one, so a portable copy does not update itself.
+pub(crate) fn is_portable() -> bool {
+    std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|dir| dir.join("portable.txt")))
+        .is_some_and(|marker| marker.is_file())
 }
 
 /// Installs an update that was downloaded in the background, before the previous session is restored.

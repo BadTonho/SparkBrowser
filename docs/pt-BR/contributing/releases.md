@@ -1,11 +1,11 @@
 # Releases assinadas e GitHub Actions automatizado
 
-As releases são publicadas automaticamente pelo **GitHub Actions** ao enviar tags de versão (por exemplo `v1.0.0` ou `v1.1.0-beta.1`), ou geradas localmente. As releases públicas ficam em `BadTonho/SparkBrowser`. Há suporte tanto para pacotes Windows (instalador NSIS) quanto para uma ampla variedade de distribuições Linux (.AppImage, .deb, .rpm e .tar.gz portátil). Os dois canais mantêm o identificador `org.spark.browser` e compartilham o perfil/banco existente.
+As releases são publicadas automaticamente pelo **GitHub Actions** ao enviar tags de versão (por exemplo `v1.0.0` ou `v1.1.0-beta.1`), ou geradas localmente. As releases públicas ficam em `BadTonho/SparkBrowser`. Há suporte tanto para pacotes Windows (instalador NSIS e .zip portátil) quanto para uma ampla variedade de distribuições Linux (.AppImage, .deb, .rpm e .tar.gz portátil). Os dois canais mantêm o identificador `org.spark.browser` e compartilham o perfil/banco existente.
 
 ## 1. Releases Automatizadas (GitHub Actions)
 
 Quando você envia uma tag iniciada em `v*`, o workflow `.github/workflows/release.yml` é acionado automaticamente:
-1. **Build Windows x64:** Compila o aplicativo, assina o instalador utilizando a chave privada `TAURI_SIGNING_PRIVATE_KEY` salva nos segredos do repositório e gera `SparkBrowser_<version>_x64-setup.exe`, sua assinatura `.sig` e o manifesto `updater.json`.
+1. **Build Windows x64:** Compila o aplicativo, assina o instalador utilizando a chave privada `TAURI_SIGNING_PRIVATE_KEY` salva nos segredos do repositório e gera `SparkBrowser_<version>_x64-setup.exe`, sua assinatura `.sig` e o manifesto `updater.json`. Também empacota `SparkBrowser_<version>_x64-portable.zip` com `spark-browser.exe`, a licença e um marcador `portable.txt`. A cópia portátil não precisa de instalação, compartilha o perfil instalado e não se atualiza sozinha: o instalador a transformaria em uma cópia instalada, então o marcador desliga a atualização automática. Baixe um zip mais novo para atualizá-la. Ela precisa do WebView2 Runtime, que o Windows 10 e 11 já incluem.
 2. **Build Linux x64:** Compila o aplicativo com WebKitGTK e gera pacotes para múltiplas distribuições:
    - **`.AppImage` (Universal):** Roda em praticamente todas as distribuições Linux (Fedora, Arch Linux, Manjaro, openSUSE, Pop!_OS, Linux Mint, Debian, Ubuntu, Void, etc.) sem necessitar de root ou instalação.
    - **`.deb` (Debian / Ubuntu):** Pacote nativo para Debian, Ubuntu, Pop!_OS, Linux Mint, Elementary OS e Zorin OS.

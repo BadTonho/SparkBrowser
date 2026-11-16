@@ -4,6 +4,8 @@ Em andamento — não lançada.
 
 ## Novas funcionalidades
 
+- Adicionada uma versão portátil para Windows (`SparkBrowser_<version>_x64-portable.zip`): descompacte e execute, sem instalação, e ela não se atualiza sozinha.
+
 - Adiciona **Atualizar automaticamente** às Configurações, ativada por padrão: as atualizações são baixadas em segundo plano, aparece um botão **Reiniciar para atualizar**, e uma atualização que ninguém reiniciou é instalada na próxima vez que o Spark abrir.
 
 - Adiciona **Hibernar outros workspaces** às configurações de Desempenho, ativada por padrão: alguns segundos depois de trocar de workspace, as abas dos outros workspaces são colocadas para dormir (abas tocando, editadas, baixando ou fixadas continuam acordadas).
@@ -32,5 +34,12 @@ Em andamento — não lançada.
 - O diagnóstico local mostra percentis recentes de operações nativas e separa os tempos de espera e execução da troca de abas.
 
 ## Correções
+
+- No Linux, os ícones dos sites agora aparecem nas abas e na página de nova guia.
+- No Linux, o escudo agora bloqueia scripts, imagens e rastreadores carregados por uma página, e não só navegações.
+- No Linux, pedidos de câmera, microfone, localização e notificações mostram o diálogo de permissão, e suas escolhas são lembradas e listadas nas Configurações.
+- No Linux, os downloads mostram o progresso e podem ser cancelados.
+- No Linux, o zoom salvo de um site é aplicado ao abri-lo, e Ctrl+roda do mouse o altera e grava.
+- No Linux, o widget do Gmail pode guardar o login no seu chaveiro e ler sua sessão do Gmail, e a memória de cada aba é medida.
 
 - Corrigido o seletor de canal de atualização desativado em builds nativos onde as atualizações automáticas não estão disponíveis.

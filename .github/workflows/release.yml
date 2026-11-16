@@ -57,6 +57,18 @@ jobs:
         run: |
           node tools/release/generate-manifest.mjs ${{ github.ref_name }}
 
+      - name: Package portable Windows zip
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $stage = "portable/SparkBrowser"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item src-tauri/target/release/spark-browser.exe $stage
+          Copy-Item LICENSE $stage
+          # Its presence tells the app it is not installed, so it never runs the installer to update itself.
+          Set-Content -Path "$stage/portable.txt" -Value "Spark portable. Delete this file only if you install Spark."
+          Compress-Archive -Path "$stage/*" -DestinationPath "release-artifacts/SparkBrowser_${version}_x64-portable.zip"
+
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:

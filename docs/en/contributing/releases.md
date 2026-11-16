@@ -1,11 +1,11 @@
 # Signed Releases & Automated GitHub Actions
 
-Releases are published automatically via **GitHub Actions** upon pushing version tags (e.g. `v1.0.0` or `v1.1.0-beta.1`), or built locally. Public releases live in `BadTonho/SparkBrowser`. Both Windows (NSIS installer) and broad Linux distributions (.AppImage, .deb, .rpm, and portable .tar.gz) packages are supported. Both channels retain identifier `org.spark.browser` and share the existing profile/database.
+Releases are published automatically via **GitHub Actions** upon pushing version tags (e.g. `v1.0.0` or `v1.1.0-beta.1`), or built locally. Public releases live in `BadTonho/SparkBrowser`. Both Windows (NSIS installer and portable .zip) and broad Linux distributions (.AppImage, .deb, .rpm, and portable .tar.gz) packages are supported. Both channels retain identifier `org.spark.browser` and share the existing profile/database.
 
 ## 1. Automated Releases (GitHub Actions)
 
 When you push a tag matching `v*`, the `.github/workflows/release.yml` workflow triggers automatically:
-1. **Windows x64 Build:** Compiles the app, signs the installer using `TAURI_SIGNING_PRIVATE_KEY` stored in repository secrets, and generates `SparkBrowser_<version>_x64-setup.exe`, its `.sig` signature, and the `updater.json` manifest.
+1. **Windows x64 Build:** Compiles the app, signs the installer using `TAURI_SIGNING_PRIVATE_KEY` stored in repository secrets, and generates `SparkBrowser_<version>_x64-setup.exe`, its `.sig` signature, and the `updater.json` manifest. It also packs `SparkBrowser_<version>_x64-portable.zip` with `spark-browser.exe`, the license and a `portable.txt` marker. The portable copy needs no installation, shares the installed profile and does not update itself: the installer would turn it into an installed copy, so the marker turns automatic updates off. Download a newer zip to update it. It needs the WebView2 Runtime, which Windows 10 and 11 include.
 2. **Linux x64 Build:** Compiles the app with WebKitGTK and generates multi-distro packages:
    - **`.AppImage` (Universal):** Runs on virtually all Linux distributions (Fedora, Arch Linux, Manjaro, openSUSE, Pop!_OS, Linux Mint, Debian, Ubuntu, Void, etc.) without requiring root or installation.
    - **`.deb` (Debian / Ubuntu):** Native package for Debian, Ubuntu, Pop!_OS, Linux Mint, Elementary OS, and Zorin OS.
