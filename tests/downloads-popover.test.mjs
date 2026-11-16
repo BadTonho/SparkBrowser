@@ -51,7 +51,7 @@ function fixture(tick = async () => {}, settle = async () => {}) {
   });
   let onTask, resolveTasks, loads = 0;
   const api = load('src/lib/stores/downloadsStore.ts', {
-    'svelte/store': { get, writable, derived }, svelte: { tick }, '../i18n': { t: writable(key => key) },
+    'svelte/store': { get, writable, derived }, '../services/ignored-error': { logIgnored() {} }, svelte: { tick }, '../i18n': { t: writable(key => key) },
     '../services/download-progress': { summarizeDownloads }, '../services/user-errors.js': { describeError: String },
     './downloadNoticesStore': noticesModule,
     '../services/bridge/overlays': { notifyOpening: id => notices.push(id), settleOverlayVisibility: settle }, '../services/bridge/downloads-popover': { setDownloadsPopover: async (...args) => calls.push(args) },

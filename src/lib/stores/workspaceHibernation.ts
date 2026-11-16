@@ -4,6 +4,7 @@ import { isTauriRuntime } from "../services/bridge/runtime";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { hibernateOtherWorkspaces } from "./settingsStore";
 import { applyTabsSnapshot } from "./browserStore";
+import { logIgnored } from "../services/ignored-error";
 
 /** Long enough that flipping through workspaces (Alt+1 … Alt+9) does not put each one to sleep on the way. */
 export const WORKSPACE_HIBERNATION_DELAY_MS = 3_000;
@@ -20,7 +21,7 @@ export function initializeWorkspaceHibernation(): () => void {
     clearTimeout(timer);
     timer = setTimeout(() => {
       if (disposed || !get(hibernateOtherWorkspaces)) return;
-      void hibernateOtherWorkspaceTabs().then(snapshot => { if (!disposed) applyTabsSnapshot(snapshot); }).catch(() => {});
+      void hibernateOtherWorkspaceTabs().then(snapshot => { if (!disposed) applyTabsSnapshot(snapshot); }).catch(logIgnored);
     }, WORKSPACE_HIBERNATION_DELAY_MS);
   };
   let workspace = get(activeWorkspaceId);

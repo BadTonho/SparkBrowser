@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { logIgnored } from "../../services/ignored-error";
   import AppIcon from "../icons/AppIcon.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { t, formatDate } from "../../i18n";
@@ -68,13 +69,13 @@
         const closingSession = nativeSessionId;
         nativeSessionKey = "";
         lastNativePresentation = "";
-        await setHistoryOverlay(false, closingSession).catch(() => {});
+        await setHistoryOverlay(false, closingSession).catch(logIgnored);
       }
       return;
     }
     const key = `${$activeWorkspaceId}:${tab.id}:${tab.url}`;
     if (key !== nativeSessionKey) {
-      if (nativeSessionKey) void setHistoryOverlay(false, nativeSessionId).catch(() => {});
+      if (nativeSessionKey) void setHistoryOverlay(false, nativeSessionId).catch(logIgnored);
       nativeSessionKey = key;
       nativeSessionId += 1;
       lastNativePresentation = "";

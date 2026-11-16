@@ -6,6 +6,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { WorkspaceItem } from "../../types/browser";
 
 import { isTauriRuntime } from "./runtime";
+import { logIgnored } from "../ignored-error";
 
 export type OverlayId =
   | "update-install"
@@ -57,7 +58,7 @@ export async function setOverlayVisibility(
 
   const shouldHideContent = [...activeOverlayIds].some((id) => !nonBlockingOverlayIds.has(id));
   overlaySyncQueue = overlaySyncQueue
-    .catch(() => undefined)
+    .catch(logIgnored)
     .then(() => invoke("set_overlay_visibility", { visible: shouldHideContent }));
   await overlaySyncQueue;
 }
@@ -75,7 +76,7 @@ export async function setWorkspaceSwitcherOverlay(
   if(!isTauriRuntime()) return;
 
   workspaceSwitcherSyncQueue = workspaceSwitcherSyncQueue
-    .catch(() => undefined)
+    .catch(logIgnored)
     .then(() =>
       invoke<void>("set_workspace_switcher_overlay", {
         visible,
@@ -106,7 +107,7 @@ export async function setBookmarkContextMenuOverlay(
   if (visible) notifyOpening();
   if(!isTauriRuntime()) return;
   bookmarkContextMenuSyncQueue = bookmarkContextMenuSyncQueue
-    .catch(() => undefined)
+    .catch(logIgnored)
     .then(() => invoke<void>("set_bookmark_context_menu_overlay", {
       visible,
       x,

@@ -28,3 +28,9 @@ test('the notification is wired into the shell, every interface and the new-tab 
   assert.match(readFileSync('src-tauri/src/window/new_tab/bridge.js', 'utf8'), /send\('error'/);
   assert.match(readFileSync('src-tauri/capabilities/default.json', 'utf8'), /allow-report-frontend-error/);
 });
+
+test('silent failures are logged as warnings instead of being swallowed', () => {
+  assert.match(readFileSync('src/lib/services/ignored-error.ts', 'utf8'), /level: "warning"/);
+  assert.match(readFileSync('src-tauri/src/commands/error_report.rs', 'utf8'), /Level::Warning/);
+  assert.doesNotMatch(readFileSync('src/lib/stores/downloadsStore.ts', 'utf8'), /\.catch\(\(\) => \{\}\)/);
+});

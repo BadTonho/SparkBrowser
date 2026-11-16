@@ -15,6 +15,7 @@ import {
   workspaces,
 } from "./workspaceStore";
 import { overlayBlurPx, workspaceSwitcherDisplay } from "./settingsStore";
+import { logIgnored } from "../services/ignored-error";
 
 export type WorkspaceSwitcherOverlay = { kind: "picker" };
 
@@ -54,7 +55,7 @@ function setOverlay(overlay: WorkspaceSwitcherOverlay | null): void {
       get(workspaces),
       get(activeWorkspaceId),
       get(overlayBlurPx)
-    ).catch(() => undefined);
+    ).catch(logIgnored);
   }
 }
 
@@ -65,7 +66,7 @@ function refreshOpenOverlay(): void {
     get(workspaces),
     get(activeWorkspaceId),
     get(overlayBlurPx)
-  ).catch(() => undefined);
+  ).catch(logIgnored);
 }
 
 function finishPickerSelection(): void {

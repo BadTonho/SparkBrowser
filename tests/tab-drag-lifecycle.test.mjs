@@ -58,7 +58,7 @@ function fixture({ failDrop = false } = {}) {
     './splitViewStore': { splitLayout: writable(null), splitKey: () => null },
     './settingsStore': { tabLayout: writable('horizontal') },
     '../i18n': { locale: writable('en'), tr: key => key },
-    '../services/bridge/overlays': { onOverlayOpening: () => () => {} },
+    '../services/ignored-error': { logIgnored() {} }, '../services/bridge/overlays': { onOverlayOpening: () => () => {} },
     '../services/bridge/tab-drag': bridge,
     '../services/split-tab-groups.js': { replaceGroupOrder },
     '../services/tab-drag-geometry.js': { crossedDragThreshold: () => true, splitDropSide: () => 'right' },

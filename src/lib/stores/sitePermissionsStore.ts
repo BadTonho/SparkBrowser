@@ -3,6 +3,7 @@ import { get, writable } from "svelte/store";
 import type { PermissionRequest } from "../types/browser";
 import { onPermissionRequests, fetchSitePermissions } from "../services/bridge/site-permissions";
 import { setOverlayVisibility } from "../services/bridge/overlays";
+import { logIgnored } from "../services/ignored-error";
 const confirmedPermissionRequests = writable<PermissionRequest[]>([]);
 export const permissionRequests = { subscribe: confirmedPermissionRequests.subscribe };
 export const isSitePermissionsOpen = writable(false);
@@ -24,7 +25,7 @@ function startPermissionEvents(): () => void {
     }
     void setOverlayVisibility(requests.length > 0, "permission-prompt");
   }
-  void onPermissionRequests(requests => { revision++; apply(requests); }).then(async unlisten => { if (disposed) { unlisten(); return; } stop = unlisten; const observed = revision; const snapshot = await fetchSitePermissions(); if (revision === observed) apply(snapshot.requests); }).catch(() => {});
+  void onPermissionRequests(requests => { revision++; apply(requests); }).then(async unlisten => { if (disposed) { unlisten(); return; } stop = unlisten; const observed = revision; const snapshot = await fetchSitePermissions(); if (revision === observed) apply(snapshot.requests); }).catch(logIgnored);
   return () => { disposed = true; stop?.(); };
 }
 

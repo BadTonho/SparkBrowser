@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { logIgnored } from "../../services/ignored-error";
   import { onMount } from "svelte";
   import { t } from "../../i18n";
   import { invoke } from "../../services/bridge/runtime";
@@ -12,7 +13,7 @@
   let id = $state<number | null>(null); let title = $state(""); let url = $state(""); let interval = $state(60); let error = $state(""); let busy = $state(false);
   let compact = $state(false);
   async function load() { feeds = await invoke<Feed[]>("get_feeds"); if (selected !== null) entries = await invoke<Entry[]>("get_feed_entries", { id: selected }); }
-  onMount(() => { void load().catch(e => error = describeError(e)); void invoke<{compact_feed_cards: boolean}>("get_experimental_flags").then(value => compact = value.compact_feed_cards).catch(() => {}); });
+  onMount(() => { void load().catch(e => error = describeError(e)); void invoke<{compact_feed_cards: boolean}>("get_experimental_flags").then(value => compact = value.compact_feed_cards).catch(logIgnored); });
   async function save() {
     busy = true; error = "";
     try { await invoke("save_feed", { id, title, url, intervalMinutes: Number(interval) }); id = null; title = ""; url = ""; interval = 60; await load(); }

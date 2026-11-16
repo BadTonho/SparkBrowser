@@ -19,6 +19,7 @@ import {
   onDownloadTaskUpdated,
   onDownloadsUpdated,
 } from "../services/tauri-bridge";
+import { logIgnored } from "../services/ignored-error";
 
 const confirmedDownloads = writable<DownloadItem[]>([]);
 export const downloads = { subscribe: confirmedDownloads.subscribe };
@@ -53,9 +54,9 @@ function applyTask(task: DownloadTask): void {
 function startDownloadEvents(): () => void {
   let disposed = false;
   const stops: (() => void)[] = [];
-  const subscriptions = [onDownloadTaskUpdated(task => { if (!disposed) applyTask(task); }), onDownloadsUpdated(() => { if (!disposed) void loadDownloads(() => !disposed).catch(() => {}); })];
+  const subscriptions = [onDownloadTaskUpdated(task => { if (!disposed) applyTask(task); }), onDownloadsUpdated(() => { if (!disposed) void loadDownloads(() => !disposed).catch(logIgnored); })];
   void Promise.all(subscriptions.map(promise => promise.then(stop => { if (disposed) stop(); else stops.push(stop); })))
-    .then(() => { if (!disposed) return loadDownloads(() => !disposed); }).catch(() => {});
+    .then(() => { if (!disposed) return loadDownloads(() => !disposed); }).catch(logIgnored);
   return () => { disposed = true; stops.forEach(stop => stop()); };
 }
 
@@ -117,7 +118,7 @@ export async function openDownloadsDrawer(anchor?: HTMLButtonElement): Promise<v
   acknowledgeDownloadNotices();
   downloadsSession.set({ id: request, anchor: reference });
   isDownloadsDrawerOpen.set(true);
-  void loadDownloads().catch(() => {});
+  void loadDownloads().catch(logIgnored);
 }
 
 export async function closeDownloadsDrawer(restoreFocus: unknown = false): Promise<void> {

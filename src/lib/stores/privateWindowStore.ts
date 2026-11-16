@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { fetchPrivateWindowState } from "../services/bridge/private-window";
+import { logIgnored } from "../services/ignored-error";
 
 export const isPrivateWindow = writable(false);
 
@@ -15,7 +16,7 @@ export function initializePrivateWindow(): () => void {
       isPrivateWindow.set(value);
       if (value) document.documentElement.dataset.private = "true";
     })
-    .catch(() => {});
+    .catch(logIgnored);
   return () => {
     stopped = true;
   };

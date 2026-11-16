@@ -24,7 +24,7 @@ function fixture(invoke = async () => {}) {
   const get = store => { let value; store.subscribe(next => { value = next; })(); return value; };
   const calls = [];
   const overlays = load('src/lib/services/bridge/overlays.ts', {
-    'svelte/store': { get }, '../../i18n': {}, '@tauri-apps/api/event': {},
+    'svelte/store': { get }, '../ignored-error': { logIgnored() {} }, '../../i18n': {}, '@tauri-apps/api/event': {},
     './runtime': { isTauriRuntime: () => true, invoke: async (command, args) => {
       calls.push(args.visible);
       await invoke(command, args);

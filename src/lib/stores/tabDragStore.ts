@@ -13,6 +13,7 @@ import { mediaPopover, closeMedia } from "./mediaPopoverStore";
 import { privacyPopover, closePrivacy } from "./privacyPopoverStore";
 import { zoomPopover, closeZoom } from "./zoomPopoverStore";
 import { isTauriRuntime } from "../services/bridge/runtime";
+import { logIgnored } from "../services/ignored-error";
 
 interface Drag {
   id: string; pointerId: number; root: HTMLElement; startX: number; startY: number;
@@ -58,7 +59,7 @@ function cleanup(keepDockPreview = false) {
   hoveredWorkspace = null; lastReorderTarget = null;
   tabDrag.set(null);
   const hidden = keepDockPreview ? flushDragPreview() : setDragPreview(null);
-  void hidden.catch(() => {});
+  void hidden.catch(logIgnored);
   return previous ? { ...previous, hidden } : null;
 }
 export function cancelTabDrag() {

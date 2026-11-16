@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { logIgnored } from "../../services/ignored-error";
   import { onMount } from "svelte";
   import { t } from "../../i18n";
   import { marquee } from "../../actions/marquee";
@@ -34,8 +35,8 @@
   onMount(() => {
     let disposed = false;
     let stop: (() => void) | undefined;
-    void onNowPlaying(next => { if (!disposed) apply(next); }).then(unlisten => { if (disposed) unlisten(); else stop = unlisten; }).catch(() => {});
-    void fetchNowPlaying().then(next => { if (!disposed) apply(next); }).catch(() => {});
+    void onNowPlaying(next => { if (!disposed) apply(next); }).then(unlisten => { if (disposed) unlisten(); else stop = unlisten; }).catch(logIgnored);
+    void fetchNowPlaying().then(next => { if (!disposed) apply(next); }).catch(logIgnored);
     const onStorage = (event: StorageEvent) => { if (event.key === THUMBNAIL_KEY) cover = readCover(); };
     window.addEventListener("storage", onStorage);
     // Between backend samples the bar advances by itself, but only while a video plays.

@@ -5,13 +5,14 @@ import { selectTab } from "./browserStore";
 import { mediaState, mediaError, queueVolume, flushVolume, exitVideo, pipBusy } from "./mediaStore";
 import { onPipAction, onPipFallback } from "../services/bridge/media";
 import { describeError, UserError } from "../services/user-errors.js";
+import { logIgnored } from "../services/ignored-error";
 
 /** The auxiliary player can address only its current document and video session. */
 function startPipControls() {
   let disposed = false;
   const stops: (() => void)[] = [];
   function register(promise: Promise<() => void>) {
-    void promise.then(stop => { if (disposed) stop(); else stops.push(stop); }).catch(() => {});
+    void promise.then(stop => { if (disposed) stop(); else stops.push(stop); }).catch(logIgnored);
   }
   register(onPipFallback(() => {
     mediaError.set(describeError(new UserError("media.pip_native_fallback", "Local video capture unavailable")));

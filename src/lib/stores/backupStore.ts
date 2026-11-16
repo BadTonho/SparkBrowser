@@ -66,6 +66,7 @@ import type {
   SyncStateSnapshot,
   SyncTargetConfig,
 } from "../types/backup";
+import { logIgnored } from "../services/ignored-error";
 
 export const backupBusy = writable(false);
 export const backupError = writable("");
@@ -339,7 +340,7 @@ export const syncPushNow = () =>
     backupSyncNotice.set(res.skipped_unchanged ? "unchanged" : "pushed");
     const activeTab = get(tabs).find((t) => t.is_active);
     if (activeTab && activeTab.url.includes("drive.google.com")) {
-      void reloadCurrentPage().catch(() => {});
+      void reloadCurrentPage().catch(logIgnored);
     }
   });
 
@@ -413,7 +414,7 @@ async function createLocal(reason: LocalBackupReason, onlyIfChanged: boolean): P
     return outcome.created;
   } catch (error) {
     // The backend recorded the failure; reload so the status panel shows it right away.
-    await fetchLocalBackupState().then((state) => localBackupState.set(state)).catch(() => {});
+    await fetchLocalBackupState().then((state) => localBackupState.set(state)).catch(logIgnored);
     throw error;
   }
 }
@@ -498,7 +499,7 @@ async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<v
     if (reloadDriveTabOnSuccess && res.synced) {
       const activeTab = get(tabs).find((t) => t.is_active);
       if (activeTab && activeTab.url.includes("drive.google.com")) {
-        void reloadCurrentPage().catch(() => {});
+        void reloadCurrentPage().catch(logIgnored);
       }
     }
   } catch (error) {

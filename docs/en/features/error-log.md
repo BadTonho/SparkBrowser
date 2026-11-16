@@ -13,6 +13,17 @@ When an error happens, a card appears in the **bottom-right corner** of the brow
 
 The same error is shown at most once a minute and at most five cards appear per minute, so a loop cannot flood the screen.
 
+## Levels
+
+Every entry has one of four levels. Only the two serious ones interrupt the user with a card; the other two are only written to the log.
+
+| Level | Meaning | Examples | Card |
+| --- | --- | --- | --- |
+| `info` | Notable events that are not problems | start, normal close | no |
+| `warning` | A failure Spark ignored and recovered from | a discarded `Result` in Rust, an empty `.catch` in the interface, the start of a freeze | no |
+| `error` | Something failed and the user may notice | native errors, script errors | yes |
+| `critical` | The app itself is in trouble | a panic, a freeze that ended, a run that did not close normally | yes, in a stronger red |
+
 ## What counts as an error
 
 | Type | Source |
@@ -24,11 +35,18 @@ The same error is shown at most once a minute and at most five cards appear per 
 | `new-tab` | A script error or unhandled rejection in the new-tab page (limited to 3 per page load) |
 | `unclean-exit` | The previous run left its `session.running` marker behind: a crash, a force-closed freeze or a power loss. Shown a few seconds after start |
 
-Errors that Spark handles silently without ever raising an error event (a `let _ = ...` in Rust) are not reported.
+### Failures that were ignored
+
+Code that used to throw an error away now logs it as a `warning` with the place that ignored it:
+
+- In Rust, `let _ = result;` became `crate::error_log::ignored(result);`, which logs the error and the file and line. Use it for every new `Result` that is deliberately ignored.
+- In the interface, an empty `.catch(() => {})` became `.catch(logIgnored)` (`src/lib/services/ignored-error.ts`). Promise queues that only keep a chain alive keep their empty catch, because the error belongs to the caller.
+
+Not covered yet: Rust code that only compiles on Linux (it was converted only where it could be compiled and checked), three Rust call sites whose error type cannot be printed, and the new-tab page scripts.
 
 ## Log file
 
-`logs/spark-errors.log` inside the Spark data directory (on Windows, `%APPDATA%\org.spark.browser\logs`). Every report, each start and each normal close is appended there. At 512 KB it is renamed to `spark-errors.log.old`, so it never uses more than about 1 MB. Private windows do not write to it or show these cards.
+`logs/spark-errors.log` inside the Spark data directory (on Windows, `%APPDATA%\org.spark.browser\logs`). Every entry, each start and each normal close is appended there, one line per entry with its level (`[INFO]`, `[WARN]`, `[ERROR]`, `[CRITICAL]`). The same entry is written at most once every 10 seconds, except `critical`. At 512 KB it is renamed to `spark-errors.log.old`, so it never uses more than about 1 MB. Private windows do not write to it or show these cards.
 
 ## Privacy
 

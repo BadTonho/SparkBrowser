@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { logIgnored } from "../../services/ignored-error";
   import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
 import {
@@ -115,7 +116,7 @@ async function removeDomain(domain: string) {
 
   <div class="setting-row" id="setting-download-destination" tabindex="-1">
     <div class="row-text"><span class="row-label">{$t("settings.ask_download_destination")}</span><span class="row-desc">{$t("settings.ask_download_destination_description")}</span></div>
-    <input type="checkbox" checked={$askDownloadDestination} aria-label={$t("settings.ask_download_destination")} onchange={event => void setAskDownloadDestination(event.currentTarget.checked).catch(() => {})} />
+    <input type="checkbox" checked={$askDownloadDestination} aria-label={$t("settings.ask_download_destination")} onchange={event => void setAskDownloadDestination(event.currentTarget.checked).catch(logIgnored)} />
   </div>
 
   <div class="setting-row" id="setting-skip-exit-review" tabindex="-1" data-testid="skip-exit-review">

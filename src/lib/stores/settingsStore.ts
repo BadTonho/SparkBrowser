@@ -30,6 +30,7 @@ import {
 } from "./browserStore";
 import { activeWorkspaceId } from "./workspaceSelectionStore";
 import { createSettingsDisplayController, findSettingsTab } from "../services/settings-display.js";
+import { logIgnored } from "../services/ignored-error";
 
 export const isSettingsModalOpen = writable<boolean>(false);
 export const settingsOverlaySession = writable<PanelSession | null>(null);
@@ -67,7 +68,7 @@ export async function setForcedDarkPages(enabled: boolean): Promise<void> {
 }
 
 /** The native side forgets the choice on restart, so the saved value is sent again when the shell starts. */
-export const syncForcedDarkPages = () => setForcedDarkMode(get(forcedDarkPages)).catch(() => {});
+export const syncForcedDarkPages = () => setForcedDarkMode(get(forcedDarkPages)).catch(logIgnored);
 
 export function setWideAddressBar(enabled: boolean): void {
   wideAddressBar.set(enabled);
@@ -114,7 +115,7 @@ export function setAutoHibernateMode(mode: AutoHibernateMode): void {
   if (!AUTO_HIBERNATE_MODES.includes(mode)) return;
   autoHibernateMode.set(mode);
   // The resident limit follows this switch, so tell the native side right away.
-  void setResidentTabLimit(get(residentTabLimit)).catch(() => {});
+  void setResidentTabLimit(get(residentTabLimit)).catch(logIgnored);
 
   if (typeof safeStorage === "undefined") return;
   try {

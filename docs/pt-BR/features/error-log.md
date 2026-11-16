@@ -13,6 +13,17 @@ Quando um erro acontece, um cartão aparece no **canto inferior direito** da jan
 
 O mesmo erro aparece no máximo uma vez por minuto e no máximo cinco cartões aparecem por minuto, então um laço não consegue inundar a tela.
 
+## Níveis
+
+Toda entrada tem um de quatro níveis. Só os dois sérios interrompem o usuário com um cartão; os outros dois apenas vão para o registro.
+
+| Nível | Significado | Exemplos | Cartão |
+| --- | --- | --- | --- |
+| `info` | Eventos relevantes que não são problemas | início, fechamento normal | não |
+| `warning` | Uma falha que o Spark ignorou e da qual se recuperou | um `Result` descartado no Rust, um `.catch` vazio na interface, o início de um travamento | não |
+| `error` | Algo falhou e o usuário pode notar | erros nativos, erros de script | sim |
+| `critical` | O próprio app está com problema | um panic, um travamento que terminou, uma execução que não fechou normalmente | sim, em vermelho mais forte |
+
 ## O que conta como erro
 
 | Tipo | Origem |
@@ -24,11 +35,18 @@ O mesmo erro aparece no máximo uma vez por minuto e no máximo cinco cartões a
 | `new-tab` | Erro de script ou rejeição não tratada na página de nova guia (até 3 por carregamento) |
 | `unclean-exit` | A execução anterior deixou o marcador `session.running`: uma queda, um travamento fechado à força ou falta de energia. Aparece alguns segundos depois de iniciar |
 
-Erros que o Spark trata em silêncio sem nunca levantar um evento de erro (um `let _ = ...` em Rust) não são reportados.
+### Falhas que eram ignoradas
+
+O código que antes jogava o erro fora agora o registra como `warning`, com o local que o ignorou:
+
+- No Rust, `let _ = resultado;` virou `crate::error_log::ignored(resultado);`, que registra o erro com o arquivo e a linha. Use-o para todo novo `Result` ignorado de propósito.
+- Na interface, um `.catch(() => {})` vazio virou `.catch(logIgnored)` (`src/lib/services/ignored-error.ts`). Filas de promessas que só mantêm a cadeia viva mantêm o catch vazio, porque o erro pertence a quem chamou.
+
+Ainda não coberto: código Rust que só compila no Linux (foi convertido apenas onde dava para compilar e conferir), três pontos do Rust cujo tipo de erro não pode ser impresso e os scripts da página de nova guia.
 
 ## Arquivo de registro
 
-`logs/spark-errors.log` dentro da pasta de dados do Spark (no Windows, `%APPDATA%\org.spark.browser\logs`). Cada relato, cada início e cada fechamento normal são acrescentados ali. Em 512 KB ele é renomeado para `spark-errors.log.old`, então nunca usa mais de cerca de 1 MB. Janelas privadas não escrevem nele nem mostram esses cartões.
+`logs/spark-errors.log` dentro da pasta de dados do Spark (no Windows, `%APPDATA%\org.spark.browser\logs`). Cada entrada, cada início e cada fechamento normal são acrescentados ali, uma linha por entrada com o nível (`[INFO]`, `[WARN]`, `[ERROR]`, `[CRITICAL]`). A mesma entrada é escrita no máximo uma vez a cada 10 segundos, exceto `critical`. Em 512 KB ele é renomeado para `spark-errors.log.old`, então nunca usa mais de cerca de 1 MB. Janelas privadas não escrevem nele nem mostram esses cartões.
 
 ## Privacidade
 

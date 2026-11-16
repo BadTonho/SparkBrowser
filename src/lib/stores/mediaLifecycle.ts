@@ -8,6 +8,7 @@ import { isTauriRuntime } from "../services/bridge/runtime";
 import { describeError } from "../services/user-errors.js";
 import { initializePipControls } from "./pipLifecycle";
 import {initializePipAppearance} from "./pipAppearanceStore";
+import { logIgnored } from "../services/ignored-error";
 
 /** One focused-tab report loop serves volume and PiP, including dynamically added videos. */
 function startMedia() {
@@ -55,7 +56,7 @@ function startMedia() {
   void getCurrentWindow().onFocusChanged(event => {
     focused = event.payload;
     if (focused) refreshFocused();
-  }).then(stop => { if (disposed) stop(); else stopFocus = stop; }).catch(() => {});
+  }).then(stop => { if (disposed) stop(); else stopFocus = stop; }).catch(logIgnored);
   void (async () => {
     stopMedia = await onTabMedia(snapshot => { if (!disposed) applyMedia(snapshot); });
     if (disposed) { stopMedia(); return; }

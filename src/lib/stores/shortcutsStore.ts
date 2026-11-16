@@ -2,6 +2,7 @@ import { UserError, describeError } from "../services/user-errors.js";
 import { safeStorage } from "../services/storage.js";
 import { get, writable } from "svelte/store";
 import { setKeyboardShortcuts as syncKeyboardShortcuts } from "../services/tauri-bridge";
+import { logIgnored } from "../services/ignored-error";
 
 export type ShortcutCombo = {
   key: string;
@@ -168,7 +169,7 @@ export function setShortcutBinding(id: string, binding: ShortcutCombo): string |
   if (typeof safeStorage !== "undefined") {
     try { safeStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* Keep the in-memory setting. */ }
   }
-  void syncKeyboardShortcuts(next).catch(() => undefined);
+  void syncKeyboardShortcuts(next).catch(logIgnored);
   return undefined;
 }
 
@@ -191,7 +192,7 @@ export function matchesMouseShortcut(event: MouseEvent, binding: ShortcutCombo):
 }
 
 export function initializeKeyboardShortcuts(): void {
-  void syncKeyboardShortcuts(get(keyboardShortcuts)).catch(() => undefined);
+  void syncKeyboardShortcuts(get(keyboardShortcuts)).catch(logIgnored);
 }
 
 export async function restoreShortcutMap(map: ShortcutMap): Promise<void> {
