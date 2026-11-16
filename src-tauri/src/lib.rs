@@ -108,7 +108,8 @@ use commands::split_view::{
 use commands::tab_organizer::close_tabs_reviewed;
 use commands::tabs::{
     auto_hibernate_inactive_tabs, close_tab, create_ephemeral_tab, create_tab, get_tabs,
-    get_tabs_memory, hibernate_inactive_tabs, hibernate_tab, move_tab_to_workspace, reorder_tabs,
+    get_tabs_memory, hibernate_inactive_tabs, hibernate_other_workspaces, hibernate_tab,
+    move_tab_to_workspace, reorder_tabs,
     set_ask_download_destination, set_hibernation_exemptions, set_resident_limit, set_tab_pinned,
     switch_tab,
 };
@@ -603,6 +604,7 @@ pub fn run() {
             hibernate_tab,
             hibernate_inactive_tabs,
             auto_hibernate_inactive_tabs,
+            hibernate_other_workspaces,
             set_overlay_visibility,
             set_media_popover,
             set_zoom_popover,

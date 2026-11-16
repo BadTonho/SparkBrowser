@@ -331,5 +331,10 @@
   "settings.changelog_intro_8c1d": "What is new, improved and fixed in each version of Spark, newest first.",
   "settings.changelog_empty_2e7b": "No release notes are available.",
   "settings.changelog_running_a94c": "Running version",
-  "settings.changelog_search_d41e": "Read what is new and what was fixed in each version of Spark."
+  "settings.changelog_search_d41e": "Read what is new and what was fixed in each version of Spark.",
+  "settings.hibernate_other_workspaces": "Hibernate other workspaces",
+  "settings.hibernate_other_workspaces_description": "Put the tabs of the workspaces you are not in to sleep a few seconds after switching. Playing, edited, downloading and pinned tabs, and exempt domains, stay awake.",
+  "settings.content_isolation_on": "Isolated",
+  "settings.content_isolation_off": "Shared",
+  "settings.hibernate_other_workspaces_search": "Put the tabs of the workspaces you are not in to sleep a few seconds after switching. Playing, edited and pinned tabs stay awake."
 }

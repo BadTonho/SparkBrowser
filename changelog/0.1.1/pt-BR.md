@@ -4,6 +4,8 @@ Em andamento — não lançada.
 
 ## Novas funcionalidades
 
+- Adiciona **Hibernar outros workspaces** às configurações de Desempenho, ativada por padrão: alguns segundos depois de trocar de workspace, as abas dos outros workspaces são colocadas para dormir (abas tocando, editadas, baixando ou fixadas continuam acordadas).
+
 - Adiciona a categoria **Changelog** às Configurações, que lista as notas de versão de cada versão, da mais recente para a mais antiga, no seu idioma.
 
 - Adiciona um plano de fundo opcional que reage ao áudio das guias normais, com 20 estilos visuais (barras, ondas, formas circulares, partículas, brilhos, aurora, terreno 3D e mais), cores personalizadas e intensidade visual.
@@ -19,6 +21,7 @@ Em andamento — não lançada.
 - Escolha se as configurações do navegador abrem em um pop-up ou em uma guia.
 
 ## Melhorias
+- A opção de isolamento de conteúdo por workspace agora mostra **Isolado** ou **Compartilhado** em vez de "Ativado" ou "Pausada".
 - As abas horizontais ficaram mais largas (até 240 px em vez de 180 px) e continuam encolhendo aos poucos, até 120 px, conforme mais abas são abertas.
 - Fechar o navegador não mostra mais uma caixa de "salvando" quando não há nada a decidir: ela aparece na hora apenas para atividade que exige uma escolha ou para um erro, e só depois de um instante enquanto salva. O envio final do backup na nuvem é pulado quando nada mudou.
 - As configurações abrem e fecham com uma animação suave que respeita a preferência por movimento reduzido.

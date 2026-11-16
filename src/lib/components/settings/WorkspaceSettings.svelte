@@ -154,7 +154,7 @@
       disabled={applyingIsolation}
       onclick={() => applyIsolation(!$workspaceIsolation)}
     >
-      {$workspaceIsolation ? $t("settings.enabled_92c1") : $t("settings.paused_e159")}
+      {$workspaceIsolation ? $t("settings.content_isolation_on") : $t("settings.content_isolation_off")}
     </button>
   </div>
   {#if isolationError}

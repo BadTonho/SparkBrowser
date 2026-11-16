@@ -116,6 +116,11 @@ export async function hibernateBackgroundTabs(
   });
 }
 
+export async function hibernateOtherWorkspaceTabs(): Promise<TabSnapshot> {
+  if(!isTauriRuntime()) return [];
+  return await invoke<TabSnapshot>("hibernate_other_workspaces");
+}
+
 export async function autoHibernateBackgroundTabs(
   mode: AutoHibernateMode
 ): Promise<TabSnapshot> {

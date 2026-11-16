@@ -128,6 +128,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "hibernate_tab",
     "hibernate_inactive_tabs",
     "auto_hibernate_inactive_tabs",
+    "hibernate_other_workspaces",
     "set_overlay_visibility",
     "set_tools_popover",
     "set_downloads_popover",

@@ -601,6 +601,14 @@ export function toggleZenMode(): void {
 }
 
 
+const HIBERNATE_OTHER_WORKSPACES_KEY = "spark_hibernate_other_workspaces";
+/** Put the tabs of the workspaces you are not in to sleep a moment after switching. On unless turned off. */
+export const hibernateOtherWorkspaces = writable(safeStorage.getItem(HIBERNATE_OTHER_WORKSPACES_KEY) !== "false");
+export function setHibernateOtherWorkspaces(enabled: boolean): boolean {
+  hibernateOtherWorkspaces.set(enabled);
+  return safeStorage.setItem(HIBERNATE_OTHER_WORKSPACES_KEY, String(enabled));
+}
+
 const savedResidentLimit = Number(safeStorage.getItem("spark_resident_limit"));
 export const residentTabLimit = writable(Number.isInteger(savedResidentLimit) && savedResidentLimit >= 1 && savedResidentLimit <= 100 ? savedResidentLimit : 8);
 export async function setResidentTabLimit(limit: number): Promise<void> {

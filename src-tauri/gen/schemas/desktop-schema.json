@@ -723,6 +723,12 @@
           "markdownDescription": "Enables the hibernate_inactive_tabs command without any pre-configured scope."
         },
         {
+          "description": "Enables the hibernate_other_workspaces command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-hibernate-other-workspaces",
+          "markdownDescription": "Enables the hibernate_other_workspaces command without any pre-configured scope."
+        },
+        {
           "description": "Enables the hibernate_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-hibernate-tab",
@@ -1843,6 +1849,12 @@
           "type": "string",
           "const": "deny-hibernate-inactive-tabs",
           "markdownDescription": "Denies the hibernate_inactive_tabs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the hibernate_other_workspaces command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-hibernate-other-workspaces",
+          "markdownDescription": "Denies the hibernate_other_workspaces command without any pre-configured scope."
         },
         {
           "description": "Denies the hibernate_tab command without any pre-configured scope.",

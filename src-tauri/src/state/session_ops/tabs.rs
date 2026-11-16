@@ -559,6 +559,54 @@ pub async fn hibernate_inactive_tabs(
     Ok(snapshot)
 }
 
+/// Puts the tabs of the workspaces the window is not showing to sleep (see
+/// `memory_policy::hibernate_other_workspaces`). The shell asks for it a moment after a workspace switch.
+#[tauri::command]
+pub async fn hibernate_other_workspaces(
+    app: AppHandle,
+    webview: tauri::Webview,
+    state: State<'_, BrowserState>,
+) -> Result<TabSnapshot, String> {
+    let window_id = crate::commands::access::caller_window(&webview);
+    let _operation = state.session().operation().await;
+    let before = TabCheckpoint::capture(&state)?;
+    let changed = (|| -> Result<bool, String> {
+        let active_workspace = state
+            .session()
+            .window(&window_id)
+            .ok_or("windows.not_found")?
+            .active_workspace_id()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
+        let exemptions = state
+            .session()
+            .edit_hibernation_exemptions()
+            .lock()
+            .map_err(|e| e.to_string())?
+            .clone();
+        let hibernated = crate::state::memory_policy::hibernate_other_workspaces(
+            &mut state
+                .session()
+                .edit_tabs()
+                .lock()
+                .map_err(|e| e.to_string())?,
+            &window_id,
+            &active_workspace,
+            &exemptions,
+        );
+        Ok(hibernated > 0)
+    })();
+    finish_change(&app, &state, before, changed)?;
+    let snapshot = crate::state::publish::publish_tabs(&app, &state, &window_id);
+    crate::security::emit_shell_all(
+        &app,
+        "privacy-stats-updated",
+        state.snapshot_privacy_stats(),
+    );
+    Ok(snapshot)
+}
+
 #[tauri::command]
 pub async fn auto_hibernate_inactive_tabs(
     app: AppHandle,

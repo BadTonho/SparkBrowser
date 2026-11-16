@@ -99,6 +99,7 @@
     "allow-hibernate-tab",
     "allow-hibernate-inactive-tabs",
     "allow-auto-hibernate-inactive-tabs",
+    "allow-hibernate-other-workspaces",
     "allow-set-overlay-visibility",
     "allow-set-tools-popover",
     "allow-set-quick-settings-popover",

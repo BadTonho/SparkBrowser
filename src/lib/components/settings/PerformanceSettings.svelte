@@ -6,6 +6,8 @@ import {
   residentTabLimit,
   hibernationExemptions,
   askDownloadDestination,
+  hibernateOtherWorkspaces,
+  setHibernateOtherWorkspaces,
   setResidentTabLimit,
   setAutoHibernateMode,
   setHibernationExemptions,
@@ -87,6 +89,11 @@ async function removeDomain(domain: string) {
         </button>
       {/each}
     </div>
+  </div>
+
+  <div class="setting-row" id="setting-hibernate-other-workspaces" tabindex="-1">
+    <div class="row-text"><span class="row-label">{$t("settings.hibernate_other_workspaces")}</span><span class="row-desc">{$t("settings.hibernate_other_workspaces_description")}</span></div>
+    <input type="checkbox" checked={$hibernateOtherWorkspaces} aria-label={$t("settings.hibernate_other_workspaces")} onchange={event => setHibernateOtherWorkspaces(event.currentTarget.checked)} />
   </div>
 
   <div class="setting-row" id="setting-hibernation-exceptions" tabindex="-1">

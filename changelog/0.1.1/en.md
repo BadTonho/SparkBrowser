@@ -4,6 +4,8 @@ In progress — not released.
 
 ## New features
 
+- Add **Hibernate other workspaces** to Performance settings, on by default: a few seconds after you switch workspace, the tabs of the other workspaces are put to sleep (playing, edited, downloading and pinned tabs stay awake).
+
 - Add a **Changelog** category to Settings that lists the release notes of every version, newest first, in your language.
 
 - Add an optional audio-reactive background with 20 visual styles (bars, waves, circular shapes, particles, glows, aurora, 3D terrain and more), custom colors and visual intensity, driven by normal browser-tab audio.
@@ -19,6 +21,7 @@ In progress — not released.
 - Choose whether browser settings open in a pop-up or in a tab.
 
 ## Improvements
+- The workspace content isolation setting now reads **Isolated** or **Shared** instead of "Enabled" or "Paused".
 - Horizontal tabs are wider (up to 240 px instead of 180 px) and still shrink smoothly, down to 120 px, as more tabs open.
 - Closing the browser no longer shows a "saving" dialog when there is nothing to decide: it appears at once only for activity that needs a choice or an error, and only after a moment while saving. The final cloud backup upload is skipped when nothing changed.
 - Settings open and close with a subtle animation that respects reduced-motion preferences.

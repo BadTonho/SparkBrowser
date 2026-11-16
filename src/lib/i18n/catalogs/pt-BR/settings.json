@@ -331,5 +331,10 @@
   "settings.changelog_intro_8c1d": "O que há de novo, melhorado e corrigido em cada versão do Spark, da mais recente para a mais antiga.",
   "settings.changelog_empty_2e7b": "Nenhuma nota de versão disponível.",
   "settings.changelog_running_a94c": "Versão em uso",
-  "settings.changelog_search_d41e": "Leia o que há de novo e o que foi corrigido em cada versão do Spark."
+  "settings.changelog_search_d41e": "Leia o que há de novo e o que foi corrigido em cada versão do Spark.",
+  "settings.hibernate_other_workspaces": "Hibernar outros workspaces",
+  "settings.hibernate_other_workspaces_description": "Coloca para dormir as abas dos workspaces em que você não está, alguns segundos depois de trocar. Abas tocando, editadas, baixando ou fixadas, e domínios com exceção, continuam acordados.",
+  "settings.content_isolation_on": "Isolado",
+  "settings.content_isolation_off": "Compartilhado",
+  "settings.hibernate_other_workspaces_search": "Coloca para dormir as abas dos workspaces em que você não está, alguns segundos depois de trocar. Abas tocando, editadas e fixadas continuam acordadas."
 }

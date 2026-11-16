@@ -10,6 +10,7 @@
   import { splitLayout } from "./lib/stores/splitViewStore";
   import { focusedTabs } from "./lib/services/split-tab-groups.js";
   import { initializeMedia } from "./lib/stores/mediaLifecycle";
+  import { initializeWorkspaceHibernation } from "./lib/stores/workspaceHibernation";
   import { initializeZoom, changeZoom } from "./lib/stores/zoomStore";
   import RecoveryNotice from "./lib/components/status/RecoveryNotice.svelte";
   import { initializeRecovery } from "./lib/stores/recoveryStore";
@@ -225,6 +226,8 @@
       await Promise.all([setResidentTabLimit(get(residentTabLimit)), loadBookmarks(), initializePrivacyStats(), initializeKeyboardShortcuts()]);
     });
 
+    const stopWorkspaceHibernation = initializeWorkspaceHibernation();
+
     // Apply the selected automatic hibernation policy once per minute.
     const hibernationInterval = setInterval(() => {
       const mode = get(autoHibernateMode);
@@ -318,6 +321,7 @@
       stopPrivateWindow();
       stopDownloadEvents();
       clearInterval(hibernationInterval);
+      stopWorkspaceHibernation();
       disposed = true;
       session.stop();
       if (unlistenPrivacy) unlistenPrivacy();
