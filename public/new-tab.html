@@ -222,16 +222,20 @@
         </button>
       </nav>
       <div id="settings-layout-field">
-        <label for="settings-layout" data-label="settingsLayout"></label>
-        <select id="settings-layout">
-          <option value="corner" data-label="settingsLayoutCorner"></option>
-          <option value="center" data-label="settingsLayoutCenter"></option>
-        </select>
-        <label for="widgets-layout" data-label="widgetsLayout"></label>
-        <select id="widgets-layout">
-          <option value="sides" data-label="widgetsLayoutSides"></option>
-          <option value="bottom" data-label="widgetsLayoutBottom"></option>
-        </select>
+        <fieldset id="settings-layout" class="segmented">
+          <legend data-label="settingsLayout"></legend>
+          <div class="segmented-options">
+          <label><input type="radio" name="panel-layout" value="corner" checked><span class="seg-body"><svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="1" width="26" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="16" y="9" width="9" height="8" rx="1.5" fill="currentColor" opacity=".7"/></svg><span data-label="settingsLayoutCorner"></span></span></label>
+          <label><input type="radio" name="panel-layout" value="center"><span class="seg-body"><svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="1" width="26" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="7" y="4.5" width="14" height="11" rx="1.5" fill="currentColor" opacity=".7"/></svg><span data-label="settingsLayoutCenter"></span></span></label>
+          </div>
+        </fieldset>
+        <fieldset id="widgets-layout" class="segmented">
+          <legend data-label="widgetsLayout"></legend>
+          <div class="segmented-options">
+          <label><input type="radio" name="widgets-layout" value="sides" checked><span class="seg-body"><svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="1" width="26" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="3" y="3" width="6" height="5" rx="1.5" fill="currentColor" opacity=".7"/><rect x="3" y="10" width="6" height="5" rx="1.5" fill="currentColor" opacity=".7"/><rect x="19" y="3" width="6" height="8" rx="1.5" fill="currentColor" opacity=".45"/></svg><span data-label="widgetsLayoutSides"></span></span></label>
+          <label><input type="radio" name="widgets-layout" value="bottom"><span class="seg-body"><svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="1" width="26" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="3" y="3" width="6" height="5" rx="1.5" fill="currentColor" opacity=".45"/><rect x="19" y="3" width="6" height="8" rx="1.5" fill="currentColor" opacity=".45"/><rect x="7" y="12" width="6" height="5" rx="1.5" fill="currentColor" opacity=".7"/><rect x="15" y="12" width="6" height="5" rx="1.5" fill="currentColor" opacity=".7"/></svg><span data-label="widgetsLayoutBottom"></span></span></label>
+          </div>
+        </fieldset>
       </div>
       </div>
     <section id="weather-section" class="settings-view" aria-labelledby="settings-heading" hidden>

@@ -357,29 +357,43 @@ test('video file size limit rejects files larger than 50MB', async () => {
   assert.equal(f.idbStore.has('current'), false);
 });
 
-test('panel and widget layout choices are validated, persisted locally and default to corner and sides',async()=>{
+test('panel and widget layout choices are segmented radios, validated, persisted locally and default to corner and sides',async()=>{
   const {readFileSync}=await import('node:fs');const {runInNewContext}=await import('node:vm');
   const run=stored=>{
     const store=new Map(Object.entries(stored??{})),listeners=new Map();
-    const element=()=>({dataset:{},value:'',addEventListener(n,f){this.fn=f;}});
-    const nodes={'settings-panel':element(),'settings-layout':element(),widgets:element(),'widgets-layout':element()};
+    const radio=value=>({value,checked:false,addEventListener(n,f){this.fn=f;}});
+    const element=()=>({dataset:{}});
+    const radios={panel:[radio('corner'),radio('center')],widgets:[radio('sides'),radio('bottom')]};
+    const nodes={'settings-panel':element(),widgets:element(),'settings-layout':{querySelectorAll:()=>radios.panel},'widgets-layout':{querySelectorAll:()=>radios.widgets}};
     runInNewContext(readFileSync('public/new-tab/settings-layout.js','utf8'),{document:{getElementById:id=>nodes[id]},window:{addEventListener:(n,f)=>listeners.set(n,[...(listeners.get(n)??[]),f])},localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)}});
-    return {nodes,store,listeners};
+    const checked=group=>radios[group].filter(r=>r.checked).map(r=>r.value);
+    const pick=(group,value)=>{for(const r of radios[group])r.checked=r.value===value;radios[group].find(r=>r.value===value).fn();};
+    return {nodes,store,listeners,radios,checked,pick};
   };
   let f=run();
   assert.equal(f.nodes['settings-panel'].dataset.layout,'corner');assert.equal(f.nodes.widgets.dataset.layout,'sides');
+  assert.deepEqual(f.checked('panel'),['corner']);assert.deepEqual(f.checked('widgets'),['sides']);
   f=run({spark_settings_panel_layout:'center',spark_widgets_layout:'bottom'});
   assert.equal(f.nodes['settings-panel'].dataset.layout,'center');assert.equal(f.nodes.widgets.dataset.layout,'bottom');
-  assert.equal(f.nodes['widgets-layout'].value,'bottom');
+  assert.deepEqual(f.checked('panel'),['center']);assert.deepEqual(f.checked('widgets'),['bottom']);
   f=run({spark_settings_panel_layout:'<script>',spark_widgets_layout:'top'});
   assert.equal(f.nodes['settings-panel'].dataset.layout,'corner');assert.equal(f.nodes.widgets.dataset.layout,'sides');
-  f=run();f.nodes['widgets-layout'].value='bottom';f.nodes['widgets-layout'].fn();
+  f=run();f.pick('widgets','bottom');
   assert.equal(f.nodes.widgets.dataset.layout,'bottom');assert.equal(f.store.get('spark_widgets_layout'),'bottom');
+  assert.deepEqual(f.checked('widgets'),['bottom'],'exactly one option is selected');
   assert.equal(f.store.get('spark_settings_panel_layout'),undefined,'only the changed choice is stored');
-  f.nodes['widgets-layout'].value='nonsense';f.nodes['widgets-layout'].fn();
-  assert.equal(f.nodes.widgets.dataset.layout,'sides');
+  f.radios.widgets[1].value='nonsense';f.radios.widgets[1].fn();
+  assert.equal(f.nodes.widgets.dataset.layout,'sides','an unknown value falls back');
+  f.radios.widgets[1].value='bottom';
   f.store.set('spark_widgets_layout','bottom');for(const fn of f.listeners.get('storage'))fn({key:'spark_widgets_layout'});
   assert.equal(f.nodes.widgets.dataset.layout,'bottom','another new tab changed it');
+  assert.deepEqual(f.checked('widgets'),['bottom']);
+  const page=readFileSync('public/new-tab.html','utf8');
+  for(const [name,values] of [['panel-layout',['corner','center']],['widgets-layout',['sides','bottom']]]){
+    const found=[...page.matchAll(new RegExp('<input type="radio" name="'+name+'" value="([a-z]+)"','g'))].map(m=>m[1]);
+    assert.deepEqual(found,values,name+' shows every option inline');
+  }
+  assert.ok(!/<select id="(settings|widgets)-layout"/.test(page),'no drop-downs for these two choices');
   const css=readFileSync('public/new-tab/settings-layout.css','utf8');
   assert.match(css,/#widgets\[data-layout="bottom"\] #media-widgets\s*\{[^}]*position:fixed[^}]*bottom:20px/);
   assert.match(css,/#media-widgets\s*\{\s*display:contents/,'transparent in the default layout');
