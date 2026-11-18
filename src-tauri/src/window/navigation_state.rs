@@ -306,6 +306,7 @@ pub(super) fn with_page_events(
         };
         crate::privacy::auto_skip::loaded(&webview, &state, &keyboard_token_for_load);
         crate::privacy::forced_dark::loaded(&webview, &state, &keyboard_token_for_load);
+        crate::privacy::cosmetic::loaded(&webview, &state, payload.url().as_str());
         let (title, is_ephemeral) = state
             .session()
             .tabs()

@@ -41,6 +41,8 @@
 
 - The top bar now shows only Settings, Downloads, Protection and Extensions by default. Turn the other buttons (Tools, Bookmarks bar, Commands, History, Zen mode, QR code, WhatsApp) on or off in **Toolbar buttons**, inside the quick settings menu.
 
+- Adblock now also hides the ads and "sponsored" boxes that the filter lists name on each page, not only blocks their requests. YouTube ads are removed before the player receives them, and "Auto skip ads" now also plays an ad that has no skip button to its end.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

@@ -1,5 +1,6 @@
 pub mod adblock_engine;
 pub mod auto_skip;
+pub mod cosmetic;
 #[cfg(target_os = "linux")]
 pub mod content_filter_linux;
 pub mod filter_lists;

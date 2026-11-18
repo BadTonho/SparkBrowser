@@ -9,6 +9,8 @@
     const host = location.hostname.toLowerCase().replace(/\.$/, '');
     return exceptions.some(domain => host === domain || host.endsWith('.' + domain));
   };
+  let refreshYoutube;
+  /*__YOUTUBE_ADS__*/
   const NativeURL = URL;
   const blocked = (input) => {
     if (!enabled || siteExcluded()) return false;
@@ -63,6 +65,7 @@
     value: (secret, value) => {
       if (secret !== token) return;
       enabled = Boolean(value);
+      refreshYoutube?.();
       if (document.readyState !== "loading") injectStyle();
     }
   });

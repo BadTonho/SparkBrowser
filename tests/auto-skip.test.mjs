@@ -9,20 +9,22 @@ function fixture(url = 'https://www.youtube.com/watch?v=fixture') {
   const button = () => ({ clicks: 0, disabled: false, hidden: false, style: {},
     getAttribute: () => null, closest() { return this.hidden ? {} : null; },
     getClientRects() { return this.hidden ? [] : [{}]; }, click() { this.clicks++; } });
-  let buttons = [button()], ad = true, player = true;
+  let buttons = [button()], ad = true, player = true, video = null, marker = true;
   const context = { URL, location: new URL(url), performance: { now: () => now },
     WeakSet, getComputedStyle: element => ({ display: 'block', visibility: 'visible', opacity: '1', ...element.style }),
     setTimeout: (callback, delay) => { timers.set(++next, { callback, due: now + delay }); return next; },
     clearTimeout: id => timers.delete(id),
     addEventListener: (name, callback) => events.set(name, callback), removeEventListener: name => events.delete(name),
     MutationObserver: class { constructor(callback) { observe = callback; } observe() {} disconnect() { disconnected++; } },
-    document: { querySelector: () => player ? { classList: { contains: () => ad }, querySelectorAll: () => buttons } : null,
+    document: { querySelector: () => player ? { classList: { contains: () => ad }, querySelectorAll: () => buttons,
+      querySelector: selector => selector === 'video' ? video : (marker ? {} : null) } : null,
       addEventListener: (name, callback) => events.set(name, callback), removeEventListener: name => events.delete(name) },
   };
   context.window = context; context.top = context;
   runInNewContext(source, context);
   return { context, button, buttons: () => buttons, setButtons: value => { buttons = value; },
     setAd: value => { ad = value; }, setPlayer: value => { player = value; },
+    setVideo: value => { video = value; }, setMarker: value => { marker = value; },
     enable: value => context.__sparkSetAutoSkip('fixture-token', value),
     mutate: () => observe?.(), event: name => events.get(name)?.(), timers, disconnected: () => disconnected,
     advance(ms = 500) { now += ms; for (const [id, timer] of [...timers]) if (timer.due <= now) { timers.delete(id); timer.callback(); } },
@@ -58,4 +60,24 @@ test('host/path/frame boundaries and SPA transitions keep ordinary content untou
   f.context.location = new URL('https://www.youtube.com/watch?v=a'); f.event('yt-navigate-finish'); f.advance(); assert.equal(f.buttons()[0].clicks, 1);
   f.setButtons([f.button()]); f.context.top = {}; f.mutate(); f.advance(); assert.equal(f.buttons()[0].clicks, 0);
   f.event('pagehide'); assert.equal(f.timers.size, 0);
+});
+
+test('an ad with no skip button is played to its end once, and only while the ad controls are shown', () => {
+  const f = fixture(); f.setButtons([]);
+  const ad = { duration: 15, currentTime: 2 };
+  f.setVideo(ad); f.enable(true); f.advance(0);
+  assert.equal(ad.currentTime, 15);
+  ad.currentTime = 3; f.mutate(); f.advance();
+  assert.equal(ad.currentTime, 3, 'the same ad is forwarded once');
+  f.setAd(false); f.mutate(); f.advance();
+  const next = { duration: 30, currentTime: 1 }; f.setVideo(next); f.setAd(true); f.mutate(); f.advance();
+  assert.equal(next.currentTime, 30, 'a later ad is forwarded again');
+  const feature = { duration: 5400, currentTime: 100 }; f.setVideo(feature); f.setAd(false); f.mutate(); f.advance();
+  f.setAd(true); f.mutate(); f.advance();
+  assert.equal(feature.currentTime, 100, 'a long video is never seeked');
+  const content = { duration: 120, currentTime: 5 }; f.setVideo(content); f.setMarker(false); f.setAd(false); f.mutate(); f.advance();
+  f.setAd(true); f.mutate(); f.advance();
+  assert.equal(content.currentTime, 5, 'without the ad controls nothing is seeked');
+  f.enable(false); f.setMarker(true); const off = { duration: 10, currentTime: 0 }; f.setVideo(off); f.mutate(); f.advance();
+  assert.equal(off.currentTime, 0, 'disabled does nothing');
 });

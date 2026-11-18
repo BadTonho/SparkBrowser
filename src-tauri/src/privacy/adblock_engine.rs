@@ -70,6 +70,14 @@ pub fn build_content_shield_script_with_exceptions(
 ) -> String {
     include_str!("content_shield.js")
         .replace(
+            "/*__YOUTUBE_ADS__*/",
+            &format!(
+                "{}{}",
+                include_str!("youtube_ads.js"),
+                "refreshYoutube = youtubeAds(() => enabled && !siteExcluded());"
+            ),
+        )
+        .replace(
             "__SHIELD_EXCEPTIONS__",
             &serde_json::to_string(exceptions).expect("domains serializable"),
         )

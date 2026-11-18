@@ -73,13 +73,15 @@ impl Snapshots {
         }
         Ok(())
     }
+    /// Network rules and element-hiding rules go to the engine; scriptlets are only used once their
+    /// code is supplied (see the shield documentation).
     fn compile(self) -> Engine {
         let mut set = FilterSet::new(false);
         for list in self.lists {
             set.add_filter_list(
                 list,
                 ParseOptions {
-                    rule_types: RuleTypes::NetworkOnly,
+                    rule_types: RuleTypes::All,
                     ..Default::default()
                 },
             );
@@ -90,6 +92,8 @@ impl Snapshots {
 
 pub struct FilterLists {
     engine: RwLock<Engine>,
+    /// Generic element-hiding selectors of the current lists.
+    generic_hide: RwLock<Arc<Vec<String>>>,
     cache: PathBuf,
     /// The lists the engine was built from, kept to derive the WebKit content rules.
     #[cfg(target_os = "linux")]
@@ -108,10 +112,14 @@ impl FilterLists {
             .and_then(|data| serde_json::from_slice::<Snapshots>(&data).ok())
             .filter(|s| s.validate().is_ok());
         let snapshots = saved.unwrap_or_else(Snapshots::bundled);
+        let generic_hide = RwLock::new(Arc::new(super::cosmetic::generic_selectors(
+            &snapshots.lists,
+        )));
         #[cfg(target_os = "linux")]
         let lists = RwLock::new(snapshots.lists.to_vec());
         Self {
             engine: RwLock::new(snapshots.compile()),
+            generic_hide,
             cache,
             #[cfg(target_os = "linux")]
             lists,
@@ -152,6 +160,33 @@ impl FilterLists {
         }
         serde_json::to_string(&rules).ok()
     }
+    /// The style sheet that hides ads on the page at `url`: the rules written for its site plus the
+    /// generic ones, unless the lists say not to use those there. Empty when there is nothing to hide.
+    pub fn cosmetic_css(&self, url: &str) -> String {
+        let Ok(engine) = self.engine.read() else {
+            return String::new();
+        };
+        let resources = engine.url_cosmetic_resources(url);
+        drop(engine);
+        let mut selectors: Vec<String> = resources
+            .hide_selectors
+            .iter()
+            .filter(|selector| super::cosmetic::is_plain_selector(selector))
+            .cloned()
+            .collect();
+        selectors.sort();
+        if !resources.generichide {
+            if let Ok(generic) = self.generic_hide.read() {
+                selectors.extend(
+                    generic
+                        .iter()
+                        .filter(|selector| !resources.exceptions.contains(*selector))
+                        .cloned(),
+                );
+            }
+        }
+        super::cosmetic::stylesheet(&selectors)
+    }
     pub fn blocks(&self, url: &str, source: &str, kind: &str, method: &str) -> bool {
         let Ok(request) = Request::new(url, source, kind, method) else {
             return false;
@@ -168,11 +203,13 @@ impl FilterLists {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         let mut file = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
         serde_json::to_writer(&mut file, &snapshots).map_err(|e| e.to_string())?;
+        let generic = Arc::new(super::cosmetic::generic_selectors(&snapshots.lists));
         let engine = snapshots.compile();
         file.flush().map_err(|e| e.to_string())?;
         file.as_file().sync_all().map_err(|e| e.to_string())?;
         file.persist(&self.cache).map_err(|e| e.to_string())?;
         *self.engine.write().map_err(|e| e.to_string())? = engine;
+        *self.generic_hide.write().map_err(|e| e.to_string())? = generic;
         #[cfg(target_os = "linux")]
         {
             if let Ok(mut current) = self.lists.write() {
@@ -259,6 +296,25 @@ mod tests {
             before
         );
         assert!(!service.cache.exists());
+    }
+
+    #[test]
+    fn pages_get_their_own_hiding_rules_plus_the_generic_ones_unless_excepted() {
+        let directory = tempfile::tempdir().unwrap();
+        let service = FilterLists::new(directory.path().join("lists.json"));
+        let mut candidate = Snapshots::bundled();
+        candidate.lists[0].push_str(
+            "\nshop.example##.only-on-shop\n##.everywhere-box\nquiet.example#@#.everywhere-box\n",
+        );
+        service.install(candidate).unwrap();
+        let shop = service.cosmetic_css("https://shop.example/page");
+        assert!(shop.contains(".only-on-shop") && shop.contains(".everywhere-box"));
+        let other = service.cosmetic_css("https://other.example/");
+        assert!(!other.contains(".only-on-shop") && other.contains(".everywhere-box"));
+        assert!(!service
+            .cosmetic_css("https://quiet.example/")
+            .contains(".everywhere-box"));
+        assert!(other.starts_with(":is(") && other.contains("display:none!important"));
     }
 
     #[test]

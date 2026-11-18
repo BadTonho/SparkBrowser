@@ -41,6 +41,8 @@
 
 - A barra superior agora mostra por padrão só Configurações, Downloads, Proteção e Extensões. Ligue ou desligue os outros botões (Ferramentas, Barra de favoritos, Comandos, Histórico, Modo Zen, QR Code, WhatsApp) em **Botões da barra**, no menu de configurações rápidas.
 
+- O bloqueador de anúncios agora também esconde os anúncios e caixas de "patrocinado" que as listas de filtros indicam em cada página, e não só bloqueia as requisições. Os anúncios do YouTube são removidos antes de o player recebê-los, e "Auto skip ads" agora também leva ao fim um anúncio que não tem botão de pular.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
