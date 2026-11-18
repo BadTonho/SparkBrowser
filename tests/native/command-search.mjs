@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
 export async function checkCommandSearch(context) {
-  const { invoke, fixture, script, until, click, wait, request, sessionId } = context;
+  const { invoke, fixture, script, until, wait, request, sessionId } = context;
   // The bar is drawn in a native layer, but the real bar (and all its logic) is in the shell page: items are clicked there, which does not depend on when the layer finishes drawing.
   const shellClick = selector => script('document.querySelector(arguments[0]).click()', selector);
   const { a,b,fixtureWorkspace } = await prepareTabs(context);
@@ -46,18 +46,18 @@ export async function checkCommandSearch(context) {
   await query('/page/a/spa');
   const crossWorkspaceId = `switch-${a.id}`;
   await until(()=>script('return Boolean(document.querySelector(`[data-command-id="${arguments[0]}"]`))',crossWorkspaceId),'cross-workspace tab result');
-  assert.ok(await script('return document.querySelector(`[data-command-id="${arguments[0]}"] .item-subtitle`).textContent.includes(arguments[1])',crossWorkspaceId,fixtureWorkspace),'tab result identifies its workspace');
+  await until(()=>script('const subtitle=document.querySelector(`[data-command-id="${arguments[0]}"] .item-subtitle`);return Boolean(subtitle&&subtitle.textContent.includes(arguments[1]))',crossWorkspaceId,fixtureWorkspace),'tab result identifies its workspace');
   await script(`const target=document.querySelector('[data-command-id="'+arguments[0]+'"]');const items=[...document.querySelectorAll('.command-item')];const steps=items.indexOf(target);for(let i=0;i<steps;i++)document.querySelector('.command-input').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));document.querySelector('.command-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));`,crossWorkspaceId);
   await until(async()=> (await invoke('get_tabs')).tabs.find(tab=>tab.is_active)?.id===a.id,'keyboard activation switches to the other workspace');
   await script(`document.querySelector('[data-tab-id="'+arguments[0]+'"]').dispatchEvent(new PointerEvent('pointerdown',{button:0,isPrimary:true,ctrlKey:true,bubbles:true,cancelable:true}));`,b.id);
   await script(`document.querySelector('[data-tab-id="'+arguments[0]+'"]').dispatchEvent(new PointerEvent('pointerdown',{button:0,isPrimary:true,shiftKey:true,bubbles:true,cancelable:true}));`,a.id);
   await until(()=>script('return Boolean(document.querySelector(".selection-actions"))'),'multi-tab action toolbar');
   assert.ok(await script('return document.querySelector(".selection-actions").textContent.includes("2")'),'Ctrl/Shift selects the inclusive range');
-  await click('.selection-actions button');
+  await shellClick('.selection-actions button');
   await until(()=>script('return Boolean(document.querySelector(".selection-actions .actions"))'),'review selected tabs');
   assert.ok(await script('const text=document.querySelector(".selection-actions").textContent.toLowerCase();return text.includes("protected")||text.includes("protegida")'),'review marks tabs protected by current activity');
-  await click('.selection-actions .actions button:last-child');
-  await click('.selection-actions button:last-child');
+  await shellClick('.selection-actions .actions button:last-child');
+  await shellClick('.selection-actions button:last-child');
   await query('cafe');
   await until(()=>script('return Boolean(document.querySelector("[data-command-id=navigate-current]"))'),'navigation before search replies');
   await script(`document.querySelector('[data-command-id=navigate-current]').dispatchEvent(new MouseEvent('mouseenter',{bubbles:false}));`);
@@ -68,12 +68,18 @@ export async function checkCommandSearch(context) {
   await shellClick(`[data-command-id="note-${noteUrl}"]`);
   await until(()=>script('return document.querySelector("[data-testid=page-note-editor]")?.value.startsWith("100%_")'),'saved note editor');
   assert.equal((await invoke('get_tabs')).tabs.length,before,'opening a note editor does not navigate');
-  assert.equal(await script('return document.querySelector("[data-testid=note-pinned-url]").textContent'),noteUrl);
+  await until(()=>script('return document.querySelector("[data-testid=note-pinned-url]")?.textContent===arguments[0]',noteUrl),'note pinned to its URL');
   // A draft for the selected URL survives page changes and another search selection.
   await script(`const editor=document.querySelector('[data-testid=page-note-editor]');editor.value='Unsaved draft for original saved URL';editor.dispatchEvent(new Event('input',{bubbles:true}));`);
+  // Switching tabs closes the bar (it is a layer above the page), but the draft is kept for its note.
   await invoke('switch_tab',{tabId:b.id});
-  await until(()=>script('return document.querySelector("textarea").value==="Unsaved draft for original saved URL"'),'note remains bound to original URL');
-  await click('[data-testid="note-follow-active"]');
+  await until(()=>script('return !document.querySelector(".command-modal")'),'switching tabs closes the command bar');
+  await query('cafe');
+  await until(()=>script('return Boolean(document.querySelector(`[data-command-id="note-${arguments[0]}"]`))',noteUrl),'saved note result after reopening');
+  await shellClick(`[data-command-id="note-${noteUrl}"]`);
+  await until(()=>script('return document.querySelector("textarea")?.value==="Unsaved draft for original saved URL"'),'draft survives closing the bar');
+  await until(()=>script('return document.querySelector("[data-testid=note-pinned-url]")?.textContent===arguments[0]',noteUrl),'note remains bound to original URL');
+  await shellClick('[data-testid="note-follow-active"]');
   await until(()=>script('return !document.querySelector("[data-testid=note-pinned-url]")'),'follow active page');
   await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
   await query('cafe');
@@ -83,11 +89,11 @@ export async function checkCommandSearch(context) {
   assert.equal((await invoke('get_tabs')).tabs.length,before,'Enter on a session only opens details');
   assert.ok(await script('return document.querySelector("[data-testid=session-details]").textContent.includes("Café")'));
   await invoke('rename_named_session',{id:session.id,name:'Café collection revised'});
-  await click('[data-testid="session-details-restore"]');
+  await shellClick('[data-testid="session-details-restore"]');
   await until(()=>script('return document.querySelector("[data-testid=session-details]").textContent.includes("revised")'),'changed session refreshed');
   assert.equal((await invoke('get_tabs')).tabs.length,before,'changed details need another confirmation');
   await assert.rejects(()=>invoke('restore_named_session',{id:session.id,expectedSession:session}),/command_search.changed/);
-  await click('[data-testid="session-details-restore"]');
+  await shellClick('[data-testid="session-details-restore"]');
   await until(async()=> (await invoke('get_tabs')).tabs.length===before+session.pages.length,'explicit restoration adds tabs');
   await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
   // Stale search items are revalidated before opening.
