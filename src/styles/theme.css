@@ -198,6 +198,31 @@ html[data-theme="light"][data-window-style="frosted"],
   --bg-downloads-panel: var(--modal-surface-bg);
 }
 
+/* Glass: clear and light-catching. A faint diagonal sheen, a bright edge and a softer blur than Ice. */
+html[data-window-style="glass"],
+:root[data-window-style="glass"] {
+  --modal-surface-bg:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.1) 100%),
+    rgba(22, 22, 28, calc(var(--modal-surface-opacity) * 0.6));
+  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.8)) saturate(190%) brightness(1.12);
+  --modal-surface-border: 1px solid rgba(255, 255, 255, 0.28);
+  --modal-surface-shadow: 0 24px 64px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.08), inset 0 0 24px rgba(255, 255, 255, 0.05);
+  --bg-permission-popover: var(--modal-surface-bg);
+  --bg-downloads-panel: var(--modal-surface-bg);
+}
+
+html[data-theme="light"][data-window-style="glass"],
+:root[data-theme="light"][data-window-style="glass"] {
+  --modal-surface-bg:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.2) 45%, rgba(255, 255, 255, 0.5) 100%),
+    rgba(255, 255, 255, calc(var(--modal-surface-opacity) * 0.55));
+  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.8)) saturate(190%) brightness(1.04);
+  --modal-surface-border: 1px solid rgba(255, 255, 255, 0.85);
+  --modal-surface-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --bg-permission-popover: var(--modal-surface-bg);
+  --bg-downloads-panel: var(--modal-surface-bg);
+}
+
 html[data-window-style="solid"],
 :root[data-window-style="solid"] {
   --modal-surface-bg: #18181b;

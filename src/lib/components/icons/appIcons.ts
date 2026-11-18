@@ -22,6 +22,8 @@ export const ICON_PATHS: Record<string, string> = {
   palette: "M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H17a4 4 0 0 0 4-4c0-4.4-4-7.2-9-7.2Z M7.5 11h.01M10 7.5h.01M14.5 7.5h.01M17 11h.01",
   keyboard: "M2 6h20v12H2Z M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10",
   window: "M3 4h18v16H3Z M3 9h18",
+  droplet: "M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z",
+  snowflake: "M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17M9.5 4 12 6.5 14.5 4M9.5 20l2.5-2.5 2.5 2.5",
   "square-filled": "M5 5h14v14H5Z",
   "circle-filled": "M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z",
   "status-online": "M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z",

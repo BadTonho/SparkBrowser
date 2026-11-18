@@ -8,17 +8,25 @@ O Spark Browser oferece controle abrangente sobre a superfície visual e transpa
 
 ## 1. Estilos Visuais
 
-Os usuários podem escolher entre dois estilos principais em **Configurações → Aparência e disposição**:
+Os usuários podem escolher entre três estilos de superfície em **Configurações → Aparência e disposição**:
 
-### 🪟 Vidro Fosco (Efeito Geleia / Blur)
-Estética moderna de vidro translúcido (glassmorphism):
-- **Tonalidade Translúcida:** Utiliza uma superfície base semitransparente (`rgba(22, 22, 28, var(--modal-surface-opacity))` no modo escuro; `rgba(255, 255, 255, var(--modal-surface-opacity))` no modo claro).
-- **Desfoque Fosco Profundo:** Aplica `backdrop-filter: blur(var(--modal-surface-blur)) saturate(160%)` acelerado por hardware que difunde suavemente o conteúdo que está atrás da janela (páginas da web, papel de parede ou janelas do desktop).
-- **Borda Especular e Elevação Suave:** Bordas sutis com leve brilho e sombras ambientes profundas que garantem contraste e legibilidade impecáveis.
-
-### ⬛ Preto Fosco (Sólido)
+### ⬛ Fosco (Sólido)
 - Oferece uma superfície completamente opaca e uniforme (`#18181b` no modo escuro; `#ffffff` no modo claro).
 - Desativa o desfoque de fundo para usuários que preferem superfícies planas e de alto contraste sem transparência.
+
+### 💧 Vidro
+Um visual de vidro claro, que reflete a luz:
+- **Brilho e borda clara:** Um leve reflexo diagonal sobre uma base de tom suave, com borda brilhante e um realce interno no alto.
+- **Desfoque suave, cor viva:** Um desfoque mais leve que o do Gelo, com saturação e brilho realçados, para que o que está atrás da janela continue reconhecível.
+- **Ajustável:** Acompanha os controles de opacidade e desfoque abaixo.
+
+### ❄️ Gelo
+Um desfoque forte, próximo do visual fosco do desktop COSMIC:
+- **Tonalidade Translúcida:** Utiliza uma superfície base semitransparente (`rgba(22, 22, 28, var(--modal-surface-opacity))` no modo escuro; `rgba(255, 255, 255, var(--modal-surface-opacity))` no modo claro).
+- **Desfoque Profundo:** Aplica `backdrop-filter: blur(var(--modal-surface-blur)) saturate(160%)` acelerado por hardware, que difunde o conteúdo atrás da janela (páginas da web, papel de parede ou janelas do desktop).
+- **Elevação Suave:** Uma borda sutil e sombras ambientes profundas garantem a legibilidade.
+
+O valor salvo do Gelo continua sendo `frosted`, então a escolha feita em versões anteriores é mantida.
 
 ---
 
@@ -27,12 +35,12 @@ Estética moderna de vidro translúcido (glassmorphism):
 Todos os controles estão disponíveis na seção **Aparência e disposição** nas Configurações:
 
 1. **Estilo do fundo das janelas (`settings.window_surface_style`)**:
-   - Alternância rápida entre **Vidro Fosco** e **Preto Fosco** (Preto Fosco vem ativado por padrão).
+   - Alternância rápida entre **Fosco**, **Vidro** e **Gelo** (Fosco vem ativado por padrão).
 2. **Opacidade do fundo das janelas (`settings.window_surface_opacity`)**:
    - Controle deslizante (slider) de **30%** (estética de gelatina vívida e translúcida) a **100%** (opaco).
    - Valor padrão: **70%**.
-3. **Desfoque do vidro fosco (`settings.window_surface_blur`)**:
-   - Ajusta o raio de difusão do desfoque de **0 px** a **32 px**.
+3. **Desfoque das janelas (`settings.window_surface_blur`)**:
+   - Ajusta o raio de difusão do desfoque de **0 px** a **32 px** (apenas Vidro e Gelo).
    - Valor padrão: **20 px**.
 4. **Desfoque atrás de diálogos (`settings.background_blur_c21c`)**:
    - Controla o desfoque separado aplicado ao plano de fundo da tela inteira quando um diálogo modal está aberto (0 a 24 px).

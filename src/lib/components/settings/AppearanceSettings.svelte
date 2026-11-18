@@ -216,24 +216,32 @@ async function changeSettingsDisplay(mode: "popup" | "tab") {
     <div class="timer-pills">
       <button
         class="mini-pill"
-        class:selected={$windowSurfaceStyle === "frosted"}
-        aria-pressed={$windowSurfaceStyle === "frosted"}
-        onclick={() => setWindowSurfaceStyle("frosted")}
-      >
-        <AppIcon name="window" /> {$t("settings.window_surface_frosted")}
-      </button>
-      <button
-        class="mini-pill"
         class:selected={$windowSurfaceStyle === "solid"}
         aria-pressed={$windowSurfaceStyle === "solid"}
         onclick={() => setWindowSurfaceStyle("solid")}
       >
         <AppIcon name="square-filled" /> {$t("settings.window_surface_solid")}
       </button>
+      <button
+        class="mini-pill"
+        class:selected={$windowSurfaceStyle === "glass"}
+        aria-pressed={$windowSurfaceStyle === "glass"}
+        onclick={() => setWindowSurfaceStyle("glass")}
+      >
+        <AppIcon name="droplet" /> {$t("settings.window_surface_glass")}
+      </button>
+      <button
+        class="mini-pill"
+        class:selected={$windowSurfaceStyle === "frosted"}
+        aria-pressed={$windowSurfaceStyle === "frosted"}
+        onclick={() => setWindowSurfaceStyle("frosted")}
+      >
+        <AppIcon name="snowflake" /> {$t("settings.window_surface_frosted")}
+      </button>
     </div>
   </div>
 
-  {#if $windowSurfaceStyle === "frosted"}
+  {#if $windowSurfaceStyle !== "solid"}
     <div class="setting-row" id="setting-window-surface-opacity" tabindex="-1">
       <div class="row-text">
         <span class="row-label">{$t("settings.window_surface_opacity")}</span>

@@ -264,7 +264,8 @@ export function setOverlayBlurPx(value: number): void {
   }
 }
 
-export type WindowSurfaceStyle = "frosted" | "solid";
+// "solid" is Matte, "glass" is the clear, light-catching glass look and "frosted" is Ice (a strong blur).
+export type WindowSurfaceStyle = "frosted" | "glass" | "solid";
 export const DEFAULT_WINDOW_SURFACE_STYLE: WindowSurfaceStyle = "solid";
 const WINDOW_SURFACE_STYLE_STORAGE_KEY = "spark_window_surface_style";
 
@@ -281,7 +282,7 @@ function getInitialWindowSurfaceStyle(): WindowSurfaceStyle {
   if (typeof safeStorage === "undefined") return DEFAULT_WINDOW_SURFACE_STYLE;
   try {
     const saved = safeStorage.getItem(WINDOW_SURFACE_STYLE_STORAGE_KEY);
-    return saved === "solid" || saved === "frosted" ? saved : DEFAULT_WINDOW_SURFACE_STYLE;
+    return saved === "solid" || saved === "frosted" || saved === "glass" ? saved : DEFAULT_WINDOW_SURFACE_STYLE;
   } catch {
     return DEFAULT_WINDOW_SURFACE_STYLE;
   }
@@ -339,10 +340,22 @@ function applyWindowSurfaceBlurPx(px: number): void {
 export const windowSurfaceStyle = writable<WindowSurfaceStyle>(getInitialWindowSurfaceStyle());
 applyWindowSurfaceStyle(get(windowSurfaceStyle));
 
+/**
+ * The webview can keep showing the previous window background until a value that feeds it changes (moving the
+ * opacity or blur slider fixed it). Nudging the blur by a hundredth of a pixel for two frames forces the repaint
+ * as soon as the style is switched.
+ */
+function repaintWindowSurfaces(): void {
+  if (typeof document === "undefined" || typeof requestAnimationFrame !== "function") return;
+  document.documentElement.style.setProperty("--modal-surface-blur", `${get(windowSurfaceBlurPx) + 0.01}px`);
+  requestAnimationFrame(() => requestAnimationFrame(() => applyWindowSurfaceBlurPx(get(windowSurfaceBlurPx))));
+}
+
 export function setWindowSurfaceStyle(style: WindowSurfaceStyle): void {
-  const next = style === "solid" ? "solid" : "frosted";
+  const next: WindowSurfaceStyle = style === "solid" ? "solid" : style === "glass" ? "glass" : "frosted";
   windowSurfaceStyle.set(next);
   applyWindowSurfaceStyle(next);
+  repaintWindowSurfaces();
 
   if (typeof safeStorage !== "undefined") {
     try {

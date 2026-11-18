@@ -59,7 +59,7 @@ The toolbar shield opens an anchored [Protection pop-up](auto-skip-ads.md) with 
 - Settings are split into **Appearance & Layout**, **Search & Navigation**, **Workspaces & Theme**, **Performance & Privacy**, and **Keyboard Shortcuts**.
 - Search all categories, settings, and keyboard shortcuts from the field beside the Browser Settings title; selecting a result opens its category and highlights the destination.
 - Choose Google or DuckDuckGo as the default search engine in **Search & Navigation**. Google is selected by default; the choice applies to Omnibox and Command Bar searches and to newly opened tabs.
-- Customize the window background surface between **Frosted Glass** (translucent jelly blur) and **Solid Matte**, fine-tune window opacity from 30% to 100%, and adjust frosted glass blur from 0 to 32 px. See [Window Appearance](window-appearance.md).
+- Customize the window background surface between **Matte**, **Glass** and **Ice** (a strong blur), fine-tune window opacity from 30% to 100%, and adjust the window blur from 0 to 32 px. See [Window Appearance](window-appearance.md).
 - Adjust the dialog backdrop blur for temporary overlays from **0–24 px** in Appearance & Layout; the preference is applied immediately and remembered across restarts.
 - Choose between **Dark** and **Light** appearance in Appearance & Layout. Dark mode is enabled by default; changes apply immediately to window chrome, settings, and overlays, and the choice is remembered across restarts.
 - Show or hide the horizontal bookmarks bar in Appearance & Layout or with the toolbar toggle; the choice is remembered across restarts and does not affect bookmarks in the vertical sidebar. The bar appears only when at least one bookmark or folder exists.

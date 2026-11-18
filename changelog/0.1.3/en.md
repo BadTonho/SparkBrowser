@@ -1,5 +1,9 @@
 # Spark 0.1.3
 
+## New features
+
+- The window background style now has three options: **Matte** (solid), **Glass** (clear and light-catching, with a sheen and a bright edge) and **Ice** (a strong blur). The earlier "Frosted Glass" choice is now called **Ice** and is kept if you had it selected.
+
 ## Improvements
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.
@@ -27,3 +31,4 @@
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.
 - Fixed the "Close the browser?" warning appearing because of the new tab or settings page: changing an option there was counted as an edited form, and "Don't show again" could never apply.
+- Fixed the window background style (Matte, Glass, Ice) not updating the windows right away; you had to move the opacity or blur slider to see the change.

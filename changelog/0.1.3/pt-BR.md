@@ -1,5 +1,9 @@
 # Spark 0.1.3
 
+## Novas funcionalidades
+
+- O estilo do fundo das janelas agora tem três opções: **Fosco** (sólido), **Vidro** (translúcido e que reflete a luz, com brilho e borda clara) e **Gelo** (um desfoque forte). A antiga escolha "Vidro Fosco" agora se chama **Gelo** e é mantida se você a tinha selecionada.
+
 ## Melhorias
 
 - No painel de personalização centralizado, as opções **Posição do painel** e **Posição dos widgets de música** agora são pequenas, ficam lado a lado e permanecem na parte de baixo do painel, deixando mais espaço para os cartões.
@@ -27,3 +31,4 @@
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
 - Corrigido o aviso "Fechar o navegador?" aparecer por causa da nova guia ou da página de configurações: mudar uma opção ali contava como formulário alterado, e o "Não me mostre novamente" nunca valia.
+- Corrigido o estilo do fundo das janelas (Fosco, Vidro, Gelo) não atualizar as janelas na hora; era preciso mexer no controle de opacidade ou de desfoque para ver a mudança.
