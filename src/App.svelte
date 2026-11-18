@@ -51,6 +51,7 @@
   import { onSettingsTabLoaded } from "./lib/services/bridge/settings-overlay";
   import { preparePanel } from "./lib/services/bridge/panels";
   import { startResourceLimits } from "./lib/stores/resourceLimitsController";
+  import { startAutoClean } from "./lib/stores/autoCleanStore";
   import { isSettingsQuickOpen } from "./lib/stores/settingsQuickPopoverStore";
   import { isResourcesOpen } from "./lib/stores/resourcesPopoverStore";
   import { isToolsOpen } from "./lib/stores/toolsStore";
@@ -206,6 +207,7 @@
     let unlistenBrowserShortcut: (() => void) | undefined;
     let unlistenSettingsTab: (() => void) | undefined;
     let stopResourceLimits: (() => void) | undefined;
+    let stopAutoClean: (() => void) | undefined;
     const stopWorkspaceShortcutBridge = initializeWorkspaceShortcutBridge();
 
     let disposed = false;
@@ -230,6 +232,7 @@
       if (disposed) return;
       void syncForcedDarkPages();
       stopResourceLimits = startResourceLimits();
+      stopAutoClean = startAutoClean();
       // The command bar opens with a shortcut, not a click on a button, so there is no pointer to warn us: its layer is prepared once the browser is up.
       window.setTimeout(() => preparePanel("commands"), 2500);
       await setHibernationExemptions(get(hibernationExemptions));
@@ -335,6 +338,7 @@
       stopWorkspaceHibernation();
       disposed = true;
       stopResourceLimits?.();
+      stopAutoClean?.();
       session.stop();
       if (unlistenPrivacy) unlistenPrivacy();
       if (unlistenBrowserShortcut) unlistenBrowserShortcut();

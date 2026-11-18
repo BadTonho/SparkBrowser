@@ -54,6 +54,12 @@ Under **Clear what is older than**, choose **Everything**, **5**, **10**, **20**
 - **Download list**: the finished downloads recorded before that. A finished download with no known date is kept.
 - **Cache and cookies/site data**: what the engine stored before that. **Windows only**: on Linux the engine can only clear what changed in the last days, which is the opposite, so with an age chosen these two report that it is not available (choose **Everything** to clear them).
 
+### Automatic cleaning
+
+The **Automatic cleaning** switch (off by default) clears the chosen items by itself, only what is older than the chosen period. It needs a period (5, 10, 20, 30 or 90 days) and at least one item: clearing everything automatically (which would sign you out of sites) is never done, so the switch cannot be turned on with **Everything**, and it turns itself off if you pick **Everything** or uncheck every item. While it is on, the page opens showing what it is set to clear, and changing the items or the period changes the automatic cleaning too.
+
+It runs about a minute after the browser opens and then about once a day, never more often. It is silent; if an item cannot be cleared, the reason goes to the error log as a warning. The choice is saved on this device. On Linux, cache and cookies cannot be cleared by age, so they are reported in the log and skipped.
+
 The cleaning page has the same size as the main page, so the panel does not change size when you move between them.
 
 ## Good to know

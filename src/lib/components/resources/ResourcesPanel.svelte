@@ -7,7 +7,9 @@
   import { onResourcesPopoverAction, setResourcesPopover } from "../../services/bridge/resources-popover";
   import { t, type MessageKey } from "../../i18n";
   import { describeError } from "../../services/user-errors.js";
-  import { clearEngineData, estimateCleanup } from "../../services/browser-data";
+  import { estimateCleanup } from "../../services/browser-data";
+  import { runCleaning, PartialCleaning, type CleanItem } from "../../services/cleaning";
+  import { autoClean, setAutoClean } from "../../stores/autoCleanStore";
   import { chosenBytes, formatBytes, itemBytes, type CleanupEstimate } from "../../services/cleanup-size";
   import { invoke, isTauriRuntime as inApp } from "../../services/bridge/runtime";
   import { logIgnored } from "../../services/ignored-error";
@@ -18,13 +20,12 @@
   import { isResourcesOpen, resourcesSession, closeResourcesPanel } from "../../stores/resourcesPopoverStore";
   import { tabs } from "../../stores/browserStore";
   import { tabsMemory, refreshTabsMemory } from "../../stores/tabMemoryStore";
-  import { wipeBrowsingHistory } from "../../stores/persistenceStore";
-  import { wipeDownloads } from "../../stores/downloadsStore";
   import "./resources.css";
 
   /** Days for "clear what is older than"; 0 is everything. */
   const AGE_CHOICES = [0, 5, 10, 20, 30, 90] as const;
-  type Choice = "cache" | "site" | "history" | "downloads";
+  type Choice = CleanItem;
+  const TITLES: Record<CleanItem, MessageKey> = { cache: "resources.item_cache", site: "resources.item_site", history: "resources.item_history", downloads: "resources.item_downloads" };
   const CHOICES: { id: Choice; title: MessageKey; hint: MessageKey }[] = [
     { id: "cache", title: "resources.item_cache", hint: "resources.item_cache_hint" },
     { id: "site", title: "resources.item_site", hint: "resources.item_site_hint" },
@@ -69,6 +70,8 @@
   $effect(() => {
     if (!$isResourcesOpen) return;
     view = "main"; confirming = false; result = null; busy = false; usage = null;
+    // With the automatic cleaning on, the page opens showing what it is set to clear.
+    if ($autoClean.enabled) { chosen = { ...$autoClean.items }; age = $autoClean.days; }
     const read = () => {
       void refreshTabsMemory(true);
       if (inApp()) void invoke<Usage>("get_resource_usage").then(value => { usage = value; }).catch(logIgnored);
@@ -136,8 +139,18 @@
     return { destroy() { cancelAnimationFrame(frame); stop(); focus?.destroy(); } };
   }
 
+  /** While the automatic cleaning is on it follows what is chosen here; with no period or nothing chosen it turns off. */
+  function followAuto() {
+    if ($autoClean.enabled) setAutoClean({ items: { ...chosen }, days: age, enabled: age > 0 && anyChosen });
+  }
+  function toggleAuto() {
+    if ($autoClean.enabled) { setAutoClean({ enabled: false }); return; }
+    if (age > 0 && anyChosen) setAutoClean({ enabled: true, items: { ...chosen }, days: age });
+  }
+
   function pickAge(days: number) {
     age = days;
+    followAuto();
     measure();
     confirming = false;
     result = null;
@@ -145,6 +158,7 @@
 
   function toggle(id: Choice) {
     chosen[id] = !chosen[id];
+    followAuto();
     confirming = false;
     result = null;
   }
@@ -153,27 +167,15 @@
     if (!anyChosen || busy) return;
     if (!confirming) { confirming = true; return; }
     busy = true; confirming = false; result = null;
-    const done: string[] = [];
-    const failed: string[] = [];
-    const attempt = async (name: string, action: () => Promise<unknown>) => {
-      try { await action(); done.push(name); }
-      catch (error) { failed.push(`${name} (${String(error).includes("age_unsupported") ? $t("resources.age_unsupported") : describeError(error)})`); }
-    };
-    const days = age > 0 ? age : null;
-    if (chosen.history) await attempt($t("resources.item_history"), () => wipeBrowsingHistory(days));
-    if (chosen.downloads) await attempt($t("resources.item_downloads"), () => wipeDownloads(days));
-    if (chosen.cache || chosen.site) {
-      const names = [chosen.cache ? $t("resources.item_cache") : "", chosen.site ? $t("resources.item_site") : ""].filter(Boolean).join(", ");
-      await attempt(names, async () => {
-        const report = await clearEngineData({ cache: chosen.cache, siteData: chosen.site, olderThanDays: days });
-        if (report.failed > 0) throw new Error($t("resources.partial"));
-      });
-    }
+    const outcome = await runCleaning(chosen, age > 0 ? age : null);
+    const names = (items: CleanItem[]) => items.map(item => $t(TITLES[item])).join(", ");
+    const why = (error: unknown) => error instanceof PartialCleaning ? $t("resources.partial")
+      : String(error).includes("age_unsupported") ? $t("resources.age_unsupported") : describeError(error);
     busy = false;
     measure();
-    result = failed.length
-      ? { text: $t("resources.failed", { items: failed.join("; ") }), failed: true }
-      : { text: $t("resources.cleared", { items: done.join(", ") }), failed: false };
+    result = outcome.failed.length
+      ? { text: $t("resources.failed", { items: outcome.failed.map(failure => `${names(failure.items)} (${why(failure.error)})`).join("; ") }), failed: true }
+      : { text: $t("resources.cleared", { items: outcome.done.map(item => $t(TITLES[item])).join(", ") }), failed: false };
   }
 
   onMount(() => () => {});
@@ -351,6 +353,20 @@
                 <span class="resources-choice-size">{estimate ? (itemBytes(estimate, choice.id) === null ? "—" : formatBytes(itemBytes(estimate, choice.id) ?? 0)) : ""}</span>
               </button>
             {/each}
+          </div>
+
+          <div class="resources-section">
+            <button
+              class="resources-row resources-auto"
+              data-testid="resources-auto"
+              role="switch"
+              aria-checked={$autoClean.enabled}
+              disabled={busy || (!$autoClean.enabled && (age === 0 || !anyChosen))}
+              onclick={toggleAuto}
+            >
+              <span class="resources-row-text"><strong>{$t("resources.auto")}</strong><small>{age === 0 && !$autoClean.enabled ? $t("resources.auto_needs_period") : $t("resources.auto_hint", { days: age || $autoClean.days })}</small></span>
+              <span class="resources-switch" aria-hidden="true"></span>
+            </button>
           </div>
 
           {#if chosen.site}<p class="resources-note">{$t("resources.site_warning")}</p>{/if}

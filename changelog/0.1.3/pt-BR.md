@@ -18,6 +18,8 @@
 
 ## Melhorias
 
+- Nova chave **Limpeza automática** na página de limpeza do painel **Recursos** (desligada por padrão): ela limpa os itens marcados com mais do que o período escolhido (5 a 90 dias) ao abrir o navegador e cerca de uma vez por dia. Ela nunca limpa tudo sozinha, então precisa de um período.
+
 - A página de limpeza do painel **Recursos** agora mostra, no topo, quanto espaço será limpo (medido no disco e seguindo o período escolhido), e cada item mostra o seu tamanho.
 
 - A página de limpeza do painel **Recursos** agora pode limpar só o que tem mais de uma quantidade de dias (5, 10, 20, 30 ou 90), mantendo o mais novo: histórico, downloads concluídos, cache e cookies. Limpar cache e cookies por idade funciona só no Windows. A página de limpeza também tem o mesmo tamanho da página principal do painel.

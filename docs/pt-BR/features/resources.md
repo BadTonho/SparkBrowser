@@ -54,6 +54,12 @@ Em **Limpar o que tem mais de**, escolha **Tudo**, **5**, **10**, **20**, **30**
 - **Lista de downloads**: os downloads concluídos registrados antes disso. Um download concluído sem data conhecida é mantido.
 - **Cache e cookies/dados dos sites**: o que o motor guardou antes disso. **Só no Windows**: no Linux o motor só consegue limpar o que mudou nos últimos dias, o oposto, então com uma idade escolhida esses dois avisam que não está disponível (escolha **Tudo** para limpá-los).
 
+### Limpeza automática
+
+A chave **Limpeza automática** (desligada por padrão) limpa sozinha os itens marcados, só o que é mais antigo que o período escolhido. Ela precisa de um período (5, 10, 20, 30 ou 90 dias) e de pelo menos um item: limpar tudo automaticamente (o que deslogaria você dos sites) nunca é feito, então a chave não liga com **Tudo**, e ela se desliga sozinha se você escolher **Tudo** ou desmarcar todos os itens. Enquanto está ligada, a página abre mostrando o que ela está configurada para limpar, e mudar os itens ou o período muda a limpeza automática também.
+
+Ela roda cerca de um minuto depois de abrir o navegador e depois mais ou menos uma vez por dia, nunca com mais frequência. É silenciosa; se um item não puder ser limpo, o motivo vai para o log de erros como aviso. A escolha fica salva neste dispositivo. No Linux, cache e cookies não podem ser limpos por idade, então são registrados no log e pulados.
+
 A página de limpeza tem o mesmo tamanho da página principal, então o painel não muda de tamanho ao ir de uma para a outra.
 
 ## Bom saber

@@ -18,6 +18,8 @@
 
 ## Improvements
 
+- New **Automatic cleaning** switch on the **Resources** cleaning page (off by default): it clears the chosen items older than the chosen period (5 to 90 days) when the browser opens and about once a day. It never clears everything by itself, so it needs a period.
+
 - The **Resources** cleaning page now shows, at the top, how much space will be cleared (measured on the disk and following the chosen period), and each item shows its own size.
 
 - The **Resources** cleaning page can now clear only what is older than a number of days (5, 10, 20, 30 or 90), keeping the newer: history, finished downloads, cache and cookies. Clearing the cache and cookies by age works on Windows only. The cleaning page also has the same size as the main page of the panel.
