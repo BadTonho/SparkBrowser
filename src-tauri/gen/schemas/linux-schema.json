@@ -603,6 +603,12 @@
           "markdownDescription": "Enables the get_recovery_status command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_resource_usage command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-resource-usage",
+          "markdownDescription": "Enables the get_resource_usage command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_saved_session command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-saved-session",
@@ -1117,6 +1123,18 @@
           "type": "string",
           "const": "allow-set-resident-limit",
           "markdownDescription": "Enables the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_resource_limits command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-resource-limits",
+          "markdownDescription": "Enables the set_resource_limits command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_resource_monitor command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-resource-monitor",
+          "markdownDescription": "Enables the set_resource_monitor command without any pre-configured scope."
         },
         {
           "description": "Enables the set_resources_popover command without any pre-configured scope.",
@@ -1713,6 +1731,12 @@
           "markdownDescription": "Denies the get_recovery_status command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_resource_usage command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-resource-usage",
+          "markdownDescription": "Denies the get_resource_usage command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_saved_session command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-saved-session",
@@ -2227,6 +2251,18 @@
           "type": "string",
           "const": "deny-set-resident-limit",
           "markdownDescription": "Denies the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_resource_limits command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-resource-limits",
+          "markdownDescription": "Denies the set_resource_limits command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_resource_monitor command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-resource-monitor",
+          "markdownDescription": "Denies the set_resource_monitor command without any pre-configured scope."
         },
         {
           "description": "Denies the set_resources_popover command without any pre-configured scope.",

@@ -14,6 +14,8 @@
 
 - New **Resources** button (off by default; turn it on in the toolbar buttons of the quick settings). It opens a panel with the memory the open tabs use and a **Cleaning** page where you choose what to clear: cache, cookies and site data, browsing history and the download list, with a confirmation before anything is cleared.
 
+- The **Resources** panel now has limits and live numbers: a memory limit (above it, the tabs you used least recently are hibernated), a processor limit (a cap on the share of the processor the pages may use) and an internet speed limit, each with its current use shown. The processor and internet limits are complete on Windows and partial on Linux (priority only, and downloads only).
+
 ## Improvements
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.

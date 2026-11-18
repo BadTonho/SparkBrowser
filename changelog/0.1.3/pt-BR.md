@@ -14,6 +14,8 @@
 
 - Novo botão **Recursos** (desligado por padrão; ligue nos botões da barra das configurações rápidas). Ele abre um painel com a memória que as abas abertas usam e uma página de **Limpeza** onde você escolhe o que limpar: cache, cookies e dados dos sites, histórico de navegação e a lista de downloads, com uma confirmação antes de limpar qualquer coisa.
 
+- O painel **Recursos** agora tem limites e números ao vivo: um limite de memória (acima dele, as abas usadas há mais tempo são hibernadas), um limite do processador (um teto para a parte do processador que as páginas podem usar) e um limite de velocidade da internet, cada um com o uso atual à mostra. Os limites de processador e internet estão completos no Windows e parciais no Linux (só prioridade, e só downloads).
+
 ## Melhorias
 
 - No painel de personalização centralizado, as opções **Posição do painel** e **Posição dos widgets de música** agora são pequenas, ficam lado a lado e permanecem na parte de baixo do painel, deixando mais espaço para os cartões.

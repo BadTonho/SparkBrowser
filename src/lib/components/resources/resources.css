@@ -82,3 +82,7 @@
 .resources-panel .resources-action.danger:hover:not(:disabled) { background: #dc2626; }
 
 @media (prefers-reduced-motion: reduce) { .resources-panel button { transition: none; } }
+
+.resources-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.resources-panel .resources-pill { padding: 4px 9px; border-radius: 99px; font-size: 11px; }
+.resources-panel .resources-pill[aria-pressed="true"] { border-color: color-mix(in srgb, var(--accent-primary, #e5e5e5) 45%, transparent); background: color-mix(in srgb, var(--accent-primary, #e5e5e5) 16%, transparent); font-weight: 650; }

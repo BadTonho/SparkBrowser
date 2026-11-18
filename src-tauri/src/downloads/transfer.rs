@@ -9,6 +9,19 @@ use std::{
 };
 use tauri::Url;
 
+/// Holds a download back so it does not go faster than the limit chosen in the resources panel (0 is none).
+/// The wait is cut in small pieces so a cancel still takes effect at once.
+fn throttle(started: Instant, received: u64, cancel: &AtomicBool) {
+    let limit = crate::resources::DOWNLOAD_LIMIT.load(Ordering::Relaxed);
+    if limit == 0 {
+        return;
+    }
+    let due = Duration::from_secs_f64(received as f64 / limit as f64);
+    while started.elapsed() < due && !cancel.load(Ordering::Relaxed) {
+        std::thread::sleep((due - started.elapsed()).min(Duration::from_millis(100)));
+    }
+}
+
 pub struct SavedDownload {
     pub file_name: String,
     pub path: PathBuf,
@@ -149,6 +162,7 @@ pub fn download_with_control(
             .map_err(|e| e.to_string())?;
         received += count as u64;
         progress(received, total);
+        throttle(started, received, cancel);
     }
     if cancel.load(Ordering::Relaxed) {
         return Err("Download cancelled".into());

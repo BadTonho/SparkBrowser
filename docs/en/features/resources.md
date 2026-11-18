@@ -6,10 +6,28 @@ The **Resources** button (a gauge) is turned **off by default**. Turn it on in *
 
 ## What the panel shows
 
-- **Memory in use**: the sum of what the open tabs use, with how many tabs are open and how many are sleeping (hibernated). It updates while the panel is open.
+- **Memory**: the sum of what the open tabs use, with how many tabs are open and how many are sleeping (hibernated), and a **memory limit**.
+- **Processor**: the share of the whole processor the pages are using, and a **processor limit**.
+- **Internet**: the speed at which the pages are receiving, and a **speed limit**.
 - **Cleaning**: opens the list of what can be cleared.
 
-Limits for memory, processor and internet are the next step and are not in this version of the panel yet.
+The numbers update every two seconds while the panel is open. They are measured only then, because measuring the network costs a little.
+
+## Limits
+
+Each limit has a row of choices; **None** turns it off. The choices are saved on this device.
+
+| Limit | Choices | What it does |
+| --- | --- | --- |
+| **Memory** | 1, 2, 4 or 8 GB | When the open tabs use more than the limit, the tab you used longest ago is hibernated, one at a time, until they fit. The active tab, tabs with a form being edited, media playing, a download or picture-in-picture, and protected tabs are never hibernated. A hibernated tab comes back when you open it. |
+| **Processor** | 25, 50 or 75% | The share of the whole processor the web engine may use, with the pages together. The browser's own interface is outside the cap, so it stays responsive; pages just run slower when they hit it. |
+| **Internet** | 1, 5, 10 or 25 Mbps | The speed of the pages' network (download and upload) and of the browser's own downloads. |
+
+### Per system
+
+- **Windows**: the processor limit is a hard cap (a job object over the engine's processes, including the ones it starts later), and the internet limit slows the pages through the engine's developer protocol. The network measure also comes from it.
+- **Linux**: the processor limit only **lowers the priority** of the web processes, so it matters when the computer is busy, and it is undone when the browser restarts (lowering the priority back needs privileges). The engine has no control over the pages' network, so the internet limit applies only to the **browser's own downloads**, and the network is not measured. The panel says so. Linux has not been tested yet.
+- Downloads started by a page (not by the browser's download box) follow the internet limit on Windows only as far as the engine's network emulation reaches them.
 
 ## Cleaning
 

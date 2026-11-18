@@ -380,6 +380,11 @@ pub(super) fn create_tab_webview(
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         false,
     )?;
+    // The page starts with the speed limit and the network monitor of the resources panel, if they are on.
+    crate::resources::webview_created(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+    );
     #[cfg(any(windows, target_os = "linux"))]
     super::navigation_state::install_native_navigation(
         app,

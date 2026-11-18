@@ -3677,6 +3677,7 @@ dependencies = [
  "getrandom 0.3.4",
  "gtk",
  "javascriptcore-rs",
+ "libc",
  "libloading 0.8.9",
  "png 0.17.16",
  "quick-xml",

@@ -8,6 +8,12 @@
   import { t, type MessageKey } from "../../i18n";
   import { describeError } from "../../services/user-errors.js";
   import { clearEngineData } from "../../services/browser-data";
+  import { invoke, isTauriRuntime as inApp } from "../../services/bridge/runtime";
+  import { logIgnored } from "../../services/ignored-error";
+  import { formatSpeed, formatMemoryLimit } from "../../services/resource-limits";
+  import {
+    resourceLimits, setResourceLimit, RAM_CHOICES_MB, CPU_CHOICES_PERCENT, NETWORK_CHOICES_KBPS,
+  } from "../../stores/resourceLimitsStore";
   import { isResourcesOpen, resourcesSession, closeResourcesPanel } from "../../stores/resourcesPopoverStore";
   import { tabs } from "../../stores/browserStore";
   import { tabsMemory, refreshTabsMemory } from "../../stores/tabMemoryStore";
@@ -38,16 +44,25 @@
   const resident = $derived($tabs.filter(tab => !tab.is_hibernated).length);
   const sleeping = $derived($tabs.length - resident);
   const usedBytes = $derived(Object.values($tabsMemory).reduce((total, bytes) => total + (bytes > 0 ? bytes : 0), 0));
+  interface Usage { cpu_percent: number; download_bytes_per_second: number | null; supports_cpu_limit: boolean; cpu_limit_is_priority: boolean; supports_network_limit: boolean }
+  let usage = $state<Usage | null>(null);
   const usedText = $derived(usedBytes >= 1024 ** 3 ? `${(usedBytes / 1024 ** 3).toFixed(1)} GB` : `${Math.round(usedBytes / 1024 ** 2)} MB`);
 
-  // A new opening starts from the main view with nothing half done.
+  // A new opening starts from the main view with nothing half done. The numbers are measured only while the panel is open.
   $effect(() => {
-    if ($isResourcesOpen) {
-      view = "main"; confirming = false; result = null; busy = false;
+    if (!$isResourcesOpen) return;
+    view = "main"; confirming = false; result = null; busy = false; usage = null;
+    const read = () => {
       void refreshTabsMemory(true);
-      const timer = setInterval(() => void refreshTabsMemory(true), 4000);
-      return () => clearInterval(timer);
-    }
+      if (inApp()) void invoke<Usage>("get_resource_usage").then(value => { usage = value; }).catch(logIgnored);
+    };
+    if (inApp()) void invoke("set_resource_monitor", { on: true }).catch(logIgnored);
+    read();
+    const timer = setInterval(read, 2000);
+    return () => {
+      clearInterval(timer);
+      if (inApp()) void invoke("set_resource_monitor", { on: false }).catch(logIgnored);
+    };
   });
 
   function host(node: HTMLElement) {
@@ -126,6 +141,43 @@
               <span class="resources-meter-value">{usedBytes > 0 ? usedText : "—"}</span>
               <span class="resources-meter-note">{$t("resources.memory_tabs", { open: resident, sleeping })}</span>
             </div>
+            <div class="resources-pills" role="group" aria-label={$t("resources.memory_limit")}>
+              <button class="resources-pill" data-testid="resources-ram-none" aria-pressed={$resourceLimits.ramMb === 0} onclick={() => void setResourceLimit("ramMb", 0)}>{$t("resources.no_limit")}</button>
+              {#each RAM_CHOICES_MB as mb (mb)}
+                <button class="resources-pill" data-testid="resources-ram-{mb}" aria-pressed={$resourceLimits.ramMb === mb} onclick={() => void setResourceLimit("ramMb", mb)}>{formatMemoryLimit(mb)}</button>
+              {/each}
+            </div>
+            {#if $resourceLimits.ramMb > 0}<p class="resources-note">{$t("resources.memory_limit_note")}</p>{/if}
+          </div>
+
+          <div class="resources-section">
+            <h3>{$t("resources.cpu")}</h3>
+            <div class="resources-meter" data-testid="resources-cpu">
+              <span class="resources-meter-value">{usage ? `${Math.round(usage.cpu_percent)}%` : "—"}</span>
+              <span class="resources-meter-note">{$t("resources.cpu_note")}</span>
+            </div>
+            <div class="resources-pills" role="group" aria-label={$t("resources.cpu_limit")}>
+              <button class="resources-pill" data-testid="resources-cpu-none" aria-pressed={$resourceLimits.cpuPercent === 0} onclick={() => void setResourceLimit("cpuPercent", 0)}>{$t("resources.no_limit")}</button>
+              {#each CPU_CHOICES_PERCENT as percent (percent)}
+                <button class="resources-pill" data-testid="resources-cpu-{percent}" aria-pressed={$resourceLimits.cpuPercent === percent} onclick={() => void setResourceLimit("cpuPercent", percent)}>{percent}%</button>
+              {/each}
+            </div>
+            {#if usage?.cpu_limit_is_priority}<p class="resources-note">{$t("resources.cpu_priority_note")}</p>{/if}
+          </div>
+
+          <div class="resources-section">
+            <h3>{$t("resources.network")}</h3>
+            <div class="resources-meter" data-testid="resources-network">
+              <span class="resources-meter-value">{usage?.download_bytes_per_second != null ? formatSpeed(usage.download_bytes_per_second) : "—"}</span>
+              <span class="resources-meter-note">{$t("resources.network_note")}</span>
+            </div>
+            <div class="resources-pills" role="group" aria-label={$t("resources.network_limit")}>
+              <button class="resources-pill" data-testid="resources-net-none" aria-pressed={$resourceLimits.networkKbps === 0} onclick={() => void setResourceLimit("networkKbps", 0)}>{$t("resources.no_limit")}</button>
+              {#each NETWORK_CHOICES_KBPS as kbps (kbps)}
+                <button class="resources-pill" data-testid="resources-net-{kbps}" aria-pressed={$resourceLimits.networkKbps === kbps} onclick={() => void setResourceLimit("networkKbps", kbps)}>{kbps / 1000} Mbps</button>
+              {/each}
+            </div>
+            {#if usage && !usage.supports_network_limit}<p class="resources-note">{$t("resources.network_downloads_only")}</p>{/if}
           </div>
 
           <div class="resources-section">
