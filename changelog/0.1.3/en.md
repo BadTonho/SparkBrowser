@@ -18,9 +18,11 @@
 
 ## Improvements
 
+- The **Resources** cleaning page now shows, at the top, how much space will be cleared (measured on the disk and following the chosen period), and each item shows its own size.
+
 - The **Resources** cleaning page can now clear only what is older than a number of days (5, 10, 20, 30 or 90), keeping the newer: history, finished downloads, cache and cookies. Clearing the cache and cookies by age works on Windows only. The cleaning page also has the same size as the main page of the panel.
 
-- In the **Resources** panel, the memory, processor and internet limits are now sliders you drag to any value (memory from 512 MB to 16 GB, processor from 10 to 90%, internet from 1 to 1000 Mbps; all the way to the right is **No limit**), instead of fixed buttons. The current numbers and the chosen limit are now centered, and you can click the limit's number to type an exact value (memory in GB, processor in %, internet in Mbps). The explanatory notes under each limit were removed, and a divider now separates the sections.
+- In the **Resources** panel, the memory, processor and internet limits are now sliders you drag to any value (memory from 512 MB to 16 GB, processor from 10 to 90%, internet from 1 to 1000 Mbps; all the way to the right is **No limit**), instead of fixed buttons. The current numbers and the chosen limit are now centered (the limit's number sits under the bar), and you can click the limit's number to type an exact value (memory in GB, processor in %, internet in Mbps). The explanatory notes under each limit were removed, and a divider now separates the sections.
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.
 

@@ -84,6 +84,17 @@ pub fn clear_downloads_before(conn: &Connection, cutoff: i64) -> Result<(), Stri
     Ok(())
 }
 
+/// Bytes the download list takes (not the files, which stay on the disk), for the records before `cutoff`.
+pub fn estimate_list_bytes(conn: &Connection, cutoff: Option<i64>) -> Result<u64, String> {
+    conn.query_row(
+        "SELECT COALESCE(SUM(LENGTH(file_name) + LENGTH(url) + LENGTH(save_path) + 32), 0) FROM downloads WHERE created_at < ?1",
+        [cutoff.unwrap_or(i64::MAX)],
+        |row| row.get::<_, i64>(0),
+    )
+    .map(|bytes| bytes.max(0) as u64)
+    .map_err(|e| e.to_string())
+}
+
 pub fn find_path(conn: &Connection, id: i64) -> Result<Option<String>, String> {
     conn.query_row(
         "SELECT save_path FROM downloads WHERE id = ?1 AND status = 'Completed'",

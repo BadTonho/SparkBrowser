@@ -42,6 +42,10 @@ Choose what to clear and press **Clear selected**; the button asks for a second 
 
 Only the cache is chosen when the panel opens. The result is shown in the panel: what was cleared, or what could not be.
 
+### How much will be cleared
+
+The top of the cleaning page shows **how much space the chosen items take** (and so how much is cleared), and each item shows its own size. It is measured on the disk, not guessed: the engine's cache and site-data folders are added up, and the history and the download list are the size of their records (the downloaded files are not touched, so the list is small). The numbers follow the period you choose, counting the files last changed before it, and they are measured again when you change the choices and after a cleaning. A very large folder may only be measured in part, and then it says "at least". Where an item cannot be measured for the chosen period (cache and cookies by age on Linux), it shows "—" and the page says so.
+
 ### Clear by age
 
 Under **Clear what is older than**, choose **Everything**, **5**, **10**, **20**, **30** or **90 days** to clear only what is older than that, and keep the newer. It applies to every item you chose:

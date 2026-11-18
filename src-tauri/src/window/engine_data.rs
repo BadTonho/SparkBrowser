@@ -82,7 +82,7 @@ fn cutoff_seconds(days: u32) -> f64 {
     (now - f64::from(days) * 86_400.0).max(0.0)
 }
 
-fn pages(app: &AppHandle) -> Vec<tauri::Webview> {
+pub(super) fn pages(app: &AppHandle) -> Vec<tauri::Webview> {
     app.webviews()
         .into_iter()
         .filter(|(label, _)| {

@@ -7,7 +7,8 @@
   import { onResourcesPopoverAction, setResourcesPopover } from "../../services/bridge/resources-popover";
   import { t, type MessageKey } from "../../i18n";
   import { describeError } from "../../services/user-errors.js";
-  import { clearEngineData } from "../../services/browser-data";
+  import { clearEngineData, estimateCleanup } from "../../services/browser-data";
+  import { chosenBytes, formatBytes, itemBytes, type CleanupEstimate } from "../../services/cleanup-size";
   import { invoke, isTauriRuntime as inApp } from "../../services/bridge/runtime";
   import { logIgnored } from "../../services/ignored-error";
   import { formatSpeed } from "../../services/resource-limits";
@@ -42,6 +43,19 @@
   let confirming = $state(false);
   let busy = $state(false);
   let result = $state<{ text: string; failed: boolean } | null>(null);
+  // What the chosen items would free, measured on the disk. It is measured again when the page opens, when the
+  // period changes and after a cleaning; an older answer that arrives late is dropped.
+  let estimate = $state<CleanupEstimate | null>(null);
+  let measuring = 0;
+  function measure() {
+    const request = ++measuring;
+    estimate = null;
+    if (!inApp()) return;
+    void estimateCleanup(age > 0 ? age : null)
+      .then(value => { if (request === measuring) estimate = value; })
+      .catch(error => { logIgnored(error); });
+  }
+  const freed = $derived(estimate ? chosenBytes(estimate, chosen) : null);
   const anyChosen = $derived(Object.values(chosen).some(Boolean));
 
   const resident = $derived($tabs.filter(tab => !tab.is_hibernated).length);
@@ -124,6 +138,7 @@
 
   function pickAge(days: number) {
     age = days;
+    measure();
     confirming = false;
     result = null;
   }
@@ -155,6 +170,7 @@
       });
     }
     busy = false;
+    measure();
     result = failed.length
       ? { text: $t("resources.failed", { items: failed.join("; ") }), failed: true }
       : { text: $t("resources.cleared", { items: done.join(", ") }), failed: false };
@@ -185,6 +201,19 @@
               <span class="resources-meter-note">{$t("resources.memory_tabs", { open: resident, sleeping })}</span>
             </div>
             <div class="resources-limit">
+              <input
+                class="resources-slider"
+                type="range"
+                data-testid="resources-ram-slider"
+                aria-label={$t("resources.memory_limit")}
+                min={0}
+                max={LIMIT_RANGES.ramMb.values.length}
+                step={1}
+                value={limitToSlider(LIMIT_RANGES.ramMb, limitOf("ramMb"))}
+                oninput={(event) => drag("ramMb", event)}
+                onchange={(event) => release("ramMb", event)}
+              />
+              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("ramMb", LIMIT_RANGES.ramMb.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
               <label class="resources-limit-field">
                 <span>{$t("resources.limit_label")}</span>
                 <input
@@ -201,19 +230,6 @@
                 />
                 <span>{UNIT.ramMb.label}</span>
               </label>
-              <input
-                class="resources-slider"
-                type="range"
-                data-testid="resources-ram-slider"
-                aria-label={$t("resources.memory_limit")}
-                min={0}
-                max={LIMIT_RANGES.ramMb.values.length}
-                step={1}
-                value={limitToSlider(LIMIT_RANGES.ramMb, limitOf("ramMb"))}
-                oninput={(event) => drag("ramMb", event)}
-                onchange={(event) => release("ramMb", event)}
-              />
-              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("ramMb", LIMIT_RANGES.ramMb.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
             </div>
           </div>
 
@@ -224,6 +240,19 @@
               <span class="resources-meter-note">{$t("resources.cpu_note")}</span>
             </div>
             <div class="resources-limit">
+              <input
+                class="resources-slider"
+                type="range"
+                data-testid="resources-cpu-slider"
+                aria-label={$t("resources.cpu_limit")}
+                min={0}
+                max={LIMIT_RANGES.cpuPercent.values.length}
+                step={1}
+                value={limitToSlider(LIMIT_RANGES.cpuPercent, limitOf("cpuPercent"))}
+                oninput={(event) => drag("cpuPercent", event)}
+                onchange={(event) => release("cpuPercent", event)}
+              />
+              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("cpuPercent", LIMIT_RANGES.cpuPercent.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
               <label class="resources-limit-field">
                 <span>{$t("resources.limit_label")}</span>
                 <input
@@ -240,19 +269,6 @@
                 />
                 <span>{UNIT.cpuPercent.label}</span>
               </label>
-              <input
-                class="resources-slider"
-                type="range"
-                data-testid="resources-cpu-slider"
-                aria-label={$t("resources.cpu_limit")}
-                min={0}
-                max={LIMIT_RANGES.cpuPercent.values.length}
-                step={1}
-                value={limitToSlider(LIMIT_RANGES.cpuPercent, limitOf("cpuPercent"))}
-                oninput={(event) => drag("cpuPercent", event)}
-                onchange={(event) => release("cpuPercent", event)}
-              />
-              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("cpuPercent", LIMIT_RANGES.cpuPercent.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
             </div>
           </div>
 
@@ -263,6 +279,19 @@
               <span class="resources-meter-note">{$t("resources.network_note")}</span>
             </div>
             <div class="resources-limit">
+              <input
+                class="resources-slider"
+                type="range"
+                data-testid="resources-net-slider"
+                aria-label={$t("resources.network_limit")}
+                min={0}
+                max={LIMIT_RANGES.networkKbps.values.length}
+                step={1}
+                value={limitToSlider(LIMIT_RANGES.networkKbps, limitOf("networkKbps"))}
+                oninput={(event) => drag("networkKbps", event)}
+                onchange={(event) => release("networkKbps", event)}
+              />
+              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("networkKbps", LIMIT_RANGES.networkKbps.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
               <label class="resources-limit-field">
                 <span>{$t("resources.limit_label")}</span>
                 <input
@@ -279,24 +308,11 @@
                 />
                 <span>{UNIT.networkKbps.label}</span>
               </label>
-              <input
-                class="resources-slider"
-                type="range"
-                data-testid="resources-net-slider"
-                aria-label={$t("resources.network_limit")}
-                min={0}
-                max={LIMIT_RANGES.networkKbps.values.length}
-                step={1}
-                value={limitToSlider(LIMIT_RANGES.networkKbps, limitOf("networkKbps"))}
-                oninput={(event) => drag("networkKbps", event)}
-                onchange={(event) => release("networkKbps", event)}
-              />
-              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("networkKbps", LIMIT_RANGES.networkKbps.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
             </div>
           </div>
 
           <div class="resources-section">
-            <button class="resources-row" data-testid="resources-open-clean" onclick={() => { view = "clean"; confirming = false; result = null; }}>
+            <button class="resources-row" data-testid="resources-open-clean" onclick={() => { view = "clean"; confirming = false; result = null; measure(); }}>
               <span class="resources-row-text"><strong>{$t("resources.clean")}</strong><small>{$t("resources.clean_hint")}</small></span>
               <span class="resources-chevron" aria-hidden="true">›</span>
             </button>
@@ -305,6 +321,11 @@
           <div class="resources-head">
             <button class="resources-back" data-testid="resources-back" aria-label={$t("resources.back")} onclick={() => { view = "main"; confirming = false; }}>‹</button>
             <h2>{$t("resources.clean")}</h2>
+          </div>
+
+          <div class="resources-meter" data-testid="resources-free">
+            <span class="resources-meter-value">{freed ? formatBytes(freed.total) : "…"}</span>
+            <span class="resources-meter-note">{!freed ? $t("resources.free_measuring") : !anyChosen ? $t("resources.free_none") : freed.unknown ? $t("resources.free_unknown") : estimate?.partial ? $t("resources.free_partial") : $t("resources.free_note")}</span>
           </div>
 
           <div class="resources-section">
@@ -327,6 +348,7 @@
               >
                 <span class="resources-box" aria-hidden="true">✓</span>
                 <span class="resources-row-text"><strong>{$t(choice.title)}</strong><small>{$t(choice.hint)}</small></span>
+                <span class="resources-choice-size">{estimate ? (itemBytes(estimate, choice.id) === null ? "—" : formatBytes(itemBytes(estimate, choice.id) ?? 0)) : ""}</span>
               </button>
             {/each}
           </div>

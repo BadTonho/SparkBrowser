@@ -138,6 +138,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_commands_popover",
     "set_resources_popover",
     "clear_browser_data",
+    "estimate_cleanup",
     "set_resource_limits",
     "set_resource_monitor",
     "get_resource_usage",

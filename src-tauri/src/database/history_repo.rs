@@ -174,6 +174,21 @@ pub fn days_ago(days: u32) -> i64 {
     current_unix_timestamp() - i64::from(days) * 86_400
 }
 
+/// Bytes the history takes that a cleaning would free: the visits, the recently closed tabs and, when the
+/// whole history goes (no `cutoff`), the saved site icons. A row counts its text plus a small fixed overhead.
+pub fn estimate_history_bytes(conn: &Connection, cutoff: Option<i64>) -> Result<u64, String> {
+    let sum = |sql: &str| -> Result<i64, String> {
+        conn.query_row(sql, [cutoff.unwrap_or(i64::MAX)], |row| row.get::<_, i64>(0))
+            .map_err(|e| e.to_string())
+    };
+    let mut total = sum("SELECT COALESCE(SUM(LENGTH(title) + LENGTH(url) + 24), 0) FROM history WHERE visited_at < ?1")?
+        + sum("SELECT COALESCE(SUM(LENGTH(url) + LENGTH(title) + LENGTH(workspace_name) + 32), 0) FROM closed_tabs WHERE closed_at < ?1")?;
+    if cutoff.is_none() {
+        total += sum("SELECT COALESCE(SUM(LENGTH(site_key) + LENGTH(png)), 0) FROM site_icons WHERE ?1 = ?1")?;
+    }
+    Ok(total.max(0) as u64)
+}
+
 /// Clears only what is older than `cutoff` (a Unix time): the visits and the recently closed tabs.
 /// Site icons stay, since newer visits may still use them. Caller owns the transaction.
 pub fn clear_history_older_than(conn: &Connection, cutoff: i64) -> Result<(), String> {
@@ -192,6 +207,19 @@ pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn the_estimate_counts_only_what_a_cleaning_would_remove() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,visited_at INTEGER NOT NULL); CREATE TABLE closed_tabs(id INTEGER PRIMARY KEY, url TEXT NOT NULL, title TEXT NOT NULL, workspace_name TEXT NOT NULL, closed_at INTEGER NOT NULL); CREATE TABLE site_icons(site_key TEXT PRIMARY KEY, png BLOB NOT NULL, updated_at INTEGER NOT NULL);").unwrap();
+        let now = current_unix_timestamp();
+        conn.execute("INSERT INTO history(title,url,visited_at) VALUES('ab','cde',?1),('ab','cde',?2)", params![now - 86_400, now - 30 * 86_400]).unwrap();
+        conn.execute("INSERT INTO site_icons(site_key,png,updated_at) VALUES('k', x'00010203', 0)", []).unwrap();
+        let row = (2 + 3 + 24) as u64;
+        assert_eq!(estimate_history_bytes(&conn, Some(days_ago(5))).unwrap(), row, "only the old visit, and no icons");
+        assert_eq!(estimate_history_bytes(&conn, None).unwrap(), 2 * row + 1 + 4, "everything, with the saved icons");
+        assert_eq!(estimate_history_bytes(&conn, Some(days_ago(90))).unwrap(), 0);
+    }
+
     #[test]
     fn clearing_by_age_keeps_the_newer_visits() {
         let conn = Connection::open_in_memory().unwrap();

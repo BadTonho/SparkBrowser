@@ -423,6 +423,12 @@
           "markdownDescription": "Enables the enter_video_pip command without any pre-configured scope."
         },
         {
+          "description": "Enables the estimate_cleanup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-estimate-cleanup",
+          "markdownDescription": "Enables the estimate_cleanup command without any pre-configured scope."
+        },
+        {
           "description": "Enables the exit_video_pip command without any pre-configured scope.",
           "type": "string",
           "const": "allow-exit-video-pip",
@@ -1615,6 +1621,12 @@
           "type": "string",
           "const": "deny-enter-video-pip",
           "markdownDescription": "Denies the enter_video_pip command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the estimate_cleanup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-estimate-cleanup",
+          "markdownDescription": "Denies the estimate_cleanup command without any pre-configured scope."
         },
         {
           "description": "Denies the exit_video_pip command without any pre-configured scope.",

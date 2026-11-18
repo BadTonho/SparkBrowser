@@ -14,7 +14,7 @@ use commands::bookmark_export::export_bookmarks;
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
-use commands::browser_data::clear_browser_data;
+use commands::browser_data::{clear_browser_data, estimate_cleanup};
 use commands::resources::{
     get_resource_usage, set_resource_limits, set_resource_monitor, set_tab_memory_levels,
 };
@@ -669,6 +669,7 @@ pub fn run() {
             set_commands_popover,
             set_resources_popover,
             clear_browser_data,
+            estimate_cleanup,
             set_resource_limits,
             set_resource_monitor,
             get_resource_usage,

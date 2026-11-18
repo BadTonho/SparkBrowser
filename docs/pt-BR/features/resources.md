@@ -42,6 +42,10 @@ Escolha o que limpar e aperte **Limpar selecionados**; o botão pede um segundo 
 
 Só o cache vem marcado ao abrir o painel. O resultado aparece no painel: o que foi limpo, ou o que não deu para limpar.
 
+### Quanto será limpo
+
+O topo da página de limpeza mostra **quanto espaço os itens marcados ocupam** (e, portanto, quanto será limpo), e cada item mostra o seu tamanho. É medido no disco, não chutado: somam-se as pastas de cache e de dados de sites do motor, e o histórico e a lista de downloads têm o tamanho dos seus registros (os arquivos baixados não são tocados, então a lista é pequena). Os números seguem o período escolhido, contando os arquivos alterados pela última vez antes dele, e são medidos de novo quando você muda as escolhas e depois de uma limpeza. Uma pasta muito grande pode ser medida só em parte, e aí aparece "pelo menos". Onde um item não pode ser medido no período escolhido (cache e cookies por idade no Linux), aparece "—" e a página avisa.
+
 ### Limpar por idade
 
 Em **Limpar o que tem mais de**, escolha **Tudo**, **5**, **10**, **20**, **30** ou **90 dias** para limpar só o que é mais antigo que isso e manter o mais novo. Vale para cada item marcado:

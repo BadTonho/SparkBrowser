@@ -110,6 +110,7 @@
     "allow-set-commands-popover",
     "allow-set-resources-popover",
     "allow-clear-browser-data",
+    "allow-estimate-cleanup",
     "allow-set-resource-limits",
     "allow-set-resource-monitor",
     "allow-get-resource-usage",

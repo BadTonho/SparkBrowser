@@ -1,5 +1,6 @@
 import { invoke, isTauriRuntime } from "./bridge/runtime";
 import { logIgnored } from "./ignored-error";
+import type { CleanupEstimate } from "./cleanup-size";
 
 /** `olderThanDays`: clear only what is older than that many days (Windows); absent clears everything. */
 export interface EngineDataRequest { cache: boolean; siteData: boolean; olderThanDays?: number | null }
@@ -31,4 +32,9 @@ export async function clearEngineData(request: EngineDataRequest): Promise<Engin
       try { localStorage.setItem(key, value); } catch (error) { logIgnored(error); }
     }
   }
+}
+
+/** Measures what a cleaning would free, for what is older than `olderThanDays` (or everything). */
+export async function estimateCleanup(olderThanDays: number | null): Promise<CleanupEstimate> {
+  return invoke<CleanupEstimate>("estimate_cleanup", { olderThanDays });
 }

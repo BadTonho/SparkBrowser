@@ -22,6 +22,12 @@ function loadBrowserData(env) {
 }
 
 const plain = value => JSON.parse(JSON.stringify(value));
+function load(path) {
+  const source = ts.transpileModule(read(path), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const exports = {};
+  runInNewContext(source, { exports });
+  return exports;
+}
 const storage = initial => {
   const values = new Map(Object.entries(initial));
   return {
@@ -99,4 +105,20 @@ test("both languages have every text of the panel", () => {
   const en = keys(read("src/lib/i18n/catalogs/en/settings.json")), pt = keys(read("src/lib/i18n/catalogs/pt-BR/settings.json"));
   assert.deepEqual(en, pt);
   assert.ok(en.length >= 20);
+});
+
+test("cleanup sizes are written the way people read them and only the chosen items add up", () => {
+  const { formatBytes, chosenBytes, itemBytes } = load("src/lib/services/cleanup-size.ts");
+  assert.equal(formatBytes(0), "0 B");
+  assert.equal(formatBytes(512), "512 B");
+  assert.equal(formatBytes(1536), "1.5 KB");
+  assert.equal(formatBytes(1024), "1 KB");
+  assert.equal(formatBytes(320 * 1024 * 1024), "320 MB");
+  assert.equal(formatBytes(12.5 * 1024 * 1024), "13 MB");
+  assert.equal(formatBytes(1.25 * 1024 ** 3), "1.3 GB");
+  const mb = 1024 * 1024;
+  const estimate = { cache_bytes: 400 * mb, site_bytes: null, history_bytes: 2 * mb, downloads_bytes: 1024, partial: false };
+  assert.deepEqual(plain(chosenBytes(estimate, { cache: true, site: false, history: true, downloads: false })), { total: 402 * mb, unknown: false });
+  assert.deepEqual(plain(chosenBytes(estimate, { cache: false, site: true, history: false, downloads: true })), { total: 1024, unknown: true }, "an item that cannot be measured counts as nothing and is flagged");
+  assert.equal(itemBytes(estimate, "site"), null);
 });
