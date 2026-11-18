@@ -19,7 +19,7 @@ Each limit is a slider you drag to the value you want, with the chosen value sho
 
 | Limit | Range | What it does |
 | --- | --- | --- |
-| **Memory** | 512 MB to 16 GB, in steps of 512 MB | When the open tabs use more than the limit, the tab you used longest ago is hibernated, one at a time, until they fit. The active tab, tabs with a form being edited, media playing, a download or picture-in-picture, and protected tabs are never hibernated. A hibernated tab comes back when you open it. |
+| **Memory** | 512 MB to 16 GB, in steps of 512 MB | The tab you are on is never touched. When the open tabs use more than the limit, the others are hibernated, the ones you used longest ago first, as many as it takes to fit (checked every few seconds, right away when you change the limit or switch tabs). Tabs with a form being edited, media playing, a download or picture-in-picture, and pinned or protected tabs are not hibernated; while they are in the background they are asked to use as little memory as the engine can give back (Windows only), and they go back to normal when you open them. A hibernated tab comes back when you open it. If the tab you are on alone uses more than the limit, nothing else can be done: the limit never closes or slows the tab you are using. |
 | **Processor** | 10 to 90%, in steps of 5 | The share of the whole processor the web engine may use, with the pages together. The browser's own interface is outside the cap, so it stays responsive; pages just run slower when they hit it. |
 | **Internet** | 1 to 1000 Mbps: steps of 1 up to 10, of 5 up to 50, of 10 up to 100, then of 100 | The speed of the pages' network (download and upload) and of the browser's own downloads. |
 

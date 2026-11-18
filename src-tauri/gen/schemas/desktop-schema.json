@@ -1257,6 +1257,12 @@
           "markdownDescription": "Enables the set_tab_drag_preview command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_tab_memory_levels command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-memory-levels",
+          "markdownDescription": "Enables the set_tab_memory_levels command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_tab_muted command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-tab-muted",
@@ -2443,6 +2449,12 @@
           "type": "string",
           "const": "deny-set-tab-drag-preview",
           "markdownDescription": "Denies the set_tab_drag_preview command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_memory_levels command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-memory-levels",
+          "markdownDescription": "Denies the set_tab_memory_levels command without any pre-configured scope."
         },
         {
           "description": "Denies the set_tab_muted command without any pre-configured scope.",

@@ -113,6 +113,7 @@
     "allow-set-resource-limits",
     "allow-set-resource-monitor",
     "allow-get-resource-usage",
+    "allow-set-tab-memory-levels",
     "allow-set-media-popover",
     "allow-set-zoom-popover",
     "allow-set-workspace-switcher-overlay",

@@ -141,6 +141,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_resource_limits",
     "set_resource_monitor",
     "get_resource_usage",
+    "set_tab_memory_levels",
     "set_quick_settings_popover",
     "set_settings_overlay",
     "set_media_popover",

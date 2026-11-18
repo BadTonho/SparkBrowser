@@ -61,6 +61,7 @@
 
 ## Correções
 
+- Corrigido o limite de memória do painel **Recursos** não se sustentar: ele hibernava só uma aba a cada poucos segundos, e as abas que não podem hibernar nunca eram reduzidas. Agora a aba em que você está é deixada em paz, todas as outras que podem hibernar são hibernadas (as usadas há mais tempo primeiro) até o limite caber, as que não podem ficam com pouca memória enquanto estão em segundo plano (Windows), e ele reage na hora quando você muda o limite ou troca de aba.
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
 - Corrigido o aviso "Fechar o navegador?" aparecer por causa da nova guia ou da página de configurações: mudar uma opção ali contava como formulário alterado, e o "Não me mostre novamente" nunca valia.
 - Corrigido o estilo do fundo das janelas (Fosco, Vidro, Gelo) não atualizar as janelas na hora; era preciso mexer no controle de opacidade ou de desfoque para ver a mudança.

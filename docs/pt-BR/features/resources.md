@@ -19,7 +19,7 @@ Cada limite é uma barra que você arrasta até o valor desejado, com o valor es
 
 | Limite | Faixa | O que faz |
 | --- | --- | --- |
-| **Memória** | 512 MB a 16 GB, de 512 em 512 MB | Quando as abas abertas usam mais que o limite, a aba que você usou há mais tempo é hibernada, uma de cada vez, até caberem. A aba ativa, abas com formulário sendo editado, mídia tocando, download ou picture-in-picture, e abas protegidas nunca são hibernadas. Uma aba hibernada volta quando você a abre. |
+| **Memória** | 512 MB a 16 GB, de 512 em 512 MB | A aba em que você está nunca é mexida. Quando as abas abertas usam mais que o limite, as outras são hibernadas, as que você usou há mais tempo primeiro, quantas forem necessárias para caber (verificado a cada poucos segundos e na hora, quando você muda o limite ou troca de aba). Abas com formulário sendo editado, mídia tocando, download ou picture-in-picture, e abas fixadas ou protegidas não são hibernadas; enquanto estão em segundo plano, elas são orientadas a usar o mínimo de memória que o motor consegue devolver (só no Windows) e voltam ao normal quando você as abre. Uma aba hibernada volta quando você a abre. Se só a aba em que você está já usa mais que o limite, não há mais o que fazer: o limite nunca fecha nem deixa lenta a aba que você está usando. |
 | **Processador** | 10 a 90%, de 5 em 5 | A parte do processador inteiro que o motor web pode usar, com as páginas juntas. A interface do próprio navegador fica fora do limite, então continua responsiva; as páginas só ficam mais lentas quando o alcançam. |
 | **Internet** | 1 a 1000 Mbps: de 1 em 1 até 10, de 5 em 5 até 50, de 10 em 10 até 100, depois de 100 em 100 | A velocidade da rede das páginas (download e envio) e dos downloads do próprio navegador. |
 

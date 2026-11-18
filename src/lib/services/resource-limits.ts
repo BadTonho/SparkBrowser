@@ -9,8 +9,13 @@ import type { TabItem } from "../types/browser";
 export function hibernationCandidates(tabs: readonly TabItem[]): TabItem[] {
   return tabs
     .filter(tab => !tab.is_active && !tab.is_hibernated && !tab.is_visible
-      && !tab.activity?.dirty_form && !tab.activity?.playing_media && !tab.activity?.downloading && !tab.activity?.picture_in_picture)
+      && !tab.activity?.dirty_form && !tab.activity?.playing_media && !tab.activity?.downloading && !tab.activity?.picture_in_picture && !tab.is_pinned)
     .sort((a, b) => (a.last_active_epoch ?? 0) - (b.last_active_epoch ?? 0));
+}
+
+/** The open tabs the user is not looking at: not the active one and not one shown in a split. */
+export function backgroundTabIds(tabs: readonly TabItem[]): Set<string> {
+  return new Set(tabs.filter(tab => !tab.is_active && !tab.is_visible).map(tab => tab.id));
 }
 
 /** Memory the open tabs use, in megabytes, from the per-tab measurements. */

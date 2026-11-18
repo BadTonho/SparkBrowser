@@ -89,14 +89,14 @@ test("the controller hibernates one candidate per check, tries the next when one
     tabs: { value: () => state.tabs },
     tabsMemory: { value: () => state.memory },
   };
-  const { hibernationCandidates, usedMegabytes, isOverLimit } = load("src/lib/services/resource-limits.ts");
+  const { hibernationCandidates, usedMegabytes, isOverLimit, backgroundTabIds } = load("src/lib/services/resource-limits.ts");
   const { enforceMemoryLimit } = load("src/lib/stores/resourceLimitsController.ts", {
     "svelte/store": { get },
     "./browserStore": { tabs: stores.tabs, suspendTab: async id => { calls.push(id); if (id === "a") throw new Error("protected"); } },
     "./tabMemoryStore": { tabsMemory: stores.tabsMemory, refreshTabsMemory: async () => {} },
     "./resourceLimitsStore": { resourceLimits: stores.resourceLimits, applyNativeLimits: async () => {} },
-    "../services/resource-limits": { hibernationCandidates, usedMegabytes, isOverLimit },
-    "../services/bridge/runtime": { isTauriRuntime: () => true },
+    "../services/resource-limits": { hibernationCandidates, usedMegabytes, isOverLimit, backgroundTabIds },
+    "../services/bridge/runtime": { isTauriRuntime: () => true, invoke: async () => {} },
     "../services/ignored-error": { logIgnored() {} },
   });
   assert.equal(await enforceMemoryLimit(), true);

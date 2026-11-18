@@ -15,7 +15,9 @@ use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::browser_data::clear_browser_data;
-use commands::resources::{get_resource_usage, set_resource_limits, set_resource_monitor};
+use commands::resources::{
+    get_resource_usage, set_resource_limits, set_resource_monitor, set_tab_memory_levels,
+};
 use commands::search_suggestions::fetch_search_suggestions;
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::error_report::report_frontend_error;
@@ -670,6 +672,7 @@ pub fn run() {
             set_resource_limits,
             set_resource_monitor,
             get_resource_usage,
+            set_tab_memory_levels,
             set_quick_settings_popover,
             set_settings_overlay,
             set_privacy_popover,

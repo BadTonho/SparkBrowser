@@ -18,6 +18,8 @@ use std::sync::{
 use std::time::Instant;
 use tauri::AppHandle;
 
+pub mod memory_level;
+
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]

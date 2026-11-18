@@ -61,6 +61,7 @@
 
 ## Fixes
 
+- Fixed the **Resources** memory limit not holding: it put only one tab to sleep every few seconds, and tabs that cannot sleep were never reduced. Now the tab you are on is left alone, every other tab that can sleep is hibernated (the ones used longest ago first) until the limit fits, the ones that cannot sleep are held at a low memory level while in the background (Windows), and it reacts right away when you change the limit or switch tabs.
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.
 - Fixed the "Close the browser?" warning appearing because of the new tab or settings page: changing an option there was counted as an edited form, and "Don't show again" could never apply.
 - Fixed the window background style (Matte, Glass, Ice) not updating the windows right away; you had to move the opacity or blur slider to see the change.
