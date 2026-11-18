@@ -128,7 +128,7 @@ test('settings categories slide in, return to the menu and keep the panel layout
   const menu=html.match(/<nav class="settings-menu-list"[\s\S]*?<\/nav>/)?.[0]??'';
   assert.equal([...menu.matchAll(/class="menu-item-icon"[^>]*><svg/g)].length,5);
   assert.match(html,/id="settings-content"/);
-  assert.match(css,/#settings-panel\s*\{[^}]*height:min\(420px, calc\(100vh - 90px\)\)/);
+  assert.match(css,/#settings-panel\s*\{[^}]*height:min\(520px, calc\(100vh - 90px\)\)/);
   assert.match(css,/#settings-panel:not\(\[open\]\)\s*\{\s*display:none/);
   assert.match(css,/#settings-content\s*\{[^}]*overflow-y:auto/);
   assert.match(css,/@media \(prefers-reduced-motion:reduce\)/);
