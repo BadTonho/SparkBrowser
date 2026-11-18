@@ -42,8 +42,16 @@
       "icons/icon.ico"
     ],
     "linux": {
-      "deb": { "recommends": ["libpulse0"] },
-      "rpm": { "recommends": ["pulseaudio-libs"] }
+      "deb": {
+        "recommends": [
+          "libpulse0"
+        ]
+      },
+      "rpm": {
+        "recommends": [
+          "pulseaudio-libs"
+        ]
+      }
     },
     "windows": {
       "webviewInstallMode": {
