@@ -17,6 +17,10 @@ The browser's accent colors can be changed in **Settings → Appearance & Layout
 
 Graphite is the browser's original black and gray and is what a new installation uses. It adds nothing to the page: the other palettes only replace the accent colors, so the backgrounds, the text and the window style (Matte, Glass, Ice) stay as they are. Each palette has a lighter version for the dark theme and a deeper one for the light theme so the text on top of it stays readable.
 
+## Palette and workspace colors
+
+Each workspace has its own accent colors (Settings → Workspaces & Theme). A palette is the accent of the **whole browser**, so while you use a palette other than Graphite it replaces the workspace colors everywhere. With **Graphite** (the default) the workspace colors apply exactly as before, so that is the setting to use if you want each workspace to have its own color. Changing the palette repaints the browser at once.
+
 ## How it works
 
 - The choice is saved on this device and is not part of backups.

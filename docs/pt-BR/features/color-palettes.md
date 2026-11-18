@@ -17,6 +17,10 @@ As cores de destaque do navegador podem ser trocadas em **Configurações → Ap
 
 Grafite é o preto e cinza originais do navegador e é o que uma instalação nova usa. Ele não acrescenta nada à página: as outras paletas só trocam as cores de destaque, então os fundos, o texto e o estilo da janela (Fosco, Vidro, Gelo) continuam como estão. Cada paleta tem uma versão mais clara para o tema escuro e uma mais profunda para o tema claro, para o texto por cima continuar legível.
 
+## Paleta e cores dos workspaces
+
+Cada workspace tem as próprias cores de destaque (Configurações → Workspaces e tema). A paleta é o destaque do **navegador inteiro**, então, enquanto você usa uma paleta diferente do Grafite, ela substitui as cores dos workspaces em todo lugar. Com o **Grafite** (o padrão) as cores dos workspaces valem exatamente como antes, então é a opção a usar se você quer uma cor para cada workspace. Trocar a paleta repinta o navegador na hora.
+
 ## Como funciona
 
 - A escolha é salva neste dispositivo e não faz parte dos backups.

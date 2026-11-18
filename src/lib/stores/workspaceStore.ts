@@ -16,6 +16,10 @@ import {
   NEW_WORKSPACE_DEFAULT_COLORS,
 } from "../constants/workspaceDefaults";
 
+// Declared first: the subscriptions below can call `applyWorkspaceTheme` while this module is still loading.
+const ACCENT_VARIABLES = ["--accent-primary", "--accent-secondary", "--accent-foreground", "--accent-gradient"];
+let appliedWorkspace: WorkspaceItem | null = null;
+
 const confirmedWorkspaces = writable<WorkspaceItem[]>(
   DEFAULT_WORKSPACES.map((workspace) => ({ ...workspace }))
 );
@@ -63,11 +67,18 @@ function getAccentForeground(primary: string, secondary: string): string {
 }
 
 /**
- * Applies the selected workspace's dynamic theme colors to CSS root variables.
+ * Paints the accent of the selected workspace on the page, unless the user chose a color palette in the
+ * settings: a palette is the accent of the whole browser, so it replaces the workspace colors (and with the
+ * default palette, Graphite, the workspace colors apply as before). The palette is the `data-palette` attribute.
  */
-export function applyWorkspaceTheme(ws: WorkspaceItem): void {
+function paintAccent(): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
+  if (root.hasAttribute?.("data-palette") || !appliedWorkspace) {
+    for (const name of ACCENT_VARIABLES) root.style.removeProperty?.(name);
+    return;
+  }
+  const ws = appliedWorkspace;
   root.style.setProperty("--accent-primary", ws.accent_primary);
   root.style.setProperty("--accent-secondary", ws.accent_secondary);
   root.style.setProperty(
@@ -78,6 +89,19 @@ export function applyWorkspaceTheme(ws: WorkspaceItem): void {
     "--accent-gradient",
     `linear-gradient(135deg, ${ws.accent_primary} 0%, ${ws.accent_secondary} 100%)`
   );
+}
+if (typeof document !== "undefined" && typeof MutationObserver !== "undefined") {
+  // A palette chosen (or cleared) here or in another window repaints the accent at once.
+  new MutationObserver(paintAccent).observe(document.documentElement, { attributes: true, attributeFilter: ["data-palette"] });
+}
+
+/**
+ * Applies the selected workspace's dynamic theme colors to CSS root variables.
+ */
+export function applyWorkspaceTheme(ws: WorkspaceItem): void {
+  if (typeof document === "undefined") return;
+  appliedWorkspace = ws;
+  paintAccent();
 }
 
 export async function initializeWorkspaces(active = () => true): Promise<void> {
