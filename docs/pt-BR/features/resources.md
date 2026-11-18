@@ -42,6 +42,16 @@ Escolha o que limpar e aperte **Limpar selecionados**; o botão pede um segundo 
 
 Só o cache vem marcado ao abrir o painel. O resultado aparece no painel: o que foi limpo, ou o que não deu para limpar.
 
+### Limpar por idade
+
+Em **Limpar o que tem mais de**, escolha **Tudo**, **5**, **10**, **20**, **30** ou **90 dias** para limpar só o que é mais antigo que isso e manter o mais novo. Vale para cada item marcado:
+
+- **Histórico**: as visitas (e as abas fechadas recentemente) de antes disso.
+- **Lista de downloads**: os downloads concluídos registrados antes disso. Um download concluído sem data conhecida é mantido.
+- **Cache e cookies/dados dos sites**: o que o motor guardou antes disso. **Só no Windows**: no Linux o motor só consegue limpar o que mudou nos últimos dias, o oposto, então com uma idade escolhida esses dois avisam que não está disponível (escolha **Tudo** para limpá-los).
+
+A página de limpeza tem o mesmo tamanho da página principal, então o painel não muda de tamanho ao ir de uma para a outra.
+
 ## Bom saber
 
 - O cache e os dados dos sites são limpos em cada armazenamento de dados alcançável por uma página aberta. Workspaces com dados isolados têm um armazenamento próprio; o de um workspace cujas abas estão todas hibernadas só é alcançado quando uma delas acorda.

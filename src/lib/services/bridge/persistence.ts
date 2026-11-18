@@ -9,9 +9,10 @@ export async function fetchHistory(limit = 50, query = "", before?: { visited_at
   return await invoke<HistoryEntry[]>("get_history", { limit, query, before: before ?? null });
 }
 
-export async function clearAllHistory(): Promise<void> {
+/** Clears the history; with `olderThanDays`, only the visits older than that many days. */
+export async function clearAllHistory(olderThanDays: number | null = null): Promise<void> {
   if(!isTauriRuntime()) return;
-  await invoke("clear_browsing_history");
+  await invoke("clear_browsing_history", { olderThanDays });
 }
 
 export async function fetchBookmarkData(): Promise<BookmarkData> {

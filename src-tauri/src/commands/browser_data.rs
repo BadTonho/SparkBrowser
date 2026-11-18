@@ -9,6 +9,9 @@ use tauri::AppHandle;
 pub struct ClearRequest {
     pub cache: bool,
     pub site_data: bool,
+    /// Only what is older than this many days; absent clears everything.
+    #[serde(default)]
+    pub older_than_days: Option<u32>,
 }
 
 #[derive(Serialize)]
@@ -27,6 +30,7 @@ pub async fn clear_browser_data(
     let wanted = Wanted {
         cache: request.cache,
         site_data: request.site_data,
+        older_than_days: request.older_than_days,
     };
     let outcome = engine_data::clear(&app, wanted).await.inspect_err(|error| {
         crate::error_log::warn(&format!("Clearing the browser data failed: {error}"));

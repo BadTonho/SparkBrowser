@@ -1,9 +1,15 @@
 use super::*;
 impl DownloadManager {
-    pub async fn clear_finished(&self, app: &AppHandle) -> Result<Vec<String>, String> {
+    /// Removes the finished downloads from the list (the files stay on the disk). With `older_than_days` only the ones
+    /// recorded before that; a finished download with no record has no known age and is kept.
+    pub async fn clear_finished(
+        &self,
+        app: &AppHandle,
+        older_than_days: Option<u32>,
+    ) -> Result<Vec<String>, String> {
         let _operation = self.operations.lock().await;
         let mut tasks = self.tasks.lock().map_err(|e| e.to_string())?;
-        let removed = tasks
+        let finished = tasks
             .iter()
             .filter(|(_, v)| !v.worker && !v.record.task.unfinished())
             .map(|(id, _)| id.clone())
@@ -19,7 +25,25 @@ impl DownloadManager {
             .ok_or("downloads.database_unavailable")?
             .unchecked_transaction()
             .map_err(|e| e.to_string())?;
-        crate::database::downloads_repo::clear_downloads(&tx)?;
+        let removed = match older_than_days {
+            None => {
+                crate::database::downloads_repo::clear_downloads(&tx)?;
+                finished
+            }
+            Some(days) => {
+                let cutoff = crate::database::history_repo::days_ago(days);
+                let mut old = Vec::new();
+                for id in finished {
+                    if crate::database::downloads_repo::recorded_at(&tx, &id)?
+                        .is_some_and(|recorded| recorded < cutoff)
+                    {
+                        old.push(id);
+                    }
+                }
+                crate::database::downloads_repo::clear_downloads_before(&tx, cutoff)?;
+                old
+            }
+        };
         for id in &removed {
             tx.execute("DELETE FROM download_jobs WHERE id=?1", [id])
                 .map_err(|e| e.to_string())?;

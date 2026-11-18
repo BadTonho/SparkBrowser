@@ -93,14 +93,15 @@ export async function startDownloadFromUrl(url: string, expectedSha256: string |
   if (task) applyTask(task);
 }
 
-export async function wipeDownloads(): Promise<void> {
+export async function wipeDownloads(olderThanDays: number | null = null): Promise<void> {
   ++loadRevision;
-  const removed = await clearAllDownloads();
+  const removed = await clearAllDownloads(olderThanDays);
   removed.forEach(id => clearedTasks.add(id));
   confirmedDownloadTasks.update(tasks => tasks.filter(task => !clearedTasks.has(task.id)));
   observeDownloadNotices(get(downloadTasks), "snapshot");
   ++loadRevision;
-  confirmedDownloads.set([]);
+  if (olderThanDays) confirmedDownloads.set(await fetchDownloads());
+  else confirmedDownloads.set([]);
 }
 
 export async function openDownloadsDrawer(anchor?: HTMLButtonElement): Promise<void> {

@@ -40,10 +40,17 @@ test("clearing site data keeps the browser's own settings, which live in the sam
   const { clearEngineData } = loadBrowserData({ storage: local, invoke: async (command, args) => { calls.push({ command, args }); local.clear(); return { cleared: 1, failed: 0 }; } });
   const report = await clearEngineData({ cache: true, siteData: true });
   assert.deepEqual(plain(report), { cleared: 1, failed: 0 });
-  assert.deepEqual(plain(calls), [{ command: "clear_browser_data", args: { request: { cache: true, site_data: true } } }]);
+  assert.deepEqual(plain(calls), [{ command: "clear_browser_data", args: { request: { cache: true, site_data: true, older_than_days: null } } }]);
   // The engine emptied the storage; the settings came back, and nothing else was invented.
   assert.equal(local.getItem("spark_color_palette"), "rose");
   assert.equal(local.getItem("spark_titlebar_actions_shown"), "[\"settings\"]");
+});
+
+test("clearing by age sends the number of days to the engine", async () => {
+  const calls = [];
+  const { clearEngineData } = loadBrowserData({ storage: storage({}), invoke: async (command, args) => { calls.push({ command, args }); return { cleared: 1, failed: 0 }; } });
+  await clearEngineData({ cache: true, siteData: false, olderThanDays: 10 });
+  assert.deepEqual(plain(calls), [{ command: "clear_browser_data", args: { request: { cache: true, site_data: false, older_than_days: 10 } } }]);
 });
 
 test("clearing only the cache never touches the storage, and a failure still gives the settings back", async () => {

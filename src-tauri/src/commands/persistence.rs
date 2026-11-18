@@ -24,14 +24,18 @@ pub async fn get_history(
     .await
 }
 #[tauri::command]
-pub async fn clear_browsing_history(app: AppHandle) -> Result<(), String> {
+/// Clears the browsing history. With `older_than_days` only what is older than that many days goes.
+pub async fn clear_browsing_history(app: AppHandle, older_than_days: Option<u32>) -> Result<(), String> {
     flush_navigation(app.clone()).await?;
     let state = app.state::<crate::state::browser_state::BrowserState>();
     let _operation = state.session().operation().await;
     let clear_app = app.clone();
     executor::run(app.clone(), move |conn| {
         let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-        history_repo::clear_history_data(&tx)?;
+        match older_than_days {
+            Some(days) => history_repo::clear_history_older_than(&tx, history_repo::days_ago(days))?,
+            None => history_repo::clear_history_data(&tx)?,
+        }
         tx.commit().map_err(|e| e.to_string())?;
         clear_app
             .state::<crate::window::new_tab::NewTabService>()

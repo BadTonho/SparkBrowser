@@ -42,6 +42,16 @@ Choose what to clear and press **Clear selected**; the button asks for a second 
 
 Only the cache is chosen when the panel opens. The result is shown in the panel: what was cleared, or what could not be.
 
+### Clear by age
+
+Under **Clear what is older than**, choose **Everything**, **5**, **10**, **20**, **30** or **90 days** to clear only what is older than that, and keep the newer. It applies to every item you chose:
+
+- **History**: the visits (and the recently closed tabs) from before that.
+- **Download list**: the finished downloads recorded before that. A finished download with no known date is kept.
+- **Cache and cookies/site data**: what the engine stored before that. **Windows only**: on Linux the engine can only clear what changed in the last days, which is the opposite, so with an age chosen these two report that it is not available (choose **Everything** to clear them).
+
+The cleaning page has the same size as the main page, so the panel does not change size when you move between them.
+
 ## Good to know
 
 - The cache and the site data are cleared in every data store reachable from an open page. Workspaces with isolated data have a store of their own; the store of a workspace whose tabs are all hibernated is not reached until one of them wakes up.

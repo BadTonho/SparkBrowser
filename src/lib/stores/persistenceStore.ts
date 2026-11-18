@@ -260,9 +260,10 @@ export async function loadHistory(query = historyQuery, more = false): Promise<v
   }
 }
 
-export async function wipeBrowsingHistory(): Promise<void> {
+export async function wipeBrowsingHistory(olderThanDays: number | null = null): Promise<void> {
   ++historyRevision;
-  await clearAllHistory();
+  await clearAllHistory(olderThanDays);
+  if (olderThanDays) { await loadHistory(historyQuery); return; }
   ++historyRevision;
   historyEntries.set([]);
   historyHasMore.set(false);

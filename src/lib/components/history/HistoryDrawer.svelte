@@ -173,7 +173,7 @@
         </div>
         <div class="header-actions">
           {#if $historyEntries.length > 0}
-            <button class="clear-btn" onclick={wipeBrowsingHistory}>
+            <button class="clear-btn" onclick={() => void wipeBrowsingHistory()}>
               {$t("history.clear_all_ddce")}
             </button>
           {/if}

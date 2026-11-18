@@ -102,6 +102,13 @@ pub fn consume(conn: &Connection, id: i64) -> Result<(), String> {
     }
     Ok(())
 }
+/// Forgets the closed tabs from before `cutoff` (a Unix time).
+pub fn clear_before(conn: &Connection, cutoff: i64) -> Result<(), String> {
+    conn.execute("DELETE FROM closed_tabs WHERE closed_at < ?1", [cutoff])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 pub fn clear(conn: &Connection) -> Result<(), String> {
     conn.execute("DELETE FROM closed_tabs", [])
         .map_err(|e| e.to_string())?;

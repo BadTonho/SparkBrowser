@@ -74,12 +74,14 @@ pub async fn cancel_download(
 ) -> Result<(), String> {
     manager.control(&app, &task_id, "cancel").await
 }
+/// Clears the finished downloads from the list; with `older_than_days`, only the older ones.
 #[tauri::command]
 pub async fn clear_all_downloads(
     app: AppHandle,
     manager: State<'_, DownloadManager>,
+    older_than_days: Option<u32>,
 ) -> Result<Vec<String>, String> {
-    manager.clear_finished(&app).await
+    manager.clear_finished(&app, older_than_days).await
 }
 
 #[tauri::command]

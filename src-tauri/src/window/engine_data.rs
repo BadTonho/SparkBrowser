@@ -13,6 +13,9 @@ use tauri::{AppHandle, Manager};
 pub struct Wanted {
     pub cache: bool,
     pub site_data: bool,
+    /// Only what is older than this many days; `None` clears everything. Windows only: the engine on Linux can
+    /// only clear what changed in the last N days, which is the opposite, so there it is refused.
+    pub older_than_days: Option<u32>,
 }
 
 impl Wanted {
@@ -69,6 +72,16 @@ fn collect(receiver: &std::sync::mpsc::Receiver<Event>, pages: usize) -> Outcome
     outcome
 }
 
+/// The moment `days` days ago, in seconds since 1970.
+#[cfg(windows)]
+fn cutoff_seconds(days: u32) -> f64 {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs_f64())
+        .unwrap_or(0.0);
+    (now - f64::from(days) * 86_400.0).max(0.0)
+}
+
 fn pages(app: &AppHandle) -> Vec<tauri::Webview> {
     app.webviews()
         .into_iter()
@@ -99,6 +112,7 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
     };
     use windows_core::{Interface, PWSTR};
 
+    let older_than_days = wanted.older_than_days;
     let mut kinds = 0i32;
     if wanted.cache {
         kinds |= COREWEBVIEW2_BROWSING_DATA_KINDS_DISK_CACHE.0
@@ -144,9 +158,18 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
                     crate::error_log::ignored(done.send(Event::Done(result.is_ok())));
                     Ok(())
                 }));
-                profile
-                    .cast::<ICoreWebView2Profile2>()?
-                    .ClearBrowsingData(COREWEBVIEW2_BROWSING_DATA_KINDS(kinds), &handler)?;
+                let profile = profile.cast::<ICoreWebView2Profile2>()?;
+                match older_than_days {
+                    None => profile
+                        .ClearBrowsingData(COREWEBVIEW2_BROWSING_DATA_KINDS(kinds), &handler)?,
+                    // From the beginning of time up to `days` days ago, in seconds since 1970.
+                    Some(days) => profile.ClearBrowsingDataInTimeRange(
+                        COREWEBVIEW2_BROWSING_DATA_KINDS(kinds),
+                        0.0,
+                        cutoff_seconds(days),
+                        &handler,
+                    )?,
+                }
                 Ok(true)
             })();
             match started {
@@ -179,6 +202,9 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
         WebViewExt, WebsiteDataManagerExt, WebsiteDataManagerExtManual, WebsiteDataTypes,
     };
 
+    if wanted.older_than_days.is_some() {
+        return Err("browser_data.age_unsupported".into());
+    }
     let mut types = WebsiteDataTypes::empty();
     if wanted.cache {
         types |= WebsiteDataTypes::MEMORY_CACHE
@@ -258,8 +284,8 @@ mod tests {
 
     #[test]
     fn nothing_wanted_is_empty() {
-        assert!(Wanted { cache: false, site_data: false }.is_empty());
-        assert!(!Wanted { cache: true, site_data: false }.is_empty());
+        assert!(Wanted { cache: false, site_data: false, older_than_days: None }.is_empty());
+        assert!(!Wanted { cache: true, site_data: false, older_than_days: Some(5) }.is_empty());
     }
 
     #[test]

@@ -169,6 +169,19 @@ pub fn clear_all_history(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+/// The Unix time `days` days ago: what is older than that is "older than `days` days".
+pub fn days_ago(days: u32) -> i64 {
+    current_unix_timestamp() - i64::from(days) * 86_400
+}
+
+/// Clears only what is older than `cutoff` (a Unix time): the visits and the recently closed tabs.
+/// Site icons stay, since newer visits may still use them. Caller owns the transaction.
+pub fn clear_history_older_than(conn: &Connection, cutoff: i64) -> Result<(), String> {
+    conn.execute("DELETE FROM history WHERE visited_at < ?1", [cutoff])
+        .map_err(|e| format!("Failed to clear old history: {}", e))?;
+    crate::database::closed_tabs_repo::clear_before(conn, cutoff)
+}
+
 /// Caller owns the transaction so all local browsing history clears together.
 pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
     clear_all_history(conn)?;
@@ -179,6 +192,21 @@ pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn clearing_by_age_keeps_the_newer_visits() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,visited_at INTEGER NOT NULL); CREATE TABLE closed_tabs(id INTEGER PRIMARY KEY, closed_at INTEGER NOT NULL);").unwrap();
+        let now = current_unix_timestamp();
+        for (title, age_days) in [("fresh", 1), ("middle", 7), ("old", 30)] {
+            conn.execute("INSERT INTO history(title,url,visited_at) VALUES(?1,'https://example.test/',?2)", params![title, now - age_days * 86_400]).unwrap();
+        }
+        conn.execute("INSERT INTO closed_tabs(closed_at) VALUES(?1),(?2)", params![now - 86_400, now - 30 * 86_400]).unwrap();
+        clear_history_older_than(&conn, days_ago(5)).unwrap();
+        let left: Vec<String> = conn.prepare("SELECT title FROM history ORDER BY visited_at DESC").unwrap().query_map([], |row| row.get(0)).unwrap().map(Result::unwrap).collect();
+        assert_eq!(left, ["fresh"]);
+        assert_eq!(conn.query_row("SELECT COUNT(*) FROM closed_tabs", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
+    }
+
     #[test]
     fn never_preserves_existing_visits_and_does_not_record_new_ones() {
         let conn = Connection::open_in_memory().unwrap();

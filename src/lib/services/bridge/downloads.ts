@@ -29,9 +29,10 @@ export async function onDownloadsUpdated(callback: () => void): Promise<Unlisten
   return isTauriRuntime() ? listen("downloads-updated", callback) : () => { };
 }
 
-export async function clearAllDownloads(): Promise<string[]> {
+/** Clears the finished downloads from the list; with `olderThanDays`, only the ones older than that many days. */
+export async function clearAllDownloads(olderThanDays: number | null = null): Promise<string[]> {
   if(!isTauriRuntime()) return [];
-  return invoke<string[]>("clear_all_downloads");
+  return invoke<string[]>("clear_all_downloads", { olderThanDays });
 }
 
 export const controlDownload = (taskId: string, action: "pause" | "resume" | "restart" | "cancel" | "verify") => invoke<void>("control_download", { taskId, action });

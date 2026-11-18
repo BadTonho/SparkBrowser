@@ -21,6 +21,8 @@
   import { wipeDownloads } from "../../stores/downloadsStore";
   import "./resources.css";
 
+  /** Days for "clear what is older than"; 0 is everything. */
+  const AGE_CHOICES = [0, 5, 10, 20, 30, 90] as const;
   type Choice = "cache" | "site" | "history" | "downloads";
   const CHOICES: { id: Choice; title: MessageKey; hint: MessageKey }[] = [
     { id: "cache", title: "resources.item_cache", hint: "resources.item_cache_hint" },
@@ -36,6 +38,7 @@
 
   let view = $state<"main" | "clean">("main");
   let chosen = $state<Record<Choice, boolean>>({ cache: true, site: false, history: false, downloads: false });
+  let age = $state<number>(0);
   let confirming = $state(false);
   let busy = $state(false);
   let result = $state<{ text: string; failed: boolean } | null>(null);
@@ -119,6 +122,12 @@
     return { destroy() { cancelAnimationFrame(frame); stop(); focus?.destroy(); } };
   }
 
+  function pickAge(days: number) {
+    age = days;
+    confirming = false;
+    result = null;
+  }
+
   function toggle(id: Choice) {
     chosen[id] = !chosen[id];
     confirming = false;
@@ -133,14 +142,15 @@
     const failed: string[] = [];
     const attempt = async (name: string, action: () => Promise<unknown>) => {
       try { await action(); done.push(name); }
-      catch (error) { failed.push(`${name} (${describeError(error)})`); }
+      catch (error) { failed.push(`${name} (${String(error).includes("age_unsupported") ? $t("resources.age_unsupported") : describeError(error)})`); }
     };
-    if (chosen.history) await attempt($t("resources.item_history"), wipeBrowsingHistory);
-    if (chosen.downloads) await attempt($t("resources.item_downloads"), wipeDownloads);
+    const days = age > 0 ? age : null;
+    if (chosen.history) await attempt($t("resources.item_history"), () => wipeBrowsingHistory(days));
+    if (chosen.downloads) await attempt($t("resources.item_downloads"), () => wipeDownloads(days));
     if (chosen.cache || chosen.site) {
       const names = [chosen.cache ? $t("resources.item_cache") : "", chosen.site ? $t("resources.item_site") : ""].filter(Boolean).join(", ");
       await attempt(names, async () => {
-        const report = await clearEngineData({ cache: chosen.cache, siteData: chosen.site });
+        const report = await clearEngineData({ cache: chosen.cache, siteData: chosen.site, olderThanDays: days });
         if (report.failed > 0) throw new Error($t("resources.partial"));
       });
     }
@@ -163,7 +173,7 @@
     role="presentation"
     onclick={(event) => { if (event.target === event.currentTarget) void closeResourcesPanel(false); }}
   >
-    <div class="resources-surface" style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
+    <div class="resources-surface" style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px" style:height="{position.maxHeight}px">
       <div class="resources-panel" data-testid="resources-panel" role="dialog" aria-modal="false" aria-label={$t("resources.title")} tabindex="-1" use:host>
         {#if view === "main"}
           <div class="resources-head"><h2>{$t("resources.title")}</h2></div>
@@ -295,6 +305,15 @@
           <div class="resources-head">
             <button class="resources-back" data-testid="resources-back" aria-label={$t("resources.back")} onclick={() => { view = "main"; confirming = false; }}>‹</button>
             <h2>{$t("resources.clean")}</h2>
+          </div>
+
+          <div class="resources-section">
+            <h3>{$t("resources.age_title")}</h3>
+            <div class="resources-pills" role="group" aria-label={$t("resources.age_title")}>
+              {#each AGE_CHOICES as days (days)}
+                <button class="resources-pill" data-testid="resources-age-{days}" aria-pressed={age === days} disabled={busy} onclick={() => pickAge(days)}>{days === 0 ? $t("resources.age_all") : $t("resources.age_days", { days })}</button>
+              {/each}
+            </div>
           </div>
 
           <div class="resources-section" role="group" aria-label={$t("resources.clean")}>

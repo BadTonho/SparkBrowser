@@ -147,7 +147,7 @@
   <div class={downloads ? "downloads-dismiss" : quickSettings ? "settings-quick-dismiss" : resources ? "resources-dismiss" : suggestions ? "suggestions-dismiss" : commands ? "commands-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
     if (event.target === event.currentTarget) send({ kind: "dismiss", reason: (downloads || quickSettings || resources) && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
   }}>
-    <div class="{commands ? "" : "popover-enter "}{downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : resources ? "resources-surface" : suggestions ? "suggestions-surface" : commands ? "commands-surface" : "tools-surface"}" bind:this={root} use:downloadFocus style:left={commands ? undefined : `${position.left}px`} style:top={commands ? undefined : `${position.top}px`} style:width={commands ? undefined : `${position.width}px`} style:max-height={commands ? undefined : `${position.maxHeight}px`}>
+    <div class="{commands ? "" : "popover-enter "}{downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : resources ? "resources-surface" : suggestions ? "suggestions-surface" : commands ? "commands-surface" : "tools-surface"}" bind:this={root} use:downloadFocus style:left={commands ? undefined : `${position.left}px`} style:top={commands ? undefined : `${position.top}px`} style:width={commands ? undefined : `${position.width}px`} style:max-height={commands ? undefined : `${position.maxHeight}px`} style:height={resources ? `${position.maxHeight}px` : undefined}>
       <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
     </div>
   </div>
