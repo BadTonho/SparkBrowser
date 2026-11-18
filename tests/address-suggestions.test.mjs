@@ -76,3 +76,22 @@ test('the list never grows past its limit', () => {
   assert.equal(buildSuggestions({ query: '', history, bookmarks: [], now: NOW }).length, 8);
   assert.equal(buildSuggestions({ query: 'page', history, bookmarks: [], now: NOW, limit: 3 }).length, 3);
 });
+
+test('the engines with suggestions are the ones the native side has an endpoint for', async () => {
+  const { WEB_SUGGESTION_ENGINES, supportsWebSuggestions } = await import('../src/lib/services/address-suggestions.js');
+  const { readFileSync } = await import('node:fs');
+  const rust = readFileSync('src-tauri/src/commands/search_suggestions.rs', 'utf8');
+  const native = [...rust.matchAll(/^\s+"([a-z]+)" => Some/gm)].map(match => match[1]);
+  assert.deepEqual([...WEB_SUGGESTION_ENGINES].sort(), native.sort());
+  assert.equal(supportsWebSuggestions('google'), true);
+  assert.equal(supportsWebSuggestions('kagi'), false);
+});
+
+test('the option is off by default and the native call refuses what it should not send', async () => {
+  const { readFileSync } = await import('node:fs');
+  const store = readFileSync('src/lib/stores/webSuggestionsStore.ts', 'utf8');
+  assert.match(store, /=== "true"/);
+  assert.match(store, /catch \{\s*return false;/);
+  const suggestions = readFileSync('src/lib/stores/addressSuggestionsStore.ts', 'utf8');
+  assert.match(suggestions, /get\(webSuggestionsEnabled\) && !get\(isPrivateWindow\)/);
+});

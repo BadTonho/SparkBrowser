@@ -6,6 +6,8 @@
 
 - Clicking the address bar or typing in it now shows suggestions below it: your most recent sites when it is empty, and, while you type, what Enter will do, then matching bookmarks and visited pages. Use the arrow keys and Enter, or click a row.
 
+- New option **Search suggestions** (Settings → Search & Navigation, off by default): while you type in the address bar, it asks your search engine for suggested searches and lists them under the matching sites. It works with Google, DuckDuckGo, Bing and Brave Search, sends only what you typed, and is never used in private windows.
+
 ## Improvements
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.

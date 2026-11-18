@@ -343,5 +343,8 @@
   "settings.restart_to_update": "Reiniciar para atualizar",
   "settings.update_downloading_automatically": "Há uma atualização disponível e ela está sendo baixada em segundo plano.",
   "settings.update_ready_next_start": "A atualização foi baixada e verificada. Reinicie para instalá-la agora; senão, ela é instalada na próxima vez que o Spark abrir.",
-  "settings.auto_update_search": "Baixa as atualizações em segundo plano e as instala na próxima vez que o Spark abrir."
+  "settings.auto_update_search": "Baixa as atualizações em segundo plano e as instala na próxima vez que o Spark abrir.",
+  "settings.web_suggestions": "Sugestões de pesquisa",
+  "settings.web_suggestions_description": "Envia o que você digita na barra de endereço ao seu mecanismo de busca para receber pesquisas sugeridas. Desligado por padrão e nunca usado em janelas privadas.",
+  "settings.web_suggestions_unsupported": "O {engine} não tem serviço de sugestões, então isto não tem efeito com ele. Funciona com Google, DuckDuckGo, Bing e Brave Search."
 }

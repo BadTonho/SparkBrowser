@@ -15,6 +15,17 @@
  */
 
 export const MAX_SUGGESTIONS = 8;
+
+/**
+ * Search engines that publish a suggestion endpoint. Keep in step with `endpoint()` in
+ * `src-tauri/src/commands/search_suggestions.rs`.
+ */
+export const WEB_SUGGESTION_ENGINES = ['google', 'duckduckgo', 'bing', 'brave'];
+
+/** @param {unknown} engine @returns {boolean} */
+export function supportsWebSuggestions(engine) {
+  return WEB_SUGGESTION_ENGINES.includes(/** @type {string} */ (engine));
+}
 const MAX_WEB_TERMS = 4;
 
 /**

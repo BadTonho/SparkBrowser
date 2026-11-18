@@ -417,6 +417,12 @@
           "markdownDescription": "Enables the export_bookmarks command without any pre-configured scope."
         },
         {
+          "description": "Enables the fetch_search_suggestions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-fetch-search-suggestions",
+          "markdownDescription": "Enables the fetch_search_suggestions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the finish_backup_preferences command without any pre-configured scope.",
           "type": "string",
           "const": "allow-finish-backup-preferences",
@@ -1495,6 +1501,12 @@
           "type": "string",
           "const": "deny-export-bookmarks",
           "markdownDescription": "Denies the export_bookmarks command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the fetch_search_suggestions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-fetch-search-suggestions",
+          "markdownDescription": "Denies the fetch_search_suggestions command without any pre-configured scope."
         },
         {
           "description": "Denies the finish_backup_preferences command without any pre-configured scope.",

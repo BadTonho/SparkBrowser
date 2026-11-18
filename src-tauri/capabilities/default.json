@@ -183,6 +183,7 @@
     "allow-set-site-zoom",
     "allow-apply-backup-zoom",
     "allow-search-command-items",
+    "allow-fetch-search-suggestions",
     "allow-get-saved-session",
     "allow-get-installed-extensions",
     "allow-load-unpacked-extension",

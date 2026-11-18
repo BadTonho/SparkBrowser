@@ -1,9 +1,12 @@
 import { get, writable } from "svelte/store";
 import { fetchHistory } from "../services/bridge/persistence";
-import { buildSuggestions, type Suggestion } from "../services/address-suggestions.js";
+import { buildSuggestions, looksLikeAddress, supportsWebSuggestions, type Suggestion } from "../services/address-suggestions.js";
+import { fetchSearchSuggestions } from "../services/bridge/search-suggestions";
 import { bookmarks } from "./persistenceStore";
 import { addressInput, isAddressEditing, submitNavigation } from "./browserStore";
 import { defaultSearchEngine, getSearchEngineLabel } from "./searchEngineStore";
+import { webSuggestionsEnabled } from "./webSuggestionsStore";
+import { isPrivateWindow } from "./privateWindowStore";
 
 export interface SuggestionState {
   open: boolean;
@@ -22,6 +25,10 @@ const HISTORY_ROWS = 60;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let generation = 0;
 
+const WEB_DELAY_MS = 150;
+const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+const termsFor = new Map<string, string[]>();
+
 async function compute(query: string, run: number): Promise<void> {
   let history: Awaited<ReturnType<typeof fetchHistory>> = [];
   try {
@@ -30,13 +37,37 @@ async function compute(query: string, run: number): Promise<void> {
     history = [];
   }
   if (run !== generation) return;
-  const items = buildSuggestions({
-    query,
-    history,
-    bookmarks: get(bookmarks),
-    engineLabel: getSearchEngineLabel(get(defaultSearchEngine)),
-  });
-  suggestionState.update(state => (state.open ? { ...state, items, selected: -1, rows: Math.max(state.rows, items.length) } : state));
+  const engine = get(defaultSearchEngine);
+  const text = query.trim();
+  const show = (webTerms: string[], keepHighlight: boolean) => {
+    const items = buildSuggestions({
+      query,
+      history,
+      bookmarks: get(bookmarks),
+      webTerms,
+      engineLabel: getSearchEngineLabel(engine),
+    });
+    suggestionState.update(state => {
+      if (!state.open) return state;
+      const kept = keepHighlight && state.selected >= 0 ? state.items[state.selected]?.id : undefined;
+      const selected = kept ? items.findIndex(item => item.id === kept) : -1;
+      return { ...state, items, selected, rows: Math.max(state.rows, items.length) };
+    });
+  };
+  const key = `${engine}
+${text.toLowerCase()}`;
+  show(termsFor.get(key) ?? [], false);
+
+  // Terms from the search engine need the option on, a normal window, words (not an address) and an engine that has them.
+  const wantsWeb = get(webSuggestionsEnabled) && !get(isPrivateWindow) && text.length > 0 && !looksLikeAddress(text) && supportsWebSuggestions(engine);
+  if (!wantsWeb || termsFor.has(key)) return;
+  await delay(WEB_DELAY_MS);
+  if (run !== generation) return;
+  const terms = await fetchSearchSuggestions(engine, text);
+  if (run !== generation) return;
+  if (termsFor.size >= 50) termsFor.clear();
+  termsFor.set(key, terms);
+  show(terms, true);
 }
 
 /** Shows suggestions for what is typed; with an empty address bar they are the most recent sites. */
@@ -50,6 +81,7 @@ export function requestSuggestions(query: string, immediate = false): void {
 
 export function closeSuggestions(): void {
   generation++;
+  termsFor.clear();
   if (timer) clearTimeout(timer);
   suggestionState.set(closed);
 }

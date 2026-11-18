@@ -40,6 +40,7 @@ pub mod shutdown;
 pub mod zoom;
 
 pub mod command_search;
+pub mod search_suggestions;
 pub mod media;
 pub mod minimum_font_probe;
 pub mod new_tab;

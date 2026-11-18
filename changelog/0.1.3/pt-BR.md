@@ -6,6 +6,8 @@
 
 - Clicar na barra de endereço ou digitar nela agora mostra sugestões logo abaixo: seus sites mais recentes quando ela está vazia e, enquanto você digita, o que o Enter vai fazer, depois favoritos e páginas visitadas que combinam. Use as setas e o Enter, ou clique numa linha.
 
+- Nova opção **Sugestões de pesquisa** (Configurações → Busca e navegação, desligada por padrão): enquanto você digita na barra de endereço, ela pede ao seu mecanismo de busca pesquisas sugeridas e as lista abaixo dos sites que combinam. Funciona com Google, DuckDuckGo, Bing e Brave Search, envia só o que você digitou e nunca é usada em janelas privadas.
+
 ## Melhorias
 
 - No painel de personalização centralizado, as opções **Posição do painel** e **Posição dos widgets de música** agora são pequenas, ficam lado a lado e permanecem na parte de baixo do painel, deixando mais espaço para os cartões.

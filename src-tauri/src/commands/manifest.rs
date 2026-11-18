@@ -38,6 +38,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "control_now_playing",
     "set_tab_muted",
     "search_command_items",
+    "fetch_search_suggestions",
     "get_saved_session",
     "get_site_zoom",
     "set_site_zoom",

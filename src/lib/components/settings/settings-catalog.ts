@@ -100,6 +100,14 @@ export const searchableSettings: SearchEntry[] = [
     keywords: "search omnibox web engine google duckduckgo bing brave startpage ecosia qwant yahoo mojeek kagi buscador",
   },
   {
+    id: "web-suggestions",
+    title: "Search suggestions",
+    description: "Send what you type in the address bar to your search engine to get suggested searches. Off by default, and never used in private windows.",
+    category: "search_navigation",
+    targetId: "setting-web-suggestions",
+    keywords: "address bar omnibox autocomplete suggestions typing privacy sugestões barra de endereço digitar autocompletar",
+  },
+  {
     id: "workspace-profile",
     title: "Workspace Identity & Theme",
     description: "Choose a workspace to edit its name, emoji, colors, or manage profiles.",

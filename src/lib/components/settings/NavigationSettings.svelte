@@ -4,6 +4,10 @@
   import { t } from "../../i18n";
 import SiteSearchSettings from "./SiteSearchSettings.svelte";
 import SearchEnginePicker from "./SearchEnginePicker.svelte";
+  import { defaultSearchEngine, getSearchEngineLabel } from "../../stores/searchEngineStore";
+  import { webSuggestionsEnabled, setWebSuggestionsEnabled } from "../../stores/webSuggestionsStore";
+  import { supportsWebSuggestions } from "../../services/address-suggestions.js";
+  const webSupported = $derived(supportsWebSuggestions($defaultSearchEngine));
 </script>
 
 <section class="setting-group" aria-labelledby="search-heading">
@@ -14,6 +18,23 @@ import SearchEnginePicker from "./SearchEnginePicker.svelte";
       <span class="row-desc">{$t("settings.used_when_typing_search_queries_in_the_omnibox_002d")}</span>
     </div>
     <SearchEnginePicker />
+  </div>
+
+  <div class="setting-row" id="setting-web-suggestions" tabindex="-1">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.web_suggestions")}</span>
+      <span class="row-desc">{$t("settings.web_suggestions_description")}</span>
+      {#if $webSuggestionsEnabled && !webSupported}
+        <span class="row-desc">{$t("settings.web_suggestions_unsupported", { engine: getSearchEngineLabel($defaultSearchEngine) })}</span>
+      {/if}
+    </div>
+    <input
+      type="checkbox"
+      role="switch"
+      aria-label={$t("settings.web_suggestions")}
+      checked={$webSuggestionsEnabled}
+      onchange={(event) => setWebSuggestionsEnabled(event.currentTarget.checked)}
+    />
   </div>
 </section>
 
