@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createListFlip } from "../../services/list-flip";
   import { showTabContextMenu } from "../../stores/persistenceStore";
   import AppIcon from "../icons/AppIcon.svelte";
   import TabFavicon from "./TabFavicon.svelte";
@@ -24,12 +25,17 @@
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
 
   let listEl = $state<HTMLDivElement>();
+  const flip = createListFlip(() => listEl, ".tab-row");
 
   let workspaceTabs = $derived(
     $tabs.filter(
       (t) => !t.workspace_id || t.workspace_id === $activeWorkspaceId
     )
   );
+  const order = $derived(workspaceTabs.map(tab => tab.id).join("|"));
+  $effect.pre(() => { order; flip.measure(); });
+  $effect(() => { order; flip.play(); });
+
 
   let currentWorkspaceName = $derived(
     $workspaces.find((w) => w.id === $activeWorkspaceId)?.name ?? "Workspace"
@@ -326,13 +332,12 @@
     cursor: grabbing;
   }
 
+  /* The row itself follows the pointer as a copy; its slot stays as a quiet placeholder. */
   .tab-row.is-dragging {
-    opacity: 0.88;
-    background: color-mix(in srgb, var(--accent-primary) 24%, var(--bg-glass-hover));
-    border: 1px solid var(--accent-primary);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-    transform: scale(1.02);
-    z-index: 50;
+    opacity: 0.35;
+    background: transparent;
+    border: 1px dashed var(--accent-primary);
+    box-shadow: none;
     pointer-events: none;
   }
 

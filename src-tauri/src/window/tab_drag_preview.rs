@@ -188,12 +188,19 @@ pub fn paint(app: &AppHandle, state: &BrowserState) -> Result<(), String> {
     let window_id = state
         .window_of_tab(&presentation.context.active_tab_id)
         .unwrap_or_else(|_| crate::state::tab_model::MAIN_WINDOW_ID.to_string());
+    // Over the shell the dragged tab is drawn by the interface itself; over the page, which covers
+    // the shell, this preview draws it.
+    let over_page = state.surfaces().viewport(&window_id).is_ok_and(|view| {
+        let (x, y) = (presentation.pointer.x, presentation.pointer.y);
+        x >= view.x && x <= view.x + view.width && y >= view.y && y <= view.y + view.height
+    });
     surface::paint(
         app,
         &window_id,
         &serde_json::json!({
             "revision": revision, "label": presentation.label, "locale": presentation.locale,
             "pointer": presentation.pointer, "title": tab.title, "host": host, "pane": pane,
+            "ghost": over_page,
             "placeholder": placeholder,
         }),
     )

@@ -5,10 +5,16 @@
   import { t } from "../../i18n";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import HorizontalTabItem from "./HorizontalTabItem.svelte";
+  import { createListFlip } from "../../services/list-flip";
   let { items, selectedId, side = null }: { items: TabItem[]; selectedId: string; side?: "left" | "right" | null } = $props();
+  let list = $state<HTMLElement>();
+  const flip = createListFlip(() => list, ".h-tab");
+  const order = $derived(items.map(tab => tab.id).join("|"));
+  $effect.pre(() => { order; flip.measure(); });
+  $effect(() => { order; flip.play(); });
 </script>
 
-<div class="tabs-scroll" data-pane-side={side ?? undefined} onwheel={(event) => { event.currentTarget.scrollLeft += event.deltaY; }} data-tauri-drag-region aria-label={side ? $t(side === "left" ? "tabs.left_pane_tabs" : "tabs.right_pane_tabs") : undefined}>
+<div class="tabs-scroll" bind:this={list} data-pane-side={side ?? undefined} onwheel={(event) => { event.currentTarget.scrollLeft += event.deltaY; }} data-tauri-drag-region aria-label={side ? $t(side === "left" ? "tabs.left_pane_tabs" : "tabs.right_pane_tabs") : undefined}>
   {#each items as tab (tab.id)}
     <HorizontalTabItem {tab} selected={tab.id === selectedId} />
   {/each}

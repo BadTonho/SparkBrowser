@@ -60,6 +60,7 @@ function fixture({ failDrop = false } = {}) {
     '../i18n': { locale: writable('en'), tr: key => key },
     '../services/ignored-error': { logIgnored() {} }, '../services/bridge/overlays': { onOverlayOpening: () => () => {} },
     '../services/bridge/tab-drag': bridge,
+    '../services/tab-drag-ghost': { createTabGhost: () => ({ move() {}, setHidden() {}, destroy() {} }) },
     '../services/split-tab-groups.js': { replaceGroupOrder },
     '../services/tab-drag-geometry.js': { crossedDragThreshold: () => true, splitDropSide: () => 'right' },
     './mediaPopoverStore': { mediaPopover: writable(null), closeMedia: async () => {} },
@@ -78,7 +79,7 @@ function fixture({ failDrop = false } = {}) {
       },
       querySelectorAll: () => [], elementFromPoint: () => ({ closest: () => null }),
     },
-    innerWidth: 800, innerHeight: 600,
+    CSS: { escape: value => value }, innerWidth: 800, innerHeight: 600,
     requestAnimationFrame: callback => { frame = callback; return 1; }, cancelAnimationFrame() { frame = undefined; },
   });
   const event = (x, y) => ({ clientX: x, clientY: y, pointerId: 1, button: 0, isPrimary: true,

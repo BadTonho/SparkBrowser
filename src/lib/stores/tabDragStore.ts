@@ -14,12 +14,14 @@ import { privacyPopover, closePrivacy } from "./privacyPopoverStore";
 import { zoomPopover, closeZoom } from "./zoomPopoverStore";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import { logIgnored } from "../services/ignored-error";
+import { createTabGhost, type TabGhost } from "../services/tab-drag-ghost";
 
 interface Drag {
   id: string; pointerId: number; root: HTMLElement; startX: number; startY: number;
   x: number; y: number;
   moved: boolean; side: DockSide | null; context: DockContext; layout: string;
   cursor: string; userSelect: string; original: import("../types/browser").TabItem[];
+  ghost: TabGhost | null;
 }
 export const tabDrag = writable<{ id: string; dragging: boolean; side: DockSide | null } | null>(null);
 let drag: Drag | null = null, busy = false, frame = 0, lastPreview = "", pendingMove = false;
@@ -48,6 +50,7 @@ function contextValid() {
 }
 function cleanup(keepDockPreview = false) {
   const previous = drag;
+  previous?.ghost?.destroy();
   drag = null; lastPreview = ""; pendingMove = false; cancelAnimationFrame(frame); frame = 0;
   window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', release);
   window.removeEventListener('pointercancel', cancelTabDrag); window.removeEventListener('blur', cancelTabDrag);
@@ -74,6 +77,9 @@ function updateDestination() {
   const bounds = document.querySelector('.viewport-frame')?.getBoundingClientRect();
   const eligible = drag.original.filter(tab => tab.workspace_id === drag!.context.workspaceId).length > 1;
   const side = bounds && eligible ? splitDropSide(bounds, drag.x, drag.y) : null;
+  // Over the page the shell is covered by the page's own layer, so the native preview shows the tab there.
+  const overPage = Boolean(bounds && drag.x >= bounds.left && drag.x <= bounds.right && drag.y >= bounds.top && drag.y <= bounds.bottom);
+  drag.ghost?.setHidden(overPage);
   if (drag.side !== side) { drag.side = side; publish(); }
   preview(side, bounds);
 }
@@ -82,11 +88,14 @@ function move(event: PointerEvent) {
   if (!contextValid() || event.clientX < 0 || event.clientY < 0 || event.clientX > innerWidth || event.clientY > innerHeight) { cancelTabDrag(); return; }
   if (!drag.moved && crossedDragThreshold(drag.startX, drag.startY, event.clientX, event.clientY)) {
     drag.moved = true; document.body.style.cursor = 'grabbing'; document.body.style.userSelect = 'none';
+    const source = document.querySelector<HTMLElement>(`[data-tab-id="${CSS.escape(drag.id)}"]`);
+    if (source) drag.ghost = createTabGhost(source, drag.root, drag.startX, drag.startY);
     void closeMedia(); void closePrivacy(); void closeZoom();
     publish();
   }
   if (!drag.moved) return;
   drag.x = event.clientX; drag.y = event.clientY;
+  drag.ghost?.move(drag.x, drag.y);
   pendingMove = true;
 }
 function processMove() {
@@ -160,7 +169,7 @@ export function startTabDrag(event: PointerEvent, id: string) {
   event.preventDefault();
   drag = { id, pointerId: event.pointerId, root, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, moved: false, side: null,
     context: { workspaceId: get(activeWorkspaceId), activeTabId: active.id, splitKey: split ? splitKey(split) : null, groupsKey: split ? splitGroupsKey(split) : null }, layout: get(tabLayout),
-    cursor: document.body.style.cursor, userSelect: document.body.style.userSelect, original: get(tabs) };
+    cursor: document.body.style.cursor, userSelect: document.body.style.userSelect, original: get(tabs), ghost: null };
   beginTabReorder();
   try { root.setPointerCapture(event.pointerId); }
   catch (error) { cancelTabDrag(); throw error; }

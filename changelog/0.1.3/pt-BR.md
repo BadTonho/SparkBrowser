@@ -43,6 +43,8 @@
 
 - O bloqueador de anúncios agora também esconde os anúncios e caixas de "patrocinado" que as listas de filtros indicam em cada página, e não só bloqueia as requisições. Os anúncios do YouTube são removidos antes de o player recebê-los, e "Auto skip ads" agora também leva ao fim um anúncio que não tem botão de pular.
 
+- Ao arrastar uma aba, agora aparece a própria aba acompanhando o ponteiro (com ícone e título), um espaço tracejado no lugar dela, e as outras abas deslizam suavemente para as novas posições quando você reordena.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.

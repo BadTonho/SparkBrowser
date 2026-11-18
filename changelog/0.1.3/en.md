@@ -43,6 +43,8 @@
 
 - Adblock now also hides the ads and "sponsored" boxes that the filter lists name on each page, not only blocks their requests. YouTube ads are removed before the player receives them, and "Auto skip ads" now also plays an ad that has no skip button to its end.
 
+- Dragging a tab now shows the tab itself following the pointer (with its icon and title), leaves a dashed placeholder in its place, and the other tabs slide smoothly to their new positions when you reorder them.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

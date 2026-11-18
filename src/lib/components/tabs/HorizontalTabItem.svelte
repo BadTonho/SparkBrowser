@@ -209,12 +209,12 @@
     letter-spacing: 0.2px;
   }
 
+  /* The tab itself follows the pointer as a copy; its slot stays as a quiet placeholder. */
   .h-tab.is-dragging {
-    opacity: 0.85;
-    border-color: var(--accent-primary);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    transform: scale(1.03);
-    z-index: 30;
+    opacity: 0.35;
+    border: 1px dashed var(--accent-primary);
+    background: transparent;
+    box-shadow: none;
     pointer-events: none;
   }
 

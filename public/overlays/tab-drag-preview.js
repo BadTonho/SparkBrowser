@@ -1,5 +1,5 @@
 let latestRevision = 0;
-window.setDragPreview = ({ revision, label, locale, pointer, title, host, pane, placeholder }) => {
+window.setDragPreview = ({ revision, label, locale, pointer, title, host, pane, placeholder, ghost: showGhost = true }) => {
   // Initial document loading may delay an earlier paint beyond a newer one.
   if (revision < latestRevision) return;
   latestRevision = revision;
@@ -20,6 +20,7 @@ window.setDragPreview = ({ revision, label, locale, pointer, title, host, pane, 
   document.getElementById('dragged-tab-title').textContent = title;
   document.getElementById('dragged-tab-host').textContent = host;
   const ghost = document.getElementById('dragged-tab');
+  ghost.hidden = !showGhost;
   const { width, height } = ghost.getBoundingClientRect();
   const x = pointer.x + width + 24 > innerWidth ? pointer.x - width - 16 : pointer.x + 16;
   const y = pointer.y + height + 26 > innerHeight ? pointer.y - height - 18 : pointer.y + 18;
