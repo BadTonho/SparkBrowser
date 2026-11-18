@@ -183,10 +183,10 @@
   .privacy-switch-row .unavailable { color: var(--text-muted); }
   .switch-control { position: relative; flex: 0 0 auto; width: 40px; height: 22px; }
   .switch-control input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-  .switch-track { position: absolute; inset: 0; border-radius: 99px; background: rgba(255,255,255,.2); transition: background .16s ease; }
+  .switch-track { position: absolute; inset: 0; border-radius: 99px; background: color-mix(in srgb, var(--text-primary) 24%, transparent); transition: background .16s ease; }
   .switch-track::before { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .16s ease; }
   .switch-control input:checked + .switch-track { background: var(--accent-primary); }
-  .switch-control input:checked + .switch-track::before { transform: translateX(18px); }
+  .switch-control input:checked + .switch-track::before { transform: translateX(18px); background: var(--accent-foreground); }
   .switch-control input:focus-visible + .switch-track { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
   .switch-control input:disabled { cursor: not-allowed; }
   .switch-control input:disabled + .switch-track { opacity: .45; }

@@ -27,8 +27,11 @@
 
 - In the browser settings, the option selectors are easier to read: each group of choices (such as Pop-up / Tab, Dark / Light) is a clear segmented control with the chosen option filled in, and titles and descriptions are larger.
 
+- In the browser settings, every on/off option is now the same switch, instead of a mix of switches and blue squares (for example in Performance and Privacy & Security).
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.
 - Fixed the "Close the browser?" warning appearing because of the new tab or settings page: changing an option there was counted as an edited form, and "Don't show again" could never apply.
 - Fixed the window background style (Matte, Glass, Ice) not updating the windows right away; you had to move the opacity or blur slider to see the change.
+- Fixed the on/off switches in the browser settings (such as Hardware acceleration) looking the same when on and when off; the knob was white on a light track. It is now clearly visible, in the dark and light themes.

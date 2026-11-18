@@ -359,6 +359,62 @@
     color: var(--accent-foreground);
   }
 
+  /* On/off controls that are plain checkboxes (no track element next to them) look like the other switches,
+     so every setting shows its state the same way. The hand-made switches keep their own track. */
+  .settings-modal :is(input[type="checkbox"][role="switch"]:not(:has(+ [aria-hidden="true"])), .setting-row > input[type="checkbox"]) {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 22px;
+    margin: 0;
+    border: 0;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--text-primary) 24%, transparent);
+    cursor: pointer;
+    transition: background 0.16s ease;
+  }
+
+  .settings-modal :is(input[type="checkbox"][role="switch"]:not(:has(+ [aria-hidden="true"])), .setting-row > input[type="checkbox"])::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    transition: transform 0.16s ease, background 0.16s ease;
+  }
+
+  .settings-modal :is(input[type="checkbox"][role="switch"]:not(:has(+ [aria-hidden="true"])), .setting-row > input[type="checkbox"]):checked {
+    background: var(--accent-primary);
+  }
+
+  .settings-modal :is(input[type="checkbox"][role="switch"]:not(:has(+ [aria-hidden="true"])), .setting-row > input[type="checkbox"]):checked::before {
+    transform: translateX(18px);
+    background: var(--accent-foreground);
+    box-shadow: none;
+  }
+
+  .settings-modal :is(input[type="checkbox"][role="switch"]:not(:has(+ [aria-hidden="true"])), .setting-row > input[type="checkbox"]):focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 3px;
+  }
+
+  .settings-modal :is(input[type="checkbox"][role="switch"]:not(:has(+ [aria-hidden="true"])), .setting-row > input[type="checkbox"]):disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Checkboxes that really are a choice among several (for example what to restore) keep their shape,
+     in the app's accent color instead of the system blue. */
+  .settings-modal input[type="checkbox"] {
+    accent-color: var(--accent-primary);
+  }
+
   /* Segmented control: one clear group, the chosen option is the filled one. */
   :where(.settings-modal) .timer-pills {
     display: flex;

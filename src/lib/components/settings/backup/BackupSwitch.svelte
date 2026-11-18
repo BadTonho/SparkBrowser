@@ -35,10 +35,10 @@
   small { color: var(--text-secondary); font-size: 11.5px; line-height: 1.45; }
   .switch { position: relative; flex: 0 0 auto; width: 40px; height: 22px; }
   .switch input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
-  .track { position: absolute; inset: 0; border-radius: 99px; background: rgba(255, 255, 255, 0.2); transition: background 0.16s ease; }
+  .track { position: absolute; inset: 0; border-radius: 99px; background: color-mix(in srgb, var(--text-primary) 24%, transparent); transition: background 0.16s ease; }
   .track::before { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.16s ease; }
   input:checked + .track { background: var(--accent-primary); }
-  input:checked + .track::before { transform: translateX(18px); }
+  input:checked + .track::before { transform: translateX(18px); background: var(--accent-foreground); }
   input:focus-visible + .track { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
   @media (prefers-reduced-motion: reduce) { .track, .track::before { transition: none; } }
 </style>

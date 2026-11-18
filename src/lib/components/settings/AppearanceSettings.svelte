@@ -375,10 +375,10 @@ async function changeSettingsDisplay(mode: "popup" | "tab") {
   .visual-toggle-row .row-text { gap: 4px; }
   .visual-switch { position: relative; flex: 0 0 auto; width: 40px; height: 22px; }
   .visual-switch input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-  .visual-switch-track { position: absolute; inset: 0; border-radius: 99px; background: rgba(255,255,255,.2); transition: background .16s ease; }
+  .visual-switch-track { position: absolute; inset: 0; border-radius: 99px; background: color-mix(in srgb, var(--text-primary) 24%, transparent); transition: background .16s ease; }
   .visual-switch-track::before { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .16s ease; }
   .visual-switch input:checked + .visual-switch-track { background: var(--accent-primary); }
-  .visual-switch input:checked + .visual-switch-track::before { transform: translateX(18px); }
+  .visual-switch input:checked + .visual-switch-track::before { transform: translateX(18px); background: var(--accent-foreground); }
   .visual-switch input:focus-visible + .visual-switch-track { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
   @media (max-width: 720px) { .visual-toggle-row { padding-inline: 4px; } }
   @media (prefers-reduced-motion: reduce) { .visual-switch-track, .visual-switch-track::before { transition: none; } }

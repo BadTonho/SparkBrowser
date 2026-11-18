@@ -27,8 +27,11 @@
 
 - Nas configurações do navegador, os seletores de opção ficaram mais fáceis de ler: cada grupo de escolhas (como Pop-up / Guia, Escuro / Claro) é um controle segmentado claro com a opção escolhida preenchida, e os títulos e as descrições ficaram maiores.
 
+- Nas configurações do navegador, toda opção de ligar e desligar agora é o mesmo interruptor, em vez de uma mistura de interruptores e quadrados azuis (por exemplo em Desempenho e em Privacidade e segurança).
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
 - Corrigido o aviso "Fechar o navegador?" aparecer por causa da nova guia ou da página de configurações: mudar uma opção ali contava como formulário alterado, e o "Não me mostre novamente" nunca valia.
 - Corrigido o estilo do fundo das janelas (Fosco, Vidro, Gelo) não atualizar as janelas na hora; era preciso mexer no controle de opacidade ou de desfoque para ver a mudança.
+- Corrigidos os interruptores das configurações do navegador (como a Aceleração de hardware) que pareciam iguais ligados e desligados; a bolinha era branca sobre uma trilha clara. Agora o estado aparece com clareza, nos temas escuro e claro.
