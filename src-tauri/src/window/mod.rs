@@ -38,6 +38,7 @@ pub mod suggestions_popover;
 pub mod ephemeral;
 #[cfg(target_os = "linux")]
 pub mod linux_layout;
+pub mod pane_animation;
 mod panel_popover;
 
 /// Prepares one panel's web view ahead of the click. See `panel_popover::prepare`.

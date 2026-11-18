@@ -168,28 +168,47 @@ pub(super) fn sync_changed_content_geometry(
             }
         }
         if let Some(bounds) = pane {
+            // A layout change (a split opening, changing or closing) slides; anything else moves at once.
+            let window_id = state.window_of_tab(tab_id).unwrap_or_default();
+            let area = state
+                .surfaces()
+                .viewport(&window_id)
+                .map(|view| (view.width, view.height))
+                .unwrap_or_default();
+            let slides = matches!(
+                super::pane_animation::plan(app, &label, &window_id, area, bounds),
+                super::pane_animation::Plan::Animated
+            );
             #[cfg(target_os = "linux")]
-            super::linux_layout::update_bounds(
-                app,
-                &label,
-                bounds.x as i32,
-                bounds.y as i32,
-                bounds.width.max(100.0) as i32,
-                bounds.height.max(100.0) as i32,
-                true,
-            )?;
+            if !slides {
+                super::linux_layout::update_bounds(
+                    app,
+                    &label,
+                    bounds.x as i32,
+                    bounds.y as i32,
+                    bounds.width.max(100.0) as i32,
+                    bounds.height.max(100.0) as i32,
+                    true,
+                )?;
+            }
             #[cfg(not(target_os = "linux"))]
             {
-                _view
-                    .set_bounds(Rect {
-                        position: LogicalPosition::new(bounds.x, bounds.y).into(),
-                        size: LogicalSize::new(bounds.width.max(100.0), bounds.height.max(100.0))
+                if !slides {
+                    _view
+                        .set_bounds(Rect {
+                            position: LogicalPosition::new(bounds.x, bounds.y).into(),
+                            size: LogicalSize::new(
+                                bounds.width.max(100.0),
+                                bounds.height.max(100.0),
+                            )
                             .into(),
-                    })
-                    .map_err(|e| e.to_string())?;
+                        })
+                        .map_err(|e| e.to_string())?;
+                }
                 _view.show().map_err(|e| e.to_string())?;
             }
         } else {
+            super::pane_animation::forget(&label);
             #[cfg(target_os = "linux")]
             super::linux_layout::set_visible(app, &label, false)?;
             #[cfg(not(target_os = "linux"))]

@@ -45,6 +45,8 @@
 
 - Dragging a tab now shows the tab itself following the pointer (with its icon and title), leaves a dashed placeholder in its place, and the other tabs slide smoothly to their new positions when you reorder them.
 
+- Opening a split is now smooth: the pages slide to their new places like the tabs do, and the area where a dragged tab opens a split is much larger (15% of the page width, instead of a thin strip at the edge).
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

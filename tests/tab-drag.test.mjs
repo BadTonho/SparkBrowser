@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { splitDropSide, crossedDragThreshold } from '../src/lib/services/tab-drag-geometry.js';
+import { splitDropSide, splitEdgeWidth, crossedDragThreshold } from '../src/lib/services/tab-drag-geometry.js';
 
 test('drag threshold uses either axis and starts at six pixels', () => {
   assert.equal(crossedDragThreshold(10, 10, 15, 10), false);
@@ -10,11 +10,16 @@ test('drag threshold uses either axis and starts at six pixels', () => {
   assert.equal(crossedDragThreshold(10, 10, 16, 10), true);
   assert.equal(crossedDragThreshold(10, 10, 15, 15), true);
 });
-test('only the internal 32px of the page edges offer docking', () => {
+test('docking is offered in the outer 15% of the page edges, between 96 and 240 pixels', () => {
   const rect = { left: 280, top: 80, width: 1000, height: 700 };
-  for (const x of [280, 300, 312]) assert.equal(splitDropSide(rect, x, 300), 'left');
-  for (const x of [1248, 1270, 1280]) assert.equal(splitDropSide(rect, x, 300), 'right');
-  for (const x of [279, 313, 700, 1247, 1281]) assert.equal(splitDropSide(rect, x, 300), null);
+  // 15% of 1000 is 150 pixels on each side.
+  for (const x of [280, 300, 430]) assert.equal(splitDropSide(rect, x, 300), 'left');
+  for (const x of [1130, 1270, 1280]) assert.equal(splitDropSide(rect, x, 300), 'right');
+  for (const x of [279, 431, 700, 1129, 1281]) assert.equal(splitDropSide(rect, x, 300), null);
+  assert.equal(splitEdgeWidth(400), 96, 'a narrow page keeps a usable zone');
+  assert.equal(splitEdgeWidth(3000), 240, 'a very wide page does not give up half of itself');
+  assert.equal(splitDropSide({ left: 0, top: 0, width: 208, height: 300 }, 96, 100), 'left');
+  assert.equal(splitDropSide({ left: 0, top: 0, width: 208, height: 300 }, 97, 100), null);
   assert.equal(splitDropSide(rect, 300, 79), null);
   assert.equal(splitDropSide(rect, 300, 781), null);
   assert.equal(splitDropSide({ ...rect, width: 150 }, 300, 300), null);

@@ -45,6 +45,8 @@
 
 - Ao arrastar uma aba, agora aparece a própria aba acompanhando o ponteiro (com ícone e título), um espaço tracejado no lugar dela, e as outras abas deslizam suavemente para as novas posições quando você reordena.
 
+- Abrir uma divisão agora é suave: as páginas deslizam para os novos lugares como as abas, e a área onde uma aba arrastada abre uma divisão é bem maior (15% da largura da página, em vez de uma faixa fina na borda).
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
