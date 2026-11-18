@@ -17,6 +17,8 @@
 
 - The "Close the browser?" window has a cleaner look: more spacing, a lighter "Don't show again" option and clearer buttons.
 
+- In **Clock**, the font, time format and position are now chosen from visible buttons instead of dropdown lists. Each font is shown with a sample time in that font.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

@@ -23,8 +23,10 @@
   <script src="/new-tab/audio-style-picker.js" defer></script>
   <link rel="stylesheet" href="/new-tab/settings-layout.css">
   <link rel="stylesheet" href="/new-tab/clock.css">
+  <link rel="stylesheet" href="/new-tab/choice-picker.css">
   <script src="/new-tab/settings-layout.js" defer></script>
   <script src="/new-tab/clock.js" defer></script>
+  <script src="/new-tab/choice-picker.js" defer></script>
 </head>
 <body>
   <div id="wallpaper-container" aria-hidden="true" hidden>
@@ -331,7 +333,7 @@
       <label class="toggle"><span data-label="showClock"></span><input id="clock-enabled" type="checkbox"></label>
       <div id="clock-options" hidden>
         <label for="clock-font" data-label="clockFont"></label>
-        <select id="clock-font">
+        <select id="clock-font" data-choice="font">
           <option value="system" data-label="clockFontSystem"></option>
           <option value="monospace" data-label="clockFontMonospace"></option>
           <option value="serif" data-label="clockFontSerif"></option>
@@ -339,12 +341,12 @@
           <option value="display" data-label="clockFontDisplay"></option>
         </select>
         <label for="clock-format" data-label="clockFormat"></label>
-        <select id="clock-format">
+        <select id="clock-format" data-choice="segmented">
           <option value="24h" data-label="clockFormat24"></option>
           <option value="12h" data-label="clockFormat12"></option>
         </select>
         <label for="clock-position" data-label="clockPosition"></label>
-        <select id="clock-position">
+        <select id="clock-position" data-choice="segmented">
           <option value="bottom" data-label="clockPositionBottom"></option>
           <option value="top" data-label="clockPositionTop"></option>
           <option value="card" data-label="clockPositionCard"></option>

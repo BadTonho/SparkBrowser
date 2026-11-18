@@ -191,6 +191,7 @@
     if (secondsInput) secondsInput.checked = config.seconds;
     if (dateInput) dateInput.checked = config.showDate;
     if (greetingInput) greetingInput.checked = config.showGreeting;
+    window.__sparkChoicePickers?.sync();
   }
 
   function notifyUpdated() {

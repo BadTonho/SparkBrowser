@@ -17,6 +17,8 @@
 
 - A janela "Fechar o navegador?" ficou com um visual mais limpo: mais espaçamento, a opção "Não me mostrar novamente" mais leve e botões mais claros.
 
+- Em **Relógio**, a fonte, o formato de hora e a posição agora são escolhidos em botões visíveis, em vez de listas suspensas. Cada fonte aparece com um horário de exemplo naquela fonte.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
