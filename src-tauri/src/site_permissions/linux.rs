@@ -49,7 +49,10 @@ async fn on_main<T: Send + 'static>(
 ) -> Result<T, String> {
     let (send, receive) = tokio::sync::oneshot::channel();
     app.run_on_main_thread(move || {
-        crate::error_log::ignored(send.send(work()));
+        crate::error_log::ignored(
+            send.send(work())
+                .map_err(|_| "the permission request was dropped before its answer was ready"),
+        );
     })
     .map_err(|e| e.to_string())?;
     receive.await.map_err(|e| e.to_string())

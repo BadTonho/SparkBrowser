@@ -41,9 +41,7 @@ pub fn refresh(app: &AppHandle) {
             .name("spark-content-rules".into())
             .spawn(move || {
                 let Some(json) = lists.content_blocking_json() else {
-                    crate::error_log::warn(&format!(
-                        "Could not convert the filter lists to content rules"
-                    ));
+                    crate::error_log::warn("Could not convert the filter lists to content rules");
                     return;
                 };
                 let main = app.clone();

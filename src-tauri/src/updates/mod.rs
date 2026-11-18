@@ -3,6 +3,7 @@ pub mod model;
 #[cfg(any(windows, test))]
 mod releases;
 mod service;
+#[cfg_attr(not(windows), allow(dead_code))] // the background installer is Windows only
 pub(crate) mod staged;
 #[cfg(windows)]
 mod windows;

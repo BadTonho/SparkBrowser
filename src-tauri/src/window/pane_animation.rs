@@ -14,9 +14,9 @@ use std::{
     },
     time::{Duration, Instant},
 };
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 #[cfg(not(target_os = "linux"))]
-use tauri::{LogicalPosition, LogicalSize, Rect};
+use tauri::{LogicalPosition, LogicalSize, Manager, Rect};
 
 const DURATION: Duration = Duration::from_millis(220);
 const FRAME: Duration = Duration::from_millis(16);
