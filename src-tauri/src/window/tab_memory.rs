@@ -94,7 +94,8 @@ pub fn current_webview_source(view: &tauri::Webview) -> Option<String> {
                 Ok(CoTaskMemPWSTR::from(raw).to_string())
             })
         };
-        crate::error_log::ignored(tx.send(source.ok().filter(|value| !value.is_empty())));
+        // The caller stops waiting after 150 ms; a late answer finding no receiver is expected, not an error.
+        let _ = tx.send(source.ok().filter(|value| !value.is_empty()));
     });
     if result.is_err() {
         return None;
@@ -109,7 +110,8 @@ pub fn current_webview_source(view: &tauri::Webview) -> Option<String> {
     use webkit2gtk::WebViewExt;
     let (tx, rx) = std::sync::mpsc::channel();
     view.with_webview(move |platform| {
-        crate::error_log::ignored(tx.send(platform.inner().uri().map(|uri| uri.to_string())));
+        // The caller stops waiting after 150 ms; a late answer finding no receiver is expected, not an error.
+        let _ = tx.send(platform.inner().uri().map(|uri| uri.to_string()));
     })
     .ok()?;
     rx.recv_timeout(std::time::Duration::from_millis(150))

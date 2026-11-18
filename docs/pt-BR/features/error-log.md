@@ -37,7 +37,7 @@ Toda entrada tem um de quatro níveis. Só os dois sérios interrompem o usuári
 
 ### Contexto de um travamento
 
-Um travamento não tem mensagem de erro, então a entrada `hang` traz um **rastro**: as últimas 40 coisas que o app foi mandado fazer (cada comando da interface e cada abertura ou fechamento de popover), cada uma com hora e thread. A última linha é a causa mais provável.
+Um travamento não tem mensagem de erro, então a entrada `hang` traz um **rastro**: as últimas 40 coisas que o app foi mandado fazer (cada comando da interface e cada abertura ou fechamento de popover), cada uma com hora e thread. A última linha é a causa mais provável. No Windows a entrada também lista **onde cada thread está esperando** (a pilha de chamadas), o que mostra um deadlock diretamente: duas threads esperando cada uma algo que a outra segura. Os nomes das funções aparecem quando o arquivo `.pdb` está ao lado do executável (builds de desenvolvimento); um build de lançamento mostra deslocamentos do módulo. O código está em [`src-tauri/src/hang_stack.rs`](../../../src-tauri/src/hang_stack.rs).
 
 ### Comandos que falham e o console
 

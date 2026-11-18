@@ -33,6 +33,7 @@ pub mod error_log;
 pub mod extensions;
 pub mod feeds;
 pub mod graphics;
+pub mod hang_stack;
 pub mod legacy;
 pub mod media;
 mod native_tests;

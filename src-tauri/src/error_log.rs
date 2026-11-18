@@ -43,7 +43,7 @@ const MAX_PER_MINUTE: usize = 5;
 /// Distinct entries remembered for de-duplication before the table is emptied.
 const MAX_REMEMBERED: usize = 500;
 const MAX_SUMMARY: usize = 300;
-const MAX_DETAILS: usize = 6_000;
+const MAX_DETAILS: usize = 16_000;
 const SESSION_MARKER: &str = "session.running";
 
 static LOG_FILE: OnceLock<PathBuf> = OnceLock::new();
@@ -158,6 +158,8 @@ pub fn watch(app: &AppHandle) {
         return;
     }
     let _ = HANDLE.set(app.clone());
+    // `watch` runs in the application setup, on the main thread: its stack is the one to look at in a freeze.
+    crate::hang_stack::remember_main_thread();
     if PREVIOUS_RUN_ENDED_BADLY.get().copied().unwrap_or(false) {
         // Wait until the interface is listening before telling the user.
         let _ = std::thread::Builder::new()
@@ -197,8 +199,9 @@ pub fn watch(app: &AppHandle) {
                             &format!("The main thread has not answered for {stalled} s"),
                             &format!(
                                 "What the app was doing, oldest first (the last line is the most \
-                                 likely cause):\n{}",
-                                recent_trail()
+                                 likely cause):\n{}\n\nWhere every thread is waiting:\n{}",
+                                recent_trail(),
+                                crate::hang_stack::capture()
                             ),
                         );
                         reported = Some(now);

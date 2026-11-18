@@ -37,7 +37,7 @@ Every entry has one of four levels. Only the two serious ones interrupt the user
 
 ### Context of a freeze
 
-A freeze has no error message, so its `hang` entry carries a **trail**: the last 40 things the app was asked to do (every interface command and every popover open or close), each with time and thread. The last line is the most likely cause.
+A freeze has no error message, so its `hang` entry carries a **trail**: the last 40 things the app was asked to do (every interface command and every popover open or close), each with time and thread. The last line is the most likely cause. On Windows the entry also lists **where every thread is waiting** (its call stack), which shows a deadlock directly: two threads each waiting for something the other holds. Function names appear when the `.pdb` file is next to the executable (development builds); a released build shows module offsets. The code is in [`src-tauri/src/hang_stack.rs`](../../../src-tauri/src/hang_stack.rs).
 
 ### Failed commands and the console
 
