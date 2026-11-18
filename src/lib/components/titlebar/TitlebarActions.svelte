@@ -17,7 +17,7 @@
   import { openPrivacy, privacyPopover } from "../../stores/privacyPopoverStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { toggleExtensionsModal, isExtensionsModalOpen } from "../../stores/extensionsStore";
-  import { titlebarActionOrder, moveTitlebarAction, type TitlebarAction } from "../../stores/titlebarActionsStore";
+  import { titlebarActionOrder, shownTitlebarActions, moveTitlebarAction, type TitlebarAction } from "../../stores/titlebarActionsStore";
   import { createActionDrag, type ActionDragPreview } from "../../services/titlebar-action-drag";
   import { isQrCodeOpen, openQrCode } from "../../stores/qrCodeStore";
 import { invoke } from "../../services/tauri-bridge";
@@ -51,7 +51,7 @@ import { invoke } from "../../services/tauri-bridge";
       console.error("WhatsApp window failed", error);
     }
   };
-  const visible = $derived($titlebarActionOrder.filter(id => (id !== "bookmarks" || $tabLayout === "horizontal") && (id !== "whatsapp" || supportsWhatsApp)));
+  const visible = $derived($titlebarActionOrder.filter(id => $shownTitlebarActions.includes(id) && (id !== "bookmarks" || $tabLayout === "horizontal") && (id !== "whatsapp" || supportsWhatsApp)));
   $effect(() => { $tabLayout; drag?.cancel(); });
 
   onMount(() => {

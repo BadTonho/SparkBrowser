@@ -4,7 +4,7 @@ export async function checkTitlebarActions(context) {
   await context.focusWindow();
   const { script, request, sessionId, until, click, restart, screenshot, invoke, fixture, resizeWindow, withWebview } = context;
   const order = () => script('return [...document.querySelectorAll(".titlebar-actions [data-action]")].map(b => b.dataset.action)');
-  const saved = () => script('return localStorage.getItem("spark_titlebar_action_order")');
+  const saved = () => script('return localStorage.getItem("spark_titlebar_action_order_v2")');
   const actions = list => request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'pointer', id: 'toolbar-mouse', parameters: { pointerType: 'mouse' }, actions: list }] });
   const move = (x, y) => ({ type: 'pointerMove', origin: 'viewport', x: Math.round(x), y: Math.round(y), duration: 100 });
   const key = value => request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'key', id: 'toolbar-key', actions: [{ type: 'keyDown', value }, { type: 'keyUp', value }] }] });

@@ -39,6 +39,8 @@
 
 - Every failed command and every console error of the interface is now written to the error log, and the log follows four levels (Critical, Error, Warning, Info).
 
+- The top bar now shows only Settings, Downloads, Protection and Extensions by default. Turn the other buttons (Tools, Bookmarks bar, Commands, History, Zen mode, QR code, WhatsApp) on or off in **Toolbar buttons**, inside the quick settings menu.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

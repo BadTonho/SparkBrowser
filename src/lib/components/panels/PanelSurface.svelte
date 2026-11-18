@@ -31,7 +31,7 @@
   // This web view starts at the bottom of the address bar, so the list is placed from its top edge, at the bar's own width.
   const position = $derived(presentation ? (suggestions
     ? { left: presentation.anchor.left, top: 4, width: presentation.anchor.width, maxHeight: Math.max(0, viewport.height - 8) }
-    : panelPosition(presentation.anchor, viewport.width, viewport.height, downloads ? { width: 480, maxHeight: 560 } : quickSettings ? { width: 300, maxHeight: 360 } : undefined)) : null);
+    : panelPosition(presentation.anchor, viewport.width, viewport.height, downloads ? { width: 480, maxHeight: 560 } : quickSettings ? { width: 300, maxHeight: 560 } : undefined)) : null);
   function downloadFocus(node: HTMLElement) { return downloads || quickSettings ? focusDialog(node, { onEscape: () => send({ kind: "dismiss", reason: "escape" }) }) : undefined; }
   function pump() {
     if (!presentation || inFlight !== null) return;

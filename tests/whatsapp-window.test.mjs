@@ -31,7 +31,7 @@ test('the titlebar button sends its own rectangle and stays hidden outside Windo
   assert.match(actions, /navigator\.userAgent\.includes\("Windows"\)/);
   assert.match(actions, /\(id !== "whatsapp" \|\| supportsWhatsApp\)/);
   assert.match(actions, /invoke\("toggle_whatsapp_popover", \{ anchor, mode/);
-  assert.match(read('src/lib/stores/titlebarActionsStore.ts'), /"qr", "whatsapp"\] as const/);
+  assert.match(read('src/lib/stores/titlebarActionsStore.ts'), /"whatsapp", "extensions"/);
 });
 
 test('WhatsApp display mode is saved and offers compact and side-panel layouts', () => {

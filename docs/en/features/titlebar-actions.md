@@ -8,6 +8,10 @@ The order is shared between horizontal and vertical tab layouts. The bookmarks a
 
 The preference is saved locally on this device and is not included in backup exports. If storage is unavailable, the new order remains usable for the current session.
 
+## Choosing which buttons show
+
+Only **Settings**, **Downloads**, **Protection** and **Extensions** are in the top bar by default. Every other button (Tools, Bookmarks bar, Commands, History, Zen mode, QR code and, on Windows, WhatsApp) is off until you turn it on. Open **Settings** (the gear) and use **Toolbar buttons** in the quick settings: each button is a toggle with its icon. A button you turn off keeps its slot, so it returns to the same place when turned on again. The Settings button cannot be hidden, because it opens this menu. From left to right the default order is Extensions, Protection, Downloads and Settings; buttons you turn on appear to the left of them, and you can still drag them anywhere. The choice is saved locally on this device and is not part of backups.
+
 ## Icon appearance
 
 All ten quick actions use decorative outline SVGs, sized at 16 × 16 pixels with a consistent 1.8-unit stroke. Tools uses a list, bookmarks a bar, commands a lightning bolt, history a clock, downloads a downward arrow, privacy a shield, settings a gear, and focus four framing corners.

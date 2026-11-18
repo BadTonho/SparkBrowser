@@ -4,7 +4,7 @@
   import { focusDialog } from "../../actions/focusDialog";
   import { panelPosition } from "../../services/panel-presentation";
   import { mountSettingsQuickHost } from "./settings-quick-host";
-  import { t } from "../../i18n";
+  import { t, type MessageKey } from "../../i18n";
   import {
     isSettingsQuickOpen,
     settingsQuickSession,
@@ -19,12 +19,14 @@
     setShowBookmarksBar,
     showBookmarksBar,
   } from "../../stores/settingsStore";
+  import TitlebarActionIcon from "../titlebar/TitlebarActionIcon.svelte";
+  import { DEFAULT_TITLEBAR_ACTIONS, ALWAYS_SHOWN_ACTIONS, shownTitlebarActions, setTitlebarActionShown, type TitlebarAction } from "../../stores/titlebarActionsStore";
   import "./settings-quick.css";
 
   const native = isTauriRuntime();
   let viewport = $state({ width: innerWidth, height: innerHeight });
   let anchor = $state({ left: 0, top: 0, width: 0, height: 0 });
-  const position = $derived(panelPosition(anchor, viewport.width, viewport.height, { width: 300, maxHeight: 360 }));
+  const position = $derived(panelPosition(anchor, viewport.width, viewport.height, { width: 300, maxHeight: 560 }));
 
   function host(node: HTMLElement) {
     const stop = mountSettingsQuickHost(node, native);
@@ -40,6 +42,17 @@
     if (!native) measure();
     return { destroy() { cancelAnimationFrame(frame); stop(); focus?.destroy(); } };
   }
+
+  // The standalone WhatsApp window ships on Windows first; the bookmarks button only exists with the horizontal layout.
+  const supportsWhatsApp = typeof navigator !== "undefined" && navigator.userAgent.includes("Windows");
+  const toolbarLabels: Record<TitlebarAction, MessageKey> = {
+    tools: "settings.toolbar_tools", bookmarks: "settings.toolbar_bookmarks", commands: "settings.toolbar_commands",
+    history: "settings.toolbar_history", downloads: "settings.toolbar_downloads", privacy: "settings.toolbar_privacy",
+    extensions: "settings.toolbar_extensions", settings: "settings.toolbar_settings", zen: "settings.toolbar_zen",
+    qr: "settings.toolbar_qr", whatsapp: "settings.toolbar_whatsapp",
+  };
+  const toolbarButtons = $derived(DEFAULT_TITLEBAR_ACTIONS.filter(id =>
+    !ALWAYS_SHOWN_ACTIONS.includes(id) && (id !== "whatsapp" || supportsWhatsApp) && (id !== "bookmarks" || $tabLayout === "horizontal")));
 
   function openAllSettings() {
     void openSettingsModal();
@@ -91,6 +104,21 @@
           <div class="settings-quick-options" role="group" aria-label={$t("settings.browser_layout_28d1")}>
             <button class:active={$tabLayout === "horizontal"} aria-pressed={$tabLayout === "horizontal"} data-testid="settings-quick-layout-horizontal" onclick={() => setTabLayout("horizontal")}>{$t("settings.horizontal_9b55")}</button>
             <button class:active={$tabLayout === "vertical"} aria-pressed={$tabLayout === "vertical"} data-testid="settings-quick-layout-vertical" onclick={() => setTabLayout("vertical")}>{$t("settings.vertical_b6d6")}</button>
+          </div>
+        </div>
+
+        <div class="settings-quick-section" aria-labelledby="settings-quick-toolbar-label">
+          <h3 id="settings-quick-toolbar-label">{$t("settings.toolbar_buttons")}</h3>
+          <div class="settings-quick-options settings-quick-toolbar" role="group" aria-label={$t("settings.toolbar_buttons")}>
+            {#each toolbarButtons as id (id)}
+              <button
+                class="settings-quick-toolbar-button"
+                class:active={$shownTitlebarActions.includes(id)}
+                aria-pressed={$shownTitlebarActions.includes(id)}
+                data-testid="settings-quick-toolbar-{id}"
+                onclick={() => setTitlebarActionShown(id, !$shownTitlebarActions.includes(id))}
+              ><TitlebarActionIcon action={id} /><span>{$t(toolbarLabels[id])}</span></button>
+            {/each}
           </div>
         </div>
 

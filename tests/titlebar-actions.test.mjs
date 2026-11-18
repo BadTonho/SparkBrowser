@@ -16,10 +16,10 @@ function load(path, imports = {}, globals = {}) {
   return exports;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
-const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'zen', 'qr', 'whatsapp'];
+const defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'whatsapp', 'extensions', 'privacy', 'downloads', 'settings'];
 
 function storeFixture(saved = null, failWrite = false) {
-  const storage = new Map(saved == null ? [] : [['spark_titlebar_action_order', saved]]);
+  const storage = new Map(saved == null ? [] : [['spark_titlebar_action_order_v2', saved]]);
   const writable = value => ({ set(next) { value = next; }, subscribe(fn) { fn(value); return () => {}; } });
   const get = store => { let value; store.subscribe(next => value = next)(); return value; };
   const store = load('src/lib/stores/titlebarActionsStore.ts', {
@@ -28,7 +28,7 @@ function storeFixture(saved = null, failWrite = false) {
       setItem: (key, value) => { if (failWrite) return false; storage.set(key, value); return true; },
     } },
   });
-  return { ...store, storage, current: () => plain(get(store.titlebarActionOrder)) };
+  return { ...store, get, storage, current: () => plain(get(store.titlebarActionOrder)) };
 }
 
 test('order defaults, validates unknown input, deduplicates and restores missing actions', () => {
@@ -42,7 +42,7 @@ test('visible actions move to either end, persist and reload', () => {
   assert.equal(f.current()[0], 'zen');
   f.moveTitlebarAction('tools', null, defaults);
   assert.equal(f.current().at(-1), 'tools');
-  assert.deepEqual(storeFixture(f.storage.get('spark_titlebar_action_order')).current(), f.current());
+  assert.deepEqual(storeFixture(f.storage.get('spark_titlebar_action_order_v2')).current(), f.current());
 });
 
 test('hidden bookmarks retain their saved slot; unavailable storage still updates the session', () => {
@@ -130,4 +130,20 @@ test('secondary buttons and unrelated pointers cannot start or complete the gest
   f.down(); f.tick(500); f.drag.up(f.point(239, 16, 2));
   assert.equal(f.drag.isTracking(), true); assert.equal(f.commits.length, 0);
   f.drag.cancel();
+});
+
+test('only the browser buttons are shown by default; the rest are turned on and off without losing their slot', () => {
+  const f = storeFixture();
+  const shown = () => plain(f.get(f.shownTitlebarActions));
+  assert.deepEqual(shown().sort(), ['downloads', 'extensions', 'privacy', 'settings']);
+  f.setTitlebarActionShown('history', true);
+  assert.ok(shown().includes('history'));
+  assert.equal(f.storage.get('spark_titlebar_actions_shown'), JSON.stringify(shown()));
+  f.setTitlebarActionShown('history', false);
+  assert.ok(!shown().includes('history'));
+  f.setTitlebarActionShown('settings', false);
+  assert.ok(shown().includes('settings'), 'the settings button can never be hidden');
+  assert.deepEqual(f.current(), defaults, 'the order is not touched');
+  assert.deepEqual(plain(f.normalizeShownActions('{')).sort(), ['downloads', 'extensions', 'privacy', 'settings']);
+  assert.deepEqual(plain(f.normalizeShownActions(['qr', 'nope', 'qr'])).sort(), ['qr', 'settings']);
 });

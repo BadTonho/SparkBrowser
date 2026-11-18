@@ -346,5 +346,17 @@
   "settings.auto_update_search": "Baixa as atualizações em segundo plano e as instala na próxima vez que o Spark abrir.",
   "settings.web_suggestions": "Sugestões de pesquisa",
   "settings.web_suggestions_description": "Envia o que você digita na barra de endereço ao seu mecanismo de busca para receber pesquisas sugeridas. Ligado por padrão e nunca usado em janelas privadas.",
-  "settings.web_suggestions_unsupported": "O {engine} não tem serviço de sugestões, então isto não tem efeito com ele. Funciona com Google, DuckDuckGo, Bing e Brave Search."
+  "settings.web_suggestions_unsupported": "O {engine} não tem serviço de sugestões, então isto não tem efeito com ele. Funciona com Google, DuckDuckGo, Bing e Brave Search.",
+  "settings.toolbar_buttons": "Botões da barra",
+  "settings.toolbar_tools": "Ferramentas",
+  "settings.toolbar_bookmarks": "Barra de favoritos",
+  "settings.toolbar_commands": "Comandos",
+  "settings.toolbar_history": "Histórico",
+  "settings.toolbar_downloads": "Downloads",
+  "settings.toolbar_privacy": "Proteção",
+  "settings.toolbar_extensions": "Extensões",
+  "settings.toolbar_settings": "Configurações",
+  "settings.toolbar_zen": "Modo Zen",
+  "settings.toolbar_qr": "QR Code",
+  "settings.toolbar_whatsapp": "WhatsApp"
 }

@@ -39,6 +39,8 @@
 
 - Todo comando que falha e todo erro de console da interface agora vão para o log de erros, que segue quatro níveis (Crítico, Erro, Aviso, Informação).
 
+- A barra superior agora mostra por padrão só Configurações, Downloads, Proteção e Extensões. Ligue ou desligue os outros botões (Ferramentas, Barra de favoritos, Comandos, Histórico, Modo Zen, QR Code, WhatsApp) em **Botões da barra**, no menu de configurações rápidas.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.

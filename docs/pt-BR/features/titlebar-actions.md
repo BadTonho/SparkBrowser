@@ -8,6 +8,10 @@ A ordem é compartilhada entre os layouts de abas horizontal e vertical. O atalh
 
 A preferência é salva localmente neste dispositivo e não faz parte das exportações de backup. Se o armazenamento estiver indisponível, a nova ordem continua disponível durante a sessão atual.
 
+## Escolher quais botões aparecem
+
+Por padrão, só **Configurações**, **Downloads**, **Proteção** e **Extensões** ficam na barra superior. Todos os outros botões (Ferramentas, Barra de favoritos, Comandos, Histórico, Modo Zen, QR Code e, no Windows, WhatsApp) ficam desligados até você ligá-los. Abra **Configurações** (a engrenagem) e use **Botões da barra** nas configurações rápidas: cada botão é um interruptor com o seu ícone. Um botão desligado mantém a sua posição, então volta ao mesmo lugar quando é ligado de novo. O botão Configurações não pode ser ocultado, porque é ele que abre este menu. Da esquerda para a direita, a ordem padrão é Extensões, Proteção, Downloads e Configurações; os botões que você ligar aparecem à esquerda deles, e você ainda pode arrastá-los para qualquer lugar. A escolha é salva localmente neste dispositivo e não entra nos backups.
+
 ## Aparência dos ícones
 
 Os dez atalhos usam SVGs decorativos de contorno, com tamanho de 16 × 16 pixels e traço uniforme de 1,8 unidade. Ferramentas usa uma lista, favoritos uma barra, comandos um raio, histórico um relógio, downloads uma seta para baixo, privacidade um escudo, configurações uma engrenagem e foco quatro cantos de enquadramento.
