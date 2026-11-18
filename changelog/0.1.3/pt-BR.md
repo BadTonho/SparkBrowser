@@ -15,6 +15,9 @@
 - O estilo do equalizador de áudio agora é escolhido em uma grade de pequenas prévias, cada uma desenhada na cor que você escolheu, em vez de uma lista suspensa.
 - No painel centralizado, a prévia da **Mídia de fundo** ficou bem maior.
 
+- A janela "Fechar o navegador?" ficou com um visual mais limpo: mais espaçamento, a opção "Não me mostrar novamente" mais leve e botões mais claros.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
+- Corrigido o aviso "Fechar o navegador?" aparecer por causa da nova guia ou da página de configurações: mudar uma opção ali contava como formulário alterado, e o "Não me mostre novamente" nunca valia.

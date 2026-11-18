@@ -15,6 +15,9 @@
 - The audio equalizer style is now chosen from a grid of small previews, each drawn in the color you picked, instead of a dropdown list.
 - In the centered panel, the **Background media** preview is much larger.
 
+- The "Close the browser?" window has a cleaner look: more spacing, a lighter "Don't show again" option and clearer buttons.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.
+- Fixed the "Close the browser?" warning appearing because of the new tab or settings page: changing an option there was counted as an edited form, and "Don't show again" could never apply.

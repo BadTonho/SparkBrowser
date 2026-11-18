@@ -3,6 +3,12 @@ use super::navigation_state::update_navigation;
 use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, Manager, Url};
 
+/// Edits only count as unsaved work on web pages. The browser's own pages (new tab, settings) apply every
+/// control as soon as it changes, so flagging them made the exit review appear for no reason.
+fn tracks_form_edits(url: &str) -> bool {
+    !super::new_tab::is_new_tab(url) && !super::settings_tab::is_settings_url(url)
+}
+
 pub(super) fn handle(
     app: &AppHandle,
     tab_id: &str,
@@ -52,7 +58,8 @@ pub(super) fn handle(
                 })
         {
             update_navigation(app, tab_id, label, token, |tab| {
-                tab.activity.dirty_form = dirty;
+                // The new tab and settings pages apply their controls immediately; nothing there is unsaved.
+                tab.activity.dirty_form = dirty && tracks_form_edits(&tab.url);
                 tab.activity.document_media = media;
                 tab.activity.refresh_media();
             });
@@ -189,5 +196,12 @@ mod tests {
             assert!(message_url(invalid, "same", "same", false).is_none());
         }
         assert!(message_url(&" ".repeat(262_145), "same", "same", false).is_none());
+    }
+
+    #[test]
+    fn only_web_pages_track_form_edits() {
+        assert!(tracks_form_edits("https://example.com/form"));
+        assert!(!tracks_form_edits("spark://newtab"));
+        assert!(!tracks_form_edits("spark://settings"));
     }
 }
