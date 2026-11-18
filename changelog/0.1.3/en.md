@@ -12,6 +12,8 @@
 
 - The Command Bar (Ctrl + K) now opens above the page, which stays visible, dimmed, behind it instead of being replaced by a dark screen with a placeholder card. It was redesigned to be cleaner and to match the rest of the browser (same surface as the other panels, a quiet selected row, no glow), and its text field now fits its placeholder.
 
+- New **Resources** button (off by default; turn it on in the toolbar buttons of the quick settings). It opens a panel with the memory the open tabs use and a **Cleaning** page where you choose what to clear: cache, cookies and site data, browsing history and the download list, with a confirmation before anything is cleared.
+
 ## Improvements
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.

@@ -12,6 +12,8 @@
 
 - A Barra de Comandos (Ctrl + K) agora abre acima da página, que continua visível, escurecida, atrás dela, em vez de ser trocada por uma tela escura com um cartão de aviso. Ela foi redesenhada para ficar mais limpa e combinar com o resto do navegador (mesma superfície dos outros painéis, linha selecionada discreta, sem brilho), e o campo de texto agora comporta o texto de ajuda.
 
+- Novo botão **Recursos** (desligado por padrão; ligue nos botões da barra das configurações rápidas). Ele abre um painel com a memória que as abas abertas usam e uma página de **Limpeza** onde você escolhe o que limpar: cache, cookies e dados dos sites, histórico de navegação e a lista de downloads, com uma confirmação antes de limpar qualquer coisa.
+
 ## Melhorias
 
 - No painel de personalização centralizado, as opções **Posição do painel** e **Posição dos widgets de música** agora são pequenas, ficam lado a lado e permanecem na parte de baixo do painel, deixando mais espaço para os cartões.

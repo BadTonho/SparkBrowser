@@ -31,6 +31,27 @@ pub async fn set_downloads_popover(
 }
 
 #[tauri::command]
+pub async fn set_resources_popover(
+    app: AppHandle,
+    webview: tauri::Webview,
+    state: State<'_, BrowserState>,
+    visible: bool,
+    session_id: u64,
+    presentation: Option<crate::window::resources_popover::Presentation>,
+    restore_focus: bool,
+) -> Result<(), String> {
+    let _operation = state.session().operation().await;
+    crate::window::resources_popover::set(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        visible,
+        session_id,
+        presentation,
+        restore_focus,
+    )
+}
+
+#[tauri::command]
 pub async fn set_commands_popover(
     app: AppHandle,
     webview: tauri::Webview,

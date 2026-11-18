@@ -231,6 +231,12 @@
           "markdownDescription": "Enables the clear_all_downloads command without any pre-configured scope."
         },
         {
+          "description": "Enables the clear_browser_data command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clear-browser-data",
+          "markdownDescription": "Enables the clear_browser_data command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_browsing_history command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-browsing-history",
@@ -1113,6 +1119,12 @@
           "markdownDescription": "Enables the set_resident_limit command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_resources_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-resources-popover",
+          "markdownDescription": "Enables the set_resources_popover command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_settings_overlay command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-settings-overlay",
@@ -1327,6 +1339,12 @@
           "type": "string",
           "const": "deny-clear-all-downloads",
           "markdownDescription": "Denies the clear_all_downloads command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_browser_data command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clear-browser-data",
+          "markdownDescription": "Denies the clear_browser_data command without any pre-configured scope."
         },
         {
           "description": "Denies the clear_browsing_history command without any pre-configured scope.",
@@ -2209,6 +2227,12 @@
           "type": "string",
           "const": "deny-set-resident-limit",
           "markdownDescription": "Denies the set_resident_limit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_resources_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-resources-popover",
+          "markdownDescription": "Denies the set_resources_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the set_settings_overlay command without any pre-configured scope.",

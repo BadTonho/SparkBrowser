@@ -14,6 +14,7 @@ use commands::bookmark_export::export_bookmarks;
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
+use commands::browser_data::clear_browser_data;
 use commands::search_suggestions::fetch_search_suggestions;
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::error_report::report_frontend_error;
@@ -76,7 +77,7 @@ use commands::navigation::{
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_downloads_popover, set_history_overlay,
-    set_commands_popover, set_suggestions_popover,
+    set_commands_popover, set_resources_popover, set_suggestions_popover,
     set_media_popover, set_overlay_visibility, set_permission_popover, set_privacy_popover,
     set_quick_settings_popover, set_settings_overlay, set_tools_popover,
     set_workspace_switcher_overlay, set_zoom_popover,
@@ -184,6 +185,7 @@ pub fn run() {
         .manage(window::downloads_popover::DownloadsPopover::default())
         .manage(window::suggestions_popover::SuggestionsPopover::default())
         .manage(window::commands_popover::CommandsPopover::default())
+        .manage(window::resources_popover::ResourcesPopover::default())
         .manage(window::quick_settings_popover::QuickSettingsPopover::default())
         .manage(window::settings_overlay::SettingsOverlay::default())
         .manage(window::privacy_popover::PrivacyPopover::default())
@@ -247,6 +249,7 @@ pub fn run() {
                 window::downloads_popover::focus_lost(window.app_handle());
                 window::suggestions_popover::focus_lost(window.app_handle());
                 window::commands_popover::focus_lost(window.app_handle());
+                window::resources_popover::focus_lost(window.app_handle());
                 window::quick_settings_popover::focus_lost(window.app_handle());
                 if let Some(state) = window.try_state::<BrowserState>() {
                     state
@@ -659,6 +662,8 @@ pub fn run() {
             set_downloads_popover,
             set_suggestions_popover,
             set_commands_popover,
+            set_resources_popover,
+            clear_browser_data,
             set_quick_settings_popover,
             set_settings_overlay,
             set_privacy_popover,

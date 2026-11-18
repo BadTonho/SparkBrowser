@@ -20,6 +20,7 @@
   import { titlebarActionOrder, shownTitlebarActions, moveTitlebarAction, type TitlebarAction } from "../../stores/titlebarActionsStore";
   import { createActionDrag, type ActionDragPreview } from "../../services/titlebar-action-drag";
   import { isQrCodeOpen, openQrCode } from "../../stores/qrCodeStore";
+  import { isResourcesOpen, openResourcesPanel } from "../../stores/resourcesPopoverStore";
 import { invoke } from "../../services/tauri-bridge";
 
   let root = $state<HTMLDivElement>(null!);
@@ -269,6 +270,22 @@ import { invoke } from "../../services/tauri-bridge";
         title={$t("qr_code.title") + " · " + $t("titlebar.reorder_hint")}
         aria-label={$t("qr_code.title")}
         aria-haspopup="dialog" aria-expanded={$isQrCodeOpen}
+      >
+        <TitlebarActionIcon action={id} />
+      </button>
+    {/if}
+    {#if id === "resources"}
+      <button
+        data-action="resources"
+        aria-describedby="titlebar-reorder-hint"
+        class:dragging={preview?.id === "resources"}
+        style:translate={preview?.id === "resources" ? `${preview.offset}px 0` : undefined}
+        class="icon-btn"
+        class:active={$isResourcesOpen}
+        use:prepares={"resources"}
+        onclick={event => openResourcesPanel(event.currentTarget)}
+        title={$t("resources.title") + " · " + $t("titlebar.reorder_hint")}
+        data-testid="open-resources" aria-label={$t("resources.title")} aria-haspopup="dialog" aria-expanded={$isResourcesOpen}
       >
         <TitlebarActionIcon action={id} />
       </button>

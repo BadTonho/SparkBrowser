@@ -15,6 +15,7 @@ pub(super) const QUICK_SETTINGS_LABEL: &str = <QuickSettings as Panel>::LABEL;
 pub(super) const SETTINGS_LABEL: &str = <Settings as Panel>::LABEL;
 pub(super) const SUGGESTIONS_LABEL: &str = <Suggestions as Panel>::LABEL;
 pub(super) const COMMANDS_LABEL: &str = <Commands as Panel>::LABEL;
+pub(super) const RESOURCES_LABEL: &str = <Resources as Panel>::LABEL;
 
 pub trait Panel: Send + Sync + 'static {
     const LABEL: &'static str;
@@ -39,6 +40,16 @@ pub struct Downloads;
 pub struct QuickSettings;
 #[derive(Default)]
 pub struct Settings;
+/// The resources panel (memory, limits and data cleaning), opened from a button in the top bar.
+#[derive(Default)]
+pub struct Resources;
+impl Panel for Resources {
+    const LABEL: &'static str = "resources-popover-webview";
+    const SURFACE: &'static str = "/index.html?surface=resources";
+    const HOST: &'static str = "resources-popover";
+    const SETTER: &'static str = "__sparkSetResourcesPopover";
+    const EVENT: &'static str = "resources-popover-action";
+}
 /// The command bar: a window-wide layer over the page, so the page stays visible (dimmed) behind it.
 #[derive(Default)]
 pub struct Commands;
@@ -250,6 +261,7 @@ pub fn prepare(app: &AppHandle, window_id: &str, panel: &str) -> Result<(), Stri
         "settings" => warm::<Settings>(app, window_id),
         "suggestions" => warm::<Suggestions>(app, window_id),
         "commands" => warm::<Commands>(app, window_id),
+        "resources" => warm::<Resources>(app, window_id),
         "history" => warm_overlay(super::history_overlay::prepare(app, window_id)),
         "zoom" => warm_overlay(super::zoom_popover::prepare(app, window_id)),
         "privacy" => warm_overlay(super::privacy_popover::prepare(app, window_id)),
@@ -521,13 +533,16 @@ pub fn set<P: Panel>(
     } else if P::HOST == "downloads-popover" {
         super::tools_popover::dismiss(app);
         super::quick_settings_popover::dismiss(app);
-    } else if P::HOST == "settings-quick-popover" || P::HOST == "commands-popover" {
+    } else if P::HOST == "settings-quick-popover"
+        || P::HOST == "commands-popover"
+        || P::HOST == "resources-popover"
+    {
         super::tools_popover::dismiss(app);
         super::downloads_popover::dismiss(app);
         super::history_overlay::dismiss(app);
         super::permission_popover::dismiss(app);
         super::suggestions_popover::dismiss(app);
-        if P::HOST == "commands-popover" {
+        if P::HOST == "commands-popover" || P::HOST == "resources-popover" {
             super::quick_settings_popover::dismiss(app);
         }
     } else {
@@ -557,7 +572,7 @@ pub fn set<P: Panel>(
 mod tests {
     use super::{
         can_finish_animated_close, Downloads, Inner, Panel, Presentation, QuickSettings, Session,
-        Commands, Suggestions, Tools,
+        Commands, Resources, Suggestions, Tools,
     };
 
     #[test]
@@ -567,6 +582,7 @@ mod tests {
         assert_eq!(QuickSettings::HOST, "settings-quick-popover");
         assert_eq!(Suggestions::HOST, "suggestions-popover");
         assert_eq!(Commands::HOST, "commands-popover");
+        assert_eq!(Resources::HOST, "resources-popover");
     }
 
     #[test]

@@ -1,7 +1,7 @@
 import { get, writable } from "svelte/store";
 import { safeStorage } from "../services/storage.js";
 
-export const DEFAULT_TITLEBAR_ACTIONS = ["tools", "bookmarks", "commands", "history", "zen", "qr", "whatsapp", "extensions", "privacy", "downloads", "settings"] as const;
+export const DEFAULT_TITLEBAR_ACTIONS = ["tools", "bookmarks", "commands", "history", "zen", "qr", "whatsapp", "resources", "extensions", "privacy", "downloads", "settings"] as const;
 export type TitlebarAction = typeof DEFAULT_TITLEBAR_ACTIONS[number];
 const STORAGE_KEY = "spark_titlebar_action_order_v2";
 const SHOWN_KEY = "spark_titlebar_actions_shown";

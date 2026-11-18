@@ -37,6 +37,7 @@ pub mod recovery;
 
 pub mod shutdown;
 
+pub mod browser_data;
 pub mod zoom;
 
 pub mod command_search;

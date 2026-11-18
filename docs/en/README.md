@@ -33,6 +33,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Address bar suggestions](./features/address-suggestions.md)
 - [Color palettes](./features/color-palettes.md)
 - [Command Bar appearance](./features/command-bar.md)
+- [Resources panel](./features/resources.md)
 - [Upgrading from the Veloce name](./features/rename-migration.md)
 - [Hardware acceleration](./features/hardware-acceleration.md)
 - [Dark mode for websites](./features/forced-dark-mode.md)

@@ -108,6 +108,8 @@
     "allow-set-downloads-popover",
     "allow-set-suggestions-popover",
     "allow-set-commands-popover",
+    "allow-set-resources-popover",
+    "allow-clear-browser-data",
     "allow-set-media-popover",
     "allow-set-zoom-popover",
     "allow-set-workspace-switcher-overlay",

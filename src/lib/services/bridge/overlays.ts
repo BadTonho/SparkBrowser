@@ -17,6 +17,7 @@ export type OverlayId =
   | "command-bar"
   | "history"
   | "settings-quick"
+  | "resources"
   | "downloads"
   | "settings"
   | "titlebar-menu"
@@ -25,7 +26,7 @@ export type OverlayId =
   | "reader-mode";
 
 const activeOverlayIds = new Set<OverlayId>();
-const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history", "settings-quick", "settings", "command-bar"]);
+const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history", "settings-quick", "settings", "command-bar", "resources"]);
 let overlaySyncQueue: Promise<void> = Promise.resolve();
 
 const openingListeners = new Set<(id?: OverlayId) => void>();

@@ -36,6 +36,8 @@ pub mod tools_popover;
 pub mod downloads_popover;
 pub mod suggestions_popover;
 pub mod commands_popover;
+pub mod resources_popover;
+pub mod engine_data;
 pub mod ephemeral;
 #[cfg(target_os = "linux")]
 pub mod linux_layout;

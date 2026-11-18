@@ -16,7 +16,7 @@ function load(path, imports = {}, globals = {}) {
   return exports;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
-const defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'whatsapp', 'extensions', 'privacy', 'downloads', 'settings'];
+const defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'whatsapp', 'resources', 'extensions', 'privacy', 'downloads', 'settings'];
 
 function storeFixture(saved = null, failWrite = false) {
   const storage = new Map(saved == null ? [] : [['spark_titlebar_action_order_v2', saved]]);

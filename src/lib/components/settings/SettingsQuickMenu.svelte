@@ -49,7 +49,7 @@
     tools: "settings.toolbar_tools", bookmarks: "settings.toolbar_bookmarks", commands: "settings.toolbar_commands",
     history: "settings.toolbar_history", downloads: "settings.toolbar_downloads", privacy: "settings.toolbar_privacy",
     extensions: "settings.toolbar_extensions", settings: "settings.toolbar_settings", zen: "settings.toolbar_zen",
-    qr: "settings.toolbar_qr", whatsapp: "settings.toolbar_whatsapp",
+    qr: "settings.toolbar_qr", whatsapp: "settings.toolbar_whatsapp", resources: "settings.toolbar_resources",
   };
   const toolbarButtons = $derived(DEFAULT_TITLEBAR_ACTIONS.filter(id =>
     !ALWAYS_SHOWN_ACTIONS.includes(id) && (id !== "whatsapp" || supportsWhatsApp) && (id !== "bookmarks" || $tabLayout === "horizontal")));

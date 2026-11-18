@@ -51,6 +51,7 @@
   import { onSettingsTabLoaded } from "./lib/services/bridge/settings-overlay";
   import { preparePanel } from "./lib/services/bridge/panels";
   import { isSettingsQuickOpen } from "./lib/stores/settingsQuickPopoverStore";
+  import { isResourcesOpen } from "./lib/stores/resourcesPopoverStore";
   import { isToolsOpen } from "./lib/stores/toolsStore";
   import { isSitePermissionsOpen } from "./lib/stores/sitePermissionsStore";
   import { isReaderOpen } from "./lib/stores/readerStore";
@@ -138,6 +139,7 @@
         DownloadsDrawer: () => import("./lib/components/downloads/DownloadsDrawer.svelte"),
         SettingsModal: () => import("./lib/components/settings/SettingsModal.svelte"),
         SettingsQuickMenu: () => import("./lib/components/settings/SettingsQuickMenu.svelte"),
+        ResourcesPanel: () => import("./lib/components/resources/ResourcesPanel.svelte"),
         ToolsPanel: () => import("./lib/components/tools/ToolsPanel.svelte"),
         SitePermissionsPanel: () => import("./lib/components/permissions/SitePermissionsPanel.svelte"),
         BookmarkEditor: () => import("./lib/components/bookmarks/BookmarkEditor.svelte"),
@@ -163,6 +165,7 @@
     if ($isDownloadsDrawerOpen) void loadSurface("DownloadsDrawer");
     if ($isSettingsModalOpen || $settingsTabSession) void loadSurface("SettingsModal");
     if ($isSettingsQuickOpen) void loadSurface("SettingsQuickMenu");
+    if ($isResourcesOpen) void loadSurface("ResourcesPanel");
     if ($isToolsOpen) void loadSurface("ToolsPanel");
     if ($isSitePermissionsOpen) void loadSurface("SitePermissionsPanel");
     if ($bookmarkEditorState) void loadSurface("BookmarkEditor");
@@ -448,6 +451,7 @@
   {#if Lazy.DownloadsDrawer}<Lazy.DownloadsDrawer />{/if}
   {#if Lazy.SettingsModal}<Lazy.SettingsModal />{/if}
   {#if Lazy.SettingsQuickMenu}<Lazy.SettingsQuickMenu />{/if}
+  {#if Lazy.ResourcesPanel}<Lazy.ResourcesPanel />{/if}
   {#if Lazy.ToolsPanel}<Lazy.ToolsPanel />{/if}
   {#if Lazy.SitePermissionsPanel}<Lazy.SitePermissionsPanel />{/if}
   <PermissionPrompt />
