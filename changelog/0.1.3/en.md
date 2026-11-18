@@ -14,3 +14,7 @@
 
 - The audio equalizer style is now chosen from a grid of small previews, each drawn in the color you picked, instead of a dropdown list.
 - In the centered panel, the **Background media** preview is much larger.
+
+## Fixes
+
+- Fixed choosing an image or video as the new-tab background having no effect in the installed app.

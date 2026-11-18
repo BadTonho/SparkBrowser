@@ -14,3 +14,7 @@
 
 - O estilo do equalizador de áudio agora é escolhido em uma grade de pequenas prévias, cada uma desenhada na cor que você escolheu, em vez de uma lista suspensa.
 - No painel centralizado, a prévia da **Mídia de fundo** ficou bem maior.
+
+## Correções
+
+- Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
