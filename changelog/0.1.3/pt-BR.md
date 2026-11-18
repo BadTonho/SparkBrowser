@@ -18,6 +18,8 @@
 
 ## Melhorias
 
+- A janela de personalização da nova guia ficou maior nas duas posições do painel, para dar mais espaço aos cartões e às opções: **Centro** e **Compacto**.
+
 - Nova chave **Limpeza automática** na página de limpeza do painel **Recursos** (desligada por padrão): ela limpa os itens marcados com mais do que o período escolhido (5 a 90 dias) ao abrir o navegador e cerca de uma vez por dia. Ela nunca limpa tudo sozinha, então precisa de um período.
 
 - A página de limpeza do painel **Recursos** agora mostra, no topo, quanto espaço será limpo (medido no disco e seguindo o período escolhido), e cada item mostra o seu tamanho.

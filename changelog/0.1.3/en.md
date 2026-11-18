@@ -18,6 +18,8 @@
 
 ## Improvements
 
+- The new-tab customization window is larger in both panel positions, to give the cards and options more room: **Center** and **Compact**.
+
 - New **Automatic cleaning** switch on the **Resources** cleaning page (off by default): it clears the chosen items older than the chosen period (5 to 90 days) when the browser opens and about once a day. It never clears everything by itself, so it needs a period.
 
 - The **Resources** cleaning page now shows, at the top, how much space will be cleared (measured on the disk and following the chosen period), and each item shows its own size.
