@@ -14,7 +14,7 @@ Por padrão, só **Configurações**, **Downloads**, **Proteção** e **Extensõ
 
 ## Aparência dos ícones
 
-Os dez atalhos usam SVGs decorativos de contorno, com tamanho de 16 × 16 pixels e traço uniforme de 1,8 unidade. Ferramentas usa uma lista, favoritos uma barra, comandos um raio, histórico um relógio, downloads uma seta para baixo, privacidade um escudo, configurações uma engrenagem e foco quatro cantos de enquadramento.
+Os dez atalhos usam SVGs decorativos de contorno, com tamanho de 16 × 16 pixels e traço uniforme de 1,8 unidade. Ferramentas usa uma chave inglesa, favoritos uma estrela, comandos um raio, histórico um relógio, downloads uma seta para baixo, privacidade um escudo, configurações uma engrenagem e foco quatro cantos de enquadramento.
 
 Os ícones herdam a propriedade CSS `color` do botão por meio de `stroke="currentColor"`. Altere o `color` do botão ou as variáveis existentes do tema (`--text-secondary`, `--text-primary` ao passar o mouse e `--accent-primary` para favoritos ativos) para recolori-los. O indicador verde de privacidade permanece separado. As cores dos ícones não possuem um seletor nas configurações.
 

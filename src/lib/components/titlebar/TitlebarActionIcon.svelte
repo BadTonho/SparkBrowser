@@ -17,9 +17,9 @@
   focusable="false"
 >
   {#if action === "tools"}
-    <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z" />
   {:else if action === "bookmarks"}
-    <path d="M4 5.5h16M4 12h16M4 18.5h16M7 3.5v4M17 3.5v4" />
+    <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z" />
   {:else if action === "commands"}
     <path d="m13 2-9 12h7l-1 8 10-12h-7l1-8Z" />
   {:else if action === "history"}
