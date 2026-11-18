@@ -47,9 +47,13 @@
 
 - Opening a split is now smooth: the pages slide to their new places like the tabs do, and the area where a dragged tab opens a split is much larger (15% of the page width, instead of a thin strip at the edge).
 
+- The settings tab opens faster: it no longer shows a white page while it loads (it is dark from the first moment) and the shell notices that the page is ready sooner.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.
 - Fixed the "Close the browser?" warning appearing because of the new tab or settings page: changing an option there was counted as an edited form, and "Don't show again" could never apply.
 - Fixed the window background style (Matte, Glass, Ice) not updating the windows right away; you had to move the opacity or blur slider to see the change.
 - Fixed the on/off switches in the browser settings (such as Hardware acceleration) looking the same when on and when off; the knob was white on a light track. It is now clearly visible, in the dark and light themes.
+- Fixed the browser freezing for good when a new tab was replaced (for example by opening the settings tab) while the audio visualizer was running.
+- The error log of a freeze now lists the main thread and the threads running Spark's own code first, so the cause is not cut off.

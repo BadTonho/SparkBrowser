@@ -47,9 +47,13 @@
 
 - Abrir uma divisão agora é suave: as páginas deslizam para os novos lugares como as abas, e a área onde uma aba arrastada abre uma divisão é bem maior (15% da largura da página, em vez de uma faixa fina na borda).
 
+- A guia de configurações abre mais rápido: não mostra mais uma página branca enquanto carrega (ela fica escura desde o primeiro instante) e a interface percebe mais cedo que a página está pronta.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
 - Corrigido o aviso "Fechar o navegador?" aparecer por causa da nova guia ou da página de configurações: mudar uma opção ali contava como formulário alterado, e o "Não me mostre novamente" nunca valia.
 - Corrigido o estilo do fundo das janelas (Fosco, Vidro, Gelo) não atualizar as janelas na hora; era preciso mexer no controle de opacidade ou de desfoque para ver a mudança.
 - Corrigidos os interruptores das configurações do navegador (como a Aceleração de hardware) que pareciam iguais ligados e desligados; a bolinha era branca sobre uma trilha clara. Agora o estado aparece com clareza, nos temas escuro e claro.
+- Corrigido o travamento permanente do navegador quando uma nova guia era substituída (por exemplo ao abrir a guia de configurações) com o visualizador de áudio em funcionamento.
+- O log de erros de um travamento agora lista primeiro a thread principal e as threads que rodam o código do Spark, para a causa não ser cortada.

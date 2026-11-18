@@ -7,6 +7,10 @@ import { invoke as nativeInvoke, type InvokeArgs } from "@tauri-apps/api/core";
 import { ipcDiagnostics } from "../diagnostics.js";
 import { UserError } from "../user-errors.js";
 
+// The same failure is written to the log once every ten seconds (the log keeps the same window), so a
+// command that is retried in a loop does not turn into a flood of log calls.
+const lastFailureLogged = new Map<string, number>();
+
 let startup: Promise<void> | undefined;
 function waitForStartup(): Promise<void> {
   return startup ??= (async () => {
@@ -31,7 +35,10 @@ export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> 
   } catch (error) {
     // A failed command is always written to the error log (as a warning), even when the caller
     // handles it, so a bug never leaves without a trace. The log command itself is skipped to avoid a loop.
-    if (command !== "report_frontend_error" && command !== "get_diagnostics") {
+    const failure = `${command}:${typeof error === "string" ? error : (error as Error)?.message ?? String(error)}`;
+    const recent = (lastFailureLogged.get(failure) ?? -Infinity) > performance.now() - 10_000;
+    if (!recent && command !== "report_frontend_error" && command !== "get_diagnostics") {
+      lastFailureLogged.set(failure, performance.now());
       void nativeInvoke("report_frontend_error", {
         summary: `Command "${command}" failed: ${typeof error === "string" ? error : (error as Error)?.message ?? String(error)}`,
         details: (error as Error)?.stack ?? "",

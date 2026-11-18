@@ -106,19 +106,34 @@ mod imp {
             }
         }
         let main = MAIN_THREAD.load(Ordering::Relaxed);
+        // The main thread and the threads running Spark's own code come first and in full. The rest
+        // (the web engine's, the system's) only count: they fill the log and rarely hold the answer.
         let mut text = String::new();
-        for (id, frames, note) in stacks {
+        let mut others = 0usize;
+        let mut ordered = stacks;
+        ordered.sort_by_key(|(id, _, _)| *id != main);
+        for (id, frames, note) in ordered {
+            let lines: Vec<String> = frames.iter().map(|a| symbol(process, *a)).collect();
+            let ours = lines.iter().any(|line| line.contains("spark_browser"));
+            if id != main && !ours {
+                others += 1;
+                continue;
+            }
             let _ = writeln!(
                 text,
                 "thread {id}{}:",
                 if id == main { " (main)" } else { "" }
             );
-            if frames.is_empty() {
+            if lines.is_empty() {
                 let _ = writeln!(text, "  (no stack: {note})");
             }
-            for address in frames {
-                let _ = writeln!(text, "  {}", symbol(process, address));
+            // Frames inside the web engine's libraries have no names and say nothing.
+            for line in lines.iter().filter(|line| !line.contains("DllCanUnloadNow")) {
+                let _ = writeln!(text, "  {line}");
             }
+        }
+        if others > 0 {
+            let _ = writeln!(text, "{others} other threads (web engine and system) are not listed.");
         }
         text
     }

@@ -101,20 +101,35 @@ fn run(app: AppHandle) {
             continue;
         }
         let service = app.state::<Visualizer>();
-        let (enabled, consumers, generation) = {
-            let mut state = service.state.lock().unwrap();
-            state.consumers.retain(|_, c| c.current(&app));
+        // Only a copy is taken under the lock. Asking whether a window is visible is answered by the
+        // main thread, and the main thread may be waiting for this very lock (a new tab replacing an
+        // old one unsubscribes from here); holding the lock across that question deadlocks the app.
+        let (enabled, snapshot, generation) = {
+            let state = service.state.lock().unwrap();
             (
                 state.preferences.enabled,
-                state
-                    .consumers
-                    .values()
-                    .filter(|c| c.visible(&app))
-                    .cloned()
-                    .collect::<Vec<_>>(),
+                state.consumers.values().cloned().collect::<Vec<_>>(),
                 state.generation,
             )
         };
+        let stale: Vec<(String, String)> = snapshot
+            .iter()
+            .filter(|c| !c.current(&app))
+            .map(|c| (c.label.clone(), c.token.clone()))
+            .collect();
+        if !stale.is_empty() {
+            let mut state = service.state.lock().unwrap();
+            for (label, token) in &stale {
+                // A newer subscription under the same label is not stale.
+                if state.consumers.get(label).is_some_and(|c| &c.token == token) {
+                    state.consumers.remove(label);
+                }
+            }
+        }
+        let consumers: Vec<_> = snapshot
+            .into_iter()
+            .filter(|c| !stale.iter().any(|(label, _)| label == &c.label) && c.visible(&app))
+            .collect();
         let active = enabled && !consumers.is_empty() && audible(&app);
         let (status, bands) = if !active {
             backend = None;

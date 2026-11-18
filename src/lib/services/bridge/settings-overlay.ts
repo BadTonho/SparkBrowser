@@ -16,7 +16,9 @@ export function onSettingsOverlayAction(callback: (event: { sessionId: number; s
 export async function setSettingsTab(tabId: string, visible: boolean, sessionId: number, presentation?: PanelPresentation, active: () => boolean = () => true): Promise<void> {
   if (!visible) return;
   let lastError: unknown;
-  for (let attempt = 0; attempt < 80; attempt++) {
+  // The page tells the shell when it has loaded (see `onSettingsTabLoaded`); this short poll only
+  // covers the gap before that, so it must be fast: every 40 ms instead of every 100 ms.
+  for (let attempt = 0; attempt < 200; attempt++) {
     if (!active()) return;
     try {
       await invoke<void>("set_settings_overlay", { visible: true, sessionId, presentation: presentation ?? null, restoreFocus: false, animateClose: false, tabId });
@@ -24,7 +26,7 @@ export async function setSettingsTab(tabId: string, visible: boolean, sessionId:
     } catch (error) {
       lastError = error;
       if (errorDetails(error).code !== "settings_tab.not_ready") throw error;
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 40));
     }
   }
   if (active()) throw lastError;
