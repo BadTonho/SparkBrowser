@@ -199,6 +199,16 @@ export async function runScenario(name, scenario) {
     assert.equal(toNamespacedPath(resolve(diagnostics.application_data_directory)).toLowerCase(), toNamespacedPath(resolve(directory, 'data')).toLowerCase());
     await until(async () => (await invoke('get_diagnostics')).startup_ready, 'native startup completes');
     await until(() => script('return document.querySelectorAll(".h-tab,.tab-row").length > 0'), 'shell initialization');
+    // The browser starts with only a few toolbar buttons; the scenarios drive the whole toolbar, so the isolated
+    // application starts with the ten they use (a saved choice, as if the user had turned them on) and the shell
+    // is reloaded once to read it. The choice persists across the restarts inside a scenario.
+    if (name !== 'account-containers' && await script('return localStorage.getItem("spark_titlebar_actions_shown")') === null) {
+      await script('localStorage.setItem("spark_titlebar_actions_shown", JSON.stringify(["tools","bookmarks","commands","history","zen","qr","extensions","privacy","downloads","settings"])); setTimeout(() => location.reload(), 0); return true;');
+      await until(async () => {
+        try { return await script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".titlebar-actions [data-action=tools]")) && document.querySelectorAll(".h-tab,.tab-row").length > 0'); }
+        catch (error) { if (/no such|not found|context|navigat|unloaded|detached/i.test(String(error))) return false; throw error; }
+      }, 'toolbar buttons shown after the shell reloads');
+    }
     if (name !== 'account-containers') {
       // Database/shell readiness precedes the content document. Scenarios start
       // only after the restored active page has finished its initial navigation.

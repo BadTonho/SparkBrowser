@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 export async function checkSplitTabHeader(context, originalLayout) {
-  const { invoke, script, click, until, resizeWindow, fixture, wait, withWebview } = context;
+  const { invoke, script, click, until, resizeWindow, fixture, wait, withWebview, request, sessionId } = context;
   const key = name => script('(document.activeElement??document).dispatchEvent(new KeyboardEvent("keydown",{key:arguments[0],bubbles:true,cancelable:true}))', name);
   const closed = () => until(() => script('return !document.querySelector("[data-testid=titlebar-menu]")'), 'More menu dismissed');
   const usableAddress = () => until(() => script(`const address=document.querySelector('.omnibox-input').getBoundingClientRect(),controls=document.querySelector('.window-controls').getBoundingClientRect(),nav=document.querySelector('.nav-controls').getBoundingClientRect(),wrapper=document.querySelector('.omnibox-wrapper').getBoundingClientRect(),go=document.querySelector('.go-btn').getBoundingClientRect();
@@ -30,16 +30,22 @@ export async function checkSplitTabHeader(context, originalLayout) {
   await usableAddress();
 
   await script('const b=document.querySelector("[data-testid=open-titlebar-menu]");b.focus();b.dispatchEvent(new KeyboardEvent("keydown",{key:"ArrowDown",bubbles:true,cancelable:true}));');
-  await until(() => script('return document.activeElement?.matches("[data-testid=titlebar-menu] [data-testid=open-tools]")'), 'ArrowDown opens More at first item');
+  await until(() => script('return document.activeElement?.matches("[data-testid=titlebar-menu] [data-testid=open-new-window]")'), 'ArrowDown opens More at first item');
   await visible('hidden');
   await key('End');
   assert.equal(await script('return document.activeElement?.dataset.testid'), 'toggle-zen');
   await key('Home'); await key('ArrowDown');
-  assert.equal(await script('return document.activeElement?.dataset.testid'), 'toggle-bookmarks');
+  assert.equal(await script('return document.activeElement?.dataset.testid'), 'open-private-window');
   await key('Escape'); await closed();
   await until(() => script('return document.activeElement?.matches("[data-testid=open-titlebar-menu]")'), 'Escape restores focus to More');
   await visible('visible');
-  await open(); await click('.menu-dismiss'); await closed();
+  // The menu is tall now, so the middle of the window is on the menu itself: click the free bottom-left corner.
+  const clickOutside = async () => {
+    const height = await script('return innerHeight');
+    await request('POST', `/session/${sessionId()}/actions`, { actions: [{ type: 'pointer', id: 'outside-mouse', parameters: { pointerType: 'mouse' }, actions: [
+      { type: 'pointerMove', origin: 'viewport', x: 12, y: height - 12, duration: 50 }, { type: 'pointerDown', button: 0 }, { type: 'pointerUp', button: 0 }] }] });
+  };
+  await open(); await clickOutside(); await closed();
   await open(); await key('Tab'); await closed();
 
   for (const item of ['open-tools','open-command-bar','open-history','open-downloads','open-settings']) {
@@ -54,7 +60,8 @@ export async function checkSplitTabHeader(context, originalLayout) {
     const dialogVisible = () => script('return [...document.querySelectorAll("[role=dialog]")].some(node=>node.getClientRects().length&&!node.hidden)');
     await inspect(() => until(dialogVisible, item + ' opens from More'));
     await wait(300);
-    assert.equal(fixture.reports.get('groups-a').visibility, item === 'open-command-bar' ? 'hidden' : 'visible');
+    // The Command Bar is a layer above the page now, so the page stays visible behind it like with the other panels.
+    assert.equal(fixture.reports.get('groups-a').visibility, 'visible');
     assert.equal(fixture.reports.get('groups-a').hiddenCount, hiddenCount, 'handoff does not expose then hide the page again');
     await inspect(() => key('Escape'));
     await inspect(() => until(async () => !await dialogVisible(), item + ' closes'));

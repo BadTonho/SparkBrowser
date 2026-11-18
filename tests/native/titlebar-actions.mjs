@@ -23,7 +23,8 @@ export async function checkTitlebarActions(context) {
     if(cancel === 'blur') await script('setTimeout(()=>window.dispatchEvent(new Event("blur")),900)');
     await request('POST', `/session/${sessionId()}/actions`, {actions:inputs});
   }
-  const defaults = ['tools', 'bookmarks', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'zen', 'qr'];
+  // The buttons the harness turns on, in the browser's default order (the default order puts the less used ones after the first four).
+  let defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'extensions', 'privacy', 'downloads', 'settings'];
   assert.deepEqual(await order(), defaults);
   await script(`window.toolbarMarkerSeen=false;window.toolbarHoldSeen=false;new MutationObserver(()=>{window.toolbarMarkerSeen ||= !!document.querySelector('.insertion-marker');window.toolbarHoldSeen ||= !!document.querySelector('.dragging')}).observe(document.querySelector('.titlebar-actions'),{subtree:true,attributes:true,childList:true});`);
   const initialRect = await request('GET', `/session/${sessionId()}/window/rect`);
@@ -37,7 +38,9 @@ export async function checkTitlebarActions(context) {
   await gesture('qr','left');
   await until(async () => (await order())[0] === 'qr', 'move QR Code action to the start');
   await gesture('qr','right');
-  await until(async () => (await order()).at(-1) === 'qr', 'restore QR Code action to the end');
+  await until(async () => (await order()).at(-1) === 'qr', 'move QR Code action to the end');
+  // QR Code sits in the middle by default, so dragging it to the end changes the order; the rest of the scenario starts from it.
+  defaults = [...defaults.filter(action => action !== 'qr'), 'qr'];
   assert.deepEqual(await order(), defaults);
 
   for (const mode of ['escape', 'outside', 'blur']) {
@@ -86,8 +89,10 @@ export async function checkTitlebarActions(context) {
   await until(async () => (await order()).length === 9, 'vertical layout hides bookmark action');
   const verticalRect = await request('GET', `/session/${sessionId()}/window/rect`);
   await gesture('zen','left');
-  const expected = ['zen', 'bookmarks', 'tools', 'commands', 'history', 'downloads', 'privacy', 'extensions', 'settings', 'qr'];
-  assert.deepEqual(JSON.parse(await saved()), expected);
+  // The saved order lists every button; the ones that are off (WhatsApp, Resources) keep their slots and are not on the toolbar.
+  const savedOrder = ['zen', 'bookmarks', 'tools', 'commands', 'history', 'extensions', 'whatsapp', 'resources', 'privacy', 'downloads', 'settings', 'qr'];
+  const expected = savedOrder.filter(action => !['whatsapp', 'resources'].includes(action));
+  assert.deepEqual(JSON.parse(await saved()), savedOrder);
   assert.deepEqual(await request('GET', `/session/${sessionId()}/window/rect`), verticalRect, 'vertical drag region does not move the window');
   await context.openSettings();
   await click('#setting-browser-layout .mini-pill:first-child'); await context.closeSettings();

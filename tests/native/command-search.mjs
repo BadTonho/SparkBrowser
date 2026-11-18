@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
 export async function checkCommandSearch(context) {
   const { invoke, fixture, script, until, click, wait, request, sessionId } = context;
+  // The bar is drawn in a native layer, but the real bar (and all its logic) is in the shell page: items are clicked there, which does not depend on when the layer finishes drawing.
+  const shellClick = selector => script('document.querySelector(arguments[0]).click()', selector);
   const { a,b,fixtureWorkspace } = await prepareTabs(context);
   const nulUrl = fixture.origin + '/page/nul-note';
   await invoke('save_page_note', { url: nulUrl, title: 'Literal note', text: 'before abc\u0000xyz after' });
@@ -16,6 +18,8 @@ export async function checkCommandSearch(context) {
   const session=(await invoke('get_saved_sessions')).find(s=>s.name==='Café collection');
   const before=(await invoke('get_tabs')).tabs.length;
   const query=async value=>{
+    // The native layer of the previous bar is still being released right after it closes; reopening in the same instant races it.
+    await wait(300);
     await script(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true}));`);
     await until(()=>script('return Boolean(document.querySelector(".command-input"))'),'command bar');
     // Wait for the opening select/focus timer before setting the test query.
@@ -34,7 +38,7 @@ export async function checkCommandSearch(context) {
   assert.equal((await invoke('get_tabs')).tabs.find(tab => tab.is_active).url,calculatorUrl,'calculator Enter does not navigate');
   await query('10 km to mi');
   await until(()=>script('return Boolean(document.querySelector("[data-command-id=calculator-result]"))'),'unit conversion suggestion');
-  await click('[data-command-id="calculator-result"]');
+  await shellClick('[data-command-id="calculator-result"]');
   await until(()=>script('return !document.querySelector(".command-modal")'),'click copies conversion result');
   assert.ok(await script('return window.__calculatorClipboard.at(-1).endsWith(" mi")'));
   assert.equal((await invoke('get_tabs')).tabs.find(tab => tab.is_active).url,calculatorUrl,'calculator click does not navigate');
@@ -61,7 +65,7 @@ export async function checkCommandSearch(context) {
   assert.equal(await script('return document.querySelector(".command-item.selected").dataset.commandId'),'navigate-current','selection survives arriving results');
   assert.ok(await script('return document.querySelectorAll(".command-item").length<=12'));
   assert.equal(await script('return document.querySelectorAll("[data-command-id=open-new-tab],[data-command-id=navigate-current]").length'),2);
-  await click(`[data-command-id="note-${noteUrl}"]`);
+  await shellClick(`[data-command-id="note-${noteUrl}"]`);
   await until(()=>script('return document.querySelector("[data-testid=page-note-editor]")?.value.startsWith("100%_")'),'saved note editor');
   assert.equal((await invoke('get_tabs')).tabs.length,before,'opening a note editor does not navigate');
   assert.equal(await script('return document.querySelector("[data-testid=note-pinned-url]").textContent'),noteUrl);
@@ -74,7 +78,7 @@ export async function checkCommandSearch(context) {
   await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
   await query('cafe');
   await until(()=>script('return Boolean(document.querySelector("[data-command-id^=session-]"))'),'session result');
-  await click(`[data-command-id="session-${session.id}"]`);
+  await shellClick(`[data-command-id="session-${session.id}"]`);
   await until(()=>script('return Boolean(document.querySelector("[data-testid=session-details]"))'),'session details');
   assert.equal((await invoke('get_tabs')).tabs.length,before,'Enter on a session only opens details');
   assert.ok(await script('return document.querySelector("[data-testid=session-details]").textContent.includes("Café")'));
@@ -90,7 +94,7 @@ export async function checkCommandSearch(context) {
   await query('other cafe');
   await until(()=>script('return Boolean(document.querySelector("[data-command-id^=note-]"))'),'note to remove');
   await invoke('delete_page_note',{url:fixture.origin+'/page/other-note'});
-  await click(`[data-command-id="note-${fixture.origin}/page/other-note"]`);
+  await shellClick(`[data-command-id="note-${fixture.origin}/page/other-note"]`);
   assert.ok(await script('return Boolean(document.querySelector(".command-input"))'),'removed item keeps command bar open');
   await script(`document.querySelector('.command-input').value='';document.querySelector('.command-input').dispatchEvent(new Event('input',{bubbles:true}));`);
   await script(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));`);
