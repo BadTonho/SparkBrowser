@@ -18,6 +18,8 @@
 
 ## Melhorias
 
+- No painel **Recursos**, os limites de memória, processador e internet agora são barras que você arrasta até qualquer valor (memória de 512 MB a 16 GB, processador de 10 a 90%, internet de 1 a 1000 Mbps; todo à direita é **Sem limite**), em vez de botões fixos. Os números atuais e o limite escolhido agora ficam centralizados, e você pode clicar no número do limite para digitar um valor exato (memória em GB, processador em % e internet em Mbps). As observações sob cada limite foram removidas, e uma linha agora separa as seções.
+
 - No painel de personalização centralizado, as opções **Posição do painel** e **Posição dos widgets de música** agora são pequenas, ficam lado a lado e permanecem na parte de baixo do painel, deixando mais espaço para os cartões.
 
 - Os nomes das opções de personalização da nova guia ficaram mais curtos: **Compacto** e **Centro** para a posição do painel, **Padrão** e **Central** para a posição dos widgets de música.

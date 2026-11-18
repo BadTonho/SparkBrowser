@@ -18,6 +18,8 @@
 
 ## Improvements
 
+- In the **Resources** panel, the memory, processor and internet limits are now sliders you drag to any value (memory from 512 MB to 16 GB, processor from 10 to 90%, internet from 1 to 1000 Mbps; all the way to the right is **No limit**), instead of fixed buttons. The current numbers and the chosen limit are now centered, and you can click the limit's number to type an exact value (memory in GB, processor in %, internet in Mbps). The explanatory notes under each limit were removed, and a divider now separates the sections.
+
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.
 
 - The labels of the new-tab customization options are shorter: **Compact** and **Center** for the panel position, **Default** and **Centered** for the music widgets position.

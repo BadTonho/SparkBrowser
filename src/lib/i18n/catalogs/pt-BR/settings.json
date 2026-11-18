@@ -390,14 +390,12 @@
   "resources.failed": "Não foi possível limpar: {items}",
   "resources.partial": "Parte dos dados não pôde ser limpa",
   "resources.memory_limit": "Limite de memória",
-  "resources.memory_limit_note": "Acima do limite, as abas que você usou há mais tempo são hibernadas.",
-  "resources.no_limit": "Sem",
+  "resources.limit_label": "Limite",
+  "resources.no_limit": "Sem limite",
   "resources.cpu": "Processador",
   "resources.cpu_note": "Usado pelas páginas (parte do processador inteiro)",
   "resources.cpu_limit": "Limite do processador",
-  "resources.cpu_priority_note": "Neste sistema o limite abaixa a prioridade das páginas; só faz diferença quando o computador está ocupado, e é desfeito ao reiniciar o navegador.",
   "resources.network": "Internet",
   "resources.network_note": "Recebido pelas páginas",
-  "resources.network_limit": "Limite de velocidade",
-  "resources.network_downloads_only": "Neste sistema o limite vale só para os downloads do próprio navegador."
+  "resources.network_limit": "Limite de velocidade"
 }

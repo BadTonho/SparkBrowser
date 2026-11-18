@@ -15,18 +15,18 @@ The numbers update every two seconds while the panel is open. They are measured 
 
 ## Limits
 
-Each limit has a row of choices; **None** turns it off. The choices are saved on this device.
+Each limit is a slider you drag to the value you want, with the chosen value shown centered above it. You can also **click the number and type an exact value** (memory in GB, processor in %, internet in Mbps) and press Enter. Typed values are kept inside what the limit allows: memory 0.25 to 128 GB, processor 1 to 95%, internet 0.1 to 1000 Mbps. Drag the slider all the way to the right, or clear the number, for **No limit**. The limit is applied when you release the slider or confirm the number, and it is saved on this device.
 
-| Limit | Choices | What it does |
+| Limit | Range | What it does |
 | --- | --- | --- |
-| **Memory** | 1, 2, 4 or 8 GB | When the open tabs use more than the limit, the tab you used longest ago is hibernated, one at a time, until they fit. The active tab, tabs with a form being edited, media playing, a download or picture-in-picture, and protected tabs are never hibernated. A hibernated tab comes back when you open it. |
-| **Processor** | 25, 50 or 75% | The share of the whole processor the web engine may use, with the pages together. The browser's own interface is outside the cap, so it stays responsive; pages just run slower when they hit it. |
-| **Internet** | 1, 5, 10 or 25 Mbps | The speed of the pages' network (download and upload) and of the browser's own downloads. |
+| **Memory** | 512 MB to 16 GB, in steps of 512 MB | When the open tabs use more than the limit, the tab you used longest ago is hibernated, one at a time, until they fit. The active tab, tabs with a form being edited, media playing, a download or picture-in-picture, and protected tabs are never hibernated. A hibernated tab comes back when you open it. |
+| **Processor** | 10 to 90%, in steps of 5 | The share of the whole processor the web engine may use, with the pages together. The browser's own interface is outside the cap, so it stays responsive; pages just run slower when they hit it. |
+| **Internet** | 1 to 1000 Mbps: steps of 1 up to 10, of 5 up to 50, of 10 up to 100, then of 100 | The speed of the pages' network (download and upload) and of the browser's own downloads. |
 
 ### Per system
 
 - **Windows**: the processor limit is a hard cap (a job object over the engine's processes, including the ones it starts later), and the internet limit slows the pages through the engine's developer protocol. The network measure also comes from it.
-- **Linux**: the processor limit only **lowers the priority** of the web processes, so it matters when the computer is busy, and it is undone when the browser restarts (lowering the priority back needs privileges). The engine has no control over the pages' network, so the internet limit applies only to the **browser's own downloads**, and the network is not measured. The panel says so. Linux has not been tested yet.
+- **Linux**: the processor limit only **lowers the priority** of the web processes, so it matters when the computer is busy, and it is undone when the browser restarts (lowering the priority back needs privileges). The engine has no control over the pages' network, so the internet limit applies only to the **browser's own downloads**, and the network is not measured. Linux has not been tested yet.
 - Downloads started by a page (not by the browser's download box) follow the internet limit on Windows only as far as the engine's network emulation reaches them.
 
 ## Cleaning

@@ -10,9 +10,9 @@
   import { clearEngineData } from "../../services/browser-data";
   import { invoke, isTauriRuntime as inApp } from "../../services/bridge/runtime";
   import { logIgnored } from "../../services/ignored-error";
-  import { formatSpeed, formatMemoryLimit } from "../../services/resource-limits";
+  import { formatSpeed } from "../../services/resource-limits";
   import {
-    resourceLimits, setResourceLimit, RAM_CHOICES_MB, CPU_CHOICES_PERCENT, NETWORK_CHOICES_KBPS,
+    resourceLimits, setResourceLimit, LIMIT_RANGES, limitToSlider, sliderToLimit, type ResourceLimits,
   } from "../../stores/resourceLimitsStore";
   import { isResourcesOpen, resourcesSession, closeResourcesPanel } from "../../stores/resourcesPopoverStore";
   import { tabs } from "../../stores/browserStore";
@@ -64,6 +64,39 @@
       if (inApp()) void invoke("set_resource_monitor", { on: false }).catch(logIgnored);
     };
   });
+
+  // While a slider is dragged only the number follows; the limit is applied when the thumb is released.
+  // The number can also be typed (Enter or leaving the field applies it). It is shown in the unit people use: GB, % and Mbps.
+  let drafts = $state<Partial<Record<keyof ResourceLimits, number>>>({});
+  const limitOf = (key: keyof ResourceLimits) => drafts[key] ?? $resourceLimits[key];
+  const UNIT: Record<keyof ResourceLimits, { label: string; perLimit: number; decimals: number }> = {
+    ramMb: { label: "GB", perLimit: 1024, decimals: 2 },
+    cpuPercent: { label: "%", perLimit: 1, decimals: 0 },
+    networkKbps: { label: "Mbps", perLimit: 1000, decimals: 3 },
+  };
+  /** What the field shows: empty means no limit. */
+  const shown = (key: keyof ResourceLimits) => {
+    const value = limitOf(key);
+    return value === 0 ? "" : String(Number((value / UNIT[key].perLimit).toFixed(UNIT[key].decimals)));
+  };
+  const endText = (key: keyof ResourceLimits, value: number) => `${Number((value / UNIT[key].perLimit).toFixed(UNIT[key].decimals))} ${UNIT[key].label}`;
+  function drag(key: keyof ResourceLimits, event: Event) {
+    drafts[key] = sliderToLimit(LIMIT_RANGES[key], Number((event.currentTarget as HTMLInputElement).value));
+  }
+  function release(key: keyof ResourceLimits, event: Event) {
+    const value = sliderToLimit(LIMIT_RANGES[key], Number((event.currentTarget as HTMLInputElement).value));
+    delete drafts[key];
+    void setResourceLimit(key, value);
+  }
+  function typed(key: keyof ResourceLimits, event: Event) {
+    const field = event.currentTarget as HTMLInputElement;
+    const number = Number(field.value);
+    const { min, max } = LIMIT_RANGES[key];
+    // Empty (or not a positive number) means no limit; anything else is kept inside what the limit can be.
+    const value = field.value.trim() === "" || !Number.isFinite(number) || number <= 0 ? 0 : Math.min(max, Math.max(min, Math.round(number * UNIT[key].perLimit)));
+    delete drafts[key];
+    void setResourceLimit(key, value).then(() => { field.value = shown(key); });
+  }
 
   function host(node: HTMLElement) {
     const stop = native ? mountPanelHost(node, true, {
@@ -141,13 +174,37 @@
               <span class="resources-meter-value">{usedBytes > 0 ? usedText : "—"}</span>
               <span class="resources-meter-note">{$t("resources.memory_tabs", { open: resident, sleeping })}</span>
             </div>
-            <div class="resources-pills" role="group" aria-label={$t("resources.memory_limit")}>
-              <button class="resources-pill" data-testid="resources-ram-none" aria-pressed={$resourceLimits.ramMb === 0} onclick={() => void setResourceLimit("ramMb", 0)}>{$t("resources.no_limit")}</button>
-              {#each RAM_CHOICES_MB as mb (mb)}
-                <button class="resources-pill" data-testid="resources-ram-{mb}" aria-pressed={$resourceLimits.ramMb === mb} onclick={() => void setResourceLimit("ramMb", mb)}>{formatMemoryLimit(mb)}</button>
-              {/each}
+            <div class="resources-limit">
+              <label class="resources-limit-field">
+                <span>{$t("resources.limit_label")}</span>
+                <input
+                  class="resources-limit-input"
+                  type="number"
+                  data-testid="resources-ram-value"
+                  aria-label={$t("resources.memory_limit")}
+                  min={LIMIT_RANGES.ramMb.min / UNIT.ramMb.perLimit}
+                  max={LIMIT_RANGES.ramMb.max / UNIT.ramMb.perLimit}
+                  step="any"
+                  placeholder={$t("resources.no_limit")}
+                  value={shown("ramMb")}
+                  onchange={(event) => typed("ramMb", event)}
+                />
+                <span>{UNIT.ramMb.label}</span>
+              </label>
+              <input
+                class="resources-slider"
+                type="range"
+                data-testid="resources-ram-slider"
+                aria-label={$t("resources.memory_limit")}
+                min={0}
+                max={LIMIT_RANGES.ramMb.values.length}
+                step={1}
+                value={limitToSlider(LIMIT_RANGES.ramMb, limitOf("ramMb"))}
+                oninput={(event) => drag("ramMb", event)}
+                onchange={(event) => release("ramMb", event)}
+              />
+              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("ramMb", LIMIT_RANGES.ramMb.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
             </div>
-            {#if $resourceLimits.ramMb > 0}<p class="resources-note">{$t("resources.memory_limit_note")}</p>{/if}
           </div>
 
           <div class="resources-section">
@@ -156,13 +213,37 @@
               <span class="resources-meter-value">{usage ? `${Math.round(usage.cpu_percent)}%` : "—"}</span>
               <span class="resources-meter-note">{$t("resources.cpu_note")}</span>
             </div>
-            <div class="resources-pills" role="group" aria-label={$t("resources.cpu_limit")}>
-              <button class="resources-pill" data-testid="resources-cpu-none" aria-pressed={$resourceLimits.cpuPercent === 0} onclick={() => void setResourceLimit("cpuPercent", 0)}>{$t("resources.no_limit")}</button>
-              {#each CPU_CHOICES_PERCENT as percent (percent)}
-                <button class="resources-pill" data-testid="resources-cpu-{percent}" aria-pressed={$resourceLimits.cpuPercent === percent} onclick={() => void setResourceLimit("cpuPercent", percent)}>{percent}%</button>
-              {/each}
+            <div class="resources-limit">
+              <label class="resources-limit-field">
+                <span>{$t("resources.limit_label")}</span>
+                <input
+                  class="resources-limit-input"
+                  type="number"
+                  data-testid="resources-cpu-value"
+                  aria-label={$t("resources.cpu_limit")}
+                  min={LIMIT_RANGES.cpuPercent.min / UNIT.cpuPercent.perLimit}
+                  max={LIMIT_RANGES.cpuPercent.max / UNIT.cpuPercent.perLimit}
+                  step="any"
+                  placeholder={$t("resources.no_limit")}
+                  value={shown("cpuPercent")}
+                  onchange={(event) => typed("cpuPercent", event)}
+                />
+                <span>{UNIT.cpuPercent.label}</span>
+              </label>
+              <input
+                class="resources-slider"
+                type="range"
+                data-testid="resources-cpu-slider"
+                aria-label={$t("resources.cpu_limit")}
+                min={0}
+                max={LIMIT_RANGES.cpuPercent.values.length}
+                step={1}
+                value={limitToSlider(LIMIT_RANGES.cpuPercent, limitOf("cpuPercent"))}
+                oninput={(event) => drag("cpuPercent", event)}
+                onchange={(event) => release("cpuPercent", event)}
+              />
+              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("cpuPercent", LIMIT_RANGES.cpuPercent.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
             </div>
-            {#if usage?.cpu_limit_is_priority}<p class="resources-note">{$t("resources.cpu_priority_note")}</p>{/if}
           </div>
 
           <div class="resources-section">
@@ -171,13 +252,37 @@
               <span class="resources-meter-value">{usage?.download_bytes_per_second != null ? formatSpeed(usage.download_bytes_per_second) : "—"}</span>
               <span class="resources-meter-note">{$t("resources.network_note")}</span>
             </div>
-            <div class="resources-pills" role="group" aria-label={$t("resources.network_limit")}>
-              <button class="resources-pill" data-testid="resources-net-none" aria-pressed={$resourceLimits.networkKbps === 0} onclick={() => void setResourceLimit("networkKbps", 0)}>{$t("resources.no_limit")}</button>
-              {#each NETWORK_CHOICES_KBPS as kbps (kbps)}
-                <button class="resources-pill" data-testid="resources-net-{kbps}" aria-pressed={$resourceLimits.networkKbps === kbps} onclick={() => void setResourceLimit("networkKbps", kbps)}>{kbps / 1000} Mbps</button>
-              {/each}
+            <div class="resources-limit">
+              <label class="resources-limit-field">
+                <span>{$t("resources.limit_label")}</span>
+                <input
+                  class="resources-limit-input"
+                  type="number"
+                  data-testid="resources-net-value"
+                  aria-label={$t("resources.network_limit")}
+                  min={LIMIT_RANGES.networkKbps.min / UNIT.networkKbps.perLimit}
+                  max={LIMIT_RANGES.networkKbps.max / UNIT.networkKbps.perLimit}
+                  step="any"
+                  placeholder={$t("resources.no_limit")}
+                  value={shown("networkKbps")}
+                  onchange={(event) => typed("networkKbps", event)}
+                />
+                <span>{UNIT.networkKbps.label}</span>
+              </label>
+              <input
+                class="resources-slider"
+                type="range"
+                data-testid="resources-net-slider"
+                aria-label={$t("resources.network_limit")}
+                min={0}
+                max={LIMIT_RANGES.networkKbps.values.length}
+                step={1}
+                value={limitToSlider(LIMIT_RANGES.networkKbps, limitOf("networkKbps"))}
+                oninput={(event) => drag("networkKbps", event)}
+                onchange={(event) => release("networkKbps", event)}
+              />
+              <div class="resources-limit-ends" aria-hidden="true"><span>{endText("networkKbps", LIMIT_RANGES.networkKbps.values[0])}</span><span>{$t("resources.no_limit")}</span></div>
             </div>
-            {#if usage && !usage.supports_network_limit}<p class="resources-note">{$t("resources.network_downloads_only")}</p>{/if}
           </div>
 
           <div class="resources-section">

@@ -54,14 +54,28 @@ test("speeds and limits are written the way people read them", () => {
   assert.equal(formatMemoryLimit(512), "512 MB");
 });
 
-test("a saved limit that is not one of the offered choices means no limit", () => {
-  const { normalizeLimits } = load("src/lib/stores/resourceLimitsStore.ts", {
+test("a saved limit that no slider position can give means no limit, and the slider maps both ways", () => {
+  const { normalizeLimits, LIMIT_RANGES, limitToSlider, sliderToLimit } = load("src/lib/stores/resourceLimitsStore.ts", {
     "svelte/store": { get: () => ({}), writable: initial => ({ set() {}, subscribe: () => () => {}, value: initial }) },
     "../services/storage.js": { safeStorage: { getItem: () => null, setItem() {} } },
     "../services/bridge/runtime": { invoke: async () => {}, isTauriRuntime: () => false },
     "../services/ignored-error": { logIgnored() {} },
   });
   assert.deepEqual(plain(normalizeLimits({ ramMb: 2048, cpuPercent: 50, networkKbps: 5000 })), { ramMb: 2048, cpuPercent: 50, networkKbps: 5000 });
+  assert.deepEqual(plain(normalizeLimits({ ramMb: 3072, cpuPercent: 15, networkKbps: 25000 })), { ramMb: 3072, cpuPercent: 15, networkKbps: 25000 });
+  assert.deepEqual(plain(normalizeLimits({ ramMb: 100, cpuPercent: 120, networkKbps: 50 })), { ramMb: 0, cpuPercent: 0, networkKbps: 0 }, "out of range");
+  const range = LIMIT_RANGES.ramMb;
+  const last = range.values.length;
+  assert.equal(sliderToLimit(range, last), 0, "the last position is no limit");
+  assert.equal(limitToSlider(range, 0), last);
+  assert.equal(sliderToLimit(range, range.values.indexOf(2048)), 2048);
+  assert.equal(limitToSlider(range, 2048), range.values.indexOf(2048));
+  const net = LIMIT_RANGES.networkKbps.values;
+  assert.deepEqual([net[0], net[8], net[9], net[16], net[17], net[21], net[22], net.at(-1)], [1000, 9000, 10000, 45000, 50000, 90000, 100000, 1000000], "fine steps first, coarse ones after");
+  assert.deepEqual(plain(normalizeLimits({ networkKbps: 500000 })), { ramMb: 0, cpuPercent: 0, networkKbps: 500000 });
+  assert.deepEqual(plain(normalizeLimits({ ramMb: 1536, cpuPercent: 33, networkKbps: 37500 })), { ramMb: 1536, cpuPercent: 33, networkKbps: 37500 }, "a typed value between two steps is kept");
+  assert.equal(limitToSlider(LIMIT_RANGES.ramMb, 1500), LIMIT_RANGES.ramMb.values.indexOf(1536), "the thumb sits on the nearest step");
+  assert.deepEqual(plain(normalizeLimits({ ramMb: 1.5, networkKbps: 1_000_001 })), { ramMb: 0, cpuPercent: 0, networkKbps: 0 });
   assert.deepEqual(plain(normalizeLimits({ ramMb: 1, cpuPercent: 99, networkKbps: -1 })), { ramMb: 0, cpuPercent: 0, networkKbps: 0 });
   for (const damaged of [null, undefined, "x", 7, [], { ramMb: "2048" }]) assert.deepEqual(plain(normalizeLimits(damaged)), { ramMb: 0, cpuPercent: 0, networkKbps: 0 });
 });

@@ -15,18 +15,18 @@ Os números se atualizam a cada dois segundos enquanto o painel está aberto. El
 
 ## Limites
 
-Cada limite tem uma fileira de opções; **Sem** desliga. As escolhas ficam salvas neste dispositivo.
+Cada limite é uma barra que você arrasta até o valor desejado, com o valor escolhido centralizado acima dela. Você também pode **clicar no número e digitar um valor exato** (memória em GB, processador em % e internet em Mbps) e apertar Enter. Os valores digitados ficam dentro do que o limite permite: memória de 0,25 a 128 GB, processador de 1 a 95%, internet de 0,1 a 1000 Mbps. Arraste a barra até o fim, à direita, ou apague o número, para **Sem limite**. O limite é aplicado quando você solta a barra ou confirma o número e fica salvo neste dispositivo.
 
-| Limite | Opções | O que faz |
+| Limite | Faixa | O que faz |
 | --- | --- | --- |
-| **Memória** | 1, 2, 4 ou 8 GB | Quando as abas abertas usam mais que o limite, a aba que você usou há mais tempo é hibernada, uma de cada vez, até caberem. A aba ativa, abas com formulário sendo editado, mídia tocando, download ou picture-in-picture, e abas protegidas nunca são hibernadas. Uma aba hibernada volta quando você a abre. |
-| **Processador** | 25, 50 ou 75% | A parte do processador inteiro que o motor web pode usar, com as páginas juntas. A interface do próprio navegador fica fora do limite, então continua responsiva; as páginas só ficam mais lentas quando o alcançam. |
-| **Internet** | 1, 5, 10 ou 25 Mbps | A velocidade da rede das páginas (download e envio) e dos downloads do próprio navegador. |
+| **Memória** | 512 MB a 16 GB, de 512 em 512 MB | Quando as abas abertas usam mais que o limite, a aba que você usou há mais tempo é hibernada, uma de cada vez, até caberem. A aba ativa, abas com formulário sendo editado, mídia tocando, download ou picture-in-picture, e abas protegidas nunca são hibernadas. Uma aba hibernada volta quando você a abre. |
+| **Processador** | 10 a 90%, de 5 em 5 | A parte do processador inteiro que o motor web pode usar, com as páginas juntas. A interface do próprio navegador fica fora do limite, então continua responsiva; as páginas só ficam mais lentas quando o alcançam. |
+| **Internet** | 1 a 1000 Mbps: de 1 em 1 até 10, de 5 em 5 até 50, de 10 em 10 até 100, depois de 100 em 100 | A velocidade da rede das páginas (download e envio) e dos downloads do próprio navegador. |
 
 ### Por sistema
 
 - **Windows**: o limite do processador é um teto rígido (um job object sobre os processos do motor, inclusive os que ele inicia depois), e o limite de internet desacelera as páginas pelo protocolo de desenvolvedor do motor. A medida da rede também vem dele.
-- **Linux**: o limite do processador só **abaixa a prioridade** dos processos web, então faz diferença quando o computador está ocupado, e é desfeito ao reiniciar o navegador (voltar a prioridade exige privilégios). O motor não tem controle sobre a rede das páginas, então o limite de internet vale só para os **downloads do próprio navegador**, e a rede não é medida. O painel avisa isso. O Linux ainda não foi testado.
+- **Linux**: o limite do processador só **abaixa a prioridade** dos processos web, então faz diferença quando o computador está ocupado, e é desfeito ao reiniciar o navegador (voltar a prioridade exige privilégios). O motor não tem controle sobre a rede das páginas, então o limite de internet vale só para os **downloads do próprio navegador**, e a rede não é medida. O Linux ainda não foi testado.
 - Downloads iniciados por uma página (e não pela caixa de downloads do navegador) seguem o limite de internet no Windows só até onde a emulação de rede do motor os alcança.
 
 ## Limpeza

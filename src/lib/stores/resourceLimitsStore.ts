@@ -13,21 +13,46 @@ export interface ResourceLimits {
   networkKbps: number;
 }
 
-export const RAM_CHOICES_MB = [1024, 2048, 4096, 8192] as const;
-export const CPU_CHOICES_PERCENT = [25, 50, 75] as const;
-export const NETWORK_CHOICES_KBPS = [1000, 5000, 10000, 25000] as const;
+/** What each slider can pick: the slider moves over this list, and one position past its end means "no limit". */
+export interface LimitRange {
+  values: readonly number[];
+  /** What can be typed instead: any whole number from `min` to `max`, in the limit's own unit (MB, percent, kbps). */
+  min: number;
+  max: number;
+}
+const steps = (from: number, to: number, by: number) => Array.from({ length: (to - from) / by + 1 }, (_, index) => from + index * by);
+export const LIMIT_RANGES: Record<keyof ResourceLimits, LimitRange> = {
+  ramMb: { values: steps(512, 16384, 512), min: 256, max: 131072 },
+  cpuPercent: { values: steps(10, 90, 5), min: 1, max: 95 },
+  // Fine steps at low speeds and coarse ones at high speeds, so 5, 25 and 500 Mbps are both easy to pick (1 Mbps = 1000 kbps).
+  networkKbps: { values: [...steps(1000, 9000, 1000), ...steps(10000, 45000, 5000), ...steps(50000, 90000, 10000), ...steps(100000, 1000000, 100000)], min: 100, max: 1000000 },
+};
+
+/** The slider position of a limit; "no limit" is the position after the last value. */
+export function limitToSlider(range: LimitRange, limit: number): number {
+  if (limit === 0) return range.values.length;
+  // A typed value between two steps puts the thumb on the nearest one.
+  let nearest = 0;
+  range.values.forEach((value, index) => { if (Math.abs(value - limit) < Math.abs(range.values[nearest] - limit)) nearest = index; });
+  return nearest;
+}
+
+/** The limit a slider position means; anything past the last value is "no limit". */
+export function sliderToLimit(range: LimitRange, position: number): number {
+  return range.values[Math.round(position)] ?? 0;
+}
 
 const STORAGE_KEY = "spark_resource_limits";
 const NONE: ResourceLimits = { ramMb: 0, cpuPercent: 0, networkKbps: 0 };
 
-/** Anything that is not one of the offered choices falls back to "no limit", so a damaged value never limits the browser. */
+/** Anything that is a value the panel cannot give falls back to "no limit", so a damaged value never limits the browser. */
 export function normalizeLimits(value: unknown): ResourceLimits {
   const saved = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
-  const pick = (given: unknown, allowed: readonly number[]) => (typeof given === "number" && allowed.includes(given) ? given : 0);
+  const pick = (given: unknown, { min, max }: LimitRange) => (typeof given === "number" && Number.isInteger(given) && given >= min && given <= max ? given : 0);
   return {
-    ramMb: pick(saved.ramMb, RAM_CHOICES_MB),
-    cpuPercent: pick(saved.cpuPercent, CPU_CHOICES_PERCENT),
-    networkKbps: pick(saved.networkKbps, NETWORK_CHOICES_KBPS),
+    ramMb: pick(saved.ramMb, LIMIT_RANGES.ramMb),
+    cpuPercent: pick(saved.cpuPercent, LIMIT_RANGES.cpuPercent),
+    networkKbps: pick(saved.networkKbps, LIMIT_RANGES.networkKbps),
   };
 }
 
