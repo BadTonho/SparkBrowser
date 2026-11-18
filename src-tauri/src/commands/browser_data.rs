@@ -32,9 +32,11 @@ pub async fn clear_browser_data(
         site_data: request.site_data,
         older_than_days: request.older_than_days,
     };
-    let outcome = engine_data::clear(&app, wanted).await.inspect_err(|error| {
-        crate::error_log::warn(&format!("Clearing the browser data failed: {error}"));
-    })?;
+    let outcome = engine_data::clear(&app, wanted)
+        .await
+        .inspect_err(|error| {
+            crate::error_log::warn(&format!("Clearing the browser data failed: {error}"));
+        })?;
     if outcome.failed > 0 {
         crate::error_log::warn(&format!(
             "Clearing the browser data: {} store(s) cleared, {} failed",
@@ -65,13 +67,14 @@ pub async fn estimate_cleanup(
     older_than_days: Option<u32>,
 ) -> Result<CleanupEstimate, String> {
     let cutoff = older_than_days.map(crate::database::history_repo::days_ago);
-    let (history_bytes, downloads_bytes) = crate::database::executor::run(app.clone(), move |conn| {
-        Ok((
-            crate::database::history_repo::estimate_history_bytes(conn, cutoff)?,
-            crate::database::downloads_repo::estimate_list_bytes(conn, cutoff)?,
-        ))
-    })
-    .await?;
+    let (history_bytes, downloads_bytes) =
+        crate::database::executor::run(app.clone(), move |conn| {
+            Ok((
+                crate::database::history_repo::estimate_history_bytes(conn, cutoff)?,
+                crate::database::downloads_repo::estimate_list_bytes(conn, cutoff)?,
+            ))
+        })
+        .await?;
     let engine = crate::window::engine_usage::measure(&app, older_than_days)
         .await
         .inspect_err(|error| {

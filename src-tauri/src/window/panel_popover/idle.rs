@@ -2,7 +2,6 @@ use super::{creation_guard, Panel, Popover};
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 
-
 pub(super) fn schedule<P: Panel>(app: &AppHandle) {
     let service = app.state::<Popover<P>>();
     let generation = {

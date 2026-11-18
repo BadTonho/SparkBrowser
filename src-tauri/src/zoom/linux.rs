@@ -87,9 +87,10 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                 if !current(&app, &label, &token) {
                     return;
                 }
-                crate::error_log::ignored(app
-                    .state::<ZoomService>()
-                    .set(&app, SiteZoom { origin, factor }));
+                crate::error_log::ignored(
+                    app.state::<ZoomService>()
+                        .set(&app, SiteZoom { origin, factor }),
+                );
             });
             Propagation::Stop
         });

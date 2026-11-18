@@ -35,7 +35,11 @@ fn emit(app: &AppHandle) {
         .lock()
         .map(|v| v.clone())
         .unwrap_or_default();
-    crate::error_log::ignored(crate::security::emit_shell(app, "permission-requests-updated", pending));
+    crate::error_log::ignored(crate::security::emit_shell(
+        app,
+        "permission-requests-updated",
+        pending,
+    ));
 }
 
 /// Runs `work` on the main thread, where the WebKit requests live, and returns its result.
@@ -215,50 +219,55 @@ async fn resolve(app: AppHandle, id: String) {
     .await
     .unwrap_or_default();
     let handle = app.clone();
-    crate::error_log::ignored(on_main(&app, move || {
-        let app = handle;
-        if saved
-            .iter()
-            .any(|(_, state)| *state == PermissionState::Block)
-        {
-            return finish(&app, &id, PermissionState::Block);
-        }
-        if !saved.is_empty()
-            && saved
+    crate::error_log::ignored(
+        on_main(&app, move || {
+            let app = handle;
+            if saved
                 .iter()
-                .all(|(_, state)| *state == PermissionState::Allow)
-        {
-            return finish(&app, &id, PermissionState::Allow);
-        }
-        let admitted = PENDING.with(|items| {
-            let mut items = items.borrow_mut();
-            let pending = items.get_mut(&id)?;
-            pending.asked = true;
-            // Ask about the first thing without a saved answer.
-            if let Some((kind, _)) = saved.iter().find(|(_, s)| *s == PermissionState::Ask) {
-                pending.meta.kind = *kind;
+                .any(|(_, state)| *state == PermissionState::Block)
+            {
+                return finish(&app, &id, PermissionState::Block);
             }
-            Some(
-                app.state::<PermissionRequests>()
-                    .admit(pending.meta.clone()),
-            )
-        });
-        match admitted {
-            Some(true) => {
-                emit(&app);
-                let app = app.clone();
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(Duration::from_secs(60)).await;
-                    let dispatch = app.clone();
-                    crate::error_log::ignored(dispatch
-                        .run_on_main_thread(move || finish(&app, &id, PermissionState::Block)));
-                });
+            if !saved.is_empty()
+                && saved
+                    .iter()
+                    .all(|(_, state)| *state == PermissionState::Allow)
+            {
+                return finish(&app, &id, PermissionState::Allow);
             }
-            Some(false) => finish(&app, &id, PermissionState::Block),
-            None => {}
-        }
-    })
-    .await);
+            let admitted = PENDING.with(|items| {
+                let mut items = items.borrow_mut();
+                let pending = items.get_mut(&id)?;
+                pending.asked = true;
+                // Ask about the first thing without a saved answer.
+                if let Some((kind, _)) = saved.iter().find(|(_, s)| *s == PermissionState::Ask) {
+                    pending.meta.kind = *kind;
+                }
+                Some(
+                    app.state::<PermissionRequests>()
+                        .admit(pending.meta.clone()),
+                )
+            });
+            match admitted {
+                Some(true) => {
+                    emit(&app);
+                    let app = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(Duration::from_secs(60)).await;
+                        let dispatch = app.clone();
+                        crate::error_log::ignored(
+                            dispatch.run_on_main_thread(move || {
+                                finish(&app, &id, PermissionState::Block)
+                            }),
+                        );
+                    });
+                }
+                Some(false) => finish(&app, &id, PermissionState::Block),
+                None => {}
+            }
+        })
+        .await,
+    );
 }
 
 pub async fn respond(app: &AppHandle, id: String, decision: String) -> Result<(), String> {

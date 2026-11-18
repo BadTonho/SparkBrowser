@@ -14,23 +14,23 @@
 mod imp {
     use std::ffi::c_void;
     use std::fmt::Write;
-    use std::sync::Once;
     use std::sync::atomic::{AtomicIsize, AtomicU32, Ordering};
+    use std::sync::Once;
     use std::time::Duration;
+    use windows::core::PCWSTR;
     use windows::Win32::Foundation::{CloseHandle, HANDLE};
     use windows::Win32::System::Diagnostics::Debug::{
-        AddrModeFlat, CONTEXT, CONTEXT_FULL_AMD64, GetThreadContext, IMAGEHLP_MODULE64,
-        STACKFRAME64, SYMBOL_INFO, StackWalk64, SymFromAddr, SymFunctionTableAccess64,
-        SymGetModuleBase64, SymGetModuleInfo64, SymInitializeW, SymSetOptions,
+        AddrModeFlat, GetThreadContext, StackWalk64, SymFromAddr, SymFunctionTableAccess64,
+        SymGetModuleBase64, SymGetModuleInfo64, SymInitializeW, SymSetOptions, CONTEXT,
+        CONTEXT_FULL_AMD64, IMAGEHLP_MODULE64, STACKFRAME64, SYMBOL_INFO,
     };
     use windows::Win32::System::Diagnostics::ToolHelp::{
-        CreateToolhelp32Snapshot, TH32CS_SNAPTHREAD, THREADENTRY32, Thread32First, Thread32Next,
+        CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32,
     };
     use windows::Win32::System::Threading::{
         GetCurrentProcess, GetCurrentProcessId, GetCurrentThreadId, OpenThread, ResumeThread,
         SuspendThread, THREAD_GET_CONTEXT, THREAD_QUERY_INFORMATION, THREAD_SUSPEND_RESUME,
     };
-    use windows::core::PCWSTR;
 
     const MAX_FRAMES: usize = 48;
     const MAX_THREADS: usize = 64;
@@ -128,12 +128,18 @@ mod imp {
                 let _ = writeln!(text, "  (no stack: {note})");
             }
             // Frames inside the web engine's libraries have no names and say nothing.
-            for line in lines.iter().filter(|line| !line.contains("DllCanUnloadNow")) {
+            for line in lines
+                .iter()
+                .filter(|line| !line.contains("DllCanUnloadNow"))
+            {
                 let _ = writeln!(text, "  {line}");
             }
         }
         if others > 0 {
-            let _ = writeln!(text, "{others} other threads (web engine and system) are not listed.");
+            let _ = writeln!(
+                text,
+                "{others} other threads (web engine and system) are not listed."
+            );
         }
         text
     }

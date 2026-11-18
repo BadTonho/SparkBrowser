@@ -72,9 +72,13 @@ pub fn clear_downloads(conn: &Connection) -> Result<(), String> {
 
 /// Age of the finished download with this task id (Unix time it was recorded), if it has a record.
 pub fn recorded_at(conn: &Connection, task_id: &str) -> Result<Option<i64>, String> {
-    conn.query_row("SELECT created_at FROM downloads WHERE task_id = ?1", [task_id], |row| row.get(0))
-        .optional()
-        .map_err(|e| e.to_string())
+    conn.query_row(
+        "SELECT created_at FROM downloads WHERE task_id = ?1",
+        [task_id],
+        |row| row.get(0),
+    )
+    .optional()
+    .map_err(|e| e.to_string())
 }
 
 /// Removes the records from before `cutoff` (a Unix time), including the ones from before downloads had a task id.

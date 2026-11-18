@@ -11,20 +11,20 @@ use commands::backup::{
     unlock_backup_file,
 };
 use commands::bookmark_export::export_bookmarks;
+use commands::browser_data::{clear_browser_data, estimate_cleanup};
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
-use commands::browser_data::{clear_browser_data, estimate_cleanup};
-use commands::resources::{
-    get_resource_usage, set_resource_limits, set_resource_monitor, set_tab_memory_levels,
-};
-use commands::search_suggestions::fetch_search_suggestions;
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::error_report::report_frontend_error;
 use commands::graphics::{get_graphics_status, restart_for_graphics, set_hardware_acceleration};
 use commands::new_tab::set_new_tab_preferences;
 use commands::panels::prepare_panel;
 use commands::private_session::{get_private_window_state, open_private_window};
+use commands::resources::{
+    get_resource_usage, set_resource_limits, set_resource_monitor, set_tab_memory_levels,
+};
+use commands::search_suggestions::fetch_search_suggestions;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::site_icons::site_icons;
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
@@ -80,11 +80,10 @@ use commands::navigation::{
 };
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
-    set_bookmark_context_menu_overlay, set_downloads_popover, set_history_overlay,
-    set_commands_popover, set_resources_popover, set_suggestions_popover,
-    set_media_popover, set_overlay_visibility, set_permission_popover, set_privacy_popover,
-    set_quick_settings_popover, set_settings_overlay, set_tools_popover,
-    set_workspace_switcher_overlay, set_zoom_popover,
+    set_bookmark_context_menu_overlay, set_commands_popover, set_downloads_popover,
+    set_history_overlay, set_media_popover, set_overlay_visibility, set_permission_popover,
+    set_privacy_popover, set_quick_settings_popover, set_resources_popover, set_settings_overlay,
+    set_suggestions_popover, set_tools_popover, set_workspace_switcher_overlay, set_zoom_popover,
 };
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,

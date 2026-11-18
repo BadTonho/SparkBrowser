@@ -42,13 +42,13 @@ pub mod resources;
 pub mod zoom;
 
 pub mod command_search;
-pub mod search_suggestions;
 pub mod media;
 pub mod minimum_font_probe;
 pub mod new_tab;
 pub mod now_playing;
 pub mod private_session;
 pub mod reader;
+pub mod search_suggestions;
 
 pub mod qr_code;
 pub mod webview_runtime;

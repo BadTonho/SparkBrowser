@@ -102,7 +102,11 @@ pub fn handler(
                     if error == "downloads.cancelled" {
                         return false;
                     }
-                    crate::error_log::ignored(crate::security::emit_shell(&app, "browser-error", error));
+                    crate::error_log::ignored(crate::security::emit_shell(
+                        &app,
+                        "browser-error",
+                        error,
+                    ));
                     return false;
                 }
             }

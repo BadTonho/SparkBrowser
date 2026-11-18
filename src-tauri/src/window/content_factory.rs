@@ -349,7 +349,9 @@ pub(super) fn create_tab_webview(
     // The settings page is the app's own and dark by default: it must not show white while it loads.
     #[cfg(windows)]
     if super::settings_tab::is_settings_url(initial_url_str) {
-        super::windows_background::dark_until_painted(&app.get_webview(&label).ok_or("New WebView was not found")?);
+        super::windows_background::dark_until_painted(
+            &app.get_webview(&label).ok_or("New WebView was not found")?,
+        );
     }
 
     #[cfg(target_os = "linux")]

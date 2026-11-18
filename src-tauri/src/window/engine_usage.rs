@@ -60,12 +60,18 @@ fn profile_folders(profile: &Path) -> Folders {
 
 /// Adds up the size of a file or folder, counting only the files last changed before `cutoff` when there is one.
 /// Stops when `deadline` passes and says so.
-fn tree_size(path: &Path, cutoff: Option<SystemTime>, deadline: Instant, partial: &mut bool) -> u64 {
+fn tree_size(
+    path: &Path,
+    cutoff: Option<SystemTime>,
+    deadline: Instant,
+    partial: &mut bool,
+) -> u64 {
     let Ok(meta) = std::fs::symlink_metadata(path) else {
         return 0;
     };
     if meta.is_file() {
-        let old_enough = cutoff.is_none_or(|limit| meta.modified().is_ok_and(|changed| changed < limit));
+        let old_enough =
+            cutoff.is_none_or(|limit| meta.modified().is_ok_and(|changed| changed < limit));
         return if old_enough { meta.len() } else { 0 };
     }
     if !meta.is_dir() {
@@ -96,7 +102,9 @@ fn measure_folders(stores: Vec<Folders>, older_than_days: Option<u32>) -> Usage 
         }
         for folder in &store.site {
             // The cookie database is one file that changes all the time: its age says nothing, so it only counts unfiltered.
-            let is_cookies = folder.file_name().is_some_and(|name| name.to_string_lossy().starts_with("Cookies"));
+            let is_cookies = folder
+                .file_name()
+                .is_some_and(|name| name.to_string_lossy().starts_with("Cookies"));
             if is_cookies && cutoff.is_some() {
                 continue;
             }
@@ -109,9 +117,7 @@ fn measure_folders(stores: Vec<Folders>, older_than_days: Option<u32>) -> Usage 
 /// Asks every open page for the folders of its store, once per distinct store.
 #[cfg(windows)]
 fn reach_stores(app: &AppHandle) -> Result<Vec<Folders>, String> {
-    use webview2_com::{
-        CoTaskMemPWSTR, Microsoft::Web::WebView2::Win32::ICoreWebView2_13,
-    };
+    use webview2_com::{CoTaskMemPWSTR, Microsoft::Web::WebView2::Win32::ICoreWebView2_13};
     use windows_core::{Interface, PWSTR};
 
     let views = super::engine_data::pages(app);
@@ -135,14 +141,18 @@ fn reach_stores(app: &AppHandle) -> Result<Vec<Folders>, String> {
                 Ok(PathBuf::from(CoTaskMemPWSTR::from(path).to_string()))
             })();
             if let Err(error) = &path {
-                crate::error_log::warn(&format!("Could not find a page's data folder to measure it: {error}"));
+                crate::error_log::warn(&format!(
+                    "Could not find a page's data folder to measure it: {error}"
+                ));
             }
             crate::error_log::ignored(sender.send(path.ok()));
         });
         match queued {
             Ok(()) => asked += 1,
             Err(error) => {
-                crate::error_log::warn(&format!("Could not reach a page to measure its data: {error}"));
+                crate::error_log::warn(&format!(
+                    "Could not reach a page to measure its data: {error}"
+                ));
                 crate::error_log::ignored(failed.send(None));
                 asked += 1;
             }
@@ -183,8 +193,12 @@ fn reach_stores(app: &AppHandle) -> Result<Vec<Folders>, String> {
         let queued = view.with_webview(move |platform| {
             let folders = platform.inner().website_data_manager().map(|manager| {
                 (
-                    manager.base_cache_directory().map(|path| PathBuf::from(path.to_string())),
-                    manager.base_data_directory().map(|path| PathBuf::from(path.to_string())),
+                    manager
+                        .base_cache_directory()
+                        .map(|path| PathBuf::from(path.to_string())),
+                    manager
+                        .base_data_directory()
+                        .map(|path| PathBuf::from(path.to_string())),
                 )
             });
             crate::error_log::ignored(sender.send(folders));
@@ -192,7 +206,9 @@ fn reach_stores(app: &AppHandle) -> Result<Vec<Folders>, String> {
         match queued {
             Ok(()) => asked += 1,
             Err(error) => {
-                crate::error_log::warn(&format!("Could not reach a page to measure its data: {error}"));
+                crate::error_log::warn(&format!(
+                    "Could not reach a page to measure its data: {error}"
+                ));
                 crate::error_log::ignored(failed.send(None));
                 asked += 1;
             }
@@ -228,7 +244,10 @@ fn reach_stores(_app: &AppHandle) -> Result<Vec<Folders>, String> {
 
 /// Measures the engine's cache and site data. `None` when it cannot be measured on this system: on Linux
 /// the engine cannot clear by age (see [`super::engine_data`]), so nothing is promised for an age there.
-pub async fn measure(app: &AppHandle, older_than_days: Option<u32>) -> Result<Option<Usage>, String> {
+pub async fn measure(
+    app: &AppHandle,
+    older_than_days: Option<u32>,
+) -> Result<Option<Usage>, String> {
     if cfg!(target_os = "linux") && older_than_days.is_some() {
         return Ok(None);
     }
@@ -261,7 +280,12 @@ mod tests {
         // Everything was just written, so nothing is older than five days.
         assert_eq!(measure_folders(stores(), Some(5)).cache_bytes, 0);
         let old = SystemTime::now() - Duration::from_secs(10 * 86_400);
-        fs::File::options().write(true).open(root.join("Cache").join("a")).unwrap().set_modified(old).unwrap();
+        fs::File::options()
+            .write(true)
+            .open(root.join("Cache").join("a"))
+            .unwrap()
+            .set_modified(old)
+            .unwrap();
         assert_eq!(measure_folders(stores(), Some(5)).cache_bytes, 100);
         let _ = fs::remove_dir_all(&root);
     }
@@ -274,19 +298,41 @@ mod tests {
         fs::create_dir_all(root.join("Service Worker").join("CacheStorage")).unwrap();
         fs::write(root.join("Local Storage").join("x"), vec![0u8; 10]).unwrap();
         fs::write(root.join("Network").join("Cookies"), vec![0u8; 20]).unwrap();
-        fs::write(root.join("Service Worker").join("CacheStorage").join("c"), vec![0u8; 40]).unwrap();
+        fs::write(
+            root.join("Service Worker").join("CacheStorage").join("c"),
+            vec![0u8; 40],
+        )
+        .unwrap();
         let usage = measure_folders(vec![profile_folders(&root)], None);
-        assert_eq!((usage.cache_bytes, usage.site_bytes, usage.partial), (40, 30, false));
+        assert_eq!(
+            (usage.cache_bytes, usage.site_bytes, usage.partial),
+            (40, 30, false)
+        );
         let old = SystemTime::now() - Duration::from_secs(30 * 86_400);
-        for file in [root.join("Local Storage").join("x"), root.join("Network").join("Cookies")] {
-            fs::File::options().write(true).open(file).unwrap().set_modified(old).unwrap();
+        for file in [
+            root.join("Local Storage").join("x"),
+            root.join("Network").join("Cookies"),
+        ] {
+            fs::File::options()
+                .write(true)
+                .open(file)
+                .unwrap()
+                .set_modified(old)
+                .unwrap();
         }
-        assert_eq!(measure_folders(vec![profile_folders(&root)], Some(5)).site_bytes, 10, "the cookie file is left out when filtering by age");
+        assert_eq!(
+            measure_folders(vec![profile_folders(&root)], Some(5)).site_bytes,
+            10,
+            "the cookie file is left out when filtering by age"
+        );
         let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
     fn a_missing_folder_is_zero() {
-        assert_eq!(measure_folders(vec![profile_folders(Path::new("/does/not/exist"))], None), Usage::default());
+        assert_eq!(
+            measure_folders(vec![profile_folders(Path::new("/does/not/exist"))], None),
+            Usage::default()
+        );
     }
 }

@@ -121,7 +121,11 @@ fn run(app: AppHandle) {
             let mut state = service.state.lock().unwrap();
             for (label, token) in &stale {
                 // A newer subscription under the same label is not stale.
-                if state.consumers.get(label).is_some_and(|c| &c.token == token) {
+                if state
+                    .consumers
+                    .get(label)
+                    .is_some_and(|c| &c.token == token)
+                {
                     state.consumers.remove(label);
                 }
             }

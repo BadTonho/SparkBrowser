@@ -103,7 +103,12 @@ mod tests {
     #[test]
     fn the_family_follows_parents_and_never_includes_this_process() {
         let own = std::process::id();
-        let all = vec![(own, 1, 0), (own + 1, own, 10), (own + 2, own + 1, 20), (own + 3, 1, 99)];
+        let all = vec![
+            (own, 1, 0),
+            (own + 1, own, 10),
+            (own + 2, own + 1, 20),
+            (own + 3, 1, 99),
+        ];
         let mut family: Vec<u32> = descendants(&all).into_iter().map(|(pid, _)| pid).collect();
         family.sort_unstable();
         assert_eq!(family, vec![own + 1, own + 2]);

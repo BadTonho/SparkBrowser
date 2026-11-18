@@ -16,8 +16,15 @@ const MAX_TERMS: usize = 8;
 const MAX_TERM_CHARS: usize = 200;
 const TIMEOUT: Duration = Duration::from_secs(3);
 
+/// An engine's suggestion endpoint: the address, the fixed parameters and the name of the query parameter.
+type Endpoint = (
+    &'static str,
+    &'static [(&'static str, &'static str)],
+    &'static str,
+);
+
 /// Endpoint, fixed parameters and the name of the query parameter, per engine id.
-fn endpoint(engine: &str) -> Option<(&'static str, &'static [(&'static str, &'static str)], &'static str)> {
+fn endpoint(engine: &str) -> Option<Endpoint> {
     match engine {
         "google" => Some((
             "https://suggestqueries.google.com/complete/search",
@@ -113,13 +120,18 @@ fn fetch(url: Url, typed: &str) -> Vec<String> {
 /// Terms the engine `engine` proposes for `query`. A network failure is not an error for the user:
 /// the list simply has no engine terms, so this never returns one.
 #[tauri::command]
-pub async fn fetch_search_suggestions(engine: String, query: String) -> Result<Vec<String>, String> {
+pub async fn fetch_search_suggestions(
+    engine: String,
+    query: String,
+) -> Result<Vec<String>, String> {
     let Some(url) = request_url(&engine, &query) else {
         return Ok(Vec::new());
     };
-    Ok(tauri::async_runtime::spawn_blocking(move || fetch(url, &query))
-        .await
-        .unwrap_or_default())
+    Ok(
+        tauri::async_runtime::spawn_blocking(move || fetch(url, &query))
+            .await
+            .unwrap_or_default(),
+    )
 }
 
 #[cfg(test)]

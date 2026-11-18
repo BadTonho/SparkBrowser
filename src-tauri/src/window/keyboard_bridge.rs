@@ -470,7 +470,9 @@ pub(super) fn install_workspace_shortcut_accelerator(
                     .add_AcceleratorKeyPressed(&handler, &mut event_token)
             };
             if let Err(error) = result {
-                crate::error_log::warn(&format!("Failed to install workspace keyboard handler: {error}"));
+                crate::error_log::warn(&format!(
+                    "Failed to install workspace keyboard handler: {error}"
+                ));
             }
         })
         .map_err(|error| format!("Failed to install workspace keyboard handler: {error}"))?;
@@ -689,7 +691,9 @@ pub(super) fn handle_keyboard_navigation(
                         if let Err(error) =
                             crate::window::caret_browsing::toggle(app_handle_for_nav)
                         {
-                            crate::error_log::warn(&format!("Unable to toggle native caret browsing: {error}"));
+                            crate::error_log::warn(&format!(
+                                "Unable to toggle native caret browsing: {error}"
+                            ));
                         }
                     } else {
                         crate::error_log::ignored(crate::security::emit_shell_for_webview(

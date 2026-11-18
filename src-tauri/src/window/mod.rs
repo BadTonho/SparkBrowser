@@ -33,19 +33,19 @@ pub mod zoom_popover;
 
 pub mod tools_popover;
 
-pub mod downloads_popover;
-pub mod suggestions_popover;
 pub mod commands_popover;
-pub mod resources_popover;
+pub mod downloads_popover;
 pub mod engine_data;
 pub mod engine_usage;
 pub mod ephemeral;
 #[cfg(target_os = "linux")]
 pub mod linux_layout;
-#[cfg(windows)]
-pub mod windows_background;
 pub mod pane_animation;
 mod panel_popover;
+pub mod resources_popover;
+pub mod suggestions_popover;
+#[cfg(windows)]
+pub mod windows_background;
 
 /// Prepares one panel's web view ahead of the click. See `panel_popover::prepare`.
 pub fn prepare_panel(app: &tauri::AppHandle, window_id: &str, panel: &str) -> Result<(), String> {

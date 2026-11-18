@@ -96,7 +96,11 @@ fn set_cap(percent: u8) -> Result<(), String> {
         ControlFlags: JOB_OBJECT_CPU_RATE_CONTROL_ENABLE | JOB_OBJECT_CPU_RATE_CONTROL_HARD_CAP,
         Anonymous: JOBOBJECT_CPU_RATE_CONTROL_INFORMATION_0 {
             // The rate is in hundredths of a percent; 100% is "no cap".
-            CpuRate: if percent == 0 { 10_000 } else { u32::from(percent) * 100 },
+            CpuRate: if percent == 0 {
+                10_000
+            } else {
+                u32::from(percent) * 100
+            },
         },
     };
     unsafe {
@@ -206,7 +210,11 @@ fn call(core: &ICoreWebView2, method: &str, parameters: &str) {
         Ok(())
     }));
     if let Err(error) = unsafe {
-        core.CallDevToolsProtocolMethod(&HSTRING::from(method), &HSTRING::from(parameters), &handler)
+        core.CallDevToolsProtocolMethod(
+            &HSTRING::from(method),
+            &HSTRING::from(parameters),
+            &handler,
+        )
     } {
         crate::error_log::warn(&format!("Could not call {method}: {error}"));
     }
@@ -250,24 +258,26 @@ pub fn attach(view: &Webview, limits: Limits, monitoring: bool) {
 
 fn listen_for_data(core: &ICoreWebView2) {
     unsafe {
-        let Ok(receiver) = core.GetDevToolsProtocolEventReceiver(&HSTRING::from("Network.dataReceived"))
+        let Ok(receiver) =
+            core.GetDevToolsProtocolEventReceiver(&HSTRING::from("Network.dataReceived"))
         else {
             return;
         };
         let receiver: ICoreWebView2DevToolsProtocolEventReceiver = receiver;
         let mut token = 0;
-        let handler = DevToolsProtocolEventReceivedEventHandler::create(Box::new(move |_, args| {
-            if let Some(args) = args {
-                let mut text = windows::core::PWSTR::null();
-                if args.ParameterObjectAsJson(&mut text).is_ok() {
-                    let json = CoTaskMemPWSTR::from(text).to_string();
-                    if let Some(bytes) = encoded_length(&json) {
-                        RECEIVED.fetch_add(bytes, Ordering::Relaxed);
+        let handler =
+            DevToolsProtocolEventReceivedEventHandler::create(Box::new(move |_, args| {
+                if let Some(args) = args {
+                    let mut text = windows::core::PWSTR::null();
+                    if args.ParameterObjectAsJson(&mut text).is_ok() {
+                        let json = CoTaskMemPWSTR::from(text).to_string();
+                        if let Some(bytes) = encoded_length(&json) {
+                            RECEIVED.fetch_add(bytes, Ordering::Relaxed);
+                        }
                     }
                 }
-            }
-            Ok(())
-        }));
+                Ok(())
+            }));
         if let Err(error) = receiver.add_DevToolsProtocolEventReceived(&handler, &mut token) {
             crate::error_log::warn(&format!("Could not listen to the network: {error}"));
         }
@@ -286,7 +296,10 @@ mod tests {
 
     #[test]
     fn the_wire_bytes_of_a_chunk_are_read_from_the_event() {
-        assert_eq!(encoded_length(r#"{"requestId":"1","dataLength":900,"encodedDataLength":412}"#), Some(412));
+        assert_eq!(
+            encoded_length(r#"{"requestId":"1","dataLength":900,"encodedDataLength":412}"#),
+            Some(412)
+        );
         assert_eq!(encoded_length(r#"{"requestId":"1"}"#), None);
         assert_eq!(encoded_length("not json"), None);
     }

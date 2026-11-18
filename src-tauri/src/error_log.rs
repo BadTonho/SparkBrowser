@@ -483,7 +483,10 @@ mod tests {
         }
         let text = recent_trail();
         assert!(text.lines().count() <= TRAIL_LENGTH);
-        assert!(text.lines().last().is_some_and(|line| line.ends_with(&format!("step {}", TRAIL_LENGTH + 4))));
+        assert!(text
+            .lines()
+            .last()
+            .is_some_and(|line| line.ends_with(&format!("step {}", TRAIL_LENGTH + 4))));
     }
 
     #[test]

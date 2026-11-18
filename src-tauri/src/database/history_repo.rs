@@ -178,13 +178,17 @@ pub fn days_ago(days: u32) -> i64 {
 /// whole history goes (no `cutoff`), the saved site icons. A row counts its text plus a small fixed overhead.
 pub fn estimate_history_bytes(conn: &Connection, cutoff: Option<i64>) -> Result<u64, String> {
     let sum = |sql: &str| -> Result<i64, String> {
-        conn.query_row(sql, [cutoff.unwrap_or(i64::MAX)], |row| row.get::<_, i64>(0))
-            .map_err(|e| e.to_string())
+        conn.query_row(sql, [cutoff.unwrap_or(i64::MAX)], |row| {
+            row.get::<_, i64>(0)
+        })
+        .map_err(|e| e.to_string())
     };
     let mut total = sum("SELECT COALESCE(SUM(LENGTH(title) + LENGTH(url) + 24), 0) FROM history WHERE visited_at < ?1")?
         + sum("SELECT COALESCE(SUM(LENGTH(url) + LENGTH(title) + LENGTH(workspace_name) + 32), 0) FROM closed_tabs WHERE closed_at < ?1")?;
     if cutoff.is_none() {
-        total += sum("SELECT COALESCE(SUM(LENGTH(site_key) + LENGTH(png)), 0) FROM site_icons WHERE ?1 = ?1")?;
+        total += sum(
+            "SELECT COALESCE(SUM(LENGTH(site_key) + LENGTH(png)), 0) FROM site_icons WHERE ?1 = ?1",
+        )?;
     }
     Ok(total.max(0) as u64)
 }
@@ -212,12 +216,31 @@ mod tests {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,visited_at INTEGER NOT NULL); CREATE TABLE closed_tabs(id INTEGER PRIMARY KEY, url TEXT NOT NULL, title TEXT NOT NULL, workspace_name TEXT NOT NULL, closed_at INTEGER NOT NULL); CREATE TABLE site_icons(site_key TEXT PRIMARY KEY, png BLOB NOT NULL, updated_at INTEGER NOT NULL);").unwrap();
         let now = current_unix_timestamp();
-        conn.execute("INSERT INTO history(title,url,visited_at) VALUES('ab','cde',?1),('ab','cde',?2)", params![now - 86_400, now - 30 * 86_400]).unwrap();
-        conn.execute("INSERT INTO site_icons(site_key,png,updated_at) VALUES('k', x'00010203', 0)", []).unwrap();
+        conn.execute(
+            "INSERT INTO history(title,url,visited_at) VALUES('ab','cde',?1),('ab','cde',?2)",
+            params![now - 86_400, now - 30 * 86_400],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO site_icons(site_key,png,updated_at) VALUES('k', x'00010203', 0)",
+            [],
+        )
+        .unwrap();
         let row = (2 + 3 + 24) as u64;
-        assert_eq!(estimate_history_bytes(&conn, Some(days_ago(5))).unwrap(), row, "only the old visit, and no icons");
-        assert_eq!(estimate_history_bytes(&conn, None).unwrap(), 2 * row + 1 + 4, "everything, with the saved icons");
-        assert_eq!(estimate_history_bytes(&conn, Some(days_ago(90))).unwrap(), 0);
+        assert_eq!(
+            estimate_history_bytes(&conn, Some(days_ago(5))).unwrap(),
+            row,
+            "only the old visit, and no icons"
+        );
+        assert_eq!(
+            estimate_history_bytes(&conn, None).unwrap(),
+            2 * row + 1 + 4,
+            "everything, with the saved icons"
+        );
+        assert_eq!(
+            estimate_history_bytes(&conn, Some(days_ago(90))).unwrap(),
+            0
+        );
     }
 
     #[test]
@@ -226,13 +249,32 @@ mod tests {
         conn.execute_batch("CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,visited_at INTEGER NOT NULL); CREATE TABLE closed_tabs(id INTEGER PRIMARY KEY, closed_at INTEGER NOT NULL);").unwrap();
         let now = current_unix_timestamp();
         for (title, age_days) in [("fresh", 1), ("middle", 7), ("old", 30)] {
-            conn.execute("INSERT INTO history(title,url,visited_at) VALUES(?1,'https://example.test/',?2)", params![title, now - age_days * 86_400]).unwrap();
+            conn.execute(
+                "INSERT INTO history(title,url,visited_at) VALUES(?1,'https://example.test/',?2)",
+                params![title, now - age_days * 86_400],
+            )
+            .unwrap();
         }
-        conn.execute("INSERT INTO closed_tabs(closed_at) VALUES(?1),(?2)", params![now - 86_400, now - 30 * 86_400]).unwrap();
+        conn.execute(
+            "INSERT INTO closed_tabs(closed_at) VALUES(?1),(?2)",
+            params![now - 86_400, now - 30 * 86_400],
+        )
+        .unwrap();
         clear_history_older_than(&conn, days_ago(5)).unwrap();
-        let left: Vec<String> = conn.prepare("SELECT title FROM history ORDER BY visited_at DESC").unwrap().query_map([], |row| row.get(0)).unwrap().map(Result::unwrap).collect();
+        let left: Vec<String> = conn
+            .prepare("SELECT title FROM history ORDER BY visited_at DESC")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
         assert_eq!(left, ["fresh"]);
-        assert_eq!(conn.query_row("SELECT COUNT(*) FROM closed_tabs", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM closed_tabs", [], |row| row
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
     }
 
     #[test]

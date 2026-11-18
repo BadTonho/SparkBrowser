@@ -439,7 +439,10 @@ pub fn set<P: Panel>(
     presentation: Option<Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
-    crate::error_log::trail(&format!("{} set visible={visible} session={session_id}", P::HOST));
+    crate::error_log::trail(&format!(
+        "{} set visible={visible} session={session_id}",
+        P::HOST
+    ));
     let service = app.state::<Popover<P>>();
     let mut inner = service.0.lock().map_err(|e| e.to_string())?;
     if !visible {
@@ -571,8 +574,8 @@ pub fn set<P: Panel>(
 #[cfg(test)]
 mod tests {
     use super::{
-        can_finish_animated_close, Downloads, Inner, Panel, Presentation, QuickSettings, Session,
-        Commands, Resources, Suggestions, Tools,
+        can_finish_animated_close, Commands, Downloads, Inner, Panel, Presentation, QuickSettings,
+        Resources, Session, Suggestions, Tools,
     };
 
     #[test]
@@ -587,8 +590,8 @@ mod tests {
 
     #[test]
     fn only_the_suggestions_panel_sits_below_its_anchor_without_taking_focus() {
-        assert!(Suggestions::BELOW_ANCHOR && !Suggestions::TAKES_FOCUS);
-        assert!(!Commands::BELOW_ANCHOR && Commands::TAKES_FOCUS);
+        const { assert!(Suggestions::BELOW_ANCHOR && !Suggestions::TAKES_FOCUS) };
+        const { assert!(!Commands::BELOW_ANCHOR && Commands::TAKES_FOCUS) };
         for (below, focus) in [
             (Tools::BELOW_ANCHOR, Tools::TAKES_FOCUS),
             (Downloads::BELOW_ANCHOR, Downloads::TAKES_FOCUS),

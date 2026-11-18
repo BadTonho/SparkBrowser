@@ -36,16 +36,20 @@ pub fn refresh(app: &AppHandle) {
         .inner()
         .clone();
     let app = app.clone();
-    crate::error_log::ignored(std::thread::Builder::new()
-        .name("spark-content-rules".into())
-        .spawn(move || {
-            let Some(json) = lists.content_blocking_json() else {
-                crate::error_log::warn(&format!("Could not convert the filter lists to content rules"));
-                return;
-            };
-            let main = app.clone();
-            crate::error_log::ignored(main.run_on_main_thread(move || save(&app, json)));
-        }));
+    crate::error_log::ignored(
+        std::thread::Builder::new()
+            .name("spark-content-rules".into())
+            .spawn(move || {
+                let Some(json) = lists.content_blocking_json() else {
+                    crate::error_log::warn(&format!(
+                        "Could not convert the filter lists to content rules"
+                    ));
+                    return;
+                };
+                let main = app.clone();
+                crate::error_log::ignored(main.run_on_main_thread(move || save(&app, json)));
+            }),
+    );
 }
 
 fn save(app: &AppHandle, json: String) {

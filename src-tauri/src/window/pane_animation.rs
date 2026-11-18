@@ -103,7 +103,13 @@ pub enum Plan {
 
 /// Decides how a pane reaches `to` and, when it should slide, starts the slide.
 /// `area` is the size of the window's page area, `window_id` the window that owns the pane.
-pub fn plan(app: &AppHandle, label: &str, window_id: &str, area: (f64, f64), to: ViewportBounds) -> Plan {
+pub fn plan(
+    app: &AppHandle,
+    label: &str,
+    window_id: &str,
+    area: (f64, f64),
+    to: ViewportBounds,
+) -> Plan {
     let now = Instant::now();
     let Ok(mut registry) = registry().lock() else {
         return Plan::Now;
@@ -200,7 +206,12 @@ mod tests {
     use super::*;
 
     fn bounds(x: f64, width: f64) -> ViewportBounds {
-        ViewportBounds { x, y: 80.0, width, height: 500.0 }
+        ViewportBounds {
+            x,
+            y: 80.0,
+            width,
+            height: 500.0,
+        }
     }
 
     #[test]
@@ -235,7 +246,10 @@ mod tests {
         pane.slide_ends = Some(now + DURATION);
         let sliding = pane.slide_ends.is_some_and(|end| now < end);
         assert!(sliding && change(pane.target.unwrap(), bounds(500.0, 500.0)) < 0.5);
-        assert!(change(pane.target.unwrap(), bounds(0.0, 1000.0)) >= 0.5, "a different layout is a new slide");
+        assert!(
+            change(pane.target.unwrap(), bounds(0.0, 1000.0)) >= 0.5,
+            "a different layout is a new slide"
+        );
     }
 
     #[test]

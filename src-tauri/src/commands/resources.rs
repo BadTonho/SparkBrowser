@@ -25,7 +25,11 @@ pub fn get_resource_usage(app: AppHandle) -> Usage {
 /// Puts the pages of the tabs in `low` at the low memory level and the ones in `normal` back at the normal one.
 /// Used while a memory limit is on, for the tabs in the background that cannot be hibernated.
 #[tauri::command]
-pub fn set_tab_memory_levels(app: AppHandle, low: Vec<String>, normal: Vec<String>) -> Result<(), String> {
+pub fn set_tab_memory_levels(
+    app: AppHandle,
+    low: Vec<String>,
+    normal: Vec<String>,
+) -> Result<(), String> {
     let mut failed = Vec::new();
     for (ids, is_low) in [(&low, true), (&normal, false)] {
         for id in ids {
@@ -37,6 +41,9 @@ pub fn set_tab_memory_levels(app: AppHandle, low: Vec<String>, normal: Vec<Strin
     if failed.is_empty() {
         Ok(())
     } else {
-        Err(format!("Could not set the memory level of: {}", failed.join("; ")))
+        Err(format!(
+            "Could not set the memory level of: {}",
+            failed.join("; ")
+        ))
     }
 }

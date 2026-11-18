@@ -107,10 +107,7 @@ pub fn configure(app: &AppHandle, limits: Limits) -> Result<(), String> {
     use tauri::Manager;
     let state = app.state::<Resources>();
     *state.limits.lock().map_err(|e| e.to_string())? = limits;
-    DOWNLOAD_LIMIT.store(
-        u64::from(limits.network_kbps) * 1000 / 8,
-        Ordering::Relaxed,
-    );
+    DOWNLOAD_LIMIT.store(u64::from(limits.network_kbps) * 1000 / 8, Ordering::Relaxed);
     platform::apply(app, limits, state.monitoring())
 }
 
@@ -154,8 +151,8 @@ pub fn usage(app: &AppHandle) -> Usage {
             let elapsed = now.duration_since(before.at).as_secs_f64();
             if elapsed > 0.2 {
                 let cores = std::thread::available_parallelism().map_or(1, |n| n.get()) as f64;
-                usage.cpu_percent =
-                    (((cpu - before.cpu_seconds) / (elapsed * cores)) * 100.0).clamp(0.0, 100.0) as f32;
+                usage.cpu_percent = (((cpu - before.cpu_seconds) / (elapsed * cores)) * 100.0)
+                    .clamp(0.0, 100.0) as f32;
                 if platform::SUPPORTS_NETWORK_MONITOR {
                     usage.download_bytes_per_second =
                         Some((received.saturating_sub(before.received) as f64 / elapsed) as u64);
@@ -180,9 +177,24 @@ mod tests {
     #[test]
     fn only_sensible_limits_are_accepted() {
         assert!(Limits::default().valid());
-        assert!(Limits { cpu_percent: 50, network_kbps: 5_000 }.valid());
-        assert!(!Limits { cpu_percent: 100, network_kbps: 0 }.valid(), "100% is no limit: use 0");
-        assert!(!Limits { cpu_percent: 0, network_kbps: 2_000_000 }.valid());
+        assert!(Limits {
+            cpu_percent: 50,
+            network_kbps: 5_000
+        }
+        .valid());
+        assert!(
+            !Limits {
+                cpu_percent: 100,
+                network_kbps: 0
+            }
+            .valid(),
+            "100% is no limit: use 0"
+        );
+        assert!(!Limits {
+            cpu_percent: 0,
+            network_kbps: 2_000_000
+        }
+        .valid());
     }
 
     #[test]

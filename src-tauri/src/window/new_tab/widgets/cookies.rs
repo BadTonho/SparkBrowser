@@ -125,17 +125,19 @@ pub async fn get_cookies_for_url(app: &AppHandle, url: &str) -> Result<String, S
             return;
         };
         manager.cookies(&url, None::<&webkit2gtk::gio::Cancellable>, move |result| {
-            crate::error_log::ignored(sender.send(result.map_err(|e| e.to_string()).map(|cookies| {
-                cookies
-                    .into_iter()
-                    .filter_map(|mut cookie| {
-                        let name = cookie.name()?;
-                        (!name.is_empty())
-                            .then(|| format!("{name}={}", cookie.value().unwrap_or_default()))
-                    })
-                    .collect::<Vec<_>>()
-                    .join("; ")
-            })));
+            crate::error_log::ignored(sender.send(result.map_err(|e| e.to_string()).map(
+                |cookies| {
+                    cookies
+                        .into_iter()
+                        .filter_map(|mut cookie| {
+                            let name = cookie.name()?;
+                            (!name.is_empty())
+                                .then(|| format!("{name}={}", cookie.value().unwrap_or_default()))
+                        })
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                },
+            )));
         });
     })
     .map_err(|e| e.to_string())?;

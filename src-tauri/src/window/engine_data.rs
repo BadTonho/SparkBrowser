@@ -64,7 +64,9 @@ fn collect(receiver: &std::sync::mpsc::Receiver<Event>, pages: usize) -> Outcome
                 outcome.failed += 1;
             }
             Err(_) => {
-                outcome.failed += started.saturating_sub(finished).max(pages - reported.min(pages));
+                outcome.failed += started
+                    .saturating_sub(finished)
+                    .max(pages - reported.min(pages));
                 break;
             }
         }
@@ -150,7 +152,11 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
                 let mut path = PWSTR::null();
                 profile.ProfilePath(&mut path)?;
                 let path = CoTaskMemPWSTR::from(path).to_string().to_lowercase();
-                if !seen.lock().map(|mut seen| seen.insert(path)).unwrap_or(true) {
+                if !seen
+                    .lock()
+                    .map(|mut seen| seen.insert(path))
+                    .unwrap_or(true)
+                {
                     return Ok(false);
                 }
                 let done = sender.clone();
@@ -183,7 +189,9 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
             }
         });
         if let Err(error) = queued {
-            crate::error_log::warn(&format!("Could not reach a page to clear its data: {error}"));
+            crate::error_log::warn(&format!(
+                "Could not reach a page to clear its data: {error}"
+            ));
             crate::error_log::ignored(failed.send(Event::Started));
             crate::error_log::ignored(failed.send(Event::Done(false)));
         }
@@ -244,7 +252,11 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
                 .base_data_directory()
                 .map(|path| path.to_string())
                 .unwrap_or_default();
-            if !folder.is_empty() && !seen.lock().map(|mut seen| seen.insert(folder)).unwrap_or(true)
+            if !folder.is_empty()
+                && !seen
+                    .lock()
+                    .map(|mut seen| seen.insert(folder))
+                    .unwrap_or(true)
             {
                 crate::error_log::ignored(sender.send(Event::Skipped));
                 return;
@@ -261,7 +273,9 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
             );
         });
         if let Err(error) = queued {
-            crate::error_log::warn(&format!("Could not reach a page to clear its data: {error}"));
+            crate::error_log::warn(&format!(
+                "Could not reach a page to clear its data: {error}"
+            ));
             crate::error_log::ignored(failed.send(Event::Started));
             crate::error_log::ignored(failed.send(Event::Done(false)));
         }
@@ -284,8 +298,18 @@ mod tests {
 
     #[test]
     fn nothing_wanted_is_empty() {
-        assert!(Wanted { cache: false, site_data: false, older_than_days: None }.is_empty());
-        assert!(!Wanted { cache: true, site_data: false, older_than_days: Some(5) }.is_empty());
+        assert!(Wanted {
+            cache: false,
+            site_data: false,
+            older_than_days: None
+        }
+        .is_empty());
+        assert!(!Wanted {
+            cache: true,
+            site_data: false,
+            older_than_days: Some(5)
+        }
+        .is_empty());
     }
 
     #[test]
@@ -297,6 +321,12 @@ mod tests {
         send.send(Event::Started).unwrap();
         send.send(Event::Done(true)).unwrap();
         send.send(Event::Done(false)).unwrap();
-        assert_eq!(collect(&receive, 3), Outcome { cleared: 1, failed: 1 });
+        assert_eq!(
+            collect(&receive, 3),
+            Outcome {
+                cleared: 1,
+                failed: 1
+            }
+        );
     }
 }
