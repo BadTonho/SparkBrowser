@@ -26,3 +26,34 @@
     apply(read(choice));
   }
 })();
+
+// Plano de fundo: a vertical list of its two groups (audio equalizer, background media), one panel shown at a time.
+(() => {
+  const ids = [['wallpaper-tab-audio', 'audio-panel'], ['wallpaper-tab-media', 'wallpaper-media-panel']];
+  const tabs = ids.map(([tab, panel]) => ({ tab: document.getElementById(tab), panel: document.getElementById(panel) }));
+  if (tabs.some(({ tab, panel }) => !tab || !panel)) return;
+  const available = () => tabs.filter(item => !(document.documentElement.dataset.private === 'true' && item.tab.id === 'wallpaper-tab-audio'));
+  function select(name) {
+    const list = available();
+    const chosen = list.find(item => item.tab.id === name) ?? list[0];
+    for (const item of tabs) {
+      const selected = item === chosen;
+      item.tab.setAttribute('aria-selected', String(selected));
+      item.tab.tabIndex = selected ? 0 : -1;
+      item.panel.hidden = !selected;
+    }
+  }
+  for (const item of tabs) {
+    item.tab.addEventListener('click', () => select(item.tab.id));
+    item.tab.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      const list = available(), at = list.indexOf(item);
+      if (at < 0) return;
+      const next = list[(at + (event.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length];
+      select(next.tab.id); next.tab.focus();
+    });
+  }
+  // Private windows have no audio equalizer; page.js marks them after this script runs.
+  new MutationObserver(() => select(tabs.find(item => item.tab.getAttribute('aria-selected') === 'true')?.tab.id)).observe(document.documentElement, { attributes: true, attributeFilter: ['data-private'] });
+  select('wallpaper-tab-audio');
+})();

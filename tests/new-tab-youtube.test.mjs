@@ -232,13 +232,13 @@ test('controls send native operations and the setting is emitted as a widget pre
   assert.equal(f.dispatched.at(-1).detail.youtube_enabled, true);
 });
 
-test('the media category switches between Spotify and YouTube panels with arrow keys', () => {
+test('the media category switches between Spotify and YouTube panels with the up and down arrow keys', () => {
   const f = fixture();
   f.node('media-tab-youtube').listeners.click();
   assert.equal(f.node('youtube-panel').hidden, false);
   assert.equal(f.node('spotify-panel').hidden, true);
   assert.equal(f.node('media-tab-youtube').attrs['aria-selected'], 'true');
-  f.node('media-tab-youtube').listeners.keydown({key: 'ArrowRight'});
+  f.node('media-tab-youtube').listeners.keydown({key: 'ArrowDown'});
   assert.equal(f.node('spotify-panel').hidden, false);
   assert.equal(f.node('media-tab-spotify').focused, true);
 });

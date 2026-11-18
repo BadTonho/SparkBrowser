@@ -63,6 +63,7 @@
   "newtab.widgets.error.spotify_external_browser": "Could not open an external browser. Windows requires Microsoft Edge; Linux requires Firefox, Chromium, Chrome or Edge on PATH.",
   "newtab.widgets.showWeather": "Show weather",
   "newtab.widgets.wallpaper": "Wallpaper",
+  "newtab.widgets.wallpaperMedia": "Background media",
   "newtab.widgets.settingsLayout": "Panel position",
   "newtab.widgets.settingsLayoutCorner": "Compact",
   "newtab.widgets.settingsLayoutCenter": "Center",

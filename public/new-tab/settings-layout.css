@@ -59,3 +59,49 @@ html[data-theme="light"] #settings-panel[data-layout="center"]::backdrop { backg
 #settings-panel[data-layout="center"] #spotify-section > #media-tabs { grid-column:1; grid-row:1; margin:0; }
 #settings-panel[data-layout="center"] #spotify-section > [role="tabpanel"] { grid-column:2; grid-row:1; max-width:560px; padding-top:0; }
 #settings-panel[data-layout="center"] #spotify-section > [role="tabpanel"] > .toggle:first-child { margin-top:0; }
+
+/* Plano de fundo: same two-column split as Music and video; the list names each group, so the fieldset needs no legend or divider. */
+#settings-panel[data-layout="center"] #wallpaper-section:not([hidden]) { display:grid; grid-template-columns:minmax(180px, 220px) minmax(0, 1fr); align-items:start; gap:0 28px; }
+#settings-panel[data-layout="center"] #wallpaper-section > #wallpaper-tabs { grid-column:1; grid-row:1; margin:0; }
+#settings-panel[data-layout="center"] #wallpaper-section > [role="tabpanel"] { grid-column:2; grid-row:1; max-width:560px; }
+#wallpaper-section > [role="tabpanel"][hidden] { display:none; }
+#audio-panel #audio-background-settings { margin:0; padding:0; border:0; }
+#audio-panel #audio-background-settings legend { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+html[data-private="true"] :is(#wallpaper-tab-audio, #audio-panel) { display:none !important; }
+
+/* The on/off switch of each grouped panel (Music and video, Wallpaper) is nested in a tab panel, so it
+   needs the same card as a switch placed directly in a settings view. */
+.settings-view [role="tabpanel"] > .toggle,
+#audio-background-settings > .toggle { min-height:48px; margin:0 0 14px; padding:0 12px; border:1px solid rgba(255, 255, 255, 0.085); border-radius:11px; background:rgba(255, 255, 255, 0.035); font-weight:600; }
+#settings-panel[data-layout="center"] .settings-view [role="tabpanel"] > .toggle,
+#settings-panel[data-layout="center"] #audio-background-settings > .toggle { min-height:54px; }
+html[data-theme="light"] .settings-view [role="tabpanel"] > .toggle,
+html[data-theme="light"] #audio-background-settings > .toggle { border-color:rgba(0, 0, 0, 0.09); background:rgba(0, 0, 0, 0.025); }
+/* Fields under the switch: evenly spaced, with a compact rounded color swatch. */
+#audio-background-options > label, #wallpaper-options > .wallpaper-slider-wrap > label { margin:18px 0 8px; }
+#audio-background-options > label:first-child { margin-top:4px; }
+#audio-background-options #audio-background-style { margin-top:0; }
+#audio-background-options #audio-background-color { display:block; width:56px; height:36px; margin:0; padding:3px; border:1px solid rgba(255, 255, 255, 0.12); border-radius:10px; background:#202023; cursor:pointer; }
+#audio-background-options #audio-background-intensity { display:block; margin:10px 0 0; }
+#audio-background-options > p { margin:18px 0 0; line-height:1.55; }
+#wallpaper-options { margin-top:2px; }
+html[data-theme="light"] #audio-background-options #audio-background-color { border-color:rgba(0, 0, 0, 0.14); background:#ffffff; }
+
+/* Audio style picker: a grid of live-drawn previews instead of a dropdown (audio-style-picker.js). */
+#audio-background-options.has-style-grid > #audio-background-style { display:none; }
+#audio-style-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:10px; }
+#audio-style-grid .style-card { display:flex; flex-direction:column; gap:7px; align-items:stretch; padding:6px 6px 8px; border:1px solid rgba(255, 255, 255, 0.085); border-radius:12px; background:rgba(255, 255, 255, 0.035); color:inherit; font:inherit; font-size:12px; font-weight:600; text-align:center; cursor:pointer; transition:background 140ms ease, border-color 140ms ease; }
+#audio-style-grid .style-card:hover:not(:disabled) { background:rgba(255, 255, 255, 0.07); border-color:rgba(255, 255, 255, 0.16); }
+#audio-style-grid .style-card[aria-checked="true"] { background:rgba(255, 255, 255, 0.12); border-color:rgba(255, 255, 255, 0.34); }
+#audio-style-grid .style-card:focus-visible { outline:2px solid #e5e5e5; outline-offset:2px; }
+#audio-style-grid .style-card:disabled { opacity:.55; cursor:default; }
+#audio-style-grid canvas { display:block; width:100%; height:auto; aspect-ratio:2 / 1; border-radius:8px; background:#0c0c0e; }
+html[data-theme="light"] #audio-style-grid .style-card { border-color:rgba(0, 0, 0, 0.08); background:rgba(0, 0, 0, 0.03); }
+html[data-theme="light"] #audio-style-grid .style-card:hover:not(:disabled) { background:rgba(0, 0, 0, 0.06); }
+html[data-theme="light"] #audio-style-grid .style-card[aria-checked="true"] { background:rgba(0, 0, 0, 0.09); border-color:rgba(0, 0, 0, 0.3); }
+html[data-private="true"] #audio-style-grid { display:none !important; }
+
+/* Background media: use the room of the centered panel for a larger preview. */
+#settings-panel[data-layout="center"] #wallpaper-preview-wrap { max-height:none; margin:12px 0 4px; }
+#settings-panel[data-layout="center"] #wallpaper-preview,
+#settings-panel[data-layout="center"] #wallpaper-video-preview { height:clamp(180px, 36vh, 320px); }

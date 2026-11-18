@@ -1,10 +1,10 @@
 /* Shared card styles live in media-card.css; this file holds the YouTube-only parts. */
-#media-tabs { display:flex; flex-direction:column; gap:8px; margin:0 0 16px; }
-#media-tabs button { display:flex; align-items:center; gap:12px; width:100%; min-height:46px; padding:8px 12px; border:1px solid rgba(255, 255, 255, 0.085); border-radius:12px; background:rgba(255, 255, 255, 0.035); color:inherit; font:inherit; font-size:13px; font-weight:600; text-align:left; cursor:pointer; transition:background 140ms ease, border-color 140ms ease; }
-#media-tabs button:hover { background:rgba(255, 255, 255, 0.07); border-color:rgba(255, 255, 255, 0.16); }
-#media-tabs .tab-icon { flex:none; display:grid; place-items:center; width:30px; height:30px; border:1px solid rgba(255, 255, 255, 0.07); border-radius:9px; background:rgba(255, 255, 255, 0.045); }
-#media-tabs .tab-label { flex:1; }
-#media-tabs button[aria-selected="true"] { background:rgba(255, 255, 255, 0.12); border-color:rgba(255, 255, 255, 0.24); }
+:is(#media-tabs, #wallpaper-tabs) { display:flex; flex-direction:column; gap:8px; margin:0 0 16px; }
+:is(#media-tabs, #wallpaper-tabs) button { display:flex; align-items:center; gap:12px; width:100%; min-height:46px; padding:8px 12px; border:1px solid rgba(255, 255, 255, 0.085); border-radius:12px; background:rgba(255, 255, 255, 0.035); color:inherit; font:inherit; font-size:13px; font-weight:600; text-align:left; cursor:pointer; transition:background 140ms ease, border-color 140ms ease; }
+:is(#media-tabs, #wallpaper-tabs) button:hover { background:rgba(255, 255, 255, 0.07); border-color:rgba(255, 255, 255, 0.16); }
+:is(#media-tabs, #wallpaper-tabs) .tab-icon { flex:none; display:grid; place-items:center; width:30px; height:30px; border:1px solid rgba(255, 255, 255, 0.07); border-radius:9px; background:rgba(255, 255, 255, 0.045); }
+:is(#media-tabs, #wallpaper-tabs) .tab-label { flex:1; }
+:is(#media-tabs, #wallpaper-tabs) button[aria-selected="true"] { background:rgba(255, 255, 255, 0.12); border-color:rgba(255, 255, 255, 0.24); }
 #youtube-panel[hidden], #spotify-panel[hidden] { display:none; }
 #media-tabs ~ div select { width:100%; }
 #youtube-options p { color:#a1a1aa; font-size:12px; }
@@ -13,8 +13,8 @@
 #youtube-media > iframe { inset:auto; top:50%; left:50%; width:auto; height:auto; transform:translate(-50%, -50%); opacity:0; transition:opacity 250ms ease; }
 #youtube-media > iframe[data-ready="true"] { opacity:1; }
 @media (prefers-reduced-motion:reduce) { #youtube-media > iframe { transition:none; } }
-html[data-theme="light"] #media-tabs button { border-color:rgba(0, 0, 0, 0.08); background:rgba(0, 0, 0, 0.03); }
-html[data-theme="light"] #media-tabs button:hover { background:rgba(0, 0, 0, 0.06); }
-html[data-theme="light"] #media-tabs button[aria-selected="true"] { background:rgba(0, 0, 0, 0.09); border-color:rgba(0, 0, 0, 0.18); }
+html[data-theme="light"] :is(#media-tabs, #wallpaper-tabs) button { border-color:rgba(0, 0, 0, 0.08); background:rgba(0, 0, 0, 0.03); }
+html[data-theme="light"] :is(#media-tabs, #wallpaper-tabs) button:hover { background:rgba(0, 0, 0, 0.06); }
+html[data-theme="light"] :is(#media-tabs, #wallpaper-tabs) button[aria-selected="true"] { background:rgba(0, 0, 0, 0.09); border-color:rgba(0, 0, 0, 0.18); }
 html[data-theme="light"] #youtube-options p { color:#62626b; }
 html[data-private="true"] :is(#youtube-widget, #youtube-panel, #media-tabs) { display:none !important; }
