@@ -49,6 +49,7 @@
   import WindowControls from "./WindowControls.svelte";
   import { splitLayout } from "../../stores/splitViewStore";
   import { titlebarMenu, openTitlebarMenu, closeTitlebarMenu } from "../../stores/titlebarMenuStore";
+  import { suggestionState, requestSuggestions, closeSuggestions, moveSuggestion, highlightedSuggestion, chooseSuggestion } from "../../stores/addressSuggestionsStore";
 
   let narrow = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 1000px)").matches);
   const splitHorizontal = $derived($tabLayout === "horizontal" && Boolean($splitLayout));
@@ -82,7 +83,20 @@
   );
 
   function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (!$suggestionState.open || !$suggestionState.items.length) return;
+      event.preventDefault();
+      moveSuggestion(event.key === "ArrowDown" ? 1 : -1);
+      return;
+    }
     if (event.key === "Enter") {
+      const chosen = highlightedSuggestion();
+      if (chosen) {
+        event.preventDefault();
+        void chooseSuggestion(chosen);
+        return;
+      }
+      closeSuggestions();
       isAddressEditing.set(false);
       (event.currentTarget as HTMLInputElement).blur();
       void submitNavigation($addressInput);
@@ -94,6 +108,8 @@
     const target = event.currentTarget as HTMLInputElement;
     target.value = get(addressInput);
     target?.select();
+    // Selected text is replaced by the first key, so suggestions start from the recent sites.
+    requestSuggestions("", true);
   }
 
   function handleBookmarkToggle() {
@@ -185,10 +201,15 @@
           class="omnibox-input"
           type="text"
           value={displayedAddress}
-          oninput={(event) => addressInput.set((event.currentTarget as HTMLInputElement).value)}
-          onkeydown={(event) => { if (event.key === "Escape") { addressInput.set(internalPage ? "" : $currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
+          oninput={(event) => { const value = (event.currentTarget as HTMLInputElement).value; addressInput.set(value); requestSuggestions(value); }}
+          onkeydown={(event) => { if (event.key === "Escape") { closeSuggestions(); addressInput.set(internalPage ? "" : $currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
           onfocus={handleFocus}
-          onblur={() => isAddressEditing.set(false)}
+          onblur={() => { isAddressEditing.set(false); closeSuggestions(); }}
+          role="combobox"
+          aria-expanded={$suggestionState.open && $suggestionState.items.length > 0}
+          aria-controls="address-suggestions-list"
+          aria-autocomplete="list"
+          aria-activedescendant={$suggestionState.selected >= 0 ? `address-suggestion-${$suggestionState.selected}` : undefined}
           placeholder="{$t("titlebar.search_49c2")} {$defaultSearchEngine} {$t("titlebar.or_enter_url_5dc7")}"
           spellcheck="false"
         />

@@ -57,5 +57,11 @@
   "qr_code.invalid_png": "The generated QR image is invalid.",
   "qr_code.invalid_extension": "Choose a PNG file name.",
   "whatsapp.open": "Open WhatsApp",
-  "titlebar.new_window": "New window"
+  "titlebar.new_window": "New window",
+  "titlebar.suggestions_label": "Address suggestions",
+  "titlebar.suggest_search": "Search with {engine}",
+  "titlebar.suggest_go": "Go to address",
+  "titlebar.suggest_bookmark": "Bookmark",
+  "titlebar.suggest_history": "History",
+  "titlebar.suggest_web": "Suggested search"
 }

@@ -4,6 +4,8 @@
 
 - The window background style now has three options: **Matte** (solid), **Glass** (clear and light-catching, with a sheen and a bright edge) and **Ice** (a strong blur). The earlier "Frosted Glass" choice is now called **Ice** and is kept if you had it selected.
 
+- Clicking the address bar or typing in it now shows suggestions below it: your most recent sites when it is empty, and, while you type, what Enter will do, then matching bookmarks and visited pages. Use the arrow keys and Enter, or click a row.
+
 ## Improvements
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.

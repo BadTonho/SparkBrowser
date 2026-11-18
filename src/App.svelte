@@ -37,6 +37,7 @@
   import { cubicOut } from "svelte/easing";
   import { get } from "svelte/store";
   import Titlebar from "./lib/components/titlebar/Titlebar.svelte";
+  import AddressSuggestions from "./lib/components/titlebar/AddressSuggestions.svelte";
   import TitlebarMenu from "./lib/components/titlebar/TitlebarMenu.svelte";
   import QrCodePanel from "./lib/components/titlebar/QrCodePanel.svelte";
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
@@ -414,6 +415,7 @@
       </div>
     {/if}
     <Titlebar />
+    <AddressSuggestions />
     <UpdateNotice />
   <RuntimeNotice />
     <BackupNotice />
