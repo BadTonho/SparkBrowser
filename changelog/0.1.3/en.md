@@ -19,6 +19,8 @@
 
 - In **Clock**, the font, time format and position are now chosen from visible buttons instead of dropdown lists. Each font is shown with a sample time in that font.
 
+- The browser settings menu has a new order: Appearance & Layout, Search & Navigation, Workspaces & Theme, Performance, Privacy & Security, Keyboard Shortcuts, About & Updates, Changelog, Local Diagnostics and Data & Backup.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

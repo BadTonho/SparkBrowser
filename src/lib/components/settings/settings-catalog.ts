@@ -6,16 +6,16 @@ export const categories: {
   icon: string;
   label: string;
 }[] = [
-    { id: "data_backup", icon: "⇩", label: "Data & Backup" },
-    { id: "updates", icon: "↻", label: "About & Updates" },
-    { id: "changelog", icon: "books", label: "Changelog" },
-    { id: "diagnostics", icon: "◷", label: "Local Diagnostics" },
     { id: "appearance_layout", icon: "monitor", label: "Appearance & Layout" },
     { id: "search_navigation", icon: "search", label: "Search & Navigation" },
     { id: "workspaces", icon: "palette", label: "Workspaces & Theme" },
     { id: "performance_privacy", icon: "rocket", label: "Performance" },
     { id: "privacy_security", icon: "shield", label: "Privacy & Security" },
     { id: "shortcuts", icon: "keyboard", label: "Keyboard Shortcuts" },
+    { id: "updates", icon: "↻", label: "About & Updates" },
+    { id: "changelog", icon: "books", label: "Changelog" },
+    { id: "diagnostics", icon: "◷", label: "Local Diagnostics" },
+    { id: "data_backup", icon: "⇩", label: "Data & Backup" },
   ];
 
 export type SearchEntry = {

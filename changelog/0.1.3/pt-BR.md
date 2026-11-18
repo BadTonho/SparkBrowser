@@ -19,6 +19,8 @@
 
 - Em **Relógio**, a fonte, o formato de hora e a posição agora são escolhidos em botões visíveis, em vez de listas suspensas. Cada fonte aparece com um horário de exemplo naquela fonte.
 
+- O menu de configurações do navegador ganhou uma nova ordem: Aparência e disposição, Busca e navegação, Workspaces e tema, Desempenho, Privacidade e segurança, Atalhos de teclado, Sobre e atualizações, Changelog, Diagnósticos locais e Dados e backup.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.
