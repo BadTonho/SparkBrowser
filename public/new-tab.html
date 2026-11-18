@@ -149,9 +149,9 @@
     <div id="settings-content">
       <p id="settings-status" role="status"></p>
       <section id="spotify-section" class="settings-view" hidden>
-        <div id="media-tabs" role="tablist">
-          <button id="media-tab-spotify" type="button" role="tab" aria-selected="true" aria-controls="spotify-panel">Spotify</button>
-          <button id="media-tab-youtube" type="button" role="tab" aria-selected="false" aria-controls="youtube-panel" tabindex="-1">YouTube</button>
+        <div id="media-tabs" role="tablist" aria-orientation="vertical">
+          <button id="media-tab-spotify" type="button" role="tab" aria-selected="true" aria-controls="spotify-panel"><span class="tab-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1db954"/><path d="M6.2 9.2c3.9-1.1 8.2-.8 11.6 1.1M6.8 12.2c3.3-.9 6.9-.6 9.8 1M7.4 15c2.7-.7 5.4-.4 7.7.9" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="tab-label">Spotify</span></button>
+          <button id="media-tab-youtube" type="button" role="tab" aria-selected="false" aria-controls="youtube-panel" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg width="22" height="16" viewBox="0 0 28 20"><rect width="28" height="20" rx="5.5" fill="#ff0000"/><path d="M11 5.5 18.5 10 11 14.5Z" fill="#fff"/></svg></span><span class="tab-label">YouTube</span></button>
         </div>
         <div id="youtube-panel" role="tabpanel" aria-labelledby="media-tab-youtube" hidden>
           <label class="toggle"><input id="youtube-enabled" type="checkbox"><span data-label="showYoutube"></span></label>

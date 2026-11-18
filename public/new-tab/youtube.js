@@ -21,8 +21,8 @@
   for (const tab of tabs) {
     $(`media-tab-${tab}`).addEventListener('click', () => selectTab(tab));
     $(`media-tab-${tab}`).addEventListener('keydown', event => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-      const next = tabs[(tabs.indexOf(tab) + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      const next = tabs[(tabs.indexOf(tab) + (event.key === 'ArrowDown' ? 1 : tabs.length - 1)) % tabs.length];
       selectTab(next); $(`media-tab-${next}`).focus();
     });
   }
