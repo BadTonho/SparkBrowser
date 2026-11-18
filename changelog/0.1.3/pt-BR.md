@@ -10,6 +10,8 @@
 
 - Agora dá para trocar a paleta de cores do navegador em **Configurações → Aparência e disposição**: Grafite (o preto e cinza originais, e o padrão), Oceano, Violeta, Esmeralda, Rosa e Âmbar, cada uma com uma versão para o tema escuro e para o claro. Ela vale para todas as janelas abertas ao mesmo tempo, para a página de nova guia e para o botão do escudo.
 
+- A Barra de Comandos (Ctrl + K) agora abre acima da página, que continua visível, escurecida, atrás dela, em vez de ser trocada por uma tela escura com um cartão de aviso. Ela foi redesenhada para ficar mais limpa e combinar com o resto do navegador (mesma superfície dos outros painéis, linha selecionada discreta, sem brilho), e o campo de texto agora comporta o texto de ajuda.
+
 ## Melhorias
 
 - No painel de personalização centralizado, as opções **Posição do painel** e **Posição dos widgets de música** agora são pequenas, ficam lado a lado e permanecem na parte de baixo do painel, deixando mais espaço para os cartões.

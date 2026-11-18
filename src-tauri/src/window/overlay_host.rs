@@ -45,6 +45,7 @@ pub fn release_window(app: &AppHandle, window_id: &str) {
     use super::{
         downloads_popover, history_overlay, media_popover, permission_popover, privacy_popover,
         quick_settings_popover, settings_overlay, suggestions_popover, tools_popover, zoom_popover,
+        commands_popover,
     };
     let hosted = |label: &str| host_id(app, label) == window_id && app.get_webview(label).is_some();
     if hosted(media_popover::LABEL) {
@@ -70,6 +71,9 @@ pub fn release_window(app: &AppHandle, window_id: &str) {
     }
     if hosted(super::panel_popover::SUGGESTIONS_LABEL) {
         suggestions_popover::dismiss(app);
+    }
+    if hosted(super::panel_popover::COMMANDS_LABEL) {
+        commands_popover::dismiss(app);
     }
     if hosted(super::panel_popover::QUICK_SETTINGS_LABEL) {
         quick_settings_popover::dismiss(app);

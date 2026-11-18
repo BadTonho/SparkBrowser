@@ -49,6 +49,7 @@
   import { isDownloadsDrawerOpen } from "./lib/stores/downloadsStore";
   import { isSettingsModalOpen, settingsTabSession, syncSettingsTabSession } from "./lib/stores/settingsStore";
   import { onSettingsTabLoaded } from "./lib/services/bridge/settings-overlay";
+  import { preparePanel } from "./lib/services/bridge/panels";
   import { isSettingsQuickOpen } from "./lib/stores/settingsQuickPopoverStore";
   import { isToolsOpen } from "./lib/stores/toolsStore";
   import { isSitePermissionsOpen } from "./lib/stores/sitePermissionsStore";
@@ -223,6 +224,8 @@
     void Promise.all([session.ready, privacyListener, shortcutListener]).then(async () => {
       if (disposed) return;
       void syncForcedDarkPages();
+      // The command bar opens with a shortcut, not a click on a button, so there is no pointer to warn us: its layer is prepared once the browser is up.
+      window.setTimeout(() => preparePanel("commands"), 2500);
       await setHibernationExemptions(get(hibernationExemptions));
       await setAskDownloadDestination(get(askDownloadDestination));
       await Promise.all([setResidentTabLimit(get(residentTabLimit)), loadBookmarks(), initializePrivacyStats(), initializeKeyboardShortcuts()]);

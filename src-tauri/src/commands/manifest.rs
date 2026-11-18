@@ -135,6 +135,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_tools_popover",
     "set_downloads_popover",
     "set_suggestions_popover",
+    "set_commands_popover",
     "set_quick_settings_popover",
     "set_settings_overlay",
     "set_media_popover",

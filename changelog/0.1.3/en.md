@@ -10,6 +10,8 @@
 
 - You can now change the browser's color palette in **Settings → Appearance & Layout**: Graphite (the original black and gray, and the default), Ocean, Violet, Emerald, Rose and Amber, each with a version for the dark and the light theme. It applies to every open window at once, to the new-tab page and to the shield button.
 
+- The Command Bar (Ctrl + K) now opens above the page, which stays visible, dimmed, behind it instead of being replaced by a dark screen with a placeholder card. It was redesigned to be cleaner and to match the rest of the browser (same surface as the other panels, a quiet selected row, no glow), and its text field now fits its placeholder.
+
 ## Improvements
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.

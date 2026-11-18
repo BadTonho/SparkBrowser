@@ -2,7 +2,6 @@ use super::{creation_guard, Panel, Popover};
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 
-const RETAIN_AFTER_USE: Duration = Duration::from_secs(30);
 
 pub(super) fn schedule<P: Panel>(app: &AppHandle) {
     let service = app.state::<Popover<P>>();
@@ -20,7 +19,7 @@ pub(super) fn schedule<P: Panel>(app: &AppHandle) {
 
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        tokio::time::sleep(RETAIN_AFTER_USE).await;
+        tokio::time::sleep(Duration::from_secs(P::RETAIN_SECS)).await;
         crate::error_log::ignored(
             tauri::async_runtime::spawn_blocking(move || release::<P>(&app, generation)).await,
         );

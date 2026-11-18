@@ -14,6 +14,7 @@ pub(super) const DOWNLOADS_LABEL: &str = <Downloads as Panel>::LABEL;
 pub(super) const QUICK_SETTINGS_LABEL: &str = <QuickSettings as Panel>::LABEL;
 pub(super) const SETTINGS_LABEL: &str = <Settings as Panel>::LABEL;
 pub(super) const SUGGESTIONS_LABEL: &str = <Suggestions as Panel>::LABEL;
+pub(super) const COMMANDS_LABEL: &str = <Commands as Panel>::LABEL;
 
 pub trait Panel: Send + Sync + 'static {
     const LABEL: &'static str;
@@ -27,6 +28,8 @@ pub trait Panel: Send + Sync + 'static {
     /// Whether opening moves the keyboard focus into the panel. The address bar's suggestions must not,
     /// or typing would stop.
     const TAKES_FOCUS: bool = true;
+    /// How long the web view is kept after the panel closes, so the next open is instant.
+    const RETAIN_SECS: u64 = 30;
 }
 #[derive(Default)]
 pub struct Tools;
@@ -36,6 +39,18 @@ pub struct Downloads;
 pub struct QuickSettings;
 #[derive(Default)]
 pub struct Settings;
+/// The command bar: a window-wide layer over the page, so the page stays visible (dimmed) behind it.
+#[derive(Default)]
+pub struct Commands;
+impl Panel for Commands {
+    const LABEL: &'static str = "commands-popover-webview";
+    const SURFACE: &'static str = "/index.html?surface=commands";
+    const HOST: &'static str = "commands-popover";
+    const SETTER: &'static str = "__sparkSetCommandsPopover";
+    const EVENT: &'static str = "commands-popover-action";
+    // Opened with a shortcut and often: worth keeping ready for a few minutes.
+    const RETAIN_SECS: u64 = 180;
+}
 #[derive(Default)]
 pub struct Suggestions;
 impl Panel for Suggestions {
@@ -234,6 +249,7 @@ pub fn prepare(app: &AppHandle, window_id: &str, panel: &str) -> Result<(), Stri
         "downloads" => warm::<Downloads>(app, window_id),
         "settings" => warm::<Settings>(app, window_id),
         "suggestions" => warm::<Suggestions>(app, window_id),
+        "commands" => warm::<Commands>(app, window_id),
         "history" => warm_overlay(super::history_overlay::prepare(app, window_id)),
         "zoom" => warm_overlay(super::zoom_popover::prepare(app, window_id)),
         "privacy" => warm_overlay(super::privacy_popover::prepare(app, window_id)),
@@ -505,11 +521,15 @@ pub fn set<P: Panel>(
     } else if P::HOST == "downloads-popover" {
         super::tools_popover::dismiss(app);
         super::quick_settings_popover::dismiss(app);
-    } else if P::HOST == "settings-quick-popover" {
+    } else if P::HOST == "settings-quick-popover" || P::HOST == "commands-popover" {
         super::tools_popover::dismiss(app);
         super::downloads_popover::dismiss(app);
         super::history_overlay::dismiss(app);
         super::permission_popover::dismiss(app);
+        super::suggestions_popover::dismiss(app);
+        if P::HOST == "commands-popover" {
+            super::quick_settings_popover::dismiss(app);
+        }
     } else {
         super::tools_popover::dismiss(app);
     }
@@ -537,7 +557,7 @@ pub fn set<P: Panel>(
 mod tests {
     use super::{
         can_finish_animated_close, Downloads, Inner, Panel, Presentation, QuickSettings, Session,
-        Suggestions, Tools,
+        Commands, Suggestions, Tools,
     };
 
     #[test]
@@ -546,11 +566,13 @@ mod tests {
         assert_eq!(Downloads::HOST, "downloads-popover");
         assert_eq!(QuickSettings::HOST, "settings-quick-popover");
         assert_eq!(Suggestions::HOST, "suggestions-popover");
+        assert_eq!(Commands::HOST, "commands-popover");
     }
 
     #[test]
     fn only_the_suggestions_panel_sits_below_its_anchor_without_taking_focus() {
         assert!(Suggestions::BELOW_ANCHOR && !Suggestions::TAKES_FOCUS);
+        assert!(!Commands::BELOW_ANCHOR && Commands::TAKES_FOCUS);
         for (below, focus) in [
             (Tools::BELOW_ANCHOR, Tools::TAKES_FOCUS),
             (Downloads::BELOW_ANCHOR, Downloads::TAKES_FOCUS),

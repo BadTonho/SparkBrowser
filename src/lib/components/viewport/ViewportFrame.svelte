@@ -31,8 +31,9 @@
       $isSettingsModalOpen ||
       $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
   );
+  // The command bar is a layer above the page, like the settings: it does not hide the page.
   let blockingOverlayOpen = $derived(
-    $isCommandBarOpen || $isDownloadsDrawerOpen ||
+    $isDownloadsDrawerOpen ||
       $isWorkspaceSwitcherOverlayOpen || Boolean($titlebarMenu)
   );
 

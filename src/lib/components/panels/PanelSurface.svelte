@@ -3,17 +3,20 @@
   import PanelViewNode from "./PanelViewNode.svelte";
   import { focusDialog } from "../../actions/focusDialog";
   import { syncDownloadFocus } from "../../services/download-panel-focus";
-  let { surface }: { surface: "tools" | "downloads" | "settings-quick" | "suggestions" } = $props();
+  let { surface }: { surface: "tools" | "downloads" | "settings-quick" | "suggestions" | "commands" } = $props();
   const downloads = $derived(surface === "downloads");
   const quickSettings = $derived(surface === "settings-quick");
   // The address bar's suggestions: a list below the address bar that never takes the keyboard.
   const suggestions = $derived(surface === "suggestions");
-  const setter = $derived(downloads ? "__sparkSetDownloadsPopover" : quickSettings ? "__sparkSetQuickSettingsPopover" : suggestions ? "__sparkSetSuggestionsPopover" : "__sparkSetToolsPopover");
+  // The command bar: a window-wide layer above the page. The page shows, dimmed, behind it.
+  const commands = $derived(surface === "commands");
+  const setter = $derived(downloads ? "__sparkSetDownloadsPopover" : quickSettings ? "__sparkSetQuickSettingsPopover" : suggestions ? "__sparkSetSuggestionsPopover" : commands ? "__sparkSetCommandsPopover" : "__sparkSetToolsPopover");
   import { panelPosition, isPanelTrigger, type PanelPresentation, type PanelViewAction } from "../../services/panel-presentation";
   import "../tools/tools.css";
   import "../downloads/downloads.css";
   import "../settings/settings-quick.css";
   import "../titlebar/suggestions.css";
+  import "../commandbar/commandbar.css";
   import "./popover-motion.css";
 
   type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number };
@@ -29,7 +32,9 @@
   let inFlight: number | null = null;
   let viewport = $state({ width: innerWidth, height: innerHeight });
   // This web view starts at the bottom of the address bar, so the list is placed from its top edge, at the bar's own width.
-  const position = $derived(presentation ? (suggestions
+  const position = $derived(presentation ? (commands
+    ? { left: 0, top: 0, width: viewport.width, maxHeight: viewport.height }
+    : suggestions
     ? { left: presentation.anchor.left, top: 4, width: presentation.anchor.width, maxHeight: Math.max(0, viewport.height - 8) }
     : panelPosition(presentation.anchor, viewport.width, viewport.height, downloads ? { width: 480, maxHeight: 560 } : quickSettings ? { width: 300, maxHeight: 560 } : undefined)) : null);
   function downloadFocus(node: HTMLElement) { return downloads || quickSettings ? focusDialog(node, { onEscape: () => send({ kind: "dismiss", reason: "escape" }) }) : undefined; }
@@ -85,7 +90,10 @@
       pendingOpeningFocus = false;
       if (downloads) syncDownloadFocus(root, focusOpening, hadForm);
       else if (quickSettings && focusOpening) root?.querySelector<HTMLElement>('[data-testid="settings-quick-theme-dark"], [data-testid="settings-quick-theme-light"]')?.focus();
+      else if (focusOpening && commands) { const field = root?.querySelector<HTMLInputElement>(".command-input"); field?.focus(); field?.select(); }
       else if (focusOpening && !suggestions) root?.querySelector<HTMLElement>("[role=tab][aria-selected=true]")?.focus();
+      // The highlight moves in the shell; this copy only has to keep the highlighted row in view.
+      if (commands) root?.querySelector<HTMLElement>(".command-item.selected")?.scrollIntoView({ block: "nearest" });
     };
     (window as unknown as Record<string, typeof set>)[setter] = set;
     const click = (event: MouseEvent) => {
@@ -103,6 +111,13 @@
     const keys = (event: KeyboardEvent) => {
       if (event.key === "Escape") { event.preventDefault(); send({ kind: "dismiss", reason: "escape" }); }
       const target = event.target as HTMLElement;
+      // The shortcut that opens the bar also closes it.
+      if (commands && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); send({ kind: "dismiss", reason: "escape" }); }
+      // The bar's own key handling (moving the highlight, running the chosen row) lives in the shell.
+      if (commands && target.matches?.(".command-input") && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
+        event.preventDefault();
+        send({ kind: "keyboard", target: Number(target.dataset.panelControl), key: event.key, ctrl: event.ctrlKey, alt: event.altKey, shift: event.shiftKey, meta: event.metaKey });
+      }
       if (target.getAttribute?.("role") === "tab" && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
         event.preventDefault();
         const items = [...root.querySelectorAll<HTMLElement>("[role=tab]")];
@@ -125,10 +140,10 @@
 
 <svelte:window onresize={() => { viewport = { width: innerWidth, height: innerHeight }; }} />
 {#if presentation && position}
-  <div class={downloads ? "downloads-dismiss" : quickSettings ? "settings-quick-dismiss" : suggestions ? "suggestions-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
+  <div class={downloads ? "downloads-dismiss" : quickSettings ? "settings-quick-dismiss" : suggestions ? "suggestions-dismiss" : commands ? "commands-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
     if (event.target === event.currentTarget) send({ kind: "dismiss", reason: (downloads || quickSettings) && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
   }}>
-    <div class="popover-enter {downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : suggestions ? "suggestions-surface" : "tools-surface"}" bind:this={root} use:downloadFocus style:left="{position.left}px" style:top="{position.top}px" style:width="{position.width}px" style:max-height="{position.maxHeight}px">
+    <div class="{commands ? "" : "popover-enter "}{downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : suggestions ? "suggestions-surface" : commands ? "commands-surface" : "tools-surface"}" bind:this={root} use:downloadFocus style:left={commands ? undefined : `${position.left}px`} style:top={commands ? undefined : `${position.top}px`} style:width={commands ? undefined : `${position.width}px`} style:max-height={commands ? undefined : `${position.maxHeight}px`}>
       <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
     </div>
   </div>

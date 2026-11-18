@@ -1,0 +1,171 @@
+/* The command bar. Plain CSS (not scoped) because the same markup is drawn in the page layout (outside the app)
+   and, inside the app, in the native layer above the page, which only receives class names and theme variables.
+   It uses the same surface, border and shadow as the other panels, so it looks like part of the browser. */
+
+/* Outside the app: a backdrop over the page layout. */
+.command-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(var(--overlay-backdrop-blur, 10px));
+  -webkit-backdrop-filter: blur(var(--overlay-backdrop-blur, 10px));
+}
+html[data-theme="light"] .command-backdrop { background: rgba(255, 255, 255, 0.35); }
+
+/* Inside the app: the real markup stays off screen in the shell and only its copy is drawn. */
+.command-controller { position: fixed; left: -10000px; top: 0; width: 620px; visibility: hidden; pointer-events: none; }
+
+/* Inside the app: the native layer. The page stays visible behind it, dimmed and softly blurred. */
+.commands-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(var(--overlay-backdrop-blur, 10px));
+  -webkit-backdrop-filter: blur(var(--overlay-backdrop-blur, 10px));
+  animation: command-dim 0.16s ease-out;
+}
+html[data-theme="light"] .commands-dismiss { background: rgba(255, 255, 255, 0.35); }
+.commands-surface { width: min(620px, 92vw); margin: 12vh auto 0; }
+
+.command-modal {
+  box-sizing: border-box;
+  width: min(620px, 92vw);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: var(--modal-surface-border, 1px solid var(--border-subtle));
+  border-radius: var(--radius-lg, 16px);
+  background: var(--modal-surface-bg, var(--bg-glass-elevated));
+  backdrop-filter: var(--modal-surface-filter, none);
+  -webkit-backdrop-filter: var(--modal-surface-filter, none);
+  box-shadow: var(--modal-surface-shadow, 0 24px 64px rgba(0, 0, 0, 0.5));
+  color: var(--text-primary);
+}
+.commands-surface .command-modal { animation: command-in 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+
+.command-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: 54px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.command-input-bar .spark-icon { display: flex; flex: none; color: var(--text-muted); }
+.command-input-bar .spark-icon svg { width: 17px; height: 17px; }
+.command-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 15px;
+}
+.command-input::placeholder { color: var(--text-muted); }
+.esc-hint {
+  flex: none;
+  padding: 2px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 10.5px;
+  letter-spacing: 0.3px;
+}
+
+.search-counts { padding: 8px 18px 0; color: var(--text-secondary); font-size: 12px; }
+.action-error { padding: 8px 18px 0; color: #ef9a9a; font-size: 12px; }
+
+.command-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: min(360px, 52vh);
+  padding: 6px;
+  overflow-y: auto;
+}
+.command-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.command-item:hover { background: var(--bg-glass-hover); }
+/* The selected row is a quiet tint, not an outline or a glow. */
+.command-item.selected { background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-glass-hover)); }
+.command-item:disabled { opacity: 0.6; cursor: default; }
+
+.item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--bg-glass-hover);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.item-icon svg { width: 15px; height: 15px; }
+.command-item.selected .item-icon { color: var(--text-primary); }
+.item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.item-title { overflow: hidden; color: var(--text-primary); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.item-subtitle { overflow: hidden; color: var(--text-secondary); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+.item-badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--bg-glass-hover);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.command-item.selected .item-badge { background: var(--accent-primary); color: var(--accent-foreground); }
+
+.command-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 16px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.command-footer kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 10px;
+}
+
+@keyframes command-dim { from { opacity: 0; } to { opacity: 1; } }
+@keyframes command-in { from { opacity: 0; transform: translateY(-10px) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .commands-dismiss, .commands-surface .command-modal { animation: none; }
+  .command-item { transition: none; }
+}

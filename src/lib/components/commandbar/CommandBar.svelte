@@ -13,6 +13,10 @@
   import { openTools } from "../../stores/toolsStore";
   import { rankCommands, normalizeSearch } from "../../services/command-ranking.js";
   import { focusDialog } from "../../actions/focusDialog";
+  import { isTauriRuntime } from "../../services/bridge/runtime";
+  import { mountPanelHost } from "../panels/panel-host";
+  import { onCommandsPopoverAction, setCommandsPopover } from "../../services/bridge/commands-popover";
+  import "./commandbar.css";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { CommandItem } from "../../types/browser";
@@ -20,6 +24,9 @@
     isCommandBarOpen,
     commandQuery,
     commandBarScale,
+    commandBarSession,
+    beginCommandBarSession,
+    endCommandBarSession,
     closeCommandBar,
   } from "../../stores/commandBarStore";
   import {
@@ -43,6 +50,37 @@
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { locale } from "../../i18n";
   import { calculateQuery } from "../../services/calculator.js";
+
+  // In the app the bar is drawn by a native layer above the page (so the page stays visible behind it);
+  // the real bar below keeps all the logic, off screen, and only a copy of the markup is shown there.
+  const native = isTauriRuntime();
+  $effect(() => {
+    if (!native) return;
+    if ($isCommandBarOpen && !$commandBarSession) {
+      const anchor = document.querySelector(".browser-root");
+      if (anchor instanceof HTMLElement) beginCommandBarSession(anchor);
+    } else if (!$isCommandBarOpen && $commandBarSession) {
+      endCommandBarSession();
+    }
+  });
+  function host(node: HTMLElement) {
+    if (!native) return {};
+    const stop = mountPanelHost(node, true, {
+      id: "commands",
+      sessionStore: commandBarSession,
+      close: async () => { await closeCommandBar(); },
+      set: setCommandsPopover,
+      listen: onCommandsPopoverAction,
+    });
+    return { destroy: stop };
+  }
+  // Outside the app the bar keeps its own motion and focus handling.
+  const fadeOutside = (node: Element, params: { duration: number }) => native ? { duration: 0 } : fade(node, params);
+  const flyOutside = (node: Element, params: { y: number; duration: number; easing: (t: number) => number }) => native ? { duration: 0 } : fly(node, params);
+  function dialog(node: HTMLElement) {
+    return native ? {} : focusDialog(node, { onEscape: closeCommandBar });
+  }
+  const present = $derived(native ? Boolean($commandBarSession) : $isCommandBarOpen);
 
   let inputEl: HTMLInputElement | undefined = $state();
   let selectedId = $state<string | null>(null);
@@ -341,234 +379,79 @@
   }
 </script>
 
-{#if $isCommandBarOpen}
+{#snippet modal()}
   <div
-    class="command-backdrop"
-    transition:fade={{ duration: 150 }}
-    onclick={() => closeCommandBar()}
-    onkeydown={(e) => e.key === "Escape" && closeCommandBar()}
-    role="presentation"
+    class="command-modal"
+    style={native ? undefined : `transform: scale(${$commandBarScale});`}
+    in:flyOutside={{ y: -18, duration: 220, easing: cubicOut }}
+    out:fadeOutside={{ duration: 130 }}
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.stopPropagation()}
+    use:dialog
+    use:host
+    role="dialog"
+    aria-modal="true"
+    aria-label={$t("commandbar.command_bar_1356")}
+    tabindex="-1"
   >
-    <div
-      class="command-modal"
-      style="transform: scale({$commandBarScale});"
-      in:fly={{ y: -18, duration: 220, easing: cubicOut }}
-      out:fade={{ duration: 130 }}
-      onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.stopPropagation()}
-      use:focusDialog={{ onEscape: closeCommandBar }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={$t("commandbar.command_bar_1356")}
-      tabindex="-1"
-    >
-      <div class="command-input-bar">
-        <span class="spark-icon"><AppIcon name="zap" /></span>
-        <input
-          bind:this={inputEl}
-          bind:value={$commandQuery}
-          onkeydown={handleKeydown}
-          class="command-input"
-          type="text"
-          placeholder={$t("commandbar.type_url_search_web_switch_workspace_tab_or_run_command_0026")}
-          spellcheck="false"
-        />
-        <kbd class="esc-hint">ESC</kbd>
-      </div>
+    <div class="command-input-bar">
+      <span class="spark-icon"><AppIcon name="zap" /></span>
+      <input
+        bind:this={inputEl}
+        bind:value={$commandQuery}
+        onkeydown={handleKeydown}
+        class="command-input"
+        type="text"
+        placeholder={$t("commandbar.type_url_search_web_switch_workspace_tab_or_run_command_0026")}
+        spellcheck="false"
+      />
+      <kbd class="esc-hint">ESC</kbd>
+    </div>
 
-      <ErrorMessage error={searchError} />
-      {#if actionError}<p class="action-error" role="alert">{actionError}</p>{/if}
-      {#if searchResults.notes_count || searchResults.sessions_count}<p class="search-counts" role="status">{$t("search.counts", { notes: `${searchResults.notes_count}${searchResults.notes_has_more ? "+" : ""}`, sessions: `${searchResults.sessions_count}${searchResults.sessions_has_more ? "+" : ""}` })}</p>{/if}
-      <div class="command-results">
-        {#each suggestions as item, idx (item.id)}
-          <button
-            class="command-item"
-            data-command-id={item.id}
-            disabled={executing}
-            class:selected={idx === selectedIndex}
-            onmouseenter={() => (selectedId = item.id)}
-            onclick={() => execute(item)}
-          >
-            <span class="item-icon"><AppIcon name={item.icon} /></span>
-            <div class="item-text">
-              <span class="item-title">{item.title}</span>
-              <span class="item-subtitle">{item.subtitle}</span>
-            </div>
-            <span class="item-badge">{item.badge}</span>
-          </button>
-        {/each}
-      </div>
+    <ErrorMessage error={searchError} />
+    {#if actionError}<p class="action-error" role="alert">{actionError}</p>{/if}
+    {#if searchResults.notes_count || searchResults.sessions_count}<p class="search-counts" role="status">{$t("search.counts", { notes: `${searchResults.notes_count}${searchResults.notes_has_more ? "+" : ""}`, sessions: `${searchResults.sessions_count}${searchResults.sessions_has_more ? "+" : ""}` })}</p>{/if}
+    <div class="command-results">
+      {#each suggestions as item, idx (item.id)}
+        <button
+          class="command-item"
+          data-command-id={item.id}
+          disabled={executing}
+          class:selected={idx === selectedIndex}
+          onmouseenter={() => (selectedId = item.id)}
+          onclick={() => execute(item)}
+        >
+          <span class="item-icon"><AppIcon name={item.icon} /></span>
+          <div class="item-text">
+            <span class="item-title">{item.title}</span>
+            <span class="item-subtitle">{item.subtitle}</span>
+          </div>
+          <span class="item-badge">{item.badge}</span>
+        </button>
+      {/each}
+    </div>
 
-      <div class="command-footer">
-        <span><kbd>↑</kbd> <kbd>↓</kbd> {$t("commandbar.to_navigate_5a70")}</span>
-        <span><kbd>↵</kbd> {$t("commandbar.to_execute_5a2d")}</span>
-        <span><kbd>{$keyboardShortcuts && shortcutLabel("command-bar")}</kbd> {$t("commandbar.anytime_75eb")}</span>
-      </div>
+    <div class="command-footer">
+      <span><kbd>↑</kbd> <kbd>↓</kbd> {$t("commandbar.to_navigate_5a70")}</span>
+      <span><kbd>↵</kbd> {$t("commandbar.to_execute_5a2d")}</span>
+      <span><kbd>{$keyboardShortcuts && shortcutLabel("command-bar")}</kbd> {$t("commandbar.anytime_75eb")}</span>
     </div>
   </div>
+{/snippet}
+
+{#if present}
+  {#if native}
+    <!-- The real bar stays off screen; only the copy inside it is shown in the native layer. -->
+    <div class="command-controller" aria-hidden="true">{@render modal()}</div>
+  {:else}
+    <div
+      class="command-backdrop"
+      transition:fade={{ duration: 150 }}
+      onclick={() => closeCommandBar()}
+      onkeydown={(e) => e.key === "Escape" && closeCommandBar()}
+      role="presentation"
+    >
+      {@render modal()}
+    </div>
+  {/if}
 {/if}
-
-<style>
-  .command-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 999;
-    background: rgba(8, 8, 8, 0.62);
-    backdrop-filter: blur(var(--overlay-backdrop-blur, 16px));
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 12vh;
-  }
-
-  .command-modal {
-    width: min(620px, 92vw);
-    border-radius: var(--radius-lg);
-    background: rgba(20, 24, 38, 0.92);
-    border: 1px solid var(--accent-primary);
-    box-shadow:
-      0 24px 64px rgba(0, 0, 0, 0.65),
-      0 0 40px color-mix(in srgb, var(--accent-primary) 22%, transparent);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    will-change: transform;
-  }
-
-  .command-input-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--border-subtle);
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  .spark-icon {
-    font-size: 18px;
-  }
-
-  .command-input {
-    flex: 1;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  .command-input::placeholder {
-    color: var(--text-muted);
-  }
-
-  .esc-hint {
-    font-size: 10.5px;
-    padding: 3px 7px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
-  }
-
-  .search-counts { padding: 8px 18px; color: var(--text-secondary); font-size: 12px; }
-  .action-error { padding: 0 18px 8px; color: #ef9a9a; font-size: 12px; }
-  .command-results {
-    display: flex;
-    flex-direction: column;
-    padding: 8px;
-    gap: 4px;
-    max-height: 340px;
-    overflow-y: auto;
-  }
-
-  .command-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: var(--radius-md);
-    text-align: left;
-    transition:
-      background 0.14s ease,
-      transform 0.14s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .command-item.selected {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--accent-primary) 24%, transparent) 0%,
-      color-mix(in srgb, var(--accent-secondary) 18%, transparent) 100%
-    );
-    border: 1px solid var(--accent-primary);
-    transform: translateX(3px);
-  }
-
-  .item-icon {
-    font-size: 16px;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .item-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .item-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .item-subtitle {
-    font-size: 11px;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .item-badge {
-    font-size: 10.5px;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 99px;
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-secondary);
-    flex-shrink: 0;
-  }
-
-  .command-item.selected .item-badge {
-    background: var(--accent-primary);
-    color: var(--accent-foreground);
-  }
-
-  .command-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    border-top: 1px solid var(--border-subtle);
-    background: rgba(0, 0, 0, 0.22);
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  .command-footer kbd {
-    padding: 1px 5px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary);
-    font-size: 10px;
-  }
-</style>

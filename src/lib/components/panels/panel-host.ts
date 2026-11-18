@@ -8,7 +8,7 @@ import { onOverlayOpening } from "../../services/bridge/overlays";
 import { locale } from "../../i18n";
 
 export interface PanelSession { id: number; anchor: HTMLElement }
-interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings" | "suggestions"; sessionStore: Readable<PanelSession | null>; independent?: boolean; onTrigger?: () => void; close: (restore?: boolean, immediate?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
+interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings" | "suggestions" | "commands"; sessionStore: Readable<PanelSession | null>; independent?: boolean; onTrigger?: () => void; close: (restore?: boolean, immediate?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
 export function mountPanelHost(root: HTMLElement, native: boolean, options: HostOptions) {
   const { id, sessionStore, close, set, listen } = options;
   const projection = createPanelProjection(root);

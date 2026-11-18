@@ -37,7 +37,9 @@ const component = new URLSearchParams(location.search).get("surface") === "tools
     ? import("./lib/components/downloads/DownloadsSurface.svelte")
     : new URLSearchParams(location.search).get("surface") === "settings-quick"
       ? import("./lib/components/settings/SettingsQuickSurface.svelte")
-      : new URLSearchParams(location.search).get("surface") === "suggestions"
+      : new URLSearchParams(location.search).get("surface") === "commands"
+        ? import("./lib/components/commandbar/CommandsSurface.svelte")
+        : new URLSearchParams(location.search).get("surface") === "suggestions"
         ? import("./lib/components/titlebar/SuggestionsSurface.svelte")
         : ["settings", "settings-tab"].includes(new URLSearchParams(location.search).get("surface") ?? "")
         ? import("./lib/components/settings/SettingsSurface.svelte")

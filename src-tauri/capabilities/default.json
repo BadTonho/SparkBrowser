@@ -107,6 +107,7 @@
     "allow-set-settings-overlay",
     "allow-set-downloads-popover",
     "allow-set-suggestions-popover",
+    "allow-set-commands-popover",
     "allow-set-media-popover",
     "allow-set-zoom-popover",
     "allow-set-workspace-switcher-overlay",
