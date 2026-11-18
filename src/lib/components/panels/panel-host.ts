@@ -23,14 +23,14 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     if (id !== "settings" && event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); void close(true); }
   };
   window.addEventListener("keydown", keys, true);
-  const themeKeys = ["--text-primary", "--text-secondary", "--text-muted", "--accent-primary", "--accent-foreground", "--border-subtle", "--bg-glass-elevated", "--bg-glass-hover", "--bg-downloads-panel", "--bg-permission-popover", "--modal-surface-bg", "--modal-surface-filter", "--modal-surface-border", "--modal-surface-shadow", "--overlay-backdrop-blur"];
+  const themeKeys = ["--text-primary", "--text-secondary", "--text-muted", "--status-on", "--status-on-bg", "--status-on-border", "--accent-primary", "--accent-secondary", "--accent-gradient", "--accent-foreground", "--border-subtle", "--bg-glass-elevated", "--bg-glass-hover", "--bg-downloads-panel", "--bg-permission-popover", "--modal-surface-bg", "--modal-surface-filter", "--modal-surface-border", "--modal-surface-shadow", "--overlay-backdrop-blur"];
   // getComputedStyle forces a style recalculation, so theme values are re-read only
   // after the root element's style, classes or theme attributes change. Theme changes
   // do not set `dirty`: publish still compares the encoded payload, so echoes of a
   // value we just applied do not start another native update.
   let themeChanged = true, theme: Record<string, string> = {};
   const themeObserver = new MutationObserver(() => { themeChanged = true; });
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class", "data-theme"] });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class", "data-theme", "data-palette"] });
   const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
   const onColorScheme = () => { themeChanged = true; };
   colorScheme.addEventListener("change", onColorScheme);

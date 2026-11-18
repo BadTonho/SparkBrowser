@@ -12,6 +12,10 @@
   --bg-permission-popover: #1c1c1c;
   --bg-viewport-frame: #101010;
   --bg-downloads-panel: #1c1c1c;
+  /* "On" state of the shield button. The default palette keeps the original green; the others use their accent. */
+  --status-on: #22c55e;
+  --status-on-bg: rgba(34, 197, 94, 0.12);
+  --status-on-border: rgba(34, 197, 94, 0.35);
   --download-status-completed: #22c55e;
   --download-status-paused: #eab308;
   --download-status-error: #ef4444;
@@ -246,4 +250,97 @@ html[data-theme="light"][data-window-style="solid"],
   opacity: 0.97 !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--accent-primary) !important;
   cursor: grabbing !important;
+}
+
+/* Color palettes. The default (graphite) is the plain colors above and has no attribute; the others
+   replace the accent. The light variants need their own, darker, accent to stay readable. */
+html[data-palette="ocean"] {
+  --accent-primary: #60a5fa;
+  --accent-secondary: #2563eb;
+  --accent-foreground: #0b1220;
+  --accent-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="ocean"][data-theme="light"] {
+  --accent-primary: #2563eb;
+  --accent-secondary: #1d4ed8;
+  --accent-foreground: #ffffff;
+  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="violet"] {
+  --accent-primary: #a78bfa;
+  --accent-secondary: #7c3aed;
+  --accent-foreground: #120b24;
+  --accent-gradient: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="violet"][data-theme="light"] {
+  --accent-primary: #7c3aed;
+  --accent-secondary: #6d28d9;
+  --accent-foreground: #ffffff;
+  --accent-gradient: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="emerald"] {
+  --accent-primary: #34d399;
+  --accent-secondary: #059669;
+  --accent-foreground: #04140e;
+  --accent-gradient: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="emerald"][data-theme="light"] {
+  --accent-primary: #059669;
+  --accent-secondary: #047857;
+  --accent-foreground: #ffffff;
+  --accent-gradient: linear-gradient(135deg, #059669 0%, #047857 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="rose"] {
+  --accent-primary: #fb7185;
+  --accent-secondary: #e11d48;
+  --accent-foreground: #1a060a;
+  --accent-gradient: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="rose"][data-theme="light"] {
+  --accent-primary: #e11d48;
+  --accent-secondary: #be123c;
+  --accent-foreground: #ffffff;
+  --accent-gradient: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="amber"] {
+  --accent-primary: #fbbf24;
+  --accent-secondary: #d97706;
+  --accent-foreground: #1a1204;
+  --accent-gradient: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-palette="amber"][data-theme="light"] {
+  --accent-primary: #d97706;
+  --accent-secondary: #b45309;
+  --accent-foreground: #ffffff;
+  --accent-gradient: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  --status-on: var(--accent-primary);
+  --status-on-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --status-on-border: color-mix(in srgb, var(--accent-primary) 40%, transparent);
 }

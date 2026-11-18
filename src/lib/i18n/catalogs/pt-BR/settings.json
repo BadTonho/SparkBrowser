@@ -358,5 +358,13 @@
   "settings.toolbar_settings": "Configurações",
   "settings.toolbar_zen": "Modo Zen",
   "settings.toolbar_qr": "QR Code",
-  "settings.toolbar_whatsapp": "WhatsApp"
+  "settings.toolbar_whatsapp": "WhatsApp",
+  "settings.palette": "Paleta de cores",
+  "settings.palette_description": "Escolha as cores de destaque do navegador",
+  "settings.palette_graphite": "Grafite",
+  "settings.palette_ocean": "Oceano",
+  "settings.palette_violet": "Violeta",
+  "settings.palette_emerald": "Esmeralda",
+  "settings.palette_rose": "Rosa",
+  "settings.palette_amber": "Âmbar"
 }

@@ -8,6 +8,8 @@
 
 - Nova opção **Sugestões de pesquisa** (Configurações → Busca e navegação, ligada por padrão): enquanto você digita na barra de endereço, ela pede ao seu mecanismo de busca pesquisas sugeridas e as lista abaixo dos sites que combinam. Funciona com Google, DuckDuckGo, Bing e Brave Search, envia só o que você digitou e nunca é usada em janelas privadas.
 
+- Agora dá para trocar a paleta de cores do navegador em **Configurações → Aparência e disposição**: Grafite (o preto e cinza originais, e o padrão), Oceano, Violeta, Esmeralda, Rosa e Âmbar, cada uma com uma versão para o tema escuro e para o claro. Ela vale para todas as janelas abertas ao mesmo tempo, para a página de nova guia e para o botão do escudo.
+
 ## Melhorias
 
 - No painel de personalização centralizado, as opções **Posição do painel** e **Posição dos widgets de música** agora são pequenas, ficam lado a lado e permanecem na parte de baixo do painel, deixando mais espaço para os cartões.

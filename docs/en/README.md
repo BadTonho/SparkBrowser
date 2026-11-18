@@ -31,6 +31,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Site search shortcuts](./features/site-search.md)
 - [Search engines](./features/search-engines.md)
 - [Address bar suggestions](./features/address-suggestions.md)
+- [Color palettes](./features/color-palettes.md)
 - [Upgrading from the Veloce name](./features/rename-migration.md)
 - [Hardware acceleration](./features/hardware-acceleration.md)
 - [Dark mode for websites](./features/forced-dark-mode.md)

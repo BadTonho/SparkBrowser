@@ -4,13 +4,13 @@ body { margin:0; }
 main { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:32px 24px; padding-bottom:calc(32px + clamp(0px, calc(50vh - 160px), 160px)); }
 .content { width:100%; max-width:640px; display:flex; flex-direction:column; gap:20px; }
 form { display:flex; width:100%; min-height:54px; border:1px solid #ffffff24; border-radius:16px; background:#ffffff08; box-shadow:0 8px 28px #0002; }
-form:focus-within { border-color:#aaa5cf; box-shadow:0 0 0 3px #a89ed018; }
+form:focus-within { border-color:var(--nt-form-focus-border); box-shadow:0 0 0 3px var(--nt-form-focus-glow); }
 input { flex:1; min-width:0; padding:16px 18px; border:0; outline:0; color:inherit; background:transparent; font:inherit; font-size:15px; }
 input::placeholder { color:#96969f; }
 button { color:inherit; font:inherit; cursor:pointer; }
 #submit { flex:none; width:52px; border:0; border-radius:0 15px 15px 0; background:transparent; display:grid; place-items:center; color:#b8b5cd; }
 button:hover { background:#ffffff0d; }
-button:focus-visible { outline:2px solid #bcb6df; outline-offset:3px; }
+button:focus-visible { outline:2px solid var(--nt-button-focus); outline-offset:3px; }
 #recent { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(104px,100%),1fr)); gap:10px; }
 .recent-site { min-width:0; border:1px solid #ffffff14; border-radius:12px; padding:14px 10px; background:#ffffff05; display:flex; flex-direction:column; gap:8px; text-align:left; }
 .site-icon { width:24px; height:24px; flex:none; object-fit:contain; }
@@ -32,8 +32,8 @@ html[data-theme="light"] form {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
 }
 html[data-theme="light"] form:focus-within {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: var(--nt-form-focus-border);
+  box-shadow: 0 0 0 3px var(--nt-form-focus-glow);
 }
 html[data-theme="light"] input::placeholder {
   color: #737373;
@@ -45,7 +45,7 @@ html[data-theme="light"] button:hover {
   background: rgba(0, 0, 0, 0.05);
 }
 html[data-theme="light"] button:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--nt-button-focus);
 }
 html[data-theme="light"] .recent-site {
   border: 1px solid rgba(0, 0, 0, 0.08);

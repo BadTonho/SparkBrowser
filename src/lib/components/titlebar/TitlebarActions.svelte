@@ -337,8 +337,8 @@ import { invoke } from "../../services/tauri-bridge";
 
   .shield-btn.shield-on {
     opacity: 1;
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.35);
+    background: var(--status-on-bg);
+    border-color: var(--status-on-border);
   }
 
   .shield-dot {
@@ -353,8 +353,8 @@ import { invoke } from "../../services/tauri-bridge";
   }
 
   .shield-btn.shield-on .shield-dot {
-    background: #22c55e;
-    box-shadow: 0 0 6px #22c55e;
+    background: var(--status-on);
+    box-shadow: 0 0 6px var(--status-on);
   }
 
 </style>

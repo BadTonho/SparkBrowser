@@ -23,6 +23,9 @@ import {
   setWorkspaceSwitcherDisplay,
   themeMode,
   setThemeMode,
+  colorPalette,
+  setColorPalette,
+  PALETTES,
   windowSurfaceStyle,
   setWindowSurfaceStyle,
   windowSurfaceOpacity,
@@ -96,6 +99,26 @@ async function changeSettingsDisplay(mode: "popup" | "tab") {
       >
         <AppIcon name="sun" /> {$t("settings.theme_light")}
       </button>
+    </div>
+  </div>
+
+  <div class="setting-row" id="setting-color-palette" tabindex="-1">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.palette")}</span>
+      <span class="row-desc">{$t("settings.palette_description")}</span>
+    </div>
+    <div class="palette-swatches" role="group" aria-label={$t("settings.palette")}>
+      {#each PALETTES as palette (palette)}
+        <button
+          class="palette-swatch palette-{palette}"
+          class:selected={$colorPalette === palette}
+          aria-pressed={$colorPalette === palette}
+          data-testid="palette-{palette}"
+          title={$t(`settings.palette_${palette}`)}
+          aria-label={$t(`settings.palette_${palette}`)}
+          onclick={() => setColorPalette(palette)}
+        ></button>
+      {/each}
     </div>
   </div>
 

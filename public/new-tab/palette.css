@@ -1,0 +1,123 @@
+/* Color palette of the new-tab page. The shell writes the choice to `spark_color_palette` (same storage as
+   the theme) and page.js copies it to `data-palette`. The defaults are the page's original colors, so the
+   default palette (graphite) looks exactly as before; the others use their accent. */
+:root {
+  --nt-accent: #e5e5e5;
+  --nt-accent-fg: #18181b;
+  --nt-focus-ring: #e5e5e5;
+  --nt-button-focus: #bcb6df;
+  --nt-form-focus-border: #aaa5cf;
+  --nt-form-focus-glow: #a89ed018;
+  --nt-selected-bg: rgba(255, 255, 255, 0.13);
+  --nt-selected-border: rgba(255, 255, 255, 0.3);
+}
+html[data-theme="light"] {
+  --nt-accent: #171717;
+  --nt-accent-fg: #ffffff;
+  --nt-focus-ring: #171717;
+  --nt-button-focus: #6366f1;
+  --nt-form-focus-border: #6366f1;
+  --nt-form-focus-glow: rgba(99, 102, 241, 0.15);
+  --nt-selected-bg: rgba(0, 0, 0, 0.1);
+  --nt-selected-border: rgba(0, 0, 0, 0.3);
+}
+html[data-palette="ocean"] {
+  --nt-accent: #60a5fa;
+  --nt-accent-fg: #0b1220;
+  --nt-focus-ring: #60a5fa;
+  --nt-button-focus: #60a5fa;
+  --nt-form-focus-border: #60a5fa;
+  --nt-form-focus-glow: color-mix(in srgb, #60a5fa 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #60a5fa 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #60a5fa 55%, transparent);
+}
+html[data-palette="ocean"][data-theme="light"] {
+  --nt-accent: #2563eb;
+  --nt-accent-fg: #ffffff;
+  --nt-focus-ring: #2563eb;
+  --nt-button-focus: #2563eb;
+  --nt-form-focus-border: #2563eb;
+  --nt-form-focus-glow: color-mix(in srgb, #2563eb 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #2563eb 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #2563eb 55%, transparent);
+}
+html[data-palette="violet"] {
+  --nt-accent: #a78bfa;
+  --nt-accent-fg: #120b24;
+  --nt-focus-ring: #a78bfa;
+  --nt-button-focus: #a78bfa;
+  --nt-form-focus-border: #a78bfa;
+  --nt-form-focus-glow: color-mix(in srgb, #a78bfa 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #a78bfa 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #a78bfa 55%, transparent);
+}
+html[data-palette="violet"][data-theme="light"] {
+  --nt-accent: #7c3aed;
+  --nt-accent-fg: #ffffff;
+  --nt-focus-ring: #7c3aed;
+  --nt-button-focus: #7c3aed;
+  --nt-form-focus-border: #7c3aed;
+  --nt-form-focus-glow: color-mix(in srgb, #7c3aed 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #7c3aed 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #7c3aed 55%, transparent);
+}
+html[data-palette="emerald"] {
+  --nt-accent: #34d399;
+  --nt-accent-fg: #04140e;
+  --nt-focus-ring: #34d399;
+  --nt-button-focus: #34d399;
+  --nt-form-focus-border: #34d399;
+  --nt-form-focus-glow: color-mix(in srgb, #34d399 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #34d399 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #34d399 55%, transparent);
+}
+html[data-palette="emerald"][data-theme="light"] {
+  --nt-accent: #059669;
+  --nt-accent-fg: #ffffff;
+  --nt-focus-ring: #059669;
+  --nt-button-focus: #059669;
+  --nt-form-focus-border: #059669;
+  --nt-form-focus-glow: color-mix(in srgb, #059669 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #059669 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #059669 55%, transparent);
+}
+html[data-palette="rose"] {
+  --nt-accent: #fb7185;
+  --nt-accent-fg: #1a060a;
+  --nt-focus-ring: #fb7185;
+  --nt-button-focus: #fb7185;
+  --nt-form-focus-border: #fb7185;
+  --nt-form-focus-glow: color-mix(in srgb, #fb7185 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #fb7185 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #fb7185 55%, transparent);
+}
+html[data-palette="rose"][data-theme="light"] {
+  --nt-accent: #e11d48;
+  --nt-accent-fg: #ffffff;
+  --nt-focus-ring: #e11d48;
+  --nt-button-focus: #e11d48;
+  --nt-form-focus-border: #e11d48;
+  --nt-form-focus-glow: color-mix(in srgb, #e11d48 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #e11d48 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #e11d48 55%, transparent);
+}
+html[data-palette="amber"] {
+  --nt-accent: #fbbf24;
+  --nt-accent-fg: #1a1204;
+  --nt-focus-ring: #fbbf24;
+  --nt-button-focus: #fbbf24;
+  --nt-form-focus-border: #fbbf24;
+  --nt-form-focus-glow: color-mix(in srgb, #fbbf24 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #fbbf24 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #fbbf24 55%, transparent);
+}
+html[data-palette="amber"][data-theme="light"] {
+  --nt-accent: #d97706;
+  --nt-accent-fg: #ffffff;
+  --nt-focus-ring: #d97706;
+  --nt-button-focus: #d97706;
+  --nt-form-focus-border: #d97706;
+  --nt-form-focus-glow: color-mix(in srgb, #d97706 18%, transparent);
+  --nt-selected-bg: color-mix(in srgb, #d97706 22%, transparent);
+  --nt-selected-border: color-mix(in srgb, #d97706 55%, transparent);
+}

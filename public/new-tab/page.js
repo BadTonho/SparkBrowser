@@ -7,10 +7,22 @@
       }
     } catch (error) { window.__sparkLogIgnored?.(error); }
   };
+  // The color palette is chosen in the browser settings and shared through the same storage as the theme.
+  const PALETTES = ['ocean', 'violet', 'emerald', 'rose', 'amber'];
+  const applyPalette = () => {
+    try {
+      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('spark_color_palette') : null;
+      const root = document.documentElement;
+      if (PALETTES.includes(saved)) root.setAttribute('data-palette', saved);
+      else root.removeAttribute('data-palette');
+    } catch (error) { window.__sparkLogIgnored?.(error); }
+  };
   applyTheme();
+  applyPalette();
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('storage', event => {
       if (event.key === 'spark_theme_mode') applyTheme();
+      if (event.key === 'spark_color_palette') applyPalette();
     });
   }
   const input = document.querySelector('#search');
@@ -24,6 +36,7 @@
   document.querySelector('#retry').addEventListener('click', () => send({ action:'read' }));
   window.addEventListener('spark-new-tab', event => {
     applyTheme();
+    applyPalette();
     const { labels, preferences, sites, error, autofocus, private: isPrivate } = event.detail;
     document.documentElement.lang = preferences.language;
     document.title = labels['newtab.title'];

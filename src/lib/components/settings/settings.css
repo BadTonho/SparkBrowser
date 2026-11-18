@@ -702,3 +702,21 @@
       gap: 7px;
     }
   }
+
+/* Palette choice: one round swatch per palette, ringed when selected. */
+:where(.settings-modal) .palette-swatches { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+:where(.settings-modal) .palette-swatch {
+  width: 28px; height: 28px; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; background: var(--swatch); box-shadow: 0 0 0 1px var(--border-subtle);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+:where(.settings-modal) .palette-swatch:hover { transform: scale(1.1); }
+:where(.settings-modal) .palette-swatch.selected { box-shadow: 0 0 0 2px var(--bg-viewport-frame), 0 0 0 4px var(--text-primary); }
+:where(.settings-modal) .palette-swatch:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { :where(.settings-modal) .palette-swatch { transition: none; } }
+:where(.settings-modal) .palette-graphite { --swatch: linear-gradient(135deg, #e5e5e5 0%, #9a9a9a 100%); }
+:where(.settings-modal) .palette-ocean { --swatch: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); }
+:where(.settings-modal) .palette-violet { --swatch: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); }
+:where(.settings-modal) .palette-emerald { --swatch: linear-gradient(135deg, #34d399 0%, #059669 100%); }
+:where(.settings-modal) .palette-rose { --swatch: linear-gradient(135deg, #fb7185 0%, #e11d48 100%); }
+:where(.settings-modal) .palette-amber { --swatch: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }

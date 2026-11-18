@@ -8,6 +8,8 @@
 
 - New option **Search suggestions** (Settings → Search & Navigation, on by default): while you type in the address bar, it asks your search engine for suggested searches and lists them under the matching sites. It works with Google, DuckDuckGo, Bing and Brave Search, sends only what you typed, and is never used in private windows.
 
+- You can now change the browser's color palette in **Settings → Appearance & Layout**: Graphite (the original black and gray, and the default), Ocean, Violet, Emerald, Rose and Amber, each with a version for the dark and the light theme. It applies to every open window at once, to the new-tab page and to the shield button.
+
 ## Improvements
 
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.

@@ -4,6 +4,12 @@ import {
   type ThemeMode,
   THEME_MODES,
 } from "../services/theme-preference.js";
+import {
+  createPalettePreference,
+  type Palette,
+  PALETTES,
+  PALETTE_STORAGE_KEY,
+} from "../services/palette-preference.js";
 import { safeStorage } from "../services/storage.js";
 import {
   readVisualPreferences,
@@ -218,6 +224,26 @@ export const themeMode = writable<ThemeMode>(themePref.get());
 export function setThemeMode(mode: ThemeMode): void {
   const applied = themePref.set(mode);
   themeMode.set(applied);
+}
+
+const palettePref = createPalettePreference({
+  storage: typeof safeStorage !== 'undefined' ? safeStorage : undefined,
+  root: typeof document !== 'undefined' ? document.documentElement : undefined,
+  changed: (palette) => colorPalette.set(palette),
+});
+
+export const colorPalette = writable<Palette>(palettePref.get());
+// Every window of the browser shares this storage: when one changes the palette, the others follow.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === PALETTE_STORAGE_KEY || event.key === null) palettePref.sync();
+  });
+}
+export { PALETTES };
+export type { Palette };
+
+export function setColorPalette(palette: Palette): void {
+  colorPalette.set(palettePref.set(palette));
 }
 
 export const DEFAULT_OVERLAY_BLUR_PX = 16;

@@ -66,7 +66,7 @@
 
 .wallpaper-slider-row input[type="range"] {
   flex: 1;
-  accent-color: #e5e5e5;
+  accent-color: var(--nt-accent);
   cursor: pointer;
 }
 
@@ -125,7 +125,7 @@ html[data-theme="light"] #wallpaper-status {
 }
 
 html[data-theme="light"] .wallpaper-slider-row input[type="range"] {
-  accent-color: #171717;
+  accent-color: var(--nt-accent);
 }
 
 html[data-theme="light"] body.has-wallpaper .widget {
