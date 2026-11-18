@@ -25,18 +25,18 @@
   const setStorage = (key, value) => {
     try {
       if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
-    } catch {}
+    } catch (error) { window.__sparkLogIgnored?.(error); }
   };
 
   const removeStorage = key => {
     try {
       if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
-    } catch {}
+    } catch (error) { window.__sparkLogIgnored?.(error); }
   };
 
   function cleanupUrls() {
     if (activeBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
-      try { URL.revokeObjectURL(activeBlobUrl); } catch {}
+      try { URL.revokeObjectURL(activeBlobUrl); } catch (error) { window.__sparkLogIgnored?.(error); }
       activeBlobUrl = null;
     }
   }
@@ -112,7 +112,7 @@
         req.onsuccess = () => { invalidateRecord(); resolve(); };
         req.onerror = () => reject(req.error);
       });
-    } catch {}
+    } catch (error) { window.__sparkLogIgnored?.(error); }
   }
 
   function notifyUpdated() {
@@ -209,13 +209,13 @@
             video.hidden = false;
             if (video.getAttribute('src') !== currentMedia.url) {
               video.src = currentMedia.url;
-              try { video.play?.(); } catch {}
+              try { video.play?.(); } catch (error) { window.__sparkLogIgnored?.(error); }
             }
           }
         } else {
           if (video) {
             video.hidden = true;
-            try { video.pause?.(); } catch {}
+            try { video.pause?.(); } catch (error) { window.__sparkLogIgnored?.(error); }
             video.removeAttribute('src');
           }
           if (image) {
@@ -232,7 +232,7 @@
         }
         if (video) {
           video.hidden = true;
-          try { video.pause?.(); } catch {}
+          try { video.pause?.(); } catch (error) { window.__sparkLogIgnored?.(error); }
           video.removeAttribute('src');
         }
       }
@@ -251,13 +251,13 @@
             videoPreview.hidden = false;
             if (videoPreview.getAttribute('src') !== currentMedia.url) {
               videoPreview.src = currentMedia.url;
-              try { videoPreview.play?.(); } catch {}
+              try { videoPreview.play?.(); } catch (error) { window.__sparkLogIgnored?.(error); }
             }
           }
         } else {
           if (videoPreview) {
             videoPreview.hidden = true;
-            try { videoPreview.pause?.(); } catch {}
+            try { videoPreview.pause?.(); } catch (error) { window.__sparkLogIgnored?.(error); }
             videoPreview.removeAttribute('src');
           }
           if (preview) {
@@ -274,7 +274,7 @@
         }
         if (videoPreview) {
           videoPreview.hidden = true;
-          try { videoPreview.pause?.(); } catch {}
+          try { videoPreview.pause?.(); } catch (error) { window.__sparkLogIgnored?.(error); }
           videoPreview.removeAttribute('src');
         }
       }

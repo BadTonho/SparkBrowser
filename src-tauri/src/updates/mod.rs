@@ -48,7 +48,7 @@ pub fn install_staged_at_startup(app: &tauri::AppHandle, conn: &rusqlite::Connec
         };
         let auto_update = crate::database::updates_repo::load_auto_update(conn).unwrap_or(true);
         if let Err(error) = staged::install_pending(app, &version, channel, auto_update) {
-            eprintln!("Staged update was not installed: {error}");
+            crate::error_log::warn(&format!("Staged update was not installed: {error}"));
         }
     }
     #[cfg(not(windows))]

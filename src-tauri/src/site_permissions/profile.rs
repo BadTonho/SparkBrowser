@@ -12,7 +12,7 @@ pub type Reply<T> = Arc<Mutex<Option<tokio::sync::oneshot::Sender<Result<T, Stri
 pub fn reply<T>(sender: &Reply<T>, result: Result<T, String>) {
     if let Ok(mut sender) = sender.lock() {
         if let Some(sender) = sender.take() {
-            let _ = sender.send(result);
+            crate::error_log::ignored(sender.send(result).map_err(|_| "the receiver was dropped"));
         }
     }
 }

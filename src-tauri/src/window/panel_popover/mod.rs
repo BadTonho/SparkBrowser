@@ -208,7 +208,7 @@ fn ensure_webview<P: Panel>(app: &AppHandle, window_id: &str) -> Result<(), Stri
 
 fn warm_overlay(result: Result<(), String>) {
     if let Err(error) = result {
-        eprintln!("Could not prepare overlay: {error}");
+        crate::error_log::warn(&format!("Could not prepare overlay: {error}"));
     }
 }
 
@@ -218,7 +218,7 @@ fn warm<P: Panel>(app: &AppHandle, window_id: &str) {
     }
     match ensure_webview::<P>(app, window_id) {
         Ok(()) => idle::schedule::<P>(app),
-        Err(error) => eprintln!("Could not prepare {}: {error}", P::LABEL),
+        Err(error) => crate::error_log::warn(&format!("Could not prepare {}: {error}", P::LABEL)),
     }
 }
 
@@ -411,6 +411,7 @@ pub fn set<P: Panel>(
     presentation: Option<Presentation>,
     restore_focus: bool,
 ) -> Result<(), String> {
+    crate::error_log::trail(&format!("{} set visible={visible} session={session_id}", P::HOST));
     let service = app.state::<Popover<P>>();
     let mut inner = service.0.lock().map_err(|e| e.to_string())?;
     if !visible {

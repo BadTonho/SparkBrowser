@@ -158,7 +158,7 @@ pub fn remove(app: &AppHandle, workspace_id: &str) {
             .join(folder_name(workspace_id));
         if folder.is_dir() {
             if let Err(error) = std::fs::remove_dir_all(&folder) {
-                eprintln!("Failed to remove workspace data folder: {error}");
+                crate::error_log::warn(&format!("Failed to remove workspace data folder: {error}"));
             }
         }
     }

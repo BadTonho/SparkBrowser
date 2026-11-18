@@ -106,7 +106,7 @@ fn receive(app: &AppHandle, label: &str, raw: &str) {
         .map(|(_, sender)| sender)
     });
     if let Some(sender) = sender {
-        let _ = sender.send((value["ok"] == true).then(|| value["value"].clone()));
+        crate::error_log::ignored(sender.send((value["ok"] == true).then(|| value["value"].clone())));
     }
 }
 

@@ -18,10 +18,10 @@ impl Drop for Pending {
     fn drop(&mut self) {
         if !self.settled {
             let manager = self.app.state::<DownloadManager>();
-            let _ = manager.update_saved(&self.app, &self.id, |t| {
+            crate::error_log::ignored(manager.update_saved(&self.app, &self.id, |t| {
                 t.status = "Interrupted".into();
                 t.error = Some("downloads.native_unavailable".into());
-            });
+            }));
         }
     }
 }
@@ -102,7 +102,7 @@ pub fn handler(
                     if error == "downloads.cancelled" {
                         return false;
                     }
-                    let _ = crate::security::emit_shell(&app, "browser-error", error);
+                    crate::error_log::ignored(crate::security::emit_shell(&app, "browser-error", error));
                     return false;
                 }
             }
@@ -119,10 +119,10 @@ pub fn handler(
                     if success && path.as_ref() == Some(&item.path) {
                         item.permit.take();
                         if let Err(error) = manager.body_completed(&app, &item.id) {
-                            let _ = manager.update_saved(&app, &item.id, |t| {
+                            crate::error_log::ignored(manager.update_saved(&app, &item.id, |t| {
                                 t.status = "Interrupted".into();
                                 t.error = Some(error);
-                            });
+                            }));
                         }
                     } else {
                         #[cfg(target_os = "linux")]
@@ -130,9 +130,9 @@ pub fn handler(
                         #[cfg(not(target_os = "linux"))]
                         let cancelled = false;
                         if cancelled {
-                            let _ = std::fs::remove_file(&item.path);
+                            crate::error_log::ignored(std::fs::remove_file(&item.path));
                         }
-                        let _ = manager.update_saved(&app, &item.id, |t| {
+                        crate::error_log::ignored(manager.update_saved(&app, &item.id, |t| {
                             if cancelled {
                                 t.status = "Cancelled".into();
                                 t.error = None;
@@ -140,7 +140,7 @@ pub fn handler(
                                 t.status = "Interrupted".into();
                                 t.error = Some("downloads.native_unavailable".into());
                             }
-                        });
+                        }));
                     }
                 }
             }

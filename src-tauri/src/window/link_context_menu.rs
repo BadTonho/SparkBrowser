@@ -87,7 +87,7 @@ pub fn install(
             Ok::<(), webview2_com::Error>(())
         })();
         if let Err(error) = result {
-            eprintln!("Link context menu unavailable: {error}");
+            crate::error_log::warn(&format!("Link context menu unavailable: {error}"));
         }
     })
     .map_err(|e| e.to_string())

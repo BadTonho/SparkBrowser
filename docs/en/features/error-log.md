@@ -35,6 +35,14 @@ Every entry has one of four levels. Only the two serious ones interrupt the user
 | `new-tab` | A script error or unhandled rejection in the new-tab page (limited to 3 per page load) |
 | `unclean-exit` | The previous run left its `session.running` marker behind: a crash, a force-closed freeze or a power loss. Shown a few seconds after start |
 
+### Context of a freeze
+
+A freeze has no error message, so its `hang` entry carries a **trail**: the last 40 things the app was asked to do (every interface command and every popover open or close), each with time and thread. The last line is the most likely cause.
+
+### Failed commands and the console
+
+Every interface command that fails is logged as a `warning` (`Command "name" failed: …`), even when the caller handles the failure. Anything the interface prints with `console.error` is logged as a `warning` too.
+
 ### Failures that were ignored
 
 Code that used to throw an error away now logs it as a `warning` with the place that ignored it:
@@ -42,7 +50,7 @@ Code that used to throw an error away now logs it as a `warning` with the place 
 - In Rust, `let _ = result;` became `crate::error_log::ignored(result);`, which logs the error and the file and line. Use it for every new `Result` that is deliberately ignored.
 - In the interface, an empty `.catch(() => {})` became `.catch(logIgnored)` (`src/lib/services/ignored-error.ts`). Promise queues that only keep a chain alive keep their empty catch, because the error belongs to the caller.
 
-Not covered yet: Rust code that only compiles on Linux (it was converted only where it could be compiled and checked), three Rust call sites whose error type cannot be printed, and the new-tab page scripts.
+Everything that used to be printed only to the console (`eprintln!`) is now logged as a `warning` too (`crate::error_log::warn`), and the new-tab page logs its ignored failures through `window.__sparkLogIgnored`. Not covered yet: Rust code that only compiles on Linux was converted without being compiled here, the scripts injected into Google Drive pages (`gdrive_bridge.js`) still have best-effort empty catches, and a few Rust places turn an error into a plain "failed" without keeping its text.
 
 ## Log file
 

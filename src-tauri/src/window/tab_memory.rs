@@ -109,7 +109,7 @@ pub fn current_webview_source(view: &tauri::Webview) -> Option<String> {
     use webkit2gtk::WebViewExt;
     let (tx, rx) = std::sync::mpsc::channel();
     view.with_webview(move |platform| {
-        let _ = tx.send(platform.inner().uri().map(|uri| uri.to_string()));
+        crate::error_log::ignored(tx.send(platform.inner().uri().map(|uri| uri.to_string())));
     })
     .ok()?;
     rx.recv_timeout(std::time::Duration::from_millis(150))

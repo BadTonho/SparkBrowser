@@ -58,7 +58,7 @@
       mirror.getVideoTracks().forEach(track => mirror.removeTrack(track));
       if (selected) mirror.addTrack(selected);
       healthySince = 0;
-      if (selected) void image.play().catch(() => {});
+      if (selected) void image.play().catch(error => window.__sparkLogIgnored?.(error));
     }
   }
   function bind(stream) {

@@ -33,7 +33,7 @@ fn build(app: &AppHandle, id: &str) -> Result<WebviewWindow, String> {
     {
         let shell = window.clone();
         app.run_on_main_thread(move || {
-            let _ = super::linux_layout::setup(&shell);
+            crate::error_log::ignored(super::linux_layout::setup(&shell));
         })
         .map_err(|e| e.to_string())?;
     }
@@ -241,7 +241,7 @@ pub async fn restore_saved(app: &AppHandle) {
                 }
             }
             Err(error) => {
-                eprintln!("Could not reopen {id}: {error}");
+                crate::error_log::warn(&format!("Could not reopen {id}: {error}"));
                 if let Ok(closed) = close_window(&state, &id) {
                     for tab in &closed.tab_ids {
                         crate::error_log::ignored(super::webview_manager::close_tab_webview(

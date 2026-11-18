@@ -51,7 +51,7 @@ fn release<P: Panel>(app: &AppHandle, generation: u64) {
         .run_on_main_thread(move || {
             if let Some(view) = main_app.get_webview(P::LABEL) {
                 if let Err(error) = view.close() {
-                    eprintln!("Could not release {}: {error}", P::LABEL);
+                    crate::error_log::warn(&format!("Could not release {}: {error}", P::LABEL));
                 } else {
                     #[cfg(target_os = "linux")]
                     crate::window::linux_layout::remove_child(&main_app, P::LABEL);

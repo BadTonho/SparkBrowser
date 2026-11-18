@@ -36,3 +36,9 @@ These rules are mandatory for all development, file operations, documentation, a
 - Every changelog is split into three categories, in this order: **New features**, **Improvements** and **Fixes** (`Novas funcionalidades`, `Melhorias` and `Correções` in Portuguese). Omit a category that has no entries.
 - **Keep the changelog up to date as you work:** any change a user can notice (new behavior, better behavior or a bug fix) must add an entry to the changelog of the version in progress, in both languages, in the same change. Changelogs of already released versions are never rewritten.
 - The format, writing guidelines and an example are in [`docs/en/contributing/changelog.md`](docs/en/contributing/changelog.md).
+
+## 8. Error Log with Four Levels (Nothing Fails Silently)
+- Every failure, in Rust and in the interface, must be written to the local error log (`logs/spark-errors.log` in the data directory) with one of four levels, from most to least severe: **Critical**, **Error**, **Warning**, **Info**. The log must say **what failed and where**, never only that something happened.
+- Never discard an error silently: use `crate::error_log::ignored(result)` instead of `let _ = result;` in Rust, and `logIgnored` instead of an empty `.catch(() => {})` in the interface. New code paths that can fail must report through `error_log`.
+- A freeze or any problem without an error message must still log the context that explains it (the log keeps a trail of the latest commands and panel actions).
+- Details are in [`docs/en/features/error-log.md`](docs/en/features/error-log.md).

@@ -231,12 +231,12 @@ pub fn handle(app: &AppHandle, tab_id: &str, label: &str, generation: &str, url:
     let service = app.state::<SettingsTabSessions>();
     let action = service.accept(label, token, document, generation, sequence, payload);
     if let Some((action, session_id)) = action {
-        let _ = crate::security::emit_shell_for_tab(
+        crate::error_log::ignored(crate::security::emit_shell_for_tab(
             app,
             tab_id,
             "settings-tab-action",
             serde_json::json!({ "sessionId": session_id, "tabId": tab_id, "sequence": sequence, "action": action }),
-        );
+        ));
     }
 }
 

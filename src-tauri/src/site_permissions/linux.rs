@@ -35,7 +35,7 @@ fn emit(app: &AppHandle) {
         .lock()
         .map(|v| v.clone())
         .unwrap_or_default();
-    let _ = crate::security::emit_shell(app, "permission-requests-updated", pending);
+    crate::error_log::ignored(crate::security::emit_shell(app, "permission-requests-updated", pending));
 }
 
 /// Runs `work` on the main thread, where the WebKit requests live, and returns its result.
@@ -45,7 +45,7 @@ async fn on_main<T: Send + 'static>(
 ) -> Result<T, String> {
     let (send, receive) = tokio::sync::oneshot::channel();
     app.run_on_main_thread(move || {
-        let _ = send.send(work());
+        crate::error_log::ignored(send.send(work()));
     })
     .map_err(|e| e.to_string())?;
     receive.await.map_err(|e| e.to_string())
@@ -215,7 +215,7 @@ async fn resolve(app: AppHandle, id: String) {
     .await
     .unwrap_or_default();
     let handle = app.clone();
-    let _ = on_main(&app, move || {
+    crate::error_log::ignored(on_main(&app, move || {
         let app = handle;
         if saved
             .iter()
@@ -250,15 +250,15 @@ async fn resolve(app: AppHandle, id: String) {
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(Duration::from_secs(60)).await;
                     let dispatch = app.clone();
-                    let _ = dispatch
-                        .run_on_main_thread(move || finish(&app, &id, PermissionState::Block));
+                    crate::error_log::ignored(dispatch
+                        .run_on_main_thread(move || finish(&app, &id, PermissionState::Block)));
                 });
             }
             Some(false) => finish(&app, &id, PermissionState::Block),
             None => {}
         }
     })
-    .await;
+    .await);
 }
 
 pub async fn respond(app: &AppHandle, id: String, decision: String) -> Result<(), String> {

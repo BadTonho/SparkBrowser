@@ -267,10 +267,10 @@ pub fn install(
                                         ));
                                     }
                                     Err(err) => {
-                                        eprintln!(
+                                        crate::error_log::warn(&format!(
                                             "Failed to install extension {}: {}",
                                             ext_id, err
-                                        );
+                                        ));
                                         crate::error_log::ignored(crate::security::emit_shell(
                                             &install_app,
                                             "extension-install-failed",
@@ -562,14 +562,14 @@ pub fn cancel_view(app: &AppHandle, label: &str) {
         for id in ids {
             if let Some(v) = OPERATIONS.with(|map| map.borrow_mut().remove(&id)) {
                 unsafe {
-                    let _ = v.core.Cancel();
+                    crate::error_log::ignored(v.core.Cancel());
                 }
                 let manager = a.state::<DownloadManager>();
                 manager.native_capability(&a, &id, false, false);
-                let _ = manager.update_saved(&a, &id, |t| {
+                crate::error_log::ignored(manager.update_saved(&a, &id, |t| {
                     t.status = "Interrupted".into();
                     t.error = Some("downloads.native_unavailable".into());
-                });
+                }));
             }
         }
     }));

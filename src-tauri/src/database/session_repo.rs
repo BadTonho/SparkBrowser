@@ -248,10 +248,10 @@ mod tests {
             }
             times.sort();
             assert_eq!(conn.total_changes(), before);
-            eprintln!(
+            crate::error_log::warn(&format!(
                 "{count} tabs: unchanged snapshot median {:?}",
                 times[times.len() / 2]
-            );
+            ));
         }
     }
 }

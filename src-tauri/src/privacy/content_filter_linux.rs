@@ -36,16 +36,16 @@ pub fn refresh(app: &AppHandle) {
         .inner()
         .clone();
     let app = app.clone();
-    let _ = std::thread::Builder::new()
+    crate::error_log::ignored(std::thread::Builder::new()
         .name("spark-content-rules".into())
         .spawn(move || {
             let Some(json) = lists.content_blocking_json() else {
-                eprintln!("Could not convert the filter lists to content rules");
+                crate::error_log::warn(&format!("Could not convert the filter lists to content rules"));
                 return;
             };
             let main = app.clone();
-            let _ = main.run_on_main_thread(move || save(&app, json));
-        });
+            crate::error_log::ignored(main.run_on_main_thread(move || save(&app, json)));
+        }));
 }
 
 fn save(app: &AppHandle, json: String) {
@@ -81,10 +81,10 @@ fn save(app: &AppHandle, json: String) {
         glib::gobject_ffi::g_object_unref(source);
         if filter.is_null() {
             if !error.is_null() {
-                eprintln!(
+                crate::error_log::warn(&format!(
                     "Content rules were rejected: {}",
                     std::ffi::CStr::from_ptr((*error).message).to_string_lossy()
-                );
+                ));
                 glib::ffi::g_error_free(error);
             }
             return;

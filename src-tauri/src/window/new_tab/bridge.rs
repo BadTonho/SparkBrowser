@@ -93,8 +93,14 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
         }
     }
     if url.path() == "/error" {
+        // `level=warning` is a failure the page ignored: it is logged without showing a card.
+        let level = if values.get("level").is_some_and(|v| v == "warning") {
+            crate::error_log::Level::Warning
+        } else {
+            crate::error_log::Level::Error
+        };
         crate::error_log::report(
-            crate::error_log::Level::Error,
+            level,
             "new-tab",
             values.get("message").map_or("", String::as_str),
             values.get("details").map_or("", String::as_str),
@@ -138,8 +144,14 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
                 })
                 .await
             }
-            _ => Err("History unavailable".into()),
+            other => {
+                crate::error_log::warn(&format!("New tab history could not be saved: {other:?}"));
+                Err("History unavailable".into())
+            }
         };
+        if let Err(error) = &rows {
+            crate::error_log::warn(&format!("New tab sites could not be loaded: {error:?}"));
+        }
         if !valid(&app, &id, &label, &token)
             || super::super::favicon::epoch(&app) != epoch
             || app.state::<NewTabService>().revision.load(Ordering::SeqCst) != revision

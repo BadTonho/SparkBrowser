@@ -270,17 +270,17 @@ pub async fn toggle_adblock_shield(
         if let Err(error) =
             reset_content_webviews(&app, &state).and_then(|()| sync_all_webviews(&app, &state))
         {
-            let _ = crate::security::emit_shell(
+            crate::error_log::ignored(crate::security::emit_shell(
                 &app,
                 "browser-error",
                 format!("The shield was changed, but some pages could not be rebuilt: {error}"),
-            );
+            ));
         }
-        let _ = crate::security::emit_shell(
+        crate::error_log::ignored(crate::security::emit_shell(
             &app,
             "browser-error",
             "This engine rebuilt WebViews to update the shield; page state and history were reset",
-        );
+        ));
     }
     crate::state::publish::publish_tabs(&app, &state, crate::state::tab_model::MAIN_WINDOW_ID);
 

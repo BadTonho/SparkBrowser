@@ -18,7 +18,7 @@
         if (!input.checked) return;
         const value = choice.values.includes(input.value) ? input.value : choice.values[0];
         apply(value);
-        try { localStorage.setItem(choice.key, value); } catch {}
+        try { localStorage.setItem(choice.key, value); } catch (error) { window.__sparkLogIgnored?.(error); }
       });
     }
     // Another new tab changed the choice.

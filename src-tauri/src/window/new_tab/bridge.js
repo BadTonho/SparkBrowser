@@ -48,10 +48,12 @@
     else if (action === 'widgets') widgets(event.detail.operation, event.detail.data);
   });
   let errorsSent = 0;
-  const reportError = (message, details) => {
-    if (++errorsSent > 3) return;
-    send('error', { message: String(message).slice(0, 500), details: String(details ?? '').slice(0, 1500) });
+  const reportError = (message, details, level) => {
+    if (++errorsSent > (level ? 30 : 3)) return;
+    send('error', { message: String(message).slice(0, 500), details: String(details ?? '').slice(0, 1500), ...(level ? { level } : {}) });
   };
+  // Page scripts call this instead of an empty catch: the failure is ignored but logged as a warning.
+  window.__sparkLogIgnored = error => reportError(`Ignored failure: ${error?.message ?? error}`, error?.stack, 'warning');
   window.addEventListener('error', event => reportError(event.message || 'Script error', `${event.filename || ''}:${event.lineno || 0}:${event.colno || 0}
 ${event.error?.stack ?? ''}`));
   window.addEventListener('unhandledrejection', event => reportError(`Unhandled rejection: ${event.reason?.message ?? event.reason}`, event.reason?.stack));

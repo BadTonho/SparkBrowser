@@ -22,7 +22,7 @@ pub async fn set_minimum_font_probe_size(app: AppHandle, size: u32) -> Result<u3
             };
             let previous = settings.minimum_font_size();
             settings.set_minimum_font_size(size);
-            let _ = send.send(previous);
+            crate::error_log::ignored(send.send(previous));
         })
         .map_err(|error| error.to_string())?;
         receive

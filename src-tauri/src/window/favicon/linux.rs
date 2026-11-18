@@ -63,7 +63,7 @@ fn capture(app: &AppHandle, label: &str, token: &str, view: &webkit2gtk::WebView
         .await;
         if matches!(result, Ok(true)) {
             super::super::new_tab::invalidate(&app);
-            let _ = crate::security::emit_shell(&app, "site-icons-changed", ());
+            crate::error_log::ignored(crate::security::emit_shell(&app, "site-icons-changed", ()));
         }
     });
 }

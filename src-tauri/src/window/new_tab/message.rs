@@ -60,9 +60,10 @@ pub(super) fn valid(path: &str, values: &HashMap<String, String>) -> bool {
         "/error"
             if required("message")
                 && values.get("message").is_some_and(|v| v.len() <= 2_000)
-                && values.get("details").is_none_or(|v| v.len() <= 6_000) =>
+                && values.get("details").is_none_or(|v| v.len() <= 6_000)
+                && values.get("level").is_none_or(|v| v == "warning") =>
         {
-            &["message", "details"]
+            &["message", "details", "level"]
         }
         _ => return false,
     };
@@ -116,6 +117,11 @@ mod tests {
         let error = HashMap::from([("message".into(), "x is not defined".into())]);
         assert!(valid("/error", &error));
         assert!(!valid("/error", &HashMap::new()));
+        let mut warning = error.clone();
+        warning.insert("level".into(), "warning".into());
+        assert!(valid("/error", &warning));
+        warning.insert("level".into(), "critical".into());
+        assert!(!valid("/error", &warning));
         assert!(!valid(
             "/error",
             &HashMap::from([("message".into(), "x".repeat(2_001))])

@@ -15,7 +15,7 @@
 //! first: the user's home folder becomes `~` and page addresses lose their path and query.
 use serde::Serialize;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     fmt::Debug,
     fs::{self, OpenOptions},
     io::Write,
@@ -54,6 +54,10 @@ static COUNTER: AtomicU64 = AtomicU64::new(0);
 static SHOWN: Mutex<Vec<(u64, String)>> = Mutex::new(Vec::new());
 /// Last time each entry was written to the log: key -> time.
 static WRITTEN: Mutex<Option<HashMap<String, u64>>> = Mutex::new(None);
+/// The most recent things the app was asked to do, oldest first. A freeze has no error to show, so
+/// its log entry lists these: the last lines are what the app was doing when it stopped answering.
+static TRAIL: Mutex<VecDeque<String>> = Mutex::new(VecDeque::new());
+const TRAIL_LENGTH: usize = 40;
 /// Set when the previous run left its marker behind, which means it did not close normally.
 static PREVIOUS_RUN_ENDED_BADLY: OnceLock<bool> = OnceLock::new();
 
@@ -191,7 +195,11 @@ pub fn watch(app: &AppHandle) {
                             Level::Warning,
                             "hang",
                             &format!("The main thread has not answered for {stalled} s"),
-                            "",
+                            &format!(
+                                "What the app was doing, oldest first (the last line is the most \
+                                 likely cause):\n{}",
+                                recent_trail()
+                            ),
                         );
                         reported = Some(now);
                     }
@@ -211,6 +219,29 @@ pub fn watch(app: &AppHandle) {
             }
         });
     HEARTBEAT.store(unix_seconds(), Ordering::Relaxed);
+}
+
+/// Remembers that `what` is about to happen, for the freeze report. Cheap and safe from any thread;
+/// never blocks (a busy trail is skipped rather than waited for).
+pub fn trail(what: &str) {
+    if let Ok(mut trail) = TRAIL.try_lock() {
+        if trail.len() == TRAIL_LENGTH {
+            trail.pop_front();
+        }
+        let thread = std::thread::current();
+        trail.push_back(format!(
+            "{} [{}] {what}",
+            &timestamp()[11..],
+            thread.name().unwrap_or("unnamed")
+        ));
+    }
+}
+
+fn recent_trail() -> String {
+    TRAIL
+        .lock()
+        .map(|trail| trail.iter().cloned().collect::<Vec<_>>().join("\n"))
+        .unwrap_or_default()
 }
 
 /// Logs a problem at `level`. `Error` and `Critical` are also shown to the user. Safe to call from
@@ -247,6 +278,13 @@ pub fn report(level: Level, kind: &str, summary: &str, details: &str) {
         time: timestamp(),
     };
     ignored(crate::security::emit_shell(app, "error-report", report));
+}
+
+/// A failure that was only printed to the console before: it is still printed (development), and now
+/// also written to the log as a `Warning` (kind `native`).
+pub fn warn(summary: &str) {
+    eprintln!("{summary}");
+    report(Level::Warning, "native", summary, "");
 }
 
 /// Use instead of `let _ = result;`: the failure is still ignored, but it is written to the log as
@@ -433,6 +471,16 @@ mod tests {
             first_in(&table, &n.to_string(), 60);
         }
         assert!(table.lock().unwrap().as_ref().unwrap().len() <= MAX_REMEMBERED);
+    }
+
+    #[test]
+    fn the_trail_keeps_only_the_latest_entries_in_order() {
+        for n in 0..TRAIL_LENGTH + 5 {
+            trail(&format!("step {n}"));
+        }
+        let text = recent_trail();
+        assert!(text.lines().count() <= TRAIL_LENGTH);
+        assert!(text.lines().last().is_some_and(|line| line.ends_with(&format!("step {}", TRAIL_LENGTH + 4))));
     }
 
     #[test]

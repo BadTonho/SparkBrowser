@@ -55,9 +55,9 @@ fn visibility(window: &tauri::Window, revision: Option<u64>) -> Result<(), Strin
                 return;
             }
             if revision.is_some() {
-                let _ = target.show();
+                crate::error_log::ignored(target.show());
             } else {
-                let _ = target.hide();
+                crate::error_log::ignored(target.hide());
             }
         })
         .map_err(|e| e.to_string())

@@ -29,6 +29,15 @@ export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> 
     success = true;
     return result;
   } catch (error) {
+    // A failed command is always written to the error log (as a warning), even when the caller
+    // handles it, so a bug never leaves without a trace. The log command itself is skipped to avoid a loop.
+    if (command !== "report_frontend_error" && command !== "get_diagnostics") {
+      void nativeInvoke("report_frontend_error", {
+        summary: `Command "${command}" failed: ${typeof error === "string" ? error : (error as Error)?.message ?? String(error)}`,
+        details: (error as Error)?.stack ?? "",
+        level: "warning",
+      }).catch(() => {});
+    }
     // New native domains return stable dotted codes, optionally followed by diagnostic details.
     if (typeof error === "string" && /^(backup|closed_tabs|recovery|downloads|shutdown|zoom|command_search|media|runtime|security|settings_tab)\.[a-z_]+(?::|$)/.test(error)) {
       throw new UserError(error.split(":", 1)[0], error);

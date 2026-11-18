@@ -35,6 +35,10 @@
 
 - In the browser settings, the title is now just **Settings** and the search is a single icon: click it, or anywhere in the free space beside it, and it opens into the search field. It closes again when you leave it empty.
 
+- When the browser stops responding, the error log now lists what it was doing just before (the last commands and panels), so the cause can be found instead of only seeing that it froze.
+
+- Every failed command and every console error of the interface is now written to the error log, and the log follows four levels (Critical, Error, Warning, Info).
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

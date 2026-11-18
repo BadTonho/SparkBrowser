@@ -35,6 +35,10 @@
 
 - Nas configurações do navegador, o título agora é só **Configurações** e a pesquisa é um único ícone: clique nele, ou em qualquer lugar do espaço livre ao lado, e ele se abre no campo de pesquisa. Ele se fecha de novo quando você o deixa vazio.
 
+- Quando o navegador para de responder, o log de erros agora lista o que ele estava fazendo logo antes (os últimos comandos e painéis), para dar para achar a causa em vez de ver só que ele travou.
+
+- Todo comando que falha e todo erro de console da interface agora vão para o log de erros, que segue quatro níveis (Crítico, Erro, Aviso, Informação).
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.

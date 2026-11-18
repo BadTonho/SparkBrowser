@@ -11,7 +11,7 @@ pub async fn control(app: &tauri::AppHandle, id: &str, action: &str) -> Result<(
         let (send, receive) = tokio::sync::oneshot::channel();
         let (handle, task) = (app.clone(), id.to_owned());
         app.run_on_main_thread(move || {
-            let _ = send.send(super::native_linux::cancel(&handle, &task));
+            crate::error_log::ignored(send.send(super::native_linux::cancel(&handle, &task)));
         })
         .map_err(|e| e.to_string())?;
         if receive.await.unwrap_or(false) {

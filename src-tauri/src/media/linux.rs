@@ -24,7 +24,7 @@ pub async fn set_muted(app: &AppHandle, view: &tauri::Webview, muted: bool) -> R
         } else {
             Err("media.stale".to_string())
         };
-        let _ = send.send(result);
+        crate::error_log::ignored(send.send(result));
     })
     .map_err(|_| "media.unavailable")?;
     tokio::time::timeout(std::time::Duration::from_secs(5), receive)

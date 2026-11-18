@@ -5,10 +5,17 @@ import { invoke, isTauriRuntime } from "./lib/services/bridge/runtime";
 // Script errors in any browser interface (shell, settings, tools, downloads) go to the error log
 // and to the notification in the bottom-right corner.
 let reported = 0;
-function reportScriptError(summary: string, details = ""): void {
-  if (!isTauriRuntime() || ++reported > 10) return;
-  void invoke("report_frontend_error", { summary, details }).catch(() => {});
+function reportScriptError(summary: string, details = "", level?: "warning"): void {
+  if (!isTauriRuntime() || ++reported > 50) return;
+  void invoke("report_frontend_error", { summary, details, level }).catch(() => {});
 }
+// Errors the interface prints to the console (including framework warnings) are logged too.
+const consoleError = console.error.bind(console);
+console.error = (...args: unknown[]) => {
+  consoleError(...args);
+  reportScriptError(`console.error: ${args.map((a) => (a instanceof Error ? a.message : String(a))).join(" ").slice(0, 300)}`,
+    args.find((a): a is Error => a instanceof Error)?.stack ?? "", "warning");
+};
 window.addEventListener("error", (event) => {
   reportScriptError(event.message || "Script error", `${event.filename}:${event.lineno}:${event.colno}\n${event.error?.stack ?? ""}`);
 });

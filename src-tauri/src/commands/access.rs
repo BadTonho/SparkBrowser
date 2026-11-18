@@ -42,6 +42,7 @@ pub fn shell_only(
                     .reject("Application startup is still in progress");
                 return true;
             }
+            crate::error_log::trail(&format!("command {}", invoke.message.command()));
             let service = invoke
                 .message
                 .webview_ref()

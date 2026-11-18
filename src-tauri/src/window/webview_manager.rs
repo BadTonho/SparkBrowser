@@ -172,7 +172,7 @@ fn navigate_content_history(app: &AppHandle, window_id: &str, go_back: bool) -> 
                 })
             };
             if let Err(error) = result {
-                eprintln!("Failed to navigate content history: {error}");
+                crate::error_log::warn(&format!("Failed to navigate content history: {error}"));
             }
         });
         operation.map_err(|error| format!("Failed to access content WebView: {error}"))?;

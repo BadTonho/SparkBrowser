@@ -72,7 +72,7 @@ impl Credentials {
         #[cfg(test)]
         self.values.lock().unwrap().remove(legacy_key);
         #[cfg(not(test))]
-        let _ = os::delete_legacy(legacy_key);
+        crate::error_log::ignored(os::delete_legacy(legacy_key));
         Ok(())
     }
     #[cfg(test)]
@@ -176,8 +176,8 @@ mod os {
         if let Some(value) = input {
             let mut stdin = child.stdin.take().ok_or(ERROR)?;
             if stdin.write_all(value.as_bytes()).is_err() {
-                let _ = child.kill();
-                let _ = child.wait();
+                crate::error_log::ignored(child.kill());
+                crate::error_log::ignored(child.wait());
                 return Err(ERROR.into());
             }
         }
@@ -189,8 +189,8 @@ mod os {
                     std::thread::sleep(Duration::from_millis(25))
                 }
                 _ => {
-                    let _ = child.kill();
-                    let _ = child.wait();
+                    crate::error_log::ignored(child.kill());
+                    crate::error_log::ignored(child.wait());
                     return Err(ERROR.into());
                 }
             }

@@ -169,7 +169,7 @@ async fn capture_webkitgtk(view: &tauri::Webview) -> Result<Vec<u8>, String> {
                             })
                     }
                 };
-                let _ = send.send(png);
+                crate::error_log::ignored(send.send(png));
             },
         );
     })

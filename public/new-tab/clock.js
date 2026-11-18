@@ -21,7 +21,7 @@
   const setStorage = (key, val) => {
     try {
       localStorage.setItem(key, val);
-    } catch {}
+    } catch (error) { window.__sparkLogIgnored?.(error); }
   };
 
   function getConfig() {
@@ -197,7 +197,7 @@
   function notifyUpdated() {
     try {
       window.dispatchEvent(new CustomEvent('spark_clock_updated', { detail: getConfig() }));
-    } catch {}
+    } catch (error) { window.__sparkLogIgnored?.(error); }
   }
 
   function bindEvents() {

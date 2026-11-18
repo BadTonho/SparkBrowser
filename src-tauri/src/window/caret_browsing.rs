@@ -19,7 +19,7 @@ pub(super) fn toggle(app: &AppHandle) -> Result<(), String> {
     for label in labels {
         if let Err(error) = apply_to_webview(app, &label, enabled) {
             for applied_label in applied {
-                let _ = apply_to_webview(app, &applied_label, previous);
+                crate::error_log::ignored(apply_to_webview(app, &applied_label, previous));
             }
             return Err(error);
         }

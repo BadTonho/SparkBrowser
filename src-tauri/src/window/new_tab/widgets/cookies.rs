@@ -121,11 +121,11 @@ pub async fn get_cookies_for_url(app: &AppHandle, url: &str) -> Result<String, S
             .context()
             .and_then(|context| context.cookie_manager());
         let Some(manager) = manager else {
-            let _ = sender.send(Err("no_webview_available".to_string()));
+            crate::error_log::ignored(sender.send(Err("no_webview_available".to_string())));
             return;
         };
         manager.cookies(&url, None::<&webkit2gtk::gio::Cancellable>, move |result| {
-            let _ = sender.send(result.map_err(|e| e.to_string()).map(|cookies| {
+            crate::error_log::ignored(sender.send(result.map_err(|e| e.to_string()).map(|cookies| {
                 cookies
                     .into_iter()
                     .filter_map(|mut cookie| {
@@ -135,7 +135,7 @@ pub async fn get_cookies_for_url(app: &AppHandle, url: &str) -> Result<String, S
                     })
                     .collect::<Vec<_>>()
                     .join("; ")
-            }));
+            })));
         });
     })
     .map_err(|e| e.to_string())?;

@@ -46,11 +46,11 @@ pub(crate) fn identifier_roots() -> Vec<PathBuf> {
 fn move_directory(old: &Path, new: &Path) {
     if old.is_dir() && !new.exists() {
         if let Err(error) = fs::rename(old, new) {
-            eprintln!(
+            crate::error_log::warn(&format!(
                 "Could not move {} to {}: {error}",
                 old.display(),
                 new.display()
-            );
+            ));
         }
     }
 }

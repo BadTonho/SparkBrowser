@@ -17,7 +17,7 @@
   }
   // Display choices are per-device conveniences, like the clock's; storage may be unavailable.
   const choice = (key, allowed) => { try { const value = localStorage.getItem(key); return allowed.includes(value) ? value : allowed[0]; } catch { return allowed[0]; } };
-  const save = (key, allowed, value) => { try { localStorage.setItem(key, allowed.includes(value) ? value : allowed[0]); } catch {} };
+  const save = (key, allowed, value) => { try { localStorage.setItem(key, allowed.includes(value) ? value : allowed[0]); } catch (error) { window.__sparkLogIgnored?.(error); } };
   const later = fn => (window.requestAnimationFrame ?? (callback => callback()))(fn);
   window.__sparkMediaCard = { clock, fitTitle, choice, save, later };
 })();

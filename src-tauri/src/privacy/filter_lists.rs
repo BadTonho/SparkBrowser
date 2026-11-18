@@ -218,7 +218,7 @@ impl FilterLists {
             std::thread::sleep(refresh_delay(&service.cache));
             loop {
                 if let Err(error) = service.refresh() {
-                    eprintln!("Filter-list refresh failed: {error}");
+                    crate::error_log::warn(&format!("Filter-list refresh failed: {error}"));
                 }
                 std::thread::sleep(REFRESH_INTERVAL);
             }

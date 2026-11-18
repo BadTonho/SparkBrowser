@@ -138,7 +138,7 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
             Ok::<(), webview2_com::Error>(())
         })();
         if let Err(error) = result {
-            eprintln!("Fullscreen handler unavailable: {error}");
+            crate::error_log::warn(&format!("Fullscreen handler unavailable: {error}"));
         }
     })
     .map_err(|e| e.to_string())

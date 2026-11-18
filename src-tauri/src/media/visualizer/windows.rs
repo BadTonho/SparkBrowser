@@ -246,15 +246,15 @@ pub fn roots(app: &tauri::AppHandle) -> Vec<u32> {
                 handle.get_webview(&crate::state::tab_model::webview_label_for_tab(&tab.id))
             {
                 let sender = sender.clone();
-                let _ = view.with_webview(move |platform| unsafe {
+                crate::error_log::ignored(view.with_webview(move |platform| unsafe {
                     let mut pid = 0;
                     if let Ok(core) = platform.controller().CoreWebView2() {
-                        let _ = core.BrowserProcessId(&mut pid);
+                        crate::error_log::ignored(core.BrowserProcessId(&mut pid));
                     }
                     if pid != 0 {
-                        let _ = sender.send(pid);
+                        crate::error_log::ignored(sender.send(pid));
                     }
-                });
+                }));
             }
         }
     }));

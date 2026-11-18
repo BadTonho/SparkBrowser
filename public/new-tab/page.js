@@ -5,7 +5,7 @@
       if (document.documentElement && typeof document.documentElement.setAttribute === 'function') {
         document.documentElement.setAttribute('data-theme', mode);
       }
-    } catch {}
+    } catch (error) { window.__sparkLogIgnored?.(error); }
   };
   applyTheme();
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {

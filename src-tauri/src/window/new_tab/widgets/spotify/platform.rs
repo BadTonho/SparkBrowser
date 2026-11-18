@@ -97,7 +97,7 @@ pub fn open(url: &url::Url) -> Result<(), String> {
         match std::process::Command::new(binary).arg(url.as_str()).spawn() {
             Ok(mut child) => {
                 std::thread::spawn(move || {
-                    let _ = child.wait();
+                    crate::error_log::ignored(child.wait());
                 });
                 return Ok(());
             }

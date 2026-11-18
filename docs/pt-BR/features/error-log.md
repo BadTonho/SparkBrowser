@@ -35,6 +35,14 @@ Toda entrada tem um de quatro níveis. Só os dois sérios interrompem o usuári
 | `new-tab` | Erro de script ou rejeição não tratada na página de nova guia (até 3 por carregamento) |
 | `unclean-exit` | A execução anterior deixou o marcador `session.running`: uma queda, um travamento fechado à força ou falta de energia. Aparece alguns segundos depois de iniciar |
 
+### Contexto de um travamento
+
+Um travamento não tem mensagem de erro, então a entrada `hang` traz um **rastro**: as últimas 40 coisas que o app foi mandado fazer (cada comando da interface e cada abertura ou fechamento de popover), cada uma com hora e thread. A última linha é a causa mais provável.
+
+### Comandos que falham e o console
+
+Todo comando da interface que falha é registrado como `warning` (`Command "nome" failed: …`), mesmo quando quem chamou trata a falha. Tudo que a interface imprime com `console.error` também vira `warning`.
+
 ### Falhas que eram ignoradas
 
 O código que antes jogava o erro fora agora o registra como `warning`, com o local que o ignorou:
@@ -42,7 +50,7 @@ O código que antes jogava o erro fora agora o registra como `warning`, com o lo
 - No Rust, `let _ = resultado;` virou `crate::error_log::ignored(resultado);`, que registra o erro com o arquivo e a linha. Use-o para todo novo `Result` ignorado de propósito.
 - Na interface, um `.catch(() => {})` vazio virou `.catch(logIgnored)` (`src/lib/services/ignored-error.ts`). Filas de promessas que só mantêm a cadeia viva mantêm o catch vazio, porque o erro pertence a quem chamou.
 
-Ainda não coberto: código Rust que só compila no Linux (foi convertido apenas onde dava para compilar e conferir), três pontos do Rust cujo tipo de erro não pode ser impresso e os scripts da página de nova guia.
+Tudo que antes só era impresso no console (`eprintln!`) agora também vai para o log como `warning` (`crate::error_log::warn`), e a página de nova guia registra suas falhas ignoradas por `window.__sparkLogIgnored`. Ainda não coberto: o código Rust que só compila no Linux foi convertido sem ser compilado aqui, os scripts injetados em páginas do Google Drive (`gdrive_bridge.js`) ainda têm catches vazios de melhor esforço, e alguns pontos do Rust transformam um erro em um "falhou" simples sem guardar o texto.
 
 ## Arquivo de registro
 
