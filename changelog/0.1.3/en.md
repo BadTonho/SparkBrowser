@@ -5,3 +5,5 @@
 - In the centered customization panel, the **Panel position** and **Music widgets position** options are now small, sit side by side and stay at the bottom of the panel, leaving more room for the cards.
 
 - The labels of the new-tab customization options are shorter: **Compact** and **Center** for the panel position, **Default** and **Centered** for the music widgets position.
+
+- The new-tab page adapts better to the window width: the Weather and Gmail cards shrink to fit beside the search box instead of dropping above it, which keeps the search box and recent sites in view on medium-sized windows. A tall Gmail card now scrolls inside itself.

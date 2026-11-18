@@ -1,6 +1,7 @@
-#widgets { position:absolute; top:24px; left:24px; right:24px; display:grid; grid-template-columns:minmax(0,280px) minmax(0,320px); justify-content:space-between; align-items:start; gap:24px; pointer-events:none; }
+#widgets { position:absolute; top:24px; left:24px; right:24px; display:grid; --widget-col:clamp(220px, calc((100vw - 640px) / 2 - 48px), 320px); grid-template-columns:minmax(0,min(280px, var(--widget-col))) minmax(0,var(--widget-col)); justify-content:space-between; align-items:start; gap:24px; pointer-events:none; }
 .widget { min-width:0; padding:18px; border:1px solid #ffffff16; border-radius:16px; background:#171717; pointer-events:auto; }
 #gmail-widget { grid-column:2; }
+@media (min-width:1180px) { #gmail-widget { max-height:calc(100vh - 48px); overflow-y:auto; scrollbar-width:thin; } }
 .widget-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .widget h2,dialog h2 { margin:0; font-size:15px; font-weight:600; }
 .widget p,dialog p { text-align:left; line-height:1.5; margin:8px 0; overflow-wrap:anywhere; }
@@ -73,7 +74,7 @@ dialog input:focus-visible,dialog select:focus-visible { outline:2px solid #e5e5
 .gmail-message span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
 .gmail-message time { font-size:10px; color:#999; }
 .gmail-message.unread .mail-sender { font-weight:700; }
-@media (max-width:1399px) {
+@media (max-width:1179px) {
   #widgets { position:relative; top:auto; left:auto; right:auto; margin:24px; }
   body:has(#widgets:not([hidden])) main { min-height:320px; padding-top:24px; padding-bottom:80px; }
 }
