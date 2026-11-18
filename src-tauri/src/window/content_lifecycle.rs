@@ -255,6 +255,7 @@ pub(crate) fn sync_webviews_after_selection(
     super::media_popover::sync(app, state)?;
     super::tools_popover::sync(app, state)?;
     super::downloads_popover::sync(app, state)?;
+    super::suggestions_popover::sync(app, state)?;
     super::quick_settings_popover::sync(app, state)?;
     super::settings_overlay::sync(app, state)?;
     super::privacy_popover::sync(app, state)?;

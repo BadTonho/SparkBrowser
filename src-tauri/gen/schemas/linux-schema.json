@@ -1143,6 +1143,12 @@
           "markdownDescription": "Enables the set_split_view command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_suggestions_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-suggestions-popover",
+          "markdownDescription": "Enables the set_suggestions_popover command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_tab_account_container command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-tab-account-container",
@@ -2227,6 +2233,12 @@
           "type": "string",
           "const": "deny-set-split-view",
           "markdownDescription": "Denies the set_split_view command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_suggestions_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-suggestions-popover",
+          "markdownDescription": "Denies the set_suggestions_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the set_tab_account_container command without any pre-configured scope.",

@@ -19,7 +19,14 @@ Clicar na barra de endereço, ou digitar nela, mostra uma lista de sugestões lo
 | Esc | Fecha a lista e restaura a barra de endereço |
 | Clique numa linha | Abre; a barra de endereço mantém o foco até a página começar a carregar |
 
-A lista se alinha à barra de endereço. Ela fica no layout da página, então a página abaixo desce enquanto a lista está aberta; a lista só cresce durante uma sessão, para a página não pular a cada tecla.
+## Como ela é desenhada
+
+A lista é um popover sobre a página, logo abaixo da barra de endereço e com a mesma largura. A página não é redimensionada nem movida, e a barra de endereço e a barra de ferramentas continuam clicáveis.
+
+- **A digitação continua na barra de endereço.** O popover nunca toma o teclado; as setas, o Enter e o Esc são tratados pela barra de endereço. Clicar numa linha leva o foco ao popover só para aquele clique.
+- **Clicar em qualquer outro lugar da página fecha a lista**, assim como o Esc, mover o foco para outra parte da interface, abrir outro painel ou trocar de janela.
+- Ele é criado com antecedência quando o ponteiro chega à barra de endereço, para a primeira lista não esperar por isso.
+- Fora do aplicativo (a interface vista num navegador comum) não há camada nativa, então a lista fica no layout da página e empurra a página para baixo.
 
 ## Sugestões de pesquisa do mecanismo de busca
 

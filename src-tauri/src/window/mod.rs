@@ -34,6 +34,7 @@ pub mod zoom_popover;
 pub mod tools_popover;
 
 pub mod downloads_popover;
+pub mod suggestions_popover;
 pub mod ephemeral;
 #[cfg(target_os = "linux")]
 pub mod linux_layout;

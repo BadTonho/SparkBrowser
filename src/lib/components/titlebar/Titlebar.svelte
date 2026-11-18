@@ -50,6 +50,8 @@
   import { splitLayout } from "../../stores/splitViewStore";
   import { titlebarMenu, openTitlebarMenu, closeTitlebarMenu } from "../../stores/titlebarMenuStore";
   import { suggestionState, requestSuggestions, closeSuggestions, moveSuggestion, highlightedSuggestion, chooseSuggestion } from "../../stores/addressSuggestionsStore";
+  import { isTauriRuntime } from "../../services/bridge/runtime";
+  import { preparePanel } from "../../services/bridge/panels";
 
   let narrow = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 1000px)").matches);
   const splitHorizontal = $derived($tabLayout === "horizontal" && Boolean($splitLayout));
@@ -108,8 +110,17 @@
     const target = event.currentTarget as HTMLInputElement;
     target.value = get(addressInput);
     target?.select();
+    preparePanel("suggestions");
     // Selected text is replaced by the first key, so suggestions start from the recent sites.
     requestSuggestions("", true);
+  }
+
+  // In the app the list is another web view: clicking it moves the focus there, which must not close it
+  // before the click lands. Focus moving to anything else in the interface still closes it.
+  function handleBlur() {
+    isAddressEditing.set(false);
+    if (!isTauriRuntime()) { closeSuggestions(); return; }
+    setTimeout(() => { if (document.hasFocus()) closeSuggestions(); }, 0);
   }
 
   function handleBookmarkToggle() {
@@ -204,7 +215,8 @@
           oninput={(event) => { const value = (event.currentTarget as HTMLInputElement).value; addressInput.set(value); requestSuggestions(value); }}
           onkeydown={(event) => { if (event.key === "Escape") { closeSuggestions(); addressInput.set(internalPage ? "" : $currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
           onfocus={handleFocus}
-          onblur={() => { isAddressEditing.set(false); closeSuggestions(); }}
+          onblur={handleBlur}
+          onpointerenter={() => preparePanel("suggestions")}
           role="combobox"
           aria-expanded={$suggestionState.open && $suggestionState.items.length > 0}
           aria-controls="address-suggestions-list"

@@ -19,7 +19,14 @@ Clicking the address bar, or typing in it, shows a list of suggestions right bel
 | Esc | Close the list and restore the address bar |
 | Click a row | Open it; the address bar keeps focus until the page starts loading |
 
-The list lines up with the address bar. It sits in the page layout, so the page below moves down while the list is open; the list only grows during one session, so the page does not jump on every key.
+## How it is drawn
+
+The list is a popover over the page, right below the address bar and as wide as it. The page is not resized or moved, and the address bar and the toolbar stay clickable.
+
+- **Typing carries on in the address bar.** The popover never takes the keyboard; the arrow keys, Enter and Esc are handled by the address bar. Clicking a row moves the focus to the popover for that click only.
+- **Clicking anywhere else on the page closes it**, as does Esc, moving the focus to another part of the interface, opening another panel, or switching to another window.
+- It is created ahead of time when the pointer reaches the address bar, so the first list does not wait for it.
+- Outside the app (the interface previewed in a plain browser) there is no native layer, so the list sits in the page layout and pushes the page down instead.
 
 ## Search suggestions from the search engine
 

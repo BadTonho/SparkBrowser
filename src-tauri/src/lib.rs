@@ -75,6 +75,7 @@ use commands::navigation::{
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_downloads_popover, set_history_overlay,
+    set_suggestions_popover,
     set_media_popover, set_overlay_visibility, set_permission_popover, set_privacy_popover,
     set_quick_settings_popover, set_settings_overlay, set_tools_popover,
     set_workspace_switcher_overlay, set_zoom_popover,
@@ -180,6 +181,7 @@ pub fn run() {
         .manage(window::media_popover::MediaPopover::default())
         .manage(window::tools_popover::ToolsPopover::default())
         .manage(window::downloads_popover::DownloadsPopover::default())
+        .manage(window::suggestions_popover::SuggestionsPopover::default())
         .manage(window::quick_settings_popover::QuickSettingsPopover::default())
         .manage(window::settings_overlay::SettingsOverlay::default())
         .manage(window::privacy_popover::PrivacyPopover::default())
@@ -241,6 +243,7 @@ pub fn run() {
                 window::zoom_popover::focus_lost(window.app_handle());
                 window::tools_popover::focus_lost(window.app_handle());
                 window::downloads_popover::focus_lost(window.app_handle());
+                window::suggestions_popover::focus_lost(window.app_handle());
                 window::quick_settings_popover::focus_lost(window.app_handle());
                 if let Some(state) = window.try_state::<BrowserState>() {
                     state
@@ -651,6 +654,7 @@ pub fn run() {
             set_forced_dark_mode,
             set_tools_popover,
             set_downloads_popover,
+            set_suggestions_popover,
             set_quick_settings_popover,
             set_settings_overlay,
             set_privacy_popover,

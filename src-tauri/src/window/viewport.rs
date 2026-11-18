@@ -81,6 +81,7 @@ pub fn resize_visible_webviews(app: &AppHandle, state: &BrowserState) -> Result<
     super::media_popover::resize(app)?;
     super::tools_popover::resize(app)?;
     super::downloads_popover::resize(app)?;
+    super::suggestions_popover::resize(app)?;
     super::quick_settings_popover::resize(app)?;
     super::settings_overlay::resize(app)?;
     super::privacy_popover::resize(app)?;

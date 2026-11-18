@@ -13,6 +13,7 @@ pub(super) const TOOLS_LABEL: &str = <Tools as Panel>::LABEL;
 pub(super) const DOWNLOADS_LABEL: &str = <Downloads as Panel>::LABEL;
 pub(super) const QUICK_SETTINGS_LABEL: &str = <QuickSettings as Panel>::LABEL;
 pub(super) const SETTINGS_LABEL: &str = <Settings as Panel>::LABEL;
+pub(super) const SUGGESTIONS_LABEL: &str = <Suggestions as Panel>::LABEL;
 
 pub trait Panel: Send + Sync + 'static {
     const LABEL: &'static str;
@@ -20,6 +21,12 @@ pub trait Panel: Send + Sync + 'static {
     const HOST: &'static str;
     const SETTER: &'static str;
     const EVENT: &'static str;
+    /// The web view covers only what lies under its anchor, so the anchor itself (for example the
+    /// address bar) stays reachable by the pointer.
+    const BELOW_ANCHOR: bool = false;
+    /// Whether opening moves the keyboard focus into the panel. The address bar's suggestions must not,
+    /// or typing would stop.
+    const TAKES_FOCUS: bool = true;
 }
 #[derive(Default)]
 pub struct Tools;
@@ -29,6 +36,17 @@ pub struct Downloads;
 pub struct QuickSettings;
 #[derive(Default)]
 pub struct Settings;
+#[derive(Default)]
+pub struct Suggestions;
+impl Panel for Suggestions {
+    const LABEL: &'static str = "suggestions-popover-webview";
+    const SURFACE: &'static str = "/index.html?surface=suggestions";
+    const HOST: &'static str = "suggestions-popover";
+    const SETTER: &'static str = "__sparkSetSuggestionsPopover";
+    const EVENT: &'static str = "suggestions-popover-action";
+    const BELOW_ANCHOR: bool = true;
+    const TAKES_FOCUS: bool = false;
+}
 impl Panel for Settings {
     const LABEL: &'static str = "settings-overlay-webview";
     const SURFACE: &'static str = "/index.html?surface=settings";
@@ -215,6 +233,7 @@ pub fn prepare(app: &AppHandle, window_id: &str, panel: &str) -> Result<(), Stri
         "tools" => warm::<Tools>(app, window_id),
         "downloads" => warm::<Downloads>(app, window_id),
         "settings" => warm::<Settings>(app, window_id),
+        "suggestions" => warm::<Suggestions>(app, window_id),
         "history" => warm_overlay(super::history_overlay::prepare(app, window_id)),
         "zoom" => warm_overlay(super::zoom_popover::prepare(app, window_id)),
         "privacy" => warm_overlay(super::privacy_popover::prepare(app, window_id)),
@@ -233,25 +252,42 @@ pub fn resize<P: Panel>(app: &AppHandle) -> Result<(), String> {
             .inner_size()
             .map_err(|e| e.to_string())?
             .to_logical::<f64>(window.scale_factor().map_err(|e| e.to_string())?);
+        let top = below_anchor::<P>(app, size.height);
         #[cfg(target_os = "linux")]
         super::linux_layout::update_bounds(
             app,
             P::LABEL,
             0,
-            0,
+            top as i32,
             size.width as i32,
-            size.height as i32,
+            (size.height - top).max(0.0) as i32,
             is_open::<P>(app),
         )?;
         #[cfg(not(target_os = "linux"))]
         _view
             .set_bounds(Rect {
-                position: LogicalPosition::new(0.0, 0.0).into(),
-                size: size.into(),
+                position: LogicalPosition::new(0.0, top).into(),
+                size: tauri::LogicalSize::new(size.width, (size.height - top).max(0.0)).into(),
             })
             .map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+/// Where the panel's web view starts: the top of the window, or the bottom of the anchor for a
+/// panel that sits below it. The anchor never leaves the window, and the result never passes its height.
+fn below_anchor<P: Panel>(app: &AppHandle, window_height: f64) -> f64 {
+    if !P::BELOW_ANCHOR {
+        return 0.0;
+    }
+    let service = app.state::<Popover<P>>();
+    let Ok(inner) = service.0.lock() else {
+        return 0.0;
+    };
+    inner.session.as_ref().map_or(0.0, |session| {
+        let anchor = &session.presentation.anchor;
+        (anchor.top + anchor.height).clamp(0.0, window_height)
+    })
 }
 
 pub fn is_open<P: Panel>(app: &AppHandle) -> bool {
@@ -485,7 +521,7 @@ pub fn set<P: Panel>(
         let view = app.get_webview(P::LABEL).ok_or("Panel WebView not found")?;
         view.eval(format!("(() => {{ const payload = {payload}; let attempts = 0; const update = () => {{ if (window.{setter}) window.{setter}(payload); else if (++attempts < 120) setTimeout(update, 16); }}; update(); }})();", setter = P::SETTER)).map_err(|e| e.to_string())?;
         crate::window::show_overlay_webview(&view)?;
-        if opening {
+        if opening && P::TAKES_FOCUS {
             view.set_focus().map_err(|e| e.to_string())?;
         }
         Ok(())
@@ -500,7 +536,7 @@ pub fn set<P: Panel>(
 mod tests {
     use super::{
         can_finish_animated_close, Downloads, Inner, Panel, Presentation, QuickSettings, Session,
-        Tools,
+        Suggestions, Tools,
     };
 
     #[test]
@@ -508,6 +544,19 @@ mod tests {
         assert_eq!(Tools::HOST, "tools-popover");
         assert_eq!(Downloads::HOST, "downloads-popover");
         assert_eq!(QuickSettings::HOST, "settings-quick-popover");
+        assert_eq!(Suggestions::HOST, "suggestions-popover");
+    }
+
+    #[test]
+    fn only_the_suggestions_panel_sits_below_its_anchor_without_taking_focus() {
+        assert!(Suggestions::BELOW_ANCHOR && !Suggestions::TAKES_FOCUS);
+        for (below, focus) in [
+            (Tools::BELOW_ANCHOR, Tools::TAKES_FOCUS),
+            (Downloads::BELOW_ANCHOR, Downloads::TAKES_FOCUS),
+            (QuickSettings::BELOW_ANCHOR, QuickSettings::TAKES_FOCUS),
+        ] {
+            assert!(!below && focus);
+        }
     }
 
     #[test]

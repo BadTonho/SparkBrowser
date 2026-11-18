@@ -3,6 +3,8 @@ import { fetchHistory } from "../services/bridge/persistence";
 import { buildSuggestions, looksLikeAddress, supportsWebSuggestions, type Suggestion } from "../services/address-suggestions.js";
 import { fetchSearchSuggestions } from "../services/bridge/search-suggestions";
 import { bookmarks } from "./persistenceStore";
+import { setSuggestionsPopover } from "../services/bridge/suggestions-popover";
+import type { PanelSession } from "../components/panels/panel-host";
 import { addressInput, isAddressEditing, submitNavigation } from "./browserStore";
 import { defaultSearchEngine, getSearchEngineLabel } from "./searchEngineStore";
 import { webSuggestionsEnabled } from "./webSuggestionsStore";
@@ -19,6 +21,25 @@ export interface SuggestionState {
 
 const closed: SuggestionState = { open: false, items: [], selected: -1, rows: 0 };
 export const suggestionState = writable<SuggestionState>(closed);
+
+/**
+ * In the app the list is a native popover over the page (below the address bar). A session lives while the
+ * popover is shown; it ends when there is nothing to list or the list closes.
+ */
+export const suggestionsSession = writable<PanelSession | null>(null);
+let sessionCounter = 0;
+
+export function beginSuggestionsSession(anchor: HTMLElement): void {
+  if (get(suggestionsSession)) return;
+  suggestionsSession.set({ id: ++sessionCounter, anchor });
+}
+
+export function endSuggestionsSession(): void {
+  const session = get(suggestionsSession);
+  if (!session) return;
+  suggestionsSession.set(null);
+  void setSuggestionsPopover(false, session.id).catch(() => {});
+}
 
 const DEBOUNCE_MS = 70;
 const HISTORY_ROWS = 60;
@@ -80,6 +101,7 @@ export function requestSuggestions(query: string, immediate = false): void {
 }
 
 export function closeSuggestions(): void {
+  endSuggestionsSession();
   generation++;
   termsFor.clear();
   if (timer) clearTimeout(timer);

@@ -1,6 +1,6 @@
 import { invoke, isTauriRuntime } from "./runtime";
 
-export type PanelName = "quick-settings" | "tools" | "downloads" | "settings" | "history" | "zoom" | "privacy" | "media";
+export type PanelName = "quick-settings" | "tools" | "downloads" | "settings" | "history" | "zoom" | "privacy" | "media" | "suggestions";
 
 const requested = new Set<PanelName>();
 

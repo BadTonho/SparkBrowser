@@ -1,0 +1,43 @@
+/* The address bar's suggestion list. Plain CSS (not scoped) because the same markup is drawn in the page layout
+   and, inside the app, in the native popover surface, which only receives class names and theme variables. */
+.address-suggestions { flex: 0 0 auto; min-width: 0; padding: 0 0 8px; }
+.address-suggestions-controller { position: fixed; left: -10000px; top: 0; width: 640px; visibility: hidden; pointer-events: none; }
+.suggestions-dismiss { position: fixed; inset: 0; z-index: 700; background: transparent; }
+.suggestions-surface { position: absolute; overflow: hidden auto; }
+.suggestion-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: var(--modal-surface-border, 1px solid var(--border-subtle));
+  border-radius: 16px;
+  background: var(--modal-surface-bg, var(--bg-glass-elevated));
+  backdrop-filter: var(--modal-surface-filter, none);
+  -webkit-backdrop-filter: var(--modal-surface-filter, none);
+  box-shadow: var(--modal-surface-shadow, 0 12px 32px rgba(0, 0, 0, 0.4));
+}
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.suggestion:hover { background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+.suggestion.highlighted { background: color-mix(in srgb, var(--text-primary) 13%, transparent); }
+.suggestion-icon { flex: 0 0 auto; display: grid; place-items: center; width: 24px; color: var(--text-muted); }
+.suggestion-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.suggestion-primary, .suggestion-secondary { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.suggestion-primary { font-size: 13px; font-weight: 600; }
+.suggestion-secondary { color: var(--text-muted); font-size: 11.5px; }
+.suggestion-kind { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--text-primary) 9%, transparent); color: var(--text-secondary); font-size: 10.5px; font-weight: 600; }
