@@ -5,13 +5,15 @@ const KEY = "spark_web_suggestions";
 
 function initial(): boolean {
   try {
-    return safeStorage?.getItem(KEY) === "true";
+    const saved = safeStorage?.getItem(KEY);
+    // On unless the user turned it off.
+    return saved === null || saved === undefined ? true : saved === "true";
   } catch {
-    return false;
+    return true;
   }
 }
 
-/** Off by default: turning it on sends what is typed in the address bar to the search engine while typing. */
+/** On by default: what is typed in the address bar goes to the search engine while typing (never in a private window). */
 export const webSuggestionsEnabled = writable<boolean>(initial());
 
 export function setWebSuggestionsEnabled(enabled: boolean): void {

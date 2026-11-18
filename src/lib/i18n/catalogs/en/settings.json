@@ -345,6 +345,6 @@
   "settings.update_ready_next_start": "The update is downloaded and verified. Restart to install it now; otherwise it installs the next time Spark opens.",
   "settings.auto_update_search": "Download updates in the background and install them the next time Spark opens.",
   "settings.web_suggestions": "Search suggestions",
-  "settings.web_suggestions_description": "Send what you type in the address bar to your search engine to get suggested searches. Off by default, and never used in private windows.",
+  "settings.web_suggestions_description": "Send what you type in the address bar to your search engine to get suggested searches. On by default, and never used in private windows.",
   "settings.web_suggestions_unsupported": "{engine} has no suggestion service, so this has no effect with it. It works with Google, DuckDuckGo, Bing and Brave Search."
 }

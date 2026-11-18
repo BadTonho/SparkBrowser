@@ -6,7 +6,7 @@
 
 - Clicking the address bar or typing in it now shows suggestions below it: your most recent sites when it is empty, and, while you type, what Enter will do, then matching bookmarks and visited pages. Use the arrow keys and Enter, or click a row.
 
-- New option **Search suggestions** (Settings → Search & Navigation, off by default): while you type in the address bar, it asks your search engine for suggested searches and lists them under the matching sites. It works with Google, DuckDuckGo, Bing and Brave Search, sends only what you typed, and is never used in private windows.
+- New option **Search suggestions** (Settings → Search & Navigation, on by default): while you type in the address bar, it asks your search engine for suggested searches and lists them under the matching sites. It works with Google, DuckDuckGo, Bing and Brave Search, sends only what you typed, and is never used in private windows.
 
 ## Improvements
 

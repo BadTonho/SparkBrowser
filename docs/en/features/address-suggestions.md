@@ -23,7 +23,7 @@ The list lines up with the address bar. It sits in the page layout, so the page 
 
 ## Search suggestions from the search engine
 
-**Settings → Search & Navigation → Search suggestions** adds the terms your search engine proposes for what you type. It is **off by default**, because it is the one place where text leaves the computer before you press Enter.
+**Settings → Search & Navigation → Search suggestions** adds the terms your search engine proposes for what you type. It is **on by default** and can be turned off there. It is the one place where text leaves the computer before you press Enter, so the setting says what it does.
 
 - Works with **Google, DuckDuckGo, Bing and Brave Search**. The other engines have no public suggestion service, so nothing is requested for them and the settings page says so.
 - Only the text typed in the address bar is sent, with the generic client name `Spark`; no cookies, no account, no redirects followed, and the request gives up after 3 seconds.
@@ -34,5 +34,5 @@ The list lines up with the address bar. It sits in the page layout, so the page 
 
 ## Notes
 
-- Without the option above, everything comes from the local history and bookmarks and nothing is sent anywhere. See [Privacy & Security settings](privacy-security-settings.md) for the history retention.
+- With the option off, everything comes from the local history and bookmarks and nothing is sent anywhere. See [Privacy & Security settings](privacy-security-settings.md) for the history retention.
 - The history is searched with the same query as the History panel, over the latest 60 matching visits.

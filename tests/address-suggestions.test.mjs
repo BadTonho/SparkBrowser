@@ -87,11 +87,11 @@ test('the engines with suggestions are the ones the native side has an endpoint 
   assert.equal(supportsWebSuggestions('kagi'), false);
 });
 
-test('the option is off by default and the native call refuses what it should not send', async () => {
+test('the option is on unless the user turned it off, and it is never used where it should not be', async () => {
   const { readFileSync } = await import('node:fs');
   const store = readFileSync('src/lib/stores/webSuggestionsStore.ts', 'utf8');
-  assert.match(store, /=== "true"/);
-  assert.match(store, /catch \{\s*return false;/);
+  assert.match(store, /saved === null \|\| saved === undefined \? true : saved === "true"/);
+  assert.match(store, /catch \{\s*return true;/);
   const suggestions = readFileSync('src/lib/stores/addressSuggestionsStore.ts', 'utf8');
   assert.match(suggestions, /get\(webSuggestionsEnabled\) && !get\(isPrivateWindow\)/);
 });

@@ -102,7 +102,7 @@ export const searchableSettings: SearchEntry[] = [
   {
     id: "web-suggestions",
     title: "Search suggestions",
-    description: "Send what you type in the address bar to your search engine to get suggested searches. Off by default, and never used in private windows.",
+    description: "Send what you type in the address bar to your search engine to get suggested searches. On by default, and never used in private windows.",
     category: "search_navigation",
     targetId: "setting-web-suggestions",
     keywords: "address bar omnibox autocomplete suggestions typing privacy sugestões barra de endereço digitar autocompletar",

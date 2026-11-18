@@ -23,7 +23,7 @@ A lista se alinha à barra de endereço. Ela fica no layout da página, então a
 
 ## Sugestões de pesquisa do mecanismo de busca
 
-**Configurações → Busca e navegação → Sugestões de pesquisa** acrescenta os termos que o seu mecanismo de busca propõe para o que você digita. Vem **desligado por padrão**, porque é o único ponto em que um texto sai do computador antes de você apertar Enter.
+**Configurações → Busca e navegação → Sugestões de pesquisa** acrescenta os termos que o seu mecanismo de busca propõe para o que você digita. Vem **ligado por padrão** e pode ser desligado ali. É o único ponto em que um texto sai do computador antes de você apertar Enter, por isso a configuração diz o que faz.
 
 - Funciona com **Google, DuckDuckGo, Bing e Brave Search**. Os outros mecanismos não têm serviço público de sugestões, então nada é pedido para eles e a página de configurações avisa.
 - Só o texto digitado na barra de endereço é enviado, com o nome genérico de cliente `Spark`; sem cookies, sem conta, sem seguir redirecionamentos, e o pedido desiste após 3 segundos.
@@ -34,5 +34,5 @@ A lista se alinha à barra de endereço. Ela fica no layout da página, então a
 
 ## Observações
 
-- Sem a opção acima, tudo vem do histórico e dos favoritos locais e nada é enviado para fora. Veja as [configurações de Privacidade e segurança](privacy-security-settings.md) para a retenção do histórico.
+- Com a opção desligada, tudo vem do histórico e dos favoritos locais e nada é enviado para fora. Veja as [configurações de Privacidade e segurança](privacy-security-settings.md) para a retenção do histórico.
 - O histórico é pesquisado com a mesma consulta do painel de Histórico, nas 60 visitas mais recentes que combinam.

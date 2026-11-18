@@ -1,8 +1,8 @@
 //! Search terms proposed by the default search engine while typing in the address bar.
 //!
 //! This is the only place where what is typed leaves the computer before Enter, so it is strict:
-//! the interface calls it only when the user turned the option on (off by default) and never in a
-//! private window; it sends nothing but the typed text and a generic client name, follows no redirect,
+//! the interface calls it only while the option is on (it is on by default, and the user can turn it
+//! off) and never in a private window; it sends nothing but the typed text and a generic client name, follows no redirect,
 //! keeps no cookies and gives up after a few seconds. Engines without a public suggestion endpoint
 //! get no suggestions. Keep the engine ids in step with `WEB_SUGGESTION_ENGINES` in
 //! `src/lib/services/address-suggestions.js`.
