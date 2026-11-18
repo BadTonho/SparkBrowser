@@ -32,7 +32,19 @@ html[data-theme="light"] #settings-panel[data-layout="center"]::backdrop { backg
 #settings-panel[data-layout="center"] .settings-menu-item .menu-item-icon svg { width:24px; height:24px; }
 #settings-panel[data-layout="center"] .settings-menu-item .menu-item-label { flex:none; margin:0; }
 #settings-panel[data-layout="center"] .settings-menu-item .menu-item-chevron { display:none; }
-#settings-panel[data-layout="center"] #settings-layout-field { max-width:320px; }
+/* The two layout pickers stay small and pinned to the bottom of the centered panel, side by side.
+   Only the category cards scroll (so more can be added later); the pickers never move. */
+#settings-panel[data-layout="center"] #settings-content { display:flex; flex-direction:column; overflow:hidden; }
+#settings-panel[data-layout="center"] #settings-content > .settings-view:not(#settings-main-view) { flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin; }
+#settings-panel[data-layout="center"] #settings-main-view:not([hidden]) { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+#settings-panel[data-layout="center"] #settings-main-view > .settings-menu-list { flex:1 1 auto; min-height:0; overflow-y:auto; align-content:start; scrollbar-width:thin; padding-right:4px; }
+#settings-panel[data-layout="center"] #settings-layout-field { flex:none; display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:center; gap:8px 20px; margin-top:0; padding-top:12px; }
+#settings-panel[data-layout="center"] #settings-layout-field fieldset.segmented { margin:0; }
+#settings-panel[data-layout="center"] #settings-layout-field legend { margin-bottom:4px; font-size:10.5px; }
+#settings-panel[data-layout="center"] #settings-layout-field .segmented-options { gap:2px; max-width:none; padding:2px; border-radius:9px; }
+#settings-panel[data-layout="center"] #settings-layout-field .segmented-options label { flex:0 0 auto; font-size:12px; }
+#settings-panel[data-layout="center"] #settings-layout-field .seg-body { gap:7px; min-height:28px; padding:3px 9px; border-radius:7px; white-space:nowrap; }
+#settings-panel[data-layout="center"] #settings-layout-field .seg-body svg { width:20px; height:14px; }
 #settings-panel[data-layout="center"] #settings-content { font-size:14px; padding-right:8px; }
 #settings-panel[data-layout="center"] .settings-view > .toggle { min-height:54px; }
 
