@@ -57,7 +57,7 @@ O escudo da barra abre um [pop-up de Proteção](auto-skip-ads.md) ancorado ao b
 ## 8. Configurações do Navegador Organizadas
 - Em **Aparência e Layout**, escolha se as configurações abrem em pop-up ou em uma guia. A mudança transfere a visualização atual imediatamente; ao abrir novamente, a guia existente no workspace atual é reutilizada.
 - As configurações são divididas em **Aparência e Layout**, **Pesquisa e Navegação**, **Espaços de Trabalho e Tema**, **Desempenho e Privacidade** e **Atalhos de Teclado**.
-- Pesquise em todas as categorias, configurações e atalhos pelo campo ao lado do título Browser Settings; selecionar um resultado abre a categoria e destaca o destino.
+- Pesquise em todas as categorias, configurações e atalhos pelo ícone de pesquisa ao lado do título Configurações (clique nele, ou em qualquer lugar do espaço livre ao lado, para abrir o campo); selecionar um resultado abre a categoria e destaca o destino.
 - Escolha Google ou DuckDuckGo como mecanismo de busca padrão em **Pesquisa e Navegação**. Google vem selecionado por padrão; a escolha vale para buscas na barra de endereço, na Command Bar e para novas guias.
 - Personalize a superfície do fundo das janelas entre **Fosco**, **Vidro** e **Gelo** (um desfoque forte), regule a opacidade das janelas de 30% a 100% e ajuste o desfoque das janelas de 0 a 32 px. Consulte [Aparência das Janelas](window-appearance.md).
 - Ajuste em Aparência e Layout o desfoque de fundo compartilhado pelos overlays temporários, de **0 a 24 px**; a preferência é aplicada imediatamente e lembrada após reiniciar.

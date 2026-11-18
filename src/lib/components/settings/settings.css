@@ -31,6 +31,7 @@
   .settings-controller { left: -200vw; right: auto; width: 100vw; visibility: hidden; pointer-events: none; }
 
   .settings-modal {
+    --settings-nav-width: 204px;
     width: 80vw;
     height: 80dvh;
     max-width: calc(100vw - 32px);
@@ -56,17 +57,66 @@
   }
 
   :where(.settings-modal) .settings-title {
-    flex: 0 0 auto;
+    flex: 0 0 calc(var(--settings-nav-width) - 14px);
+    min-width: 0;
     font-size: 14px;
     font-weight: 700;
     color: var(--text-primary);
   }
 
+  /* Closed, the search is one icon and the whole free stretch of the header opens it; open, it is the box below. */
   :where(.settings-modal) .settings-search {
+    position: relative;
+    flex: 1 1 auto;
     min-width: 0;
-    width: min(38vw, 420px);
     height: 34px;
-    margin-left: 2px;
+    display: flex;
+    align-items: center;
+  }
+
+  :where(.settings-modal) .search-open {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  :where(.settings-modal) .search-open-icon {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 19px;
+    line-height: 1;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+
+  :where(.settings-modal) .search-open:hover .search-open-icon,
+  :where(.settings-modal) .search-open:focus-visible .search-open-icon {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-subtle));
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-primary);
+  }
+
+  :where(.settings-modal) .settings-search.expanded .search-open,
+  :where(.settings-modal) .settings-search:not(.expanded) .search-box {
+    display: none;
+  }
+
+  :where(.settings-modal) .search-box {
+    min-width: 0;
+    width: min(100%, 420px);
+    height: 34px;
     padding: 0 9px;
     display: flex;
     align-items: center;
@@ -78,7 +128,7 @@
     transition: border-color 0.15s ease, background 0.15s ease;
   }
 
-  :where(.settings-modal) .settings-search:focus-within {
+  :where(.settings-modal) .search-box:focus-within {
     border-color: color-mix(in srgb, var(--accent-primary) 65%, var(--border-subtle));
     background: rgba(255, 255, 255, 0.055);
   }
@@ -89,7 +139,7 @@
     line-height: 1;
   }
 
-  :where(.settings-modal) .settings-search input {
+  :where(.settings-modal) .search-box input {
     width: 100%;
     min-width: 0;
     height: 100%;
@@ -101,11 +151,11 @@
     font-size: 12px;
   }
 
-  :where(.settings-modal) .settings-search input::placeholder {
+  :where(.settings-modal) .search-box input::placeholder {
     color: var(--text-muted);
   }
 
-  :where(.settings-modal) .settings-search input::-webkit-search-cancel-button {
+  :where(.settings-modal) .search-box input::-webkit-search-cancel-button {
     display: none;
   }
 
@@ -149,8 +199,8 @@
   }
 
   :where(.settings-modal) .category-nav {
-    width: 204px;
-    flex: 0 0 204px;
+    width: var(--settings-nav-width);
+    flex: 0 0 var(--settings-nav-width);
     padding: 14px 10px;
     display: flex;
     flex-direction: column;
@@ -568,18 +618,16 @@
       padding: 16px;
     }
 
-    :where(.settings-modal) .category-nav {
-      width: 178px;
-      flex-basis: 178px;
+    .settings-modal {
+      --settings-nav-width: 178px;
     }
 
     :where(.settings-modal) .settings-content {
       padding: 16px;
     }
 
-    :where(.settings-modal) .settings-search {
-      width: auto;
-      flex: 1 1 auto;
+    :where(.settings-modal) .search-box {
+      width: 100%;
     }
   }
 
@@ -590,6 +638,7 @@
     }
 
     :where(.settings-modal) .settings-title {
+      flex: 0 1 auto;
       max-width: 42%;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -597,14 +646,13 @@
       font-size: 12px;
     }
 
-    :where(.settings-modal) .settings-search {
+    :where(.settings-modal) .search-box {
       height: 31px;
-      margin-left: 0;
       padding-inline: 7px;
       gap: 5px;
     }
 
-    :where(.settings-modal) .settings-search input {
+    :where(.settings-modal) .search-box input {
       font-size: 11px;
     }
 

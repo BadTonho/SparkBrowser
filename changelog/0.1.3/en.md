@@ -29,6 +29,8 @@
 
 - In the browser settings, every on/off option is now the same switch, instead of a mix of switches and blue squares (for example in Performance and Privacy & Security).
 
+- In the browser settings, the title is now just **Settings** and the search is a single icon: click it, or anywhere in the free space beside it, and it opens into the search field. It closes again when you leave it empty.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

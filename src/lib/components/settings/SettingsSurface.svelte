@@ -16,6 +16,7 @@
   const pending = new Map<number, number>();
   let sequence = 0, closedSession = 0, inFlight: number | null = null;
   let highlighted = "";
+  let searchWasShown = false;
   const outbox: PanelViewAction[] = [];
   function pump() {
     if (!presentation || inFlight !== null || !outbox.length) return;
@@ -52,7 +53,12 @@
       for (const [key, color] of Object.entries(value.theme)) document.documentElement.style.setProperty(key, color);
       pump();
       await tick();
-      if (opening && (!tabMode || value.focus)) root?.querySelector<HTMLElement>("#settings-search-input")?.focus();
+      // The search is one icon until it is opened: focus the icon on opening, and the field once it appears.
+      const searchField = root?.querySelector<HTMLInputElement>("#settings-search-input");
+      const searchShown = Boolean(searchField && searchField.getClientRects().length);
+      if (opening && (!tabMode || value.focus)) (searchShown ? searchField : root?.querySelector<HTMLElement>("#settings-search-open"))?.focus();
+      else if (searchShown && !searchWasShown && (!tabMode || value.focus)) searchField?.focus();
+      searchWasShown = searchShown;
       const target = root?.querySelector<HTMLElement>(".search-target-highlight");
       if (target && target.id !== highlighted) {
         highlighted = target.id;

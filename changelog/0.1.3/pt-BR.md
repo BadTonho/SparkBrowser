@@ -29,6 +29,8 @@
 
 - Nas configurações do navegador, toda opção de ligar e desligar agora é o mesmo interruptor, em vez de uma mistura de interruptores e quadrados azuis (por exemplo em Desempenho e em Privacidade e segurança).
 
+- Nas configurações do navegador, o título agora é só **Configurações** e a pesquisa é um único ícone: clique nele, ou em qualquer lugar do espaço livre ao lado, e ele se abre no campo de pesquisa. Ele se fecha de novo quando você o deixa vazio.
+
 ## Correções
 
 - Corrigido o problema em que escolher uma imagem ou vídeo como plano de fundo da nova guia não tinha efeito no aplicativo instalado.

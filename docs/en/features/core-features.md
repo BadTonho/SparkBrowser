@@ -57,7 +57,7 @@ The toolbar shield opens an anchored [Protection pop-up](auto-skip-ads.md) with 
 ## 8. Organized Browser Settings
 - In **Appearance & Layout**, choose whether settings open as a pop-up or in a tab. Changing the choice moves the current settings view immediately; opening settings again reuses the existing tab in the current workspace.
 - Settings are split into **Appearance & Layout**, **Search & Navigation**, **Workspaces & Theme**, **Performance & Privacy**, and **Keyboard Shortcuts**.
-- Search all categories, settings, and keyboard shortcuts from the field beside the Browser Settings title; selecting a result opens its category and highlights the destination.
+- Search all categories, settings, and keyboard shortcuts with the search icon next to the Settings title (click it, or anywhere in the free space beside it, to open the field); selecting a result opens its category and highlights the destination.
 - Choose Google or DuckDuckGo as the default search engine in **Search & Navigation**. Google is selected by default; the choice applies to Omnibox and Command Bar searches and to newly opened tabs.
 - Customize the window background surface between **Matte**, **Glass** and **Ice** (a strong blur), fine-tune window opacity from 30% to 100%, and adjust the window blur from 0 to 32 px. See [Window Appearance](window-appearance.md).
 - Adjust the dialog backdrop blur for temporary overlays from **0–24 px** in Appearance & Layout; the preference is applied immediately and remembered across restarts.

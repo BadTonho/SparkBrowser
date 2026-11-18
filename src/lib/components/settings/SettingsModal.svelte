@@ -51,9 +51,12 @@ import {
 
 import { categories, searchableSettings, type SearchEntry } from "./settings-catalog";
 let searchQuery = $state("");
+// The search starts as a single icon; it opens on click and closes again when it is empty and loses focus.
+let searchOpen = $state(false);
 let highlightedTargetTimer: ReturnType<typeof setTimeout> | undefined;
 let highlightedTarget: HTMLElement | undefined;
 const hasSearchQuery = $derived(searchQuery.trim().length > 0);
+const searchExpanded = $derived(searchOpen || hasSearchQuery);
 const searchResults = $derived.by(() => {
   if(!$isSettingsModalOpen && !$settingsTabSession) return [];
   const tokens = normalizeSearchText(searchQuery).trim().split(/\s+/).filter(Boolean);
@@ -81,8 +84,19 @@ const searchResults = $derived.by(() => {
   });
 });
 
+async function openSearch(): Promise<void> {
+  searchOpen = true;
+  await tick();
+  if (!native) document.getElementById("settings-search-input")?.focus();
+}
+
+function collapseSearch(): void {
+  if (!hasSearchQuery) searchOpen = false;
+}
+
 function selectCategory(category: SettingsCategory): void {
   searchQuery = "";
+  searchOpen = false;
   recordingShortcutId.set(null);
   setActiveSettingsCategory(category);
 }
@@ -104,6 +118,7 @@ function handleSearchKeydown(event: KeyboardEvent): void {
 
 async function selectSearchResult(entry: SearchEntry): Promise<void> {
   searchQuery = "";
+  searchOpen = false;
   recordingShortcutId.set(null);
   setActiveSettingsCategory(entry.category);
   await tick();
@@ -129,7 +144,7 @@ async function selectSearchResult(entry: SearchEntry): Promise<void> {
 }
 
 $effect(() => {
-  if($isSettingsModalOpen || $settingsTabSession) searchQuery = "";
+  if($isSettingsModalOpen || $settingsTabSession) { searchQuery = ""; searchOpen = false; }
   else recordingShortcutId.set(null);
 });
 
@@ -189,28 +204,41 @@ function handleWindowMousedown(event: MouseEvent): void {
     >
       <div class="settings-header">
         <span class="settings-title"><AppIcon name="settings" /> {$t("settings.browser_settings_59f9")}</span>
-        <div class="settings-search">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <input
-            id="settings-search-input"
-            type="search"
-            bind:value={searchQuery}
-            onkeydown={handleSearchKeydown}
-            placeholder={$t("settings.search_settings_6801")}
+        <div class="settings-search" class:expanded={searchExpanded}>
+          <button
+            id="settings-search-open"
+            class="search-open"
+            type="button"
             aria-label={$t("settings.search_all_settings_b98f")}
-            autocomplete="off"
-            spellcheck="false"
-          />
-          {#if hasSearchQuery}
-            <button
-              class="clear-search-btn"
-              type="button"
-              onclick={clearSearch}
-              aria-label={$t("settings.clear_settings_search_63c6")}
-            >
-              ×
-            </button>
-          {/if}
+            aria-expanded={searchExpanded}
+            onclick={openSearch}
+          >
+            <span class="search-open-icon" aria-hidden="true">⌕</span>
+          </button>
+          <div class="search-box">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input
+              id="settings-search-input"
+              type="search"
+              bind:value={searchQuery}
+              onkeydown={handleSearchKeydown}
+              onblur={collapseSearch}
+              placeholder={$t("settings.search_settings_6801")}
+              aria-label={$t("settings.search_all_settings_b98f")}
+              autocomplete="off"
+              spellcheck="false"
+            />
+            {#if hasSearchQuery}
+              <button
+                class="clear-search-btn"
+                type="button"
+                onclick={clearSearch}
+                aria-label={$t("settings.clear_settings_search_63c6")}
+              >
+                ×
+              </button>
+            {/if}
+          </div>
         </div>
         <button
           class="close-btn"
