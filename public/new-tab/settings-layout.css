@@ -105,3 +105,14 @@ html[data-private="true"] #audio-style-grid { display:none !important; }
 #settings-panel[data-layout="center"] #wallpaper-preview-wrap { max-height:none; margin:12px 0 4px; }
 #settings-panel[data-layout="center"] #wallpaper-preview,
 #settings-panel[data-layout="center"] #wallpaper-video-preview { height:clamp(180px, 36vh, 320px); }
+
+/* Two-column groups (Music and video, Wallpaper): the section keeps still and only the right column scrolls,
+   so the list on the left stays in view. A divider gives the list its own full-height column. */
+#settings-panel[data-layout="center"] #settings-content > :is(#spotify-section, #wallpaper-section):not([hidden]) { overflow:hidden; grid-template-rows:minmax(0, 1fr); align-items:stretch; gap:0 24px; }
+#settings-panel[data-layout="center"] :is(#spotify-section, #wallpaper-section) > :is(#media-tabs, #wallpaper-tabs) { align-self:stretch; padding-right:24px; border-right:1px solid rgba(255, 255, 255, 0.085); align-content:start; }
+#settings-panel[data-layout="center"] :is(#spotify-section, #wallpaper-section) > [role="tabpanel"]:not([hidden]) { min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding:2px 10px 2px 0; }
+#settings-panel[data-layout="center"] #wallpaper-section > #audio-panel { max-width:none; }
+html[data-theme="light"] #settings-panel[data-layout="center"] :is(#spotify-section, #wallpaper-section) > :is(#media-tabs, #wallpaper-tabs) { border-right-color:rgba(0, 0, 0, 0.08); }
+
+/* The right column uses all the room that is left, so no empty strip remains beside it. */
+#settings-panel[data-layout="center"] :is(#spotify-section, #wallpaper-section) > [role="tabpanel"] { max-width:none; }
