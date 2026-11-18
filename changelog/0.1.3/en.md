@@ -21,6 +21,8 @@
 
 - The browser settings menu has a new order: Appearance & Layout, Search & Navigation, Workspaces & Theme, Performance, Privacy & Security, Keyboard Shortcuts, About & Updates, Changelog, Local Diagnostics and Data & Backup.
 
+- In the browser settings, the option selectors are easier to read: each group of choices (such as Pop-up / Tab, Dark / Light) is a clear segmented control with the chosen option filled in, and titles and descriptions are larger.
+
 ## Fixes
 
 - Fixed choosing an image or video as the new-tab background having no effect in the installed app.

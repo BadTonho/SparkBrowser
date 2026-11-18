@@ -316,8 +316,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 12px;
+    gap: 16px;
+    padding: 14px 16px;
     border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-subtle);
@@ -327,26 +327,29 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
   }
 
   :where(.settings-modal) .row-label {
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 600;
     color: var(--text-primary);
   }
 
   :where(.settings-modal) .row-desc {
-    font-size: 11px;
+    font-size: 12px;
+    line-height: 1.45;
     color: var(--text-secondary);
   }
 
   :where(.settings-modal) .pill-action {
     flex: 0 0 auto;
-    padding: 6px 12px;
+    min-height: 32px;
+    padding: 0 16px;
     border-radius: 99px;
-    background: rgba(255, 255, 255, 0.08);
-    font-size: 11.5px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--text-secondary);
   }
@@ -356,10 +359,15 @@
     color: var(--accent-foreground);
   }
 
+  /* Segmented control: one clear group, the chosen option is the filled one. */
   :where(.settings-modal) .timer-pills {
     display: flex;
     flex: 0 0 auto;
-    gap: 4px;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.04);
   }
 
   :where(.settings-modal) .range-control {
@@ -386,29 +394,42 @@
   }
 
   :where(.settings-modal) .mini-pill {
-    padding: 5px 8px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.06);
-    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 14px;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 12.5px;
+    font-weight: 600;
     white-space: nowrap;
     color: var(--text-secondary);
+    transition: background 140ms ease, color 140ms ease;
+  }
+
+  :where(.settings-modal) .mini-pill:hover:not(.selected):not(:disabled) {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-primary);
   }
 
   :where(.settings-modal) .mini-pill.selected {
     background: var(--accent-primary);
     color: var(--accent-foreground);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   }
 
   :where(.settings-modal) .engine-select {
     flex: 0 0 auto;
-    min-width: 130px;
-    padding: 7px 10px;
+    min-width: 150px;
+    min-height: 36px;
+    padding: 0 12px;
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
     background: #202020;
     color: var(--text-primary);
     color-scheme: dark;
-    font-size: 11.5px;
+    font-size: 12.5px;
     font-weight: 600;
   }
 

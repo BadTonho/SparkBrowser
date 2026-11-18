@@ -143,7 +143,15 @@ html[data-theme="light"] .settings-modal {
   box-shadow: var(--modal-surface-shadow);
 }
 
-html[data-theme="light"] :where(.settings-modal) .mini-pill {
+html[data-theme="light"] :where(.settings-modal) .timer-pills {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme="light"] :where(.settings-modal) .mini-pill:hover:not(.selected):not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme="light"] :where(.settings-modal) .pill-action:not(.active) {
   background: rgba(0, 0, 0, 0.05);
 }
 
