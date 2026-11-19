@@ -628,7 +628,10 @@ pub(super) fn handle_keyboard_navigation(
     let focused = app_handle_for_nav
         .try_state::<BrowserState>()
         .and_then(|state| state.window_of_tab(tab_for_nav).ok())
-        .and_then(|window_id| app_handle_for_nav.get_webview_window(&window_id))
+        // The shell is a Window that hosts several WebViews, so it is looked up as a Window:
+        // get_webview_window only finds windows made of a single WebView and returned None here,
+        // which made every page shortcut look unfocused and be dropped.
+        .and_then(|window_id| app_handle_for_nav.get_window(&window_id))
         .and_then(|window| window.is_focused().ok())
         .unwrap_or(false);
 

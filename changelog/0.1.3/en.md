@@ -79,3 +79,4 @@
 - Fixed the browser freezing for good when a new tab was replaced (for example by opening the settings tab) while the audio visualizer was running.
 - The error log of a freeze now lists the main thread and the threads running Spark's own code first, so the cause is not cut off.
 - Fixed, on Linux, a site icon from a page opened before you cleared the browsing history coming back into the new-tab page afterwards, if the icon finished loading after the history was cleared.
+- Fixed, on Linux, keyboard shortcuts doing nothing while a web page had focus: Ctrl+T, Ctrl+L, Ctrl+W and every other shortcut with Ctrl were ignored.
