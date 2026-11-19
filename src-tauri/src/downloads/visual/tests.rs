@@ -104,3 +104,30 @@ fn wic_returns_only_small_reencoded_pngs_and_rejects_links() {
         .size_bytes
         .is_none());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn gdk_pixbuf_returns_only_small_reencoded_pngs_and_rejects_bad_input() {
+    let bytes = linux::thumbnail(&png(320, 200)).unwrap();
+    let reader = png::Decoder::new(std::io::Cursor::new(bytes))
+        .read_info()
+        .unwrap();
+    assert_eq!((reader.info().width, reader.info().height), (96, 60));
+    assert!(linux::thumbnail(&png(4001, 4000)).is_none());
+    assert!(linux::thumbnail(b"\x89PNG\r\n\x1a\ncorrupt").is_none());
+    assert!(linux::thumbnail(b"<svg onload='unsafe()'/>").is_none());
+    let root = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    let other = outside.path().join("external.png");
+    std::fs::write(&other, png(1, 1)).unwrap();
+    let link = root.path().join("link.png");
+    std::os::unix::fs::symlink(&other, &link).unwrap();
+    assert!(inspect(root.path(), &link).size_bytes.is_none());
+    let real = root.path().join("real.png");
+    std::fs::write(&real, png(320, 200)).unwrap();
+    let visual = inspect(root.path(), &real);
+    assert!(visual
+        .thumbnail_png
+        .unwrap()
+        .starts_with("data:image/png;base64,"));
+}

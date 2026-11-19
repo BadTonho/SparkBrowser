@@ -67,6 +67,8 @@
 
 - The settings tab opens faster: it no longer shows a white page while it loads (it is dark from the first moment) and the shell notices that the page is ready sooner.
 
+- On Linux, finished image downloads (PNG, JPEG, GIF and BMP) now show a small preview of the picture in the downloads list, as they already did on Windows, instead of only a file-type icon.
+
 ## Fixes
 
 - Fixed the **Resources** memory limit not holding: it put only one tab to sleep every few seconds, and tabs that cannot sleep were never reduced. Now the tab you are on is left alone, every other tab that can sleep is hibernated (the ones used longest ago first) until the limit fits, the ones that cannot sleep are held at a low memory level while in the background (Windows), and it reacts right away when you change the limit or switch tabs.

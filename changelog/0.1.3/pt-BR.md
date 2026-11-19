@@ -67,6 +67,8 @@
 
 - A guia de configurações abre mais rápido: não mostra mais uma página branca enquanto carrega (ela fica escura desde o primeiro instante) e a interface percebe mais cedo que a página está pronta.
 
+- No Linux, downloads de imagem concluídos (PNG, JPEG, GIF e BMP) agora mostram uma pequena prévia da imagem na lista de downloads, como já acontecia no Windows, em vez de só um ícone do tipo de arquivo.
+
 ## Correções
 
 - Corrigido o limite de memória do painel **Recursos** não se sustentar: ele hibernava só uma aba a cada poucos segundos, e as abas que não podem hibernar nunca eram reduzidas. Agora a aba em que você está é deixada em paz, todas as outras que podem hibernar são hibernadas (as usadas há mais tempo primeiro) até o limite caber, as que não podem ficam com pouca memória enquanto estão em segundo plano (Windows), e ele reage na hora quando você muda o limite ou troca de aba.

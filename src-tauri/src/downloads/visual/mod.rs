@@ -1,12 +1,18 @@
 //! Presentation-only reads of registered downloads. No caller-supplied filesystem paths.
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(test)]
 mod tests;
 #[cfg(windows)]
 mod windows;
+#[cfg(target_os = "linux")]
+use linux as platform;
+#[cfg(windows)]
+use windows as platform;
 
 use super::{files, manager::DownloadManager};
 use crate::database::downloads_repo;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -16,11 +22,11 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "linux", test))]
 const MAX_FILE: u64 = 16 * 1024 * 1024;
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "linux", test))]
 const MAX_PIXELS: u64 = 16_000_000;
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "linux", test))]
 const THUMBNAIL_SIDE: u32 = 96;
 
 #[derive(Deserialize)]
@@ -110,9 +116,9 @@ fn inspect(root: &Path, path: &Path) -> DownloadVisual {
     let Some(size) = file.metadata().ok().map(|m| m.len()) else {
         return DownloadVisual::default();
     };
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     let thumbnail_png = read_thumbnail(file, size);
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "linux")))]
     let thumbnail_png = None;
     DownloadVisual {
         size_bytes: Some(size),
@@ -120,7 +126,7 @@ fn inspect(root: &Path, path: &Path) -> DownloadVisual {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 fn read_thumbnail(mut file: File, size: u64) -> Option<String> {
     use std::io::Read;
     if size == 0 || size > MAX_FILE {
@@ -128,7 +134,7 @@ fn read_thumbnail(mut file: File, size: u64) -> Option<String> {
     }
     let mut bytes = vec![0; 12];
     file.read_exact(&mut bytes).ok()?;
-    if !windows::supported_header(&bytes) {
+    if !platform::supported_header(&bytes) {
         return None;
     }
     if file
@@ -139,11 +145,11 @@ fn read_thumbnail(mut file: File, size: u64) -> Option<String> {
     {
         return None;
     }
-    let png = windows::thumbnail(&bytes)?;
+    let png = platform::thumbnail(&bytes)?;
     Some(format!("data:image/png;base64,{}", STANDARD.encode(png)))
 }
 
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "linux", test))]
 fn thumbnail_size(width: u32, height: u32) -> Option<(u32, u32)> {
     if width == 0 || height == 0 || u64::from(width) * u64::from(height) > MAX_PIXELS {
         return None;
