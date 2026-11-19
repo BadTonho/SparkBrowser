@@ -109,7 +109,11 @@ pub(super) fn create_tab_webview(
         ))
         .initialization_script(crate::privacy::forced_dark::initializer(
             &keyboard_bridge_token,
-            app.state::<BrowserState>().policies().forced_dark_enabled(),
+            crate::privacy::forced_dark::effective(
+                app.state::<BrowserState>().policies().forced_dark_enabled(),
+                super::new_tab::is_new_tab(initial_url_str)
+                    || super::settings_tab::is_settings_url(initial_url_str),
+            ),
         ))
         .zoom_hotkeys_enabled(false)
         .initialization_script(include_str!("page_activity.js").replace(

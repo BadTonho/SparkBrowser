@@ -1,0 +1,5 @@
+# Spark 0.1.4
+
+## Correções
+
+- Corrigida a guia de configurações (e a página de nova guia) aparecendo com o tema trocado quando o **Modo escuro nos sites** estava ligado: o navegador escurecia as próprias páginas, então o tema escuro parecia claro e o claro parecia escuro. As páginas do próprio navegador agora nunca são alteradas por essa opção.
