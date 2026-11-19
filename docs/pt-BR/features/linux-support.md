@@ -60,6 +60,7 @@ cargo install tauri-driver --locked --root .cache/native-tools
 npm run test:native:build:fast
 npm run test:native:critical
 npm run test:native -- --case media-linux   # volume, mudo e Picture-in-Picture no WebKitGTK
+npm run test:native -- --case keyboard-linux   # Ctrl+L e Ctrl+T apertados a partir de uma página
 ```
 
 Limite conhecido: o cenário `backup-identities` não alcança abas de contêiner de conta, porque cada contêiner usa seu próprio diretório de dados do WebKit, que a sessão do WebDriver não automatiza.

@@ -60,6 +60,7 @@ cargo install tauri-driver --locked --root .cache/native-tools
 npm run test:native:build:fast
 npm run test:native:critical
 npm run test:native -- --case media-linux   # volume, mute and Picture-in-Picture on WebKitGTK
+npm run test:native -- --case keyboard-linux   # Ctrl+L and Ctrl+T pressed from a web page
 ```
 
 Known limit: the `backup-identities` scenario cannot reach account-container tabs because each container uses its own WebKit data directory, which the WebDriver session does not automate.
