@@ -20,7 +20,7 @@ Native web views, workspaces, split view and local-first privacy tools, in one c
 ---
 
 > [!NOTE]
-> Spark is in **early development** (latest release 0.1.2, version 0.1.3 in progress). Expect rough edges and changes between releases. Windows is the most tested platform; Linux support is described in the [Linux support guide](./docs/en/features/linux-support.md).
+> Spark is in **early development** (latest release 0.1.3). Expect rough edges and changes between releases. Windows is the most tested platform; Linux support is described in the [Linux support guide](./docs/en/features/linux-support.md).
 
 ## Highlights
 
