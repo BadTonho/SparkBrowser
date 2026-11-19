@@ -76,3 +76,4 @@
 - Fixed the on/off switches in the browser settings (such as Hardware acceleration) looking the same when on and when off; the knob was white on a light track. It is now clearly visible, in the dark and light themes.
 - Fixed the browser freezing for good when a new tab was replaced (for example by opening the settings tab) while the audio visualizer was running.
 - The error log of a freeze now lists the main thread and the threads running Spark's own code first, so the cause is not cut off.
+- Fixed, on Linux, a site icon from a page opened before you cleared the browsing history coming back into the new-tab page afterwards, if the icon finished loading after the history was cleared.

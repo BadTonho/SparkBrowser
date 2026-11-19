@@ -76,3 +76,4 @@
 - Corrigidos os interruptores das configurações do navegador (como a Aceleração de hardware) que pareciam iguais ligados e desligados; a bolinha era branca sobre uma trilha clara. Agora o estado aparece com clareza, nos temas escuro e claro.
 - Corrigido o travamento permanente do navegador quando uma nova guia era substituída (por exemplo ao abrir a guia de configurações) com o visualizador de áudio em funcionamento.
 - O log de erros de um travamento agora lista primeiro a thread principal e as threads que rodam o código do Spark, para a causa não ser cortada.
+- Corrigido, no Linux, o ícone de um site de uma página aberta antes de você limpar o histórico de navegação voltar para a página de nova guia depois da limpeza, quando o ícone terminava de carregar só depois que o histórico era limpo.

@@ -1,6 +1,10 @@
 //! Site icons on Linux: WebKitGTK reports the page icon as a cairo surface, which is stored as a
 //! small PNG exactly like the Windows capture does.
 use super::*;
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
 use webkit2gtk::{LoadEvent, WebContextExt, WebViewExt};
 
 /// Icons larger than this are scaled down so they fit the stored-icon size limit.
@@ -26,18 +30,34 @@ pub fn install(
                 }
             }
         }
-        let (a, l, t) = (app.clone(), label.clone(), token.clone());
-        web_view.connect_favicon_notify(move |view| capture(&a, &l, &t, view));
-        web_view.connect_load_changed(move |view, event| {
-            if event == LoadEvent::Finished {
-                capture(&app, &label, &token, view);
-            }
+        // The history epoch is fixed when a document starts loading, so an icon that arrives after
+        // the history was cleared is recognised as belonging to the cleared history.
+        let document_epoch = Arc::new(AtomicU64::new(super::epoch(&app)));
+        let (a, l, t, e) = (
+            app.clone(),
+            label.clone(),
+            token.clone(),
+            document_epoch.clone(),
+        );
+        web_view.connect_favicon_notify(move |view| {
+            capture(&a, &l, &t, view, e.load(Ordering::SeqCst))
+        });
+        web_view.connect_load_changed(move |view, event| match event {
+            LoadEvent::Started => document_epoch.store(super::epoch(&app), Ordering::SeqCst),
+            LoadEvent::Finished => capture(
+                &app,
+                &label,
+                &token,
+                view,
+                document_epoch.load(Ordering::SeqCst),
+            ),
+            _ => {}
         });
     })
     .map_err(|e| e.to_string())
 }
 
-fn capture(app: &AppHandle, label: &str, token: &str, view: &webkit2gtk::WebView) {
+fn capture(app: &AppHandle, label: &str, token: &str, view: &webkit2gtk::WebView, epoch: u64) {
     let Some(url) = view.uri().map(|uri| uri.to_string()) else {
         return;
     };
@@ -50,7 +70,6 @@ fn capture(app: &AppHandle, label: &str, token: &str, view: &webkit2gtk::WebView
     let Some(bytes) = view.favicon().and_then(encode) else {
         return;
     };
-    let epoch = super::epoch(app);
     let (app, label, token) = (app.clone(), label.to_owned(), token.to_owned());
     tauri::async_runtime::spawn(async move {
         let worker_app = app.clone();
