@@ -79,6 +79,5 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Investigação de privacidade de rede](security/network-privacy-investigation.md)
 - [Proteções contra rastreamento](features/tracking-protection.md)
 - [Isolamento de conteúdo por workspace](features/workspace-isolation.md)
-- [Verificações locais de push e tags de release](contributing/local-hooks.md)
 - [Isolamento AppContainer (planejado)](security/app-container-isolation.md)
 - [Proteção planejada contra sites e downloads suspeitos](roadmap/security-protections.md)

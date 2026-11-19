@@ -11,8 +11,6 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "validate": "node tools/testing/validate.mjs",
     "validate:quick": "node tools/testing/validate.mjs --quick",
-    "hooks:install": "node tools/git/install-hooks.mjs",
-    "prepare": "node tools/git/install-hooks.mjs",
     "tauri": "tauri",
     "test": "node --test tests/*.test.mjs",
     "test:native:build": "node tools/testing/build-native.mjs",

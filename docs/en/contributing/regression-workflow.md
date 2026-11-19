@@ -4,8 +4,6 @@ Before changing shared behavior, identify its owning domain and write a behavior
 
 ## Local validation
 
-The [local push hook](local-hooks.md) runs `validate:quick` on ordinary pushes and full validation plus a fresh native build and critical scenarios on release-tag pushes. npm installs it automatically outside CI, preserving custom hooks. These local checks consume no Actions minutes and can be bypassed by Git clients; they are not server-side enforcement.
-
 - `npm run architecture:check` rejects static runtime import cycles in frontend services/stores, private browser state imports, unauthorized session mutation imports and bypasses of the content factory boundary. Rust visibility also prevents mutable session guards outside the state module.
 - `npm run validate` includes architecture checks, JavaScript contracts, Svelte checks, Rust formatting, strict Clippy, Rust tests, frontend build and repository security checks.
 - Build the isolated application with `npm run test:native:build:fast`, then run `npm run test:native:critical`. Use `npm run test:native` for the complete suite. See [native setup](native-tests.md).

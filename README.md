@@ -103,8 +103,6 @@ npm run validate   # broader workflow: frontend and Rust checks
 
 See the [validation guide](./docs/en/contributing/validation.md) for platform notes and optional native tests.
 
-npm installs [local push checks](./docs/en/contributing/local-hooks.md) outside CI. Ordinary pushes run `npm run validate:quick`; release-tag pushes require full validation and fresh critical native tests. Existing checkouts can run `npm run hooks:install`. GitHub CI remains manual.
-
 Changes that users can notice also need an entry in the [changelog](./changelog/README.md), following the [changelog guide](./docs/en/contributing/changelog.md).
 
 ## Documentation

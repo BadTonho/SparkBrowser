@@ -6,7 +6,7 @@
 
 Execute a partir da raiz do repositório:
 
-`npm run validate:quick` executa testes JavaScript (incluindo arquitetura) e verificações Svelte/TypeScript. O [hook local pre-push](local-hooks.md) é instalado pelo ciclo `prepare` do npm e executa essas verificações nos pushes comuns. Pushes de tags de release executam a validação completa e novos testes nativos críticos; `npm run validate -- --critical` executa essas etapas explicitamente.
+`npm run validate:quick` executa testes JavaScript (incluindo arquitetura) e verificações Svelte/TypeScript. Execute `npm run validate -- --critical` para a validação completa com novos testes nativos críticos.
 
 `npm run validate` executa testes JavaScript, verificações Svelte/TypeScript, rustfmt, Clippy, testes Rust, build do frontend e verificação de segurança do repositório, parando na primeira falha. `npm run validate -- --native` também compila o aplicativo nativo isolado e executa toda a suíte WebDriver. Configure as [ferramentas nativas](native-tests.md) antes; as dependências Rust precisam estar em cache para as etapas offline. Auditorias e verificações isoladas de assinaturas de instaladores continuam separadas.
 
@@ -47,4 +47,4 @@ Finalize conferindo `git status`, `git diff`, `git diff --cached` e as regras de
 
 ## Arquitetura e contratos entre funcionalidades
 
-`npm run architecture:check` está incluído pelos testes JavaScript na validação consolidada. Execute `npm run test:native:critical` após compilar o aplicativo nativo isolado para conferir os cenários obrigatórios entre funcionalidades. CI e workflows nativos são manuais; o hook local pre-push exige os cenários críticos para tags de release. O workflow de release verifica as duas plataformas antes de empacotar, mas não executa cenários nativos. Consulte o [fluxo de regressões](regression-workflow.md) e a [responsabilidade pelo estado](../architecture/state-ownership.md).
+`npm run architecture:check` está incluído pelos testes JavaScript na validação consolidada. Execute `npm run test:native:critical` após compilar o aplicativo nativo isolado para conferir os cenários obrigatórios entre funcionalidades. CI e workflows nativos são manuais. O workflow de release verifica as duas plataformas antes de empacotar, mas não executa cenários nativos. Consulte o [fluxo de regressões](regression-workflow.md) e a [responsabilidade pelo estado](../architecture/state-ownership.md).

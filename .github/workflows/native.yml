@@ -1,7 +1,7 @@
 name: Native regressions
 
 # Manual only (the daily schedule and pull request runs were removed to save GitHub
-# Actions minutes). Release tags are checked locally by the pre-push hook.
+# Actions minutes).
 on:
   workflow_dispatch:
 

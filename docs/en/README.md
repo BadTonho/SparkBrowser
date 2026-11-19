@@ -79,6 +79,5 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Network privacy investigation](security/network-privacy-investigation.md)
 - [Tracking protections](features/tracking-protection.md)
 - [Workspace content isolation](features/workspace-isolation.md)
-- [Local push checks and release tags](contributing/local-hooks.md)
 - [AppContainer isolation (planned)](security/app-container-isolation.md)
 - [Planned protection against suspicious sites and downloads](roadmap/security-protections.md)

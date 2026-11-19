@@ -37,7 +37,7 @@ Quando você envia uma tag iniciada em `v*`, o workflow `.github/workflows/relea
 
 O workflow de release compila e publica; ele não executa a suíte de regressões nativas (essa suíte é um workflow separado e manual, o `native.yml`, e ainda não passou nos runners do GitHub). Valide primeiro na sua máquina:
 
-O [hook local pre-push](local-hooks.md) exige validação completa, nova compilação nativa isolada com perfil de release e a suíte nativa crítica ao enviar uma tag de versão. Instale-o com `npm run hooks:install` nos checkouts existentes; a instalação do npm também o instala fora da CI. Ele exige checkout limpo, versões iguais e tags apontando para `HEAD`. Os dois jobs de release do GitHub executam verificações de arquitetura/segurança antes de empacotar, mas não conseguem comprovar a execução nativa local. Hooks podem ser ignorados; sempre revise as evidências nativas antes de publicar o rascunho.
+Tags de release não são verificadas por um hook local: valide na sua própria máquina antes (os passos acima). Os dois jobs de release do GitHub executam verificações de arquitetura/segurança antes de empacotar, mas não conseguem comprovar a execução nativa local, então sempre revise as evidências nativas antes de publicar o rascunho.
 
 1. Execute `npm run validate` e os cenários nativos críticos com `npm run test:native:critical` (veja [testes nativos](native-tests.md)).
 2. Confirme que o repositório está limpo e segue a [política de zero vazamentos](rules-and-standards.md#regra-1-zero-arquivos-sensíveis-no-github).
