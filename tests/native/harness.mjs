@@ -135,6 +135,16 @@ export async function runScenario(name, scenario) {
       } finally {
         await request('POST', `/session/${session}/window`, { handle: previous });
       }
+    } else {
+      // No OS helper on Linux: ask the window manager through Tauri so the document receives real focus events.
+      const previous = await request('GET', `/session/${session}/window`);
+      await request('POST', `/session/${session}/window`, { handle: shellWebview });
+      try {
+        await invoke('plugin:window|set_focus', { label: 'main' });
+        await wait(200);
+      } finally {
+        await request('POST', `/session/${session}/window`, { handle: previous });
+      }
     }
   }
   async function floatingWindow(action='Inspect',name='pip-window') {

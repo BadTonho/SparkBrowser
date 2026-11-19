@@ -127,9 +127,10 @@ export const scenarios = {
 
   },
   dialogs: async context => {
-    await context.focusWindow();
     const { invoke, until, fixture, script, click, wait, screenshot, request, sessionId } = context;
     const { a, b } = await prepareTabs(context);
+    // Creating the tabs moves GTK focus to their page webviews, so focus the shell after they exist.
+    await context.focusWindow();
     // Draft and focus lifecycle are checked in the shell's DOM through its real event handlers.
     await script('document.querySelector(".omnibox-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
     await until(() => script('return document.querySelector(".omnibox-input").value.endsWith("/page/a/spa")'), 'formatted frontend navigation settled');
