@@ -65,5 +65,7 @@ test('appearance controls are searchable and live classes preserve responsive an
   assert.match(titlebar, /responsive-compact=\{responsiveCompact\}/);
   assert.match(actions, /var\(--titlebar-control-width/);
   assert.match(viewport, /class:framed=\{\$roundedContentFrame\}/);
+  assert.match(viewport, /\.viewport-shell\s*\{[\s\S]*?padding:\s*0;/);
+  assert.match(viewport, /\.viewport-shell\.framed\s*\{[\s\S]*?padding:\s*8px;/);
   assert.match(viewport, /\.viewport-shell\.zen \.viewport-frame[\s\S]*box-shadow:\s*none/);
 });

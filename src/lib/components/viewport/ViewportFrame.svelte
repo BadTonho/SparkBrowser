@@ -85,7 +85,7 @@
   });
 </script>
 
-<main class="viewport-shell" class:zen={$isZenMode}>
+<main class="viewport-shell" class:zen={$isZenMode} class:framed={$roundedContentFrame}>
   <div class="viewport-frame" class:framed={$roundedContentFrame} bind:this={viewportEl}>
     {#if inTauri && !anyOverlayOpen && viewportEl && $splitLayout}<SplitDivider frame={viewportEl} flush={viewportSync.flush} />{/if}
     {#if !inTauri || blockingOverlayOpen}
@@ -115,10 +115,15 @@
   .viewport-shell {
     flex: 1;
     height: 100%;
-    padding: 8px;
+    padding: 0;
     background: var(--bg-glass-primary);
     display: flex;
     transition: padding 0.2s ease;
+  }
+
+  /* The gap around the page belongs to the rounded frame: without it the page fills the area. */
+  .viewport-shell.framed {
+    padding: 8px;
   }
 
   .viewport-shell.zen {
