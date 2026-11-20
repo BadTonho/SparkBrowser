@@ -16,3 +16,4 @@
 - Fixed the address bar suggestions staying on screen when you switched tabs or clicked elsewhere in the toolbar. The list now closes.
 - Fixed keyboard shortcuts (F5 and the others) not working after clicking an empty area of the tab bar: the keyboard focus was lost. The shortcuts now keep working.
 - Fixed F5 (and Ctrl+Shift+R) reloading the browser's own interface, which made the tabs flicker, instead of reloading the page. They now reload the active page.
+- Fixed the "Close the browser?" dialog appearing with nothing to save: the backup made when closing is now built only when something changed since the last backup, so closing with nothing new is instant.

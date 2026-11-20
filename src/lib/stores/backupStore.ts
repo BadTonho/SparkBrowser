@@ -106,6 +106,13 @@ let folderAutoSaveTimer: ReturnType<typeof setTimeout> | undefined;
 let cloudMinuteInterval: ReturnType<typeof setInterval> | undefined;
 let autoSyncUnsubscribes: (() => void)[] = [];
 let hasPendingChangesForCloud = false;
+/**
+ * Changes of the saved data since the last local backup was written or found unchanged. The exit backup
+ * builds and fingerprints the whole document, so it only runs when this says something changed: closing
+ * with nothing new never waits for it (and never shows the closing dialog).
+ */
+let localChanges = 0;
+let localSavedChanges = 0;
 let autoSyncReady = false;
 let gdriveLoginRequiredPause = false;
 let awaitingGoogleAccountSelection = false;
@@ -408,9 +415,12 @@ export const saveEncryption = (enabled: boolean, password: string | null = null)
 
 async function createLocal(reason: LocalBackupReason, onlyIfChanged: boolean): Promise<boolean> {
   await noteWriter.flushAll();
+  // A change made while the backup is written stays pending for the next one.
+  const changesAtStart = localChanges;
   try {
     const outcome = await createLocalBackup(capturePreferences(), reason, onlyIfChanged);
     localBackupState.set(outcome.state);
+    localSavedChanges = changesAtStart;
     return outcome.created;
   } catch (error) {
     // The backend recorded the failure; reload so the status panel shows it right away.
@@ -534,6 +544,7 @@ function scheduleAutoSync(): void {
 
 function notifyPersistentDataChanged(): void {
   if (!autoSyncReady) return;
+  localChanges += 1;
   hasPendingChangesForCloud = true;
   const cfg = get(backupSyncState).config;
   if (cfg.mode !== "disabled" && cfg.auto_save) {
@@ -549,7 +560,7 @@ export async function flushBackupSyncBeforeShutdown(): Promise<void> {
   if (!isTauriRuntime()) return;
   // Both steps are best effort and bounded: a slow disk, an unreachable WebDAV server or a Google
   // Drive page that never finishes loading must never keep the browser from closing.
-  if (get(localBackupState).schedule.on_exit) {
+  if (get(localBackupState).schedule.on_exit && localChanges !== localSavedChanges) {
     await settleWithin(createLocal("exit", true), EXIT_BACKUP_WAIT_MS);
   }
   if (folderAutoSaveTimer) {

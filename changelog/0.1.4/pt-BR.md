@@ -16,3 +16,4 @@
 - Corrigidas as sugestões da barra de endereço que continuavam na tela ao trocar de guia ou clicar em outro ponto da barra de ferramentas. Agora a lista fecha.
 - Corrigidos os atalhos de teclado (F5 e os demais) que paravam de funcionar depois de clicar numa área vazia da barra de guias: o foco do teclado se perdia. Agora os atalhos continuam funcionando.
 - Corrigido o F5 (e o Ctrl+Shift+R) recarregando a própria interface do navegador, o que fazia as guias piscarem, em vez de recarregar a página. Agora eles recarregam a página ativa.
+- Corrigido o diálogo "Fechar o navegador?" aparecendo sem nada para salvar: o backup feito ao fechar agora só é montado quando algo mudou desde o último backup, então fechar sem novidades é instantâneo.

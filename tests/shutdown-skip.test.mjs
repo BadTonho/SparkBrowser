@@ -60,3 +60,13 @@ test('closing skips the cloud upload when nothing changed and the dialog follows
   assert.doesNotMatch(store, /setOverlayVisibility\(state\.phase !== "idle"/, 'the overlay follows the dialog, not the phase');
   assert.match(readFileSync('src/lib/components/shutdown/ShutdownDialog.svelte', 'utf8'), /\{#if \$shutdownVisible && \$shutdownState\.phase !== "idle"\}/);
 });
+
+test('closing never builds the exit backup when nothing changed since the last one', () => {
+  const backup = readFileSync('src/lib/stores/backupStore.ts', 'utf8');
+  const exitFlush = backup.slice(backup.indexOf('export async function flushBackupSyncBeforeShutdown'), backup.indexOf('function startBackupStatus'));
+  assert.match(exitFlush, /schedule\.on_exit && localChanges !== localSavedChanges/);
+  assert.ok(exitFlush.indexOf('localChanges !== localSavedChanges') < exitFlush.indexOf('createLocal("exit"'), 'checked before the backup is built');
+  // Every change counts, and a backup only clears the changes that existed when it started.
+  assert.match(backup, /function notifyPersistentDataChanged\(\): void \{\s*if \(!autoSyncReady\) return;\s*localChanges \+= 1;/);
+  assert.match(backup, /const changesAtStart = localChanges;[\s\S]*localSavedChanges = changesAtStart;/);
+});
