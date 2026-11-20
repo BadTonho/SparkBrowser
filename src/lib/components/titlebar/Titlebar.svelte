@@ -65,7 +65,23 @@
     const update = () => { narrow = media.matches; };
     media.addEventListener("change", update);
     update();
-    return () => media.removeEventListener("change", update);
+    // The list is another web view: when focus comes back to the interface (a click on a tab, the toolbar...)
+    // and the address bar is not being edited, nothing else would close it.
+    const closeStaleSuggestions = () => { if (!get(isAddressEditing)) closeSuggestions(); };
+    window.addEventListener("focus", closeStaleSuggestions);
+    return () => {
+      media.removeEventListener("change", update);
+      window.removeEventListener("focus", closeStaleSuggestions);
+    };
+  });
+  // Switching tabs always closes the suggestions, whatever had the focus.
+  let lastActiveTabId: string | undefined;
+  $effect(() => {
+    const activeId = $tabs.find((tab) => tab.is_active)?.id;
+    untrack(() => {
+      if (lastActiveTabId !== undefined && activeId !== lastActiveTabId) closeSuggestions();
+      lastActiveTabId = activeId;
+    });
   });
   onDestroy(() => { void closeTitlebarMenu(); });
   $effect(() => {
@@ -215,6 +231,7 @@
           oninput={(event) => { const value = (event.currentTarget as HTMLInputElement).value; addressInput.set(value); requestSuggestions(value); }}
           onkeydown={(event) => { if (event.key === "Escape") { closeSuggestions(); addressInput.set(internalPage ? "" : $currentUrl); isAddressEditing.set(false); (event.currentTarget as HTMLInputElement).blur(); } else handleKeydown(event); }}
           onfocus={handleFocus}
+          onclick={(event) => { if (!get(suggestionState).open) handleFocus(event as unknown as FocusEvent); }}
           onblur={handleBlur}
           onpointerenter={() => preparePanel("suggestions")}
           role="combobox"

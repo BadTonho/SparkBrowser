@@ -95,3 +95,14 @@ test('the option is on unless the user turned it off, and it is never used where
   const suggestions = readFileSync('src/lib/stores/addressSuggestionsStore.ts', 'utf8');
   assert.match(suggestions, /get\(webSuggestionsEnabled\) && !get\(isPrivateWindow\)/);
 });
+
+test('the suggestions close when the active tab changes or focus returns to the interface', async () => {
+  const { readFileSync } = await import('node:fs');
+  const titlebar = readFileSync('src/lib/components/titlebar/Titlebar.svelte', 'utf8');
+  assert.match(titlebar, /activeId !== lastActiveTabId\) closeSuggestions\(\)/);
+  assert.match(titlebar, /addEventListener\("focus", closeStaleSuggestions\)/);
+  assert.match(titlebar, /removeEventListener\("focus", closeStaleSuggestions\)/);
+  assert.match(titlebar, /if \(!get\(isAddressEditing\)\) closeSuggestions\(\)/);
+  // The field can still hold the focus after the list closed: a click must open it again.
+  assert.match(titlebar, /onclick=\{\(event\) => \{ if \(!get\(suggestionState\)\.open\) handleFocus/);
+});
