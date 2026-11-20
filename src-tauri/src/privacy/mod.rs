@@ -6,11 +6,7 @@ pub mod cosmetic;
 pub mod filter_lists;
 pub mod forced_dark;
 pub mod gpc;
+pub mod https_only;
 pub mod tracking_parameters;
 #[cfg(windows)]
 pub mod windows_filter;
-
-// The navigation policy is test-only until the platform event adapters can
-// enforce its lifecycle without gaps in WebView2 and WebKitGTK.
-#[cfg(test)]
-mod network_policy;

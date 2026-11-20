@@ -70,9 +70,9 @@ Revisar os 36 itens para registrar o estado atual, os pontos de entrada existent
 
 ## Etapa 7 — Privacidade de rede e navegação segura
 
-- Navegação via Tor: definir objetivo de privacidade e isolamento por janela ou sessão; comprovar prevenção de vazamentos antes de qualquer promessa de anonimato.
-- DNS sobre HTTPS: definir provedor, configuração, falhas e exceções; comprovar cobertura do tráfego WebView nas duas plataformas.
-- Modo somente HTTPS: definir padrão, avisos, exceções e retorno a HTTP; validar detecção e cobertura das WebViews.
+- Navegação via Tor: **adiada**. Escondida da interface até que a prevenção de vazamentos seja demonstrada com os motores reais; veja a [investigação de privacidade de rede](../security/network-privacy-investigation.md).
+- DNS sobre HTTPS: **feito** (desligado por padrão, aplicado após reiniciar). Pendente: captura de tráfego nos dois motores. Veja [Privacidade de rede](../features/network-privacy.md).
+- Modo somente HTTPS: **feito** (desligado por padrão, exceção HTTP de uso único). Pendente: cenários nativos nos dois motores. Veja [Privacidade de rede](../features/network-privacy.md).
 
 **Gate de decisão:** confirmar o nível de proteção e o comportamento em falhas antes de ativar qualquer proteção de rede por padrão. Verificar interação entre roteamento, resolução DNS e tráfego das WebViews.
 

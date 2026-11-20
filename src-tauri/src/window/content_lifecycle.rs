@@ -61,6 +61,10 @@ pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String
 /// Drops a tab's WebView so the next sync recreates it inside the folder of its
 /// current workspace. No document keeps writing into a previous data directory.
 pub fn close_tab_webview(app: &AppHandle, tab_id: &str) -> Result<(), String> {
+    app.state::<BrowserState>()
+        .policies()
+        .https_only()
+        .forget(tab_id);
     let label = webview_label_for_tab(tab_id);
     if app.get_webview(&label).is_some() {
         close_and_clean(app, &label)

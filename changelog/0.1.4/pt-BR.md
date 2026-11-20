@@ -1,5 +1,14 @@
 # Spark 0.1.4
 
+## Novas funcionalidades
+
+- **Modo somente HTTPS** (Configurações → Privacidade e segurança → Privacidade de rede): abre a versão segura de todos os sites. Se ela não puder ser acessada, um aviso pergunta antes de continuar por HTTP, uma vez e só para aquele endereço. Endereços locais, como localhost, não são alterados. Vem desligado.
+- **DNS sobre HTTPS** (no mesmo lugar): procura os nomes dos sites pela Cloudflare ou pelo Google para que a rede não possa lê-los nem alterá-los, sem voltar ao DNS comum. Vem desligado e é aplicado depois de reiniciar. Chamadas de vídeo (WebRTC) e as requisições de atualização e de ícones do próprio navegador não são cobertas.
+
+## Melhorias
+
+- A entrada **Sessão Tor** não aparece mais nas configurações de privacidade: ela foi adiada até que vazamentos de tráfego possam ser descartados. Nada dela esteve ativo.
+
 ## Correções
 
 - Corrigida a opção **Mostrar cantos arredondados no conteúdo**: com ela desligada, ainda sobrava uma borda (um espaço de 8px) ao redor da página. Agora a página ocupa toda a área quando está desligada.

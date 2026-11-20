@@ -11,12 +11,15 @@
   import {
     fetchPrivacySettings,
     setHistoryRetention,
+    setHttpsOnly,
     setPopupSetting,
     setSmartScreen,
     type HistoryRetention,
     type PrivacySettings,
   } from "../../services/bridge/privacy-settings";
   import { describeError } from "../../services/user-errors.js";
+  import { networkBusy, networkError, networkStatus, refreshNetwork, restartForNetwork, setDohProvider } from "../../stores/networkStore";
+  import type { DohProvider } from "../../services/bridge/network";
 
   const retentionOptions: { value: HistoryRetention; label: string }[] = [
     { value: "one_month", label: "1 month" },
@@ -33,6 +36,7 @@
   const desktop = isTauriRuntime();
 
   onMount(() => {
+    void refreshNetwork();
     void fetchPrivacySettings().then(value => settings = value).catch(cause => error = describeError(cause));
   });
 
@@ -55,6 +59,22 @@
     try {
       await setPopupSetting(enabled);
       settings = { ...settings, allow_popups: enabled };
+    } catch (cause) { error = describeError(cause); }
+    finally { busy = false; }
+  }
+
+  function chooseDoh(event: Event): void {
+    const value = (event.currentTarget as HTMLSelectElement).value;
+    void setDohProvider(value === "cloudflare" || value === "google" ? (value as DohProvider) : null);
+  }
+
+  async function changeHttpsOnly(event: Event): Promise<void> {
+    if (!settings) return;
+    const enabled = (event.currentTarget as HTMLInputElement).checked;
+    busy = true; error = "";
+    try {
+      await setHttpsOnly(enabled);
+      settings = { ...settings, https_only: enabled };
     } catch (cause) { error = describeError(cause); }
     finally { busy = false; }
   }
@@ -93,15 +113,36 @@
   <h2 class="group-title" id="privacy-security-heading">{$t("settings.privacy_security")}</h2>
 
   <h3 class="group-title privacy-subheading">{$t("settings.network_privacy")}</h3>
-  <div class="setting-row" id="setting-network-tor">
-    <div class="row-text"><span class="row-label">{$t("settings.network_tor")}</span><span class="row-desc">{$t("settings.network_tor_unavailable")}</span></div>
+  <div class="setting-row" id="setting-network-doh" tabindex="-1" data-testid="doh-setting">
+    <div class="row-text">
+      <span class="row-label">{$t("settings.network_doh")}</span>
+      <span class="row-desc">{$t("settings.network_doh_description")}</span>
+      {#if $networkStatus.restartRequired}
+        <span class="row-desc restart-note" role="status" data-testid="doh-restart-note">{$t("settings.network_doh_restart")}</span>
+      {/if}
+    </div>
+    <div class="doh-controls">
+      {#if $networkStatus.restartRequired}
+        <button class="pill-action" type="button" data-testid="doh-restart" disabled={$networkBusy} onclick={restartForNetwork}>{$t("settings.network_doh_restart_now")}</button>
+      {/if}
+      <select aria-label={$t("settings.network_doh")} data-testid="doh-provider" value={$networkStatus.dohProvider ?? "off"} disabled={$networkBusy || !desktop} onchange={chooseDoh}>
+        <option value="off">{$t("settings.network_doh_off")}</option>
+        <option value="cloudflare">Cloudflare (1.1.1.1)</option>
+        <option value="google">Google (8.8.8.8)</option>
+      </select>
+    </div>
   </div>
-  <div class="setting-row" id="setting-network-doh">
-    <div class="row-text"><span class="row-label">{$t("settings.network_doh")}</span><span class="row-desc">{$t("settings.network_doh_unavailable")}</span></div>
-  </div>
-  <div class="setting-row" id="setting-network-https">
-    <div class="row-text"><span class="row-label">{$t("settings.network_https")}</span><span class="row-desc">{$t("settings.network_https_unavailable")}</span></div>
-  </div>
+  {#if $networkError}<p class="settings-message" role="alert">{$networkError}</p>{/if}
+  <label class="privacy-switch-row" id="setting-network-https" tabindex="-1">
+    <span class="row-text">
+      <span class="row-label">{$t("settings.network_https")}</span>
+      <span class="row-desc">{$t("settings.network_https_description")}</span>
+    </span>
+    <span class="switch-control">
+      <input type="checkbox" role="switch" aria-label={$t("settings.network_https")} checked={settings?.https_only ?? false} disabled={!settings || busy} onchange={changeHttpsOnly} />
+      <span class="switch-track" aria-hidden="true"></span>
+    </span>
+  </label>
 
   <h3 class="group-title">{$t("settings.clear_local_history")}</h3>
   <div class="setting-row" id="clear-local-history" tabindex="-1">
@@ -172,6 +213,8 @@
   .privacy-security-settings { gap: 10px; }
   .privacy-security-settings > .group-title:first-child { margin-bottom: 4px; }
   .privacy-subheading { margin-top: 12px; }
+  .doh-controls { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+  .restart-note { color: #fcd34d; }
   .privacy-security-settings .setting-row { min-height: 62px; }
   .privacy-security-settings select { width: min(180px, 40%); min-height: 36px; padding: 6px 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: rgba(255,255,255,.04); color: var(--text-primary); font: inherit; font-size: 11px; }
   .privacy-switch-row { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; }

@@ -16,8 +16,7 @@ Windows and Linux remain in scope. Features depending on WebViews or operating-s
 | Persistent account containers | Define the expected identity isolation and behavior across tabs, workspaces, and restarts. Platform feasibility must be demonstrated. |
 | Password manager | Define vault scope, unlocking through a master password or OS facilities, autofill, and recovery. The security model needs design and audit. |
 | AI assistant | Choose local processing, external services, or both; define providers, costs, key use, and consent to send content. |
-| Tor browsing | Define the privacy objective, window or session scope, and acceptable limits. Demonstrate isolation and leak prevention before promising anonymity. |
-| DNS over HTTPS | Define provider, configuration, failure behavior, and exceptions. Verify whether WebView traffic can be covered on both platforms. |
+| Tor browsing | **Deferred** and hidden from the interface. Define the privacy objective, window or session scope, and acceptable limits. Demonstrate isolation and leak prevention before promising anonymity. |
 | Advanced custom picture-in-picture | Define which extra capabilities justify a custom solution and behavior when the WebView does not provide them. PiP infrastructure already exists; assess its gaps first. |
 | Chrome Web Store extension installation | Define the compatibility commitment and Linux behavior, where the engine differs, as well as permissions and security handling. Store integration feasibility has not been demonstrated. |
 | Page translation | Choose local processing, an external service, or both; define languages, downloads, costs, and consent to send text. |

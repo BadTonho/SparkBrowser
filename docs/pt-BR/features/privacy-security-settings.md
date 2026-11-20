@@ -16,6 +16,10 @@ No Windows, a configuração do Microsoft Defender SmartScreen controla a verifi
 
 Esse controle não está disponível no Linux nem em runtimes do WebView2 para Windows que não exponham a configuração necessária. O Spark não substitui nem simula essa proteção em plataformas sem suporte.
 
+## Privacidade de rede
+
+O modo somente HTTPS e o DNS sobre HTTPS vêm desligados; a sessão Tor está adiada e não aparece. Veja [Privacidade de rede](network-privacy.md).
+
 ## Proteção de sites
 
 A configuração de pop-ups controla se páginas web podem abrir destinos HTTP ou HTTPS em novas guias do Spark. Ela começa desativada para preservar o comportamento atual de bloqueio do navegador. A janela de picture-in-picture do próprio Spark é tratada separadamente e continua disponível quando pop-ups de páginas estão desativados.

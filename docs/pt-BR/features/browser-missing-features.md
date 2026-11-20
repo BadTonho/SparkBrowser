@@ -16,8 +16,7 @@ Windows e Linux continuam no escopo do projeto. Os itens que dependem de WebView
 | Contêineres persistentes de contas | Definir o isolamento esperado entre identidades e o comportamento entre abas, workspaces e reinicializações. A viabilidade por plataforma deve ser comprovada. |
 | Gerenciador de senhas | Definir escopo do cofre, desbloqueio por senha mestra ou recursos do SO, preenchimento e recuperação. O modelo de segurança precisa ser projetado e auditado. |
 | Assistente de IA | Escolher processamento local, serviços externos ou ambos; definir provedores, custos, uso de chaves e consentimento para envio do conteúdo. |
-| Navegação via Tor | Definir o objetivo de privacidade, escopo por janela ou sessão e limites aceitáveis. A viabilidade de isolamento e prevenção de vazamentos deve ser comprovada antes de prometer anonimato. |
-| DNS sobre HTTPS | Definir provedor, configuração, comportamento em caso de falha e exceções. É necessário verificar se o tráfego das WebViews pode ser coberto nas duas plataformas. |
+| Navegação via Tor | **Adiada** e escondida da interface. Definir o objetivo de privacidade, escopo por janela ou sessão e limites aceitáveis. A viabilidade de isolamento e prevenção de vazamentos deve ser comprovada antes de prometer anonimato. |
 | Picture-in-Picture avançado próprio | Definir quais recursos adicionais justificam uma solução própria e o comportamento quando a WebView não os oferecer. Já existe infraestrutura de PiP; avaliar suas lacunas primeiro. |
 | Instalação de extensões pela Chrome Web Store | Definir o compromisso de compatibilidade e o comportamento no Linux, onde o motor é diferente, além do tratamento de permissões e segurança. A viabilidade da integração com a loja não está demonstrada. |
 | Tradução de páginas | Escolher processamento local, serviço externo ou ambos; definir idiomas, downloads, custos e consentimento para envio de texto. |

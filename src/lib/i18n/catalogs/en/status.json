@@ -25,5 +25,8 @@
   "status.error_report_send": "Send error",
   "status.error_report_send_failed": "Could not open the report page. Copy the error above and send it to the project issues.",
   "status.error_report_more": "+{count} more errors",
-  "status.error_report_title_critical": "Spark hit a critical error"
+  "status.error_report_title_critical": "Spark hit a critical error",
+  "status.https_only_title": "Secure connection not available",
+  "status.https_only_body": "HTTPS-only mode could not open the secure version of {host}. Continuing over HTTP is not private: anyone on the network can read and change the page. The permission is valid once, for this address only.",
+  "status.https_only_continue": "Continue over HTTP"
 }

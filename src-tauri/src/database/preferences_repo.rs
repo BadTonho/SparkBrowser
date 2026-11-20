@@ -4,6 +4,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 pub const WORKSPACE_ISOLATION_KEY: &str = "workspace_isolation";
 pub const HISTORY_RETENTION_KEY: &str = "history_retention";
 pub const ALLOW_POPUPS_KEY: &str = "allow_popups";
+pub const HTTPS_ONLY_KEY: &str = "https_only_mode_v1";
 pub const SMART_SCREEN_KEY: &str = "smart_screen_enabled";
 pub const TRACKING_CLEANING_KEY: &str = "tracking_cleaning_v1";
 pub const GPC_KEY: &str = "global_privacy_control_v1";

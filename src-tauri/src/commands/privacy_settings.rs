@@ -6,12 +6,13 @@ use crate::{
     state::browser_state::BrowserState,
 };
 use serde::Serialize;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 #[derive(Serialize)]
 pub struct PrivacySettings {
     pub history_retention: HistoryRetention,
     pub allow_popups: bool,
+    pub https_only: bool,
     pub smart_screen_supported: bool,
     pub smart_screen_enabled: bool,
 }
@@ -23,6 +24,7 @@ pub fn get_privacy_settings(state: State<'_, BrowserState>) -> PrivacySettings {
             state.policies().history_retention_months(),
         ),
         allow_popups: state.policies().allow_popups(),
+        https_only: state.policies().https_only().enabled(),
         smart_screen_supported: state.policies().smart_screen_supported(),
         smart_screen_enabled: state.policies().smart_screen_enabled(),
     }
@@ -90,6 +92,44 @@ pub async fn set_popup_setting(
     .await?;
     state.policies().set_allow_popups(enabled);
     Ok(())
+}
+
+#[tauri::command]
+pub async fn set_https_only(
+    app: AppHandle,
+    state: State<'_, BrowserState>,
+    enabled: bool,
+) -> Result<(), String> {
+    executor::run(app, move |conn| {
+        crate::database::preferences_repo::store(
+            conn,
+            crate::database::preferences_repo::HTTPS_ONLY_KEY,
+            if enabled { "true" } else { "false" },
+        )
+    })
+    .await?;
+    state.policies().https_only().set_enabled(enabled);
+    Ok(())
+}
+
+/// The user chose to continue with the HTTP address the upgrade could not reach. Valid once.
+#[tauri::command]
+pub fn allow_http_once(
+    app: AppHandle,
+    webview: tauri::Webview,
+    tab_id: String,
+    url: String,
+) -> Result<(), String> {
+    let state = app.state::<BrowserState>();
+    let window = super::access::caller_window(&webview);
+    if !state.window_of_tab(&tab_id).is_ok_and(|owner| owner == window) {
+        return Err("Tab not found".to_string());
+    }
+    let target = tauri::Url::parse(&url).map_err(|e| e.to_string())?;
+    if !state.policies().https_only().allow_once(&tab_id, &target) {
+        return Err("This address cannot be opened over HTTP".to_string());
+    }
+    crate::window::webview_manager::navigate_tab_document(&app, &tab_id, target)
 }
 
 #[tauri::command]

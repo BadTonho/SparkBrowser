@@ -70,9 +70,9 @@ Review the 36 items and record their current state, existing entry points, depen
 
 ## Stage 7 — Network privacy and safe browsing
 
-- Tor browsing: define the privacy objective and window or session isolation; demonstrate leak prevention before promising anonymity.
-- DNS over HTTPS: define provider, configuration, failure and exceptions; prove WebView traffic coverage on both platforms.
-- HTTPS-only mode: define defaults, warnings, exceptions and HTTP fallback; validate WebView detection and coverage.
+- Tor browsing: **deferred**. Hidden from the interface until leak prevention is demonstrated with the real engines; see the [network privacy investigation](../security/network-privacy-investigation.md).
+- DNS over HTTPS: **done** (off by default, applied after a restart). Pending: traffic capture on both engines. See [Network privacy](../features/network-privacy.md).
+- HTTPS-only mode: **done** (off by default, one-use HTTP exception). Pending: native scenarios on both engines. See [Network privacy](../features/network-privacy.md).
 
 **Decision gate:** confirm protection level and failure behavior before enabling network protection by default. Check routing, DNS resolution and WebView traffic interactions.
 

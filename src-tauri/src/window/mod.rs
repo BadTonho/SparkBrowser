@@ -65,6 +65,11 @@ pub fn create_webview_builder(
     {
         builder = builder.browser_extensions_enabled(true);
     }
+    // WebView2 gets the DNS over HTTPS proxy in its start-up arguments; WebKitGTK takes it per WebView.
+    #[cfg(not(windows))]
+    if let Some(proxy) = crate::network::proxy_url() {
+        builder = builder.proxy_url(proxy);
+    }
     builder
 }
 

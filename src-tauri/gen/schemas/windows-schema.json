@@ -177,6 +177,12 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the allow_http_once command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-allow-http-once",
+          "markdownDescription": "Enables the allow_http_once command without any pre-configured scope."
+        },
+        {
           "description": "Enables the apply_backup_zoom command without any pre-configured scope.",
           "type": "string",
           "const": "allow-apply-backup-zoom",
@@ -591,6 +597,12 @@
           "markdownDescription": "Enables the get_local_backup_state command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_network_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-network-status",
+          "markdownDescription": "Enables the get_network_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_now_playing command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-now-playing",
@@ -951,6 +963,12 @@
           "markdownDescription": "Enables the restart_for_graphics command without any pre-configured scope."
         },
         {
+          "description": "Enables the restart_for_network command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-restart-for-network",
+          "markdownDescription": "Enables the restart_for_network command without any pre-configured scope."
+        },
+        {
           "description": "Enables the restart_webview_runtime command without any pre-configured scope.",
           "type": "string",
           "const": "allow-restart-webview-runtime",
@@ -1065,6 +1083,12 @@
           "markdownDescription": "Enables the set_dark_mode_probe_scheme command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_doh_provider command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-doh-provider",
+          "markdownDescription": "Enables the set_doh_provider command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_download_checksum command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-download-checksum",
@@ -1117,6 +1141,12 @@
           "type": "string",
           "const": "allow-set-history-retention",
           "markdownDescription": "Enables the set_history_retention command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_https_only command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-https-only",
+          "markdownDescription": "Enables the set_https_only command without any pre-configured scope."
         },
         {
           "description": "Enables the set_keyboard_shortcuts command without any pre-configured scope.",
@@ -1375,6 +1405,12 @@
           "type": "string",
           "const": "allow-update-workspace",
           "markdownDescription": "Enables the update_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the allow_http_once command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-allow-http-once",
+          "markdownDescription": "Denies the allow_http_once command without any pre-configured scope."
         },
         {
           "description": "Denies the apply_backup_zoom command without any pre-configured scope.",
@@ -1791,6 +1827,12 @@
           "markdownDescription": "Denies the get_local_backup_state command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_network_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-network-status",
+          "markdownDescription": "Denies the get_network_status command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_now_playing command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-now-playing",
@@ -2151,6 +2193,12 @@
           "markdownDescription": "Denies the restart_for_graphics command without any pre-configured scope."
         },
         {
+          "description": "Denies the restart_for_network command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-restart-for-network",
+          "markdownDescription": "Denies the restart_for_network command without any pre-configured scope."
+        },
+        {
           "description": "Denies the restart_webview_runtime command without any pre-configured scope.",
           "type": "string",
           "const": "deny-restart-webview-runtime",
@@ -2265,6 +2313,12 @@
           "markdownDescription": "Denies the set_dark_mode_probe_scheme command without any pre-configured scope."
         },
         {
+          "description": "Denies the set_doh_provider command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-doh-provider",
+          "markdownDescription": "Denies the set_doh_provider command without any pre-configured scope."
+        },
+        {
           "description": "Denies the set_download_checksum command without any pre-configured scope.",
           "type": "string",
           "const": "deny-set-download-checksum",
@@ -2317,6 +2371,12 @@
           "type": "string",
           "const": "deny-set-history-retention",
           "markdownDescription": "Denies the set_history_retention command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_https_only command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-https-only",
+          "markdownDescription": "Denies the set_https_only command without any pre-configured scope."
         },
         {
           "description": "Denies the set_keyboard_shortcuts command without any pre-configured scope.",

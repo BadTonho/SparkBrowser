@@ -11,6 +11,7 @@ pub(crate) struct Policies {
     history_retention_months: std::sync::atomic::AtomicU64,
     history_retention_operation: tokio::sync::Mutex<()>,
     allow_popups: AtomicBool,
+    https_only: crate::privacy::https_only::HttpsOnly,
     smart_screen_enabled: AtomicBool,
     smart_screen_supported: AtomicBool,
     auto_skip_ads_enabled: AtomicBool,
@@ -83,6 +84,9 @@ impl Policies {
     pub(crate) fn set_allow_popups(&self, value: bool) {
         self.allow_popups
             .store(value, std::sync::atomic::Ordering::Release);
+    }
+    pub(crate) fn https_only(&self) -> &crate::privacy::https_only::HttpsOnly {
+        &self.https_only
     }
     pub(crate) fn smart_screen_enabled(&self) -> bool {
         self.smart_screen_enabled
@@ -183,6 +187,7 @@ impl Default for Policies {
             history_retention_months: std::sync::atomic::AtomicU64::new(3),
             history_retention_operation: tokio::sync::Mutex::new(()),
             allow_popups: AtomicBool::new(false),
+            https_only: Default::default(),
             smart_screen_enabled: AtomicBool::new(true),
             smart_screen_supported: AtomicBool::new(false),
             auto_skip_ads_enabled: AtomicBool::new(false),

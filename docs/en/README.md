@@ -76,6 +76,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Immersive Reader View](features/reader-mode.md)
 - [Ephemeral Tabs and disposable containers](features/ephemeral-tabs.md)
 - [Application security boundaries](security/application-boundaries.md)
+- [Network privacy: HTTPS-only mode and DNS over HTTPS](features/network-privacy.md)
 - [Network privacy investigation](security/network-privacy-investigation.md)
 - [Tracking protections](features/tracking-protection.md)
 - [Workspace content isolation](features/workspace-isolation.md)

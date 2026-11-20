@@ -18,6 +18,7 @@ use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::error_report::report_frontend_error;
 use commands::graphics::{get_graphics_status, restart_for_graphics, set_hardware_acceleration};
+use commands::network::{get_network_status, restart_for_network, set_doh_provider};
 use commands::new_tab::set_new_tab_preferences;
 use commands::panels::prepare_panel;
 use commands::private_session::{get_private_window_state, open_private_window};
@@ -37,6 +38,7 @@ pub mod error_log;
 pub mod extensions;
 pub mod feeds;
 pub mod graphics;
+pub mod network;
 pub mod hang_stack;
 pub mod legacy;
 pub mod media;
@@ -95,7 +97,8 @@ use commands::privacy::{
     toggle_adblock_shield,
 };
 use commands::privacy_settings::{
-    get_privacy_settings, set_history_retention, set_popup_setting, set_smart_screen,
+    allow_http_once, get_privacy_settings, set_history_retention, set_https_only, set_popup_setting,
+    set_smart_screen,
 };
 use commands::qr_code::save_qr_code_png;
 use commands::reader::get_reader_article;
@@ -159,6 +162,10 @@ pub fn run() {
         let accelerated = graphics::data_directory(context.config())
             .is_none_or(|directory| graphics::load(&directory));
         graphics::apply_environment(accelerated);
+        // The same goes for the DNS over HTTPS proxy: the engine takes its address when it starts.
+        network::apply_environment(
+            graphics::data_directory(context.config()).and_then(|directory| network::load(&directory)),
+        );
         if let Some(directory) = graphics::data_directory(context.config()) {
             error_log::install(&directory);
         }
@@ -286,6 +293,7 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            network::start();
             #[cfg(windows)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
@@ -435,6 +443,13 @@ pub fn run() {
                 )
                 .unwrap_or(false),
             );
+            state.policies().https_only().set_enabled(
+                crate::database::preferences_repo::load_bool(
+                    &conn,
+                    crate::database::preferences_repo::HTTPS_ONLY_KEY,
+                )
+                .unwrap_or(false),
+            );
             state.policies().set_smart_screen_enabled(
                 crate::database::preferences_repo::load(
                     &conn,
@@ -570,6 +585,9 @@ pub fn run() {
             get_graphics_status,
             set_hardware_acceleration,
             restart_for_graphics,
+            get_network_status,
+            set_doh_provider,
+            restart_for_network,
             export_bookmarks,
             choose_backup_file,
             discard_backup_import,
@@ -651,6 +669,8 @@ pub fn run() {
             get_privacy_settings,
             set_history_retention,
             set_popup_setting,
+            set_https_only,
+            allow_http_once,
             set_smart_screen,
             get_bookmark_data,
             save_bookmark,

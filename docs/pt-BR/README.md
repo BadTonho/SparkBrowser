@@ -76,6 +76,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Modo Leitura Imersivo](features/reader-mode.md)
 - [Abas Efêmeras e containers descartáveis](features/ephemeral-tabs.md)
 - [Fronteiras de segurança do aplicativo](security/application-boundaries.md)
+- [Privacidade de rede: modo somente HTTPS e DNS sobre HTTPS](features/network-privacy.md)
 - [Investigação de privacidade de rede](security/network-privacy-investigation.md)
 - [Proteções contra rastreamento](features/tracking-protection.md)
 - [Isolamento de conteúdo por workspace](features/workspace-isolation.md)

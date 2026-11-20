@@ -16,6 +16,10 @@ On Windows, the setting for Microsoft Defender SmartScreen controls WebView2 rep
 
 This control is unavailable on Linux and on Windows WebView2 runtimes that do not expose the required setting. Spark does not substitute or simulate this protection on unsupported platforms.
 
+## Network privacy
+
+HTTPS-only mode and DNS over HTTPS are off by default; the Tor session is deferred and not shown. See [Network privacy](network-privacy.md).
+
 ## Site protection
 
 The pop-up setting controls whether web pages may open HTTP or HTTPS destinations as new Spark tabs. It is off by default, preserving the browser's existing blocked behavior. Spark's own picture-in-picture window is handled separately and remains available when web pop-ups are disabled.

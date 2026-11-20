@@ -270,6 +270,23 @@ pub(super) fn create_tab_webview(
         }
         let new_url_str = nav_url.to_string();
 
+        // HTTPS-only mode: the HTTP address is cancelled and its HTTPS form is opened instead.
+        if let Some(state) = app_handle_for_nav.try_state::<BrowserState>() {
+            use crate::privacy::https_only::Decision;
+            match state.policies().https_only().decide(&tab_for_nav, nav_url) {
+                Decision::Allow => {}
+                Decision::Block => return false,
+                Decision::Upgrade(target) => {
+                    let (app, tab) = (app_handle_for_nav.clone(), tab_for_nav.clone());
+                    // The navigation is started after this callback returns, not from inside it.
+                    tauri::async_runtime::spawn(async move {
+                        crate::error_log::ignored(super::content_lifecycle::navigate_tab_document(&app, &tab, target));
+                    });
+                    return false;
+                }
+            }
+        }
+
         if let Some(state) = app_handle_for_nav.try_state::<BrowserState>() {
             let shield_on = state
                 .policies()

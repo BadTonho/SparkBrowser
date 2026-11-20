@@ -25,5 +25,8 @@
   "status.error_report_send": "Enviar erro",
   "status.error_report_send_failed": "Não foi possível abrir a página de envio. Copie o erro acima e envie para as issues do projeto.",
   "status.error_report_more": "+{count} outros erros",
-  "status.error_report_title_critical": "O Spark encontrou um erro crítico"
+  "status.error_report_title_critical": "O Spark encontrou um erro crítico",
+  "status.https_only_title": "Conexão segura indisponível",
+  "status.https_only_body": "O modo somente HTTPS não conseguiu abrir a versão segura de {host}. Continuar por HTTP não é privado: qualquer pessoa na rede pode ler e alterar a página. A permissão vale uma vez, só para este endereço.",
+  "status.https_only_continue": "Continuar por HTTP"
 }
