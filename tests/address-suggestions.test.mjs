@@ -106,3 +106,12 @@ test('the suggestions close when the active tab changes or focus returns to the 
   // The field can still hold the focus after the list closed: a click must open it again.
   assert.match(titlebar, /onclick=\{\(event\) => \{ if \(!get\(suggestionState\)\.open\) handleFocus/);
 });
+
+test('pressing an empty title bar area focuses the interface so shortcuts keep working', async () => {
+  const { readFileSync } = await import('node:fs');
+  const action = readFileSync('src/lib/actions/focusShellOnDrag.ts', 'utf8');
+  assert.match(action, /hasAttribute\("data-tauri-drag-region"\)/);
+  assert.match(action, /focusAddressBar\(\)\.catch\(logIgnored\)/);
+  assert.match(readFileSync('src/lib/components/tabs/HorizontalTabBar.svelte', 'utf8'), /use:focusShellOnDrag/);
+  assert.match(readFileSync('src/lib/components/titlebar/Titlebar.svelte', 'utf8'), /use:focusShellOnDrag/);
+});

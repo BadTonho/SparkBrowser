@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { focusShellOnDrag } from "../../actions/focusShellOnDrag";
   import { cancelTabDrag } from "../../stores/tabDragStore";
   import { tabs } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceStore";
@@ -11,7 +12,7 @@
   const geometry = $derived($viewportBounds && $splitLayout ? splitHeaderGeometry($viewportBounds, $splitDragRatio ?? $splitLayout.ratio) : null);
   onDestroy(cancelTabDrag);
 </script>
-<div class="h-tabbar" class:split={Boolean($splitLayout)} data-tauri-drag-region>
+<div class="h-tabbar" class:split={Boolean($splitLayout)} data-tauri-drag-region use:focusShellOnDrag>
   {#if $splitLayout && geometry}
     <div class="pane-tabs" data-testid="split-tabs-left" class:focused={$splitLayout.focused_tab_id === $splitLayout.left_tab_id} style:left="{geometry.left}px" style:width="{geometry.leftWidth}px">
       <HorizontalTabList items={workspaceTabs.filter(tab => $splitLayout!.left_tab_ids.includes(tab.id))} selectedId={$splitLayout.left_tab_id} side="left" />

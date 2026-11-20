@@ -3,6 +3,7 @@
   import { initializeRuntime } from "./lib/stores/webviewRuntimeStore";
   import { initializeNewTab } from "./lib/services/new-tab";
   import { focusAddressBar } from "./lib/services/bridge/navigation";
+  import { isReloadKey } from "./lib/services/reload-key.js";
   import { openBrowserWindow } from "./lib/services/bridge/windows";
   import ShutdownDialog from "./lib/components/shutdown/ShutdownDialog.svelte";
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
@@ -276,6 +277,13 @@
         event.preventDefault();
         if (definition.id !== "switch-workspaces") cancelWorkspaceAltHoldTimer();
         if (!event.repeat) dispatchShortcut(definition.id, event.key);
+        return;
+      }
+
+      // The interface is itself a web view: left alone, F5 (or Ctrl+Shift+R) would reload the interface instead of the page.
+      if (!openWorkspaceOverlay && isReloadKey(event)) {
+        event.preventDefault();
+        if (!event.repeat) dispatchShortcut("reload-tab", event.key);
         return;
       }
 

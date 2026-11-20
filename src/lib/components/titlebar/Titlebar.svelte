@@ -52,6 +52,7 @@
   import { suggestionState, requestSuggestions, closeSuggestions, moveSuggestion, highlightedSuggestion, chooseSuggestion } from "../../stores/addressSuggestionsStore";
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import { preparePanel } from "../../services/bridge/panels";
+  import { focusShellOnDrag } from "../../actions/focusShellOnDrag";
 
   let narrow = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 1000px)").matches);
   const splitHorizontal = $derived($tabLayout === "horizontal" && Boolean($splitLayout));
@@ -147,7 +148,7 @@
 </script>
 
 {#if !$isZenMode}
-  <header class="titlebar" class:split-horizontal={splitHorizontal} class:responsive-compact={responsiveCompact} class:density-compact={$compactToolbar} class:wide-address-bar={$wideAddressBar} data-tauri-drag-region={$tabLayout === "vertical" || splitHorizontal ? "" : undefined}>
+  <header class="titlebar" class:split-horizontal={splitHorizontal} class:responsive-compact={responsiveCompact} class:density-compact={$compactToolbar} class:wide-address-bar={$wideAddressBar} data-tauri-drag-region={$tabLayout === "vertical" || splitHorizontal ? "" : undefined} use:focusShellOnDrag>
     <div class="titlebar-left">
       <PrivateBadge />
       {#if $tabLayout === "vertical"}
