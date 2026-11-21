@@ -112,7 +112,13 @@ mod tests {
         let mut e = entry();
         e.title = "   ".into();
         assert!(e.validate().is_err());
-        for (field, max) in [(0, MAX_TITLE), (1, MAX_URL), (2, MAX_USERNAME), (3, MAX_PASSWORD), (4, MAX_NOTES)] {
+        for (field, max) in [
+            (0, MAX_TITLE),
+            (1, MAX_URL),
+            (2, MAX_USERNAME),
+            (3, MAX_PASSWORD),
+            (4, MAX_NOTES),
+        ] {
             let mut e = entry();
             let text = "a".repeat(max + 1);
             match field {
@@ -136,7 +142,13 @@ mod tests {
     #[test]
     fn ids_are_32_hex_characters() {
         assert!(valid_id(&"a1".repeat(16)));
-        for bad in ["", "abc", &"g".repeat(32), &"a".repeat(33), "'; DROP TABLE vault_entries;--"] {
+        for bad in [
+            "",
+            "abc",
+            &"g".repeat(32),
+            &"a".repeat(33),
+            "'; DROP TABLE vault_entries;--",
+        ] {
             assert!(!valid_id(bad), "{bad}");
         }
     }

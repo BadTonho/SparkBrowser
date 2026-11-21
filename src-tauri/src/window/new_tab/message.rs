@@ -38,8 +38,9 @@ fn widget(operation: &str, data: &str) -> bool {
         | "youtube_toggle" | "youtube_next" | "youtube_previous" | "youtube_open" => {
             serde_json::from_str::<Empty>(data).is_ok()
         }
-        "youtube_seek" => serde_json::from_str::<Seek>(data)
-            .is_ok_and(|value| value.seconds.is_finite() && (0.0..=86_400.0).contains(&value.seconds)),
+        "youtube_seek" => serde_json::from_str::<Seek>(data).is_ok_and(|value| {
+            value.seconds.is_finite() && (0.0..=86_400.0).contains(&value.seconds)
+        }),
         _ => false,
     }
 }
@@ -116,7 +117,13 @@ mod tests {
     #[test]
     fn youtube_seek_needs_a_bounded_number_of_seconds() {
         assert!(widget("youtube_seek", r#"{"seconds":42.5}"#));
-        for data in [r#"{"seconds":-1}"#, r#"{"seconds":999999}"#, r#"{"seconds":"5"}"#, "{}", r#"{"seconds":1,"x":2}"#] {
+        for data in [
+            r#"{"seconds":-1}"#,
+            r#"{"seconds":999999}"#,
+            r#"{"seconds":"5"}"#,
+            "{}",
+            r#"{"seconds":1,"x":2}"#,
+        ] {
             assert!(!widget("youtube_seek", data), "{data}");
         }
     }

@@ -38,7 +38,12 @@ fn fail(error: CryptoError, place: &str) -> String {
         CryptoError::Corrupt | CryptoError::Unavailable => Level::Error,
         _ => Level::Warning,
     };
-    error_log::report(level, "vault", &format!("{place} failed: {}", error.code()), "");
+    error_log::report(
+        level,
+        "vault",
+        &format!("{place} failed: {}", error.code()),
+        "",
+    );
     error.code().into()
 }
 
@@ -101,7 +106,9 @@ fn unlock_with(
     let header = header(conn)?;
     match open(&header) {
         Ok(key) => {
-            service.set_auto_lock_minutes(repo::auto_lock_minutes(conn)?.unwrap_or(DEFAULT_AUTO_LOCK_MINUTES));
+            service.set_auto_lock_minutes(
+                repo::auto_lock_minutes(conn)?.unwrap_or(DEFAULT_AUTO_LOCK_MINUTES),
+            );
             service.unlock(key, now);
             Ok(())
         }
@@ -114,8 +121,15 @@ fn unlock_with(
     }
 }
 
-pub fn unlock(conn: &Connection, service: &VaultService, password: &str, now: Instant) -> Result<(), String> {
-    unlock_with(conn, service, now, "the password", |h| crypto::unlock_with_password(h, password))
+pub fn unlock(
+    conn: &Connection,
+    service: &VaultService,
+    password: &str,
+    now: Instant,
+) -> Result<(), String> {
+    unlock_with(conn, service, now, "the password", |h| {
+        crypto::unlock_with_password(h, password)
+    })
 }
 
 /// Opens the vault with the secret Windows Hello produced. The operating system already made the person
@@ -129,18 +143,27 @@ pub fn unlock_with_hello(
     let header = header(conn)?;
     match crypto::unlock_with_hello(&header, secret) {
         Ok(key) => {
-            service.set_auto_lock_minutes(repo::auto_lock_minutes(conn)?.unwrap_or(DEFAULT_AUTO_LOCK_MINUTES));
+            service.set_auto_lock_minutes(
+                repo::auto_lock_minutes(conn)?.unwrap_or(DEFAULT_AUTO_LOCK_MINUTES),
+            );
             service.unlock(key, now);
             Ok(())
         }
-        Err(error) => Err(hello_failure(error, "unlocking the vault with Windows Hello")),
+        Err(error) => Err(hello_failure(
+            error,
+            "unlocking the vault with Windows Hello",
+        )),
     }
 }
 
 /// A Windows Hello secret that does not open the vault is not a wrong guess (Windows controls who can
 /// produce it), so it is reported as its own failure and never feeds the brake.
 fn hello_failure(error: CryptoError, place: &str) -> String {
-    let error = if error == CryptoError::WrongSecret { CryptoError::Unavailable } else { error };
+    let error = if error == CryptoError::WrongSecret {
+        CryptoError::Unavailable
+    } else {
+        error
+    };
     error_log::report(
         Level::Warning,
         "vault",
@@ -194,7 +217,11 @@ pub fn set_require_hello(
     error_log::report(
         Level::Info,
         "vault",
-        if on { "Windows Hello is now asked for every password shown or copied" } else { "Windows Hello is no longer asked for every password shown or copied" },
+        if on {
+            "Windows Hello is now asked for every password shown or copied"
+        } else {
+            "Windows Hello is no longer asked for every password shown or copied"
+        },
         "",
     );
     Ok(())
@@ -252,7 +279,10 @@ pub fn list(conn: &Connection, service: &VaultService, now: Instant) -> Result<L
         }
     }
     entries.sort_by_key(|entry| entry.title.to_lowercase());
-    Ok(Listing { entries, unreadable })
+    Ok(Listing {
+        entries,
+        unreadable,
+    })
 }
 
 /// What the person used to prove who they are before a password is shown.
@@ -265,7 +295,12 @@ pub enum Proof<'a> {
 
 /// Checks a proof before a password is shown. When the vault asks for Windows Hello each time, a typed
 /// master password is not enough. A wrong master password counts toward the brake.
-pub fn confirm_reveal(conn: &Connection, service: &VaultService, proof: Proof<'_>, now: Instant) -> Result<(), String> {
+pub fn confirm_reveal(
+    conn: &Connection,
+    service: &VaultService,
+    proof: Proof<'_>,
+    now: Instant,
+) -> Result<(), String> {
     match proof {
         Proof::Password(password) => {
             if repo::require_hello(conn)? {
@@ -292,19 +327,35 @@ pub fn reveal_confirmed(
     reveal(conn, service, id, now)
 }
 
-pub fn reveal(conn: &Connection, service: &VaultService, id: &str, now: Instant) -> Result<Revealed, String> {
+pub fn reveal(
+    conn: &Connection,
+    service: &VaultService,
+    id: &str,
+    now: Instant,
+) -> Result<Revealed, String> {
     let key = service.key(now)?;
     if !valid_id(id) {
         return Err("vault.not_found".into());
     }
     let row = repo::row(conn, id)?.ok_or("vault.not_found")?;
-    let plain = crypto::open_entry(&key, &row.id, &row.blob).map_err(|e| fail(e, "reading a vault entry"))?;
-    let data: EntryData = serde_json::from_slice(&plain).map_err(|_| fail(CryptoError::Corrupt, "reading a vault entry"))?;
-    Ok(Revealed { id: row.id, data, updated_at: row.updated_at })
+    let plain = crypto::open_entry(&key, &row.id, &row.blob)
+        .map_err(|e| fail(e, "reading a vault entry"))?;
+    let data: EntryData = serde_json::from_slice(&plain)
+        .map_err(|_| fail(CryptoError::Corrupt, "reading a vault entry"))?;
+    Ok(Revealed {
+        id: row.id,
+        data,
+        updated_at: row.updated_at,
+    })
 }
 
 /// Only the password of one entry, for copying it from the backend (it never reaches the interface).
-pub fn password(conn: &Connection, service: &VaultService, id: &str, now: Instant) -> Result<Zeroizing<String>, String> {
+pub fn password(
+    conn: &Connection,
+    service: &VaultService,
+    id: &str,
+    now: Instant,
+) -> Result<Zeroizing<String>, String> {
     let mut revealed = reveal(conn, service, id, now)?;
     let password = Zeroizing::new(std::mem::take(&mut revealed.data.password));
     revealed.data.notes.zeroize();
@@ -313,7 +364,8 @@ pub fn password(conn: &Connection, service: &VaultService, id: &str, now: Instan
 
 fn new_id() -> Result<String, String> {
     let mut bytes = [0u8; 16];
-    getrandom::fill(&mut bytes).map_err(|_| fail(CryptoError::Unavailable, "creating an entry id"))?;
+    getrandom::fill(&mut bytes)
+        .map_err(|_| fail(CryptoError::Unavailable, "creating an entry id"))?;
     Ok(bytes.iter().map(|b| format!("{b:02x}")).collect())
 }
 
@@ -343,12 +395,18 @@ pub fn save(
         }
     };
     let plain = Zeroizing::new(serde_json::to_vec(data).map_err(|e| e.to_string())?);
-    let blob = crypto::seal_entry(&key, &id, &plain).map_err(|e| fail(e, "saving a vault entry"))?;
+    let blob =
+        crypto::seal_entry(&key, &id, &plain).map_err(|e| fail(e, "saving a vault entry"))?;
     repo::put(conn, &id, &blob, timestamp)?;
     Ok(data.summary(&id, timestamp))
 }
 
-pub fn delete(conn: &Connection, service: &VaultService, id: &str, now: Instant) -> Result<(), String> {
+pub fn delete(
+    conn: &Connection,
+    service: &VaultService,
+    id: &str,
+    now: Instant,
+) -> Result<(), String> {
     service.key(now)?;
     if !valid_id(id) || !repo::delete(conn, id)? {
         return Err("vault.not_found".into());
@@ -380,27 +438,53 @@ pub fn change_password(
     let updated = crypto::change_password(&header, &key, new_password)
         .map_err(|e| fail(e, "changing the vault password"))?;
     repo::update_header(conn, &updated)?;
-    error_log::report(Level::Info, "vault", "the vault master password was changed", "");
+    error_log::report(
+        Level::Info,
+        "vault",
+        "the vault master password was changed",
+        "",
+    );
     Ok(())
 }
 
 /// Turns Windows Hello on (or replaces its key) for an open vault. The master password is unaffected.
-pub fn enable_hello(conn: &Connection, service: &VaultService, secret: &[u8], now: Instant) -> Result<(), String> {
+pub fn enable_hello(
+    conn: &Connection,
+    service: &VaultService,
+    secret: &[u8],
+    now: Instant,
+) -> Result<(), String> {
     let key = service.key(now)?;
-    let updated = crypto::set_hello(&header(conn)?, &key, secret).map_err(|e| fail(e, "turning on Windows Hello"))?;
+    let updated = crypto::set_hello(&header(conn)?, &key, secret)
+        .map_err(|e| fail(e, "turning on Windows Hello"))?;
     repo::update_header(conn, &updated)?;
-    error_log::report(Level::Info, "vault", "Windows Hello was turned on for the vault", "");
+    error_log::report(
+        Level::Info,
+        "vault",
+        "Windows Hello was turned on for the vault",
+        "",
+    );
     Ok(())
 }
 
 /// Turns Windows Hello off. Refused when it is the only way in besides the recovery key.
-pub fn disable_hello(conn: &Connection, service: &VaultService, now: Instant) -> Result<(), String> {
+pub fn disable_hello(
+    conn: &Connection,
+    service: &VaultService,
+    now: Instant,
+) -> Result<(), String> {
     service.key(now)?;
-    let updated = crypto::remove_hello(&header(conn)?).map_err(|e| fail(e, "turning off Windows Hello"))?;
+    let updated =
+        crypto::remove_hello(&header(conn)?).map_err(|e| fail(e, "turning off Windows Hello"))?;
     repo::update_header(conn, &updated)?;
     // Without Windows Hello there is nothing to ask for each time.
     repo::set_require_hello(conn, false)?;
-    error_log::report(Level::Info, "vault", "Windows Hello was turned off for the vault", "");
+    error_log::report(
+        Level::Info,
+        "vault",
+        "Windows Hello was turned off for the vault",
+        "",
+    );
     Ok(())
 }
 
@@ -419,7 +503,12 @@ pub fn enable_password(
     let updated = crypto::change_password(&header, &key, new_password)
         .map_err(|e| fail(e, "turning on the vault master password"))?;
     repo::update_header(conn, &updated)?;
-    error_log::report(Level::Info, "vault", "the vault master password was turned on", "");
+    error_log::report(
+        Level::Info,
+        "vault",
+        "the vault master password was turned on",
+        "",
+    );
     Ok(())
 }
 
@@ -431,9 +520,15 @@ pub fn disable_password(
     now: Instant,
 ) -> Result<(), String> {
     let header = verify_password(conn, service, current, now)?;
-    let updated = crypto::remove_password(&header).map_err(|e| fail(e, "turning off the vault master password"))?;
+    let updated = crypto::remove_password(&header)
+        .map_err(|e| fail(e, "turning off the vault master password"))?;
     repo::update_header(conn, &updated)?;
-    error_log::report(Level::Info, "vault", "the vault master password was turned off", "");
+    error_log::report(
+        Level::Info,
+        "vault",
+        "the vault master password was turned off",
+        "",
+    );
     Ok(())
 }
 
@@ -447,7 +542,13 @@ pub fn import_entries(
     now: Instant,
 ) -> Result<ImportResult, String> {
     let key = service.key(now)?;
-    let identity = |entry: &EntryData| (entry.url.to_lowercase(), entry.username.to_lowercase(), entry.password.clone());
+    let identity = |entry: &EntryData| {
+        (
+            entry.url.to_lowercase(),
+            entry.username.to_lowercase(),
+            entry.password.clone(),
+        )
+    };
     let mut known: HashSet<(String, String, String)> = HashSet::new();
     for row in repo::rows(conn)? {
         if let Some(data) = crypto::open_entry(&key, &row.id, &row.blob)
@@ -458,7 +559,11 @@ pub fn import_entries(
         }
     }
     let mut count = repo::count(conn)?;
-    let mut result = ImportResult { imported: 0, duplicates: 0, skipped: 0 };
+    let mut result = ImportResult {
+        imported: 0,
+        duplicates: 0,
+        skipped: 0,
+    };
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
     for entry in entries {
         if entry.validate().is_err() {
@@ -470,7 +575,8 @@ pub fn import_entries(
         } else {
             let id = new_id()?;
             let plain = Zeroizing::new(serde_json::to_vec(&entry).map_err(|e| e.to_string())?);
-            let blob = crypto::seal_entry(&key, &id, &plain).map_err(|e| fail(e, "importing vault entries"))?;
+            let blob = crypto::seal_entry(&key, &id, &plain)
+                .map_err(|e| fail(e, "importing vault entries"))?;
             repo::put(&tx, &id, &blob, timestamp)?;
             count += 1;
             result.imported += 1;
@@ -480,7 +586,10 @@ pub fn import_entries(
     error_log::report(
         Level::Info,
         "vault",
-        &format!("{} passwords were imported from a file ({} already there, {} left out)", result.imported, result.duplicates, result.skipped),
+        &format!(
+            "{} passwords were imported from a file ({} already there, {} left out)",
+            result.imported, result.duplicates, result.skipped
+        ),
         "",
     );
     Ok(result)
@@ -488,7 +597,11 @@ pub fn import_entries(
 
 /// Every entry in plain text, for an export the person confirmed. The second value counts entries that
 /// could not be decrypted (damaged data), which are left out.
-pub fn export_entries(conn: &Connection, service: &VaultService, now: Instant) -> Result<(Vec<EntryData>, usize), String> {
+pub fn export_entries(
+    conn: &Connection,
+    service: &VaultService,
+    now: Instant,
+) -> Result<(Vec<EntryData>, usize), String> {
     let key = service.key(now)?;
     let (mut entries, mut unreadable) = (Vec::new(), 0);
     for row in repo::rows(conn)? {
@@ -499,7 +612,12 @@ pub fn export_entries(conn: &Connection, service: &VaultService, now: Instant) -
             Some(data) => entries.push(data),
             None => {
                 unreadable += 1;
-                error_log::report(Level::Error, "vault", "a vault entry could not be decrypted for the export", &format!("entry id {}", row.id));
+                error_log::report(
+                    Level::Error,
+                    "vault",
+                    "a vault entry could not be decrypted for the export",
+                    &format!("entry id {}", row.id),
+                );
             }
         }
     }
@@ -507,7 +625,12 @@ pub fn export_entries(conn: &Connection, service: &VaultService, now: Instant) -
     Ok((entries, unreadable))
 }
 
-pub fn set_auto_lock(conn: &Connection, service: &VaultService, minutes: u32, now: Instant) -> Result<(), String> {
+pub fn set_auto_lock(
+    conn: &Connection,
+    service: &VaultService,
+    minutes: u32,
+    now: Instant,
+) -> Result<(), String> {
     service.key(now)?;
     if !AUTO_LOCK_CHOICES.contains(&minutes) {
         return Err("vault.invalid_setting".into());
@@ -521,7 +644,12 @@ pub fn set_auto_lock(conn: &Connection, service: &VaultService, minutes: u32, no
 pub fn reset(conn: &Connection, service: &VaultService) -> Result<(), String> {
     repo::wipe(conn)?;
     service.lock();
-    error_log::report(Level::Warning, "vault", "the password vault was erased and reset", "");
+    error_log::report(
+        Level::Warning,
+        "vault",
+        "the password vault was erased and reset",
+        "",
+    );
     Ok(())
 }
 
@@ -555,9 +683,15 @@ mod tests {
         assert_eq!(recovery.len(), 39);
         let s = status(&conn, &service, now).unwrap();
         assert!(s.initialized && s.unlocked && s.entry_count == 0);
-        assert_eq!(create(&conn, &service, Some(PASSWORD), None, now).unwrap_err(), "vault.already_initialized");
+        assert_eq!(
+            create(&conn, &service, Some(PASSWORD), None, now).unwrap_err(),
+            "vault.already_initialized"
+        );
         let (other, other_service, _) = setup();
-        assert_eq!(create(&other, &other_service, Some("short"), None, now).unwrap_err(), "vault.password_invalid");
+        assert_eq!(
+            create(&other, &other_service, Some("short"), None, now).unwrap_err(),
+            "vault.password_invalid"
+        );
         assert!(!status(&other, &other_service, now).unwrap().initialized);
     }
 
@@ -565,15 +699,34 @@ mod tests {
     fn entries_are_encrypted_at_rest_listed_without_secrets_and_revealed_on_request() {
         let (conn, service, now) = setup();
         create(&conn, &service, Some(PASSWORD), None, now).unwrap();
-        let saved = save(&conn, &service, None, &entry("Bank", "hunter2-secret"), 10, now).unwrap();
+        let saved = save(
+            &conn,
+            &service,
+            None,
+            &entry("Bank", "hunter2-secret"),
+            10,
+            now,
+        )
+        .unwrap();
         save(&conn, &service, None, &entry("alpha", "p"), 11, now).unwrap();
         // Nothing readable in the database.
         for row in repo::rows(&conn).unwrap() {
             let text = String::from_utf8_lossy(&row.blob).to_string();
-            assert!(!text.contains("hunter2") && !text.contains("Bank") && !text.contains("example.test"));
+            assert!(
+                !text.contains("hunter2")
+                    && !text.contains("Bank")
+                    && !text.contains("example.test")
+            );
         }
         let listing = list(&conn, &service, now).unwrap();
-        assert_eq!(listing.entries.iter().map(|e| e.title.as_str()).collect::<Vec<_>>(), ["alpha", "Bank"]);
+        assert_eq!(
+            listing
+                .entries
+                .iter()
+                .map(|e| e.title.as_str())
+                .collect::<Vec<_>>(),
+            ["alpha", "Bank"]
+        );
         assert!(!serde_json::to_string(&listing).unwrap().contains("hunter2"));
         let shown = reveal(&conn, &service, &saved.id, now).unwrap();
         assert_eq!(shown.data.password, "hunter2-secret");
@@ -585,14 +738,48 @@ mod tests {
         let (conn, service, now) = setup();
         create(&conn, &service, Some(PASSWORD), None, now).unwrap();
         let first = save(&conn, &service, None, &entry("Site", "one"), 1, now).unwrap();
-        save(&conn, &service, Some(&first.id), &entry("Site", "two"), 2, now).unwrap();
+        save(
+            &conn,
+            &service,
+            Some(&first.id),
+            &entry("Site", "two"),
+            2,
+            now,
+        )
+        .unwrap();
         assert_eq!(list(&conn, &service, now).unwrap().entries.len(), 1);
-        assert_eq!(reveal(&conn, &service, &first.id, now).unwrap().data.password, "two");
-        assert_eq!(save(&conn, &service, Some(&"0".repeat(32)), &entry("x", "y"), 3, now).unwrap_err(), "vault.not_found");
-        assert_eq!(save(&conn, &service, None, &entry("  ", "y"), 3, now).unwrap_err(), "vault.invalid_entry");
+        assert_eq!(
+            reveal(&conn, &service, &first.id, now)
+                .unwrap()
+                .data
+                .password,
+            "two"
+        );
+        assert_eq!(
+            save(
+                &conn,
+                &service,
+                Some(&"0".repeat(32)),
+                &entry("x", "y"),
+                3,
+                now
+            )
+            .unwrap_err(),
+            "vault.not_found"
+        );
+        assert_eq!(
+            save(&conn, &service, None, &entry("  ", "y"), 3, now).unwrap_err(),
+            "vault.invalid_entry"
+        );
         delete(&conn, &service, &first.id, now).unwrap();
-        assert_eq!(delete(&conn, &service, &first.id, now).unwrap_err(), "vault.not_found");
-        assert_eq!(reveal(&conn, &service, "nonsense", now).unwrap_err(), "vault.not_found");
+        assert_eq!(
+            delete(&conn, &service, &first.id, now).unwrap_err(),
+            "vault.not_found"
+        );
+        assert_eq!(
+            reveal(&conn, &service, "nonsense", now).unwrap_err(),
+            "vault.not_found"
+        );
     }
 
     #[test]
@@ -611,7 +798,10 @@ mod tests {
         ] {
             assert_eq!(result.unwrap_err(), "vault.locked");
         }
-        assert_eq!(unlock(&conn, &service, "wrong password", now).unwrap_err(), "vault.wrong_secret");
+        assert_eq!(
+            unlock(&conn, &service, "wrong password", now).unwrap_err(),
+            "vault.wrong_secret"
+        );
         assert!(!status(&conn, &service, now).unwrap().unlocked);
         unlock(&conn, &service, PASSWORD, now).unwrap();
         assert_eq!(list(&conn, &service, now).unwrap().entries.len(), 1);
@@ -626,7 +816,10 @@ mod tests {
         create(&conn, &service, Some(PASSWORD), None, now).unwrap();
         service.lock();
         for _ in 0..3 {
-            assert_eq!(unlock(&conn, &service, "nope nope nope", now).unwrap_err(), "vault.wrong_secret");
+            assert_eq!(
+                unlock(&conn, &service, "nope nope nope", now).unwrap_err(),
+                "vault.wrong_secret"
+            );
         }
         let blocked = unlock(&conn, &service, PASSWORD, now).unwrap_err();
         assert!(blocked.starts_with("vault.throttled:"), "{blocked}");
@@ -639,18 +832,44 @@ mod tests {
         let (conn, service, now) = setup();
         let recovery = create(&conn, &service, Some(PASSWORD), None, now).unwrap();
         let saved = save(&conn, &service, None, &entry("Site", "pw"), 1, now).unwrap();
-        assert_eq!(change_password(&conn, &service, "not it at all", "a brand new password", now).unwrap_err(), "vault.wrong_secret");
-        assert_eq!(change_password(&conn, &service, PASSWORD, "short", now).unwrap_err(), "vault.password_invalid");
+        assert_eq!(
+            change_password(
+                &conn,
+                &service,
+                "not it at all",
+                "a brand new password",
+                now
+            )
+            .unwrap_err(),
+            "vault.wrong_secret"
+        );
+        assert_eq!(
+            change_password(&conn, &service, PASSWORD, "short", now).unwrap_err(),
+            "vault.password_invalid"
+        );
         change_password(&conn, &service, PASSWORD, "a brand new password", now).unwrap();
         service.lock();
         assert!(unlock(&conn, &service, PASSWORD, now).is_err());
-        unlock(&conn, &service, "a brand new password", now + Duration::from_secs(120)).unwrap();
-        assert_eq!(reveal(&conn, &service, &saved.id, now + Duration::from_secs(120)).unwrap().data.password, "pw");
+        unlock(
+            &conn,
+            &service,
+            "a brand new password",
+            now + Duration::from_secs(120),
+        )
+        .unwrap();
+        assert_eq!(
+            reveal(&conn, &service, &saved.id, now + Duration::from_secs(120))
+                .unwrap()
+                .data
+                .password,
+            "pw"
+        );
         service.lock();
         unlock_with_recovery(&conn, &service, &recovery, now + Duration::from_secs(120)).unwrap();
     }
 
-    const HELLO: &[u8] = b"a signature produced by windows hello after the user proved who they are";
+    const HELLO: &[u8] =
+        b"a signature produced by windows hello after the user proved who they are";
 
     #[test]
     fn a_vault_can_be_created_and_opened_with_windows_hello_alone() {
@@ -660,14 +879,29 @@ mod tests {
         let s = status(&conn, &service, now).unwrap();
         assert!(s.has_hello && !s.has_password);
         service.lock();
-        assert_eq!(unlock(&conn, &service, PASSWORD, now).unwrap_err(), "vault.method_unavailable");
+        assert_eq!(
+            unlock(&conn, &service, PASSWORD, now).unwrap_err(),
+            "vault.method_unavailable"
+        );
         unlock_with_hello(&conn, &service, HELLO, now).unwrap();
-        assert_eq!(reveal(&conn, &service, &saved.id, now).unwrap().data.password, "pw");
+        assert_eq!(
+            reveal(&conn, &service, &saved.id, now)
+                .unwrap()
+                .data
+                .password,
+            "pw"
+        );
         service.lock();
         unlock_with_recovery(&conn, &service, &recovery, now).unwrap();
-        assert_eq!(create(&conn, &service, None, None, now).unwrap_err(), "vault.already_initialized");
+        assert_eq!(
+            create(&conn, &service, None, None, now).unwrap_err(),
+            "vault.already_initialized"
+        );
         let (other, other_service, _) = setup();
-        assert_eq!(create(&other, &other_service, None, None, now).unwrap_err(), "vault.last_method");
+        assert_eq!(
+            create(&other, &other_service, None, None, now).unwrap_err(),
+            "vault.last_method"
+        );
     }
 
     #[test]
@@ -677,11 +911,20 @@ mod tests {
         service.lock();
         for _ in 0..5 {
             assert_eq!(
-                unlock_with_hello(&conn, &service, b"another signature that is long enough", now).unwrap_err(),
+                unlock_with_hello(
+                    &conn,
+                    &service,
+                    b"another signature that is long enough",
+                    now
+                )
+                .unwrap_err(),
                 "vault.hello_failed"
             );
         }
-        assert!(service.check_attempt(now).is_ok(), "no brake for Windows Hello failures");
+        assert!(
+            service.check_attempt(now).is_ok(),
+            "no brake for Windows Hello failures"
+        );
         unlock(&conn, &service, PASSWORD, now).unwrap();
     }
 
@@ -690,19 +933,37 @@ mod tests {
         let (conn, service, now) = setup();
         create(&conn, &service, Some(PASSWORD), None, now).unwrap();
         let saved = save(&conn, &service, None, &entry("Site", "pw"), 1, now).unwrap();
-        assert_eq!(disable_password(&conn, &service, PASSWORD, now).unwrap_err(), "vault.last_method");
+        assert_eq!(
+            disable_password(&conn, &service, PASSWORD, now).unwrap_err(),
+            "vault.last_method"
+        );
         disable_hello(&conn, &service, now).unwrap(); // already off: nothing to do, nothing lost
         enable_hello(&conn, &service, HELLO, now).unwrap();
         assert!(status(&conn, &service, now).unwrap().has_hello);
-        assert_eq!(disable_password(&conn, &service, "not it at all", now).unwrap_err(), "vault.wrong_secret");
+        assert_eq!(
+            disable_password(&conn, &service, "not it at all", now).unwrap_err(),
+            "vault.wrong_secret"
+        );
         disable_password(&conn, &service, PASSWORD, now).unwrap();
         service.lock();
         assert!(unlock(&conn, &service, PASSWORD, now + Duration::from_secs(120)).is_err());
         unlock_with_hello(&conn, &service, HELLO, now).unwrap();
-        assert_eq!(reveal(&conn, &service, &saved.id, now).unwrap().data.password, "pw");
-        assert_eq!(enable_password(&conn, &service, "short", now).unwrap_err(), "vault.password_invalid");
+        assert_eq!(
+            reveal(&conn, &service, &saved.id, now)
+                .unwrap()
+                .data
+                .password,
+            "pw"
+        );
+        assert_eq!(
+            enable_password(&conn, &service, "short", now).unwrap_err(),
+            "vault.password_invalid"
+        );
         enable_password(&conn, &service, "a brand new password", now).unwrap();
-        assert_eq!(enable_password(&conn, &service, "another password", now).unwrap_err(), "vault.method_already_on");
+        assert_eq!(
+            enable_password(&conn, &service, "another password", now).unwrap_err(),
+            "vault.method_already_on"
+        );
         disable_hello(&conn, &service, now).unwrap();
         service.lock();
         assert!(unlock_with_hello(&conn, &service, HELLO, now).is_err());
@@ -725,31 +986,64 @@ mod tests {
         create(&conn, &service, Some(PASSWORD), Some(HELLO), now).unwrap();
         let saved = save(&conn, &service, None, &entry("Site", "pw"), 1, now).unwrap();
         // The vault is open, yet nothing is shown without a proof, and a wrong one is refused.
-        let shown = reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), now).unwrap();
+        let shown =
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), now).unwrap();
         assert_eq!(shown.data.password, "pw");
         assert_eq!(
-            reveal_confirmed(&conn, &service, &saved.id, Proof::Password("not it at all"), now).unwrap_err(),
+            reveal_confirmed(
+                &conn,
+                &service,
+                &saved.id,
+                Proof::Password("not it at all"),
+                now
+            )
+            .unwrap_err(),
             "vault.wrong_secret"
         );
         assert_eq!(
-            reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(b"another signature that is long enough"), now).unwrap_err(),
+            reveal_confirmed(
+                &conn,
+                &service,
+                &saved.id,
+                Proof::Hello(b"another signature that is long enough"),
+                now
+            )
+            .unwrap_err(),
             "vault.hello_failed"
         );
-        assert_eq!(reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(HELLO), now).unwrap().data.password, "pw");
         assert_eq!(
-            reveal_confirmed(&conn, &service, "nonsense", Proof::Password(PASSWORD), now).unwrap_err(),
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(HELLO), now)
+                .unwrap()
+                .data
+                .password,
+            "pw"
+        );
+        assert_eq!(
+            reveal_confirmed(&conn, &service, "nonsense", Proof::Password(PASSWORD), now)
+                .unwrap_err(),
             "vault.not_found"
         );
         // Wrong master passwords slow down, like at the unlock screen.
         for _ in 0..3 {
-            let _ = reveal_confirmed(&conn, &service, &saved.id, Proof::Password("nope nope nope"), now);
+            let _ = reveal_confirmed(
+                &conn,
+                &service,
+                &saved.id,
+                Proof::Password("nope nope nope"),
+                now,
+            );
         }
-        assert!(reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), now).unwrap_err().starts_with("vault.throttled:"));
+        assert!(
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), now)
+                .unwrap_err()
+                .starts_with("vault.throttled:")
+        );
         // When Windows Hello is required each time, a typed password no longer works.
         let later = now + Duration::from_secs(120);
         set_require_hello(&conn, &service, true, None, later).unwrap();
         assert_eq!(
-            reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), later).unwrap_err(),
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), later)
+                .unwrap_err(),
             "vault.hello_required"
         );
         assert!(reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(HELLO), later).is_ok());
@@ -764,16 +1058,28 @@ mod tests {
     fn asking_for_windows_hello_each_time_guards_passwords_and_needs_windows_hello() {
         let (conn, service, now) = setup();
         create(&conn, &service, Some(PASSWORD), None, now).unwrap();
-        assert_eq!(set_require_hello(&conn, &service, true, None, now).unwrap_err(), "vault.method_unavailable");
+        assert_eq!(
+            set_require_hello(&conn, &service, true, None, now).unwrap_err(),
+            "vault.method_unavailable"
+        );
         enable_hello(&conn, &service, HELLO, now).unwrap();
         assert!(confirm_if_required(&conn, None).is_ok(), "off by default");
         set_require_hello(&conn, &service, true, None, now).unwrap();
         assert!(status(&conn, &service, now).unwrap().require_hello);
-        assert_eq!(confirm_if_required(&conn, None).unwrap_err(), "vault.hello_required");
-        assert_eq!(confirm_if_required(&conn, Some(b"another signature that is long enough")).unwrap_err(), "vault.hello_failed");
+        assert_eq!(
+            confirm_if_required(&conn, None).unwrap_err(),
+            "vault.hello_required"
+        );
+        assert_eq!(
+            confirm_if_required(&conn, Some(b"another signature that is long enough")).unwrap_err(),
+            "vault.hello_failed"
+        );
         confirm_if_required(&conn, Some(HELLO)).unwrap();
         // Changing it while it is on needs the proof too.
-        assert_eq!(set_require_hello(&conn, &service, false, None, now).unwrap_err(), "vault.hello_required");
+        assert_eq!(
+            set_require_hello(&conn, &service, false, None, now).unwrap_err(),
+            "vault.hello_required"
+        );
         set_require_hello(&conn, &service, false, Some(HELLO), now).unwrap();
         set_require_hello(&conn, &service, true, None, now).unwrap();
         // Turning Windows Hello off drops the setting with it, so passwords never get stuck.
@@ -790,17 +1096,46 @@ mod tests {
         let mut same = entry("Another title", "pw");
         same.url = "HTTPS://EXAMPLE.TEST".into();
         same.username = "ME@example.test".into();
-        let fresh = EntryData { title: "Fresh".into(), url: "https://fresh.test".into(), username: "u".into(), password: "p".into(), notes: String::new() };
-        let invalid = EntryData { title: " ".into(), ..fresh.clone() };
-        let result = import_entries(&conn, &service, vec![same, fresh.clone(), fresh, invalid], 5, now).unwrap();
-        assert_eq!(result, ImportResult { imported: 1, duplicates: 2, skipped: 1 });
+        let fresh = EntryData {
+            title: "Fresh".into(),
+            url: "https://fresh.test".into(),
+            username: "u".into(),
+            password: "p".into(),
+            notes: String::new(),
+        };
+        let invalid = EntryData {
+            title: " ".into(),
+            ..fresh.clone()
+        };
+        let result = import_entries(
+            &conn,
+            &service,
+            vec![same, fresh.clone(), fresh, invalid],
+            5,
+            now,
+        )
+        .unwrap();
+        assert_eq!(
+            result,
+            ImportResult {
+                imported: 1,
+                duplicates: 2,
+                skipped: 1
+            }
+        );
         assert_eq!(list(&conn, &service, now).unwrap().entries.len(), 2);
         let (all, unreadable) = export_entries(&conn, &service, now).unwrap();
         assert_eq!((all.len(), unreadable), (2, 0));
         assert_eq!(all[0].title, "Existing");
         service.lock();
-        assert_eq!(import_entries(&conn, &service, vec![], 5, now).unwrap_err(), "vault.locked");
-        assert_eq!(export_entries(&conn, &service, now).unwrap_err(), "vault.locked");
+        assert_eq!(
+            import_entries(&conn, &service, vec![], 5, now).unwrap_err(),
+            "vault.locked"
+        );
+        assert_eq!(
+            export_entries(&conn, &service, now).unwrap_err(),
+            "vault.locked"
+        );
     }
 
     #[test]
@@ -809,16 +1144,24 @@ mod tests {
         create(&conn, &service, Some(PASSWORD), None, now).unwrap();
         verify_password(&conn, &service, PASSWORD, now).unwrap();
         for _ in 0..3 {
-            assert_eq!(verify_password(&conn, &service, "nope nope nope", now).unwrap_err(), "vault.wrong_secret");
+            assert_eq!(
+                verify_password(&conn, &service, "nope nope nope", now).unwrap_err(),
+                "vault.wrong_secret"
+            );
         }
-        assert!(verify_password(&conn, &service, PASSWORD, now).unwrap_err().starts_with("vault.throttled:"));
+        assert!(verify_password(&conn, &service, PASSWORD, now)
+            .unwrap_err()
+            .starts_with("vault.throttled:"));
     }
 
     #[test]
     fn auto_lock_choices_are_validated_and_applied() {
         let (conn, service, now) = setup();
         create(&conn, &service, Some(PASSWORD), None, now).unwrap();
-        assert_eq!(set_auto_lock(&conn, &service, 7, now).unwrap_err(), "vault.invalid_setting");
+        assert_eq!(
+            set_auto_lock(&conn, &service, 7, now).unwrap_err(),
+            "vault.invalid_setting"
+        );
         set_auto_lock(&conn, &service, 1, now).unwrap();
         assert_eq!(status(&conn, &service, now).unwrap().auto_lock_minutes, 1);
         assert!(!service.is_unlocked(now + Duration::from_secs(61)));
@@ -837,7 +1180,10 @@ mod tests {
         assert_eq!(listing.entries.len(), 1);
         assert_eq!(listing.entries[0].id, good.id);
         assert_eq!(listing.unreadable, 1);
-        assert_eq!(reveal(&conn, &service, &bad.id, now).unwrap_err(), "vault.corrupt");
+        assert_eq!(
+            reveal(&conn, &service, &bad.id, now).unwrap_err(),
+            "vault.corrupt"
+        );
     }
 
     #[test]

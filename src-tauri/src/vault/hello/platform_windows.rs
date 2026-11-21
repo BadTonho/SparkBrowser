@@ -18,8 +18,12 @@ fn failed(what: &str, error: impl std::fmt::Display) -> HelloError {
 
 fn status_error(what: &str, status: KeyCredentialStatus) -> HelloError {
     match status {
-        KeyCredentialStatus::UserCanceled | KeyCredentialStatus::UserPrefersPassword => HelloError::Cancelled,
-        KeyCredentialStatus::NotFound => HelloError::Failed(format!("{what}: the Windows Hello key was not found")),
+        KeyCredentialStatus::UserCanceled | KeyCredentialStatus::UserPrefersPassword => {
+            HelloError::Cancelled
+        }
+        KeyCredentialStatus::NotFound => {
+            HelloError::Failed(format!("{what}: the Windows Hello key was not found"))
+        }
         KeyCredentialStatus::SecurityDeviceLocked => {
             HelloError::Failed(format!("{what}: the security device is locked"))
         }
@@ -34,41 +38,62 @@ pub fn is_available() -> bool {
 }
 
 fn sign(credential: &KeyCredential) -> Result<Zeroizing<Vec<u8>>, HelloError> {
-    let challenge = CryptographicBuffer::CreateFromByteArray(CHALLENGE).map_err(|e| failed("preparing the challenge", e))?;
+    let challenge = CryptographicBuffer::CreateFromByteArray(CHALLENGE)
+        .map_err(|e| failed("preparing the challenge", e))?;
     let result = credential
         .RequestSignAsync(&challenge)
         .and_then(|operation| operation.join())
         .map_err(|e| failed("asking Windows to sign", e))?;
-    let status = result.Status().map_err(|e| failed("reading the signing status", e))?;
+    let status = result
+        .Status()
+        .map_err(|e| failed("reading the signing status", e))?;
     if status != KeyCredentialStatus::Success {
         return Err(status_error("signing with Windows Hello", status));
     }
-    let signature = result.Result().map_err(|e| failed("reading the signature", e))?;
+    let signature = result
+        .Result()
+        .map_err(|e| failed("reading the signature", e))?;
     let mut bytes = windows_core::Array::<u8>::new();
-    CryptographicBuffer::CopyToByteArray(&signature, &mut bytes).map_err(|e| failed("copying the signature", e))?;
+    CryptographicBuffer::CopyToByteArray(&signature, &mut bytes)
+        .map_err(|e| failed("copying the signature", e))?;
     Ok(Zeroizing::new(bytes.to_vec()))
 }
 
 pub fn enroll() -> Result<Zeroizing<Vec<u8>>, HelloError> {
-    let result = KeyCredentialManager::RequestCreateAsync(&HSTRING::from(CREDENTIAL), KeyCredentialCreationOption::ReplaceExisting)
-        .and_then(|operation| operation.join())
-        .map_err(|e| failed("creating the Windows Hello key", e))?;
-    let status = result.Status().map_err(|e| failed("reading the creation status", e))?;
+    let result = KeyCredentialManager::RequestCreateAsync(
+        &HSTRING::from(CREDENTIAL),
+        KeyCredentialCreationOption::ReplaceExisting,
+    )
+    .and_then(|operation| operation.join())
+    .map_err(|e| failed("creating the Windows Hello key", e))?;
+    let status = result
+        .Status()
+        .map_err(|e| failed("reading the creation status", e))?;
     if status != KeyCredentialStatus::Success {
         return Err(status_error("creating the Windows Hello key", status));
     }
-    sign(&result.Credential().map_err(|e| failed("reading the new key", e))?)
+    sign(
+        &result
+            .Credential()
+            .map_err(|e| failed("reading the new key", e))?,
+    )
 }
 
 pub fn secret() -> Result<Zeroizing<Vec<u8>>, HelloError> {
     let result = KeyCredentialManager::OpenAsync(&HSTRING::from(CREDENTIAL))
         .and_then(|operation| operation.join())
         .map_err(|e| failed("opening the Windows Hello key", e))?;
-    let status = result.Status().map_err(|e| failed("reading the open status", e))?;
+    let status = result
+        .Status()
+        .map_err(|e| failed("reading the open status", e))?;
     if status != KeyCredentialStatus::Success {
         return Err(status_error("opening the Windows Hello key", status));
     }
-    sign(&result.Credential().map_err(|e| failed("reading the key", e))?)
+    sign(
+        &result
+            .Credential()
+            .map_err(|e| failed("reading the key", e))?,
+    )
 }
 
 pub fn forget() -> Result<(), HelloError> {

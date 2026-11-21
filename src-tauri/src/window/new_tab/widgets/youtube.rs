@@ -293,19 +293,29 @@ pub(super) async fn control(
         wait_for_load(app, &video.tab_id).await;
     }
     let script = match (operation, seconds) {
-        ("youtube_seek", Some(seconds)) if seconds.is_finite() && (0.0..=86_400.0).contains(&seconds) => {
+        ("youtube_seek", Some(seconds))
+            if seconds.is_finite() && (0.0..=86_400.0).contains(&seconds) =>
+        {
             format!("(()=>{{const v=document.querySelector('video');if(v)v.currentTime={seconds:.2};}})();")
         }
         ("youtube_seek", _) => return Err("invalid_action".into()),
         // The reloaded page is paused, so "toggle" means play (and must not pause an autoplay).
-        ("youtube_toggle", _) if woken => "(()=>{const v=document.querySelector('video');if(v)v.play();})();".to_string(),
-        _ => script(operation, video.source).ok_or("invalid_action")?.to_string(),
+        ("youtube_toggle", _) if woken => {
+            "(()=>{const v=document.querySelector('video');if(v)v.play();})();".to_string()
+        }
+        _ => script(operation, video.source)
+            .ok_or("invalid_action")?
+            .to_string(),
     };
-    let script = if woken { when_video_ready(&script) } else { script };
+    let script = if woken {
+        when_video_ready(&script)
+    } else {
+        script
+    };
     app.get_webview(&label)
-    .ok_or("youtube_not_found")?
-    .eval(&script)
-    .map_err(|_| "youtube_not_found")?;
+        .ok_or("youtube_not_found")?
+        .eval(&script)
+        .map_err(|_| "youtube_not_found")?;
     // The tab needs a moment to report its new playback state.
     let app = app.clone();
     tauri::async_runtime::spawn(async move {

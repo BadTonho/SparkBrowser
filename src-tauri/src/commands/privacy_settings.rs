@@ -122,7 +122,10 @@ pub fn allow_http_once(
 ) -> Result<(), String> {
     let state = app.state::<BrowserState>();
     let window = super::access::caller_window(&webview);
-    if !state.window_of_tab(&tab_id).is_ok_and(|owner| owner == window) {
+    if !state
+        .window_of_tab(&tab_id)
+        .is_ok_and(|owner| owner == window)
+    {
         return Err("Tab not found".to_string());
     }
     let target = tauri::Url::parse(&url).map_err(|e| e.to_string())?;

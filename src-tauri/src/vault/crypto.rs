@@ -138,8 +138,13 @@ fn derive(secret: &[u8], salt: &[u8], kdf: &Kdf) -> Result<Zeroizing<[u8; KEY_LE
     {
         return Err(CryptoError::Corrupt);
     }
-    let params = Params::new(kdf.memory_kib, kdf.iterations, kdf.parallelism, Some(KEY_LEN))
-        .map_err(|_| CryptoError::Corrupt)?;
+    let params = Params::new(
+        kdf.memory_kib,
+        kdf.iterations,
+        kdf.parallelism,
+        Some(KEY_LEN),
+    )
+    .map_err(|_| CryptoError::Corrupt)?;
     let mut key = Zeroizing::new([0u8; KEY_LEN]);
     Argon2::new(Algorithm::Argon2id, Version::V0x13, params)
         .hash_password_into(secret, salt, key.as_mut())
@@ -162,7 +167,13 @@ fn open(key: &[u8], aad: &[u8], nonce: &[u8], ciphertext: &[u8]) -> Result<Vec<u
     }
     let cipher = Aes256Gcm::new_from_slice(key).map_err(|_| ())?;
     cipher
-        .decrypt(Nonce::from_slice(nonce), Payload { msg: ciphertext, aad })
+        .decrypt(
+            Nonce::from_slice(nonce),
+            Payload {
+                msg: ciphertext,
+                aad,
+            },
+        )
         .map_err(|_| ())
 }
 
@@ -313,7 +324,9 @@ pub fn create(
         password: master_password
             .map(|password| wrap("password", password.as_bytes(), &dek, &kdf))
             .transpose()?,
-        hello: hello_secret.map(|secret| wrap_hello(secret, &dek)).transpose()?,
+        hello: hello_secret
+            .map(|secret| wrap_hello(secret, &dek))
+            .transpose()?,
         recovery: wrap("recovery", recovery.as_ref(), &dek, &kdf)?,
         kdf,
     };
@@ -330,13 +343,19 @@ fn check(header: &Header) -> Result<(), CryptoError> {
 
 pub fn unlock_with_password(header: &Header, password: &str) -> Result<Key, CryptoError> {
     check(header)?;
-    let wrapped = header.password.as_ref().ok_or(CryptoError::MethodUnavailable)?;
+    let wrapped = header
+        .password
+        .as_ref()
+        .ok_or(CryptoError::MethodUnavailable)?;
     unwrap("password", password.as_bytes(), wrapped, &header.kdf)
 }
 
 pub fn unlock_with_hello(header: &Header, secret: &[u8]) -> Result<Key, CryptoError> {
     check(header)?;
-    let wrapped = header.hello.as_ref().ok_or(CryptoError::MethodUnavailable)?;
+    let wrapped = header
+        .hello
+        .as_ref()
+        .ok_or(CryptoError::MethodUnavailable)?;
     unwrap_hello(secret, wrapped)
 }
 
@@ -453,7 +472,13 @@ mod tests {
     fn only_text_shaped_like_a_recovery_key_passes_the_shape_check() {
         let (_, _, recovery) = create(Some(PASSWORD), None).unwrap();
         assert!(is_recovery_key_shape(&recovery));
-        for bad in ["", "short", PASSWORD, "AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAA1", &format!("{recovery}\nextra")] {
+        for bad in [
+            "",
+            "short",
+            PASSWORD,
+            "AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAA1",
+            &format!("{recovery}\nextra"),
+        ] {
             assert!(!is_recovery_key_shape(bad), "{bad:?}");
         }
     }
@@ -469,7 +494,10 @@ mod tests {
 
     #[test]
     fn password_length_is_bounded() {
-        assert_eq!(create(Some("short"), None).err(), Some(CryptoError::InvalidPassword));
+        assert_eq!(
+            create(Some("short"), None).err(),
+            Some(CryptoError::InvalidPassword)
+        );
         assert_eq!(
             create(Some(&"a".repeat(MAX_PASSWORD_CHARS + 1)), None).err(),
             Some(CryptoError::InvalidPassword)
@@ -559,20 +587,36 @@ mod tests {
         assert!(unlock_with_password(&header, PASSWORD).is_err());
     }
 
-    const HELLO: &[u8] = b"a signature produced by windows hello after the user proved who they are";
+    const HELLO: &[u8] =
+        b"a signature produced by windows hello after the user proved who they are";
 
     #[test]
     fn the_vault_can_open_with_windows_hello_alone_or_next_to_the_password() {
         let (only_hello, dek, recovery) = create(None, Some(HELLO)).unwrap();
         assert!(only_hello.password.is_none());
-        assert_eq!(unlock_with_hello(&only_hello, HELLO).unwrap().0.as_ref(), dek.0.as_ref());
-        assert_eq!(unlock_with_password(&only_hello, PASSWORD).unwrap_err(), CryptoError::MethodUnavailable);
+        assert_eq!(
+            unlock_with_hello(&only_hello, HELLO).unwrap().0.as_ref(),
+            dek.0.as_ref()
+        );
+        assert_eq!(
+            unlock_with_password(&only_hello, PASSWORD).unwrap_err(),
+            CryptoError::MethodUnavailable
+        );
         assert!(unlock_with_recovery(&only_hello, &recovery).is_ok());
         let (both, dek, _) = create(Some(PASSWORD), Some(HELLO)).unwrap();
-        assert_eq!(unlock_with_hello(&both, HELLO).unwrap().0.as_ref(), dek.0.as_ref());
-        assert_eq!(unlock_with_password(&both, PASSWORD).unwrap().0.as_ref(), dek.0.as_ref());
+        assert_eq!(
+            unlock_with_hello(&both, HELLO).unwrap().0.as_ref(),
+            dek.0.as_ref()
+        );
+        assert_eq!(
+            unlock_with_password(&both, PASSWORD).unwrap().0.as_ref(),
+            dek.0.as_ref()
+        );
         let (only_password, _, _) = create(Some(PASSWORD), None).unwrap();
-        assert_eq!(unlock_with_hello(&only_password, HELLO).unwrap_err(), CryptoError::MethodUnavailable);
+        assert_eq!(
+            unlock_with_hello(&only_password, HELLO).unwrap_err(),
+            CryptoError::MethodUnavailable
+        );
         assert_eq!(create(None, None).err(), Some(CryptoError::LastMethod));
     }
 
@@ -583,7 +627,10 @@ mod tests {
             unlock_with_hello(&header, b"another signature that is long enough").unwrap_err(),
             CryptoError::WrongSecret
         );
-        assert_eq!(unlock_with_hello(&header, b"short").unwrap_err(), CryptoError::Unavailable);
+        assert_eq!(
+            unlock_with_hello(&header, b"short").unwrap_err(),
+            CryptoError::Unavailable
+        );
         // The hello copy is bound to its kind: it cannot stand in for the recovery copy.
         header.recovery = header.hello.clone().unwrap();
         assert!(unlock_with_recovery(&header, "AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA").is_err());
@@ -592,19 +639,28 @@ mod tests {
     #[test]
     fn each_method_can_be_added_and_removed_but_one_always_remains() {
         let (header, dek, _) = create(Some(PASSWORD), None).unwrap();
-        assert_eq!(remove_password(&header).unwrap_err(), CryptoError::LastMethod);
+        assert_eq!(
+            remove_password(&header).unwrap_err(),
+            CryptoError::LastMethod
+        );
         let with_hello = set_hello(&header, &dek, HELLO).unwrap();
         assert!(unlock_with_hello(&with_hello, HELLO).is_ok());
         assert!(unlock_with_password(&with_hello, PASSWORD).is_ok());
         let without_password = remove_password(&with_hello).unwrap();
         assert!(unlock_with_password(&without_password, PASSWORD).is_err());
         assert!(unlock_with_hello(&without_password, HELLO).is_ok());
-        assert_eq!(remove_hello(&without_password).unwrap_err(), CryptoError::LastMethod);
+        assert_eq!(
+            remove_hello(&without_password).unwrap_err(),
+            CryptoError::LastMethod
+        );
         // A password can be added back to a vault that only had Windows Hello.
         let again = change_password(&without_password, &dek, "a brand new password").unwrap();
         assert!(unlock_with_password(&again, "a brand new password").is_ok());
         let without_hello = remove_hello(&again).unwrap();
-        assert_eq!(unlock_with_hello(&without_hello, HELLO).unwrap_err(), CryptoError::MethodUnavailable);
+        assert_eq!(
+            unlock_with_hello(&without_hello, HELLO).unwrap_err(),
+            CryptoError::MethodUnavailable
+        );
     }
 
     #[test]

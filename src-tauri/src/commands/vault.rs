@@ -4,8 +4,8 @@
 //! passed in or out are never written to the log.
 use crate::database::executor;
 use crate::error_log::{self, Level};
-use crate::vault::hello::{self, HelloError};
 use crate::vault::csv;
+use crate::vault::hello::{self, HelloError};
 use crate::vault::model::{EntryData, Revealed, Status, Summary};
 use crate::vault::ops::{self, ImportResult, Listing};
 use crate::vault::service::VaultService;
@@ -43,17 +43,34 @@ async fn hello_step(
     what: &'static str,
     work: fn() -> Result<Zeroizing<Vec<u8>>, HelloError>,
 ) -> Result<Zeroizing<Vec<u8>>, String> {
-    let outcome = tauri::async_runtime::spawn_blocking(work).await.map_err(|error| {
-        error_log::report(Level::Error, "vault", &format!("{what} stopped unexpectedly"), &error.to_string());
-        HelloError::Failed(String::new()).code().to_string()
-    })?;
+    let outcome = tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|error| {
+            error_log::report(
+                Level::Error,
+                "vault",
+                &format!("{what} stopped unexpectedly"),
+                &error.to_string(),
+            );
+            HelloError::Failed(String::new()).code().to_string()
+        })?;
     outcome.map_err(|error| {
         let (level, summary, detail) = match &error {
-            HelloError::Cancelled => (Level::Info, format!("{what} was cancelled in Windows Hello"), String::new()),
-            HelloError::Unavailable => {
-                (Level::Warning, format!("{what} needs Windows Hello, which is not available here"), String::new())
-            }
-            HelloError::Failed(detail) => (Level::Error, format!("{what} failed in Windows Hello"), detail.clone()),
+            HelloError::Cancelled => (
+                Level::Info,
+                format!("{what} was cancelled in Windows Hello"),
+                String::new(),
+            ),
+            HelloError::Unavailable => (
+                Level::Warning,
+                format!("{what} needs Windows Hello, which is not available here"),
+                String::new(),
+            ),
+            HelloError::Failed(detail) => (
+                Level::Error,
+                format!("{what} failed in Windows Hello"),
+                detail.clone(),
+            ),
         };
         error_log::report(level, "vault", &summary, &detail);
         error.code().to_string()
@@ -68,7 +85,7 @@ async fn proof_if_required(
     what: &'static str,
 ) -> Result<Option<Zeroizing<Vec<u8>>>, String> {
     service.key(Instant::now())?;
-    if executor::run(app.clone(), |conn| ops::requires_hello(conn)).await? {
+    if executor::run(app.clone(), ops::requires_hello).await? {
         Ok(Some(hello_step(what, hello::secret).await?))
     } else {
         Ok(None)
@@ -98,11 +115,17 @@ async fn forget_hello() {
 }
 
 #[tauri::command]
-pub async fn vault_status(app: AppHandle, service: State<'_, VaultService>) -> Result<Status, String> {
+pub async fn vault_status(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<Status, String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    let available = tauri::async_runtime::spawn_blocking(hello::is_available).await.unwrap_or(false);
-    let mut status = executor::run(app, move |conn| ops::status(conn, &service, Instant::now())).await?;
+    let available = tauri::async_runtime::spawn_blocking(hello::is_available)
+        .await
+        .unwrap_or(false);
+    let mut status =
+        executor::run(app, move |conn| ops::status(conn, &service, Instant::now())).await?;
     status.hello_available = available;
     Ok(status)
 }
@@ -149,33 +172,54 @@ pub async fn vault_unlock(
     allowed(&app)?;
     let service = service.inner().clone();
     let password = Zeroizing::new(password);
-    executor::run(app, move |conn| ops::unlock(conn, &service, &password, Instant::now())).await
+    executor::run(app, move |conn| {
+        ops::unlock(conn, &service, &password, Instant::now())
+    })
+    .await
 }
 
 /// Opens the vault after the person proves who they are to Windows (PIN, fingerprint or face).
 #[tauri::command]
-pub async fn vault_unlock_hello(app: AppHandle, service: State<'_, VaultService>) -> Result<(), String> {
+pub async fn vault_unlock_hello(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<(), String> {
     allowed(&app)?;
     let service = service.inner().clone();
     let secret = hello_step("unlocking the vault with Windows Hello", hello::secret).await?;
-    executor::run(app, move |conn| ops::unlock_with_hello(conn, &service, &secret, Instant::now())).await
+    executor::run(app, move |conn| {
+        ops::unlock_with_hello(conn, &service, &secret, Instant::now())
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn vault_hello_enable(app: AppHandle, service: State<'_, VaultService>) -> Result<(), String> {
+pub async fn vault_hello_enable(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<(), String> {
     allowed(&app)?;
     let service = service.inner().clone();
     // Ask Windows only for an open vault: asking replaces the key pair, so a locked vault must not get that far.
     service.key(Instant::now())?;
     let secret = hello_step("turning on Windows Hello", hello::enroll).await?;
-    executor::run(app, move |conn| ops::enable_hello(conn, &service, &secret, Instant::now())).await
+    executor::run(app, move |conn| {
+        ops::enable_hello(conn, &service, &secret, Instant::now())
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn vault_hello_disable(app: AppHandle, service: State<'_, VaultService>) -> Result<(), String> {
+pub async fn vault_hello_disable(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<(), String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    executor::run(app, move |conn| ops::disable_hello(conn, &service, Instant::now())).await?;
+    executor::run(app, move |conn| {
+        ops::disable_hello(conn, &service, Instant::now())
+    })
+    .await?;
     forget_hello().await;
     Ok(())
 }
@@ -189,7 +233,10 @@ pub async fn vault_password_enable(
     allowed(&app)?;
     let service = service.inner().clone();
     let new_password = Zeroizing::new(new_password);
-    executor::run(app, move |conn| ops::enable_password(conn, &service, &new_password, Instant::now())).await
+    executor::run(app, move |conn| {
+        ops::enable_password(conn, &service, &new_password, Instant::now())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -201,7 +248,10 @@ pub async fn vault_password_disable(
     allowed(&app)?;
     let service = service.inner().clone();
     let current = Zeroizing::new(current);
-    executor::run(app, move |conn| ops::disable_password(conn, &service, &current, Instant::now())).await
+    executor::run(app, move |conn| {
+        ops::disable_password(conn, &service, &current, Instant::now())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -227,7 +277,10 @@ pub fn vault_lock(app: AppHandle, service: State<'_, VaultService>) -> Result<()
 }
 
 #[tauri::command]
-pub async fn vault_list(app: AppHandle, service: State<'_, VaultService>) -> Result<Listing, String> {
+pub async fn vault_list(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<Listing, String> {
     allowed(&app)?;
     let service = service.inner().clone();
     executor::run(app, move |conn| ops::list(conn, &service, Instant::now())).await
@@ -250,14 +303,26 @@ pub async fn vault_reveal(
         Some(password) => {
             let password = Zeroizing::new(password);
             executor::run(app, move |conn| {
-                ops::reveal_confirmed(conn, &service, &id, ops::Proof::Password(&password), Instant::now())
+                ops::reveal_confirmed(
+                    conn,
+                    &service,
+                    &id,
+                    ops::Proof::Password(&password),
+                    Instant::now(),
+                )
             })
             .await
         }
         None => {
             let secret = hello_step("showing a vault password", hello::secret).await?;
             executor::run(app, move |conn| {
-                ops::reveal_confirmed(conn, &service, &id, ops::Proof::Hello(&secret), Instant::now())
+                ops::reveal_confirmed(
+                    conn,
+                    &service,
+                    &id,
+                    ops::Proof::Hello(&secret),
+                    Instant::now(),
+                )
             })
             .await
         }
@@ -274,7 +339,14 @@ pub async fn vault_save_entry(
     allowed(&app)?;
     let service = service.inner().clone();
     executor::run(app, move |conn| {
-        ops::save(conn, &service, id.as_deref(), &entry, timestamp(), Instant::now())
+        ops::save(
+            conn,
+            &service,
+            id.as_deref(),
+            &entry,
+            timestamp(),
+            Instant::now(),
+        )
     })
     .await
 }
@@ -287,7 +359,10 @@ pub async fn vault_delete_entry(
 ) -> Result<(), String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    executor::run(app, move |conn| ops::delete(conn, &service, &id, Instant::now())).await
+    executor::run(app, move |conn| {
+        ops::delete(conn, &service, &id, Instant::now())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -314,7 +389,10 @@ pub async fn vault_set_auto_lock(
 ) -> Result<(), String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    executor::run(app, move |conn| ops::set_auto_lock(conn, &service, minutes, Instant::now())).await
+    executor::run(app, move |conn| {
+        ops::set_auto_lock(conn, &service, minutes, Instant::now())
+    })
+    .await
 }
 
 /// Turns "ask for Windows Hello every time a password is shown or copied" on or off.
@@ -329,7 +407,13 @@ pub async fn vault_set_require_hello(
     // Changing it while it is on needs Windows Hello once more; turning it on does not.
     let proof = proof_if_required(&app, &service, "changing the Windows Hello requirement").await?;
     executor::run(app, move |conn| {
-        ops::set_require_hello(conn, &service, enabled, proof.as_deref().map(|p| p.as_slice()), Instant::now())
+        ops::set_require_hello(
+            conn,
+            &service,
+            enabled,
+            proof.as_deref().map(|p| p.as_slice()),
+            Instant::now(),
+        )
     })
     .await
 }
@@ -337,16 +421,28 @@ pub async fn vault_set_require_hello(
 /// Reads a file the person picked, bounded, and wipes it from memory when dropped.
 fn read_import_file(path: &std::path::Path) -> Result<Zeroizing<Vec<u8>>, String> {
     let describe = |error: std::io::Error| {
-        error_log::report(Level::Error, "vault", "the file to import could not be read", &error.to_string());
+        error_log::report(
+            Level::Error,
+            "vault",
+            "the file to import could not be read",
+            &error.to_string(),
+        );
         "vault.import_failed".to_string()
     };
     let file = std::fs::File::open(path).map_err(describe)?;
     if file.metadata().map_err(describe)?.len() > csv::MAX_IMPORT_BYTES {
-        error_log::report(Level::Warning, "vault", "the file to import is too large", "");
+        error_log::report(
+            Level::Warning,
+            "vault",
+            "the file to import is too large",
+            "",
+        );
         return Err("vault.import_too_large".into());
     }
     let mut bytes = Zeroizing::new(Vec::new());
-    file.take(csv::MAX_IMPORT_BYTES + 1).read_to_end(&mut bytes).map_err(describe)?;
+    file.take(csv::MAX_IMPORT_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(describe)?;
     Ok(bytes)
 }
 
@@ -362,24 +458,43 @@ pub async fn vault_import_csv(
     service.key(Instant::now())?;
     let picker = app.clone();
     let bytes = tauri::async_runtime::spawn_blocking(move || {
-        let Some(path) = picker.dialog().file().add_filter("CSV", &["csv"]).blocking_pick_file() else {
+        let Some(path) = picker
+            .dialog()
+            .file()
+            .add_filter("CSV", &["csv"])
+            .blocking_pick_file()
+        else {
             return Ok(None);
         };
         let path = path.into_path().map_err(|e| {
-            error_log::report(Level::Error, "vault", "the chosen import file has no usable path", &e.to_string());
+            error_log::report(
+                Level::Error,
+                "vault",
+                "the chosen import file has no usable path",
+                &e.to_string(),
+            );
             "vault.import_failed".to_string()
         })?;
         read_import_file(&path).map(Some)
     })
     .await
     .map_err(|error| {
-        error_log::report(Level::Error, "vault", "reading the import file stopped unexpectedly", &error.to_string());
+        error_log::report(
+            Level::Error,
+            "vault",
+            "reading the import file stopped unexpectedly",
+            &error.to_string(),
+        );
         "vault.import_failed".to_string()
     })??;
     let Some(bytes) = bytes else { return Ok(None) };
-    let parsed = csv::parse(&bytes).map_err(|code| {
-        error_log::report(Level::Warning, "vault", "the file to import is not a password export", "");
-        code
+    let parsed = csv::parse(&bytes).inspect_err(|_| {
+        error_log::report(
+            Level::Warning,
+            "vault",
+            "the file to import is not a password export",
+            "",
+        );
     })?;
     drop(bytes);
     let left_out = parsed.skipped;
@@ -412,12 +527,15 @@ pub async fn vault_export_csv(
             .await?;
         }
         None => {
-            let secret = hello_step("confirming Windows Hello for the export", hello::secret).await?;
+            let secret =
+                hello_step("confirming Windows Hello for the export", hello::secret).await?;
             executor::run(app.clone(), move |conn| ops::confirm_hello(conn, &secret)).await?;
         }
     }
-    let (entries, unreadable) =
-        executor::run(app.clone(), move |conn| ops::export_entries(conn, &service, Instant::now())).await?;
+    let (entries, unreadable) = executor::run(app.clone(), move |conn| {
+        ops::export_entries(conn, &service, Instant::now())
+    })
+    .await?;
     let count = entries.len();
     let bytes = csv::render(&entries);
     drop(entries);
@@ -433,21 +551,36 @@ pub async fn vault_export_csv(
             return Ok(false);
         };
         let path = path.into_path().map_err(|e| {
-            error_log::report(Level::Error, "vault", "the chosen export file has no usable path", &e.to_string());
+            error_log::report(
+                Level::Error,
+                "vault",
+                "the chosen export file has no usable path",
+                &e.to_string(),
+            );
             "vault.export_failed".to_string()
         })?;
         if !path.to_string_lossy().to_lowercase().ends_with(".csv") {
             return Err("vault.export_failed".to_string());
         }
         crate::backup::files::write_bytes(&path, &bytes).map_err(|detail| {
-            error_log::report(Level::Error, "vault", "the password export file could not be written", &detail);
+            error_log::report(
+                Level::Error,
+                "vault",
+                "the password export file could not be written",
+                &detail,
+            );
             "vault.export_failed".to_string()
         })?;
         Ok(true)
     })
     .await
     .map_err(|error| {
-        error_log::report(Level::Error, "vault", "writing the password export stopped unexpectedly", &error.to_string());
+        error_log::report(
+            Level::Error,
+            "vault",
+            "writing the password export stopped unexpectedly",
+            &error.to_string(),
+        );
         "vault.export_failed".to_string()
     })??;
     if !written {
@@ -465,12 +598,18 @@ pub async fn vault_export_csv(
 /// Test helper (debug builds only): adds made-up logins so the list can be tried with data. A release
 /// build has no such code and answers `vault.dev_only`.
 #[tauri::command]
-pub async fn vault_dev_seed(app: AppHandle, service: State<'_, VaultService>) -> Result<ImportResult, String> {
+pub async fn vault_dev_seed(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<ImportResult, String> {
     allowed(&app)?;
     #[cfg(debug_assertions)]
     {
         let service = service.inner().clone();
-        executor::run(app, move |conn| crate::vault::dev::seed(conn, &service, timestamp(), Instant::now())).await
+        executor::run(app, move |conn| {
+            crate::vault::dev::seed(conn, &service, timestamp(), Instant::now())
+        })
+        .await
     }
     #[cfg(not(debug_assertions))]
     {
@@ -481,12 +620,18 @@ pub async fn vault_dev_seed(app: AppHandle, service: State<'_, VaultService>) ->
 
 /// Test helper (debug builds only): removes the made-up logins again, and only them.
 #[tauri::command]
-pub async fn vault_dev_remove(app: AppHandle, service: State<'_, VaultService>) -> Result<usize, String> {
+pub async fn vault_dev_remove(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<usize, String> {
     allowed(&app)?;
     #[cfg(debug_assertions)]
     {
         let service = service.inner().clone();
-        executor::run(app, move |conn| crate::vault::dev::remove(conn, &service, Instant::now())).await
+        executor::run(app, move |conn| {
+            crate::vault::dev::remove(conn, &service, Instant::now())
+        })
+        .await
     }
     #[cfg(not(debug_assertions))]
     {
@@ -535,11 +680,19 @@ fn recovery_file(recovery_key: &str) -> String {
 /// must have the shape of a recovery key, so this cannot be used to write anything else. The file is
 /// not encrypted, which the interface says. `false` means the dialog was cancelled.
 #[tauri::command]
-pub async fn vault_save_recovery_file(app: AppHandle, recovery_key: String) -> Result<bool, String> {
+pub async fn vault_save_recovery_file(
+    app: AppHandle,
+    recovery_key: String,
+) -> Result<bool, String> {
     allowed(&app)?;
     let recovery_key = Zeroizing::new(recovery_key);
     if !crate::vault::crypto::is_recovery_key_shape(&recovery_key) {
-        error_log::report(Level::Warning, "vault", "saving the recovery key file was refused: the text is not a recovery key", "");
+        error_log::report(
+            Level::Warning,
+            "vault",
+            "saving the recovery key file was refused: the text is not a recovery key",
+            "",
+        );
         return Err("vault.save_failed".into());
     }
     let contents = Zeroizing::new(recovery_file(recovery_key.trim()));
@@ -554,22 +707,42 @@ pub async fn vault_save_recovery_file(app: AppHandle, recovery_key: String) -> R
             return Ok(false);
         };
         let path = path.into_path().map_err(|e| {
-            error_log::report(Level::Error, "vault", "the chosen recovery key file has no usable path", &e.to_string());
+            error_log::report(
+                Level::Error,
+                "vault",
+                "the chosen recovery key file has no usable path",
+                &e.to_string(),
+            );
             "vault.save_failed".to_string()
         })?;
         if !path.to_string_lossy().to_lowercase().ends_with(".txt") {
             return Err("vault.save_failed".to_string());
         }
         crate::backup::files::write_bytes(&path, contents.as_bytes()).map_err(|detail| {
-            error_log::report(Level::Error, "vault", "the recovery key file could not be written", &detail);
+            error_log::report(
+                Level::Error,
+                "vault",
+                "the recovery key file could not be written",
+                &detail,
+            );
             "vault.save_failed".to_string()
         })?;
-        error_log::report(Level::Info, "vault", "the recovery key was saved to a file", "");
+        error_log::report(
+            Level::Info,
+            "vault",
+            "the recovery key was saved to a file",
+            "",
+        );
         Ok(true)
     })
     .await
     .map_err(|error| {
-        error_log::report(Level::Error, "vault", "saving the recovery key file stopped unexpectedly", &error.to_string());
+        error_log::report(
+            Level::Error,
+            "vault",
+            "saving the recovery key file stopped unexpectedly",
+            &error.to_string(),
+        );
         "vault.save_failed".to_string()
     })?
 }

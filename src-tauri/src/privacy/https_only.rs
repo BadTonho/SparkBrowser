@@ -90,7 +90,10 @@ impl HttpsOnly {
         }
         if let Ok(mut exceptions) = self.exceptions.lock() {
             // A permission is consumed by the first navigation that follows it, whatever it targets.
-            if exceptions.remove(tab).is_some_and(|allowed| allowed == *url) {
+            if exceptions
+                .remove(tab)
+                .is_some_and(|allowed| allowed == *url)
+            {
                 return Decision::Allow;
             }
         }
@@ -216,7 +219,10 @@ mod tests {
     #[test]
     fn nothing_changes_while_the_mode_is_off() {
         let policy = HttpsOnly::default();
-        assert_eq!(policy.decide("t", &url("http://example.test/")), Decision::Allow);
+        assert_eq!(
+            policy.decide("t", &url("http://example.test/")),
+            Decision::Allow
+        );
     }
 
     #[test]

@@ -28,14 +28,15 @@ use commands::resources::{
 use commands::search_suggestions::fetch_search_suggestions;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::site_icons::site_icons;
-use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::vault::{
-    vault_change_master_password, vault_copy_password, vault_copy_text, vault_create, vault_delete_entry, vault_list, vault_lock,
-    vault_reset, vault_reveal, vault_save_entry, vault_set_auto_lock, vault_status, vault_unlock,
-    vault_unlock_recovery, vault_unlock_hello, vault_hello_enable, vault_hello_disable, vault_password_enable,
-    vault_password_disable, vault_set_require_hello, vault_import_csv, vault_export_csv,
-    vault_save_recovery_file, vault_dev_seed, vault_dev_remove,
+    vault_change_master_password, vault_copy_password, vault_copy_text, vault_create,
+    vault_delete_entry, vault_dev_remove, vault_dev_seed, vault_export_csv, vault_hello_disable,
+    vault_hello_enable, vault_import_csv, vault_list, vault_lock, vault_password_disable,
+    vault_password_enable, vault_reset, vault_reveal, vault_save_entry, vault_save_recovery_file,
+    vault_set_auto_lock, vault_set_require_hello, vault_status, vault_unlock, vault_unlock_hello,
+    vault_unlock_recovery,
 };
+use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
 pub mod commands;
@@ -45,11 +46,11 @@ pub mod error_log;
 pub mod extensions;
 pub mod feeds;
 pub mod graphics;
-pub mod network;
 pub mod hang_stack;
 pub mod legacy;
 pub mod media;
 mod native_tests;
+pub mod network;
 pub mod privacy;
 pub mod private_session;
 pub mod recovery;
@@ -105,8 +106,8 @@ use commands::privacy::{
     toggle_adblock_shield,
 };
 use commands::privacy_settings::{
-    allow_http_once, get_privacy_settings, set_history_retention, set_https_only, set_popup_setting,
-    set_smart_screen,
+    allow_http_once, get_privacy_settings, set_history_retention, set_https_only,
+    set_popup_setting, set_smart_screen,
 };
 use commands::qr_code::save_qr_code_png;
 use commands::reader::get_reader_article;
@@ -172,7 +173,8 @@ pub fn run() {
         graphics::apply_environment(accelerated);
         // The same goes for the DNS over HTTPS proxy: the engine takes its address when it starts.
         network::apply_environment(
-            graphics::data_directory(context.config()).and_then(|directory| network::load(&directory)),
+            graphics::data_directory(context.config())
+                .and_then(|directory| network::load(&directory)),
         );
         if let Some(directory) = graphics::data_directory(context.config()) {
             error_log::install(&directory);

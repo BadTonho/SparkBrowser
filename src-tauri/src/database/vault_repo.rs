@@ -34,14 +34,18 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
 /// Adds the setting that asks for Windows Hello every time a password is shown or copied.
 fn migrate_require_hello(conn: &Connection) -> Result<(), String> {
     super::migrations::apply(conn, "vault-require-hello-v1", |conn| {
-        conn.execute_batch("ALTER TABLE vault_meta ADD COLUMN require_hello INTEGER NOT NULL DEFAULT 0")
-            .map_err(|e| e.to_string())
+        conn.execute_batch(
+            "ALTER TABLE vault_meta ADD COLUMN require_hello INTEGER NOT NULL DEFAULT 0",
+        )
+        .map_err(|e| e.to_string())
     })
 }
 
 pub fn load_header(conn: &Connection) -> Result<Option<Header>, String> {
     let text: Option<String> = conn
-        .query_row("SELECT header FROM vault_meta WHERE id=1", [], |row| row.get(0))
+        .query_row("SELECT header FROM vault_meta WHERE id=1", [], |row| {
+            row.get(0)
+        })
         .optional()
         .map_err(|e| e.to_string())?;
     text.map(|text| serde_json::from_str(&text).map_err(|_| "vault.corrupt".to_string()))
@@ -72,34 +76,50 @@ pub fn update_header(conn: &Connection, header: &Header) -> Result<(), String> {
 }
 
 pub fn auto_lock_minutes(conn: &Connection) -> Result<Option<u32>, String> {
-    conn.query_row("SELECT auto_lock_minutes FROM vault_meta WHERE id=1", [], |row| row.get(0))
-        .optional()
-        .map_err(|e| e.to_string())
+    conn.query_row(
+        "SELECT auto_lock_minutes FROM vault_meta WHERE id=1",
+        [],
+        |row| row.get(0),
+    )
+    .optional()
+    .map_err(|e| e.to_string())
 }
 
 pub fn set_auto_lock_minutes(conn: &Connection, minutes: u32) -> Result<(), String> {
-    conn.execute("UPDATE vault_meta SET auto_lock_minutes=?1 WHERE id=1", [minutes])
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+    conn.execute(
+        "UPDATE vault_meta SET auto_lock_minutes=?1 WHERE id=1",
+        [minutes],
+    )
+    .map(|_| ())
+    .map_err(|e| e.to_string())
 }
 
 pub fn require_hello(conn: &Connection) -> Result<bool, String> {
-    conn.query_row("SELECT require_hello FROM vault_meta WHERE id=1", [], |row| row.get::<_, i64>(0))
-        .optional()
-        .map(|value| value.unwrap_or(0) != 0)
-        .map_err(|e| e.to_string())
+    conn.query_row(
+        "SELECT require_hello FROM vault_meta WHERE id=1",
+        [],
+        |row| row.get::<_, i64>(0),
+    )
+    .optional()
+    .map(|value| value.unwrap_or(0) != 0)
+    .map_err(|e| e.to_string())
 }
 
 pub fn set_require_hello(conn: &Connection, on: bool) -> Result<(), String> {
-    conn.execute("UPDATE vault_meta SET require_hello=?1 WHERE id=1", [i64::from(on)])
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+    conn.execute(
+        "UPDATE vault_meta SET require_hello=?1 WHERE id=1",
+        [i64::from(on)],
+    )
+    .map(|_| ())
+    .map_err(|e| e.to_string())
 }
 
 pub fn count(conn: &Connection) -> Result<usize, String> {
-    conn.query_row("SELECT COUNT(*) FROM vault_entries", [], |row| row.get::<_, i64>(0))
-        .map(|n| n.max(0) as usize)
-        .map_err(|e| e.to_string())
+    conn.query_row("SELECT COUNT(*) FROM vault_entries", [], |row| {
+        row.get::<_, i64>(0)
+    })
+    .map(|n| n.max(0) as usize)
+    .map_err(|e| e.to_string())
 }
 
 pub fn rows(conn: &Connection) -> Result<Vec<Row>, String> {
@@ -115,7 +135,8 @@ pub fn rows(conn: &Connection) -> Result<Vec<Row>, String> {
             })
         })
         .map_err(|e| e.to_string())?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
 }
 
 pub fn row(conn: &Connection, id: &str) -> Result<Option<Row>, String> {
@@ -183,7 +204,10 @@ mod tests {
         let (header, _, _) = crypto::create(Some("correct horse battery"), None).unwrap();
         create(&conn, &header, 5).unwrap();
         assert_eq!(load_header(&conn).unwrap(), Some(header.clone()));
-        assert_eq!(create(&conn, &header, 5).unwrap_err(), "vault.already_initialized");
+        assert_eq!(
+            create(&conn, &header, 5).unwrap_err(),
+            "vault.already_initialized"
+        );
         let (other, _, _) = crypto::create(Some("another long password"), None).unwrap();
         update_header(&conn, &other).unwrap();
         assert_eq!(load_header(&conn).unwrap(), Some(other));
@@ -199,7 +223,10 @@ mod tests {
         put(&conn, "a", b"three", 3).unwrap();
         assert_eq!(count(&conn).unwrap(), 2);
         let all = rows(&conn).unwrap();
-        assert_eq!(all.iter().map(|r| r.id.as_str()).collect::<Vec<_>>(), ["a", "b"]);
+        assert_eq!(
+            all.iter().map(|r| r.id.as_str()).collect::<Vec<_>>(),
+            ["a", "b"]
+        );
         assert_eq!(row(&conn, "a").unwrap().unwrap().blob, b"three");
         assert!(delete(&conn, "a").unwrap());
         assert!(!delete(&conn, "a").unwrap());
@@ -221,8 +248,11 @@ mod tests {
     #[test]
     fn a_damaged_header_is_reported_as_corrupt_not_as_missing() {
         let conn = db();
-        conn.execute("INSERT INTO vault_meta(id,header,auto_lock_minutes) VALUES(1,'{not json',5)", [])
-            .unwrap();
+        conn.execute(
+            "INSERT INTO vault_meta(id,header,auto_lock_minutes) VALUES(1,'{not json',5)",
+            [],
+        )
+        .unwrap();
         assert_eq!(load_header(&conn).unwrap_err(), "vault.corrupt");
     }
 }

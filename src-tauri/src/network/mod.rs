@@ -255,7 +255,11 @@ mod tests {
         assert_eq!(load(dir.path()), None);
         fs::write(dir.path().join(FILE), r#"{"doh_provider":"unknown"}"#).unwrap();
         assert_eq!(load(dir.path()), None);
-        fs::write(dir.path().join(FILE), "\u{feff}{\"doh_provider\":\"google\"}").unwrap();
+        fs::write(
+            dir.path().join(FILE),
+            "\u{feff}{\"doh_provider\":\"google\"}",
+        )
+        .unwrap();
         assert_eq!(load(dir.path()), Some(Provider::Google));
     }
 
@@ -317,6 +321,9 @@ mod tests {
         // No proxy runs in tests.
         assert!(!status(None).restart_required);
         assert!(status(Some(Provider::Google)).restart_required);
-        assert_eq!(status(Some(Provider::Google)).doh_provider.as_deref(), Some("google"));
+        assert_eq!(
+            status(Some(Provider::Google)).doh_provider.as_deref(),
+            Some("google")
+        );
     }
 }

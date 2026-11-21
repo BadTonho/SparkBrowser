@@ -29,17 +29,83 @@ fn sample(title: &str, url: &str, username: &str, password: &str, note: &str) ->
 /// without an address, a long title, notes with line breaks.
 pub fn samples() -> Vec<EntryData> {
     vec![
-        sample("Crunchyroll", "https://www.crunchyroll.com/login", "otaku@exemplo.test", "teste-crunchyroll-01", ""),
-        sample("Discord", "https://discord.com/login", "amigo@exemplo.test", "teste-discord-02", "conta principal"),
-        sample("Qt", "https://login.qt.io", "dev@exemplo.test", "teste-qt-03", ""),
-        sample("Reserva", "https://reserva.ink", "leitor@exemplo.test", "teste-reserva-04", ""),
-        sample("Roblox", "https://www.roblox.com/home", "jogador", "teste-roblox-05", ""),
-        sample("Supabase", "https://supabase.com/dashboard", "dev@exemplo.test", "teste-supabase-06", "projeto de desenvolvimento"),
-        sample("Supabase", "https://supabase.com/dashboard", "prod@exemplo.test", "teste-supabase-07", "projeto de producao"),
-        sample("Supabase", "https://supabase.com/dashboard", "teste@exemplo.test", "teste-supabase-08", ""),
-        sample("GitHub", "https://github.com/login", "pessoal", "teste-github-09", ""),
-        sample("GitHub", "https://github.com/login", "trabalho", "teste-github-10", "linha 1\nlinha 2"),
-        sample("Wi-Fi de casa", "", "roteador", "teste-wifi-11", "um login sem endereco de site"),
+        sample(
+            "Crunchyroll",
+            "https://www.crunchyroll.com/login",
+            "otaku@exemplo.test",
+            "teste-crunchyroll-01",
+            "",
+        ),
+        sample(
+            "Discord",
+            "https://discord.com/login",
+            "amigo@exemplo.test",
+            "teste-discord-02",
+            "conta principal",
+        ),
+        sample(
+            "Qt",
+            "https://login.qt.io",
+            "dev@exemplo.test",
+            "teste-qt-03",
+            "",
+        ),
+        sample(
+            "Reserva",
+            "https://reserva.ink",
+            "leitor@exemplo.test",
+            "teste-reserva-04",
+            "",
+        ),
+        sample(
+            "Roblox",
+            "https://www.roblox.com/home",
+            "jogador",
+            "teste-roblox-05",
+            "",
+        ),
+        sample(
+            "Supabase",
+            "https://supabase.com/dashboard",
+            "dev@exemplo.test",
+            "teste-supabase-06",
+            "projeto de desenvolvimento",
+        ),
+        sample(
+            "Supabase",
+            "https://supabase.com/dashboard",
+            "prod@exemplo.test",
+            "teste-supabase-07",
+            "projeto de producao",
+        ),
+        sample(
+            "Supabase",
+            "https://supabase.com/dashboard",
+            "teste@exemplo.test",
+            "teste-supabase-08",
+            "",
+        ),
+        sample(
+            "GitHub",
+            "https://github.com/login",
+            "pessoal",
+            "teste-github-09",
+            "",
+        ),
+        sample(
+            "GitHub",
+            "https://github.com/login",
+            "trabalho",
+            "teste-github-10",
+            "linha 1\nlinha 2",
+        ),
+        sample(
+            "Wi-Fi de casa",
+            "",
+            "roteador",
+            "teste-wifi-11",
+            "um login sem endereco de site",
+        ),
         sample(
             "Banco com um nome bem comprido para ver como a lista quebra a linha",
             "https://internetbanking.um-endereco-bem-comprido-para-testar.exemplo.test/entrar",
@@ -51,7 +117,12 @@ pub fn samples() -> Vec<EntryData> {
 }
 
 /// Adds the made-up logins. Ones already there are not added again, so pressing it twice is harmless.
-pub fn seed(conn: &Connection, service: &VaultService, timestamp: i64, now: Instant) -> Result<ImportResult, String> {
+pub fn seed(
+    conn: &Connection,
+    service: &VaultService,
+    timestamp: i64,
+    now: Instant,
+) -> Result<ImportResult, String> {
     ops::import_entries(conn, service, samples(), timestamp, now)
 }
 
@@ -68,7 +139,12 @@ pub fn remove(conn: &Connection, service: &VaultService, now: Instant) -> Result
             removed += 1;
         }
     }
-    error_log::report(Level::Info, "vault", &format!("{removed} test passwords were removed from the vault"), "");
+    error_log::report(
+        Level::Info,
+        "vault",
+        &format!("{removed} test passwords were removed from the vault"),
+        "",
+    );
     Ok(removed)
 }
 
@@ -82,14 +158,35 @@ mod tests {
         repo::migrate(&conn).unwrap();
         let (service, now) = (VaultService::default(), Instant::now());
         ops::create(&conn, &service, Some("correct horse battery"), None, now).unwrap();
-        let real = EntryData { title: "Real".into(), password: "pw".into(), ..EntryData::default() };
+        let real = EntryData {
+            title: "Real".into(),
+            password: "pw".into(),
+            ..EntryData::default()
+        };
         ops::save(&conn, &service, None, &real, 1, now).unwrap();
 
         let first = seed(&conn, &service, 2, now).unwrap();
-        assert_eq!(first, ImportResult { imported: samples().len(), duplicates: 0, skipped: 0 });
+        assert_eq!(
+            first,
+            ImportResult {
+                imported: samples().len(),
+                duplicates: 0,
+                skipped: 0
+            }
+        );
         let again = seed(&conn, &service, 3, now).unwrap();
-        assert_eq!(again, ImportResult { imported: 0, duplicates: samples().len(), skipped: 0 });
-        assert_eq!(ops::list(&conn, &service, now).unwrap().entries.len(), samples().len() + 1);
+        assert_eq!(
+            again,
+            ImportResult {
+                imported: 0,
+                duplicates: samples().len(),
+                skipped: 0
+            }
+        );
+        assert_eq!(
+            ops::list(&conn, &service, now).unwrap().entries.len(),
+            samples().len() + 1
+        );
 
         assert_eq!(remove(&conn, &service, now).unwrap(), samples().len());
         let left = ops::list(&conn, &service, now).unwrap().entries;

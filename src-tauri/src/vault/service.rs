@@ -39,7 +39,9 @@ fn minutes(value: u32) -> Duration {
 impl VaultService {
     fn inner(&self) -> MutexGuard<'_, Inner> {
         // A panic elsewhere must not leave the vault stuck open or unusable.
-        self.0.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.0
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     /// Locks the vault if it has been idle for longer than the configured time.
@@ -123,7 +125,9 @@ mod tests {
     use crate::vault::crypto;
 
     fn key() -> Key {
-        crypto::create(Some("correct horse battery"), None).unwrap().1
+        crypto::create(Some("correct horse battery"), None)
+            .unwrap()
+            .1
     }
 
     #[test]
@@ -155,7 +159,10 @@ mod tests {
         assert!(!service.is_unlocked(start + Duration::from_secs(120)));
         service.unlock(key(), start);
         assert!(service.lock_if_idle(start + Duration::from_secs(61)));
-        assert!(!service.lock_if_idle(start + Duration::from_secs(62)), "only reports the change once");
+        assert!(
+            !service.lock_if_idle(start + Duration::from_secs(62)),
+            "only reports the change once"
+        );
     }
 
     #[test]
@@ -164,7 +171,10 @@ mod tests {
         let now = Instant::now();
         service.failure(now);
         service.failure(now);
-        assert!(service.check_attempt(now).is_ok(), "a few honest mistakes cost nothing");
+        assert!(
+            service.check_attempt(now).is_ok(),
+            "a few honest mistakes cost nothing"
+        );
         service.failure(now);
         assert!(service.check_attempt(now).is_err());
         assert!(service.check_attempt(now + Duration::from_secs(2)).is_ok());

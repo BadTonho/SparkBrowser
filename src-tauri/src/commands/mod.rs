@@ -5,7 +5,6 @@ pub mod experiments;
 pub mod feeds;
 pub mod navigation;
 pub mod notes;
-pub mod vault;
 pub mod persistence;
 pub mod privacy;
 pub mod privacy_settings;
@@ -17,6 +16,7 @@ pub mod split_view;
 pub mod tab_organizer;
 pub mod tabs;
 pub mod updates;
+pub mod vault;
 pub mod windows;
 pub mod workspaces;
 

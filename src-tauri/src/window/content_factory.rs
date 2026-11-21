@@ -280,7 +280,9 @@ pub(super) fn create_tab_webview(
                     let (app, tab) = (app_handle_for_nav.clone(), tab_for_nav.clone());
                     // The navigation is started after this callback returns, not from inside it.
                     tauri::async_runtime::spawn(async move {
-                        crate::error_log::ignored(super::content_lifecycle::navigate_tab_document(&app, &tab, target));
+                        crate::error_log::ignored(super::content_lifecycle::navigate_tab_document(
+                            &app, &tab, target,
+                        ));
                     });
                     return false;
                 }

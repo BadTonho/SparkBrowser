@@ -87,7 +87,10 @@ pub(super) fn install_native_navigation(
                 report_loaded(webview);
             }
             if event == webkit2gtk::LoadEvent::Finished {
-                if let Some(url) = webview.uri().and_then(|uri| url::Url::parse(uri.as_str()).ok()) {
+                if let Some(url) = webview
+                    .uri()
+                    .and_then(|uri| url::Url::parse(uri.as_str()).ok())
+                {
                     crate::privacy::https_only::navigation_succeeded(&a, &t, &url);
                 }
             }
@@ -187,44 +190,47 @@ pub(super) fn install_native_navigation(
                 Ok(())
             }));
             let (a, t, l, secret) = (app.clone(), tab_id.clone(), label.clone(), token.clone());
-            let completed = NavigationCompletedEventHandler::create(Box::new(move |sender, args| {
-                if let Some(args) = args {
-                    let mut id = 0;
-                    let mut success = Default::default();
-                    let mut status = Default::default();
-                    unsafe {
-                        args.NavigationId(&mut id)?;
-                        args.IsSuccess(&mut success)?;
-                        args.WebErrorStatus(&mut status)?;
-                    }
-                    let latest = current.load(Ordering::SeqCst);
-                    // 14 is OPERATION_CANCELED: an HTTP address replaced by its HTTPS form is not a failure.
-                    if latest != 0 && latest == id && (success.as_bool() || status.0 != 14) {
-                        if success.as_bool() {
-                            let mut value = Default::default();
-                            if let Some(core) = &sender {
-                                unsafe {
-                                    core.Source(&mut value)?;
-                                }
-                                if let Ok(finished) =
-                                    url::Url::parse(&CoTaskMemPWSTR::from(value).to_string())
-                                {
-                                    crate::privacy::https_only::navigation_succeeded(&a, &t, &finished);
-                                }
-                            }
-                        } else {
-                            crate::privacy::https_only::navigation_failed(&a, &t);
+            let completed =
+                NavigationCompletedEventHandler::create(Box::new(move |sender, args| {
+                    if let Some(args) = args {
+                        let mut id = 0;
+                        let mut success = Default::default();
+                        let mut status = Default::default();
+                        unsafe {
+                            args.NavigationId(&mut id)?;
+                            args.IsSuccess(&mut success)?;
+                            args.WebErrorStatus(&mut status)?;
                         }
-                        update_navigation(&a, &t, &l, &secret, |tab| {
-                            tab.navigation.loading = false;
-                            tab.navigation.error = (!success.as_bool()).then(|| {
-                                format!("Navigation failed (WebView2 status {})", status.0)
+                        let latest = current.load(Ordering::SeqCst);
+                        // 14 is OPERATION_CANCELED: an HTTP address replaced by its HTTPS form is not a failure.
+                        if latest != 0 && latest == id && (success.as_bool() || status.0 != 14) {
+                            if success.as_bool() {
+                                let mut value = Default::default();
+                                if let Some(core) = &sender {
+                                    unsafe {
+                                        core.Source(&mut value)?;
+                                    }
+                                    if let Ok(finished) =
+                                        url::Url::parse(&CoTaskMemPWSTR::from(value).to_string())
+                                    {
+                                        crate::privacy::https_only::navigation_succeeded(
+                                            &a, &t, &finished,
+                                        );
+                                    }
+                                }
+                            } else {
+                                crate::privacy::https_only::navigation_failed(&a, &t);
+                            }
+                            update_navigation(&a, &t, &l, &secret, |tab| {
+                                tab.navigation.loading = false;
+                                tab.navigation.error = (!success.as_bool()).then(|| {
+                                    format!("Navigation failed (WebView2 status {})", status.0)
+                                });
                             });
-                        });
+                        }
                     }
-                }
-                Ok(())
-            }));
+                    Ok(())
+                }));
             unsafe {
                 core.add_NavigationStarting(&starting, &mut registration)?;
                 core.add_HistoryChanged(&history, &mut registration)?;

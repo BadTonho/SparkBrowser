@@ -77,7 +77,12 @@ struct Columns {
 fn columns(header: &[String]) -> Columns {
     let mut columns = Columns::default();
     for (index, name) in header.iter().enumerate() {
-        let slot = match name.trim().trim_start_matches('\u{feff}').to_lowercase().as_str() {
+        let slot = match name
+            .trim()
+            .trim_start_matches('\u{feff}')
+            .to_lowercase()
+            .as_str()
+        {
             "name" | "title" => &mut columns.title,
             "url" | "website" | "web site" | "login_uri" | "origin" => &mut columns.url,
             "username" | "user" | "login" | "login_username" | "user name" => &mut columns.username,
@@ -99,7 +104,9 @@ fn host(url: &str) -> Option<String> {
 }
 
 pub fn parse(bytes: &[u8]) -> Result<Parsed, String> {
-    let text = Zeroizing::new(String::from_utf8(bytes.to_vec()).map_err(|_| "vault.import_invalid".to_string())?);
+    let text = Zeroizing::new(
+        String::from_utf8(bytes.to_vec()).map_err(|_| "vault.import_invalid".to_string())?,
+    );
     let rows = rows(&text)?;
     let mut rows = rows.into_iter();
     let header = rows.next().ok_or("vault.import_invalid")?;
@@ -107,7 +114,12 @@ pub fn parse(bytes: &[u8]) -> Result<Parsed, String> {
     let Some(password) = columns.password else {
         return Err("vault.import_invalid".into());
     };
-    let cell = |row: &[String], index: Option<usize>| index.and_then(|i| row.get(i)).map(|s| s.trim().to_string()).unwrap_or_default();
+    let cell = |row: &[String], index: Option<usize>| {
+        index
+            .and_then(|i| row.get(i))
+            .map(|s| s.trim().to_string())
+            .unwrap_or_default()
+    };
     let (mut entries, mut skipped) = (Vec::new(), 0);
     for row in rows {
         let secret = row.get(password).cloned().unwrap_or_default();
@@ -123,7 +135,11 @@ pub fn parse(bytes: &[u8]) -> Result<Parsed, String> {
             username,
             password: secret,
             // Notes keep their line breaks; only the ends are trimmed.
-            notes: columns.notes.and_then(|i| row.get(i)).map(|s| s.trim().to_string()).unwrap_or_default(),
+            notes: columns
+                .notes
+                .and_then(|i| row.get(i))
+                .map(|s| s.trim().to_string())
+                .unwrap_or_default(),
         };
         if entry.password.is_empty() || entry.validate().is_err() {
             skipped += 1;
@@ -146,11 +162,17 @@ fn cell(text: &str) -> String {
 pub fn render(entries: &[EntryData]) -> Zeroizing<Vec<u8>> {
     let mut out = Zeroizing::new(String::from("name,url,username,password,note\r\n"));
     for entry in entries {
-        let line = [&entry.title, &entry.url, &entry.username, &entry.password, &entry.notes]
-            .iter()
-            .map(|field| cell(field))
-            .collect::<Vec<_>>()
-            .join(",");
+        let line = [
+            &entry.title,
+            &entry.url,
+            &entry.username,
+            &entry.password,
+            &entry.notes,
+        ]
+        .iter()
+        .map(|field| cell(field))
+        .collect::<Vec<_>>()
+        .join(",");
         out.push_str(&line);
         out.push_str("\r\n");
     }
@@ -162,7 +184,13 @@ mod tests {
     use super::*;
 
     fn entry(title: &str, url: &str, user: &str, pw: &str, notes: &str) -> EntryData {
-        EntryData { title: title.into(), url: url.into(), username: user.into(), password: pw.into(), notes: notes.into() }
+        EntryData {
+            title: title.into(),
+            url: url.into(),
+            username: user.into(),
+            password: pw.into(),
+            notes: notes.into(),
+        }
     }
 
     #[test]
@@ -170,7 +198,16 @@ mod tests {
         let text = "name,url,username,password,note\r\ndiscord.com,https://discord.com/login,me@x.test,hunter2,\r\n,https://www.roblox.com/,kid,pw2,a note\r\n";
         let parsed = parse(text.as_bytes()).unwrap();
         assert_eq!(parsed.skipped, 0);
-        assert_eq!(parsed.entries[0], entry("discord.com", "https://discord.com/login", "me@x.test", "hunter2", ""));
+        assert_eq!(
+            parsed.entries[0],
+            entry(
+                "discord.com",
+                "https://discord.com/login",
+                "me@x.test",
+                "hunter2",
+                ""
+            )
+        );
         // A missing title is taken from the address.
         assert_eq!(parsed.entries[1].title, "roblox.com");
         assert_eq!(parsed.entries[1].notes, "a note");
@@ -198,16 +235,32 @@ mod tests {
     #[test]
     fn a_file_that_is_not_a_password_export_is_refused() {
         for bad in ["", "a,b,c\n1,2,3\n", "name,url\nx,y\n"] {
-            assert_eq!(parse(bad.as_bytes()).unwrap_err(), "vault.import_invalid", "{bad:?}");
+            assert_eq!(
+                parse(bad.as_bytes()).unwrap_err(),
+                "vault.import_invalid",
+                "{bad:?}"
+            );
         }
-        assert_eq!(parse(b"name,password\n\"unterminated,x\n").unwrap_err(), "vault.import_invalid");
-        assert_eq!(parse(&[0xff, 0xfe, 0x00]).unwrap_err(), "vault.import_invalid");
+        assert_eq!(
+            parse(b"name,password\n\"unterminated,x\n").unwrap_err(),
+            "vault.import_invalid"
+        );
+        assert_eq!(
+            parse(&[0xff, 0xfe, 0x00]).unwrap_err(),
+            "vault.import_invalid"
+        );
     }
 
     #[test]
     fn an_export_reads_back_the_same() {
         let entries = vec![
-            entry("Bank", "https://bank.test", "me", "pa,ss\"word", "multi\nline"),
+            entry(
+                "Bank",
+                "https://bank.test",
+                "me",
+                "pa,ss\"word",
+                "multi\nline",
+            ),
             entry("Plain", "", "", "x", ""),
             entry(" spaced ", "https://a.test", "u", "p", ""),
         ];

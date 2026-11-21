@@ -18,10 +18,7 @@ pub fn get_network_status(app: AppHandle) -> Result<NetworkStatus, String> {
 /// Saves the choice (`None` turns DNS over HTTPS off). It applies on the next start; the status
 /// says whether a restart is pending.
 #[tauri::command]
-pub fn set_doh_provider(
-    app: AppHandle,
-    provider: Option<String>,
-) -> Result<NetworkStatus, String> {
+pub fn set_doh_provider(app: AppHandle, provider: Option<String>) -> Result<NetworkStatus, String> {
     let provider = match provider {
         Some(id) => Some(Provider::from_id(&id).ok_or("network.unknown_provider")?),
         None => None,

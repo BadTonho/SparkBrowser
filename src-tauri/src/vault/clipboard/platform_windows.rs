@@ -170,6 +170,9 @@ mod tests {
         assert!(clear_if_unchanged(mark).unwrap(), "our own copy is cleared");
         let first = write("first").unwrap();
         write("something the user copied later").unwrap();
-        assert!(!clear_if_unchanged(first).unwrap(), "a newer copy is left alone");
+        assert!(
+            !clear_if_unchanged(first).unwrap(),
+            "a newer copy is left alone"
+        );
     }
 }

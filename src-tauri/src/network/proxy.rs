@@ -293,8 +293,7 @@ mod tests {
 
     #[test]
     fn connect_and_absolute_requests_are_parsed() {
-        let connect =
-            parse_head(b"CONNECT site.test:443 HTTP/1.1\r\nHost: site.test:443").unwrap();
+        let connect = parse_head(b"CONNECT site.test:443 HTTP/1.1\r\nHost: site.test:443").unwrap();
         assert_eq!(
             connect.target,
             Target::Tunnel {
@@ -337,7 +336,9 @@ mod tests {
     fn requests_that_are_not_proxy_requests_are_refused() {
         assert!(bad(parse_head(b"GET /relative HTTP/1.1\r\n")));
         assert!(bad(parse_head(b"GET https://site.test/ HTTP/1.1\r\n")));
-        assert!(bad(parse_head(b"GET http://user:pw@site.test/ HTTP/1.1\r\n")));
+        assert!(bad(parse_head(
+            b"GET http://user:pw@site.test/ HTTP/1.1\r\n"
+        )));
         assert!(bad(parse_head(b"CONNECT site.test HTTP/1.1")));
         assert!(parse_head(b"CONNECT site.test:80 HTTP/1.1").is_ok());
         assert!(bad(parse_head(b"CONNECT [2001:db8::1] HTTP/1.1\r\n")));
