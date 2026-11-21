@@ -9,6 +9,7 @@
 ## Melhorias
 
 - A entrada **Sessão Tor** não aparece mais nas configurações de privacidade: ela foi adiada até que vazamentos de tráfego possam ser descartados. Nada dela esteve ativo.
+- A página **Sobre e atualizações** agora mostra o link do repositório do navegador no GitHub, com um botão que o abre em uma nova guia.
 
 ## Correções
 

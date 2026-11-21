@@ -410,5 +410,8 @@
   "resources.cpu_limit": "Processor limit",
   "resources.network": "Internet",
   "resources.network_note": "Received by the pages",
-  "resources.network_limit": "Speed limit"
+  "resources.network_limit": "Speed limit",
+  "settings.repository_title": "Browser repository",
+  "settings.repository_description": "The source code, releases and issue tracker of Spark live on GitHub.",
+  "settings.repository_open": "Open repository"
 }

@@ -5,6 +5,9 @@
   import { updateState, updateBusy, updateActionError, checkUpdates, selectUpdateChannel, startUpdateDownload, startUpdateInstall, setAutoUpdateEnabled } from "../../stores/updatesStore";
   import type { UpdateChannel } from "../../types/updates";
   import { isTauriRuntime } from "../../services/bridge/runtime";
+  import { createNewTab } from "../../services/tauri-bridge";
+  import { REPOSITORY_URL } from "../../services/project-links.js";
+  import { logIgnored } from "../../services/ignored-error";
   const active = $derived($updateBusy || ["checking", "downloading", "installing"].includes($updateState.status));
   const status = $derived.by(() => {
     switch ($updateState.status) {
@@ -19,6 +22,7 @@
       default: return $t("settings.check_for_a_newer_version_of_spark_browser_078c");
     }
   });
+  function openRepository() { void createNewTab(REPOSITORY_URL).catch(logIgnored); }
   function date(timestamp: number) { return $formatDate(timestamp * 1000, { dateStyle: "medium", timeStyle: "short" }); }
 </script>
 
@@ -69,6 +73,12 @@
     <pre>{$updateState.update.notes || $t("common.no_release_notes")}</pre>
   {/if}
   <p>{$t("settings.updates_are_checked_when_the_browser_opens_downloading_and_installing_re_d689")}</p>
+  <div class="repository">
+    <h3>{$t("settings.repository_title")}</h3>
+    <p>{$t("settings.repository_description")}</p>
+    <button class="pill-action" disabled={!isTauriRuntime()} onclick={openRepository}>{$t("settings.repository_open")}</button>
+    <p class="repository-url">{REPOSITORY_URL}</p>
+  </div>
   <RuntimeSettings />
 </section>
 
@@ -78,4 +88,7 @@
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
   pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; max-height: 260px; overflow: auto; }
   progress { width: 100%; }
+  .repository { margin: 16px 0; }
+  .repository h3 { margin: 0 0 4px; font-size: 13px; color: var(--text-primary); }
+  .repository-url { margin: 6px 0 0; user-select: text; overflow-wrap: anywhere; }
 </style>

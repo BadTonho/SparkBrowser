@@ -9,6 +9,7 @@
 ## Improvements
 
 - The **Tor session** entry is no longer shown in the privacy settings: it is postponed until traffic leaks can be ruled out. Nothing about it was ever active.
+- The **About & Updates** page now shows the link to the browser repository on GitHub, with a button that opens it in a new tab.
 
 ## Fixes
 

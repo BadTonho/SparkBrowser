@@ -410,5 +410,8 @@
   "resources.cpu_limit": "Limite do processador",
   "resources.network": "Internet",
   "resources.network_note": "Recebido pelas páginas",
-  "resources.network_limit": "Limite de velocidade"
+  "resources.network_limit": "Limite de velocidade",
+  "settings.repository_title": "Repositório do navegador",
+  "settings.repository_description": "O código-fonte, as versões e o rastreador de problemas do Spark ficam no GitHub.",
+  "settings.repository_open": "Abrir repositório"
 }
