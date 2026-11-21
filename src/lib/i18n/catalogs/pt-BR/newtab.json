@@ -101,6 +101,7 @@
   "newtab.widgets.showWallpaper": "Mostrar mídia de fundo",
   "newtab.widgets.chooseWallpaper": "Escolher imagem ou vídeo…",
   "newtab.widgets.removeWallpaper": "Remover mídia",
+  "newtab.widgets.wallpaperZoom": "Zoom",
   "newtab.widgets.wallpaperDim": "Escurecimento do fundo",
   "newtab.widgets.wallpaperLoading": "Processando mídia…",
   "newtab.widgets.wallpaperSaved": "Plano de fundo atualizado.",

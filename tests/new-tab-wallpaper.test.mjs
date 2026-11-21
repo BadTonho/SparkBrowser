@@ -404,3 +404,46 @@ test('panel and widget layout choices are segmented radios, validated, persisted
   assert.ok(start>0&&group.includes('id="spotify-widget"')&&group.includes('id="youtube-widget"'),'both music cards are grouped');
   assert.ok(!group.includes('weather-widget')&&!group.includes('gmail-widget')&&!group.includes('clock-card-widget'),'other widgets stay put');
 });
+
+test('zoom 100% fills the area, lower zoom shows the whole picture centred and only overflowing axes pan', async () => {
+  const testData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true', spark_wallpaper_zoom: '50', spark_wallpaper_pos: '100,0' });
+  f.idbStore.set('current', testData);
+  const image = f.nodes.get('wallpaper-image'), container = f.nodes.get('wallpaper-container');
+  Object.assign(container, { clientWidth: 1000, clientHeight: 500 });
+  Object.assign(image, { naturalWidth: 1000, naturalHeight: 1000 });
+  await new Promise(r => setTimeout(r, 25));
+  // At 100% a square picture covers a 1000x500 area, so it is 1000x1000 and cropped vertically.
+  // At 50% it is 500x500: fully visible and centred horizontally despite the saved x = 100%, since it fits.
+  assert.equal(image.style.width, '500px');
+  assert.equal(image.style.height, '500px');
+  assert.equal(image.style.left, '250px');
+  assert.equal(image.style.top, '0px');
+  assert.equal(image.style.objectFit, 'fill');
+  f.storage.set('spark_wallpaper_zoom', '100');
+  f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_zoom' });
+  await new Promise(r => setTimeout(r, 25));
+  assert.equal(image.style.width, '1000px');
+  assert.equal(image.style.height, '1000px');
+  assert.equal(image.style.left, '0px');
+  assert.equal(image.style.top, '0px');
+});
+
+test('changing the zoom recenters the picture before it can be panned again', async () => {
+  const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true', spark_wallpaper_pos: '100,100' });
+  f.idbStore.set('current', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+  Object.assign(f.nodes.get('wallpaper-container'), { clientWidth: 1000, clientHeight: 500 });
+  Object.assign(f.nodes.get('wallpaper-image'), { naturalWidth: 1000, naturalHeight: 1000 });
+  await new Promise(r => setTimeout(r, 25));
+  const image = f.nodes.get('wallpaper-image');
+  // The saved corner position (100%, 100%) shows the bottom right: 1000x1000 in a 1000x500 area.
+  assert.equal(image.style.top, '-500px');
+  const zoom = f.nodes.get('wallpaper-zoom');
+  zoom.listeners.input({ target: { value: '200' } });
+  // 200% is 2000x2000, centred in the area: the same amount cropped on every side.
+  assert.equal(image.style.left, '-500px');
+  assert.equal(image.style.top, '-750px');
+  zoom.listeners.change({ target: { value: '200' } });
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '50,50');
+  assert.equal(f.storage.get('spark_wallpaper_zoom'), '200');
+});

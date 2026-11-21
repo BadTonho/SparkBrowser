@@ -41,60 +41,105 @@
     return { x: clampPct(x), y: clampPct(y) };
   }
 
-  function applyPosition(pos = readPosition()) {
-    const value = `${pos.x}% ${pos.y}%`;
-    for (const id of ['wallpaper-image', 'wallpaper-video', 'wallpaper-preview', 'wallpaper-video-preview']) {
-      const node = $(id);
-      if (node) node.style.objectPosition = value;
+  function readZoom() {
+    const value = Number(getStorage('spark_wallpaper_zoom') ?? 100);
+    return Math.min(300, Math.max(25, Number.isFinite(value) ? value : 100));
+  }
+
+  const MEDIA = [
+    ['wallpaper-image', 'wallpaper-container'], ['wallpaper-video', 'wallpaper-container'],
+    ['wallpaper-preview', 'wallpaper-preview-wrap'], ['wallpaper-video-preview', 'wallpaper-preview-wrap']
+  ];
+  let zoomLive = null;
+
+  const naturalSize = node => ({ w: node.naturalWidth || node.videoWidth || 0, h: node.naturalHeight || node.videoHeight || 0 });
+
+  // Zoom 100% is the picture filling the whole area; lower shows more of it (and the margins around),
+  // higher enlarges it. Where the picture overflows the area it can be panned; where it fits, it is centred.
+  function mediaGeometry(node, box, pos, zoom) {
+    const { w: nw, h: nh } = naturalSize(node);
+    const W = box.clientWidth, H = box.clientHeight;
+    if (!nw || !nh || !W || !H) return null;
+    const scale = Math.max(W / nw, H / nh) * (zoom / 100);
+    const w = nw * scale, h = nh * scale;
+    // Only an axis where the picture is bigger than the area can be panned; otherwise it stays centred.
+    const place = (room, focus) => (room >= 0 ? room / 2 : room * focus / 100);
+    return { w, h, W, H, left: place(W - w, pos.x), top: place(H - h, pos.y) };
+  }
+
+  function fitPreviewBox() {
+    const wrap = $('wallpaper-preview-wrap');
+    if (!wrap || !window.innerWidth || !window.innerHeight) return;
+    // The preview has the shape of the screen, so it shows the same framing as the new tab.
+    const ratio = window.innerWidth / window.innerHeight, avail = wrap.parentElement?.clientWidth || 0;
+    let width = 180 * ratio;
+    if (avail && width > avail) width = avail;
+    const size = [`${Math.round(width)}px`, `${Math.round(width / ratio)}px`];
+    if (wrap.style.width !== size[0]) wrap.style.width = size[0];
+    if (wrap.style.height !== size[1]) wrap.style.height = size[1];
+  }
+
+  function applyPosition(pos = readPosition(), zoom = zoomLive ?? readZoom()) {
+    fitPreviewBox();
+    for (const [id, boxId] of MEDIA) {
+      const node = $(id), box = $(boxId);
+      if (!node || !box) continue;
+      const g = mediaGeometry(node, box, pos, zoom);
+      const style = node.style;
+      if (!g) {
+        // Not measurable yet (hidden or still loading): the stylesheet's "cover" applies meanwhile.
+        for (const key of ['left', 'top', 'width', 'height', 'objectFit', 'inset']) style[key] = '';
+        continue;
+      }
+      style.inset = 'auto'; style.objectFit = 'fill';
+      style.width = `${g.w}px`; style.height = `${g.h}px`;
+      style.left = `${g.left}px`; style.top = `${g.top}px`;
     }
   }
 
   function resetPosition() {
     setStorage('spark_wallpaper_pos', '50,50');
+    setStorage('spark_wallpaper_zoom', '100');
   }
 
   function initPositionDrag() {
     const wrap = $('wallpaper-preview-wrap');
     if (!wrap) return;
+    for (const [id] of MEDIA) {
+      const node = $(id);
+      node?.addEventListener?.('load', () => applyPosition());
+      node?.addEventListener?.('loadedmetadata', () => applyPosition());
+    }
+    window.addEventListener('resize', () => applyPosition());
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => applyPosition()).observe(wrap);
     let drag = null;
     wrap.addEventListener('pointerdown', event => {
       if (event.button !== 0) return;
       const media = currentMedia?.mediaType === 'video' ? $('wallpaper-video-preview') : $('wallpaper-preview');
       if (!media || media.hidden) return;
-      const naturalW = media.naturalWidth || media.videoWidth;
-      const naturalH = media.naturalHeight || media.videoHeight;
-      if (!naturalW || !naturalH) return;
-      const box = media.getBoundingClientRect();
-      const scale = Math.max(box.width / naturalW, box.height / naturalH);
-      drag = {
-        id: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        origin: readPosition(),
-        overflowX: naturalW * scale - box.width,
-        overflowY: naturalH * scale - box.height
-      };
+      const origin = readPosition();
+      const g = mediaGeometry(media, wrap, origin, zoomLive ?? readZoom());
+      if (!g) return;
+      drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, origin, slackX: g.W - g.w, slackY: g.H - g.h, pos: origin };
       try { wrap.setPointerCapture(event.pointerId); } catch (error) { window.__sparkLogIgnored?.(error); }
       wrap.classList.add('dragging');
       event.preventDefault();
     });
     wrap.addEventListener('pointermove', event => {
       if (!drag || event.pointerId !== drag.id) return;
-      // Dragging the picture right shows more of its left side, so the focal point moves the other way.
-      const x = drag.overflowX > 0 ? drag.origin.x - ((event.clientX - drag.startX) / drag.overflowX) * 100 : drag.origin.x;
-      const y = drag.overflowY > 0 ? drag.origin.y - ((event.clientY - drag.startY) / drag.overflowY) * 100 : drag.origin.y;
-      applyPosition({ x: clampPct(x), y: clampPct(y) });
+      // The picture follows the pointer: left = slack * x, so x moves by dx / slack (slack < 0 when it overflows).
+      const x = drag.slackX < -0.5 ? drag.origin.x + ((event.clientX - drag.startX) / drag.slackX) * 100 : drag.origin.x;
+      const y = drag.slackY < -0.5 ? drag.origin.y + ((event.clientY - drag.startY) / drag.slackY) * 100 : drag.origin.y;
+      drag.pos = { x: clampPct(x), y: clampPct(y) };
+      applyPosition(drag.pos);
     });
     const finish = event => {
       if (!drag || event.pointerId !== drag.id) return;
+      const { pos } = drag;
       drag = null;
       wrap.classList.remove('dragging');
-      const media = currentMedia?.mediaType === 'video' ? $('wallpaper-video-preview') : $('wallpaper-preview');
-      const match = /^([\d.]+)% ([\d.]+)%$/.exec(media?.style.objectPosition ?? '');
-      if (match) {
-        setStorage('spark_wallpaper_pos', `${match[1]},${match[2]}`);
-        notifyUpdated();
-      }
+      setStorage('spark_wallpaper_pos', `${Math.round(pos.x * 10) / 10},${Math.round(pos.y * 10) / 10}`);
+      notifyUpdated();
     };
     wrap.addEventListener('pointerup', finish);
     wrap.addEventListener('pointercancel', finish);
@@ -345,6 +390,9 @@
         }
       }
     }
+    const zoomInput = $('wallpaper-zoom'), zoomVal = $('wallpaper-zoom-val');
+    if (zoomInput) zoomInput.value = String(readZoom());
+    if (zoomVal) zoomVal.textContent = `${readZoom()}%`;
     applyPosition();
   }
 
@@ -369,6 +417,24 @@
         } else {
           setStatus('');
         }
+      });
+    }
+
+    const zoomInput = $('wallpaper-zoom');
+    if (zoomInput) {
+      const zoomVal = $('wallpaper-zoom-val');
+      zoomInput.addEventListener('input', event => {
+        const val = Number(event.target.value);
+        if (zoomVal) zoomVal.textContent = `${val}%`;
+        zoomLive = val;
+        // Zooming always happens around the centre; drag the preview afterwards to pan.
+        applyPosition({ x: 50, y: 50 }, val);
+      });
+      zoomInput.addEventListener('change', event => {
+        zoomLive = null;
+        setStorage('spark_wallpaper_pos', '50,50');
+        setStorage('spark_wallpaper_zoom', String(event.target.value));
+        notifyUpdated();
       });
     }
 
@@ -526,7 +592,8 @@
         event.key === 'spark_wallpaper_updated' ||
         event.key === 'spark_wallpaper_enabled' ||
         event.key === 'spark_wallpaper_dim' ||
-        event.key === 'spark_wallpaper_pos'
+        event.key === 'spark_wallpaper_pos' ||
+        event.key === 'spark_wallpaper_zoom'
       ) {
         if (event.key === 'spark_wallpaper_updated') invalidateRecord();
         applyWallpaper();

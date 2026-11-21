@@ -5,6 +5,7 @@
 - **HTTPS-only mode** (Settings → Privacy & Security → Network privacy): opens the secure version of every site. If it cannot be reached, a notice asks before continuing over HTTP, once and only for that address. Local addresses such as localhost are not changed. It is off by default.
 - **DNS over HTTPS** (same place): looks up site names through Cloudflare or Google so the network cannot read or change them, with no fall back to the ordinary DNS. It is off by default and applies after a restart. Video calls (WebRTC) and the browser's own update and icon requests are not covered.
 - **Background media can now be repositioned**: drag the preview in Settings → Background → Background media to choose which part of the image or video stays visible on the new-tab page.
+- The **background media can now be zoomed**: a new Zoom slider (25% to 300%, so it can also shrink the picture) in Settings → Background → Background media changes how much of the image or video is shown: 100% fills the screen, lower shows more of it (down to all of it, with the background around), higher enlarges it from the center. The preview now has the shape of your screen, so it shows the real framing.
 
 ## Improvements
 

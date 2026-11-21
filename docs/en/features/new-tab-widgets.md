@@ -47,6 +47,7 @@ You can set a custom background image or looping video from your device through 
 - **Glassmorphism**: When a wallpaper is active, widgets and search cards gain subtle translucency and backdrop blur.
 - **Cross-tab sync & Persistence**: The chosen media is stored locally in device storage (IndexedDB Blobs and local preferences) and updates across all open new tabs in real time without entering backups.
 - **Remove**: Deleting the wallpaper immediately cleans up object URLs and restores the default solid background.
+- **Zoom**: A slider sets how much of the image or video is shown, from 25% to 300%: 100% fills the screen, lower shows more of it (the background shows around it) and higher enlarges it. Changing the zoom always recenters the picture. Where the picture fits inside the screen it stays centered; where it is larger you can drag it to choose what shows. The preview has the shape of the screen. It is saved, synced across tabs and reset when you choose new media.
 - **Reposition**: Drag the preview in the settings to choose which part of the image or video stays visible when it is cropped to fit the screen. The position is saved, synced across tabs and reset when you choose new media.
 
 ## Clock

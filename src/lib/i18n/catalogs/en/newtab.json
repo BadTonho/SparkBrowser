@@ -101,6 +101,7 @@
   "newtab.widgets.showWallpaper": "Show background media",
   "newtab.widgets.chooseWallpaper": "Choose image or video…",
   "newtab.widgets.removeWallpaper": "Remove media",
+  "newtab.widgets.wallpaperZoom": "Zoom",
   "newtab.widgets.wallpaperDim": "Background dimming",
   "newtab.widgets.wallpaperLoading": "Processing media…",
   "newtab.widgets.wallpaperSaved": "Background updated.",

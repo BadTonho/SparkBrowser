@@ -5,6 +5,7 @@
 - **Modo somente HTTPS** (Configurações → Privacidade e segurança → Privacidade de rede): abre a versão segura de todos os sites. Se ela não puder ser acessada, um aviso pergunta antes de continuar por HTTP, uma vez e só para aquele endereço. Endereços locais, como localhost, não são alterados. Vem desligado.
 - **DNS sobre HTTPS** (no mesmo lugar): procura os nomes dos sites pela Cloudflare ou pelo Google para que a rede não possa lê-los nem alterá-los, sem voltar ao DNS comum. Vem desligado e é aplicado depois de reiniciar. Chamadas de vídeo (WebRTC) e as requisições de atualização e de ícones do próprio navegador não são cobertas.
 - **A mídia de fundo agora pode ser reposicionada**: arraste a pré-visualização em Configurações → Plano de fundo → Mídia de fundo para escolher qual parte da imagem ou do vídeo fica visível na página de nova guia.
+- A **mídia de fundo agora pode receber zoom**: um novo controle de Zoom (25% a 300%, então também dá para diminuir a imagem) em Configurações → Plano de fundo → Mídia de fundo muda o quanto da imagem ou do vídeo aparece: 100% preenche a tela, menos mostra mais dela (até aparecer inteira, com o fundo ao redor), mais amplia a partir do centro. A pré-visualização agora tem o formato da sua tela, então mostra o enquadramento real.
 
 ## Melhorias
 
