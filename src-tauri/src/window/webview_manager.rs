@@ -80,6 +80,20 @@ pub fn spawn_content_webview(app: &AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Brings a hibernated tab back to life in the background: its page loads in a hidden view and the
+/// tab stays where it is, so a widget can control it without taking the user away from the new tab.
+pub(crate) fn wake_tab_webview(app: &AppHandle, tab_id: &str) -> Result<(), String> {
+    let state = app.state::<BrowserState>();
+    let tab = state
+        .snapshot_tabs()
+        .into_iter()
+        .find(|tab| tab.id == tab_id)
+        .ok_or("Tab not found")?;
+    let bounds = state.surfaces().viewport(&tab.window_id)?;
+    ensure_tab_webview(app, tab_id, &tab.url, bounds)?;
+    super::viewport::sync_content_geometry(app, &state)
+}
+
 pub(super) fn ensure_tab_webview(
     app: &AppHandle,
     tab_id: &str,

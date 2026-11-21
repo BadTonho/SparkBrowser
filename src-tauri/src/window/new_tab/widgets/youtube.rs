@@ -244,6 +244,26 @@ fn script(operation: &str, source: &str) -> Option<&'static str> {
         _ => return None,
     })
 }
+/// Waits (bounded) until the woken tab finishes loading its page.
+async fn wait_for_load(app: &AppHandle, tab_id: &str) {
+    tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+    for _ in 0..40 {
+        let loading = app
+            .state::<BrowserState>()
+            .snapshot_tabs()
+            .iter()
+            .find(|tab| tab.id == tab_id)
+            .is_some_and(|tab| tab.navigation.loading);
+        if !loading {
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    }
+}
+/// Runs `action` as soon as the page has a video with its metadata loaded, for at most 15 seconds.
+fn when_video_ready(action: &str) -> String {
+    format!("(()=>{{let n=0;const t=setInterval(()=>{{const v=document.querySelector('video');if(v&&v.readyState>=1){{clearInterval(t);{action}}}else if(++n>60)clearInterval(t);}},250);}})();")
+}
 pub(super) async fn control(
     app: &AppHandle,
     operation: &str,
@@ -265,16 +285,24 @@ pub(super) async fn control(
             .map(|_| ())?;
         return Ok(());
     }
+    let label = crate::state::tab_model::webview_label_for_tab(&video.tab_id);
+    // A hibernated tab has no page: wake it in the background and act once the video is ready.
+    let woken = app.get_webview(&label).is_none();
+    if woken {
+        crate::state::session_ops::tabs::wake_tab(app, &video.tab_id).await?;
+        wait_for_load(app, &video.tab_id).await;
+    }
     let script = match (operation, seconds) {
         ("youtube_seek", Some(seconds)) if seconds.is_finite() && (0.0..=86_400.0).contains(&seconds) => {
             format!("(()=>{{const v=document.querySelector('video');if(v)v.currentTime={seconds:.2};}})();")
         }
         ("youtube_seek", _) => return Err("invalid_action".into()),
+        // The reloaded page is paused, so "toggle" means play (and must not pause an autoplay).
+        ("youtube_toggle", _) if woken => "(()=>{const v=document.querySelector('video');if(v)v.play();})();".to_string(),
         _ => script(operation, video.source).ok_or("invalid_action")?.to_string(),
     };
-    app.get_webview(&crate::state::tab_model::webview_label_for_tab(
-        &video.tab_id,
-    ))
+    let script = if woken { when_video_ready(&script) } else { script };
+    app.get_webview(&label)
     .ok_or("youtube_not_found")?
     .eval(&script)
     .map_err(|_| "youtube_not_found")?;
@@ -339,6 +367,12 @@ mod tests {
         assert_eq!(parse(&url, "(12) A (b) - YouTube").unwrap().2, "A (b)");
         assert_eq!(parse(&url, "(x) Title").unwrap().2, "(x) Title");
         assert_eq!(parse(&url, &"a".repeat(500)).unwrap().2.len(), 200);
+    }
+    #[test]
+    fn a_woken_tab_waits_for_its_video_before_acting() {
+        let wrapped = when_video_ready("document.title='x';");
+        assert!(wrapped.contains("readyState>=1") && wrapped.contains("document.title='x';"));
+        assert!(wrapped.contains("clearInterval"));
     }
     #[test]
     fn controls_exist_for_every_source_and_unknown_operations_are_rejected() {

@@ -520,6 +520,33 @@ pub async fn hibernate_tab(
     Ok(snapshot)
 }
 
+/// Wakes a hibernated tab without selecting it: the page reloads in a hidden view.
+pub(crate) async fn wake_tab(app: &AppHandle, tab_id: &str) -> Result<(), String> {
+    let state = app.state::<BrowserState>();
+    let _operation = state.session().operation().await;
+    let before = TabCheckpoint::capture(&state)?;
+    let changed = (|| -> Result<bool, String> {
+        let mut tabs = state
+            .session()
+            .edit_tabs()
+            .lock()
+            .map_err(|e| e.to_string())?;
+        let tab = tabs
+            .iter_mut()
+            .find(|t| t.id == tab_id)
+            .ok_or("Tab not found")?;
+        let was = tab.is_hibernated;
+        tab.is_hibernated = false;
+        Ok(was)
+    })();
+    finish_change(app, &state, before, changed)?;
+    crate::window::webview_manager::wake_tab_webview(app, tab_id)?;
+    if let Ok(window_id) = state.window_of_tab(tab_id) {
+        crate::state::publish::publish_tabs(app, &state, &window_id);
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn hibernate_inactive_tabs(
     app: AppHandle,

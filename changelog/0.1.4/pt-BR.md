@@ -20,3 +20,4 @@
 - Corrigido o diálogo "Fechar o navegador?" aparecendo sem nada para salvar: o backup feito ao fechar agora só é montado quando algo mudou desde o último backup, então fechar sem novidades é instantâneo.
 - Corrigidos os botões laterais do mouse (4 e 5) que voltavam ou avançavam mais de uma página: o navegador também navegava sozinho ao soltar o botão. Agora eles movem exatamente uma página.
 - Corrigido o cartão do YouTube na nova guia: não dava para clicar nem arrastar a barra de progresso. Agora ela pula para o momento em que você clica ou arrasta, na guia que está tocando.
+- Corrigido o cartão do YouTube na nova guia que não fazia nada quando a guia controlada estava hibernada. Agora, ao apertar play (ou qualquer controle), essa guia acorda em segundo plano, recarrega a página e inicia o vídeo, sem sair da nova guia.
