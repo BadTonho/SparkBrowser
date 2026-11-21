@@ -15,7 +15,20 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use zeroize::Zeroizing;
 
-pub(super) fn allowed(app: &AppHandle) -> Result<(), String> {
+/// Reading and unlocking: a private window may do this only when "Allow autofill in private windows"
+/// is on, because then it holds a read-only copy of the vault. Changing the vault is never allowed there.
+pub(crate) fn allowed_read(app: &AppHandle) -> Result<(), String> {
+    let in_private = app
+        .try_state::<crate::autofill::AutofillService>()
+        .is_some_and(|service| service.settings().in_private);
+    if in_private {
+        Ok(())
+    } else {
+        allowed(app)
+    }
+}
+
+pub(crate) fn allowed(app: &AppHandle) -> Result<(), String> {
     let private = app
         .try_state::<crate::private_session::PrivateRole>()
         .is_some_and(|role| role.is_private());
@@ -39,7 +52,7 @@ fn timestamp() -> i64 {
 
 /// Runs one Windows Hello step off the interface and database threads: it waits for the person to
 /// answer the Windows prompt. Failures are logged here; only a stable code goes back to the interface.
-pub(super) async fn hello_step(
+pub(crate) async fn hello_step(
     what: &'static str,
     work: fn() -> Result<Zeroizing<Vec<u8>>, HelloError>,
 ) -> Result<Zeroizing<Vec<u8>>, String> {
@@ -119,7 +132,7 @@ pub async fn vault_status(
     app: AppHandle,
     service: State<'_, VaultService>,
 ) -> Result<Status, String> {
-    allowed(&app)?;
+    allowed_read(&app)?;
     let service = service.inner().clone();
     let available = tauri::async_runtime::spawn_blocking(hello::is_available)
         .await
@@ -169,7 +182,7 @@ pub async fn vault_unlock(
     service: State<'_, VaultService>,
     password: String,
 ) -> Result<(), String> {
-    allowed(&app)?;
+    allowed_read(&app)?;
     let service = service.inner().clone();
     let password = Zeroizing::new(password);
     executor::run(app, move |conn| {
@@ -184,7 +197,7 @@ pub async fn vault_unlock_hello(
     app: AppHandle,
     service: State<'_, VaultService>,
 ) -> Result<(), String> {
-    allowed(&app)?;
+    allowed_read(&app)?;
     let service = service.inner().clone();
     let secret = hello_step("unlocking the vault with Windows Hello", hello::secret).await?;
     executor::run(app, move |conn| {
@@ -260,7 +273,7 @@ pub async fn vault_unlock_recovery(
     service: State<'_, VaultService>,
     recovery_key: String,
 ) -> Result<(), String> {
-    allowed(&app)?;
+    allowed_read(&app)?;
     let service = service.inner().clone();
     let key = Zeroizing::new(recovery_key);
     executor::run(app, move |conn| {
@@ -271,7 +284,7 @@ pub async fn vault_unlock_recovery(
 
 #[tauri::command]
 pub fn vault_lock(app: AppHandle, service: State<'_, VaultService>) -> Result<(), String> {
-    allowed(&app)?;
+    allowed_read(&app)?;
     service.lock();
     Ok(())
 }
@@ -281,7 +294,7 @@ pub async fn vault_list(
     app: AppHandle,
     service: State<'_, VaultService>,
 ) -> Result<Listing, String> {
-    allowed(&app)?;
+    allowed_read(&app)?;
     let service = service.inner().clone();
     executor::run(app, move |conn| ops::list(conn, &service, Instant::now())).await
 }
@@ -295,7 +308,7 @@ pub async fn vault_reveal(
     id: String,
     current_password: Option<String>,
 ) -> Result<Revealed, String> {
-    allowed(&app)?;
+    allowed_read(&app)?;
     let service = service.inner().clone();
     // An open vault first, so a locked one never shows a Windows prompt it cannot use.
     service.key(Instant::now())?;

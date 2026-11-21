@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
-import { deleteAutofillRecord, listAutofillRecords, revealAutofillRecord, saveAutofillRecord } from "../services/bridge/autofill";
-import type { AutofillKind, AutofillRecord, AutofillRevealed, AutofillSummary } from "../types/autofill";
+import { deleteAutofillRecord, getAutofillSettings, listAutofillRecords, revealAutofillRecord, saveAutofillRecord, setAutofillSettings } from "../services/bridge/autofill";
+import type { AutofillKind, AutofillRecord, AutofillRevealed, AutofillSettings, AutofillSummary } from "../types/autofill";
 import { runVaultCall, syncVaultLock } from "./vaultStore";
 
 /** The saved cards and contact details, as list rows (a card shows only its last four digits). */
@@ -47,4 +47,17 @@ export function forgetAutofill(): void {
   autofillCards.set([]);
   autofillContacts.set([]);
   autofillUnreadable.set(0);
+}
+
+/** The two switches (null until the backend answered). */
+export const autofillSettings = writable<AutofillSettings | null>(null);
+
+export async function loadAutofillSettings(): Promise<void> {
+  const settings = await runVaultCall(getAutofillSettings, true);
+  if (settings) autofillSettings.set(settings);
+}
+
+export async function changeAutofillSettings(next: AutofillSettings): Promise<void> {
+  const saved = await runVaultCall(() => setAutofillSettings(next.enabled, next.in_private));
+  if (saved) autofillSettings.set(saved);
 }

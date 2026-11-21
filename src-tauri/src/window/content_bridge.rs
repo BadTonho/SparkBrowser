@@ -24,6 +24,10 @@ pub(super) fn handle(
         super::new_tab::handle(app, tab_id, label, token, nav_url);
         return false;
     }
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("autofill") {
+        crate::autofill::handle(app, label, token, nav_url);
+        return false;
+    }
     if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("page-activity") {
         if nav_url.path() != "/state" {
             return false;
@@ -118,8 +122,10 @@ fn message_url(json: &str, source: &str, current: &str, settings_document: bool)
     }
     let url = Url::parse(value.get("sparkContent")?.as_str()?).ok()?;
     (url.scheme() == "spark-internal"
-        && (matches!(url.host_str(), Some("new-tab" | "page-activity"))
-            || (settings_document && url.host_str() == Some("settings-tab")))
+        && (matches!(
+            url.host_str(),
+            Some("new-tab" | "page-activity" | "autofill")
+        ) || (settings_document && url.host_str() == Some("settings-tab")))
         && (url.host_str() == Some("settings-tab") || json.len() <= 262_144))
         .then_some(url)
 }

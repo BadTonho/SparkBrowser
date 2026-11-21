@@ -495,6 +495,12 @@
           "markdownDescription": "Enables the get_active_workspace command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_autofill_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-autofill-settings",
+          "markdownDescription": "Enables the get_autofill_settings command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_backup_pending_preferences command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-backup-pending-preferences",
@@ -1057,6 +1063,12 @@
           "type": "string",
           "const": "allow-set-auto-update",
           "markdownDescription": "Enables the set_auto_update command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_autofill_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-autofill-settings",
+          "markdownDescription": "Enables the set_autofill_settings command without any pre-configured scope."
         },
         {
           "description": "Enables the set_backup_encryption command without any pre-configured scope.",
@@ -1905,6 +1917,12 @@
           "markdownDescription": "Denies the get_active_workspace command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_autofill_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-autofill-settings",
+          "markdownDescription": "Denies the get_autofill_settings command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_backup_pending_preferences command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-backup-pending-preferences",
@@ -2467,6 +2485,12 @@
           "type": "string",
           "const": "deny-set-auto-update",
           "markdownDescription": "Denies the set_auto_update command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_autofill_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-autofill-settings",
+          "markdownDescription": "Denies the set_autofill_settings command without any pre-configured scope."
         },
         {
           "description": "Denies the set_backup_encryption command without any pre-configured scope.",

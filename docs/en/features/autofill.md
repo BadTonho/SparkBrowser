@@ -8,7 +8,7 @@ Everything here lives in the same encrypted vault as the passwords. You create a
 
 ## Payments
 
-Save cards to fill in at checkout. A card has a number, the name on it, month and year of expiry and an optional nickname.
+Save cards to fill in at checkout (see [Filling in pages](#filling-in-pages)). A card has a number, the name on it, month and year of expiry and an optional nickname.
 
 - **The security code (CVV/CVC) is never saved.** You type it on the site each time.
 - The list shows only the nickname (or the brand) and the **last four digits**, never the whole number.
@@ -20,14 +20,39 @@ Save cards to fill in at checkout. A card has a number, the name on it, month an
 
 Save names, emails, phones and addresses. Every field is optional but at least one must be filled, and an email must look like one. Contact details open with the vault (no extra confirmation), because they are far less sensitive than a card or a password. Up to 200.
 
+## Filling in pages
+
+Click a login, card or contact field and Spark lists what fits under it. Pick an item with the mouse (or ArrowDown and Enter) and the form fills in.
+
+- **Logins** are offered on a page of the site they were saved for (the saved address or one of its subdomains), never on look-alike addresses, and never on the plain `http://` version of a site saved with `https://`. Click the username or password field.
+- **Cards** are offered under card number, name and expiry fields. The security code is never filled: type it yourself. Month and year fill selects and `MM/YY` or `MM/YYYY` fields alike.
+- **Contact info** is offered under name, email, phone and address fields.
+- The list only shows titles (an email, `Visa •••• 4242`), never a password or a whole card number. It lives in a closed part of the page that the site cannot read, and only reacts to real clicks and keys. What fills the form comes from Spark after you pick.
+- With **Use Windows Hello when showing or copying passwords** on (see [password manager](./password-manager.md)), filling a login or a card asks for Windows Hello each time. Contact info never asks.
+- **Locked vault:** the list says so. With Windows Hello it offers **Unlock with Windows Hello**; otherwise unlock it in Settings.
+- Search boxes, other frames inside a page (such as payment iframes) and Spark's own pages are not filled. Only the page you are on is: if you move to another site before picking, nothing is filled.
+- The list text follows the language of your system, not the language chosen in Spark.
+
+### The switches
+
+Under the list in Settings:
+
+- **Offer to fill in forms** (on by default) turns all of this on or off.
+- **Allow autofill in private windows** (off by default). When on, a **new** private window carries a **read-only copy** of the encrypted vault: you unlock it there (Windows Hello from the list, or the master password in its Settings) and can fill, but never add, edit or delete. The copy disappears with the window. Windows already open do not change.
+
 ## Not included
 
 - **Email aliases** (addresses that forward to your email) need an online service Spark does not run, so they are not offered.
-- Autofill in pages and the question "save this card/address?" arrive in later versions of this feature; see the [changelog](../../../changelog/README.md).
+- Saving a login, card or address when you submit a form ("Save this card?") is not there yet.
 
-## Private windows
+## Tests
 
-The vault is not available in [private windows](./private-window.md).
+```
+node tools/testing/native-smoke.mjs --case autofill
+node --test tests/autofill-roles.test.mjs
+```
+
+`autofill` fills a login, a card and a contact in a real page and checks the cases above (other site, search box, locked vault, switch off). `autofill-roles` covers how fields are recognised.
 
 ## Storage
 

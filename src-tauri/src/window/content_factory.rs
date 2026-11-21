@@ -120,6 +120,10 @@ pub(super) fn create_tab_webview(
             "__ACTIVITY_TOKEN__",
             &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
         ))
+        .initialization_script(crate::autofill::initializer(
+            &keyboard_bridge_token,
+            app.config().identifier == "org.spark.browser.native-tests",
+        ))
         .initialization_script(build_content_shield_script_with_exceptions(
             shield_enabled,
             &keyboard_bridge_token,

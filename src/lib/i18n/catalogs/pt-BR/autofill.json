@@ -29,5 +29,9 @@
   "autofill.contact_region": "Estado ou região",
   "autofill.contact_postal_code": "CEP",
   "autofill.contact_country": "País",
-  "autofill.error_invalid": "Confira os campos: o número do cartão precisa ser válido e mês e ano preenchidos, ou preencha ao menos um campo de contato com um e-mail válido."
+  "autofill.error_invalid": "Confira os campos: o número do cartão precisa ser válido e mês e ano preenchidos, ou preencha ao menos um campo de contato com um e-mail válido.",
+  "autofill.enabled_title": "Oferecer preenchimento de formulários",
+  "autofill.enabled_description": "Mostra seus logins, cartões e dados de contato salvos abaixo do campo de um formulário quando você clica nele.",
+  "autofill.private_title": "Permitir preenchimento automático em janelas privadas",
+  "autofill.private_description": "As janelas privadas recebem uma cópia somente leitura do cofre criptografado, e você o desbloqueia lá também. Janelas já abertas não mudam."
 }

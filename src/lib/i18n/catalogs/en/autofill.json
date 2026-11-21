@@ -29,5 +29,9 @@
   "autofill.contact_region": "State or region",
   "autofill.contact_postal_code": "Postal code",
   "autofill.contact_country": "Country",
-  "autofill.error_invalid": "Check the fields: a card needs a valid number, month and year; contact info needs at least one field and a valid email."
+  "autofill.error_invalid": "Check the fields: a card needs a valid number, month and year; contact info needs at least one field and a valid email.",
+  "autofill.enabled_title": "Offer to fill in forms",
+  "autofill.enabled_description": "Show your saved logins, cards and contact info under a form field when you click it.",
+  "autofill.private_title": "Allow autofill in private windows",
+  "autofill.private_description": "Private windows get a read-only copy of the encrypted vault, and you unlock it there too. Windows already open do not change."
 }

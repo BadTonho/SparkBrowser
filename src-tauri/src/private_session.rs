@@ -35,6 +35,8 @@ const COPIED_TABLES: &[&str] = &[
     "new_tab_settings",
     "app_preferences",
 ];
+/// The encrypted vault, copied into private windows only when the person allowed autofill there.
+const VAULT_TABLES: &[&str] = &["vault_meta", "vault_entries", "vault_records"];
 /// Backup sync secrets stay in the normal profile and are never copied.
 const EXCLUDED_PREFERENCE_KEYS: &[&str] = &["backup_sync_secret_v1", "backup_sync_credential_v2"];
 const EXCLUDED_PREFERENCE_PREFIX: &str = "backup_sync";
@@ -188,9 +190,16 @@ pub fn copy_profile(conn: &Connection, source_db: &Path) -> Result<(), String> {
     let source = source_db.to_str().ok_or("private.invalid_source")?;
     conn.execute("ATTACH DATABASE ?1 AS source", [source])
         .map_err(|e| format!("private.attach_failed: {e}"))?;
-    let copied = COPIED_TABLES
+    let mut copied = COPIED_TABLES
         .iter()
         .try_for_each(|table| copy_table(conn, table));
+    // Only with "Allow autofill in private windows": the vault (still encrypted) comes along so the
+    // private window can offer logins, cards and contact details. It cannot change the vault.
+    if copied.is_ok() && private_autofill_on(conn) {
+        copied = VAULT_TABLES
+            .iter()
+            .try_for_each(|table| copy_table(conn, table));
+    }
     let detached = conn
         .execute_batch("DETACH DATABASE source")
         .map_err(|e| format!("private.detach_failed: {e}"));
@@ -200,6 +209,15 @@ pub fn copy_profile(conn: &Connection, source_db: &Path) -> Result<(), String> {
     settings.spotify_client_id.clear();
     settings.audio_background = Default::default();
     crate::database::new_tab_repo::save(conn, &settings)
+}
+
+fn private_autofill_on(conn: &Connection) -> bool {
+    conn.query_row(
+        "SELECT value FROM main.app_preferences WHERE key=?1",
+        [crate::autofill::PRIVATE_KEY],
+        |row| row.get::<_, String>(0),
+    )
+    .is_ok_and(|value| value == "true")
 }
 
 fn copy_table(conn: &Connection, table: &str) -> Result<(), String> {

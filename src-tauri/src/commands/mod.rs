@@ -1,4 +1,5 @@
 pub mod account_containers;
+pub mod autofill;
 pub mod downloads;
 pub mod error_report;
 pub mod experiments;

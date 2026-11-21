@@ -122,6 +122,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "vault_save_entry",
     "vault_delete_entry",
     "vault_records_list",
+    "get_autofill_settings",
+    "set_autofill_settings",
     "vault_record_reveal",
     "vault_record_save",
     "vault_record_delete",

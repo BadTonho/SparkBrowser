@@ -22,7 +22,7 @@ pub async fn vault_records_list(
     service: State<'_, VaultService>,
     kind: String,
 ) -> Result<RecordListing, String> {
-    super::vault::allowed(&app)?;
+    super::vault::allowed_read(&app)?;
     let service = service.inner().clone();
     executor::run(app, move |conn| {
         records::list(conn, &service, &kind, Instant::now())
@@ -39,7 +39,7 @@ pub async fn vault_record_reveal(
     id: String,
     current_password: Option<String>,
 ) -> Result<RecordRevealed, String> {
-    super::vault::allowed(&app)?;
+    super::vault::allowed_read(&app)?;
     let service = service.inner().clone();
     service.key(Instant::now())?;
     let kind = {

@@ -2,6 +2,7 @@
 
 ## Novas funcionalidades
 
+- **Preenchimento automático nas páginas:** clique em um campo de login, cartão ou contato e escolha um item salvo para preencher o formulário. Logins só aparecem no próprio site, cartões nunca preenchem o código de segurança e, com o Windows Hello configurado para ser pedido sempre, ele é pedido antes de preencher um login ou cartão. Interruptores para desligar e para permitir em janelas privadas (uma cópia somente leitura do cofre).
 - Seção **Preenchimento automático e senhas** nas Configurações, com **Pagamentos** (cartões salvos; o código de segurança nunca é guardado e abrir um cartão pede a senha mestra ou o Windows Hello) e **Dados de contato** (nomes, e-mails, telefones e endereços), ambos guardados no cofre criptografado junto das senhas.
 - Arraste uma aba para fora da janela do navegador e solte para abri-la em uma nova janela, posicionada onde você soltou.
 

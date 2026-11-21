@@ -122,7 +122,13 @@ test('every vault command is registered end to end', () => {
   // Every command refuses private windows first.
   const bodies = source.split('#[tauri::command]').slice(1);
   assert.equal(bodies.length, commands.length);
-  for (const body of bodies) assert.match(body, /allowed\(&app\)\?;/);
+  // Only reading and unlocking may work in a private window (and only with "autofill in private windows" on);
+  // everything that changes the vault refuses it.
+  const readOnly = new Set(['vault_status', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_lock', 'vault_list', 'vault_reveal']);
+  for (const body of bodies) {
+    const name = /fn (vault_\w+)\(/.exec(body)[1];
+    assert.match(body, readOnly.has(name) ? /allowed_read\(&app\)\?;/ : /allowed\(&app\)\?;/, name);
+  }
   assert.match(lib, /manage\(vault::service::VaultService::default\(\)\)/);
 });
 
@@ -133,6 +139,8 @@ test('the vault never travels in backups and is not copied into private windows'
   const privateSession = read('src-tauri/src/private_session.rs');
   const copied = privateSession.slice(privateSession.indexOf('const COPIED_TABLES'), privateSession.indexOf('];', privateSession.indexOf('const COPIED_TABLES')));
   assert.ok(!/vault/.test(copied));
+  // The vault is copied only when the person turned on autofill in private windows.
+  assert.match(privateSession, /private_autofill_on\(conn\)/);
 });
 
 test('nothing in the vault code logs or prints a secret', () => {

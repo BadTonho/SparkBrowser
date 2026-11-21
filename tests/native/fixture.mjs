@@ -162,6 +162,21 @@ export async function createFixture() {
       response.end('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="120"><rect width="120" height="120" fill="#ffd400"/><rect x="120" width="120" height="120" fill="#e40046"/><circle cx="120" cy="60" r="34" fill="#00a6a6"/></svg>');
       return;
     }
+    if (url.pathname === '/autofill-probe') {
+      const months = Array.from({ length: 12 }, (_, i) => `<option value="${String(i + 1).padStart(2, '0')}">${i + 1}</option>`).join('');
+      const years = [2029, 2030, 2031, 2032].map(y => `<option value="${y}">${y}</option>`).join('');
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.end(`<!doctype html><html><head><meta charset="utf-8"><title>Autofill probe</title></head><body>
+        <form id="login" onsubmit="return false"><input id="user" name="username" type="text"><input id="pass" name="password" type="password"></form>
+        <form id="pay" onsubmit="return false">
+          <input id="ccname" autocomplete="cc-name"><input id="ccnum" autocomplete="cc-number">
+          <select id="ccmonth" autocomplete="cc-exp-month">${months}</select>
+          <select id="ccyear" autocomplete="cc-exp-year">${years}</select>
+        </form>
+        <form id="contact" onsubmit="return false"><input id="cname" autocomplete="name"><input id="cmail" autocomplete="email"><input id="cphone" autocomplete="tel"><input id="ccity" autocomplete="address-level2"></form>
+        <input id="search" name="q"></body></html>`);
+      return;
+    }
     if (url.pathname === '/dark-mode-probe') {
       const kind = ['supported', 'light-only', 'already-dark'].includes(url.searchParams.get('kind'))
         ? url.searchParams.get('kind') : 'supported';

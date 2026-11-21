@@ -2,6 +2,7 @@ use commands::account_containers::{
     create_account_container, create_container_tab, delete_account_container,
     get_account_containers, rename_account_container, set_tab_account_container,
 };
+use commands::autofill::{get_autofill_settings, set_autofill_settings};
 use commands::backup::{
     cancel_backup_unlock, choose_backup_file, choose_backup_sync_folder, commit_backup_import,
     create_local_backup, delete_local_backup, discard_backup_import, export_backup,
@@ -41,6 +42,7 @@ use commands::vault_records::{
 };
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
+pub mod autofill;
 pub mod backup;
 pub mod commands;
 pub mod database;
@@ -229,6 +231,7 @@ pub fn run() {
         .manage(profile_lock)
         .manage(graphics_service)
         .manage(BrowserState::default())
+        .manage(autofill::AutofillService::default())
         .manage(window::fullscreen::FullscreenState::default())
         .manage(webview_runtime::RuntimeService::default())
         .manage(window::new_tab::NewTabService::default())
@@ -386,6 +389,8 @@ pub fn run() {
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
+            app.state::<autofill::AutofillService>()
+                .apply(autofill::load_settings(&conn).map_err(std::io::Error::other)?);
             // Secrets saved under the pre-rename names follow the profile; a locked keyring just retries next start.
             crate::error_log::ignored(backup::migrate_legacy_secrets(
                 &conn,
@@ -718,6 +723,8 @@ pub fn run() {
             vault_save_entry,
             vault_delete_entry,
             vault_records_list,
+            get_autofill_settings,
+            set_autofill_settings,
             vault_record_reveal,
             vault_record_save,
             vault_record_delete,

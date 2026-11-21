@@ -40,6 +40,14 @@ export interface AutofillListing {
   unreadable: number;
 }
 
+/** The two switches of Settings → Autofill & passwords. */
+export interface AutofillSettings {
+  /** Offer to fill in pages. */
+  enabled: boolean;
+  /** Also offer it in private windows, which then carry a read-only copy of the vault. */
+  in_private: boolean;
+}
+
 /** The pages of Settings → Autofill and passwords. */
 export type AutofillPage = "home" | "passwords" | "payments" | "contacts";
 

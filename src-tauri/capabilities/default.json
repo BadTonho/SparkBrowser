@@ -82,6 +82,8 @@
     "allow-vault-save-entry",
     "allow-vault-delete-entry",
     "allow-vault-records-list",
+    "allow-get-autofill-settings",
+    "allow-set-autofill-settings",
     "allow-vault-record-reveal",
     "allow-vault-record-save",
     "allow-vault-record-delete",
