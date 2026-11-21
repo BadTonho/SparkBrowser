@@ -1,6 +1,6 @@
 # Contêineres de contas e cofre de senhas: viabilidade e revisão de segurança
 
-Estado: **implementação de contêineres em validação; candidata do cofre somente com fixtures**. O cofre não está pronto para credenciais reais ou distribuição. Este documento é uma entrada para auditoria, não uma auditoria nem aprovação. Nenhum auditor independente foi contratado neste trabalho.
+Estado: **implementação de contêineres em validação; primeira versão do cofre lançada sem auditoria independente**. O cofre de senhas descrito em [Gerenciador de senhas](../features/password-manager.md) aceita credenciais reais, por decisão explícita do responsável, com um aviso permanente na interface de que não foi auditado de forma independente. O gate de auditoria abaixo **continua aberto**: ele não foi cumprido, e este documento é uma entrada para auditoria, não uma auditoria nem aprovação. Nenhum auditor independente foi contratado neste trabalho.
 
 ## Gate de viabilidade dos contêineres
 
@@ -31,3 +31,17 @@ A revisão de ameaças deve cobrir páginas e quadros maliciosos, documentos ant
 `tools/testing/vault-model.mjs` é uma candidata exclusiva de testes exercitada por `tests/vault-model.test.mjs`. Ela cifra registros sintéticos fixos com AES-256-GCM e deriva chaves de proteção de teste com scrypt. Usa armazenamento em memória e um adaptador simulado do SO, não aceita credenciais reais e não possui interface de produção ou ponte com páginas. Os testes cobrem reabertura, recuperação, corrupção, seleção, mudanças simuladas de origem e falhas. Isso não comprova segurança de produção, integração real com o SO, durabilidade em disco ou aplicação de origens pelo navegador. Algoritmos e parâmetros são exemplos para revisão, não escolhas aprovadas para produção.
 
 Antes de aceitar credenciais reais: implementar uma versão candidata isolada; testar integrações criptográficas e de plataforma reais com dados sintéticos; obter auditoria de segurança independente cobrindo modelo de ameaças e código; corrigir achados e registrar a revisão das correções; então decidir separadamente sobre a ativação. O modelo e estas notas não devem ser apresentados como auditoria concluída.
+
+## Primeira versão do cofre (Configurações → Senhas)
+
+Decisão: o responsável pelo projeto escolheu implementar o cofre e lançá-lo com um aviso permanente ("Ainda sem auditoria independente") em vez de esperar pela auditoria. Nada nesta seção é resultado de auditoria.
+
+O que foi construído, em relação aos limites acima:
+
+- **Local, com senha mestra obrigatória.** Uma chave de dados aleatória de 256 bits cifra cada entrada com AES-256-GCM (nonce aleatório a cada gravação, com o id da entrada e a versão do formato como dados associados). A chave é embrulhada duas vezes com chaves do Argon2id (64 MiB, 3 passagens, limitadas na leitura): uma da senha mestra e outra de uma chave de recuperação de 160 bits mostrada uma vez na criação. Trocar a senha mestra só reembrulha a chave.
+- **Não feito nesta versão:** desbloqueio opcional assistido pelo sistema (o armazenamento de credenciais do Windows e o `secret-tool` não foram usados, conforme a revisão acima), rotação da chave de recuperação, exportação e a auditoria independente do custo do KDF, do tratamento da memória, de canais laterais e da substituição segura contra falhas.
+- **Sem integração com páginas.** Não há preenchimento automático, pedido de salvar nem API voltada às páginas; portanto as verificações de origem, aba ativa e geração da WebView listadas acima ainda não se aplicam e **precisam ser projetadas e auditadas antes de qualquer integração com páginas**.
+- **Bloqueio.** Bloqueio manual, por inatividade (1 a 60 minutos, padrão 5) e ao sair; a chave existe só na memória e é apagada com `zeroize` ao ser descartada. O evento de bloqueio do sistema não é tratado.
+- **Força bruta.** Após 3 tentativas erradas, cada nova tentativa espera (dobrando, no máximo 60 s). Isso só atrasa a interface; não protege contra ataques offline a uma cópia do banco, em que o custo do Argon2id é a defesa.
+- **Isolamento.** Só a interface do shell chama os comandos do cofre; janelas privadas os recusam; as tabelas ficam fora de backups, sincronização e perfis privados; as falhas são registradas sem material secreto.
+- **Riscos residuais conhecidos.** Os segredos são strings comuns enquanto passam pela interface e pela área de transferência; a limpeza da memória é feita no melhor esforço; malware rodando como o usuário com o cofre desbloqueado consegue lê-lo; a área de transferência é limpa após 30 segundos, mas outros programas podem lê-la antes; o arquivo cifrado pode ser copiado e atacado offline.

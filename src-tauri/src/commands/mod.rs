@@ -5,6 +5,7 @@ pub mod experiments;
 pub mod feeds;
 pub mod navigation;
 pub mod notes;
+pub mod vault;
 pub mod persistence;
 pub mod privacy;
 pub mod privacy_settings;

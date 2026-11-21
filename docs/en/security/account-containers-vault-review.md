@@ -1,6 +1,6 @@
 # Account containers and password vault: feasibility and security review
 
-Status: **account-container implementation under validation; fixture-only vault candidate**. The vault is not ready for real credentials or deployment. This document is an audit input, not an audit or an approval. No independent reviewer has been engaged through this work.
+Status: **account-container implementation under validation; first vault release shipped without an independent audit**. The password vault described in [Password manager](../features/password-manager.md) accepts real credentials, by the owner's explicit decision, behind a permanent in-app notice that it has not been independently audited. The audit gate below is **still open**: it was not performed, and this document is an audit input, not an audit or an approval. No independent reviewer has been engaged through this work.
 
 ## Container feasibility gate
 
@@ -31,3 +31,17 @@ Threat review must cover malicious pages and frames, stale documents, compromise
 `tools/testing/vault-model.mjs` is a test-only candidate exercised by `tests/vault-model.test.mjs`. It encrypts fixed synthetic records with AES-256-GCM and derives fixture wrapping keys with scrypt. It uses in-memory storage and a simulated OS adapter, accepts no real credential input, and has no production UI or page bridge. Tests cover reopening, recovery, corruption, selection, simulated origin changes and failure paths. These are not evidence of production security, actual OS integration, disk durability or origin enforcement in the browser. Algorithms and parameters are examples for review, not approved production choices.
 
 Before real credentials are accepted: implement an isolated candidate; test real cryptographic and platform integrations with synthetic data; obtain an independent security audit covering the threat model and code; address findings and obtain a recorded review of fixes; then separately decide activation. The model and these notes must not be presented as a completed audit.
+
+## First vault release (Settings → Passwords)
+
+Decision: the project owner chose to implement the vault and ship it with a permanent notice ("Not independently audited yet") instead of waiting for the audit. Nothing in this section is an audit result.
+
+What was built, against the boundaries above:
+
+- **Local, master password required.** A random 256-bit data key encrypts every entry with AES-256-GCM (random nonce per write, entry id and format version bound as associated data). The key is wrapped twice with keys from Argon2id (64 MiB, 3 passes, bounded on read): once from the master password and once from a 160-bit recovery key shown once at creation. Changing the master password rewraps the key only.
+- **Not done in this release:** optional OS-assisted unlock (the Windows credential store and `secret-tool` were not used, matching the review above), recovery-key rotation, export, and the independent audit of KDF cost, memory handling, side channels and crash-safe replacement.
+- **No page integration.** There is no autofill, no save prompt and no page-facing API, so the origin-binding, active-tab and WebView-generation checks listed above do not apply yet and **must be designed and audited before any page integration**.
+- **Lock behavior.** Manual lock, idle lock (1 to 60 minutes, default 5) and lock on exit; the key exists only in memory and is wiped with `zeroize` when dropped. The OS-lock event is not handled.
+- **Brute force.** After 3 wrong attempts each further attempt waits (doubling, capped at 60 s). This slows the interface only; it does not protect against offline attacks on a copied database, where the Argon2id cost is the defense.
+- **Isolation.** Only the shell interface can call the vault commands; private windows refuse them; the tables are excluded from backups, sync and private profiles; failures are logged without secret material.
+- **Known residual risks.** Secrets are plain strings while they cross the interface and the clipboard; zeroization is best effort; malware running as the user while the vault is unlocked can read it; the clipboard is cleared after 30 seconds but other programs may read it earlier; the encrypted file can be copied and attacked offline.

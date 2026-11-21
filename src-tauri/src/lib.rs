@@ -29,6 +29,11 @@ use commands::search_suggestions::fetch_search_suggestions;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::site_icons::site_icons;
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
+use commands::vault::{
+    vault_change_master_password, vault_create, vault_delete_entry, vault_list, vault_lock,
+    vault_reset, vault_reveal, vault_save_entry, vault_set_auto_lock, vault_status, vault_unlock,
+    vault_unlock_recovery,
+};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
 pub mod commands;
@@ -53,6 +58,7 @@ pub mod shutdown;
 pub mod site_permissions;
 pub mod state;
 pub mod updates;
+pub mod vault;
 pub mod webview_runtime;
 pub mod window;
 pub mod zoom;
@@ -197,6 +203,7 @@ pub fn run() {
         .manage(window::commands_popover::CommandsPopover::default())
         .manage(window::resources_popover::ResourcesPopover::default())
         .manage(resources::Resources::default())
+        .manage(vault::service::VaultService::default())
         .manage(window::quick_settings_popover::QuickSettingsPopover::default())
         .manage(window::settings_overlay::SettingsOverlay::default())
         .manage(window::privacy_popover::PrivacyPopover::default())
@@ -520,6 +527,19 @@ pub fn run() {
                 .startup_ready()
                 .store(true, std::sync::atomic::Ordering::Release);
             feeds::start(app.handle().clone());
+            // The password vault locks itself once it has been idle for the time chosen in Settings.
+            let vault_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+                    if vault_handle
+                        .state::<vault::service::VaultService>()
+                        .lock_if_idle(std::time::Instant::now())
+                    {
+                        error_log::ignored(security::emit_shell(&vault_handle, "vault-locked", ()));
+                    }
+                }
+            });
 
             Ok(())
         })
@@ -626,6 +646,18 @@ pub fn run() {
             search_page_notes,
             save_page_note,
             delete_page_note,
+            vault_status,
+            vault_create,
+            vault_unlock,
+            vault_unlock_recovery,
+            vault_lock,
+            vault_list,
+            vault_reveal,
+            vault_save_entry,
+            vault_delete_entry,
+            vault_change_master_password,
+            vault_set_auto_lock,
+            vault_reset,
             close_tabs_reviewed,
             set_split_view,
             dock_tab_to_split,

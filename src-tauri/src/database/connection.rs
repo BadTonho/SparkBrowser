@@ -121,6 +121,7 @@ pub fn initialize_schema(conn: &Connection) -> Result<(), String> {
     crate::database::saved_sessions_repo::migrate(conn)?;
     crate::database::site_search_repo::migrate(conn)?;
     crate::database::notes_repo::migrate(conn)?;
+    crate::database::vault_repo::migrate(conn)?;
     crate::feeds::migrate(conn)?;
     crate::database::split_repo::migrate(conn)?;
     crate::database::backup_repo::migrate(conn)?;

@@ -1,0 +1,26 @@
+<script lang="ts">
+  import { t } from "../../../i18n";
+  import { copySecret } from "../../../services/vault/clipboard.js";
+  import { logIgnored } from "../../../services/ignored-error";
+  import { dismissRecoveryKey, vaultRecoveryKey } from "../../../stores/vaultStore";
+
+  let copied = $state<boolean | null>(null);
+
+  async function copy(): Promise<void> {
+    if ($vaultRecoveryKey) copied = await copySecret($vaultRecoveryKey, { onError: logIgnored });
+  }
+</script>
+
+{#if $vaultRecoveryKey}
+  <div class="vault-card" role="alertdialog" aria-labelledby="vault-recovery-title" data-testid="vault-recovery">
+    <h3 id="vault-recovery-title">{$t("passwords.recovery_title")}</h3>
+    <p>{$t("passwords.recovery_text")}</p>
+    <code class="vault-secret" data-testid="vault-recovery-key">{$vaultRecoveryKey}</code>
+    <div class="vault-actions">
+      <button class="pill-action" type="button" onclick={copy}>{$t("passwords.recovery_copy")}</button>
+      <button class="pill-action primary-pill" type="button" onclick={dismissRecoveryKey} data-testid="vault-recovery-confirm">{$t("passwords.recovery_confirm")}</button>
+    </div>
+    {#if copied === true}<p class="vault-ok" role="status">{$t("passwords.copied")}</p>{/if}
+    {#if copied === false}<p class="vault-error" role="alert">{$t("passwords.copy_failed")}</p>{/if}
+  </div>
+{/if}

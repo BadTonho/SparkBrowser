@@ -436,6 +436,7 @@ export type SettingsCategory =
   | "workspaces"
   | "performance_privacy"
   | "privacy_security"
+  | "passwords"
   | "shortcuts"
   | "diagnostics"
   | "changelog";
@@ -448,6 +449,7 @@ const settingsCategories: SettingsCategory[] = [
   "workspaces",
   "performance_privacy",
   "privacy_security",
+  "passwords",
   "shortcuts",
   "diagnostics",
   "changelog",

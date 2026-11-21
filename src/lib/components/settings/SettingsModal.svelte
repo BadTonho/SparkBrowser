@@ -7,6 +7,7 @@ import { createShortcutRecorder } from "./shortcut-recorder.svelte";
 import AppearanceSettings from "./AppearanceSettings.svelte";
 import BackupSettings from "./BackupSettings.svelte";
 import UpdateSettings from "./UpdateSettings.svelte";
+import PasswordSettings from "./passwords/PasswordSettings.svelte";
 import ChangelogSettings from "./ChangelogSettings.svelte";
 import NavigationSettings from "./NavigationSettings.svelte";
 import PerformanceSettings from "./PerformanceSettings.svelte";
@@ -306,6 +307,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             <PerformanceSettings />
           {:else if $activeSettingsCategory === "privacy_security"}
             <PrivacySecuritySettings />
+          {:else if $activeSettingsCategory === "passwords"}
+            <PasswordSettings />
           {:else if $activeSettingsCategory === "shortcuts"}
             <ShortcutSettings error={recorder.error} onStart={recorder.start} />
           {:else if $activeSettingsCategory === "diagnostics"}

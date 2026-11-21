@@ -1407,6 +1407,78 @@
           "markdownDescription": "Enables the update_workspace command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_change_master_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-change-master-password",
+          "markdownDescription": "Enables the vault_change_master_password command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_create command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-create",
+          "markdownDescription": "Enables the vault_create command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_delete_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-delete-entry",
+          "markdownDescription": "Enables the vault_delete_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-list",
+          "markdownDescription": "Enables the vault_list command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_lock command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-lock",
+          "markdownDescription": "Enables the vault_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_reset command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-reset",
+          "markdownDescription": "Enables the vault_reset command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_reveal command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-reveal",
+          "markdownDescription": "Enables the vault_reveal command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_save_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-save-entry",
+          "markdownDescription": "Enables the vault_save_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_set_auto_lock command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-set-auto-lock",
+          "markdownDescription": "Enables the vault_set_auto_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-status",
+          "markdownDescription": "Enables the vault_status command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_unlock command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-unlock",
+          "markdownDescription": "Enables the vault_unlock command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_unlock_recovery command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-unlock-recovery",
+          "markdownDescription": "Enables the vault_unlock_recovery command without any pre-configured scope."
+        },
+        {
           "description": "Denies the allow_http_once command without any pre-configured scope.",
           "type": "string",
           "const": "deny-allow-http-once",
@@ -2635,6 +2707,78 @@
           "type": "string",
           "const": "deny-update-workspace",
           "markdownDescription": "Denies the update_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_change_master_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-change-master-password",
+          "markdownDescription": "Denies the vault_change_master_password command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_create command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-create",
+          "markdownDescription": "Denies the vault_create command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_delete_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-delete-entry",
+          "markdownDescription": "Denies the vault_delete_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-list",
+          "markdownDescription": "Denies the vault_list command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_lock command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-lock",
+          "markdownDescription": "Denies the vault_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_reset command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-reset",
+          "markdownDescription": "Denies the vault_reset command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_reveal command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-reveal",
+          "markdownDescription": "Denies the vault_reveal command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_save_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-save-entry",
+          "markdownDescription": "Denies the vault_save_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_set_auto_lock command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-set-auto-lock",
+          "markdownDescription": "Denies the vault_set_auto_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-status",
+          "markdownDescription": "Denies the vault_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_unlock command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-unlock",
+          "markdownDescription": "Denies the vault_unlock command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_unlock_recovery command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-unlock-recovery",
+          "markdownDescription": "Denies the vault_unlock_recovery command without any pre-configured scope."
         },
         {
           "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
