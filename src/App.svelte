@@ -330,6 +330,9 @@
     window.addEventListener("keyup", handleGlobalKeyup, true);
     window.addEventListener("mousedown", handleGlobalMousedown, true);
     window.addEventListener("auxclick", handleGlobalAuxClick, true);
+    // Cancel the native side-button navigation fired on release, which stacks on the shortcut.
+    window.addEventListener("mouseup", handleGlobalAuxClick, true);
+    window.addEventListener("pointerup", handleGlobalAuxClick, true);
     return () => {
       stopTabDrag();
       stopMedia();
@@ -354,6 +357,8 @@
       if (unlistenSettingsTab) unlistenSettingsTab();
       stopWorkspaceShortcutBridge();
       motionPreference.removeEventListener("change", updateMotionPreference);
+      window.removeEventListener("mouseup", handleGlobalAuxClick, true);
+      window.removeEventListener("pointerup", handleGlobalAuxClick, true);
       window.removeEventListener("keydown", handleGlobalShortcuts, true);
       window.removeEventListener("keyup", handleGlobalKeyup, true);
       window.removeEventListener("mousedown", handleGlobalMousedown, true);

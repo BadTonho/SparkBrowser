@@ -17,3 +17,4 @@
 - Fixed keyboard shortcuts (F5 and the others) not working after clicking an empty area of the tab bar: the keyboard focus was lost. The shortcuts now keep working.
 - Fixed F5 (and Ctrl+Shift+R) reloading the browser's own interface, which made the tabs flicker, instead of reloading the page. They now reload the active page.
 - Fixed the "Close the browser?" dialog appearing with nothing to save: the backup made when closing is now built only when something changed since the last backup, so closing with nothing new is instant.
+- Fixed the mouse back/forward side buttons (4 and 5) going more than one page at a time: the browser was also navigating by itself when the button was released. Now they move exactly one page.

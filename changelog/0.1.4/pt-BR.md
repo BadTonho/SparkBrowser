@@ -17,3 +17,4 @@
 - Corrigidos os atalhos de teclado (F5 e os demais) que paravam de funcionar depois de clicar numa área vazia da barra de guias: o foco do teclado se perdia. Agora os atalhos continuam funcionando.
 - Corrigido o F5 (e o Ctrl+Shift+R) recarregando a própria interface do navegador, o que fazia as guias piscarem, em vez de recarregar a página. Agora eles recarregam a página ativa.
 - Corrigido o diálogo "Fechar o navegador?" aparecendo sem nada para salvar: o backup feito ao fechar agora só é montado quando algo mudou desde o último backup, então fechar sem novidades é instantâneo.
+- Corrigidos os botões laterais do mouse (4 e 5) que voltavam ou avançavam mais de uma página: o navegador também navegava sozinho ao soltar o botão. Agora eles movem exatamente uma página.

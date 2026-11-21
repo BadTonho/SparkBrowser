@@ -153,6 +153,16 @@ pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: b
             }}
           }}, true);
 
+          // Chromium performs its own back/forward when a side button is released, on top of the
+          // shortcut handled on mousedown, so the page moved more than one entry. Cancel the native one.
+          for (const type of ["mouseup", "pointerup"]) {{
+            window.addEventListener(type, (event) => {{
+              if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }}, true);
+          }}
+
           window.addEventListener("auxclick", (event) => {{
             if (event.isTrusted && event.button === 1 && !event.defaultPrevented) {{
               const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
