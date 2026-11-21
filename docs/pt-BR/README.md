@@ -33,6 +33,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Sugestões da barra de endereço](./features/address-suggestions.md)
 - [Paletas de cores](./features/color-palettes.md)
 - [Gerenciador de senhas](./features/password-manager.md)
+- [Preenchimento automático (cartões e contatos)](./features/autofill.md)
 - [Aparência da Barra de Comandos](./features/command-bar.md)
 - [Painel de recursos](./features/resources.md)
 - [Atualizando a partir do nome Veloce](./features/rename-migration.md)

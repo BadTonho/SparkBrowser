@@ -4,6 +4,7 @@ const KNOWN = {
   'vault.throttled': 'passwords.error_throttled',
   'vault.locked': 'passwords.error_locked',
   'vault.invalid_entry': 'passwords.error_invalid_entry',
+  'vault.invalid_record': 'autofill.error_invalid',
   'vault.password_invalid': 'passwords.error_password_invalid',
   'vault.full': 'passwords.error_full',
   'vault.corrupt': 'passwords.error_corrupt',

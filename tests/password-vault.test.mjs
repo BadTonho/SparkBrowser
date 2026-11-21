@@ -84,7 +84,7 @@ test('Settings has a Passwords category with search entries and the not-audited 
   assert.match(read('src/lib/stores/settingsStore.ts'), /\| "passwords"/);
   assert.match(read('src/lib/stores/settingsStore.ts'), /"passwords",\r?\n\s*"shortcuts"/);
   const catalog = read('src/lib/components/settings/settings-catalog.ts');
-  assert.match(catalog, /id: "passwords", icon: "lock", label: "Passwords"/);
+  assert.match(catalog, /id: "passwords", icon: "lock", label: "Autofill & Passwords"/);
   assert.match(catalog, /category: "passwords", targetId: "passwords-heading"/);
   assert.match(read('src/lib/components/settings/SettingsModal.svelte'), /=== "passwords"\}\s*<PasswordSettings/);
   const screen = read('src/lib/components/settings/passwords/PasswordSettings.svelte');
@@ -236,7 +236,7 @@ test('forms that ask for a secret open in a centered modal dialog, not inline un
 
 test('the test-data buttons exist only in development: the interface checks DEV and the backend is debug-only', () => {
   const workspace = read('src/lib/components/settings/passwords/VaultWorkspace.svelte');
-  assert.match(workspace, /\{#if import\.meta\.env\.DEV\}[\s\S]*vault-dev-seed[\s\S]*vault-dev-remove/);
+  assert.match(workspace, /\{#if import\.meta\.env\.DEV[^}]*\}[\s\S]*vault-dev-seed[\s\S]*vault-dev-remove/);
   assert.match(read('src-tauri/src/vault/mod.rs'), /#\[cfg\(debug_assertions\)\]\s*pub mod dev;/);
   const commands = read('src-tauri/src/commands/vault.rs');
   assert.match(commands, /vault_dev_seed[\s\S]*?#\[cfg\(debug_assertions\)\][\s\S]*?#\[cfg\(not\(debug_assertions\)\)\][\s\S]*?vault\.dev_only/);
@@ -281,8 +281,9 @@ test('a password is only shown after a proof, in a page laid out like other brow
   assert.match(list, /watchIdle\(/);
   assert.match(list, /detail = null;\s*editing = null;\s*expired = true;/);
   const confirm = read('src/lib/components/settings/passwords/VaultConfirmDialog.svelte');
-  assert.match(confirm, /revealEntry\(entry\.id, value\)/);
-  assert.match(confirm, /revealEntry\(entry\.id, null\)/);
+  assert.match(confirm, /reveal\(value\)/);
+  assert.match(confirm, /reveal\(null\)/);
+  assert.match(read('src/lib/components/settings/passwords/VaultList.svelte'), /revealEntry\(confirming!\.id, secret\)/);
   const detail = read('src/lib/components/settings/passwords/VaultDetail.svelte');
   for (const part of ['vault-detail-username', 'vault-detail-password', 'vault-detail-eye', 'vault-detail-copy', 'vault-edit', 'vault-delete']) {
     assert.ok(detail.includes(part), part);

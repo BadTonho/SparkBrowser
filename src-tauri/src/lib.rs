@@ -36,6 +36,9 @@ use commands::vault::{
     vault_set_auto_lock, vault_set_require_hello, vault_status, vault_unlock, vault_unlock_hello,
     vault_unlock_recovery,
 };
+use commands::vault_records::{
+    vault_record_delete, vault_record_reveal, vault_record_save, vault_records_list,
+};
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
@@ -714,6 +717,10 @@ pub fn run() {
             vault_reveal,
             vault_save_entry,
             vault_delete_entry,
+            vault_records_list,
+            vault_record_reveal,
+            vault_record_save,
+            vault_record_delete,
             vault_change_master_password,
             vault_set_auto_lock,
             vault_reset,

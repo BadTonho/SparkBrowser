@@ -2,6 +2,7 @@
 
 ## Novas funcionalidades
 
+- Seção **Preenchimento automático e senhas** nas Configurações, com **Pagamentos** (cartões salvos; o código de segurança nunca é guardado e abrir um cartão pede a senha mestra ou o Windows Hello) e **Dados de contato** (nomes, e-mails, telefones e endereços), ambos guardados no cofre criptografado junto das senhas.
 - Arraste uma aba para fora da janela do navegador e solte para abri-la em uma nova janela, posicionada onde você soltou.
 
 ## Melhorias

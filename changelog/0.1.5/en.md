@@ -2,6 +2,7 @@
 
 ## New features
 
+- **Autofill & passwords** section in Settings with **Payments** (saved cards, the security code is never stored and opening a card asks for your master password or Windows Hello) and **Contact info** (names, emails, phones and addresses), both kept in the encrypted vault next to your passwords.
 - Drag a tab out of the browser window and release it to open it in a new window, placed where you dropped it.
 
 ## Improvements

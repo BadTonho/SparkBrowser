@@ -28,7 +28,96 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())
     })?;
-    migrate_require_hello(conn)
+    migrate_require_hello(conn)?;
+    migrate_records(conn)
+}
+
+/// Payment cards and contact details live next to the logins, encrypted the same way, in their own
+/// table so the list of logins never has to understand them.
+fn migrate_records(conn: &Connection) -> Result<(), String> {
+    super::migrations::apply(conn, "vault-records-v1", |conn| {
+        conn.execute_batch(
+            "CREATE TABLE vault_records(
+                id TEXT PRIMARY KEY,
+                kind TEXT NOT NULL,
+                blob BLOB NOT NULL,
+                updated_at INTEGER NOT NULL
+            );",
+        )
+        .map_err(|e| e.to_string())
+    })
+}
+
+pub struct RecordRow {
+    pub id: String,
+    pub kind: String,
+    pub blob: Vec<u8>,
+    pub updated_at: i64,
+}
+
+fn record_from(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecordRow> {
+    Ok(RecordRow {
+        id: row.get(0)?,
+        kind: row.get(1)?,
+        blob: row.get(2)?,
+        updated_at: row.get(3)?,
+    })
+}
+
+pub fn record_count(conn: &Connection, kind: &str) -> Result<usize, String> {
+    conn.query_row(
+        "SELECT COUNT(*) FROM vault_records WHERE kind=?1",
+        [kind],
+        |row| row.get::<_, i64>(0),
+    )
+    .map(|n| n.max(0) as usize)
+    .map_err(|e| e.to_string())
+}
+
+pub fn records(conn: &Connection, kind: &str) -> Result<Vec<RecordRow>, String> {
+    let mut statement = conn
+        .prepare(
+            "SELECT id,kind,blob,updated_at FROM vault_records WHERE kind=?1
+             ORDER BY updated_at DESC,id",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = statement
+        .query_map([kind], record_from)
+        .map_err(|e| e.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
+}
+
+pub fn record(conn: &Connection, id: &str) -> Result<Option<RecordRow>, String> {
+    conn.query_row(
+        "SELECT id,kind,blob,updated_at FROM vault_records WHERE id=?1",
+        [id],
+        record_from,
+    )
+    .optional()
+    .map_err(|e| e.to_string())
+}
+
+pub fn put_record(
+    conn: &Connection,
+    id: &str,
+    kind: &str,
+    blob: &[u8],
+    updated_at: i64,
+) -> Result<(), String> {
+    conn.execute(
+        "INSERT INTO vault_records(id,kind,blob,updated_at) VALUES(?1,?2,?3,?4)
+         ON CONFLICT(id) DO UPDATE SET blob=excluded.blob,updated_at=excluded.updated_at",
+        params![id, kind, blob, updated_at],
+    )
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+pub fn delete_record(conn: &Connection, id: &str) -> Result<bool, String> {
+    conn.execute("DELETE FROM vault_records WHERE id=?1", [id])
+        .map(|changed| changed > 0)
+        .map_err(|e| e.to_string())
 }
 
 /// Adds the setting that asks for Windows Hello every time a password is shown or copied.
@@ -174,8 +263,10 @@ pub fn delete(conn: &Connection, id: &str) -> Result<bool, String> {
 /// Removes the header and every entry. Used only when the user has lost the password and the
 /// recovery key and chooses to start over: the old entries cannot be read anyway.
 pub fn wipe(conn: &Connection) -> Result<(), String> {
-    conn.execute_batch("DELETE FROM vault_entries; DELETE FROM vault_meta;")
-        .map_err(|e| e.to_string())
+    conn.execute_batch(
+        "DELETE FROM vault_entries; DELETE FROM vault_records; DELETE FROM vault_meta;",
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

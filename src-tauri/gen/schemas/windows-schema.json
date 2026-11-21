@@ -1503,6 +1503,30 @@
           "markdownDescription": "Enables the vault_password_enable command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_record_delete command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-record-delete",
+          "markdownDescription": "Enables the vault_record_delete command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_record_reveal command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-record-reveal",
+          "markdownDescription": "Enables the vault_record_reveal command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_record_save command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-record-save",
+          "markdownDescription": "Enables the vault_record_save command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_records_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-records-list",
+          "markdownDescription": "Enables the vault_records_list command without any pre-configured scope."
+        },
+        {
           "description": "Enables the vault_reset command without any pre-configured scope.",
           "type": "string",
           "const": "allow-vault-reset",
@@ -2887,6 +2911,30 @@
           "type": "string",
           "const": "deny-vault-password-enable",
           "markdownDescription": "Denies the vault_password_enable command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_record_delete command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-record-delete",
+          "markdownDescription": "Denies the vault_record_delete command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_record_reveal command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-record-reveal",
+          "markdownDescription": "Denies the vault_record_reveal command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_record_save command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-record-save",
+          "markdownDescription": "Denies the vault_record_save command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_records_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-records-list",
+          "markdownDescription": "Denies the vault_records_list command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_reset command without any pre-configured scope.",

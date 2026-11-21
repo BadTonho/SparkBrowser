@@ -2,7 +2,7 @@
   import { t, formatDate } from "../../../i18n";
   import { avatarSlot, groupEntries, siteOf } from "../../../services/vault/groups.js";
   import { watchIdle } from "../../../services/vault/idle.js";
-  import { removeEntry, vaultEntries, vaultUnreadable } from "../../../stores/vaultStore";
+  import { removeEntry, revealEntry, vaultEntries, vaultUnreadable } from "../../../stores/vaultStore";
   import type { VaultEntryData, VaultRevealed, VaultSummary } from "../../../types/vault";
   import EntryEditor from "./EntryEditor.svelte";
   import VaultConfirmDialog from "./VaultConfirmDialog.svelte";
@@ -129,5 +129,5 @@
 {/if}
 
 {#if confirming}
-  <VaultConfirmDialog entry={confirming} site={siteOf(confirming)} onconfirmed={confirmed} oncancel={() => (confirming = null)} />
+  <VaultConfirmDialog reveal={secret => revealEntry(confirming!.id, secret)} site={siteOf(confirming)} onconfirmed={confirmed} oncancel={() => (confirming = null)} />
 {/if}

@@ -1,15 +1,16 @@
-<script lang="ts">
+<script lang="ts" generics="T">
   import { t } from "../../../i18n";
-  import { revealEntry, vaultBusy, vaultFailure, vaultStatus } from "../../../stores/vaultStore";
-  import type { VaultRevealed, VaultSummary } from "../../../types/vault";
+  import { vaultBusy, vaultFailure, vaultStatus } from "../../../stores/vaultStore";
   import VaultDialog from "./VaultDialog.svelte";
 
   // Opening a password asks who is there, every time: the master password or Windows Hello. The backend
   // enforces it; this dialog only collects the proof.
-  let { entry, site, onconfirmed, oncancel }: {
-    entry: VaultSummary;
+  // `reveal` asks the backend to open the item with the proof given (the typed password, or null for
+  // Windows Hello). It works for logins and for saved cards alike.
+  let { reveal, site, onconfirmed, oncancel }: {
+    reveal: (secret: string | null) => Promise<T | undefined>;
     site: string;
-    onconfirmed: (revealed: VaultRevealed) => void;
+    onconfirmed: (revealed: T) => void;
     oncancel: () => void;
   } = $props();
 
@@ -26,12 +27,12 @@
     const value = secret;
     secret = "";
     if (!value) return;
-    const revealed = await revealEntry(entry.id, value);
+    const revealed = await reveal(value);
     if (revealed) onconfirmed(revealed);
   }
 
   async function withHello(): Promise<void> {
-    const revealed = await revealEntry(entry.id, null);
+    const revealed = await reveal(null);
     if (revealed) onconfirmed(revealed);
   }
 

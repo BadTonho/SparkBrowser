@@ -17,6 +17,7 @@ pub mod tab_organizer;
 pub mod tabs;
 pub mod updates;
 pub mod vault;
+pub mod vault_records;
 pub mod windows;
 pub mod workspaces;
 

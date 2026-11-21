@@ -251,3 +251,7 @@ export function initializeVaultEvents(): () => void {
     .catch(logIgnored);
   return () => { disposed = true; stop?.(); };
 }
+
+// Shared with the autofill store (cards and contact details live in the same vault).
+export const runVaultCall = run;
+export const syncVaultLock = syncLockState;

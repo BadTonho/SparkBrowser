@@ -11,7 +11,7 @@ export const categories: {
     { id: "workspaces", icon: "palette", label: "Workspaces & Theme" },
     { id: "performance_privacy", icon: "rocket", label: "Performance" },
     { id: "privacy_security", icon: "shield", label: "Privacy & Security" },
-    { id: "passwords", icon: "lock", label: "Passwords" },
+    { id: "passwords", icon: "lock", label: "Autofill & Passwords" },
     { id: "shortcuts", icon: "keyboard", label: "Keyboard Shortcuts" },
     { id: "updates", icon: "↻", label: "About & Updates" },
     { id: "changelog", icon: "books", label: "Changelog" },

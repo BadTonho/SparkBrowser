@@ -15,7 +15,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use zeroize::Zeroizing;
 
-fn allowed(app: &AppHandle) -> Result<(), String> {
+pub(super) fn allowed(app: &AppHandle) -> Result<(), String> {
     let private = app
         .try_state::<crate::private_session::PrivateRole>()
         .is_some_and(|role| role.is_private());
@@ -39,7 +39,7 @@ fn timestamp() -> i64 {
 
 /// Runs one Windows Hello step off the interface and database threads: it waits for the person to
 /// answer the Windows prompt. Failures are logged here; only a stable code goes back to the interface.
-async fn hello_step(
+pub(super) async fn hello_step(
     what: &'static str,
     work: fn() -> Result<Zeroizing<Vec<u8>>, HelloError>,
 ) -> Result<Zeroizing<Vec<u8>>, String> {

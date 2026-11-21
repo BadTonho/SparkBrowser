@@ -2,7 +2,7 @@
 
 [Português](../../pt-BR/features/password-manager.md)
 
-Open **Settings → Passwords** to keep your logins in an encrypted vault on this computer. Once unlocked it has two pages, like the password manager of other browsers: **Passwords** (search, **Add** and the list) and **Settings** (everything about the vault itself).
+Open **Settings → Autofill & Passwords → Password manager** to keep (the same section also holds [cards and contact info](./autofill.md))  your logins in an encrypted vault on this computer. Once unlocked it has two pages, like the password manager of other browsers: **Passwords** (search, **Add** and the list) and **Settings** (everything about the vault itself).
 
 > **Not independently audited yet.** The vault is new and has not been reviewed by an independent security auditor. Settings shows this notice permanently. Do not rely on it as the only copy of important passwords. See the [security review](../security/account-containers-vault-review.md).
 

@@ -2,7 +2,7 @@
 
 [English](../../en/features/password-manager.md)
 
-Abra **Configurações → Senhas** para guardar seus logins em um cofre criptografado neste computador. Depois de desbloqueado, ele tem duas páginas, como o gerenciador de senhas de outros navegadores: **Senhas** (busca, **Adicionar** e a lista) e **Configurações** (tudo sobre o próprio cofre).
+Abra **Configurações → Preenchimento automático e senhas → Gerenciador de senhas** para guardar (a mesma seção tem também [cartões e dados de contato](./autofill.md))  seus logins em um cofre criptografado neste computador. Depois de desbloqueado, ele tem duas páginas, como o gerenciador de senhas de outros navegadores: **Senhas** (busca, **Adicionar** e a lista) e **Configurações** (tudo sobre o próprio cofre).
 
 > **Ainda sem auditoria independente.** O cofre é novo e não foi revisado por um auditor de segurança independente. As Configurações mostram este aviso de forma permanente. Não dependa dele como única cópia de senhas importantes. Veja a [revisão de segurança](../security/account-containers-vault-review.md).
 

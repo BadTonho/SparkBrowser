@@ -52,7 +52,9 @@ import readerEn from "./catalogs/en/reader.json";
 import readerPt from "./catalogs/pt-BR/reader.json";
 import passwordsEn from "./catalogs/en/passwords.json";
 import passwordsPt from "./catalogs/pt-BR/passwords.json";
+import autofillEn from "./catalogs/en/autofill.json";
+import autofillPt from "./catalogs/pt-BR/autofill.json";
 
-export const english = { ...newtabEn, ...mediaEn, ...searchEn, ...zoomEn, ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn, ...extensionsEn, ...readerEn, ...passwordsEn };
+export const english = { ...newtabEn, ...mediaEn, ...searchEn, ...zoomEn, ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn, ...extensionsEn, ...readerEn, ...passwordsEn, ...autofillEn };
 export type MessageKey = keyof typeof english;
-export const portuguese: Record<MessageKey, string> = { ...newtabPt, ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt, ...extensionsPt, ...readerPt, ...passwordsPt };
+export const portuguese: Record<MessageKey, string> = { ...newtabPt, ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt, ...extensionsPt, ...readerPt, ...passwordsPt, ...autofillPt };
