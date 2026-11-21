@@ -49,6 +49,7 @@ Você pode definir uma imagem ou vídeo em loop personalizado a partir do seu di
 - **Efeito translúcido (Glassmorphism)**: Com uma mídia de fundo ativa, os cartões de busca e widgets adotam transparência com desfoque de fundo (*backdrop blur*).
 - **Sincronização entre guias e persistência**: A mídia escolhida fica salva localmente no armazenamento do dispositivo (Blobs no IndexedDB e preferências locais) e sincroniza entre todas as novas guias abertas em tempo real, sem vazar para backups.
 - **Remover**: Excluir a mídia limpa as URLs de objetos e restaura imediatamente a cor sólida padrão.
+- **Reposicionar**: Arraste a pré-visualização nas configurações para escolher qual parte da imagem ou do vídeo continua visível quando ele é cortado para caber na tela. A posição é salva, sincronizada entre guias e volta ao centro ao escolher outra mídia.
 
 ## Relógio
 

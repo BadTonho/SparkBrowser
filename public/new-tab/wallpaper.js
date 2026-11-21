@@ -34,6 +34,72 @@
     } catch (error) { window.__sparkLogIgnored?.(error); }
   };
 
+  const clampPct = value => Math.min(100, Math.max(0, Number.isFinite(value) ? value : 50));
+
+  function readPosition() {
+    const [x, y] = (getStorage('spark_wallpaper_pos') ?? '50,50').split(',').map(Number);
+    return { x: clampPct(x), y: clampPct(y) };
+  }
+
+  function applyPosition(pos = readPosition()) {
+    const value = `${pos.x}% ${pos.y}%`;
+    for (const id of ['wallpaper-image', 'wallpaper-video', 'wallpaper-preview', 'wallpaper-video-preview']) {
+      const node = $(id);
+      if (node) node.style.objectPosition = value;
+    }
+  }
+
+  function resetPosition() {
+    setStorage('spark_wallpaper_pos', '50,50');
+  }
+
+  function initPositionDrag() {
+    const wrap = $('wallpaper-preview-wrap');
+    if (!wrap) return;
+    let drag = null;
+    wrap.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      const media = currentMedia?.mediaType === 'video' ? $('wallpaper-video-preview') : $('wallpaper-preview');
+      if (!media || media.hidden) return;
+      const naturalW = media.naturalWidth || media.videoWidth;
+      const naturalH = media.naturalHeight || media.videoHeight;
+      if (!naturalW || !naturalH) return;
+      const box = media.getBoundingClientRect();
+      const scale = Math.max(box.width / naturalW, box.height / naturalH);
+      drag = {
+        id: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        origin: readPosition(),
+        overflowX: naturalW * scale - box.width,
+        overflowY: naturalH * scale - box.height
+      };
+      try { wrap.setPointerCapture(event.pointerId); } catch (error) { window.__sparkLogIgnored?.(error); }
+      wrap.classList.add('dragging');
+      event.preventDefault();
+    });
+    wrap.addEventListener('pointermove', event => {
+      if (!drag || event.pointerId !== drag.id) return;
+      // Dragging the picture right shows more of its left side, so the focal point moves the other way.
+      const x = drag.overflowX > 0 ? drag.origin.x - ((event.clientX - drag.startX) / drag.overflowX) * 100 : drag.origin.x;
+      const y = drag.overflowY > 0 ? drag.origin.y - ((event.clientY - drag.startY) / drag.overflowY) * 100 : drag.origin.y;
+      applyPosition({ x: clampPct(x), y: clampPct(y) });
+    });
+    const finish = event => {
+      if (!drag || event.pointerId !== drag.id) return;
+      drag = null;
+      wrap.classList.remove('dragging');
+      const media = currentMedia?.mediaType === 'video' ? $('wallpaper-video-preview') : $('wallpaper-preview');
+      const match = /^([\d.]+)% ([\d.]+)%$/.exec(media?.style.objectPosition ?? '');
+      if (match) {
+        setStorage('spark_wallpaper_pos', `${match[1]},${match[2]}`);
+        notifyUpdated();
+      }
+    };
+    wrap.addEventListener('pointerup', finish);
+    wrap.addEventListener('pointercancel', finish);
+  }
+
   function cleanupUrls() {
     if (activeBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
       try { URL.revokeObjectURL(activeBlobUrl); } catch (error) { window.__sparkLogIgnored?.(error); }
@@ -279,9 +345,11 @@
         }
       }
     }
+    applyPosition();
   }
 
   function initControls() {
+    initPositionDrag();
     const enabledToggle = $('wallpaper-enabled');
     const dimInput = $('wallpaper-dim');
     const dimVal = $('wallpaper-dim-val');
@@ -344,6 +412,7 @@
             blob: file
           })
           .then(async () => {
+            resetPosition();
             setStorage('spark_wallpaper_enabled', 'true');
             notifyUpdated();
             await applyWallpaper();
@@ -367,7 +436,8 @@
               blob: file
             })
               .then(async () => {
-                setStorage('spark_wallpaper_enabled', 'true');
+                resetPosition();
+            setStorage('spark_wallpaper_enabled', 'true');
                 notifyUpdated();
                 await applyWallpaper();
                 setStatus(text('wallpaperSaved'));
@@ -412,7 +482,8 @@
                 mime: finalBlob.type || file.type || 'image/jpeg',
                 blob: finalBlob
               });
-              setStorage('spark_wallpaper_enabled', 'true');
+              resetPosition();
+            setStorage('spark_wallpaper_enabled', 'true');
               notifyUpdated();
               await applyWallpaper();
               setStatus(text('wallpaperSaved'));
@@ -454,7 +525,8 @@
       if (
         event.key === 'spark_wallpaper_updated' ||
         event.key === 'spark_wallpaper_enabled' ||
-        event.key === 'spark_wallpaper_dim'
+        event.key === 'spark_wallpaper_dim' ||
+        event.key === 'spark_wallpaper_pos'
       ) {
         if (event.key === 'spark_wallpaper_updated') invalidateRecord();
         applyWallpaper();

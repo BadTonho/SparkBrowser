@@ -43,6 +43,13 @@
   border-radius: 10px;
   overflow: hidden;
   max-height: 140px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+#wallpaper-preview-wrap.dragging {
+  cursor: grabbing;
 }
 
 #wallpaper-preview,
@@ -51,6 +58,8 @@
   height: 120px;
   object-fit: cover;
   display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .wallpaper-slider-wrap {
