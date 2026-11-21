@@ -3,6 +3,8 @@
 pub mod clipboard;
 pub mod crypto;
 pub mod csv;
+#[cfg(debug_assertions)]
+pub mod dev;
 pub mod hello;
 pub mod model;
 pub mod ops;

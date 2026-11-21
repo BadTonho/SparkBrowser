@@ -1437,6 +1437,18 @@
           "markdownDescription": "Enables the vault_delete_entry command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_dev_remove command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-dev-remove",
+          "markdownDescription": "Enables the vault_dev_remove command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_dev_seed command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-dev-seed",
+          "markdownDescription": "Enables the vault_dev_seed command without any pre-configured scope."
+        },
+        {
           "description": "Enables the vault_export_csv command without any pre-configured scope.",
           "type": "string",
           "const": "allow-vault-export-csv",
@@ -2803,6 +2815,18 @@
           "type": "string",
           "const": "deny-vault-delete-entry",
           "markdownDescription": "Denies the vault_delete_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_dev_remove command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-dev-remove",
+          "markdownDescription": "Denies the vault_dev_remove command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_dev_seed command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-dev-seed",
+          "markdownDescription": "Denies the vault_dev_seed command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_export_csv command without any pre-configured scope.",

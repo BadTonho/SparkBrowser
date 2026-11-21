@@ -34,7 +34,7 @@ use commands::vault::{
     vault_reset, vault_reveal, vault_save_entry, vault_set_auto_lock, vault_status, vault_unlock,
     vault_unlock_recovery, vault_unlock_hello, vault_hello_enable, vault_hello_disable, vault_password_enable,
     vault_password_disable, vault_set_require_hello, vault_import_csv, vault_export_csv,
-    vault_save_recovery_file,
+    vault_save_recovery_file, vault_dev_seed, vault_dev_remove,
 };
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
@@ -662,6 +662,8 @@ pub fn run() {
             vault_import_csv,
             vault_export_csv,
             vault_save_recovery_file,
+            vault_dev_seed,
+            vault_dev_remove,
             vault_lock,
             vault_list,
             vault_reveal,

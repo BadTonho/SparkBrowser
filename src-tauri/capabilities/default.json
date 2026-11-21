@@ -74,6 +74,8 @@
     "allow-vault-import-csv",
     "allow-vault-export-csv",
     "allow-vault-save-recovery-file",
+    "allow-vault-dev-seed",
+    "allow-vault-dev-remove",
     "allow-vault-lock",
     "allow-vault-list",
     "allow-vault-reveal",

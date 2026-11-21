@@ -447,6 +447,39 @@ pub async fn vault_export_csv(
     Ok(Some(count))
 }
 
+/// Test helper (debug builds only): adds made-up logins so the list can be tried with data. A release
+/// build has no such code and answers `vault.dev_only`.
+#[tauri::command]
+pub async fn vault_dev_seed(app: AppHandle, service: State<'_, VaultService>) -> Result<ImportResult, String> {
+    allowed(&app)?;
+    #[cfg(debug_assertions)]
+    {
+        let service = service.inner().clone();
+        executor::run(app, move |conn| crate::vault::dev::seed(conn, &service, timestamp(), Instant::now())).await
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = &service;
+        Err("vault.dev_only".into())
+    }
+}
+
+/// Test helper (debug builds only): removes the made-up logins again, and only them.
+#[tauri::command]
+pub async fn vault_dev_remove(app: AppHandle, service: State<'_, VaultService>) -> Result<usize, String> {
+    allowed(&app)?;
+    #[cfg(debug_assertions)]
+    {
+        let service = service.inner().clone();
+        executor::run(app, move |conn| crate::vault::dev::remove(conn, &service, Instant::now())).await
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = &service;
+        Err("vault.dev_only".into())
+    }
+}
+
 /// Copies the password of one entry straight from the backend, so it never reaches the interface.
 /// The clipboard is emptied again after 30 seconds if it still holds it.
 #[tauri::command]

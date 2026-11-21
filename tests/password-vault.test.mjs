@@ -105,7 +105,7 @@ test('the vault screens never keep secrets around after use', () => {
 });
 
 test('every vault command is registered end to end', () => {
-  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_hello_enable', 'vault_hello_disable', 'vault_password_enable', 'vault_password_disable', 'vault_set_require_hello', 'vault_import_csv', 'vault_export_csv', 'vault_save_recovery_file', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
+  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_hello_enable', 'vault_hello_disable', 'vault_password_enable', 'vault_password_disable', 'vault_set_require_hello', 'vault_import_csv', 'vault_export_csv', 'vault_save_recovery_file', 'vault_dev_seed', 'vault_dev_remove', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
   const manifest = read('src-tauri/src/commands/manifest.rs');
   const capabilities = read('src-tauri/capabilities/default.json');
   const lib = read('src-tauri/src/lib.rs');
@@ -229,4 +229,14 @@ test('forms that ask for a secret open in a centered modal dialog, not inline un
   }
   // Whatever was typed is dropped when the dialog closes.
   assert.match(settings, /function closePanel\(\)[\s\S]*formSecret = "";[\s\S]*current = "";[\s\S]*next = "";/);
+});
+
+test('the test-data buttons exist only in development: the interface checks DEV and the backend is debug-only', () => {
+  const workspace = read('src/lib/components/settings/passwords/VaultWorkspace.svelte');
+  assert.match(workspace, /\{#if import\.meta\.env\.DEV\}[\s\S]*vault-dev-seed[\s\S]*vault-dev-remove/);
+  assert.match(read('src-tauri/src/vault/mod.rs'), /#\[cfg\(debug_assertions\)\]\s*pub mod dev;/);
+  const commands = read('src-tauri/src/commands/vault.rs');
+  assert.match(commands, /vault_dev_seed[\s\S]*?#\[cfg\(debug_assertions\)\][\s\S]*?#\[cfg\(not\(debug_assertions\)\)\][\s\S]*?vault\.dev_only/);
+  // Only entries marked as test data are ever removed.
+  assert.match(read('src-tauri/src/vault/dev.rs'), /starts_with\(MARKER\)/);
 });

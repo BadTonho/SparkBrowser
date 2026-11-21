@@ -2,7 +2,7 @@ import { get, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import {
-  changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, disableVaultHello, disableVaultPassword,
+  changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, devRemoveVault, devSeedVault, disableVaultHello, disableVaultPassword,
   enableVaultHello, enableVaultPassword, exportVaultCsv, getVaultStatus, importVaultCsv, listVaultEntries, lockVault, resetVault,
   revealVaultEntry, saveVaultEntry, saveVaultRecoveryFile, setVaultAutoLock, setVaultRequireHello, unlockVault, unlockVaultWithHello, unlockVaultWithRecovery,
 } from "../services/bridge/vault";
@@ -202,6 +202,24 @@ export async function exportPasswords(currentPassword: string | null): Promise<b
   if (typeof count === "number") vaultInfo.set({ key: "passwords.export_done" as MessageKey, values: { count } });
   else if (count === undefined) await syncLockState();
   return typeof count === "number";
+}
+
+/** Test helper, shown only in development: adds made-up logins so the list can be tried with data. */
+export async function addTestPasswords(): Promise<void> {
+  vaultInfo.set(null);
+  const result = await run(devSeedVault);
+  if (result) vaultInfo.set({ key: "passwords.dev_added" as MessageKey, values: { imported: result.imported } });
+  else await syncLockState();
+  await refreshVaultStatus();
+}
+
+/** Test helper, shown only in development: removes the made-up logins again, and only them. */
+export async function removeTestPasswords(): Promise<void> {
+  vaultInfo.set(null);
+  const count = await run(devRemoveVault);
+  if (typeof count === "number") vaultInfo.set({ key: "passwords.dev_removed" as MessageKey, values: { count } });
+  else await syncLockState();
+  await refreshVaultStatus();
 }
 
 export async function chooseAutoLock(minutes: number): Promise<void> {

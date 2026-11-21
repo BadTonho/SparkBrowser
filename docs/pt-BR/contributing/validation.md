@@ -48,3 +48,8 @@ Finalize conferindo `git status`, `git diff`, `git diff --cached` e as regras de
 ## Arquitetura e contratos entre funcionalidades
 
 `npm run architecture:check` está incluído pelos testes JavaScript na validação consolidada. Execute `npm run test:native:critical` após compilar o aplicativo nativo isolado para conferir os cenários obrigatórios entre funcionalidades. CI e workflows nativos são manuais. O workflow de release verifica as duas plataformas antes de empacotar, mas não executa cenários nativos. Consulte o [fluxo de regressões](regression-workflow.md) e a [responsabilidade pelo estado](../architecture/state-ownership.md).
+
+
+## Dados de teste do cofre de senhas
+
+Só em builds de desenvolvimento (`npm run tauri dev`), Configurações → Senhas mostra um cartão tracejado **Só para testes** com **Adicionar senhas de teste** e **Remover senhas de teste**. O primeiro adiciona uma dúzia de logins inventados (várias contas em um site, um endereço com `www.`, um login sem site, um título comprido) para testar a lista com dados; apertar duas vezes não adiciona nada em dobro. O segundo remove apenas as entradas cujas notas começam com `[dados de teste]`, nunca algo que você salvou. Os botões não existem em builds de release: a interface verifica `import.meta.env.DEV` e os comandos do backend só existem com `debug_assertions` ligado (senão respondem `vault.dev_only`). O cofre precisa estar desbloqueado.

@@ -48,3 +48,8 @@ Finish by checking `git status`, `git diff`, `git diff --cached`, and sensitive-
 ## Architecture and cross-feature contracts
 
 `npm run architecture:check` is included through the JavaScript tests in consolidated validation. Run `npm run test:native:critical` after building the isolated native application to check the mandatory cross-feature scenarios. CI and native workflows are manual. The release workflow checks both platforms before packaging but does not execute native scenarios. See [regression workflow](regression-workflow.md) and [state ownership](../architecture/state-ownership.md).
+
+
+## Test data for the password vault
+
+In development builds only (`npm run tauri dev`), Settings → Passwords shows a dashed **Only for tests** card with **Add test passwords** and **Remove test passwords**. The first adds a dozen made-up logins (several accounts on one site, a `www.` address, a login without a website, a long title) so the list can be tried with data; pressing it twice adds nothing twice. The second removes only entries whose notes start with `[dados de teste]`, never anything you saved. The buttons are not in release builds: the interface checks `import.meta.env.DEV` and the backend commands only exist when `debug_assertions` is on (otherwise they answer `vault.dev_only`). The vault must be unlocked.
