@@ -1413,6 +1413,18 @@
           "markdownDescription": "Enables the vault_change_master_password command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_copy_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-copy-password",
+          "markdownDescription": "Enables the vault_copy_password command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_copy_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-copy-text",
+          "markdownDescription": "Enables the vault_copy_text command without any pre-configured scope."
+        },
+        {
           "description": "Enables the vault_create command without any pre-configured scope.",
           "type": "string",
           "const": "allow-vault-create",
@@ -2713,6 +2725,18 @@
           "type": "string",
           "const": "deny-vault-change-master-password",
           "markdownDescription": "Denies the vault_change_master_password command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_copy_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-copy-password",
+          "markdownDescription": "Denies the vault_copy_password command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_copy_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-copy-text",
+          "markdownDescription": "Denies the vault_copy_text command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_create command without any pre-configured scope.",

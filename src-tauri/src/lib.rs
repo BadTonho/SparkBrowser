@@ -30,7 +30,7 @@ use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, 
 use commands::site_icons::site_icons;
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::vault::{
-    vault_change_master_password, vault_create, vault_delete_entry, vault_list, vault_lock,
+    vault_change_master_password, vault_copy_password, vault_copy_text, vault_create, vault_delete_entry, vault_list, vault_lock,
     vault_reset, vault_reveal, vault_save_entry, vault_set_auto_lock, vault_status, vault_unlock,
     vault_unlock_recovery,
 };
@@ -204,6 +204,7 @@ pub fn run() {
         .manage(window::resources_popover::ResourcesPopover::default())
         .manage(resources::Resources::default())
         .manage(vault::service::VaultService::default())
+        .manage(vault::clipboard::VaultClipboard::default())
         .manage(window::quick_settings_popover::QuickSettingsPopover::default())
         .manage(window::settings_overlay::SettingsOverlay::default())
         .manage(window::privacy_popover::PrivacyPopover::default())
@@ -658,6 +659,8 @@ pub fn run() {
             vault_change_master_password,
             vault_set_auto_lock,
             vault_reset,
+            vault_copy_password,
+            vault_copy_text,
             close_tabs_reviewed,
             set_split_view,
             dock_tab_to_split,
@@ -768,7 +771,10 @@ pub fn run() {
                     app.state::<shutdown::ShutdownService>().request(app, None),
                 );
             }
-            tauri::RunEvent::Exit => error_log::clean_exit(),
+            tauri::RunEvent::Exit => {
+                vault::clipboard::clear_on_exit(app);
+                error_log::clean_exit()
+            }
             _ => {}
         });
 }

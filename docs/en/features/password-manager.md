@@ -11,7 +11,7 @@ Open **Settings → Passwords** to keep your logins in an encrypted vault on thi
 - **Create a vault** with a master password (8 to 256 characters). Spark cannot recover this password for you.
 - **Recovery key:** when the vault is created you get a recovery key, shown **once**. Spark does not keep a copy. It opens the vault if you forget the master password. Losing both the password and the recovery key makes the saved passwords unreadable.
 - **Add, edit, search and delete** entries with a title, website, username, password and notes. A **Generate** button makes a random 20-character password (no look-alike characters such as `0`/`O` or `1`/`l`).
-- **Copy a password or username** to the clipboard. The clipboard is emptied again after 30 seconds. Passwords are shown only when you ask (Show / Edit), never in the list.
+- **Copy a password or username** to the clipboard. The browser itself (not the Settings page) empties the clipboard again after 30 seconds, even if Settings was closed, but only if it still holds what was copied: something you copied afterwards is left alone. A password is copied straight from the encrypted vault, without passing through the interface. Passwords are shown only when you ask (Show / Edit), never in the list.
 - **Lock:** manually (**Lock now**), automatically after 1, 5 (default), 15, 30 or 60 minutes without use, and whenever the browser closes. A locked vault asks for the master password or the recovery key.
 - **Change the master password** (the current one is asked again). Saved entries and the recovery key keep working.
 - **Start over** if both secrets are lost: the unlock screen offers to erase the vault. This deletes every saved password for good.
@@ -31,5 +31,5 @@ This first version only manages the vault in Settings. It does not detect logins
 ## Limits
 
 - Anyone who can run code as you while the vault is unlocked can read it. Lock the vault when you step away.
-- Copying a password makes it available to every program that reads the clipboard until it is cleared.
+- Copying a password makes it available to every program that reads the clipboard until it is cleared. On Windows the copy is marked so it stays out of the clipboard history and cloud clipboard, and it is also cleared if the browser exits first. On Linux the copy disappears when the browser exits, but a clipboard manager may already have kept its own copy.
 - There is no unlock with the operating system account or biometrics, and no check of passwords against known leaks, yet.

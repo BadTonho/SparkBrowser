@@ -1,8 +1,6 @@
 <script lang="ts">
   import { t, formatDate } from "../../../i18n";
-  import { copySecret } from "../../../services/vault/clipboard.js";
-  import { logIgnored } from "../../../services/ignored-error";
-  import { removeEntry, revealEntry, vaultBusy, vaultEntries, vaultUnreadable } from "../../../stores/vaultStore";
+  import { copyEntryPassword, copyVaultSecret, removeEntry, revealEntry, vaultBusy, vaultEntries, vaultUnreadable } from "../../../stores/vaultStore";
   import type { VaultEntryData } from "../../../types/vault";
   import EntryEditor from "./EntryEditor.svelte";
 
@@ -11,7 +9,8 @@
   let query = $state("");
   let editing = $state<{ id: string | null; data: VaultEntryData } | null>(null);
   let deleting = $state<string | null>(null);
-  let copied = $state<boolean | null>(null);
+  /** Only success is shown here; a failure appears as the vault error message. */
+  let copied = $state(false);
 
   const shown = $derived.by(() => {
     const needle = query.trim().toLowerCase();
@@ -20,12 +19,11 @@
   });
 
   async function copyPassword(id: string): Promise<void> {
-    const entry = await revealEntry(id);
-    copied = entry ? await copySecret(entry.password, { onError: logIgnored }) : null;
+    copied = await copyEntryPassword(id);
   }
 
   async function copyUsername(username: string): Promise<void> {
-    copied = await copySecret(username, { onError: logIgnored });
+    copied = await copyVaultSecret(username);
   }
 
   async function edit(id: string): Promise<void> {
@@ -49,8 +47,7 @@
     <button class="pill-action primary-pill" type="button" onclick={() => (editing = { id: null, data: { ...blank } })} data-testid="vault-add">{$t("passwords.add")}</button>
   </div>
   {#if $vaultUnreadable > 0}<p class="vault-error" role="alert">{$t("passwords.unreadable", { count: $vaultUnreadable })}</p>{/if}
-  {#if copied === true}<p class="vault-ok" role="status">{$t("passwords.copied")}</p>{/if}
-  {#if copied === false}<p class="vault-error" role="alert">{$t("passwords.copy_failed")}</p>{/if}
+  {#if copied}<p class="vault-ok" role="status">{$t("passwords.copied")}</p>{/if}
   {#if $vaultEntries.length === 0}
     <p class="vault-note" data-testid="vault-empty">{$t("passwords.empty")}</p>
   {:else if shown.length === 0}
@@ -73,7 +70,7 @@
           {:else}
             <div class="vault-actions">
               <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => copyPassword(entry.id)} data-testid="vault-copy-password">{$t("passwords.copy_password")}</button>
-              {#if entry.username}<button class="pill-action" type="button" onclick={() => copyUsername(entry.username)}>{$t("passwords.copy_username")}</button>{/if}
+              {#if entry.username}<button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => copyUsername(entry.username)}>{$t("passwords.copy_username")}</button>{/if}
               <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => edit(entry.id)} data-testid="vault-edit">{$t("passwords.edit")}</button>
               <button class="pill-action" type="button" onclick={() => (deleting = entry.id)} data-testid="vault-delete">{$t("passwords.delete")}</button>
             </div>

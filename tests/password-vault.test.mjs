@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { generatePassword, GENERATED_LENGTH } from '../src/lib/services/vault/password-generator.js';
-import { copySecret, resetClipboardTimer, CLEAR_AFTER_MS } from '../src/lib/services/vault/clipboard.js';
 import { vaultError } from '../src/lib/services/vault/errors.js';
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -33,40 +32,25 @@ test('the length is bounded and the random source is used without bias', () => {
   assert.ok(generatePassword(8, biased).length === 8 && calls > 8);
 });
 
-test('copying a secret clears the clipboard after 30 seconds and restarts the wait on a new copy', async () => {
-  resetClipboardTimer();
-  const written = [];
-  const timers = [];
-  const cleared = [];
-  const env = {
-    clipboard: { writeText: async text => { written.push(text); } },
-    setTimer: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
-    clearTimer: id => cleared.push(id),
-  };
-  assert.equal(await copySecret('first', env), true);
-  assert.equal(timers[0].ms, CLEAR_AFTER_MS);
-  assert.equal(CLEAR_AFTER_MS, 30_000);
-  assert.equal(await copySecret('second', env), true);
-  assert.deepEqual(cleared, [1], 'the earlier clean-up is cancelled');
-  timers[1].fn();
-  await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(written, ['first', 'second', '']);
+test('the backend copies secrets and clears the clipboard only if it still holds them', () => {
+  const clipboard = read('src-tauri/src/vault/clipboard/mod.rs');
+  assert.match(clipboard, /CLEAR_AFTER: Duration = Duration::from_secs\(30\)/);
+  assert.match(clipboard, /clear_if_unchanged/);
+  assert.match(read('src-tauri/src/vault/clipboard/platform_windows.rs'), /GetClipboardSequenceNumber[\s\S]*CanIncludeInClipboardHistory/);
+  assert.match(read('src-tauri/src/vault/clipboard/platform_linux.rs'), /wait_for_text\(\)[\s\S]*digest/);
+  assert.match(read('src-tauri/src/lib.rs'), /RunEvent::Exit => \{\s*vault::clipboard::clear_on_exit\(app\);/);
+  // The password is copied by id: the interface never receives it to copy it.
+  const list = read('src/lib/components/settings/passwords/VaultList.svelte');
+  assert.match(list, /copyEntryPassword\(id\)/);
+  assert.ok(!/navigator\.clipboard/.test(list + read('src/lib/components/settings/passwords/RecoveryKeyDialog.svelte')));
 });
 
-test('a clipboard that refuses is reported and nothing is scheduled', async () => {
-  resetClipboardTimer();
-  const errors = [];
-  const timers = [];
-  const env = {
-    clipboard: { writeText: async () => { throw new Error('denied'); } },
-    setTimer: (fn, ms) => timers.push({ fn, ms }),
-    onError: error => errors.push(error.message),
-  };
-  assert.equal(await copySecret('secret', env), false);
-  assert.deepEqual(errors, ['denied']);
-  assert.equal(timers.length, 0);
-  // Without a clipboard at all there is nothing to copy to.
-  assert.equal(await copySecret('secret', { clipboard: null, setTimer: () => 0 }) || await copySecret('secret', {}), false);
+test('a refresh after an action keeps the error of that action visible', () => {
+  const store = read('src/lib/stores/vaultStore.ts');
+  assert.match(store, /if \(!keepFailure\) vaultFailure\.set\(null\);/);
+  assert.match(store, /run\(getVaultStatus, true\)/);
+  assert.match(store, /run\(listVaultEntries, true\)/);
+  assert.equal(vaultError('vault.clipboard_failed').key, 'passwords.copy_failed');
 });
 
 test('backend error codes become stable messages and never echo unknown text', () => {
@@ -120,7 +104,7 @@ test('the vault screens never keep secrets around after use', () => {
 });
 
 test('every vault command is registered end to end', () => {
-  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset'];
+  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
   const manifest = read('src-tauri/src/commands/manifest.rs');
   const capabilities = read('src-tauri/capabilities/default.json');
   const lib = read('src-tauri/src/lib.rs');
@@ -150,7 +134,7 @@ test('the vault never travels in backups and is not copied into private windows'
 });
 
 test('nothing in the vault code logs or prints a secret', () => {
-  for (const file of ['src-tauri/src/vault/crypto.rs', 'src-tauri/src/vault/ops.rs', 'src-tauri/src/vault/service.rs', 'src-tauri/src/commands/vault.rs']) {
+  for (const file of ['src-tauri/src/vault/crypto.rs', 'src-tauri/src/vault/ops.rs', 'src-tauri/src/vault/service.rs', 'src-tauri/src/commands/vault.rs', 'src-tauri/src/vault/clipboard/mod.rs', 'src-tauri/src/vault/clipboard/platform_windows.rs', 'src-tauri/src/vault/clipboard/platform_linux.rs']) {
     const code = read(file).split('#[cfg(test)]')[0];
     assert.ok(!/println!|eprintln!|dbg!/.test(code), `${file} prints nothing`);
     for (const [line] of code.matchAll(/error_log::[a-z_]+\([^;]*;/gs)) {

@@ -160,6 +160,28 @@ pub async fn vault_set_auto_lock(
     executor::run(app, move |conn| ops::set_auto_lock(conn, &service, minutes, Instant::now())).await
 }
 
+/// Copies the password of one entry straight from the backend, so it never reaches the interface.
+/// The clipboard is emptied again after 30 seconds if it still holds it.
+#[tauri::command]
+pub async fn vault_copy_password(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+    id: String,
+) -> Result<(), String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    let password =
+        executor::run(app.clone(), move |conn| ops::password(conn, &service, &id, Instant::now())).await?;
+    crate::vault::clipboard::copy(&app, password).await
+}
+
+/// Copies text the interface already shows (a username, the recovery key) with the same clean-up.
+#[tauri::command]
+pub async fn vault_copy_text(app: AppHandle, text: String) -> Result<(), String> {
+    allowed(&app)?;
+    crate::vault::clipboard::copy(&app, Zeroizing::new(text)).await
+}
+
 /// Erases the vault after both secrets were lost. The interface asks for an explicit confirmation.
 #[tauri::command]
 pub async fn vault_reset(

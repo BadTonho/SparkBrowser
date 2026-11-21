@@ -73,6 +73,8 @@
     "allow-vault-change-master-password",
     "allow-vault-set-auto-lock",
     "allow-vault-reset",
+    "allow-vault-copy-password",
+    "allow-vault-copy-text",
     "allow-close-tabs-reviewed",
     "allow-set-split-view",
     "allow-dock-tab-to-split",

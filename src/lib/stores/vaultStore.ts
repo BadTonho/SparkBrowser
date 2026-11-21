@@ -2,7 +2,7 @@ import { get, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import {
-  changeVaultPassword, createVault, deleteVaultEntry, getVaultStatus, listVaultEntries, lockVault,
+  changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, getVaultStatus, listVaultEntries, lockVault,
   resetVault, revealVaultEntry, saveVaultEntry, setVaultAutoLock, unlockVault, unlockVaultWithRecovery,
 } from "../services/bridge/vault";
 import { vaultError } from "../services/vault/errors.js";
@@ -26,9 +26,13 @@ function fail(error: unknown): undefined {
   return undefined;
 }
 
-async function run<T>(work: () => Promise<T>): Promise<T | undefined> {
+/**
+ * Runs one backend call. A user action clears the previous message first; a refresh that follows it
+ * (`keepFailure`) must not, or the error of that action would vanish before it is seen.
+ */
+async function run<T>(work: () => Promise<T>, keepFailure = false): Promise<T | undefined> {
   vaultBusy.set(true);
-  vaultFailure.set(null);
+  if (!keepFailure) vaultFailure.set(null);
   try {
     return await work();
   } catch (error) {
@@ -45,7 +49,7 @@ function forgetEntries(): void {
 
 export async function refreshVaultStatus(): Promise<void> {
   if (!isTauriRuntime()) return;
-  const status = await run(getVaultStatus);
+  const status = await run(getVaultStatus, true);
   if (!status) return;
   vaultStatus.set(status);
   if (status.unlocked) await loadVaultEntries();
@@ -53,7 +57,7 @@ export async function refreshVaultStatus(): Promise<void> {
 }
 
 export async function loadVaultEntries(): Promise<void> {
-  const listing = await run(listVaultEntries);
+  const listing = await run(listVaultEntries, true);
   if (!listing) {
     await syncLockState();
     return;
@@ -105,6 +109,19 @@ export async function revealEntry(id: string): Promise<VaultRevealed | undefined
   const entry = await run(() => revealVaultEntry(id));
   if (!entry) await syncLockState();
   return entry;
+}
+
+/** Copies an entry's password without it ever reaching the interface. */
+export async function copyEntryPassword(id: string): Promise<boolean> {
+  const done = await run(async () => { await copyVaultPassword(id); return true; });
+  if (!done) await syncLockState();
+  return done === true;
+}
+
+/** Copies a username or the recovery key; the backend clears the clipboard the same way. */
+export async function copyVaultSecret(text: string): Promise<boolean> {
+  const done = await run(async () => { await copyVaultText(text); return true; });
+  return done === true;
 }
 
 export async function saveEntry(id: string | null, data: VaultEntryData): Promise<boolean> {

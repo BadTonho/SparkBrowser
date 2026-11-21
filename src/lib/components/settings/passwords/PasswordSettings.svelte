@@ -49,7 +49,7 @@
   {#if $vaultFailure}
     <p class="vault-error" role="alert" data-testid="vault-error">{$t($vaultFailure.key, $vaultFailure.values)}</p>
   {/if}
-  {#if $vaultStatus && $vaultStatus.retry_after_seconds > 0 && !$vaultStatus.unlocked && !$vaultFailure}
+  {#if $vaultStatus && $vaultStatus.retry_after_seconds > 0 && !$vaultStatus.unlocked && $vaultFailure?.key !== "passwords.error_throttled"}
     <p class="vault-error" role="status">{$t("passwords.error_throttled", { seconds: $vaultStatus.retry_after_seconds })}</p>
   {/if}
 </section>

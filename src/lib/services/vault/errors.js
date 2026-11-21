@@ -8,6 +8,7 @@ const KNOWN = {
   'vault.full': 'passwords.error_full',
   'vault.corrupt': 'passwords.error_corrupt',
   'vault.private_window': 'passwords.private_unavailable',
+  'vault.clipboard_failed': 'passwords.copy_failed',
 };
 
 /**

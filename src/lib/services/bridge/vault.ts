@@ -13,4 +13,7 @@ export const saveVaultEntry = (id: string | null, entry: VaultEntryData) => invo
 export const deleteVaultEntry = (id: string) => invoke<void>("vault_delete_entry", { id });
 export const changeVaultPassword = (current: string, newPassword: string) => invoke<void>("vault_change_master_password", { current, newPassword });
 export const setVaultAutoLock = (minutes: number) => invoke<void>("vault_set_auto_lock", { minutes });
+/** The backend copies the password itself and clears the clipboard again after 30 seconds. */
+export const copyVaultPassword = (id: string) => invoke<void>("vault_copy_password", { id });
+export const copyVaultText = (text: string) => invoke<void>("vault_copy_text", { text });
 export const resetVault = () => invoke<void>("vault_reset", { confirm: true });

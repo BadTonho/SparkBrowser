@@ -1,13 +1,12 @@
 <script lang="ts">
   import { t } from "../../../i18n";
-  import { copySecret } from "../../../services/vault/clipboard.js";
-  import { logIgnored } from "../../../services/ignored-error";
-  import { dismissRecoveryKey, vaultRecoveryKey } from "../../../stores/vaultStore";
+  import { copyVaultSecret, dismissRecoveryKey, vaultBusy, vaultRecoveryKey } from "../../../stores/vaultStore";
 
-  let copied = $state<boolean | null>(null);
+  /** Only success is shown here; a failure appears as the vault error message. */
+  let copied = $state(false);
 
   async function copy(): Promise<void> {
-    if ($vaultRecoveryKey) copied = await copySecret($vaultRecoveryKey, { onError: logIgnored });
+    if ($vaultRecoveryKey) copied = await copyVaultSecret($vaultRecoveryKey);
   }
 </script>
 
@@ -17,10 +16,9 @@
     <p>{$t("passwords.recovery_text")}</p>
     <code class="vault-secret" data-testid="vault-recovery-key">{$vaultRecoveryKey}</code>
     <div class="vault-actions">
-      <button class="pill-action" type="button" onclick={copy}>{$t("passwords.recovery_copy")}</button>
+      <button class="pill-action" type="button" disabled={$vaultBusy} onclick={copy}>{$t("passwords.recovery_copy")}</button>
       <button class="pill-action primary-pill" type="button" onclick={dismissRecoveryKey} data-testid="vault-recovery-confirm">{$t("passwords.recovery_confirm")}</button>
     </div>
-    {#if copied === true}<p class="vault-ok" role="status">{$t("passwords.copied")}</p>{/if}
-    {#if copied === false}<p class="vault-error" role="alert">{$t("passwords.copy_failed")}</p>{/if}
+    {#if copied}<p class="vault-ok" role="status">{$t("passwords.copied")}</p>{/if}
   </div>
 {/if}

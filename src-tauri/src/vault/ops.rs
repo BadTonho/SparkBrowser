@@ -13,7 +13,7 @@ use crate::error_log::{self, Level};
 use rusqlite::Connection;
 use serde::Serialize;
 use std::time::Instant;
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 
 #[derive(Debug, Serialize, PartialEq)]
 pub struct Listing {
@@ -144,6 +144,14 @@ pub fn reveal(conn: &Connection, service: &VaultService, id: &str, now: Instant)
     let plain = crypto::open_entry(&key, &row.id, &row.blob).map_err(|e| fail(e, "reading a vault entry"))?;
     let data: EntryData = serde_json::from_slice(&plain).map_err(|_| fail(CryptoError::Corrupt, "reading a vault entry"))?;
     Ok(Revealed { id: row.id, data, updated_at: row.updated_at })
+}
+
+/// Only the password of one entry, for copying it from the backend (it never reaches the interface).
+pub fn password(conn: &Connection, service: &VaultService, id: &str, now: Instant) -> Result<Zeroizing<String>, String> {
+    let mut revealed = reveal(conn, service, id, now)?;
+    let password = Zeroizing::new(std::mem::take(&mut revealed.data.password));
+    revealed.data.notes.zeroize();
+    Ok(password)
 }
 
 fn new_id() -> Result<String, String> {
