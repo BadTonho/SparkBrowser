@@ -1,5 +1,5 @@
 import { invoke } from "./runtime";
-import type { VaultEntryData, VaultListing, VaultRevealed, VaultStatus, VaultSummary } from "../../types/vault";
+import type { VaultEntryData, VaultImportResult, VaultListing, VaultRevealed, VaultStatus, VaultSummary } from "../../types/vault";
 
 export const getVaultStatus = () => invoke<VaultStatus>("vault_status");
 /** Resolves with the recovery key, which the backend shows once and never stores. */
@@ -12,6 +12,14 @@ export const enableVaultHello = () => invoke<void>("vault_hello_enable");
 export const disableVaultHello = () => invoke<void>("vault_hello_disable");
 export const enableVaultPassword = (newPassword: string) => invoke<void>("vault_password_enable", { newPassword });
 export const disableVaultPassword = (current: string) => invoke<void>("vault_password_disable", { current });
+export const setVaultRequireHello = (enabled: boolean) => invoke<void>("vault_set_require_hello", { enabled });
+/** The backend opens the file dialog and reads the file itself. Resolves null when the dialog was cancelled. */
+export const importVaultCsv = () => invoke<VaultImportResult | null>("vault_import_csv");
+/**
+ * The backend asks for the confirmation (the master password given here, or Windows Hello when null),
+ * opens the save dialog and writes the file. Resolves the number of passwords written, or null when cancelled.
+ */
+export const exportVaultCsv = (currentPassword: string | null) => invoke<number | null>("vault_export_csv", { currentPassword });
 export const lockVault = () => invoke<void>("vault_lock");
 export const listVaultEntries = () => invoke<VaultListing>("vault_list");
 export const revealVaultEntry = (id: string) => invoke<VaultRevealed>("vault_reveal", { id });

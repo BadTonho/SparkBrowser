@@ -2,7 +2,7 @@
 
 [English](../../en/features/password-manager.md)
 
-Abra **Configurações → Senhas** para guardar seus logins em um cofre criptografado neste computador.
+Abra **Configurações → Senhas** para guardar seus logins em um cofre criptografado neste computador. Depois de desbloqueado, ele tem duas páginas, como o gerenciador de senhas de outros navegadores: **Senhas** (busca, **Adicionar** e a lista) e **Configurações** (tudo sobre o próprio cofre).
 
 > **Ainda sem auditoria independente.** O cofre é novo e não foi revisado por um auditor de segurança independente. As Configurações mostram este aviso de forma permanente. Não dependa dele como única cópia de senhas importantes. Veja a [revisão de segurança](../security/account-containers-vault-review.md).
 
@@ -12,13 +12,19 @@ Abra **Configurações → Senhas** para guardar seus logins em um cofre criptog
 - **As formas de desbloquear são independentes.** Você pode usar só a senha mestra, só o Windows Hello, ou os dois e escolher um a cada desbloqueio. Em **Opções do cofre → Formas de desbloquear** você liga ou desliga cada um depois (desligar a senha mestra pede a senha mais uma vez). Pelo menos uma precisa ficar ligada: a chave de recuperação não conta como uma delas.
 - **Windows Hello** pede ao Windows para confirmar que é você (PIN, digital ou rosto) a cada vez. Só funciona neste computador e nesta conta do Windows. Se o cofre abre só com o Windows Hello, redefinir o PIN, trocar de conta do Windows ou reinstalar o sistema pode bloquear essa forma: use a chave de recuperação.
 - **Chave de recuperação:** ao criar o cofre você recebe uma chave de recuperação, mostrada **uma única vez**. O Spark não guarda cópia. Ela abre o cofre se você esquecer a senha mestra ou se o Windows Hello deixar de funcionar. Perder todas as formas de entrar, inclusive a chave de recuperação, deixa as senhas salvas ilegíveis.
+- **A lista é agrupada por site.** Todas as contas de um site ficam sob uma linha (com uma letra de identificação e, para várias contas, "N contas"). Clique na linha para ver as contas e copiar, editar ou apagar. A busca abre todos os sites que combinam.
 - **Adicionar, editar, buscar e apagar** entradas com título, site, usuário, senha e notas. O botão **Gerar** cria uma senha aleatória de 20 caracteres (sem caracteres parecidos, como `0`/`O` ou `1`/`l`).
 - **Copiar a senha ou o usuário** para a área de transferência. O próprio navegador (não a página de Configurações) esvazia a área de transferência de novo após 30 segundos, mesmo que as Configurações tenham sido fechadas, mas só se ela ainda tiver o que foi copiado: algo que você copiou depois fica intacto. A senha é copiada direto do cofre criptografado, sem passar pela interface. As senhas só aparecem quando você pede (Mostrar / Editar), nunca na lista.
 - **Bloquear:** manualmente (**Bloquear agora**), automaticamente após 1, 5 (padrão), 15, 30 ou 60 minutos sem uso, e sempre que o navegador fecha. Um cofre bloqueado pede a senha mestra, o Windows Hello ou a chave de recuperação, conforme o que estiver ligado.
 - **Trocar a senha mestra** (a atual é pedida de novo). As entradas salvas, o Windows Hello e a chave de recuperação continuam funcionando.
 - **Recomeçar** se as duas senhas forem perdidas: a tela de desbloqueio oferece apagar o cofre. Isso apaga todas as senhas salvas para sempre.
 
-Esta primeira versão só gerencia o cofre nas Configurações. Ela não detecta logins, não oferece salvar senhas nem preenchê-las nas páginas, e não importa nem exporta senhas.
+- **Usar o Windows Hello ao mostrar ou copiar senhas** (página Configurações, exige o Windows Hello como forma de desbloquear): o Windows confirma que é você sempre que uma senha é mostrada, copiada ou exportada. Desligar isso pede o Windows Hello mais uma vez, e desligar o Windows Hello como forma de desbloquear também desliga isso.
+- **Importar senhas** de um arquivo CSV (o formato que Chrome, Edge e a maioria dos gerenciadores exportam: `name, url, username, password, note`, com outros nomes de coluna comuns também aceitos). O Spark abre o diálogo de arquivo e lê o arquivo ele mesmo, então o conteúdo nunca passa pela interface. Senhas que já estão no cofre (mesmo endereço, usuário e senha) não são adicionadas duas vezes, e linhas sem senha ou com campos longos demais ficam de fora. O resultado é mostrado: adicionadas, já estavam, ficaram de fora. O arquivo CSV continua no disco: exclua-o depois.
+- **Exportar senhas** para um arquivo CSV. O Spark primeiro confirma que é você (Windows Hello quando o cofre tem, senão a senha mestra) e depois pergunta onde salvar. **O arquivo não é criptografado**: quem abrir consegue ler todas as senhas, então exclua-o assim que terminar.
+- **Excluir todos os dados** apaga o cofre e a chave de recuperação (após uma confirmação), também com o cofre desbloqueado.
+
+Esta primeira versão só gerencia o cofre nas Configurações. Ela não detecta logins, não oferece salvar senhas nem preenchê-las nas páginas.
 
 ## Como ele é protegido
 

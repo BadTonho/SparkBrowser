@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t, formatDate } from "../../../i18n";
+  import { avatarHue, groupEntries } from "../../../services/vault/groups.js";
   import { copyEntryPassword, copyVaultSecret, removeEntry, revealEntry, vaultBusy, vaultEntries, vaultUnreadable } from "../../../stores/vaultStore";
   import type { VaultEntryData } from "../../../types/vault";
   import EntryEditor from "./EntryEditor.svelte";
@@ -9,14 +10,20 @@
   let query = $state("");
   let editing = $state<{ id: string | null; data: VaultEntryData } | null>(null);
   let deleting = $state<string | null>(null);
+  let opened = $state<string[]>([]);
   /** Only success is shown here; a failure appears as the vault error message. */
   let copied = $state(false);
 
-  const shown = $derived.by(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return $vaultEntries;
-    return $vaultEntries.filter(entry => `${entry.title} ${entry.url} ${entry.username}`.toLowerCase().includes(needle));
-  });
+  const groups = $derived(groupEntries($vaultEntries, query));
+  const searching = $derived(query.trim().length > 0);
+
+  function isOpen(site: string): boolean {
+    return searching || opened.includes(site);
+  }
+
+  function toggle(site: string): void {
+    opened = opened.includes(site) ? opened.filter(item => item !== site) : [...opened, site];
+  }
 
   async function copyPassword(id: string): Promise<void> {
     copied = await copyEntryPassword(id);
@@ -50,30 +57,45 @@
   {#if copied}<p class="vault-ok" role="status">{$t("passwords.copied")}</p>{/if}
   {#if $vaultEntries.length === 0}
     <p class="vault-note" data-testid="vault-empty">{$t("passwords.empty")}</p>
-  {:else if shown.length === 0}
+  {:else if groups.length === 0}
     <p class="vault-note">{$t("passwords.no_results")}</p>
   {:else}
-    <ul class="vault-list" data-testid="vault-list">
-      {#each shown as entry (entry.id)}
-        <li class="vault-item" data-testid="vault-item">
-          <div class="vault-item-text">
-            <span class="vault-item-title">{entry.title}</span>
-            <span class="vault-item-sub">{[entry.username, entry.url].filter(Boolean).join(" · ")}</span>
-            <span class="vault-item-sub">{$t("passwords.updated", { date: $formatDate(entry.updated_at * 1000, { dateStyle: "medium" }) })}</span>
-          </div>
-          {#if deleting === entry.id}
-            <div class="vault-actions" role="alertdialog" aria-label={$t("passwords.delete_confirm")}>
-              <span class="vault-note">{$t("passwords.delete_confirm")}</span>
-              <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => confirmDelete(entry.id)} data-testid="vault-delete-confirm">{$t("passwords.delete")}</button>
-              <button class="pill-action" type="button" onclick={() => (deleting = null)}>{$t("passwords.cancel")}</button>
-            </div>
-          {:else}
-            <div class="vault-actions">
-              <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => copyPassword(entry.id)} data-testid="vault-copy-password">{$t("passwords.copy_password")}</button>
-              {#if entry.username}<button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => copyUsername(entry.username)}>{$t("passwords.copy_username")}</button>{/if}
-              <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => edit(entry.id)} data-testid="vault-edit">{$t("passwords.edit")}</button>
-              <button class="pill-action" type="button" onclick={() => (deleting = entry.id)} data-testid="vault-delete">{$t("passwords.delete")}</button>
-            </div>
+    <ul class="vault-groups" data-testid="vault-list">
+      {#each groups as group (group.site)}
+        <li class="vault-group">
+          <button class="vault-group-head" type="button" aria-expanded={isOpen(group.site)} aria-label={$t("passwords.group_open", { site: group.site })}
+            onclick={() => toggle(group.site)} data-testid="vault-group">
+            <span class="vault-avatar" style={`--hue: ${avatarHue(group.site)}`} aria-hidden="true">{group.site.charAt(0).toUpperCase()}</span>
+            <span class="vault-group-name">{group.site}</span>
+            {#if group.entries.length > 1}<span class="vault-group-count">{$t("passwords.accounts", { count: group.entries.length })}</span>{/if}
+            <span class="vault-chevron" class:open={isOpen(group.site)} aria-hidden="true">›</span>
+          </button>
+          {#if isOpen(group.site)}
+            <ul class="vault-accounts">
+              {#each group.entries as entry (entry.id)}
+                <li class="vault-item" data-testid="vault-item">
+                  <div class="vault-item-text">
+                    <span class="vault-item-title">{entry.username || entry.title}</span>
+                    <span class="vault-item-sub">{[entry.username ? entry.title : "", entry.url].filter(Boolean).join(" · ")}</span>
+                    <span class="vault-item-sub">{$t("passwords.updated", { date: $formatDate(entry.updated_at * 1000, { dateStyle: "medium" }) })}</span>
+                  </div>
+                  {#if deleting === entry.id}
+                    <div class="vault-actions" role="alertdialog" aria-label={$t("passwords.delete_confirm")}>
+                      <span class="vault-note">{$t("passwords.delete_confirm")}</span>
+                      <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => confirmDelete(entry.id)} data-testid="vault-delete-confirm">{$t("passwords.delete")}</button>
+                      <button class="pill-action" type="button" onclick={() => (deleting = null)}>{$t("passwords.cancel")}</button>
+                    </div>
+                  {:else}
+                    <div class="vault-actions">
+                      <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => copyPassword(entry.id)} data-testid="vault-copy-password">{$t("passwords.copy_password")}</button>
+                      {#if entry.username}<button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => copyUsername(entry.username)}>{$t("passwords.copy_username")}</button>{/if}
+                      <button class="pill-action" type="button" disabled={$vaultBusy} onclick={() => edit(entry.id)} data-testid="vault-edit">{$t("passwords.edit")}</button>
+                      <button class="pill-action" type="button" onclick={() => (deleting = entry.id)} data-testid="vault-delete">{$t("passwords.delete")}</button>
+                    </div>
+                  {/if}
+                </li>
+              {/each}
+            </ul>
           {/if}
         </li>
       {/each}

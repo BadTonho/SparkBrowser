@@ -15,6 +15,11 @@ const KNOWN = {
   'vault.method_unavailable': 'passwords.error_method_unavailable',
   'vault.method_already_on': 'passwords.error_method_already_on',
   'vault.last_method': 'passwords.error_last_method',
+  'vault.hello_required': 'passwords.error_hello_required',
+  'vault.import_invalid': 'passwords.error_import_invalid',
+  'vault.import_too_large': 'passwords.error_import_too_large',
+  'vault.import_failed': 'passwords.error_import_failed',
+  'vault.export_failed': 'passwords.error_export_failed',
 };
 
 /**

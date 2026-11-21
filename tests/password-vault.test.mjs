@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { generatePassword, GENERATED_LENGTH } from '../src/lib/services/vault/password-generator.js';
 import { vaultError } from '../src/lib/services/vault/errors.js';
+import { avatarHue, groupEntries, siteOf } from '../src/lib/services/vault/groups.js';
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -104,7 +105,7 @@ test('the vault screens never keep secrets around after use', () => {
 });
 
 test('every vault command is registered end to end', () => {
-  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_hello_enable', 'vault_hello_disable', 'vault_password_enable', 'vault_password_disable', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
+  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_hello_enable', 'vault_hello_disable', 'vault_password_enable', 'vault_password_disable', 'vault_set_require_hello', 'vault_import_csv', 'vault_export_csv', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
   const manifest = read('src-tauri/src/commands/manifest.rs');
   const capabilities = read('src-tauri/capabilities/default.json');
   const lib = read('src-tauri/src/lib.rs');
@@ -149,7 +150,7 @@ test('the unlock methods are independent: password, Windows Hello or both, never
   const setup = read('src/lib/components/settings/passwords/VaultSetup.svelte');
   assert.match(setup, /noMethod/);
   assert.match(setup, /hello_available/);
-  const options = read('src/lib/components/settings/passwords/VaultOptions.svelte');
+  const options = read('src/lib/components/settings/passwords/VaultSettings.svelte');
   assert.match(options, /disabled=\{\$vaultBusy \|\| !hasHello\}[^>]*vault-password-off/);
   assert.match(options, /disabled=\{\$vaultBusy \|\| !hasPassword\}[^>]*vault-hello-off/);
   for (const code of ['hello_cancelled', 'hello_failed', 'hello_unavailable', 'method_unavailable', 'method_already_on', 'last_method']) {
@@ -166,6 +167,45 @@ test('Windows Hello is Windows-only, asks Windows off the database thread and ke
   assert.match(commands, /spawn_blocking\(work\)/);
   // A failed Windows Hello unlock is not a wrong guess: it must not feed the brake.
   const ops = read('src-tauri/src/vault/ops.rs').split('#[cfg(test)]')[0];
-  const helloUnlock = ops.slice(ops.indexOf('pub fn unlock_with_hello'), ops.indexOf('pub fn unlock_with_recovery'));
+  const helloUnlock = ops.slice(ops.indexOf('pub fn unlock_with_hello'), ops.indexOf('pub fn requires_hello'));
   assert.ok(!/service\.failure/.test(helloUnlock));
+});
+
+test('the list is grouped by site, like other browsers password pages', () => {
+  const entry = (title, url, username) => ({ id: title + username, title, url, username });
+  assert.equal(siteOf(entry('x', 'https://www.Discord.com/login', 'a')), 'discord.com');
+  assert.equal(siteOf(entry('x', 'roblox.com/home', 'a')), 'roblox.com');
+  assert.equal(siteOf(entry('My Wifi', '', 'a')), 'my wifi');
+  assert.equal(siteOf(entry('', '', '')), '—');
+  const groups = groupEntries([
+    entry('Supabase', 'https://supabase.com', 'zed'),
+    entry('Supabase', 'https://app.supabase.com', 'amy'),
+    entry('Supabase', 'https://supabase.com/x', 'bob'),
+    entry('Discord', 'https://discord.com', 'me'),
+  ]);
+  assert.deepEqual(groups.map(g => [g.site, g.entries.length]), [['app.supabase.com', 1], ['discord.com', 1], ['supabase.com', 2]]);
+  assert.deepEqual(groups[2].entries.map(e => e.username), ['bob', 'zed']);
+  assert.deepEqual(groupEntries([entry('A', 'https://a.test', 'u'), entry('B', 'https://b.test', 'v')], 'V').map(g => g.site), ['b.test']);
+  assert.equal(avatarHue('discord.com'), avatarHue('discord.com'));
+  assert.ok(avatarHue('x') >= 0 && avatarHue('x') < 360);
+});
+
+test('settings rows: Windows Hello each time, import, export and delete, all through the backend', () => {
+  const settings = read('src/lib/components/settings/passwords/VaultSettings.svelte');
+  assert.match(settings, /role="switch"[\s\S]*!hasHello/);
+  assert.match(settings, /importPasswords\(\)/);
+  assert.match(settings, /exportPasswords\(null\)/);
+  assert.match(settings, /eraseVault\(\)/);
+  const bridge = read('src/lib/services/bridge/vault.ts');
+  // The file is chosen and read by the backend: its contents never travel through the interface.
+  assert.ok(!/FileReader|<input[^>]*type="file"/.test(settings + read('src/lib/stores/vaultStore.ts')));
+  assert.match(bridge, /importVaultCsv = \(\) => invoke<VaultImportResult \| null>\("vault_import_csv"\)/);
+  const commands = read('src-tauri/src/commands/vault.rs');
+  // Showing or copying a password is guarded by the Windows Hello requirement; exporting always asks.
+  assert.match(commands, /vault_reveal[\s\S]*?confirm_if_required[\s\S]*?ops::reveal/);
+  assert.match(commands, /vault_copy_password[\s\S]*?confirm_if_required[\s\S]*?ops::password/);
+  assert.match(commands, /vault_export_csv[\s\S]*?verify_password[\s\S]*?confirm_hello[\s\S]*?export_entries/);
+  for (const code of ['hello_required', 'import_invalid', 'import_too_large', 'import_failed', 'export_failed']) {
+    assert.equal(vaultError(`vault.${code}`).key, `passwords.error_${code}`);
+  }
 });

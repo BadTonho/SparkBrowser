@@ -12,6 +12,7 @@ use crate::database::vault_repo as repo;
 use crate::error_log::{self, Level};
 use rusqlite::Connection;
 use serde::Serialize;
+use std::collections::HashSet;
 use std::time::Instant;
 use zeroize::{Zeroize, Zeroizing};
 
@@ -20,6 +21,16 @@ pub struct Listing {
     pub entries: Vec<Summary>,
     /// Entries that could not be decrypted (damaged data); the rest still open.
     pub unreadable: usize,
+}
+
+/// What an import did with the rows of a file.
+#[derive(Debug, Serialize, PartialEq)]
+pub struct ImportResult {
+    pub imported: usize,
+    /// Already in the vault (same address, user name and password).
+    pub duplicates: usize,
+    /// Rows left out: unreadable, or the vault is full.
+    pub skipped: usize,
 }
 
 fn fail(error: CryptoError, place: &str) -> String {
@@ -50,6 +61,7 @@ pub fn status(conn: &Connection, service: &VaultService, now: Instant) -> Result
         has_hello: header.as_ref().is_some_and(|h| h.hello.is_some()),
         // Whether this computer offers Windows Hello is the caller's to say (it needs the operating system).
         hello_available: false,
+        require_hello: initialized && repo::require_hello(conn)?,
         unlocked: initialized && service.is_unlocked(now),
         entry_count: if initialized { repo::count(conn)? } else { 0 },
         auto_lock_minutes: repo::auto_lock_minutes(conn)?.unwrap_or(DEFAULT_AUTO_LOCK_MINUTES),
@@ -121,20 +133,90 @@ pub fn unlock_with_hello(
             service.unlock(key, now);
             Ok(())
         }
-        Err(error) => {
-            let error = if error == CryptoError::WrongSecret { CryptoError::Unavailable } else { error };
-            error_log::report(
-                Level::Warning,
-                "vault",
-                "unlocking the vault with Windows Hello failed: the Windows Hello key no longer opens it",
-                error.code(),
-            );
-            Err(match error {
-                CryptoError::Unavailable => "vault.hello_failed".to_string(),
-                other => other.code().to_string(),
-            })
-        }
+        Err(error) => Err(hello_failure(error, "unlocking the vault with Windows Hello")),
     }
+}
+
+/// A Windows Hello secret that does not open the vault is not a wrong guess (Windows controls who can
+/// produce it), so it is reported as its own failure and never feeds the brake.
+fn hello_failure(error: CryptoError, place: &str) -> String {
+    let error = if error == CryptoError::WrongSecret { CryptoError::Unavailable } else { error };
+    error_log::report(
+        Level::Warning,
+        "vault",
+        &format!("{place} failed: the Windows Hello key no longer opens it"),
+        error.code(),
+    );
+    match error {
+        CryptoError::Unavailable => "vault.hello_failed".to_string(),
+        other => other.code().to_string(),
+    }
+}
+
+/// True when Windows Hello must be confirmed again before a password is shown, copied or exported.
+pub fn requires_hello(conn: &Connection) -> Result<bool, String> {
+    repo::require_hello(conn)
+}
+
+/// Checks a Windows Hello secret against the vault without opening it.
+pub fn confirm_hello(conn: &Connection, secret: &[u8]) -> Result<(), String> {
+    crypto::unlock_with_hello(&header(conn)?, secret)
+        .map(|_| ())
+        .map_err(|e| hello_failure(e, "confirming Windows Hello"))
+}
+
+/// Refuses the action when the vault asks for Windows Hello each time and no valid proof came with it.
+pub fn confirm_if_required(conn: &Connection, proof: Option<&[u8]>) -> Result<(), String> {
+    if !repo::require_hello(conn)? {
+        return Ok(());
+    }
+    match proof {
+        Some(secret) => confirm_hello(conn, secret),
+        None => Err("vault.hello_required".into()),
+    }
+}
+
+/// Turns "ask for Windows Hello each time" on or off. It needs Windows Hello to be one of the ways to
+/// unlock, and changing it while it is on needs a fresh Windows Hello confirmation.
+pub fn set_require_hello(
+    conn: &Connection,
+    service: &VaultService,
+    on: bool,
+    proof: Option<&[u8]>,
+    now: Instant,
+) -> Result<(), String> {
+    service.key(now)?;
+    if on && header(conn)?.hello.is_none() {
+        return Err("vault.method_unavailable".into());
+    }
+    confirm_if_required(conn, proof)?;
+    repo::set_require_hello(conn, on)?;
+    error_log::report(
+        Level::Info,
+        "vault",
+        if on { "Windows Hello is now asked for every password shown or copied" } else { "Windows Hello is no longer asked for every password shown or copied" },
+        "",
+    );
+    Ok(())
+}
+
+/// Checks the master password of an open vault (it counts toward the brake on wrong guesses).
+pub fn verify_password(
+    conn: &Connection,
+    service: &VaultService,
+    current: &str,
+    now: Instant,
+) -> Result<Header, String> {
+    service.key(now)?;
+    brake(service, now)?;
+    let header = header(conn)?;
+    if let Err(error) = crypto::unlock_with_password(&header, current) {
+        if error == CryptoError::WrongSecret {
+            service.failure(now);
+        }
+        return Err(fail(error, "confirming the current vault password"));
+    }
+    Ok(header)
 }
 
 pub fn unlock_with_recovery(
@@ -279,6 +361,8 @@ pub fn disable_hello(conn: &Connection, service: &VaultService, now: Instant) ->
     service.key(now)?;
     let updated = crypto::remove_hello(&header(conn)?).map_err(|e| fail(e, "turning off Windows Hello"))?;
     repo::update_header(conn, &updated)?;
+    // Without Windows Hello there is nothing to ask for each time.
+    repo::set_require_hello(conn, false)?;
     error_log::report(Level::Info, "vault", "Windows Hello was turned off for the vault", "");
     Ok(())
 }
@@ -309,19 +393,81 @@ pub fn disable_password(
     current: &str,
     now: Instant,
 ) -> Result<(), String> {
-    service.key(now)?;
-    brake(service, now)?;
-    let header = header(conn)?;
-    if let Err(error) = crypto::unlock_with_password(&header, current) {
-        if error == CryptoError::WrongSecret {
-            service.failure(now);
-        }
-        return Err(fail(error, "confirming the current vault password"));
-    }
+    let header = verify_password(conn, service, current, now)?;
     let updated = crypto::remove_password(&header).map_err(|e| fail(e, "turning off the vault master password"))?;
     repo::update_header(conn, &updated)?;
     error_log::report(Level::Info, "vault", "the vault master password was turned off", "");
     Ok(())
+}
+
+/// Adds the entries of an import. Ones already in the vault are not added twice, and the vault never
+/// grows past its limit. All of it is stored or none of it.
+pub fn import_entries(
+    conn: &Connection,
+    service: &VaultService,
+    entries: Vec<EntryData>,
+    timestamp: i64,
+    now: Instant,
+) -> Result<ImportResult, String> {
+    let key = service.key(now)?;
+    let identity = |entry: &EntryData| (entry.url.to_lowercase(), entry.username.to_lowercase(), entry.password.clone());
+    let mut known: HashSet<(String, String, String)> = HashSet::new();
+    for row in repo::rows(conn)? {
+        if let Some(data) = crypto::open_entry(&key, &row.id, &row.blob)
+            .ok()
+            .and_then(|plain| serde_json::from_slice::<EntryData>(&plain).ok())
+        {
+            known.insert(identity(&data));
+        }
+    }
+    let mut count = repo::count(conn)?;
+    let mut result = ImportResult { imported: 0, duplicates: 0, skipped: 0 };
+    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    for entry in entries {
+        if entry.validate().is_err() {
+            result.skipped += 1;
+        } else if !known.insert(identity(&entry)) {
+            result.duplicates += 1;
+        } else if count >= MAX_ENTRIES {
+            result.skipped += 1;
+        } else {
+            let id = new_id()?;
+            let plain = Zeroizing::new(serde_json::to_vec(&entry).map_err(|e| e.to_string())?);
+            let blob = crypto::seal_entry(&key, &id, &plain).map_err(|e| fail(e, "importing vault entries"))?;
+            repo::put(&tx, &id, &blob, timestamp)?;
+            count += 1;
+            result.imported += 1;
+        }
+    }
+    tx.commit().map_err(|e| e.to_string())?;
+    error_log::report(
+        Level::Info,
+        "vault",
+        &format!("{} passwords were imported from a file ({} already there, {} left out)", result.imported, result.duplicates, result.skipped),
+        "",
+    );
+    Ok(result)
+}
+
+/// Every entry in plain text, for an export the person confirmed. The second value counts entries that
+/// could not be decrypted (damaged data), which are left out.
+pub fn export_entries(conn: &Connection, service: &VaultService, now: Instant) -> Result<(Vec<EntryData>, usize), String> {
+    let key = service.key(now)?;
+    let (mut entries, mut unreadable) = (Vec::new(), 0);
+    for row in repo::rows(conn)? {
+        match crypto::open_entry(&key, &row.id, &row.blob)
+            .ok()
+            .and_then(|plain| serde_json::from_slice::<EntryData>(&plain).ok())
+        {
+            Some(data) => entries.push(data),
+            None => {
+                unreadable += 1;
+                error_log::report(Level::Error, "vault", "a vault entry could not be decrypted for the export", &format!("entry id {}", row.id));
+            }
+        }
+    }
+    entries.sort_by_key(|entry| entry.title.to_lowercase());
+    Ok((entries, unreadable))
 }
 
 pub fn set_auto_lock(conn: &Connection, service: &VaultService, minutes: u32, now: Instant) -> Result<(), String> {
@@ -534,6 +680,60 @@ mod tests {
         ] {
             assert_eq!(result.unwrap_err(), "vault.locked");
         }
+    }
+
+    #[test]
+    fn asking_for_windows_hello_each_time_guards_passwords_and_needs_windows_hello() {
+        let (conn, service, now) = setup();
+        create(&conn, &service, Some(PASSWORD), None, now).unwrap();
+        assert_eq!(set_require_hello(&conn, &service, true, None, now).unwrap_err(), "vault.method_unavailable");
+        enable_hello(&conn, &service, HELLO, now).unwrap();
+        assert!(confirm_if_required(&conn, None).is_ok(), "off by default");
+        set_require_hello(&conn, &service, true, None, now).unwrap();
+        assert!(status(&conn, &service, now).unwrap().require_hello);
+        assert_eq!(confirm_if_required(&conn, None).unwrap_err(), "vault.hello_required");
+        assert_eq!(confirm_if_required(&conn, Some(b"another signature that is long enough")).unwrap_err(), "vault.hello_failed");
+        confirm_if_required(&conn, Some(HELLO)).unwrap();
+        // Changing it while it is on needs the proof too.
+        assert_eq!(set_require_hello(&conn, &service, false, None, now).unwrap_err(), "vault.hello_required");
+        set_require_hello(&conn, &service, false, Some(HELLO), now).unwrap();
+        set_require_hello(&conn, &service, true, None, now).unwrap();
+        // Turning Windows Hello off drops the setting with it, so passwords never get stuck.
+        disable_hello(&conn, &service, now).unwrap();
+        assert!(!status(&conn, &service, now).unwrap().require_hello);
+        assert!(confirm_if_required(&conn, None).is_ok());
+    }
+
+    #[test]
+    fn an_import_adds_new_entries_once_and_an_export_lists_everything() {
+        let (conn, service, now) = setup();
+        create(&conn, &service, Some(PASSWORD), None, now).unwrap();
+        save(&conn, &service, None, &entry("Existing", "pw"), 1, now).unwrap();
+        let mut same = entry("Another title", "pw");
+        same.url = "HTTPS://EXAMPLE.TEST".into();
+        same.username = "ME@example.test".into();
+        let fresh = EntryData { title: "Fresh".into(), url: "https://fresh.test".into(), username: "u".into(), password: "p".into(), notes: String::new() };
+        let invalid = EntryData { title: " ".into(), ..fresh.clone() };
+        let result = import_entries(&conn, &service, vec![same, fresh.clone(), fresh, invalid], 5, now).unwrap();
+        assert_eq!(result, ImportResult { imported: 1, duplicates: 2, skipped: 1 });
+        assert_eq!(list(&conn, &service, now).unwrap().entries.len(), 2);
+        let (all, unreadable) = export_entries(&conn, &service, now).unwrap();
+        assert_eq!((all.len(), unreadable), (2, 0));
+        assert_eq!(all[0].title, "Existing");
+        service.lock();
+        assert_eq!(import_entries(&conn, &service, vec![], 5, now).unwrap_err(), "vault.locked");
+        assert_eq!(export_entries(&conn, &service, now).unwrap_err(), "vault.locked");
+    }
+
+    #[test]
+    fn verifying_the_password_counts_wrong_guesses() {
+        let (conn, service, now) = setup();
+        create(&conn, &service, Some(PASSWORD), None, now).unwrap();
+        verify_password(&conn, &service, PASSWORD, now).unwrap();
+        for _ in 0..3 {
+            assert_eq!(verify_password(&conn, &service, "nope nope nope", now).unwrap_err(), "vault.wrong_secret");
+        }
+        assert!(verify_password(&conn, &service, PASSWORD, now).unwrap_err().starts_with("vault.throttled:"));
     }
 
     #[test]

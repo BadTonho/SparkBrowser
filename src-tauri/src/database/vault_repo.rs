@@ -27,6 +27,15 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
             );",
         )
         .map_err(|e| e.to_string())
+    })?;
+    migrate_require_hello(conn)
+}
+
+/// Adds the setting that asks for Windows Hello every time a password is shown or copied.
+fn migrate_require_hello(conn: &Connection) -> Result<(), String> {
+    super::migrations::apply(conn, "vault-require-hello-v1", |conn| {
+        conn.execute_batch("ALTER TABLE vault_meta ADD COLUMN require_hello INTEGER NOT NULL DEFAULT 0")
+            .map_err(|e| e.to_string())
     })
 }
 
@@ -70,6 +79,19 @@ pub fn auto_lock_minutes(conn: &Connection) -> Result<Option<u32>, String> {
 
 pub fn set_auto_lock_minutes(conn: &Connection, minutes: u32) -> Result<(), String> {
     conn.execute("UPDATE vault_meta SET auto_lock_minutes=?1 WHERE id=1", [minutes])
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+pub fn require_hello(conn: &Connection) -> Result<bool, String> {
+    conn.query_row("SELECT require_hello FROM vault_meta WHERE id=1", [], |row| row.get::<_, i64>(0))
+        .optional()
+        .map(|value| value.unwrap_or(0) != 0)
+        .map_err(|e| e.to_string())
+}
+
+pub fn set_require_hello(conn: &Connection, on: bool) -> Result<(), String> {
+    conn.execute("UPDATE vault_meta SET require_hello=?1 WHERE id=1", [i64::from(on)])
         .map(|_| ())
         .map_err(|e| e.to_string())
 }

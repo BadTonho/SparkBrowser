@@ -5,11 +5,14 @@
 use crate::database::executor;
 use crate::error_log::{self, Level};
 use crate::vault::hello::{self, HelloError};
+use crate::vault::csv;
 use crate::vault::model::{EntryData, Revealed, Status, Summary};
-use crate::vault::ops::{self, Listing};
+use crate::vault::ops::{self, ImportResult, Listing};
 use crate::vault::service::VaultService;
+use std::io::Read;
 use std::time::Instant;
 use tauri::{AppHandle, Manager, State};
+use tauri_plugin_dialog::DialogExt;
 use zeroize::Zeroizing;
 
 fn allowed(app: &AppHandle) -> Result<(), String> {
@@ -55,6 +58,21 @@ async fn hello_step(
         error_log::report(level, "vault", &summary, &detail);
         error.code().to_string()
     })
+}
+
+/// The Windows Hello proof for an action on a password, asked only when the vault wants it each time.
+/// An open vault is required first, so a locked one never shows a prompt it cannot use.
+async fn proof_if_required(
+    app: &AppHandle,
+    service: &VaultService,
+    what: &'static str,
+) -> Result<Option<Zeroizing<Vec<u8>>>, String> {
+    service.key(Instant::now())?;
+    if executor::run(app.clone(), |conn| ops::requires_hello(conn)).await? {
+        Ok(Some(hello_step(what, hello::secret).await?))
+    } else {
+        Ok(None)
+    }
 }
 
 /// Deletes the Windows Hello key pair of the vault (best effort: the vault no longer uses it).
@@ -223,7 +241,12 @@ pub async fn vault_reveal(
 ) -> Result<Revealed, String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    executor::run(app, move |conn| ops::reveal(conn, &service, &id, Instant::now())).await
+    let proof = proof_if_required(&app, &service, "showing a vault password").await?;
+    executor::run(app, move |conn| {
+        ops::confirm_if_required(conn, proof.as_deref().map(|p| p.as_slice()))?;
+        ops::reveal(conn, &service, &id, Instant::now())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -279,6 +302,151 @@ pub async fn vault_set_auto_lock(
     executor::run(app, move |conn| ops::set_auto_lock(conn, &service, minutes, Instant::now())).await
 }
 
+/// Turns "ask for Windows Hello every time a password is shown or copied" on or off.
+#[tauri::command]
+pub async fn vault_set_require_hello(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+    enabled: bool,
+) -> Result<(), String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    // Changing it while it is on needs Windows Hello once more; turning it on does not.
+    let proof = proof_if_required(&app, &service, "changing the Windows Hello requirement").await?;
+    executor::run(app, move |conn| {
+        ops::set_require_hello(conn, &service, enabled, proof.as_deref().map(|p| p.as_slice()), Instant::now())
+    })
+    .await
+}
+
+/// Reads a file the person picked, bounded, and wipes it from memory when dropped.
+fn read_import_file(path: &std::path::Path) -> Result<Zeroizing<Vec<u8>>, String> {
+    let describe = |error: std::io::Error| {
+        error_log::report(Level::Error, "vault", "the file to import could not be read", &error.to_string());
+        "vault.import_failed".to_string()
+    };
+    let file = std::fs::File::open(path).map_err(describe)?;
+    if file.metadata().map_err(describe)?.len() > csv::MAX_IMPORT_BYTES {
+        error_log::report(Level::Warning, "vault", "the file to import is too large", "");
+        return Err("vault.import_too_large".into());
+    }
+    let mut bytes = Zeroizing::new(Vec::new());
+    file.take(csv::MAX_IMPORT_BYTES + 1).read_to_end(&mut bytes).map_err(describe)?;
+    Ok(bytes)
+}
+
+/// Adds the passwords of a CSV file (Chrome, Edge and similar). The file is chosen and read here, so
+/// its contents never pass through the interface. `None` means the dialog was cancelled.
+#[tauri::command]
+pub async fn vault_import_csv(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+) -> Result<Option<ImportResult>, String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    service.key(Instant::now())?;
+    let picker = app.clone();
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        let Some(path) = picker.dialog().file().add_filter("CSV", &["csv"]).blocking_pick_file() else {
+            return Ok(None);
+        };
+        let path = path.into_path().map_err(|e| {
+            error_log::report(Level::Error, "vault", "the chosen import file has no usable path", &e.to_string());
+            "vault.import_failed".to_string()
+        })?;
+        read_import_file(&path).map(Some)
+    })
+    .await
+    .map_err(|error| {
+        error_log::report(Level::Error, "vault", "reading the import file stopped unexpectedly", &error.to_string());
+        "vault.import_failed".to_string()
+    })??;
+    let Some(bytes) = bytes else { return Ok(None) };
+    let parsed = csv::parse(&bytes).map_err(|code| {
+        error_log::report(Level::Warning, "vault", "the file to import is not a password export", "");
+        code
+    })?;
+    drop(bytes);
+    let left_out = parsed.skipped;
+    let mut result = executor::run(app, move |conn| {
+        ops::import_entries(conn, &service, parsed.entries, timestamp(), Instant::now())
+    })
+    .await?;
+    result.skipped += left_out;
+    Ok(Some(result))
+}
+
+/// Writes every password to a CSV file, in plain text, after the person confirms who they are: with
+/// the master password when one is given, with Windows Hello otherwise. `None` means the dialog was
+/// cancelled. Otherwise the number of passwords written.
+#[tauri::command]
+pub async fn vault_export_csv(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+    current_password: Option<String>,
+) -> Result<Option<usize>, String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    service.key(Instant::now())?;
+    match current_password {
+        Some(password) => {
+            let (password, service) = (Zeroizing::new(password), service.clone());
+            executor::run(app.clone(), move |conn| {
+                ops::verify_password(conn, &service, &password, Instant::now()).map(|_| ())
+            })
+            .await?;
+        }
+        None => {
+            let secret = hello_step("confirming Windows Hello for the export", hello::secret).await?;
+            executor::run(app.clone(), move |conn| ops::confirm_hello(conn, &secret)).await?;
+        }
+    }
+    let (entries, unreadable) =
+        executor::run(app.clone(), move |conn| ops::export_entries(conn, &service, Instant::now())).await?;
+    let count = entries.len();
+    let bytes = csv::render(&entries);
+    drop(entries);
+    let saver = app.clone();
+    let written = tauri::async_runtime::spawn_blocking(move || {
+        let Some(path) = saver
+            .dialog()
+            .file()
+            .add_filter("CSV", &["csv"])
+            .set_file_name("spark-passwords.csv")
+            .blocking_save_file()
+        else {
+            return Ok(false);
+        };
+        let path = path.into_path().map_err(|e| {
+            error_log::report(Level::Error, "vault", "the chosen export file has no usable path", &e.to_string());
+            "vault.export_failed".to_string()
+        })?;
+        if !path.to_string_lossy().to_lowercase().ends_with(".csv") {
+            return Err("vault.export_failed".to_string());
+        }
+        crate::backup::files::write_bytes(&path, &bytes).map_err(|detail| {
+            error_log::report(Level::Error, "vault", "the password export file could not be written", &detail);
+            "vault.export_failed".to_string()
+        })?;
+        Ok(true)
+    })
+    .await
+    .map_err(|error| {
+        error_log::report(Level::Error, "vault", "writing the password export stopped unexpectedly", &error.to_string());
+        "vault.export_failed".to_string()
+    })??;
+    if !written {
+        return Ok(None);
+    }
+    error_log::report(
+        Level::Info,
+        "vault",
+        &format!("{count} passwords were exported to a CSV file ({unreadable} unreadable entries left out)"),
+        "",
+    );
+    Ok(Some(count))
+}
+
 /// Copies the password of one entry straight from the backend, so it never reaches the interface.
 /// The clipboard is emptied again after 30 seconds if it still holds it.
 #[tauri::command]
@@ -289,8 +457,12 @@ pub async fn vault_copy_password(
 ) -> Result<(), String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    let password =
-        executor::run(app.clone(), move |conn| ops::password(conn, &service, &id, Instant::now())).await?;
+    let proof = proof_if_required(&app, &service, "copying a vault password").await?;
+    let password = executor::run(app.clone(), move |conn| {
+        ops::confirm_if_required(conn, proof.as_deref().map(|p| p.as_slice()))?;
+        ops::password(conn, &service, &id, Instant::now())
+    })
+    .await?;
     crate::vault::clipboard::copy(&app, password).await
 }
 

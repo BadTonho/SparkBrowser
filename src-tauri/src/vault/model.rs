@@ -49,6 +49,8 @@ pub struct Status {
     pub has_hello: bool,
     /// This computer offers Windows Hello (always false outside Windows).
     pub hello_available: bool,
+    /// Windows Hello is asked again every time a password is shown or copied.
+    pub require_hello: bool,
     pub unlocked: bool,
     pub entry_count: usize,
     pub auto_lock_minutes: u32,

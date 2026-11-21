@@ -3,8 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import {
   changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, disableVaultHello, disableVaultPassword,
-  enableVaultHello, enableVaultPassword, getVaultStatus, listVaultEntries, lockVault, resetVault, revealVaultEntry, saveVaultEntry,
-  setVaultAutoLock, unlockVault, unlockVaultWithHello, unlockVaultWithRecovery,
+  enableVaultHello, enableVaultPassword, exportVaultCsv, getVaultStatus, importVaultCsv, listVaultEntries, lockVault, resetVault,
+  revealVaultEntry, saveVaultEntry, setVaultAutoLock, setVaultRequireHello, unlockVault, unlockVaultWithHello, unlockVaultWithRecovery,
 } from "../services/bridge/vault";
 import { vaultError } from "../services/vault/errors.js";
 import { logIgnored } from "../services/ignored-error";
@@ -21,6 +21,8 @@ export const vaultFailure = writable<{ key: MessageKey; values: Record<string, u
 export const vaultRecoveryKey = writable<string | null>(null);
 export type VaultNotice = "password_changed" | "hello_on" | "hello_off" | "password_on" | "password_off";
 export const vaultNotice = writable<VaultNotice | null>(null);
+/** The outcome of an import or export, or of changing a setting: a message with its values. */
+export const vaultInfo = writable<{ key: MessageKey; values: Record<string, unknown> } | null>(null);
 
 function fail(error: unknown): undefined {
   const { key, values } = vaultError(error);
@@ -171,6 +173,32 @@ export const turnHelloOff = () => changeMethod(disableVaultHello, "hello_off");
 export const turnPasswordOn = (newPassword: string) => changeMethod(() => enableVaultPassword(newPassword), "password_on");
 export const turnPasswordOff = (current: string) => changeMethod(() => disableVaultPassword(current), "password_off");
 
+/** Asks for Windows Hello every time a password is shown, copied or exported. The screen follows the backend's answer. */
+export async function turnRequireHello(on: boolean): Promise<void> {
+  vaultInfo.set(null);
+  const done = await run(async () => { await setVaultRequireHello(on); return true; });
+  if (!done) await syncLockState();
+  await refreshVaultStatus();
+}
+
+/** The backend opens the dialog and reads the file; a cancelled dialog changes nothing. */
+export async function importPasswords(): Promise<void> {
+  vaultInfo.set(null);
+  const result = await run(importVaultCsv);
+  if (result) vaultInfo.set({ key: "passwords.import_result" as MessageKey, values: { ...result } });
+  else if (result === undefined) await syncLockState();
+  await refreshVaultStatus();
+}
+
+/** `currentPassword` confirms the person; null means Windows Hello does. True when a file was written. */
+export async function exportPasswords(currentPassword: string | null): Promise<boolean> {
+  vaultInfo.set(null);
+  const count = await run(() => exportVaultCsv(currentPassword));
+  if (typeof count === "number") vaultInfo.set({ key: "passwords.export_done" as MessageKey, values: { count } });
+  else if (count === undefined) await syncLockState();
+  return typeof count === "number";
+}
+
 export async function chooseAutoLock(minutes: number): Promise<void> {
   const done = await run(async () => { await setVaultAutoLock(minutes); return true; });
   if (!done) await syncLockState();
@@ -186,6 +214,7 @@ export async function eraseVault(): Promise<void> {
 export function dismissVaultMessages(): void {
   vaultFailure.set(null);
   vaultNotice.set(null);
+  vaultInfo.set(null);
 }
 
 /** Keeps the screen in step when the backend locks the vault by itself (idle time). */

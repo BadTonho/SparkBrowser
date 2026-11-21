@@ -1437,6 +1437,12 @@
           "markdownDescription": "Enables the vault_delete_entry command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_export_csv command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-export-csv",
+          "markdownDescription": "Enables the vault_export_csv command without any pre-configured scope."
+        },
+        {
           "description": "Enables the vault_hello_disable command without any pre-configured scope.",
           "type": "string",
           "const": "allow-vault-hello-disable",
@@ -1447,6 +1453,12 @@
           "type": "string",
           "const": "allow-vault-hello-enable",
           "markdownDescription": "Enables the vault_hello_enable command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_import_csv command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-import-csv",
+          "markdownDescription": "Enables the vault_import_csv command without any pre-configured scope."
         },
         {
           "description": "Enables the vault_list command without any pre-configured scope.",
@@ -1495,6 +1507,12 @@
           "type": "string",
           "const": "allow-vault-set-auto-lock",
           "markdownDescription": "Enables the vault_set_auto_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_set_require_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-set-require-hello",
+          "markdownDescription": "Enables the vault_set_require_hello command without any pre-configured scope."
         },
         {
           "description": "Enables the vault_status command without any pre-configured scope.",
@@ -2781,6 +2799,12 @@
           "markdownDescription": "Denies the vault_delete_entry command without any pre-configured scope."
         },
         {
+          "description": "Denies the vault_export_csv command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-export-csv",
+          "markdownDescription": "Denies the vault_export_csv command without any pre-configured scope."
+        },
+        {
           "description": "Denies the vault_hello_disable command without any pre-configured scope.",
           "type": "string",
           "const": "deny-vault-hello-disable",
@@ -2791,6 +2815,12 @@
           "type": "string",
           "const": "deny-vault-hello-enable",
           "markdownDescription": "Denies the vault_hello_enable command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_import_csv command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-import-csv",
+          "markdownDescription": "Denies the vault_import_csv command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_list command without any pre-configured scope.",
@@ -2839,6 +2869,12 @@
           "type": "string",
           "const": "deny-vault-set-auto-lock",
           "markdownDescription": "Denies the vault_set_auto_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_set_require_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-set-require-hello",
+          "markdownDescription": "Denies the vault_set_require_hello command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_status command without any pre-configured scope.",

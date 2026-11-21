@@ -7,10 +7,9 @@
     dismissVaultMessages, initializeVaultEvents, refreshVaultStatus, vaultFailure, vaultRecoveryKey, vaultStatus,
   } from "../../../stores/vaultStore";
   import RecoveryKeyDialog from "./RecoveryKeyDialog.svelte";
-  import VaultList from "./VaultList.svelte";
-  import VaultOptions from "./VaultOptions.svelte";
   import VaultSetup from "./VaultSetup.svelte";
   import VaultUnlock from "./VaultUnlock.svelte";
+  import VaultWorkspace from "./VaultWorkspace.svelte";
 
   const desktop = isTauriRuntime();
 
@@ -42,8 +41,7 @@
   {:else if $vaultStatus?.unlocked === false}
     <VaultUnlock />
   {:else if $vaultStatus?.unlocked}
-    <VaultList />
-    <VaultOptions />
+    <VaultWorkspace />
   {/if}
 
   {#if $vaultFailure}
