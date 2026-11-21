@@ -47,6 +47,7 @@ pub mod extensions;
 pub mod feeds;
 pub mod graphics;
 pub mod hang_stack;
+pub mod instance_link;
 pub mod legacy;
 pub mod media;
 mod native_tests;
@@ -71,7 +72,9 @@ use commands::media::{
 };
 use commands::minimum_font_probe::set_minimum_font_probe_size;
 use commands::now_playing::{control_now_playing, get_now_playing};
-use commands::windows::{get_browser_windows, move_tab_to_window, open_browser_window};
+use commands::windows::{
+    detach_tab_to_new_window, get_browser_windows, move_tab_to_window, open_browser_window,
+};
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
@@ -174,6 +177,19 @@ pub fn run() {
     let profile_lock = match recovery::profile_lock::ProfileLock::acquire(&data_directory) {
         Ok(lock) => lock,
         Err(error) => {
+            if matches!(error, std::fs::TryLockError::WouldBlock) && !role.is_private() {
+                // Spark is already running: it opens the window this launch was meant to show.
+                match instance_link::ask_running_instance(&data_directory) {
+                    Ok(true) => return,
+                    Ok(false) => {}
+                    Err(details) => error_log::rejected_launch(
+                        &data_directory,
+                        error_log::Level::Warning,
+                        "Spark could not ask the running instance for a window",
+                        &details,
+                    ),
+                }
+            }
             let (level, message) = if matches!(error, std::fs::TryLockError::WouldBlock) {
                 (
                     error_log::Level::Warning,
@@ -547,6 +563,17 @@ pub fn run() {
                 .startup_ready()
                 .store(true, std::sync::atomic::Ordering::Release);
             feeds::start(app.handle().clone());
+            // A second launch of Spark asks this process for a new window instead of failing.
+            if !app.state::<private_session::PrivateRole>().is_private() {
+                if let Err(error) = instance_link::serve(app.handle(), &data_directory) {
+                    error_log::report(
+                        error_log::Level::Warning,
+                        "instance-link",
+                        "Spark will not open a window when launched a second time",
+                        &error,
+                    );
+                }
+            }
             // The password vault locks itself once it has been idle for the time chosen in Settings.
             let vault_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -597,6 +624,7 @@ pub fn run() {
             set_pip_window_shadow,
             open_browser_window,
             move_tab_to_window,
+            detach_tab_to_new_window,
             get_browser_windows,
             exit_video_pip,
             get_tab_media,

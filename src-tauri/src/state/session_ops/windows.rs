@@ -68,11 +68,44 @@ pub fn move_tab(state: &BrowserState, tab_id: &str, target: &str) -> Result<Stri
     if state.session().window(target).is_none() {
         return Err("windows.not_found".into());
     }
+    move_tab_into(state, tab_id, target, false)
+}
+
+/// Moves a tab into a window that does not exist yet, so the new window starts with only that tab
+/// (no extra new-tab page). Returns the window the tab came from.
+pub fn move_tab_to_new_window(
+    state: &BrowserState,
+    tab_id: &str,
+    new_window_id: &str,
+) -> Result<String, String> {
+    if state.session().window(new_window_id).is_some() {
+        return Err("windows.already_open".into());
+    }
+    move_tab_into(state, tab_id, new_window_id, true)
+}
+
+fn move_tab_into(
+    state: &BrowserState,
+    tab_id: &str,
+    target: &str,
+    create_target: bool,
+) -> Result<String, String> {
     let source = state.window_of_tab(tab_id)?;
     if source == target {
         return Ok(source);
     }
     TabCheckpoint::commit_with_activation(state, Some((tab_id, false)), || {
+        if create_target {
+            let workspace = state
+                .snapshot_tabs()
+                .into_iter()
+                .find(|tab| tab.id == tab_id)
+                .map(|tab| tab.workspace_id)
+                .ok_or("Tab was not found")?;
+            state
+                .session()
+                .open_window(target, tab_id.to_string(), workspace)?;
+        }
         let source_state = state.session().window(&source).ok_or("windows.not_found")?;
         let was_active = source_state
             .edit_active_tab_id()

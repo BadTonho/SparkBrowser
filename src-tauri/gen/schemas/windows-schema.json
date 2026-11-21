@@ -399,6 +399,12 @@
           "markdownDescription": "Enables the delete_workspace command without any pre-configured scope."
         },
         {
+          "description": "Enables the detach_tab_to_new_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-detach-tab-to-new-window",
+          "markdownDescription": "Enables the detach_tab_to_new_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the discard_backup_import command without any pre-configured scope.",
           "type": "string",
           "const": "allow-discard-backup-import",
@@ -1777,6 +1783,12 @@
           "type": "string",
           "const": "deny-delete-workspace",
           "markdownDescription": "Denies the delete_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the detach_tab_to_new_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-detach-tab-to-new-window",
+          "markdownDescription": "Denies the detach_tab_to_new_window command without any pre-configured scope."
         },
         {
           "description": "Denies the discard_backup_import command without any pre-configured scope.",

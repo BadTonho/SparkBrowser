@@ -28,6 +28,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_pip_window_shadow",
     "open_browser_window",
     "move_tab_to_window",
+    "detach_tab_to_new_window",
     "get_browser_windows",
     "exit_video_pip",
     "enter_video_pip",

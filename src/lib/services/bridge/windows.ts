@@ -32,6 +32,12 @@ export async function moveTabToWindow(tabId: string, windowId: string): Promise<
   await invoke<void>("move_tab_to_window", { tabId, windowId });
 }
 
+/** Moves a tab into a new window placed at the screen position (physical pixels) where it was dropped. */
+export async function detachTabToNewWindow(tabId: string, x: number, y: number): Promise<void> {
+  if (!isTauriRuntime()) return;
+  await invoke<void>("detach_tab_to_new_window", { tabId, x, y });
+}
+
 /** A readable name for a window id: `main` is window 1, `window-<n>` is window n. */
 export function windowNumber(id: string): number {
   const match = /^window-(\d+)$/.exec(id);

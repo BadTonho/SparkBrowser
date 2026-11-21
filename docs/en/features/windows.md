@@ -2,11 +2,13 @@
 
 Open another window with **Ctrl+N** or from the **⋯ More** menu → **New window**. Each window has its own tab bar, address bar, selected tab, selected workspace and split view, so one can sit on each monitor. Cookies, logins, favorites, history, downloads, settings and workspaces are shared by every window.
 
+Starting Spark again (from the shortcut, the taskbar or the executable) while it is already running does not start a second browser: the running one opens a new window and brings it to the front. Only one process can use the profile, so this is how a window on every monitor is opened from outside the browser.
+
 This is different from a [private window](./private-window.md): it is a separate process that keeps nothing. Normal windows share one profile.
 
 ## Moving tabs between windows
 
-Right-click a tab and choose **Move to window N** or **Move to a new window**. The tab becomes the selected one in the destination; the window it left selects a neighbour (or a new-tab page when that was its last tab). The page reloads in its new window.
+Drag a tab out of the window and release it outside to open it in a **new window** placed at the drop point (a window's only tab stays where it is). Or right-click a tab and choose **Move to window N** or **Move to a new window**. The tab becomes the selected one in the destination; the window it left selects a neighbour (or a new-tab page when that was its last tab). The page reloads in its new window.
 
 ## Closing
 

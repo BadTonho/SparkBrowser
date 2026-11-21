@@ -60,6 +60,7 @@ function fixture({ failDrop = false } = {}) {
     '../i18n': { locale: writable('en'), tr: key => key },
     '../services/ignored-error': { logIgnored() {} }, '../services/bridge/overlays': { onOverlayOpening: () => () => {} },
     '../services/bridge/tab-drag': bridge,
+    '../services/bridge/windows': { detachTabToNewWindow: async (tabId, x, y) => { calls.push({ command: 'detach', tabId, x, y }); } },
     '../services/tab-drag-ghost': { createTabGhost: () => ({ move() {}, setHidden() {}, destroy() {} }) },
     '../services/split-tab-groups.js': { replaceGroupOrder },
     '../services/tab-drag-geometry.js': { crossedDragThreshold: () => true, splitDropSide: () => 'right' },
@@ -82,13 +83,13 @@ function fixture({ failDrop = false } = {}) {
     CSS: { escape: value => value }, innerWidth: 800, innerHeight: 600,
     requestAnimationFrame: callback => { frame = callback; return 1; }, cancelAnimationFrame() { frame = undefined; },
   });
-  const event = (x, y) => ({ clientX: x, clientY: y, pointerId: 1, button: 0, isPrimary: true,
+  const event = (x, y) => ({ clientX: x, clientY: y, screenX: x + 1000, screenY: y + 50, pointerId: 1, button: 0, isPrimary: true,
     target: { closest: () => null }, preventDefault() {} });
   store.startTabDrag(event(100, 20), 'b');
   listeners.get('pointermove')(event(790, 300));
   return { calls, acknowledge, bridge, store, captured: () => captured,
     move: (x, y) => listeners.get('pointermove')(event(x, y)), frame: () => frame?.(),
-    release: () => listeners.get('pointerup')(event(790, 300)) };
+    release: () => listeners.get('pointerup')(event(790, 300)), releaseAt: (x, y) => listeners.get('pointerup')(event(x, y)) };
 }
 
 test('pointer movements are coalesced until the next frame and release flushes the latest position', async () => {
@@ -139,5 +140,14 @@ test('cancelling with a pending update clears it without confirming the split', 
   await f.bridge.flushDragPreview();
   assert.equal(f.captured(), false);
   assert.equal(f.calls.at(-1).args.presentation, null);
+  assert.equal(f.calls.some(c => c.command === 'dock_tab_to_split'), false);
+});
+
+test('dropping a tab outside the window moves it to a new window at the drop point', async () => {
+  const f = fixture();
+  f.move(900, 300);
+  await f.releaseAt(900, 300);
+  const detach = f.calls.find(c => c.command === 'detach');
+  assert.deepEqual({ tabId: detach.tabId, x: detach.x, y: detach.y }, { tabId: 'b', x: 1900, y: 350 });
   assert.equal(f.calls.some(c => c.command === 'dock_tab_to_split'), false);
 });

@@ -7,6 +7,7 @@ import { replaceGroupOrder } from "../services/split-tab-groups.js";
 import { tabLayout } from "./settingsStore";
 import { locale, tr } from "../i18n";
 import { onOverlayOpening } from "../services/bridge/overlays";
+import { detachTabToNewWindow } from "../services/bridge/windows";
 import { dockTabToSplit, moveTabInSplit, setDragPreview, flushDragPreview, type DockSide, type DockContext } from "../services/bridge/tab-drag";
 import { crossedDragThreshold, splitDropSide } from "../services/tab-drag-geometry.js";
 import { mediaPopover, closeMedia } from "./mediaPopoverStore";
@@ -83,9 +84,13 @@ function updateDestination() {
   if (drag.side !== side) { drag.side = side; publish(); }
   preview(side, bounds);
 }
+/** True when the pointer is outside this window: releasing there moves the tab to a new window. */
+function outsideWindow(event: PointerEvent) {
+  return event.clientX < 0 || event.clientY < 0 || event.clientX > innerWidth || event.clientY > innerHeight;
+}
 function move(event: PointerEvent) {
   if (!drag || event.pointerId !== drag.pointerId) return;
-  if (!contextValid() || event.clientX < 0 || event.clientY < 0 || event.clientX > innerWidth || event.clientY > innerHeight) { cancelTabDrag(); return; }
+  if (!contextValid()) { cancelTabDrag(); return; }
   if (!drag.moved && crossedDragThreshold(drag.startX, drag.startY, event.clientX, event.clientY)) {
     drag.moved = true; document.body.style.cursor = 'grabbing'; document.body.style.userSelect = 'none';
     const source = document.querySelector<HTMLElement>(`[data-tab-id="${CSS.escape(drag.id)}"]`);
@@ -122,7 +127,8 @@ function processMove() {
 }
 async function release(event: PointerEvent) {
   if (!drag || event.pointerId !== drag.pointerId) return;
-  if (!contextValid() || event.clientX < 0 || event.clientY < 0 || event.clientX > innerWidth || event.clientY > innerHeight) { cancelTabDrag(); return; }
+  if (!contextValid()) { cancelTabDrag(); return; }
+  if (outsideWindow(event)) { await detachDraggedTab(event); return; }
   // Re-evaluate docking at release without repeating the last provisional reorder.
   move(event);
   processMove();
@@ -160,6 +166,22 @@ async function release(event: PointerEvent) {
     try { if (docking) await setDragPreview(null); }
     finally { busy = false; }
   }
+}
+/** Dropping a tab outside the window opens it in a new window at the drop point. */
+async function detachDraggedTab(event: PointerEvent) {
+  const dragged = drag;
+  if (!dragged) return;
+  // The only tab of a window has nothing to leave behind, so it stays where it is.
+  const detachable = dragged.moved && isTauriRuntime() && get(tabs).length > 1;
+  const ended = cleanup();
+  if (!ended) return;
+  busy = true;
+  try {
+    if (!detachable) { await finishTabReorder(true); return; }
+    await finishTabReorder(true);
+    const scale = window.devicePixelRatio || 1;
+    await detachTabToNewWindow(ended.id, Math.round(event.screenX * scale), Math.round(event.screenY * scale));
+  } finally { busy = false; }
 }
 export function startTabDrag(event: PointerEvent, id: string) {
   if (busy || drag || event.button !== 0 || !event.isPrimary || (event.target as HTMLElement).closest('button,input,a')) return;

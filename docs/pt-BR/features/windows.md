@@ -4,9 +4,11 @@ Abra outra janela com **Ctrl+N** ou pelo menu **⋯ Mais** → **Nova janela**. 
 
 Isto é diferente de uma [janela privada](./private-window.md): ela é outro processo e não guarda nada. As janelas normais compartilham um único perfil.
 
+Abrir o Spark de novo (pelo atalho, pela barra de tarefas ou pelo executável) enquanto ele já está em execução não inicia um segundo navegador: o que está aberto cria uma nova janela e a traz para a frente. Só um processo pode usar o perfil, então é assim que se abre uma janela em cada monitor a partir de fora do navegador.
+
 ## Mover abas entre janelas
 
-Clique com o botão direito em uma aba e escolha **Mover para a janela N** ou **Mover para uma nova janela**. A aba passa a ser a selecionada no destino; a janela de onde ela saiu seleciona uma vizinha (ou uma página de nova aba, se era a última). A página recarrega na nova janela.
+Arraste uma aba para fora da janela e solte para abri-la em uma **nova janela** posicionada no ponto onde soltou (a única aba de uma janela fica onde está). Ou clique com o botão direito em uma aba e escolha **Mover para a janela N** ou **Mover para uma nova janela**. A aba passa a ser a selecionada no destino; a janela de onde ela saiu seleciona uma vizinha (ou uma página de nova aba, se era a última). A página recarrega na nova janela.
 
 ## Fechar
 

@@ -72,6 +72,45 @@ pub async fn open(app: &AppHandle, from_window: &str) -> Result<String, String> 
     Ok(id)
 }
 
+/// Takes a tab out of its window into a new one placed at the given screen position (physical
+/// pixels), where the tab was dropped. The page reloads in its new window.
+pub async fn detach_tab(app: &AppHandle, tab_id: &str, x: i32, y: i32) -> Result<String, String> {
+    let state = app.state::<BrowserState>();
+    let _operation = state.session().operation().await;
+    let id = next_window_id(&state);
+    let source = crate::state::session_ops::windows::move_tab_to_new_window(&state, tab_id, &id)?;
+    let window = match build(app, &id) {
+        Ok(window) => window,
+        Err(error) => {
+            // The window never appeared: its tab goes back to the window it came from.
+            crate::error_log::ignored(crate::state::session_ops::windows::move_tab(
+                &state, tab_id, &source,
+            ));
+            crate::error_log::ignored(close_window(&state, &id));
+            return Err(error);
+        }
+    };
+    place_near(&window, x, y);
+    super::webview_manager::close_tab_webview(app, tab_id)?;
+    super::webview_manager::sync_all_webviews(app, &state)?;
+    for window_id in [source.as_str(), id.as_str()] {
+        crate::state::publish::publish_tabs(app, &state, window_id);
+    }
+    crate::error_log::ignored(window.set_focus());
+    Ok(id)
+}
+
+/// Puts the window's top-left corner a little up and left of the drop point, so the pointer lands on
+/// its tab bar. Only where the platform lets an application choose; elsewhere the window is centered.
+fn place_near(window: &WebviewWindow, x: i32, y: i32) {
+    if can_place_windows() {
+        crate::error_log::ignored(window.set_position(tauri::PhysicalPosition::new(
+            x.saturating_sub(120),
+            y.saturating_sub(20),
+        )));
+    }
+}
+
 /// Sends a tab to another window. The page is rebuilt inside that window, so it reloads.
 pub async fn move_tab(app: &AppHandle, tab_id: &str, target: &str) -> Result<(), String> {
     let state = app.state::<BrowserState>();
