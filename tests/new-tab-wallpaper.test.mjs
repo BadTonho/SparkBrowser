@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { setImmediate as flushWallpaper } from 'node:timers/promises';
 import { runInNewContext } from 'node:vm';
 
 function createWallpaperFixture(initialStorage = {}) {
@@ -75,7 +76,7 @@ function createWallpaperFixture(initialStorage = {}) {
     }
   };
 
-  // Mock IndexedDB
+  // Complete mocked IndexedDB requests asynchronously without depending on timer resolution.
   const idbStore = new Map();
   const stats = { opens: 0, reads: 0 };
   const indexedDB = {
@@ -89,29 +90,29 @@ function createWallpaperFixture(initialStorage = {}) {
               get: key => {
                 stats.reads++;
                 const getReq = {};
-                setTimeout(() => {
+                queueMicrotask(() => {
                   getReq.result = idbStore.get(key);
                   getReq.onsuccess?.();
-                }, 0);
+                });
                 return getReq;
               },
               put: (val, key) => {
                 const putReq = {};
                 idbStore.set(key, val);
-                setTimeout(() => putReq.onsuccess?.(), 0);
+                queueMicrotask(() => putReq.onsuccess?.());
                 return putReq;
               },
               delete: key => {
                 const delReq = {};
                 idbStore.delete(key);
-                setTimeout(() => delReq.onsuccess?.(), 0);
+                queueMicrotask(() => delReq.onsuccess?.());
                 return delReq;
               }
             })
           })
         }
       };
-      setTimeout(() => req.onsuccess?.(), 0);
+      queueMicrotask(() => req.onsuccess?.());
       return req;
     }
   };
@@ -144,23 +145,23 @@ function createWallpaperFixture(initialStorage = {}) {
 test('wallpaper reads are shared until another tab changes the stored record', async () => {
   const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true' });
   f.idbStore.set('current', 'data:image/png;base64,one');
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
   const labels = {};
   f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels } });
   f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels } });
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
   assert.equal(f.stats.opens, 1);
   assert.equal(f.stats.reads, 1);
   f.idbStore.set('current', 'data:image/png;base64,two');
   f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_updated' });
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
   assert.equal(f.stats.reads, 2);
   assert.equal(f.nodes.get('wallpaper-image').src, 'data:image/png;base64,two');
 });
 
 test('images are size-limited and stored as one blob', async () => {
   const f = createWallpaperFixture();
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
   const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json', 'utf8'));
   f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels } });
   const input = f.nodes.get('wallpaper-file');
@@ -171,14 +172,14 @@ test('images are size-limited and stored as one blob', async () => {
   const image = { name: 'small.png', type: 'image/png', size: 100 };
   input.files = [image];
   input.listeners.change();
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
   assert.equal(f.idbStore.get('current').blob, image);
   assert.equal('dataUrl' in f.idbStore.get('current'), false);
 });
 
 test('wallpaper starts hidden when no custom image is saved', async () => {
   const f = createWallpaperFixture();
-  await new Promise(r => setTimeout(r, 25));
+  await flushWallpaper();
 
   const container = f.nodes.get('wallpaper-container');
   const toggle = f.nodes.get('wallpaper-enabled');
@@ -198,7 +199,7 @@ test('wallpaper applies stored image and activates background container with dim
 
   // Trigger DOMContentLoaded / init
   for (const fn of f.listeners.get('DOMContentLoaded') || []) fn();
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
 
   const container = f.nodes.get('wallpaper-container');
   const image = f.nodes.get('wallpaper-image');
@@ -220,7 +221,7 @@ test('dimming slider updates dimming value and saves preference', async () => {
     spark_wallpaper_enabled: 'true',
     spark_wallpaper_dim: '40'
   });
-  await new Promise(r => setTimeout(r, 10));
+  await flushWallpaper();
 
   const slider = f.nodes.get('wallpaper-dim');
   const dimVal = f.nodes.get('wallpaper-dim-val');
@@ -241,10 +242,10 @@ test('remove button deletes wallpaper and clears DOM presentation', async () => 
   });
   f.idbStore.set('current', testData);
 
-  await new Promise(r => setTimeout(r, 10));
+  await flushWallpaper();
   const removeBtn = f.nodes.get('wallpaper-remove');
   await removeBtn.listeners.click();
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
 
   assert.equal(f.idbStore.has('current'), false);
   assert.equal(f.nodes.get('wallpaper-container').hidden, true);
@@ -257,7 +258,7 @@ test('storage events from another tab update wallpaper state', async () => {
   const f = createWallpaperFixture({
     spark_wallpaper_enabled: 'false'
   });
-  await new Promise(r => setTimeout(r, 10));
+  await flushWallpaper();
 
   const container = f.nodes.get('wallpaper-container');
   assert.equal(container.hidden, true);
@@ -269,7 +270,7 @@ test('storage events from another tab update wallpaper state', async () => {
   for (const fn of f.listeners.get('storage') || []) {
     fn({ key: 'spark_wallpaper_updated' });
   }
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
 
   assert.equal(container.hidden, false);
   assert.equal(f.nodes.get('wallpaper-image').src, 'data:image/png;base64,tab2');
@@ -277,7 +278,7 @@ test('storage events from another tab update wallpaper state', async () => {
 
 test('settings menu list opens option detail view and back button returns to list', async () => {
   const f = createWallpaperFixture();
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
 
   const mainView = f.nodes.get('settings-main-view');
   const weatherSec = f.nodes.get('weather-section');
@@ -313,7 +314,7 @@ test('wallpaper applies stored video and plays in wallpaper-video element', asyn
 
   // Trigger DOMContentLoaded
   for (const fn of f.listeners.get('DOMContentLoaded') || []) fn();
-  await new Promise(r => setTimeout(r, 25));
+  await flushWallpaper();
 
   const container = f.nodes.get('wallpaper-container');
   const video = f.nodes.get('wallpaper-video');
@@ -335,7 +336,7 @@ test('video file size limit rejects files larger than 50MB', async () => {
   const f = createWallpaperFixture({
     spark_wallpaper_enabled: 'true'
   });
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
 
   const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/pt-BR/newtab.json', 'utf8'));
   f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels, preferences: { language: 'pt-BR' } } });
@@ -351,7 +352,7 @@ test('video file size limit rejects files larger than 50MB', async () => {
   }];
 
   fileInput.listeners.change();
-  await new Promise(r => setTimeout(r, 20));
+  await flushWallpaper();
 
   assert.match(status.textContent, /50 MB/i);
   assert.equal(f.idbStore.has('current'), false);
@@ -412,7 +413,7 @@ test('zoom 100% fills the area, lower zoom shows the whole picture centred and o
   const image = f.nodes.get('wallpaper-image'), container = f.nodes.get('wallpaper-container');
   Object.assign(container, { clientWidth: 1000, clientHeight: 500 });
   Object.assign(image, { naturalWidth: 1000, naturalHeight: 1000 });
-  await new Promise(r => setTimeout(r, 25));
+  await flushWallpaper();
   // At 100% a square picture covers a 1000x500 area, so it is 1000x1000 and cropped vertically.
   // At 50% it is 500x500: fully visible and centred horizontally despite the saved x = 100%, since it fits.
   assert.equal(image.style.width, '500px');
@@ -422,7 +423,7 @@ test('zoom 100% fills the area, lower zoom shows the whole picture centred and o
   assert.equal(image.style.objectFit, 'fill');
   f.storage.set('spark_wallpaper_zoom', '100');
   f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_zoom' });
-  await new Promise(r => setTimeout(r, 25));
+  await flushWallpaper();
   assert.equal(image.style.width, '1000px');
   assert.equal(image.style.height, '1000px');
   assert.equal(image.style.left, '0px');
@@ -434,7 +435,7 @@ test('changing the zoom recenters the picture before it can be panned again', as
   f.idbStore.set('current', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
   Object.assign(f.nodes.get('wallpaper-container'), { clientWidth: 1000, clientHeight: 500 });
   Object.assign(f.nodes.get('wallpaper-image'), { naturalWidth: 1000, naturalHeight: 1000 });
-  await new Promise(r => setTimeout(r, 25));
+  await flushWallpaper();
   const image = f.nodes.get('wallpaper-image');
   // The saved corner position (100%, 100%) shows the bottom right: 1000x1000 in a 1000x500 area.
   assert.equal(image.style.top, '-500px');
