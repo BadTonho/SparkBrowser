@@ -73,6 +73,7 @@
   "newtab.widgets.audioBackground": "Audio equalizer",
   "newtab.widgets.audioBackgroundEnabled": "Show audio-reactive visualizer",
   "newtab.widgets.audioBackgroundColor": "Color",
+  "newtab.widgets.audioBackgroundOpacity": "Effect opacity",
   "newtab.widgets.audioBackgroundIntensity": "Visual intensity",
   "newtab.widgets.audioBackgroundStyle": "Visual style",
   "newtab.widgets.audioStyleBars": "Bars",

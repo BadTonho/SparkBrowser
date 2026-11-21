@@ -48,6 +48,8 @@ pub struct AudioBackground {
     pub enabled: bool,
     pub color: String,
     pub intensity: f64,
+    /// How visible the whole effect is: 1.0 opaque, lower is more transparent.
+    pub opacity: f64,
     pub style: String,
 }
 /// Visual styles the new-tab canvas knows how to draw (see `public/new-tab/audio-styles.js`).
@@ -79,6 +81,7 @@ impl Default for AudioBackground {
             enabled: false,
             color: "#1db954".into(),
             intensity: 1.0,
+            opacity: 1.0,
             style: "bars".into(),
         }
     }
@@ -89,7 +92,9 @@ impl AudioBackground {
             || !self.color.starts_with('#')
             || !self.color.as_bytes()[1..].iter().all(u8::is_ascii_hexdigit)
             || !self.intensity.is_finite()
-            || !(0.5..=2.0).contains(&self.intensity)
+            || !(0.25..=4.0).contains(&self.intensity)
+            || !self.opacity.is_finite()
+            || !(0.1..=1.0).contains(&self.opacity)
             || !AUDIO_STYLES.contains(&self.style.as_str())
         {
             return Err("invalid_settings".into());
@@ -196,9 +201,21 @@ mod tests {
             assert!(s.validate().is_err());
         }
         s.audio_background.color = "#Ab12ef".into();
-        for intensity in [f64::NAN, f64::INFINITY, 0.0, 2.1] {
+        for intensity in [f64::NAN, f64::INFINITY, 0.0, 0.2, 4.1] {
             s.audio_background.intensity = intensity;
             assert!(s.validate().is_err());
+        }
+        for intensity in [0.25, 3.0, 4.0] {
+            s.audio_background.intensity = intensity;
+            assert!(s.validate().is_ok());
+        }
+        for opacity in [f64::NAN, 0.0, 0.05, 1.1] {
+            s.audio_background.opacity = opacity;
+            assert!(s.validate().is_err());
+        }
+        for opacity in [0.1, 0.5, 1.0] {
+            s.audio_background.opacity = opacity;
+            assert!(s.validate().is_ok());
         }
         s.audio_background.intensity = 1.5;
         for style in ["", "Bars", "unknown", "wave "] {

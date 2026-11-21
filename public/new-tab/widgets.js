@@ -111,7 +111,7 @@
   });
   window.addEventListener('spark-audio-setting', event => {
     if (!settings()) return;
-    change({ audio_background: { ...(settings().audio_background ?? { enabled:false, color:'#1db954', intensity:1, style:'bars' }), ...event.detail } });
+    change({ audio_background: { ...(settings().audio_background ?? { enabled:false, color:'#1db954', intensity:1, opacity:1, style:'bars' }), ...event.detail } });
   });
   $('weather-enabled').addEventListener('change', event => { showCategory('weather'); change({ weather_enabled: event.target.checked }); });
   $('gmail-enabled').addEventListener('change', event => { showCategory('gmail'); change({ gmail_enabled: event.target.checked }); });

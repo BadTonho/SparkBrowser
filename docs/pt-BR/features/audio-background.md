@@ -2,7 +2,7 @@
 
 [English](../../en/features/audio-background.md)
 
-Abra **Personalizar nova guia → Plano de fundo → Equalizador de áudio** e ative **Mostrar visualizador que reage ao áudio**. O efeito começa desativado. Escolha um estilo visual, uma cor e a intensidade visual entre 0,5 e 2,0; esses controles nunca alteram o volume da reprodução.
+Abra **Personalizar nova guia → Plano de fundo → Equalizador de áudio** e ative **Mostrar visualizador que reage ao áudio**. O efeito começa desativado. Escolha um estilo visual, uma cor e a intensidade visual entre 0,25 e 4,0, que define o quanto o efeito reage e o tamanho das suas formas (o efeito acompanha o controle enquanto você arrasta) e a opacidade do efeito entre 0,1 e 1,0, para o quanto ele é transparente; esses controles nunca alteram o volume da reprodução.
 
 O visualizador aparece sobre a cor, imagem ou vídeo atual, atrás dos controles da página. Os estilos em faixa ficam no quarto inferior da nova guia; os estilos em tela cheia usam a página inteira. Ele reage ao espectro real do áudio, incluindo Web Audio, das guias normais em todas as janelas e workspaces do mesmo perfil. O visual desaparece em aproximadamente meio segundo de silêncio. O modo de movimento reduzido usa atualizações discretas e menos frequentes em vez de transições suaves.
 

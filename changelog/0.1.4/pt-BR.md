@@ -10,6 +10,7 @@
 
 - A entrada **Sessão Tor** não aparece mais nas configurações de privacidade: ela foi adiada até que vazamentos de tráfego possam ser descartados. Nada dela esteve ativo.
 - A página **Sobre e atualizações** agora mostra o link do repositório do navegador no GitHub, com um botão que o abre em uma nova guia.
+- A **intensidade do equalizador de áudio** agora muda o tamanho do próprio efeito (barras, anéis, orbes, partículas e os demais crescem ou encolhem), e não só o quanto ele aparece. A faixa passou de 0,5–2 para 0,25–4 e o efeito acompanha o controle enquanto você arrasta. Um novo controle de **Opacidade do efeito**, ao lado, define o quanto o efeito é transparente. Os dois controles agora mostram o valor em porcentagem (na intensidade, 100% é onde a barra terminava antes e agora ela vai até 200%).
 
 ## Correções
 

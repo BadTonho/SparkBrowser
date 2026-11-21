@@ -8,7 +8,7 @@ function fixture(reduced=false){
   let counter=0;
   const listen=(name,fn)=>{const previous=events.get(name);events.set(name,event=>{previous?.(event);fn(event);});};
   const context={clearRect(){rects.length=0;},fillRect(...r){rects.push(r);},createLinearGradient(){return {addColorStop(){}};}};
-  for(const id of ['audio-background','audio-background-enabled','audio-background-options','audio-background-color','audio-background-intensity','audio-background-style','audio-background-settings','audio-background-status'])nodes.set(id,{hidden:true,listeners:{},addEventListener(name,fn){this.listeners[name]=fn;},getContext(){return context;}});
+  for(const id of ['audio-background','audio-background-enabled','audio-background-options','audio-background-color','audio-background-intensity','audio-background-opacity','audio-background-intensity-value','audio-background-opacity-value','audio-background-style','audio-background-settings','audio-background-status'])nodes.set(id,{hidden:true,listeners:{},addEventListener(name,fn){this.listeners[name]=fn;},getContext(){return context;}});
   const document={hidden:false,getElementById:id=>nodes.get(id),addEventListener:listen};
   const window={innerWidth:1000,innerHeight:800,devicePixelRatio:1,addEventListener:listen,
     matchMedia:()=>({matches:reduced,addEventListener(){}}),
@@ -78,9 +78,38 @@ test('every visual style draws finite shapes from real levels and the selector i
   for(const id of ids){
     const style=window.__sparkAudioStyles[id],store={};
     assert.ok(['band','full'].includes(style.layout));
-    for(let frame=0;frame<3;frame++){calls.length=0;style.draw(new Proxy({},handler),1000,400,levels,{color:'#1db954',t:frame,dt:0.033,store});assert.ok(calls.length>0,`${id} draws`);}
+    for(const gain of [Math.SQRT1_2,1,Math.SQRT2])for(let frame=0;frame<3;frame++){calls.length=0;style.draw(new Proxy({},handler),1000,400,levels,{color:'#1db954',gain,t:frame,dt:0.033,store});assert.ok(calls.length>0,`${id} draws`);}
   }
   const f=fixture();f.render({style:'wave'});
   f.nodes.get('audio-background-style').listeners.change({target:{value:'radial'}});
   assert.equal(JSON.stringify(f.actions.at(-1)),'{"style":"radial"}');
+});
+
+test('the intensity gain makes the shapes themselves bigger, not only more opaque',()=>{
+  const source=readFileSync('public/new-tab/audio-styles.js','utf8');
+  const window={};runInNewContext(source,{window,Math,Float32Array,Array,Object,Number});
+  const reach=gain=>{
+    let far=0;const noop=()=>{};
+    const ctx=new Proxy({},{get:(_,name)=>name==='lineTo'?(x,y)=>{far=Math.max(far,Math.hypot(x-500,y-200));}:noop,set:()=>true});
+    window.__sparkAudioStyles.radial.draw(ctx,1000,400,Array(32).fill(0.5),{color:'#1db954',gain,t:0,dt:0.033,store:{}});
+    return far;
+  };
+  assert.ok(reach(2)>reach(1)&&reach(1)>reach(0.5));
+});
+
+test('the effect has its own opacity slider, saved apart from the intensity one',()=>{
+  const f=fixture();f.render({opacity:0.4});
+  assert.equal(f.nodes.get('audio-background-opacity').value,'0.4');
+  f.nodes.get('audio-background-opacity').listeners.change({target:{value:'0.7'}});
+  assert.equal(JSON.stringify(f.actions.at(-1)),'{"opacity":0.7}');
+  const picker=readFileSync('public/new-tab/audio-style-picker.js','utf8');
+  assert.match(picker,/gain:\s*1/,'the style previews pass a gain');
+});
+
+test('both sliders show their value as a percentage, 100% being where the slider used to end',()=>{
+  const f=fixture();f.render({intensity:2,opacity:0.4});
+  assert.equal(f.nodes.get('audio-background-intensity-value').textContent,'100%');
+  assert.equal(f.nodes.get('audio-background-opacity-value').textContent,'40%');
+  f.nodes.get('audio-background-intensity').listeners.input({target:{value:'4'}});
+  assert.equal(f.nodes.get('audio-background-intensity-value').textContent,'200%');
 });

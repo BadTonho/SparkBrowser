@@ -82,7 +82,7 @@ html[data-theme="light"] #audio-background-settings > .toggle { border-color:rgb
 #audio-background-options > label:first-child { margin-top:4px; }
 #audio-background-options #audio-background-style { margin-top:0; }
 #audio-background-options #audio-background-color { display:block; width:56px; height:36px; margin:0; padding:3px; border:1px solid rgba(255, 255, 255, 0.12); border-radius:10px; background:#202023; cursor:pointer; }
-#audio-background-options #audio-background-intensity { display:block; margin:10px 0 0; }
+#audio-background-options #audio-background-intensity, #audio-background-options #audio-background-opacity { display:block; margin:10px 0 0; }
 #audio-background-options > p { margin:18px 0 0; line-height:1.55; }
 #wallpaper-options { margin-top:2px; }
 html[data-theme="light"] #audio-background-options #audio-background-color { border-color:rgba(0, 0, 0, 0.14); background:#ffffff; }

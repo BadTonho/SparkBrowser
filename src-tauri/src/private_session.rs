@@ -351,6 +351,7 @@ mod tests {
                     enabled: true,
                     color: "#112233".into(),
                     intensity: 1.5,
+                    opacity: 0.6,
                     style: "radial".into(),
                 },
                 ..Default::default()

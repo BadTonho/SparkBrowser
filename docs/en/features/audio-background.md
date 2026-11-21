@@ -2,7 +2,7 @@
 
 [Português](../../pt-BR/features/audio-background.md)
 
-Open **Customize new tab → Wallpaper → Audio equalizer** and enable **Show audio-reactive visualizer**. The effect starts disabled. Choose a visual style, a color and a visual intensity from 0.5 to 2.0; these controls never change playback volume.
+Open **Customize new tab → Wallpaper → Audio equalizer** and enable **Show audio-reactive visualizer**. The effect starts disabled. Choose a visual style, a color and a visual intensity from 0.25 to 4.0, which scales how strongly the effect reacts and how big its shapes grow (the effect follows the slider while you drag it), and an effect opacity from 0.1 to 1.0 for how transparent it is; these controls never change playback volume.
 
 The visualizer appears over your current solid color, image or video background, behind the page controls. Band styles stay within the lower quarter of the new tab; full-screen styles use the whole page. It reacts to the actual audio spectrum, including Web Audio, from normal browser tabs across windows and workspaces in the same profile. The visual fades out in roughly half a second of silence. Reduced-motion mode uses discrete, less frequent updates instead of smooth transitions.
 

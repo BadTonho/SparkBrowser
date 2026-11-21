@@ -73,6 +73,7 @@
   "newtab.widgets.audioBackground": "Equalizador de áudio",
   "newtab.widgets.audioBackgroundEnabled": "Mostrar visualizador que reage ao áudio",
   "newtab.widgets.audioBackgroundColor": "Cor",
+  "newtab.widgets.audioBackgroundOpacity": "Opacidade do efeito",
   "newtab.widgets.audioBackgroundIntensity": "Intensidade visual",
   "newtab.widgets.audioBackgroundStyle": "Estilo visual",
   "newtab.widgets.audioStyleBars": "Barras",

@@ -34,7 +34,7 @@
       const store = {};
       for (let f = 0; f < FRAMES; f++) {
         ctx.clearRect(0, 0, W, H);
-        style.draw(ctx, W, H, levels, { color: hex, t: 1 + f * 0.033, dt: 0.033, store });
+        style.draw(ctx, W, H, levels, { color: hex, gain: 1, t: 1 + f * 0.033, dt: 0.033, store });
       }
     } catch { ctx.clearRect(0, 0, W, H); }
   }
