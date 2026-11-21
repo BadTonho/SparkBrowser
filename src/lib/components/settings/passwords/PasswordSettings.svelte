@@ -24,13 +24,18 @@
   });
 </script>
 
-<section class="setting-group" aria-labelledby="passwords-heading">
-  <h2 id="passwords-heading" class="group-title">{$t("passwords.category")}</h2>
-  <p class="intro">{$t("passwords.description")}</p>
-  <aside class="vault-warning" role="note" data-testid="vault-audit-warning">
-    <strong>{$t("passwords.warning_title")}</strong>
-    <span>{$t("passwords.warning_text")}</span>
-  </aside>
+<section class="setting-group vault-root" aria-labelledby="passwords-heading">
+<div class="vault-page" data-testid="vault-page">
+  <header class="vault-head">
+    <div class="vault-head-text">
+      <h2 id="passwords-heading" class="group-title">{$t("passwords.category")}</h2>
+      <p class="intro">{$t("passwords.description")}</p>
+    </div>
+    <aside class="vault-warning" role="note" data-testid="vault-audit-warning">
+      <strong>{$t("passwords.warning_title")}</strong>
+      <span>{$t("passwords.warning_text")}</span>
+    </aside>
+  </header>
 
   {#if !desktop}
     <p class="vault-note">{$t("passwords.desktop_required")}</p>
@@ -50,6 +55,7 @@
   {#if $vaultStatus && $vaultStatus.retry_after_seconds > 0 && !$vaultStatus.unlocked && $vaultFailure?.key !== "passwords.error_throttled"}
     <p class="vault-error" role="status">{$t("passwords.error_throttled", { seconds: $vaultStatus.retry_after_seconds })}</p>
   {/if}
+</div>
 </section>
 
 <style>

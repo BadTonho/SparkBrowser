@@ -218,3 +218,15 @@ test('the recovery key can be saved to a file, only when the text is shaped like
   assert.match(commands, /vault_save_recovery_file[\s\S]*?is_recovery_key_shape[\s\S]*?blocking_save_file/);
   assert.equal(vaultError('vault.save_failed').key, 'passwords.error_save_failed');
 });
+
+test('forms that ask for a secret open in a centered modal dialog, not inline under the row', () => {
+  const dialog = read('src/lib/components/settings/passwords/VaultDialog.svelte');
+  assert.match(dialog, /showModal\(\)/);
+  assert.match(dialog, /<dialog /);
+  const settings = read('src/lib/components/settings/passwords/VaultSettings.svelte');
+  for (const form of ['vault-password-form', 'vault-change-password', 'vault-export-form', 'vault-delete-panel']) {
+    assert.match(settings, new RegExp(`<VaultDialog[^>]*testid="${form}"`), form);
+  }
+  // Whatever was typed is dropped when the dialog closes.
+  assert.match(settings, /function closePanel\(\)[\s\S]*formSecret = "";[\s\S]*current = "";[\s\S]*next = "";/);
+});

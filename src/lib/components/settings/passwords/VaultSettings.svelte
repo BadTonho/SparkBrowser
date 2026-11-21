@@ -4,10 +4,11 @@
   import { VAULT_AUTO_LOCK_MINUTES } from "../../../types/vault";
   import {
     changeMasterPassword, chooseAutoLock, eraseVault, exportPasswords, importPasswords, lockNow, turnHelloOff, turnHelloOn,
-    turnPasswordOff, turnPasswordOn, turnRequireHello, vaultBusy, vaultInfo, vaultNotice, vaultStatus,
+    turnPasswordOff, turnPasswordOn, turnRequireHello, vaultBusy, vaultFailure, vaultInfo, vaultNotice, vaultStatus,
   } from "../../../stores/vaultStore";
+  import VaultDialog from "./VaultDialog.svelte";
 
-  /** Which row has its extra form open. Only one at a time, so the page stays short. */
+  /** The dialog that is open, if any. Only one at a time. */
   let panel = $state<"password_on" | "password_off" | "change" | "export" | "delete" | null>(null);
   let formSecret = $state("");
   let current = $state("");
@@ -21,7 +22,17 @@
     formSecret = "";
     current = "";
     next = "";
-    panel = panel === which ? null : which;
+    vaultFailure.set(null);
+    panel = which;
+  }
+
+  function closePanel(): void {
+    // Whatever was typed is dropped with the dialog.
+    formSecret = "";
+    current = "";
+    next = "";
+    vaultFailure.set(null);
+    panel = null;
   }
 
   async function toggleRequireHello(event: Event): Promise<void> {
@@ -37,7 +48,7 @@
     formSecret = "";
     if (!value || (mode !== "password_on" && mode !== "password_off")) return;
     const done = mode === "password_on" ? await turnPasswordOn(value) : await turnPasswordOff(value);
-    if (done) panel = null;
+    if (done) closePanel();
   }
 
   async function submitChange(event: SubmitEvent): Promise<void> {
@@ -45,7 +56,7 @@
     const [old, fresh] = [current, next];
     current = "";
     next = "";
-    if (await changeMasterPassword(old, fresh)) panel = null;
+    if (await changeMasterPassword(old, fresh)) closePanel();
   }
 
   /** Windows Hello confirms the export when the vault has it; otherwise the master password does. */
@@ -62,11 +73,11 @@
     const value = formSecret;
     formSecret = "";
     if (!value) return;
-    if (await exportPasswords(value)) panel = null;
+    if (await exportPasswords(value)) closePanel();
   }
 
   async function erase(): Promise<void> {
-    panel = null;
+    closePanel();
     await eraseVault();
   }
 </script>
@@ -125,40 +136,12 @@
       <button class="pill-action" type="button" onclick={() => open("password_on")} disabled={$vaultBusy} data-testid="vault-password-on">{$t("passwords.password_turn_on")}</button>
     {/if}
   </div>
-  {#if panel === "password_on" || panel === "password_off"}
-    <form class="vault-panel" onsubmit={submitPassword} data-testid="vault-password-form">
-      <label class="vault-field">
-        <span>{$t(panel === "password_on" ? "passwords.new_password" : "passwords.current_password")}</span>
-        <input type="password" bind:value={formSecret} autocomplete={panel === "password_on" ? "new-password" : "current-password"}
-          minlength={panel === "password_on" ? 8 : undefined} maxlength="256"
-          placeholder={panel === "password_on" ? $t("passwords.password_hint") : undefined} disabled={$vaultBusy} required />
-      </label>
-      <div class="vault-actions">
-        <button class="pill-action" type="submit" disabled={$vaultBusy || !formSecret}>{$t(panel === "password_on" ? "passwords.password_confirm_on" : "passwords.password_confirm_off")}</button>
-      </div>
-    </form>
-  {/if}
 
   {#if hasPassword}
     <div class="vault-setting">
       <span class="vault-setting-text"><span class="vault-setting-title">{$t("passwords.change_password")}</span></span>
       <button class="pill-action" type="button" onclick={() => open("change")} disabled={$vaultBusy} data-testid="vault-change-open">{$t("passwords.change_open")}</button>
     </div>
-    {#if panel === "change"}
-      <form class="vault-panel" onsubmit={submitChange} data-testid="vault-change-password">
-        <label class="vault-field">
-          <span>{$t("passwords.current_password")}</span>
-          <input type="password" bind:value={current} autocomplete="current-password" maxlength="256" disabled={$vaultBusy} required />
-        </label>
-        <label class="vault-field">
-          <span>{$t("passwords.new_password")}</span>
-          <input type="password" bind:value={next} autocomplete="new-password" minlength="8" maxlength="256" placeholder={$t("passwords.password_hint")} disabled={$vaultBusy} required />
-        </label>
-        <div class="vault-actions">
-          <button class="pill-action" type="submit" disabled={$vaultBusy || !current || next.length < 8}>{$t("passwords.change_password")}</button>
-        </div>
-      </form>
-    {/if}
   {/if}
 
   <div class="vault-setting">
@@ -176,17 +159,6 @@
     </span>
     <button class="pill-action" type="button" onclick={() => void startExport()} disabled={$vaultBusy} data-testid="vault-export">{$t("passwords.export_button")}</button>
   </div>
-  {#if panel === "export"}
-    <form class="vault-panel" onsubmit={submitExport} data-testid="vault-export-form">
-      <label class="vault-field">
-        <span>{$t("passwords.export_confirm")}</span>
-        <input type="password" bind:value={formSecret} autocomplete="current-password" maxlength="256" disabled={$vaultBusy} required />
-      </label>
-      <div class="vault-actions">
-        <button class="pill-action" type="submit" disabled={$vaultBusy || !formSecret}>{$t("passwords.export_button")}</button>
-      </div>
-    </form>
-  {/if}
 
   <div class="vault-setting">
     <span class="vault-setting-text">
@@ -195,16 +167,6 @@
     </span>
     <button class="pill-action" type="button" onclick={() => open("delete")} disabled={$vaultBusy} data-testid="vault-delete-all">{$t("passwords.delete_button")}</button>
   </div>
-  {#if panel === "delete"}
-    <div role="alertdialog" aria-labelledby="vault-delete-title" class="vault-panel" data-testid="vault-delete-panel">
-      <h3 id="vault-delete-title">{$t("passwords.reset_title")}</h3>
-      <p class="vault-note">{$t("passwords.reset_warning")}</p>
-      <div class="vault-actions">
-        <button class="pill-action" type="button" onclick={erase} disabled={$vaultBusy} data-testid="vault-delete-all-confirm">{$t("passwords.reset_confirm")}</button>
-        <button class="pill-action" type="button" onclick={() => (panel = null)}>{$t("passwords.cancel")}</button>
-      </div>
-    </div>
-  {/if}
 </div>
 
 {#if $vaultInfo}<p class="vault-ok" role="status" data-testid="vault-info">{$t($vaultInfo.key, $vaultInfo.values)}</p>{/if}
@@ -213,3 +175,66 @@
 {#if $vaultNotice === "password_on"}<p class="vault-ok" role="status">{$t("passwords.notice_password_on")}</p>{/if}
 {#if $vaultNotice === "password_off"}<p class="vault-ok" role="status">{$t("passwords.notice_password_off")}</p>{/if}
 {#if $vaultNotice === "password_changed"}<p class="vault-ok" role="status">{$t("passwords.password_changed")}</p>{/if}
+
+{#if panel === "password_on" || panel === "password_off"}
+  <VaultDialog title={$t(panel === "password_on" ? "passwords.password_turn_on" : "passwords.password_turn_off")} onclose={closePanel} testid="vault-password-form">
+    <form class="vault-dialog-form" onsubmit={submitPassword}>
+      <label class="vault-field">
+        <span>{$t(panel === "password_on" ? "passwords.new_password" : "passwords.current_password")}</span>
+        <input type="password" bind:value={formSecret} autocomplete={panel === "password_on" ? "new-password" : "current-password"}
+          minlength={panel === "password_on" ? 8 : undefined} maxlength="256"
+          placeholder={panel === "password_on" ? $t("passwords.password_hint") : undefined} disabled={$vaultBusy} required />
+      </label>
+      {#if $vaultFailure}<p class="vault-error" role="alert">{$t($vaultFailure.key, $vaultFailure.values)}</p>{/if}
+      <div class="vault-actions">
+        <button class="pill-action primary-pill" type="submit" disabled={$vaultBusy || !formSecret}>{$t(panel === "password_on" ? "passwords.password_confirm_on" : "passwords.password_confirm_off")}</button>
+        <button class="pill-action" type="button" onclick={closePanel}>{$t("passwords.cancel")}</button>
+      </div>
+    </form>
+  </VaultDialog>
+{:else if panel === "change"}
+  <VaultDialog title={$t("passwords.change_password")} onclose={closePanel} testid="vault-change-password">
+    <form class="vault-dialog-form" onsubmit={submitChange}>
+      <label class="vault-field">
+        <span>{$t("passwords.current_password")}</span>
+        <input type="password" bind:value={current} autocomplete="current-password" maxlength="256" disabled={$vaultBusy} required />
+      </label>
+      <label class="vault-field">
+        <span>{$t("passwords.new_password")}</span>
+        <input type="password" bind:value={next} autocomplete="new-password" minlength="8" maxlength="256" placeholder={$t("passwords.password_hint")} disabled={$vaultBusy} required />
+      </label>
+      {#if $vaultFailure}<p class="vault-error" role="alert">{$t($vaultFailure.key, $vaultFailure.values)}</p>{/if}
+      <div class="vault-actions">
+        <button class="pill-action primary-pill" type="submit" disabled={$vaultBusy || !current || next.length < 8}>{$t("passwords.change_password")}</button>
+        <button class="pill-action" type="button" onclick={closePanel}>{$t("passwords.cancel")}</button>
+      </div>
+    </form>
+  </VaultDialog>
+{:else if panel === "export"}
+  <VaultDialog title={$t("passwords.export_title")} onclose={closePanel} testid="vault-export-form">
+    <form class="vault-dialog-form" onsubmit={submitExport}>
+      <p class="vault-note">{$t("passwords.export_description")}</p>
+      <label class="vault-field">
+        <span>{$t("passwords.export_confirm")}</span>
+        <input type="password" bind:value={formSecret} autocomplete="current-password" maxlength="256" disabled={$vaultBusy} required />
+      </label>
+      {#if $vaultFailure}<p class="vault-error" role="alert">{$t($vaultFailure.key, $vaultFailure.values)}</p>{/if}
+      <div class="vault-actions">
+        <button class="pill-action primary-pill" type="submit" disabled={$vaultBusy || !formSecret}>{$t("passwords.export_button")}</button>
+        <button class="pill-action" type="button" onclick={closePanel}>{$t("passwords.cancel")}</button>
+      </div>
+    </form>
+  </VaultDialog>
+{:else if panel === "delete"}
+  <VaultDialog title={$t("passwords.reset_title")} onclose={closePanel} testid="vault-delete-panel">
+    <p class="vault-note">{$t("passwords.reset_warning")}</p>
+    <div class="vault-actions">
+      <button class="pill-action primary-pill" type="button" onclick={erase} disabled={$vaultBusy} data-testid="vault-delete-all-confirm">{$t("passwords.reset_confirm")}</button>
+      <button class="pill-action" type="button" onclick={closePanel}>{$t("passwords.cancel")}</button>
+    </div>
+  </VaultDialog>
+{/if}
+
+<style>
+  .vault-dialog-form { display: flex; flex-direction: column; gap: 12px; }
+</style>
