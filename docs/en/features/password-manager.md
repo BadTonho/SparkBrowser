@@ -27,7 +27,7 @@ Open **Settings → Autofill & Passwords → Password manager** to keep (the sam
 - **Export passwords** to a CSV file. Spark first confirms it is you (Windows Hello when the vault has it, otherwise your master password), then asks where to save. **The file is not encrypted**: anyone who opens it can read every password, so delete it as soon as you are done.
 - **Delete all data** erases the vault and the recovery key (after a confirmation), also while it is unlocked.
 
-Logins are [filled into pages](./autofill.md#filling-in-pages) when you click a login field. Spark does not yet offer to save a login when you submit a form.
+Logins are [filled into pages](./autofill.md#filling-in-pages) when you click a login field. Spark also [offers to save or update a login](./autofill.md#saving-what-you-type) when you submit a form.
 
 ## How it is protected
 

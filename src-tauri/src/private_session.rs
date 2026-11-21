@@ -421,4 +421,35 @@ mod tests {
             .unwrap();
         assert_eq!(favorites, 1);
     }
+    #[test]
+    fn the_vault_is_copied_into_a_private_window_only_when_autofill_there_is_on() {
+        use crate::database::vault_repo as vault;
+        for allowed in [false, true] {
+            let dir = tempfile::tempdir().unwrap();
+            let source_path = dir.path().join("source.db");
+            let source = Connection::open(&source_path).unwrap();
+            initialize_schema(&source).unwrap();
+            initialize_preferences_table(&source).unwrap();
+            let (header, _key, _recovery) =
+                crate::vault::crypto::create(Some("correct horse battery"), None).unwrap();
+            vault::create(&source, &header, 5).unwrap();
+            vault::put(&source, &"a1".repeat(16), b"sealed", 1).unwrap();
+            vault::put_record(&source, &"b2".repeat(16), "card", b"sealed", 1).unwrap();
+            source
+                .execute(
+                    "INSERT INTO app_preferences (key, value) VALUES (?1, ?2)",
+                    rusqlite::params![crate::autofill::PRIVATE_KEY, allowed.to_string()],
+                )
+                .unwrap();
+            drop(source);
+            let target = Connection::open(dir.path().join("target.db")).unwrap();
+            initialize_schema(&target).unwrap();
+            initialize_preferences_table(&target).unwrap();
+            copy_profile(&target, &source_path).unwrap();
+            let copied = vault::load_header(&target).unwrap().is_some();
+            assert_eq!(copied, allowed, "header copied only when allowed");
+            assert_eq!(vault::count(&target).unwrap() == 1, allowed);
+            assert_eq!(vault::record_count(&target, "card").unwrap() == 1, allowed);
+        }
+    }
 }

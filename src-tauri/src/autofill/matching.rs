@@ -19,6 +19,20 @@ pub fn origin(raw: &str) -> Option<(String, String)> {
     ))
 }
 
+/// The host of an address without `www.`, for showing ("example.com").
+pub fn display_host(raw: &str) -> String {
+    host_of(raw).unwrap_or_else(|| raw.to_string())
+}
+
+/// A page is of the same site as an address (or a subdomain of it, or the other way round).
+pub fn same_family(site_url: &str, page: &Url) -> bool {
+    let (Some(site), Some(host)) = (host_of(site_url), page.host_str()) else {
+        return false;
+    };
+    let host = host.to_ascii_lowercase();
+    same_site(&site, host.strip_prefix("www.").unwrap_or(&host))
+}
+
 /// Same site, or one is a subdomain of the other (`login.example.com` and `example.com`).
 fn same_site(a: &str, b: &str) -> bool {
     a == b || a.ends_with(&format!(".{b}")) || b.ends_with(&format!(".{a}"))

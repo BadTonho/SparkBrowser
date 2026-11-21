@@ -13,9 +13,15 @@
   const text = portuguese ? {
     locked: 'O cofre do Spark está bloqueado', hello: 'Desbloquear com o Windows Hello',
     settings: 'Desbloqueie em Configurações › Preenchimento automático e senhas',
+    saveLogin: s => `Salvar a senha de ${s}?`, updateLogin: s => `Atualizar a senha de ${s}?`,
+    saveCard: s => `Salvar o cartão ${s}?`, saveContact: s => `Salvar estes dados de contato (${s})?`,
+    save: 'Salvar', update: 'Atualizar', notNow: 'Agora não',
   } : {
     locked: 'The Spark vault is locked', hello: 'Unlock with Windows Hello',
     settings: 'Unlock it in Settings › Autofill & passwords',
+    saveLogin: s => `Save the password for ${s}?`, updateLogin: s => `Update the password for ${s}?`,
+    saveCard: s => `Save the card ${s}?`, saveContact: s => `Save this contact info (${s})?`,
+    save: 'Save', update: 'Update', notNow: 'Not now',
   };
   let sequence = 0;
   let current = null;
@@ -194,11 +200,92 @@
     hide();
   }
 
+  // --- Saving what the person typed -------------------------------------------------------------
+  const filled = el => (el.value || '').trim();
+  /** Month and year from a "MM/YY", "MM / YYYY" or "MMYY" field. */
+  function parseExpiry(value) {
+    const match = /^(\d{1,2})\s*[\/\-.]?\s*(\d{2}|\d{4})$/.exec(value.trim());
+    if (!match) return null;
+    const year = match[2].length === 2 ? 2000 + Number(match[2]) : Number(match[2]);
+    return { month: String(Number(match[1])), year: String(year) };
+  }
+  /** What a submitted form holds, as { kind, values } for the browser to compare with the vault. */
+  function capture(form) {
+    const found = {};
+    for (const el of form.querySelectorAll('input,select')) {
+      const info = analyze(el);
+      if (!info || !filled(el)) continue;
+      if (info.role === 'password' && found.password && !/new-password/.test(el.getAttribute('autocomplete') || '')) continue;
+      found[info.role] = filled(el);
+    }
+    if (found['cc-exp'] && !found['cc-exp-month']) {
+      const expiry = parseExpiry(found['cc-exp']);
+      if (expiry) { found['cc-exp-month'] = expiry.month; found['cc-exp-year'] = expiry.year; }
+    }
+    if (found['cc-number']) {
+      const values = { 'cc-number': found['cc-number'], 'cc-name': found['cc-name'] || '', 'cc-exp-month': found['cc-exp-month'] || '', 'cc-exp-year': found['cc-exp-year'] || '' };
+      return { kind: 'card', values };
+    }
+    if (found.password) return { kind: 'login', values: { username: found.username || found.email || '', password: found.password } };
+    const contact = {};
+    for (const [role, value] of Object.entries(found)) if (!role.startsWith('cc-') && role !== 'username') contact[role] = value;
+    return Object.keys(contact).length >= 3 ? { kind: 'contact', values: contact } : null;
+  }
+  document.addEventListener('submit', event => {
+    if (!event.isTrusted || !(event.target instanceof HTMLFormElement)) return;
+    const found = capture(event.target);
+    if (found) post('capture', { kind: found.kind, data: JSON.stringify(found.values), origin: location.origin });
+  }, true);
+
+  let banner = null;
+  function closeBanner() { if (banner) banner.host.remove(); banner = null; }
+  /** A bar at the top of the page: "Save the password for example.com?". Real clicks only. */
+  function prompt(message) {
+    closeBanner();
+    const host = document.createElement('div');
+    const root = host.attachShadow({ mode: __AUTOFILL_SHADOW__ });
+    const style = document.createElement('style');
+    style.textContent = `
+      :host { all: initial; }
+      .bar { position: fixed; z-index: 2147483647; top: 12px; right: 12px; box-sizing: border-box; max-width: min(420px, calc(100vw - 24px));
+        display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(128,128,128,.35);
+        background: #20232a; color: #f2f3f5; box-shadow: 0 8px 28px rgba(0,0,0,.35); font: 13px/1.4 system-ui, sans-serif; }
+      @media (prefers-color-scheme: light) { .bar { background: #fff; color: #1d1f23; } }
+      .row { display: flex; gap: 8px; justify-content: flex-end; }
+      button { all: unset; padding: 6px 12px; border-radius: 8px; cursor: pointer; background: rgba(128,128,128,.22); }
+      button.primary { background: #3b82f6; color: #fff; }
+      button:focus-visible { outline: 2px solid #93c5fd; }`;
+    const bar = document.createElement('div');
+    bar.className = 'bar'; bar.setAttribute('role', 'alertdialog');
+    const label = document.createElement('div');
+    const sentence = message.kind === 'login' ? (message.mode === 'update' ? text.updateLogin : text.saveLogin)
+      : message.kind === 'card' ? text.saveCard : text.saveContact;
+    label.textContent = sentence(message.subject);
+    const row = document.createElement('div'); row.className = 'row';
+    const decide = (name, path, primary) => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.textContent = name; if (primary) button.className = 'primary';
+      button.addEventListener('click', event => { if (!event.isTrusted) return; event.preventDefault(); closeBanner(); post(path, { kind: message.kind }); });
+      return button;
+    };
+    row.append(decide(text.notNow, 'dismiss', false), decide(message.mode === 'update' ? text.update : text.save, 'save', true));
+    bar.append(label, row);
+    root.append(style, bar);
+    document.documentElement.append(host);
+    banner = { host };
+  }
+  // A page that follows a submit (the login redirects) tells the browser it is there, so a pending
+  // "save this?" can be shown on it.
+  const announce = () => post('ready', { kind: 'login' });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', announce, { once: true }); else announce();
+
   // The browser reaches the page only through this one name, which is not writable and not guessable.
   Object.defineProperty(window, entry, {
     value(message) {
       if (message.op === 'show') show(message);
       else if (message.op === 'fill') fill(message.kind, message.values);
+      else if (message.op === 'prompt') prompt(message);
+      else if (message.op === 'close-prompt') closeBanner();
     },
   });
 })();

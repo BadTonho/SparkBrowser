@@ -67,6 +67,40 @@ export async function checkAutofill(context) {
   await wait(600);
   assert.equal(await listed(), null, 'no suggestions under a search box');
 
+  // Saving: a sign-up submitted with a new login asks to save it, and asks again only when it changes.
+  const bar = () => page(`const host=[...document.documentElement.children].find(e=>e.shadowRoot&&e.shadowRoot.querySelector('.bar'));
+    return host?{text:host.shadowRoot.querySelector('.bar div').textContent,buttons:[...host.shadowRoot.querySelectorAll('button')].map(b=>b.textContent)}:null;`);
+  const press = index => withWebview(path, async () => {
+    const element = await script(`const host=[...document.documentElement.children].find(e=>e.shadowRoot&&e.shadowRoot.querySelector('.bar'));return host.shadowRoot.querySelectorAll('button')[arguments[0]]`, index);
+    await request('POST', `/session/${context.sessionId()}/element/${reference(element)}/click`, {});
+  });
+  const submit = async (user, pass) => {
+    await page(`document.querySelector('#nuser').value=${JSON.stringify(user)};document.querySelector('#npass').value=${JSON.stringify(pass)};return true`);
+    await click('#go');
+  };
+  const savedUsers = async () => (await invoke('vault_list')).entries.map(entry => entry.username);
+
+  await submit('newuser@example.test', 'brand-new-pass');
+  const offer = await until(bar, 'save question shown');
+  assert.match(offer.text, /(password|senha)/i);
+  assert.ok(!offer.text.includes('brand-new-pass'), 'the question never shows the password');
+  assert.equal(offer.buttons.length, 2);
+  await press(1);
+  await until(async () => (await savedUsers()).includes('newuser@example.test'), 'login saved after Save');
+  await until(async () => await bar() === null, 'question closed');
+
+  await submit('newuser@example.test', 'brand-new-pass');
+  await wait(900);
+  assert.equal(await bar(), null, 'a login that is already saved is not offered again');
+
+  await submit('newuser@example.test', 'changed-pass');
+  await until(bar, 'update question shown');
+  await press(0);
+  await until(async () => await bar() === null, 'question closed by Not now');
+  await submit('newuser@example.test', 'changed-pass');
+  await wait(900);
+  assert.equal(await bar(), null, 'a declined question is not asked again');
+
   // A locked vault offers nothing to fill, only a note.
   await invoke('vault_lock');
   await click('#user');

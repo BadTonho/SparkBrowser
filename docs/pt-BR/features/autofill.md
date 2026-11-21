@@ -33,6 +33,15 @@ Clique em um campo de login, cartão ou contato e o Spark lista o que combina em
 - Caixas de busca, outros quadros dentro de uma página (como iframes de pagamento) e as páginas do próprio Spark não são preenchidos. Só a página em que você está: se você for para outro site antes de escolher, nada é preenchido.
 - O texto da lista segue o idioma do seu sistema, não o idioma escolhido no Spark.
 
+### Salvando o que você digita
+
+Envie um cadastro, um login, um pagamento ou um endereço e o Spark pode perguntar, numa barra no canto superior direito da página: **Salvar a senha de example.com?**, **Atualizar a senha de example.com?**, **Salvar o cartão Visa •••• 4242?** ou **Salvar estes dados de contato?**. Nada é salvo até você clicar em **Salvar** (ou **Atualizar**).
+
+- Ele só pergunta com o cofre **desbloqueado**, nunca em janela privada, e não quando o mesmo login ou cartão já está salvo. Uma senha diferente oferece **Atualizar**.
+- Um cartão só é oferecido com número válido (checksum) e validade; o código de segurança nunca é lido. Dados de contato precisam de endereço ou telefone e de ao menos três campos preenchidos.
+- Se o envio levar a outra página do mesmo site, a pergunta é feita lá (por até 90 segundos).
+- **Agora não** impede essa mesma pergunta para aquele site até o Spark reiniciar.
+
 ### Os interruptores
 
 Abaixo da lista, nas Configurações:
@@ -43,7 +52,6 @@ Abaixo da lista, nas Configurações:
 ## Fora do escopo
 
 - **Aliases de e-mail** (endereços que encaminham para o seu e-mail) dependem de um serviço online que o Spark não mantém, então não são oferecidos.
-- Salvar um login, cartão ou endereço ao enviar um formulário ("Salvar este cartão?") ainda não existe.
 
 ## Testes
 
@@ -52,7 +60,7 @@ node tools/testing/native-smoke.mjs --case autofill
 node --test tests/autofill-roles.test.mjs
 ```
 
-`autofill` preenche um login, um cartão e um contato numa página real e confere os casos acima (outro site, caixa de busca, cofre bloqueado, interruptor desligado). `autofill-roles` cobre como os campos são reconhecidos.
+`autofill` preenche um login, um cartão e um contato numa página real e confere os casos acima (outro site, caixa de busca, cofre bloqueado, interruptor desligado) e as perguntas de salvar (salvar, já salvo, Agora não). `autofill-roles` cobre como os campos são reconhecidos.
 
 ## Armazenamento
 

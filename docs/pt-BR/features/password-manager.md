@@ -27,7 +27,7 @@ Abra **Configurações → Preenchimento automático e senhas → Gerenciador de
 - **Exportar senhas** para um arquivo CSV. O Spark primeiro confirma que é você (Windows Hello quando o cofre tem, senão a senha mestra) e depois pergunta onde salvar. **O arquivo não é criptografado**: quem abrir consegue ler todas as senhas, então exclua-o assim que terminar.
 - **Excluir todos os dados** apaga o cofre e a chave de recuperação (após uma confirmação), também com o cofre desbloqueado.
 
-Os logins são [preenchidos nas páginas](./autofill.md#preenchendo-nas-páginas) quando você clica em um campo de login. O Spark ainda não oferece salvar um login ao enviar um formulário.
+Os logins são [preenchidos nas páginas](./autofill.md#preenchendo-nas-páginas) quando você clica em um campo de login. O Spark também [oferece salvar ou atualizar um login](./autofill.md#salvando-o-que-você-digita) ao enviar um formulário.
 
 ## Como ele é protegido
 

@@ -11,6 +11,7 @@
 //! - secrets are never written to the error log.
 mod matching;
 mod payload;
+mod save;
 
 use crate::database::{executor, preferences_repo};
 use crate::error_log::{self, Level};
@@ -87,6 +88,8 @@ pub struct AutofillService {
     disabled: AtomicBool,
     in_private: AtomicBool,
     pending: Mutex<HashMap<String, Pending>>,
+    saves: Mutex<HashMap<String, save::PendingSave>>,
+    declined: Mutex<std::collections::HashSet<String>>,
 }
 
 impl AutofillService {
@@ -104,6 +107,25 @@ impl AutofillService {
     fn remember(&self, label: &str, pending: Pending) {
         if let Ok(mut map) = self.pending.lock() {
             map.insert(label.to_string(), pending);
+        }
+    }
+    fn keep_save(&self, label: &str, pending: save::PendingSave) {
+        if let Ok(mut map) = self.saves.lock() {
+            map.insert(label.to_string(), pending);
+        }
+    }
+    fn peek_save(&self, label: &str) -> Option<save::PendingSave> {
+        self.saves.lock().ok()?.get(label).cloned()
+    }
+    fn take_save(&self, label: &str) -> Option<save::PendingSave> {
+        self.saves.lock().ok()?.remove(label)
+    }
+    fn is_declined(&self, key: &str) -> bool {
+        self.declined.lock().is_ok_and(|set| set.contains(key))
+    }
+    fn decline(&self, key: String) {
+        if let Ok(mut set) = self.declined.lock() {
+            set.insert(key);
         }
     }
     fn recall(&self, label: &str) -> Option<Pending> {
@@ -185,7 +207,8 @@ pub(crate) fn handle(app: &AppHandle, label: &str, token: &str, url: &Url) {
     let Some(values) = crate::security::bridge::query(
         url,
         &[
-            "token", "document", "sequence", "kind", "role", "x", "y", "w", "h", "id",
+            "token", "document", "sequence", "kind", "role", "x", "y", "w", "h", "id", "data",
+            "origin",
         ],
     ) else {
         return;
@@ -222,6 +245,29 @@ pub(crate) fn handle(app: &AppHandle, label: &str, token: &str, url: &Url) {
     );
     let id = values.get("id").cloned();
     match url.path() {
+        "/capture" => {
+            let Some(data) = values
+                .get("data")
+                .and_then(|text| serde_json::from_str::<HashMap<String, String>>(text).ok())
+            else {
+                return;
+            };
+            let origin = values.get("origin").cloned().unwrap_or_default();
+            tauri::async_runtime::spawn(async move {
+                if let Err(error) = save::capture(&app, &label, &token, kind, data, &origin).await {
+                    report("could not look at a submitted form", &error);
+                }
+            });
+        }
+        "/ready" => save::ready(&app, &label, &token),
+        "/dismiss" => save::dismiss(&app, &label),
+        "/save" => {
+            tauri::async_runtime::spawn(async move {
+                if let Err(error) = save::confirm(&app, &label).await {
+                    report("could not save what was submitted", &error);
+                }
+            });
+        }
         "/request" => {
             app.state::<AutofillService>().remember(
                 &label,

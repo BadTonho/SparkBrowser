@@ -174,6 +174,7 @@ export async function createFixture() {
           <select id="ccyear" autocomplete="cc-exp-year">${years}</select>
         </form>
         <form id="contact" onsubmit="return false"><input id="cname" autocomplete="name"><input id="cmail" autocomplete="email"><input id="cphone" autocomplete="tel"><input id="ccity" autocomplete="address-level2"></form>
+        <form id="signup" onsubmit="return false"><input id="nuser" autocomplete="username"><input id="npass" type="password" autocomplete="new-password"><button id="go" type="submit">Sign up</button></form>
         <input id="search" name="q"></body></html>`);
       return;
     }

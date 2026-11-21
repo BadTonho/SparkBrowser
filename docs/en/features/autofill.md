@@ -33,6 +33,15 @@ Click a login, card or contact field and Spark lists what fits under it. Pick an
 - Search boxes, other frames inside a page (such as payment iframes) and Spark's own pages are not filled. Only the page you are on is: if you move to another site before picking, nothing is filled.
 - The list text follows the language of your system, not the language chosen in Spark.
 
+### Saving what you type
+
+Submit a sign-up, a login, a payment or an address form and Spark may ask, in a bar at the top right of the page: **Save the password for example.com?**, **Update the password for example.com?**, **Save the card Visa •••• 4242?** or **Save this contact info?**. Nothing is saved until you click **Save** (or **Update**).
+
+- It asks only with the vault **unlocked**, never in a private window, and not when the same login or card is already saved. A changed password offers **Update**.
+- A card is offered only with a valid number (checksum) and an expiry date; its security code is never read. Contact info needs an address or phone and at least three filled fields.
+- If the submit sends you to another page of the same site, the question is asked there (for up to 90 seconds).
+- **Not now** stops that same question for that site until Spark restarts.
+
 ### The switches
 
 Under the list in Settings:
@@ -43,7 +52,6 @@ Under the list in Settings:
 ## Not included
 
 - **Email aliases** (addresses that forward to your email) need an online service Spark does not run, so they are not offered.
-- Saving a login, card or address when you submit a form ("Save this card?") is not there yet.
 
 ## Tests
 
@@ -52,7 +60,7 @@ node tools/testing/native-smoke.mjs --case autofill
 node --test tests/autofill-roles.test.mjs
 ```
 
-`autofill` fills a login, a card and a contact in a real page and checks the cases above (other site, search box, locked vault, switch off). `autofill-roles` covers how fields are recognised.
+`autofill` fills a login, a card and a contact in a real page and checks the cases above (other site, search box, locked vault, switch off) and the save questions (save, already saved, Not now). `autofill-roles` covers how fields are recognised.
 
 ## Storage
 

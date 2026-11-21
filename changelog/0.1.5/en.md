@@ -3,6 +3,7 @@
 ## New features
 
 - **Autofill in pages:** click a login, card or contact field and pick a saved item to fill the form. Logins are offered only on their own site, cards never fill the security code, and with Windows Hello set to be asked each time it is asked before a login or card is filled. Switches to turn it off and to allow it in private windows (a read-only copy of the vault).
+- **Save what you type:** after you submit a login, payment or address form, Spark asks whether to save it (or update a changed password). It asks only with the vault unlocked, never in private windows, and does not repeat a question you declined.
 - **Autofill & passwords** section in Settings with **Payments** (saved cards, the security code is never stored and opening a card asks for your master password or Windows Hello) and **Contact info** (names, emails, phones and addresses), both kept in the encrypted vault next to your passwords.
 - Drag a tab out of the browser window and release it to open it in a new window, placed where you dropped it.
 
