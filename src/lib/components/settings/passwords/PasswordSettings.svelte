@@ -12,6 +12,7 @@
   import VaultWorkspace from "./VaultWorkspace.svelte";
 
   const desktop = isTauriRuntime();
+  const showUnlock = $derived(desktop && !$vaultRecoveryKey && $vaultStatus?.initialized !== false && $vaultStatus?.unlocked === false);
 
   onMount(() => {
     dismissVaultMessages();
@@ -23,6 +24,15 @@
     };
   });
 </script>
+
+{#snippet vaultMessages()}
+  {#if $vaultFailure}
+    <p class="vault-error" role="alert" data-testid="vault-error">{$t($vaultFailure.key, $vaultFailure.values)}</p>
+  {/if}
+  {#if $vaultStatus && $vaultStatus.retry_after_seconds > 0 && !$vaultStatus.unlocked && $vaultFailure?.key !== "passwords.error_throttled"}
+    <p class="vault-error" role="status">{$t("passwords.error_throttled", { seconds: $vaultStatus.retry_after_seconds })}</p>
+  {/if}
+{/snippet}
 
 <section class="setting-group vault-root" aria-labelledby="passwords-heading">
 <div class="vault-page" data-testid="vault-page">
@@ -43,17 +53,14 @@
     <RecoveryKeyDialog />
   {:else if $vaultStatus?.initialized === false}
     <VaultSetup />
-  {:else if $vaultStatus?.unlocked === false}
-    <VaultUnlock />
+  {:else if showUnlock}
+    <VaultUnlock messages={vaultMessages} />
   {:else if $vaultStatus?.unlocked}
     <VaultWorkspace />
   {/if}
 
-  {#if $vaultFailure}
-    <p class="vault-error" role="alert" data-testid="vault-error">{$t($vaultFailure.key, $vaultFailure.values)}</p>
-  {/if}
-  {#if $vaultStatus && $vaultStatus.retry_after_seconds > 0 && !$vaultStatus.unlocked && $vaultFailure?.key !== "passwords.error_throttled"}
-    <p class="vault-error" role="status">{$t("passwords.error_throttled", { seconds: $vaultStatus.retry_after_seconds })}</p>
+  {#if !showUnlock}
+    {@render vaultMessages()}
   {/if}
 </div>
 </section>

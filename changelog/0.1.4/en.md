@@ -15,6 +15,9 @@
 
 ## Improvements
 
+- The password list has a larger search field, clearer account counts, and a more prominent **Add password** button. The confirmation dialog uses the same larger controls as the unlock card.
+- The password vault unlock card has a larger master password field, a full-width **Unlock** button, and clearer access to Windows Hello and recovery.
+
 - The **Tor session** entry is no longer shown in the privacy settings: it is postponed until traffic leaks can be ruled out. Nothing about it was ever active.
 - The **About & Updates** page now shows the link to the browser repository on GitHub, with a button that opens it in a new tab.
 - The **audio equalizer intensity** now changes the size of the effect itself (bars, rings, orbs, particles and so on grow or shrink), not just how visible it is. The range went from 0.5–2 to 0.25–4 and the effect follows the slider while you drag it. A new **Effect opacity** slider next to it controls how transparent the effect is. Both sliders now show their value as a percentage (for the intensity, 100% is where the slider used to end and it now goes up to 200%).

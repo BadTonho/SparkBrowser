@@ -1,6 +1,10 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "../../../i18n";
   import { eraseVault, unlockWithHello, unlockWithPassword, unlockWithRecoveryKey, vaultBusy, vaultStatus } from "../../../stores/vaultStore";
+  import VaultIcon from "./VaultIcon.svelte";
+
+  let { messages }: { messages: Snippet } = $props();
 
   let useRecovery = $state(false);
   let secret = $state("");
@@ -33,34 +37,40 @@
   }
 </script>
 
-<div class="vault-card" data-testid="vault-unlock">
-  <form class="vault-form" onsubmit={submit}>
-    <h3>{$t("passwords.unlock_title")}</h3>
+<section class="vault-card vault-unlock" aria-labelledby="vault-unlock-title" data-testid="vault-unlock">
+  <header class="vault-unlock-header">
+    <span class="vault-auth-icon"><VaultIcon name="lock" /></span>
+    <h3 id="vault-unlock-title">{$t("passwords.unlock_title")}</h3>
     <p>{$t("passwords.unlock_description")}</p>
-    {#if hasHello && !useRecovery}
-      <div class="vault-actions">
-        <button class="pill-action primary-pill" type="button" onclick={() => void unlockWithHello()} disabled={$vaultBusy} data-testid="vault-unlock-hello">{$t("passwords.unlock_hello")}</button>
-      </div>
-    {/if}
+  </header>
+  <div class="vault-auth-controls">
     {#if showSecretForm}
-      <label class="vault-field">
-        <span>{$t(recoveryForm ? "passwords.recovery_key" : "passwords.master_password")}</span>
-        <input type={recoveryForm ? "text" : "password"} bind:value={secret} autocomplete="off" spellcheck="false" maxlength="256"
-          disabled={$vaultBusy} data-testid="vault-unlock-secret" />
-      </label>
-      <div class="vault-actions">
-        <button class="pill-action primary-pill" type="submit" disabled={$vaultBusy || !secret} data-testid="vault-unlock-submit">{$t("passwords.unlock")}</button>
-      </div>
+      <form class="vault-auth-form" onsubmit={submit}>
+        <label class="vault-field">
+          <span>{$t(recoveryForm ? "passwords.recovery_key" : "passwords.master_password")}</span>
+          <input type={recoveryForm ? "text" : "password"} bind:value={secret} autocomplete="off" spellcheck="false" maxlength="256"
+            disabled={$vaultBusy} data-testid="vault-unlock-secret" />
+        </label>
+        <button class="vault-button vault-primary" type="submit" disabled={$vaultBusy || !secret} data-testid="vault-unlock-submit">{$t("passwords.unlock")}</button>
+      </form>
     {/if}
-  </form>
-  {#if hasPassword}
-    <button class="vault-link" type="button" onclick={switchMode}>{$t(useRecovery ? "passwords.use_password" : "passwords.use_recovery")}</button>
-  {:else if hasHello}
-    <button class="vault-link" type="button" onclick={switchMode}>{$t(useRecovery ? "passwords.use_hello" : "passwords.use_recovery")}</button>
-  {/if}
-  {#if !resetting}
-    <button class="vault-link" type="button" onclick={() => (resetting = true)} data-testid="vault-reset-open">{$t("passwords.reset_open")}</button>
-  {:else}
+    {#if hasHello && !useRecovery}
+      <button class="vault-button" class:vault-primary={!showSecretForm} type="button"
+        onclick={() => void unlockWithHello()} disabled={$vaultBusy} data-testid="vault-unlock-hello">{$t("passwords.unlock_hello")}</button>
+    {/if}
+    {@render messages()}
+  </div>
+  <div class="vault-unlock-footer">
+    {#if hasPassword || hasHello}
+      <button class="vault-link" type="button" onclick={switchMode}>
+        {$t(!useRecovery ? "passwords.use_recovery" : hasPassword ? "passwords.use_password" : "passwords.use_hello")}
+      </button>
+    {/if}
+    {#if !resetting}
+      <button class="vault-link" type="button" onclick={() => (resetting = true)} data-testid="vault-reset-open">{$t("passwords.reset_open")}</button>
+    {/if}
+  </div>
+  {#if resetting}
     <div role="alertdialog" aria-labelledby="vault-reset-title" class="vault-reset" data-testid="vault-reset">
       <h3 id="vault-reset-title">{$t("passwords.reset_title")}</h3>
       <p>{$t("passwords.reset_warning")}</p>
@@ -70,10 +80,10 @@
       </div>
     </div>
   {/if}
-</div>
+</section>
 
 <style>
-  .vault-form, .vault-reset { display: flex; flex-direction: column; gap: 10px; }
+  .vault-reset { display: flex; flex-direction: column; gap: 10px; }
   .vault-reset h3 { font-size: 14px; }
   .vault-reset { padding-top: 6px; border-top: 1px solid var(--border-subtle); }
 </style>

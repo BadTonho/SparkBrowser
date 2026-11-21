@@ -42,32 +42,25 @@
   }
 </script>
 
-<VaultDialog title={$t("passwords.confirm_title")} onclose={cancel} testid="vault-confirm">
+<VaultDialog title={$t("passwords.confirm_title")} onclose={cancel} testid="vault-confirm" icon="lock">
   <p class="vault-note">{$t("passwords.confirm_text", { site })}</p>
-  {#if hasHello}
-    <div class="vault-actions">
-      <button class="pill-action primary-pill" type="button" disabled={$vaultBusy} onclick={withHello} data-testid="vault-confirm-hello">{$t("passwords.confirm_with_hello")}</button>
-    </div>
-    {#if helloRequired}<p class="vault-note">{$t("passwords.confirm_hello_required")}</p>{/if}
-  {/if}
-  {#if showPassword}
-    {#if hasHello}<p class="vault-note">{$t("passwords.confirm_or")}</p>{/if}
-    <form class="vault-confirm-form" onsubmit={withPassword}>
-      <label class="vault-field">
-        <span>{$t("passwords.master_password")}</span>
-        <input type="password" bind:value={secret} autocomplete="current-password" maxlength="256" disabled={$vaultBusy} data-testid="vault-confirm-password" />
-      </label>
-      <div class="vault-actions">
-        <button class="pill-action primary-pill" type="submit" disabled={$vaultBusy || !secret} data-testid="vault-confirm-submit">{$t("passwords.confirm_button")}</button>
-      </div>
-    </form>
-  {/if}
-  {#if $vaultFailure}<p class="vault-error" role="alert">{$t($vaultFailure.key, $vaultFailure.values)}</p>{/if}
-  <div class="vault-actions">
-    <button class="pill-action" type="button" onclick={cancel}>{$t("passwords.cancel")}</button>
+  <div class="vault-auth-controls">
+    {#if showPassword}
+      <form class="vault-auth-form" onsubmit={withPassword}>
+        <label class="vault-field">
+          <span>{$t("passwords.master_password")}</span>
+          <input type="password" bind:value={secret} autocomplete="current-password" maxlength="256" disabled={$vaultBusy} data-testid="vault-confirm-password" />
+        </label>
+        <button class="vault-button vault-primary" type="submit" disabled={$vaultBusy || !secret} data-testid="vault-confirm-submit">{$t("passwords.confirm_button")}</button>
+      </form>
+    {/if}
+    {#if hasHello}
+      <button class="vault-button" class:vault-primary={!showPassword} type="button" disabled={$vaultBusy} onclick={withHello} data-testid="vault-confirm-hello">{$t("passwords.confirm_with_hello")}</button>
+      {#if helloRequired}<p class="vault-note">{$t("passwords.confirm_hello_required")}</p>{/if}
+    {/if}
+    {#if $vaultFailure}<p class="vault-error" role="alert">{$t($vaultFailure.key, $vaultFailure.values)}</p>{/if}
+  </div>
+  <div class="vault-confirm-footer">
+    <button class="vault-link" type="button" onclick={cancel}>{$t("passwords.cancel")}</button>
   </div>
 </VaultDialog>
-
-<style>
-  .vault-confirm-form { display: flex; flex-direction: column; gap: 10px; }
-</style>

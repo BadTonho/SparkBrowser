@@ -1,17 +1,24 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
   import { t } from "../../../i18n";
+  import VaultIcon from "./VaultIcon.svelte";
 
   // A modal made of plain elements, not a native <dialog>: the Settings tab shows a projection of the
   // interface that only carries an allowed set of tags (see services/panel-presentation.ts), and a
   // <dialog> is not one of them. The backdrop is a button so a click outside closes it even there,
   // where only buttons, forms and inputs can be clicked.
-  let { title, onclose, children, testid }: { title: string; onclose: () => void; children: Snippet; testid?: string } = $props();
+  let { title, onclose, children, testid, icon }: {
+    title: string;
+    onclose: () => void;
+    children: Snippet;
+    testid?: string;
+    icon?: "lock";
+  } = $props();
 
   let layer: HTMLDivElement;
 
   onMount(() => {
-    layer.querySelector<HTMLElement>("input:not([disabled]), button.primary-pill:not([disabled])")?.focus();
+    layer.querySelector<HTMLElement>("input:not([disabled]), button:is(.primary-pill, .vault-primary):not([disabled])")?.focus();
   });
 
   function key(event: KeyboardEvent): void {
@@ -22,9 +29,16 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="vault-dialog-layer" bind:this={layer} onkeydown={key} data-testid={testid}>
   <button class="vault-dialog-backdrop" type="button" tabindex="-1" aria-label={$t("passwords.cancel")} onclick={onclose}></button>
-  <div class="vault-dialog" role="dialog" aria-modal="true" aria-labelledby="vault-dialog-title">
+  <div class="vault-dialog" class:vault-auth-dialog={icon} role="dialog" aria-modal="true" aria-labelledby="vault-dialog-title">
     <div class="vault-dialog-body">
-      <h3 id="vault-dialog-title">{title}</h3>
+      {#if icon}
+        <header class="vault-auth-dialog-header">
+          <span class="vault-auth-icon"><VaultIcon name={icon} /></span>
+          <h3 id="vault-dialog-title">{title}</h3>
+        </header>
+      {:else}
+        <h3 id="vault-dialog-title">{title}</h3>
+      {/if}
       {@render children()}
     </div>
   </div>
@@ -46,4 +60,11 @@
   }
   .vault-dialog-body { display: flex; flex-direction: column; gap: 12px; padding: 18px; }
   .vault-dialog-body h3 { margin: 0; font-size: 16px; line-height: 1.35; color: var(--text-primary); }
+  .vault-auth-dialog { width: min(456px, 100%); }
+  .vault-auth-dialog .vault-dialog-body { gap: 16px; padding: 24px; }
+  .vault-auth-dialog-header { display: flex; align-items: center; gap: 12px; }
+  .vault-auth-dialog-header h3 { font-size: 20px; }
+  @media (max-width: 720px) {
+    .vault-auth-dialog .vault-dialog-body { padding: 16px; }
+  }
 </style>

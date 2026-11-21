@@ -7,6 +7,7 @@
   import EntryEditor from "./EntryEditor.svelte";
   import VaultConfirmDialog from "./VaultConfirmDialog.svelte";
   import VaultDetail from "./VaultDetail.svelte";
+  import VaultIcon from "./VaultIcon.svelte";
 
   const blank: VaultEntryData = { title: "", url: "", username: "", password: "", notes: "" };
 
@@ -79,15 +80,20 @@
   <VaultDetail entry={detail} site={siteOf(detail)} onclose={() => (detail = null)} onedit={edit} ondelete={remove} />
 {:else}
   <div class="vault-toolbar">
-    <input class="vault-search" type="search" bind:value={query} placeholder={$t("passwords.search")} aria-label={$t("passwords.search")} data-testid="vault-search" />
-    <button class="pill-action primary-pill" type="button" onclick={() => (editing = { id: null, data: { ...blank } })} data-testid="vault-add">{$t("passwords.add")}</button>
+    <div class="vault-search-field">
+      <span class="vault-search-icon"><VaultIcon name="search" /></span>
+      <input class="vault-search" type="search" bind:value={query} placeholder={$t("passwords.search")} aria-label={$t("passwords.search")} data-testid="vault-search" />
+    </div>
+    <button class="vault-button vault-primary vault-add" type="button" onclick={() => (editing = { id: null, data: { ...blank } })} data-testid="vault-add">
+      <VaultIcon name="plus" /> {$t("passwords.add")}
+    </button>
   </div>
   {#if expired}<p class="vault-note" role="status" data-testid="vault-expired">{$t("passwords.afk_closed")}</p>{/if}
   {#if $vaultUnreadable > 0}<p class="vault-error" role="alert">{$t("passwords.unreadable", { count: $vaultUnreadable })}</p>{/if}
   {#if $vaultEntries.length === 0}
-    <p class="vault-note" data-testid="vault-empty">{$t("passwords.empty")}</p>
+    <p class="vault-note vault-list-empty" data-testid="vault-empty">{$t("passwords.empty")}</p>
   {:else if groups.length === 0}
-    <p class="vault-note">{$t("passwords.no_results")}</p>
+    <p class="vault-note vault-list-empty" role="status">{$t("passwords.no_results")}</p>
   {:else}
     <ul class="vault-groups" data-testid="vault-list">
       {#each groups as group (group.site)}
@@ -95,18 +101,22 @@
           <button class="vault-group-head" type="button" aria-expanded={group.entries.length > 1 ? isOpen(group.site) : undefined}
             aria-label={$t("passwords.group_open", { site: group.site })} onclick={() => pick(group.entries, group.site)} data-testid="vault-group">
             <span class={`vault-avatar hue-${avatarSlot(group.site)}`} aria-hidden="true">{group.site.charAt(0).toUpperCase()}</span>
-            <span class="vault-group-name">{group.site}</span>
-            {#if group.entries.length > 1}<span class="vault-group-count">{$t("passwords.accounts", { count: group.entries.length })}</span>{/if}
-            <span class="vault-chevron" class:open={group.entries.length > 1 && isOpen(group.site)} aria-hidden="true">›</span>
+            <span class="vault-group-label">
+              <span class="vault-group-name">{group.site}</span>
+              {#if group.entries.length > 1}<span class="vault-group-count">{$t("passwords.accounts", { count: group.entries.length })}</span>{/if}
+            </span>
+            <span class="vault-chevron" class:open={group.entries.length > 1 && isOpen(group.site)}><VaultIcon name="chevron" /></span>
           </button>
           {#if group.entries.length > 1 && isOpen(group.site)}
             <ul class="vault-accounts">
               {#each group.entries as entry (entry.id)}
                 <li>
                   <button class="vault-account" type="button" onclick={() => ask(entry)} data-testid="vault-item">
-                    <span class="vault-item-title">{entry.username || entry.title}</span>
-                    <span class="vault-item-sub">{$t("passwords.updated", { date: $formatDate(entry.updated_at * 1000, { dateStyle: "medium" }) })}</span>
-                    <span class="vault-chevron" aria-hidden="true">›</span>
+                    <span class="vault-account-label">
+                      <span class="vault-item-title">{entry.username || entry.title}</span>
+                      <span class="vault-item-sub">{$t("passwords.updated", { date: $formatDate(entry.updated_at * 1000, { dateStyle: "medium" }) })}</span>
+                    </span>
+                    <span class="vault-chevron"><VaultIcon name="chevron" /></span>
                   </button>
                 </li>
               {/each}

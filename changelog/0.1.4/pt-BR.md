@@ -15,6 +15,9 @@
 
 ## Melhorias
 
+- A lista de senhas tem um campo de busca maior, uma contagem de contas mais visível e um botão **Adicionar senha** em destaque. A janela de confirmação usa os mesmos controles maiores do cartão de desbloqueio.
+- O cartão de desbloqueio do cofre de senhas tem um campo maior para a senha mestra, um botão **Desbloquear** que ocupa toda a largura e acesso mais claro ao Windows Hello e à recuperação.
+
 - A entrada **Sessão Tor** não aparece mais nas configurações de privacidade: ela foi adiada até que vazamentos de tráfego possam ser descartados. Nada dela esteve ativo.
 - A página **Sobre e atualizações** agora mostra o link do repositório do navegador no GitHub, com um botão que o abre em uma nova guia.
 - A **intensidade do equalizador de áudio** agora muda o tamanho do próprio efeito (barras, anéis, orbes, partículas e os demais crescem ou encolhem), e não só o quanto ele aparece. A faixa passou de 0,5–2 para 0,25–4 e o efeito acompanha o controle enquanto você arrasta. Um novo controle de **Opacidade do efeito**, ao lado, define o quanto o efeito é transparente. Os dois controles agora mostram o valor em porcentagem (na intensidade, 100% é onde a barra terminava antes e agora ela vai até 200%).
