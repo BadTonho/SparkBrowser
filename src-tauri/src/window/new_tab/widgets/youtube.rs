@@ -244,7 +244,11 @@ fn script(operation: &str, source: &str) -> Option<&'static str> {
         _ => return None,
     })
 }
-pub(super) async fn control(app: &AppHandle, operation: &str) -> Result<(), String> {
+pub(super) async fn control(
+    app: &AppHandle,
+    operation: &str,
+    seconds: Option<f64>,
+) -> Result<(), String> {
     let enabled = app
         .state::<Widgets>()
         .runtime
@@ -261,12 +265,18 @@ pub(super) async fn control(app: &AppHandle, operation: &str) -> Result<(), Stri
             .map(|_| ())?;
         return Ok(());
     }
-    let script = script(operation, video.source).ok_or("invalid_action")?;
+    let script = match (operation, seconds) {
+        ("youtube_seek", Some(seconds)) if seconds.is_finite() && (0.0..=86_400.0).contains(&seconds) => {
+            format!("(()=>{{const v=document.querySelector('video');if(v)v.currentTime={seconds:.2};}})();")
+        }
+        ("youtube_seek", _) => return Err("invalid_action".into()),
+        _ => script(operation, video.source).ok_or("invalid_action")?.to_string(),
+    };
     app.get_webview(&crate::state::tab_model::webview_label_for_tab(
         &video.tab_id,
     ))
     .ok_or("youtube_not_found")?
-    .eval(script)
+    .eval(&script)
     .map_err(|_| "youtube_not_found")?;
     // The tab needs a moment to report its new playback state.
     let app = app.clone();
@@ -289,7 +299,7 @@ pub(crate) async fn sidebar_control(app: &AppHandle, operation: &str) -> Result<
     if sidebar_snapshot(app).is_none() {
         return Err("youtube_not_found".into());
     }
-    control(app, operation).await
+    control(app, operation, None).await
 }
 
 #[cfg(test)]
@@ -338,5 +348,6 @@ mod tests {
             }
         }
         assert!(script("youtube_eval", "youtube").is_none());
+        assert!(script("youtube_seek", "youtube").is_none());
     }
 }

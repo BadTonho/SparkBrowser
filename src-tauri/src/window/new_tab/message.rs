@@ -17,6 +17,11 @@ struct Cities {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Empty {}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Seek {
+    seconds: f64,
+}
 
 fn widget(operation: &str, data: &str) -> bool {
     match operation {
@@ -33,6 +38,8 @@ fn widget(operation: &str, data: &str) -> bool {
         | "youtube_toggle" | "youtube_next" | "youtube_previous" | "youtube_open" => {
             serde_json::from_str::<Empty>(data).is_ok()
         }
+        "youtube_seek" => serde_json::from_str::<Seek>(data)
+            .is_ok_and(|value| value.seconds.is_finite() && (0.0..=86_400.0).contains(&value.seconds)),
         _ => false,
     }
 }
@@ -105,6 +112,13 @@ mod tests {
             assert!(!widget(op, r#"{"script":"alert(1)"}"#), "{op}");
         }
         assert!(!widget("youtube_eval", "{}"));
+    }
+    #[test]
+    fn youtube_seek_needs_a_bounded_number_of_seconds() {
+        assert!(widget("youtube_seek", r#"{"seconds":42.5}"#));
+        for data in [r#"{"seconds":-1}"#, r#"{"seconds":999999}"#, r#"{"seconds":"5"}"#, "{}", r#"{"seconds":1,"x":2}"#] {
+            assert!(!widget("youtube_seek", data), "{data}");
+        }
     }
     #[test]
     fn required_fields_and_cross_action_parameters_are_checked_before_session_changes() {

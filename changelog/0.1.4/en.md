@@ -19,3 +19,4 @@
 - Fixed F5 (and Ctrl+Shift+R) reloading the browser's own interface, which made the tabs flicker, instead of reloading the page. They now reload the active page.
 - Fixed the "Close the browser?" dialog appearing with nothing to save: the backup made when closing is now built only when something changed since the last backup, so closing with nothing new is instant.
 - Fixed the mouse back/forward side buttons (4 and 5) going more than one page at a time: the browser was also navigating by itself when the button was released. Now they move exactly one page.
+- Fixed the YouTube card on the new tab: its progress bar could not be clicked or dragged. It now jumps to the moment you click or drag to, in the tab that is playing.

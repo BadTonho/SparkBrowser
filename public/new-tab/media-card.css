@@ -24,6 +24,7 @@
 .mc-progress::-webkit-progress-bar { background:rgba(255, 255, 255, 0.14); }
 .mc-progress::-webkit-progress-value { background:var(--mc-accent, #ff4d4d); transition:width 900ms linear; }
 .mc-progress::-moz-progress-bar { background:var(--mc-accent, #ff4d4d); }
+#youtube-progress { height:6px; cursor:pointer; touch-action:none; }
 .mc-times { display:flex; justify-content:space-between; margin-top:-2px; color:#a1a1aa; font-size:10px; font-variant-numeric:tabular-nums; }
 .mc-controls { position:relative; display:flex; justify-content:center; gap:10px; margin:10px 0 0; }
 .mc-controls .icon-button { width:32px; height:32px; border-radius:9px; font-size:12px; }

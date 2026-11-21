@@ -37,6 +37,38 @@
   for (const [id, operation] of [['youtube-previous', 'youtube_previous'], ['youtube-toggle', 'youtube_toggle'], ['youtube-next', 'youtube_next'], ['youtube-open', 'youtube_open']]) {
     $(id).addEventListener('click', () => send(operation));
   }
+  // The bar can be clicked or dragged to jump to another moment; the tab is told once the pointer is released.
+  let scrubbing = false;
+  const bar = $('youtube-progress');
+  const barSeconds = event => {
+    const box = bar.getBoundingClientRect();
+    const fraction = box.width > 0 ? Math.min(1, Math.max(0, (event.clientX - box.left) / box.width)) : 0;
+    return fraction * (sample?.duration ?? 0);
+  };
+  bar.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || !sample) return;
+    scrubbing = true;
+    try { bar.setPointerCapture(event.pointerId); } catch { /* The drag still works without capture. */ }
+    bar.value = barSeconds(event);
+    $('youtube-elapsed').textContent = card.clock(bar.value);
+    event.preventDefault();
+  });
+  bar.addEventListener('pointermove', event => {
+    if (!scrubbing || !sample) return;
+    bar.value = barSeconds(event);
+    $('youtube-elapsed').textContent = card.clock(bar.value);
+  });
+  const endScrub = event => {
+    if (!scrubbing) return;
+    scrubbing = false;
+    if (!sample || event.type === 'pointercancel') { paintProgress(); return; }
+    const seconds = Math.round(barSeconds(event) * 100) / 100;
+    sample = { ...sample, position: seconds, at: Date.now() };
+    paintProgress();
+    window.dispatchEvent(new CustomEvent('spark-new-tab-action', { detail: { action: 'widgets', operation: 'youtube_seek', data: { seconds } } }));
+  };
+  bar.addEventListener('pointerup', endScrub);
+  bar.addEventListener('pointercancel', endScrub);
   const position = () => sample ? Math.min(sample.duration, sample.position + (sample.playing ? (Date.now() - sample.at) / 1000 : 0)) : null;
   const fitTitle = () => card.fitTitle($('youtube-marquee'), $('youtube-title'));
   // The player is scaled up past its box (like object-fit: cover, then ZOOM further) so the title bar at
@@ -54,7 +86,7 @@
   // (which YouTube covers with a big play button or an error message) show the thumbnail instead.
   function setReady(ready) { $('youtube-frame').setAttribute('data-ready', String(ready)); }
   function paintProgress() {
-    if (!sample) return;
+    if (!sample || scrubbing) return;
     const elapsed = position();
     $('youtube-progress').max = sample.duration; $('youtube-progress').value = elapsed;
     $('youtube-elapsed').textContent = card.clock(elapsed);

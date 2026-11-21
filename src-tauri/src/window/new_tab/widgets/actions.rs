@@ -180,7 +180,12 @@ async fn perform(
             Ok(serde_json::json!({}))
         }
         "youtube_toggle" | "youtube_next" | "youtube_previous" | "youtube_open" => {
-            youtube::control(app, operation).await?;
+            youtube::control(app, operation, None).await?;
+            Ok(serde_json::json!({}))
+        }
+        "youtube_seek" => {
+            let seconds = data["seconds"].as_f64().ok_or("invalid_action")?;
+            youtube::control(app, operation, Some(seconds)).await?;
             Ok(serde_json::json!({}))
         }
         "panel" => {
