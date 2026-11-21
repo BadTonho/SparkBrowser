@@ -145,6 +145,10 @@ export async function checkMediaPip(context) {
   await invoke('move_tab_to_workspace',{tabId:other,workspaceId:'media-pip-workspace'});await invoke('switch_workspace',{workspaceId:'media-pip-workspace'});
   assert.equal((await read()).frames.some(f=>f.picture_in_picture),true,'popup survives workspace change');
   await checkBackgroundFloatingVolume(context,id,other);
+  await until(()=>script('return document.querySelector("[data-testid=toggle-pip]")?.disabled===false'),'return operation releases the toolbar');
+  await click('[data-testid=toggle-pip]');
+  await until(async()=> (await read()).frames.some(f=>f.pip_mode==='custom'),'PiP reopens after returning');
+  await invoke('switch_tab',{tabId:other});
   await until(()=>script('const b=document.querySelector("[data-testid=toggle-pip]");return !b.disabled && b.getAttribute("aria-pressed")==="true";'),'background floating video remains controllable');
   await click('[data-testid=toggle-pip]');
   await until(async()=> !(await read()).frames.some(f=>f.picture_in_picture),'toolbar exits PiP from another tab');

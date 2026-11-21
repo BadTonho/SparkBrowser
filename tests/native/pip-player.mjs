@@ -83,14 +83,24 @@ export async function checkFloatingVolume(context,id) {
 }
 
 export async function checkBackgroundFloatingVolume(context,id,other) {
-  const {script,invoke,until}=context;
+  const {script,invoke,until,request,sessionId,withWebview}=context;
   await withFloatingPlayer(context,()=>script('const s=document.querySelector("[data-testid=pip-volume]");s.value="42";s.dispatchEvent(new Event("input",{bubbles:true}));s.dispatchEvent(new Event("change",{bubbles:true}));'));
   await until(async()=> (await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id)?.applied_volume===42,'PiP controls source tab from another workspace');
   assert.equal((await invoke('get_tabs')).tabs.find(t=>t.is_active).id,other);
   assert.equal((await invoke('get_tab_media')).tabs.find(t=>t.tab_id===other)?.applied_volume,100,'focused peer volume is unchanged');
-  await withFloatingPlayer(context,()=>script('document.querySelector("[data-testid=pip-return]").click();'));
+  const base=`/session/${sessionId()}`;
+  const popup=await withFloatingPlayer(context,async()=>{
+    const handle=await request('GET',base+'/window');
+    await script('const s=document.querySelector("[data-testid=pip-volume]");s.value="57";s.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("[data-testid=pip-return]").click();');
+    return handle;
+  });
   await until(async()=> (await invoke('get_tabs')).tabs.find(t=>t.is_active)?.id===id,'return button selects source tab and workspace');
-  await invoke('switch_tab',{tabId:other});
+  await until(async()=> !(await request('GET',base+'/window/handles')).includes(popup),'return closes the floating window');
+  await until(async()=>{
+    const state=(await invoke('get_tab_media')).tabs.find(t=>t.tab_id===id);
+    return state.applied_volume===57&&!state.frames.some(f=>f.picture_in_picture);
+  },'return commits the last volume edit and exits picture-in-picture');
+  assert.equal(await withWebview('/page/media-pip',()=>script('return [...document.querySelectorAll("video")].every(v=>v.paused&&getComputedStyle(v).visibility!=="hidden");')),true,'return restores the original image without resuming a paused video');
 }
 
 export async function checkFloatingFrameChurn(context,id) {

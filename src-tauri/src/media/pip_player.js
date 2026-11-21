@@ -100,7 +100,7 @@
   action(back,()=>seek(source.currentTime-10));action(forward,()=>seek(source.currentTime+10));
   action(play,()=>{if(source.paused)void source.play().catch(()=>{});else source.pause();});
   listen(progress,'input',()=>seek(progress.value));
-  action(minimize,()=>send('minimize'));action(returnButton,()=>send('return'));action(closeButton,()=>send('close',latest));
+  action(minimize,()=>send('minimize'));action(returnButton,()=>send('return',latest));action(closeButton,()=>send('close',latest));
   popup.__sparkPipRequestClose=()=>send('close',latest);
   for(const event of ['play','pause','ended'])listen(source,event,update);
   for(const event of ['timeupdate','durationchange','progress','loadedmetadata'])listen(source,event,scheduleUpdate);
