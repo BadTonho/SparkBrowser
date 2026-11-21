@@ -53,3 +53,8 @@ Finalize conferindo `git status`, `git diff`, `git diff --cached` e as regras de
 ## Dados de teste do cofre de senhas
 
 Só em builds de desenvolvimento (`npm run tauri dev`), Configurações → Senhas mostra um cartão tracejado **Só para testes** com **Adicionar senhas de teste** e **Remover senhas de teste**. O primeiro adiciona uma dúzia de logins inventados (várias contas em um site, um endereço com `www.`, um login sem site, um título comprido) para testar a lista com dados; apertar duas vezes não adiciona nada em dobro. O segundo remove apenas as entradas cujas notas começam com `[dados de teste]`, nunca algo que você salvou. Os botões não existem em builds de release: a interface verifica `import.meta.env.DEV` e os comandos do backend só existem com `debug_assertions` ligado (senão respondem `vault.dev_only`). O cofre precisa estar desbloqueado.
+
+
+## As telas de Configurações são projetadas
+
+A aba de Configurações não executa os componentes de Configurações: ela mostra uma projeção da interface (veja `src/lib/services/panel-presentation.ts`). Só uma lista de tags e atributos atravessa, e só botões, formulários e campos podem ser clicados lá. Uma tag fora da lista (por exemplo `dialog`, `fieldset`, `legend`, `a` ou `rect` do SVG), um `style` inline, ou uma contenção de CSS (`container-type`, `contain`) que prenderia sobreposições `position: fixed` a uma seção simplesmente não funciona na aba, embora pareça certo em um navegador comum. Monte modais com elementos simples e um botão como fundo, use classes para cores e fique nas tags permitidas. O `tests/password-vault.test.mjs` confere isso nas telas de senhas.

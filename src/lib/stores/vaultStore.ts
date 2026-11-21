@@ -121,8 +121,9 @@ export async function lockNow(): Promise<void> {
   await refreshVaultStatus();
 }
 
-export async function revealEntry(id: string): Promise<VaultRevealed | undefined> {
-  const entry = await run(() => revealVaultEntry(id));
+/** Shows an entry after the person proved who they are (master password, or Windows Hello when null). */
+export async function revealEntry(id: string, currentPassword: string | null): Promise<VaultRevealed | undefined> {
+  const entry = await run(() => revealVaultEntry(id, currentPassword));
   if (!entry) await syncLockState();
   return entry;
 }

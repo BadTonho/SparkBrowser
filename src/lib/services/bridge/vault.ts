@@ -27,7 +27,8 @@ export const devSeedVault = () => invoke<VaultImportResult>("vault_dev_seed");
 export const devRemoveVault = () => invoke<number>("vault_dev_remove");
 export const lockVault = () => invoke<void>("vault_lock");
 export const listVaultEntries = () => invoke<VaultListing>("vault_list");
-export const revealVaultEntry = (id: string) => invoke<VaultRevealed>("vault_reveal", { id });
+/** The person proves who they are every time: with `currentPassword`, or with Windows Hello when it is null. */
+export const revealVaultEntry = (id: string, currentPassword: string | null) => invoke<VaultRevealed>("vault_reveal", { id, currentPassword });
 export const saveVaultEntry = (id: string | null, entry: VaultEntryData) => invoke<VaultSummary>("vault_save_entry", { id, entry });
 export const deleteVaultEntry = (id: string) => invoke<void>("vault_delete_entry", { id });
 export const changeVaultPassword = (current: string, newPassword: string) => invoke<void>("vault_change_master_password", { current, newPassword });

@@ -11,6 +11,7 @@
 - **The password manager now looks like the one in other browsers**: inside Settings → Passwords there are two pages, **Passwords** (search, Add and the list grouped by site, with several accounts under one row) and **Settings** (settings rows with switches). The new **Use Windows Hello when showing or copying passwords** option makes Windows confirm it is you every time a password is shown, copied or exported.
 - **Import and export passwords** (Settings → Passwords → Settings) as a CSV file, the format Chrome and Edge use. Import skips what is already in the vault and shows how many were added; export first confirms it is you (Windows Hello or the master password) and writes an **unencrypted** file, so delete it afterwards. You can also **delete all vault data** from there.
 - **Download the recovery key** of the password vault: next to Copy key there is now a **Download key** button that saves the key to a text file you choose. The file is not encrypted, so keep it away from this computer, for example on a USB drive.
+- **Seeing a saved password now asks who you are**: clicking a login asks for the master password or Windows Hello every time, and then opens it in a page of its own (username and password with copy buttons, an eye to show the password, website, note, Edit and Delete). After 5 minutes away (no use of the window, tab out of sight, computer asleep) the password closes and has to be confirmed again.
 
 ## Improvements
 

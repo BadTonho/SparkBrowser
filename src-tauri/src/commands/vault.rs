@@ -234,19 +234,34 @@ pub async fn vault_list(app: AppHandle, service: State<'_, VaultService>) -> Res
 }
 
 #[tauri::command]
+/// Shows one entry in full. The person proves who they are every time: with the master password given
+/// here, or with Windows Hello (Windows asks) when `current_password` is empty.
 pub async fn vault_reveal(
     app: AppHandle,
     service: State<'_, VaultService>,
     id: String,
+    current_password: Option<String>,
 ) -> Result<Revealed, String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    let proof = proof_if_required(&app, &service, "showing a vault password").await?;
-    executor::run(app, move |conn| {
-        ops::confirm_if_required(conn, proof.as_deref().map(|p| p.as_slice()))?;
-        ops::reveal(conn, &service, &id, Instant::now())
-    })
-    .await
+    // An open vault first, so a locked one never shows a Windows prompt it cannot use.
+    service.key(Instant::now())?;
+    match current_password {
+        Some(password) => {
+            let password = Zeroizing::new(password);
+            executor::run(app, move |conn| {
+                ops::reveal_confirmed(conn, &service, &id, ops::Proof::Password(&password), Instant::now())
+            })
+            .await
+        }
+        None => {
+            let secret = hello_step("showing a vault password", hello::secret).await?;
+            executor::run(app, move |conn| {
+                ops::reveal_confirmed(conn, &service, &id, ops::Proof::Hello(&secret), Instant::now())
+            })
+            .await
+        }
+    }
 }
 
 #[tauri::command]

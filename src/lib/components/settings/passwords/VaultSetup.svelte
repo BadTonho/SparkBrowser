@@ -27,8 +27,8 @@
 <form class="vault-card" onsubmit={submit} data-testid="vault-setup">
   <h3>{$t("passwords.setup_title")}</h3>
   <p>{$t("passwords.setup_description")}</p>
-  <fieldset class="vault-methods">
-    <legend>{$t("passwords.setup_methods")}</legend>
+  <div class="vault-methods" role="group" aria-labelledby="vault-methods-label">
+    <span id="vault-methods-label" class="vault-methods-label">{$t("passwords.setup_methods")}</span>
     <label class="vault-choice">
       <input type="checkbox" bind:checked={usePassword} disabled={$vaultBusy} data-testid="vault-method-password" />
       <span>{$t("passwords.method_password")}</span>
@@ -39,7 +39,7 @@
         <span>{$t("passwords.method_hello")}<small>{$t("passwords.method_hello_hint")}</small></span>
       </label>
     {/if}
-  </fieldset>
+  </div>
   {#if usePassword}
     <label class="vault-field">
       <span>{$t("passwords.master_password")}</span>
@@ -62,8 +62,8 @@
 </form>
 
 <style>
-  .vault-methods { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
-  .vault-methods legend { padding: 0; margin-bottom: 6px; color: var(--text-secondary); font-size: 12px; }
+  .vault-methods { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .vault-methods-label { margin-bottom: 4px; color: var(--text-secondary); font-size: 12px; }
   .vault-choice { display: flex; align-items: flex-start; gap: 8px; color: var(--text-primary); font-size: 13px; }
   .vault-choice small { display: block; margin-top: 2px; color: var(--text-secondary); font-size: 11.5px; line-height: 1.5; }
   .vault-choice input { margin-top: 2px; }

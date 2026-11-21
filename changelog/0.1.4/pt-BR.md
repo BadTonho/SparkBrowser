@@ -11,6 +11,7 @@
 - **O gerenciador de senhas agora tem o visual dos de outros navegadores**: dentro de Configurações → Senhas há duas páginas, **Senhas** (busca, Adicionar e a lista agrupada por site, com várias contas sob uma linha) e **Configurações** (linhas de configuração com interruptores). A nova opção **Usar o Windows Hello ao mostrar ou copiar senhas** faz o Windows confirmar que é você sempre que uma senha for mostrada, copiada ou exportada.
 - **Importar e exportar senhas** (Configurações → Senhas → Configurações) como arquivo CSV, o formato que o Chrome e o Edge usam. A importação ignora o que já está no cofre e mostra quantas foram adicionadas; a exportação primeiro confirma que é você (Windows Hello ou senha mestra) e grava um arquivo **sem criptografia**, então exclua-o depois. Também dá para **excluir todos os dados do cofre** por lá.
 - **Baixar a chave de recuperação** do cofre de senhas: ao lado de Copiar chave há agora o botão **Baixar chave**, que salva a chave em um arquivo de texto à sua escolha. O arquivo não é criptografado, então guarde-o longe deste computador, por exemplo em um pendrive.
+- **Ver uma senha salva agora pergunta quem é você**: clicar em um login pede a senha mestra ou o Windows Hello toda vez, e depois o abre em uma página própria (nome de usuário e senha com botões de copiar, um olho para mostrar a senha, site, observação, Editar e Excluir). Após 5 minutos de ausência (sem usar a janela, com a aba fora de vista ou com o computador dormindo) a senha fecha e precisa ser confirmada de novo.
 
 ## Melhorias
 

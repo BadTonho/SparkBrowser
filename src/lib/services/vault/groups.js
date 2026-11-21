@@ -46,6 +46,16 @@ export function groupEntries(entries, query = '') {
 }
 
 /**
+ * One of twelve colour slots for a site's letter. The interface picks the colour by class, because the
+ * Settings tab does not carry inline styles.
+ * @param {string} text
+ * @returns {number} 0 to 11
+ */
+export function avatarSlot(text) {
+  return Math.floor(avatarHue(text) / 30);
+}
+
+/**
  * A stable colour for a site's letter, so the same site always looks the same.
  * @param {string} text
  * @returns {number} a hue from 0 to 359

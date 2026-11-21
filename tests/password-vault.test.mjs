@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { generatePassword, GENERATED_LENGTH } from '../src/lib/services/vault/password-generator.js';
 import { vaultError } from '../src/lib/services/vault/errors.js';
 import { avatarHue, groupEntries, siteOf } from '../src/lib/services/vault/groups.js';
+import { isIdle, REVEAL_IDLE_MS, watchIdle } from '../src/lib/services/vault/idle.js';
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -41,9 +42,9 @@ test('the backend copies secrets and clears the clipboard only if it still holds
   assert.match(read('src-tauri/src/vault/clipboard/platform_linux.rs'), /wait_for_text\(\)[\s\S]*digest/);
   assert.match(read('src-tauri/src/lib.rs'), /RunEvent::Exit => \{\s*vault::clipboard::clear_on_exit\(app\);/);
   // The password is copied by id: the interface never receives it to copy it.
-  const list = read('src/lib/components/settings/passwords/VaultList.svelte');
-  assert.match(list, /copyEntryPassword\(id\)/);
-  assert.ok(!/navigator\.clipboard/.test(list + read('src/lib/components/settings/passwords/RecoveryKeyDialog.svelte')));
+  const detail = read('src/lib/components/settings/passwords/VaultDetail.svelte');
+  assert.match(detail, /copyEntryPassword\(entry\.id\)/);
+  assert.ok(!/navigator\.clipboard/.test(detail + read('src/lib/components/settings/passwords/VaultList.svelte') + read('src/lib/components/settings/passwords/RecoveryKeyDialog.svelte')));
 });
 
 test('a refresh after an action keeps the error of that action visible', () => {
@@ -202,7 +203,7 @@ test('settings rows: Windows Hello each time, import, export and delete, all thr
   assert.match(bridge, /importVaultCsv = \(\) => invoke<VaultImportResult \| null>\("vault_import_csv"\)/);
   const commands = read('src-tauri/src/commands/vault.rs');
   // Showing or copying a password is guarded by the Windows Hello requirement; exporting always asks.
-  assert.match(commands, /vault_reveal[\s\S]*?confirm_if_required[\s\S]*?ops::reveal/);
+  assert.match(commands, /vault_reveal[\s\S]*?reveal_confirmed[\s\S]*?Proof::Password[\s\S]*?hello_step[\s\S]*?Proof::Hello/);
   assert.match(commands, /vault_copy_password[\s\S]*?confirm_if_required[\s\S]*?ops::password/);
   assert.match(commands, /vault_export_csv[\s\S]*?verify_password[\s\S]*?confirm_hello[\s\S]*?export_entries/);
   for (const code of ['hello_required', 'import_invalid', 'import_too_large', 'import_failed', 'export_failed']) {
@@ -221,8 +222,10 @@ test('the recovery key can be saved to a file, only when the text is shaped like
 
 test('forms that ask for a secret open in a centered modal dialog, not inline under the row', () => {
   const dialog = read('src/lib/components/settings/passwords/VaultDialog.svelte');
-  assert.match(dialog, /showModal\(\)/);
-  assert.match(dialog, /<dialog /);
+  // Plain elements: a native <dialog> is not projected into the Settings tab, where it would simply vanish.
+  assert.match(dialog, /class="vault-dialog-layer"/);
+  assert.match(dialog, /role="dialog" aria-modal="true"/);
+  assert.ok(!/<dialog[\s>]/.test(dialog.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '')));
   const settings = read('src/lib/components/settings/passwords/VaultSettings.svelte');
   for (const form of ['vault-password-form', 'vault-change-password', 'vault-export-form', 'vault-delete-panel']) {
     assert.match(settings, new RegExp(`<VaultDialog[^>]*testid="${form}"`), form);
@@ -239,4 +242,77 @@ test('the test-data buttons exist only in development: the interface checks DEV 
   assert.match(commands, /vault_dev_seed[\s\S]*?#\[cfg\(debug_assertions\)\][\s\S]*?#\[cfg\(not\(debug_assertions\)\)\][\s\S]*?vault\.dev_only/);
   // Only entries marked as test data are ever removed.
   assert.match(read('src-tauri/src/vault/dev.rs'), /starts_with\(MARKER\)/);
+});
+
+test('five minutes away counts as idle, including a hidden tab or a sleeping computer', () => {
+  assert.equal(REVEAL_IDLE_MS, 5 * 60 * 1000);
+  assert.equal(isIdle(0, REVEAL_IDLE_MS - 1), false);
+  assert.equal(isIdle(0, REVEAL_IDLE_MS), true);
+  assert.equal(isIdle(1000, 1000 + 10 * 60 * 1000), true);
+  assert.equal(isIdle(0, 5000, 1000), true);
+});
+
+test('the idle watcher expires once, after the limit, and activity postpones it', () => {
+  const listeners = new Map();
+  const target = { addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) };
+  const doc = { addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) };
+  let clock = 0;
+  let expired = 0;
+  const stop = watchIdle(() => expired++, { target, doc, now: () => clock, limit: 1000, every: 100000 });
+  clock = 900;
+  listeners.get('pointermove')();
+  clock = 1800; // 900 ms after the last activity: still fine
+  listeners.get('keydown')();
+  assert.equal(expired, 0);
+  // Away for longer than the limit, then back: it expires at the first sign of life, and only once.
+  clock = 3000;
+  listeners.get('visibilitychange')();
+  listeners.get('pointerdown')();
+  assert.equal(expired, 1);
+  stop();
+  assert.equal(listeners.size, 0, 'every listener is removed');
+});
+
+test('a password is only shown after a proof, in a page laid out like other browsers, and closed when away', () => {
+  const list = read('src/lib/components/settings/passwords/VaultList.svelte');
+  // Clicking a login asks first; only a confirmed reveal reaches the detail page.
+  assert.match(list, /VaultConfirmDialog/);
+  assert.match(list, /function confirmed\(revealed: VaultRevealed\)[\s\S]*detail = revealed/);
+  assert.match(list, /watchIdle\(/);
+  assert.match(list, /detail = null;\s*editing = null;\s*expired = true;/);
+  const confirm = read('src/lib/components/settings/passwords/VaultConfirmDialog.svelte');
+  assert.match(confirm, /revealEntry\(entry\.id, value\)/);
+  assert.match(confirm, /revealEntry\(entry\.id, null\)/);
+  const detail = read('src/lib/components/settings/passwords/VaultDetail.svelte');
+  for (const part of ['vault-detail-username', 'vault-detail-password', 'vault-detail-eye', 'vault-detail-copy', 'vault-edit', 'vault-delete']) {
+    assert.ok(detail.includes(part), part);
+  }
+  // The password is masked with a fixed number of dots, so its length is not given away.
+  assert.match(detail, /visible \? entry\.password : "•+"/);
+  const bridge = read('src/lib/services/bridge/vault.ts');
+  assert.match(bridge, /revealVaultEntry = \(id: string, currentPassword: string \| null\)/);
+});
+
+test('the password screens only use what the Settings tab projects (allowed tags, no inline styles)', () => {
+  // The Settings tab shows a projection of the interface: tags and attributes outside this list are
+  // dropped, so an element that is not in it simply does not appear there.
+  const projection = read('src/lib/services/panel-presentation.ts');
+  const allowed = new Set(projection.match(/const tags = new Set\(\[([^\]]*)\]\)/)[1].replaceAll('"', '').split(',').map(tag => tag.trim()));
+  assert.ok(allowed.has('div') && allowed.has('button') && !allowed.has('dialog'), 'read the allowed list');
+  const folder = 'src/lib/components/settings/passwords/';
+  for (const file of readdirSync(new URL(`../${folder}`, import.meta.url)).filter(name => name.endsWith('.svelte'))) {
+    const markup = read(folder + file)
+      .replace(/<script[\s\S]*?<\/script>/g, '')
+      .replace(/<style[\s\S]*?<\/style>/g, '')
+      .replace(/<!--[\s\S]*?-->/g, '');
+    const used = new Set([...markup.matchAll(/<([a-z][a-z0-9]*)[\s>/]/g)].map(match => match[1]));
+    const dropped = [...used].filter(tag => !allowed.has(tag));
+    assert.deepEqual(dropped, [], `${file} uses tags the Settings tab does not show`);
+    assert.ok(!/\sstyle=/.test(markup), `${file} has an inline style, which the Settings tab drops`);
+  }
+});
+
+test('the password page has no containment that would pin its fixed dialogs to a section', () => {
+  const css = read('src/lib/components/settings/passwords/passwords.css');
+  assert.ok(!/container-type|contain\s*:/.test(css));
 });

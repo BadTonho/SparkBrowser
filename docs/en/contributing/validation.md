@@ -53,3 +53,8 @@ Finish by checking `git status`, `git diff`, `git diff --cached`, and sensitive-
 ## Test data for the password vault
 
 In development builds only (`npm run tauri dev`), Settings → Passwords shows a dashed **Only for tests** card with **Add test passwords** and **Remove test passwords**. The first adds a dozen made-up logins (several accounts on one site, a `www.` address, a login without a website, a long title) so the list can be tried with data; pressing it twice adds nothing twice. The second removes only entries whose notes start with `[dados de teste]`, never anything you saved. The buttons are not in release builds: the interface checks `import.meta.env.DEV` and the backend commands only exist when `debug_assertions` is on (otherwise they answer `vault.dev_only`). The vault must be unlocked.
+
+
+## Settings screens are projected
+
+The Settings tab does not run the Settings components itself: it shows a projection of the interface (see `src/lib/services/panel-presentation.ts`). Only a list of tags and attributes crosses over, and only buttons, forms and inputs can be clicked there. A tag outside the list (for example `dialog`, `fieldset`, `legend`, `a` or SVG `rect`), an inline `style`, or a CSS containment (`container-type`, `contain`) that would pin `position: fixed` overlays to a section simply does not work in the tab, although it looks fine in a plain browser. Build modals from plain elements with a button as the backdrop, color with classes, and keep to the allowed tags. `tests/password-vault.test.mjs` checks this for the password screens.

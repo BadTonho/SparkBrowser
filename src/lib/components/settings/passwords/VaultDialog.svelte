@@ -1,50 +1,49 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
+  import { t } from "../../../i18n";
 
-  // A native modal dialog: it opens in the top layer, centered on the window, with the page dimmed and
-  // inert behind it. Escape and a click outside close it.
+  // A modal made of plain elements, not a native <dialog>: the Settings tab shows a projection of the
+  // interface that only carries an allowed set of tags (see services/panel-presentation.ts), and a
+  // <dialog> is not one of them. The backdrop is a button so a click outside closes it even there,
+  // where only buttons, forms and inputs can be clicked.
   let { title, onclose, children, testid }: { title: string; onclose: () => void; children: Snippet; testid?: string } = $props();
 
-  let dialog: HTMLDialogElement;
-  // Taking the dialog down from the page must not report a second close to the parent.
-  let disposed = false;
+  let layer: HTMLDivElement;
 
   onMount(() => {
-    dialog.showModal();
-    return () => {
-      disposed = true;
-      if (dialog.open) dialog.close();
-    };
+    layer.querySelector<HTMLElement>("input:not([disabled]), button.primary-pill:not([disabled])")?.focus();
   });
 
-  function outside(event: MouseEvent): void {
-    // The body fills the dialog, so only a click on the dimmed area itself reaches the dialog element.
-    if (event.target === dialog) onclose();
+  function key(event: KeyboardEvent): void {
+    if (event.key === "Escape") onclose();
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<dialog bind:this={dialog} class="vault-dialog" aria-labelledby="vault-dialog-title" onclose={() => { if (!disposed) onclose(); }} onclick={outside} data-testid={testid}>
-  <div class="vault-dialog-body">
-    <h3 id="vault-dialog-title">{title}</h3>
-    {@render children()}
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="vault-dialog-layer" bind:this={layer} onkeydown={key} data-testid={testid}>
+  <button class="vault-dialog-backdrop" type="button" tabindex="-1" aria-label={$t("passwords.cancel")} onclick={onclose}></button>
+  <div class="vault-dialog" role="dialog" aria-modal="true" aria-labelledby="vault-dialog-title">
+    <div class="vault-dialog-body">
+      <h3 id="vault-dialog-title">{title}</h3>
+      {@render children()}
+    </div>
   </div>
-</dialog>
+</div>
 
 <style>
+  .vault-dialog-layer { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; }
+  .vault-dialog-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: rgba(0, 0, 0, 0.55); cursor: default; }
   .vault-dialog {
-    width: min(420px, calc(100vw - 32px));
-    max-height: calc(100dvh - 32px);
-    margin: auto;
-    padding: 0;
+    position: relative;
+    width: min(420px, 100%);
+    max-height: 100%;
+    overflow: auto;
     border: var(--modal-surface-border, 1px solid var(--border-subtle));
     border-radius: var(--radius-lg, 14px);
     background: var(--modal-surface-bg, #1b1b1f);
     color: var(--text-primary);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-    overflow: auto;
   }
-  .vault-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
   .vault-dialog-body { display: flex; flex-direction: column; gap: 12px; padding: 18px; }
   .vault-dialog-body h3 { margin: 0; font-size: 16px; line-height: 1.35; color: var(--text-primary); }
 </style>

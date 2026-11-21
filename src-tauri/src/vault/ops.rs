@@ -255,6 +255,43 @@ pub fn list(conn: &Connection, service: &VaultService, now: Instant) -> Result<L
     Ok(Listing { entries, unreadable })
 }
 
+/// What the person used to prove who they are before a password is shown.
+pub enum Proof<'a> {
+    /// The master password, typed.
+    Password(&'a str),
+    /// The secret Windows Hello produced after PIN, fingerprint or face.
+    Hello(&'a [u8]),
+}
+
+/// Checks a proof before a password is shown. When the vault asks for Windows Hello each time, a typed
+/// master password is not enough. A wrong master password counts toward the brake.
+pub fn confirm_reveal(conn: &Connection, service: &VaultService, proof: Proof<'_>, now: Instant) -> Result<(), String> {
+    match proof {
+        Proof::Password(password) => {
+            if repo::require_hello(conn)? {
+                return Err("vault.hello_required".into());
+            }
+            verify_password(conn, service, password, now).map(|_| ())
+        }
+        Proof::Hello(secret) => {
+            service.key(now)?;
+            confirm_hello(conn, secret)
+        }
+    }
+}
+
+/// Shows one entry in full, but only after the person proved who they are (every time, not once per unlock).
+pub fn reveal_confirmed(
+    conn: &Connection,
+    service: &VaultService,
+    id: &str,
+    proof: Proof<'_>,
+    now: Instant,
+) -> Result<Revealed, String> {
+    confirm_reveal(conn, service, proof, now)?;
+    reveal(conn, service, id, now)
+}
+
 pub fn reveal(conn: &Connection, service: &VaultService, id: &str, now: Instant) -> Result<Revealed, String> {
     let key = service.key(now)?;
     if !valid_id(id) {
@@ -680,6 +717,47 @@ mod tests {
         ] {
             assert_eq!(result.unwrap_err(), "vault.locked");
         }
+    }
+
+    #[test]
+    fn showing_a_password_needs_the_master_password_or_windows_hello_every_time() {
+        let (conn, service, now) = setup();
+        create(&conn, &service, Some(PASSWORD), Some(HELLO), now).unwrap();
+        let saved = save(&conn, &service, None, &entry("Site", "pw"), 1, now).unwrap();
+        // The vault is open, yet nothing is shown without a proof, and a wrong one is refused.
+        let shown = reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), now).unwrap();
+        assert_eq!(shown.data.password, "pw");
+        assert_eq!(
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Password("not it at all"), now).unwrap_err(),
+            "vault.wrong_secret"
+        );
+        assert_eq!(
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(b"another signature that is long enough"), now).unwrap_err(),
+            "vault.hello_failed"
+        );
+        assert_eq!(reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(HELLO), now).unwrap().data.password, "pw");
+        assert_eq!(
+            reveal_confirmed(&conn, &service, "nonsense", Proof::Password(PASSWORD), now).unwrap_err(),
+            "vault.not_found"
+        );
+        // Wrong master passwords slow down, like at the unlock screen.
+        for _ in 0..3 {
+            let _ = reveal_confirmed(&conn, &service, &saved.id, Proof::Password("nope nope nope"), now);
+        }
+        assert!(reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), now).unwrap_err().starts_with("vault.throttled:"));
+        // When Windows Hello is required each time, a typed password no longer works.
+        let later = now + Duration::from_secs(120);
+        set_require_hello(&conn, &service, true, None, later).unwrap();
+        assert_eq!(
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Password(PASSWORD), later).unwrap_err(),
+            "vault.hello_required"
+        );
+        assert!(reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(HELLO), later).is_ok());
+        service.lock();
+        assert_eq!(
+            reveal_confirmed(&conn, &service, &saved.id, Proof::Hello(HELLO), later).unwrap_err(),
+            "vault.locked"
+        );
     }
 
     #[test]
