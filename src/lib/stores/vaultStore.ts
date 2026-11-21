@@ -2,8 +2,9 @@ import { get, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import {
-  changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, getVaultStatus, listVaultEntries, lockVault,
-  resetVault, revealVaultEntry, saveVaultEntry, setVaultAutoLock, unlockVault, unlockVaultWithRecovery,
+  changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, disableVaultHello, disableVaultPassword,
+  enableVaultHello, enableVaultPassword, getVaultStatus, listVaultEntries, lockVault, resetVault, revealVaultEntry, saveVaultEntry,
+  setVaultAutoLock, unlockVault, unlockVaultWithHello, unlockVaultWithRecovery,
 } from "../services/bridge/vault";
 import { vaultError } from "../services/vault/errors.js";
 import { logIgnored } from "../services/ignored-error";
@@ -18,7 +19,8 @@ export const vaultBusy = writable(false);
 export const vaultFailure = writable<{ key: MessageKey; values: Record<string, unknown> } | null>(null);
 /** The recovery key of a vault just created: shown once, then dropped. */
 export const vaultRecoveryKey = writable<string | null>(null);
-export const vaultNotice = writable<"password_changed" | null>(null);
+export type VaultNotice = "password_changed" | "hello_on" | "hello_off" | "password_on" | "password_off";
+export const vaultNotice = writable<VaultNotice | null>(null);
 
 function fail(error: unknown): undefined {
   const { key, values } = vaultError(error);
@@ -75,8 +77,9 @@ async function syncLockState(): Promise<void> {
   vaultFailure.set(null);
 }
 
-export async function createNewVault(masterPassword: string): Promise<boolean> {
-  const recovery = await run(() => createVault(masterPassword));
+/** `masterPassword` is null for a vault that opens with Windows Hello only. */
+export async function createNewVault(masterPassword: string | null, useHello: boolean): Promise<boolean> {
+  const recovery = await run(() => createVault(masterPassword, useHello));
   if (recovery === undefined) return false;
   vaultRecoveryKey.set(recovery);
   await refreshVaultStatus();
@@ -89,6 +92,12 @@ export function dismissRecoveryKey(): void {
 
 export async function unlockWithPassword(password: string): Promise<boolean> {
   const done = await run(async () => { await unlockVault(password); return true; });
+  await refreshVaultStatus();
+  return done === true;
+}
+
+export async function unlockWithHello(): Promise<boolean> {
+  const done = await run(async () => { await unlockVaultWithHello(); return true; });
   await refreshVaultStatus();
   return done === true;
 }
@@ -146,6 +155,21 @@ export async function changeMasterPassword(current: string, next: string): Promi
   else await syncLockState();
   return done === true;
 }
+
+/** Runs a change to the unlock methods, then shows what it did (or why it could not). */
+async function changeMethod(work: () => Promise<void>, notice: VaultNotice): Promise<boolean> {
+  vaultNotice.set(null);
+  const done = await run(async () => { await work(); return true; });
+  if (done) vaultNotice.set(notice);
+  else await syncLockState();
+  await refreshVaultStatus();
+  return done === true;
+}
+
+export const turnHelloOn = () => changeMethod(enableVaultHello, "hello_on");
+export const turnHelloOff = () => changeMethod(disableVaultHello, "hello_off");
+export const turnPasswordOn = (newPassword: string) => changeMethod(() => enableVaultPassword(newPassword), "password_on");
+export const turnPasswordOff = (current: string) => changeMethod(() => disableVaultPassword(current), "password_off");
 
 export async function chooseAutoLock(minutes: number): Promise<void> {
   const done = await run(async () => { await setVaultAutoLock(minutes); return true; });

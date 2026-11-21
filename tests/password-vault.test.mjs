@@ -104,7 +104,7 @@ test('the vault screens never keep secrets around after use', () => {
 });
 
 test('every vault command is registered end to end', () => {
-  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
+  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_hello_enable', 'vault_hello_disable', 'vault_password_enable', 'vault_password_disable', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
   const manifest = read('src-tauri/src/commands/manifest.rs');
   const capabilities = read('src-tauri/capabilities/default.json');
   const lib = read('src-tauri/src/lib.rs');
@@ -141,4 +141,31 @@ test('nothing in the vault code logs or prints a secret', () => {
       assert.ok(!/password|recovery_key|master|secret_value|\bkey\b/i.test(line.replace(/"[^"]*"/g, '')), `${file} logs only fixed text: ${line.slice(0, 80)}`);
     }
   }
+});
+
+test('the unlock methods are independent: password, Windows Hello or both, never none', () => {
+  const store = read('src/lib/stores/vaultStore.ts');
+  assert.match(store, /createNewVault\(masterPassword: string \| null, useHello: boolean\)/);
+  const setup = read('src/lib/components/settings/passwords/VaultSetup.svelte');
+  assert.match(setup, /noMethod/);
+  assert.match(setup, /hello_available/);
+  const options = read('src/lib/components/settings/passwords/VaultOptions.svelte');
+  assert.match(options, /disabled=\{\$vaultBusy \|\| !hasHello\}[^>]*vault-password-off/);
+  assert.match(options, /disabled=\{\$vaultBusy \|\| !hasPassword\}[^>]*vault-hello-off/);
+  for (const code of ['hello_cancelled', 'hello_failed', 'hello_unavailable', 'method_unavailable', 'method_already_on', 'last_method']) {
+    assert.equal(vaultError(`vault.${code}`).key, `passwords.error_${code}`);
+  }
+});
+
+test('Windows Hello is Windows-only, asks Windows off the database thread and keeps no secret of its own', () => {
+  const hello = read('src-tauri/src/vault/hello/mod.rs');
+  assert.match(hello, /#\[cfg\(windows\)\][\s\S]*platform_windows\.rs[\s\S]*#\[cfg\(not\(windows\)\)\][\s\S]*platform_other\.rs/);
+  assert.match(read('src-tauri/src/vault/hello/platform_other.rs'), /Err\(HelloError::Unavailable\)/);
+  assert.match(read('src-tauri/src/vault/hello/platform_windows.rs'), /KeyCredentialManager[\s\S]*RequestSignAsync/);
+  const commands = read('src-tauri/src/commands/vault.rs');
+  assert.match(commands, /spawn_blocking\(work\)/);
+  // A failed Windows Hello unlock is not a wrong guess: it must not feed the brake.
+  const ops = read('src-tauri/src/vault/ops.rs').split('#[cfg(test)]')[0];
+  const helloUnlock = ops.slice(ops.indexOf('pub fn unlock_with_hello'), ops.indexOf('pub fn unlock_with_recovery'));
+  assert.ok(!/service\.failure/.test(helloUnlock));
 });

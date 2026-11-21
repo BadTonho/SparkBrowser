@@ -3,9 +3,15 @@ import type { VaultEntryData, VaultListing, VaultRevealed, VaultStatus, VaultSum
 
 export const getVaultStatus = () => invoke<VaultStatus>("vault_status");
 /** Resolves with the recovery key, which the backend shows once and never stores. */
-export const createVault = (masterPassword: string) => invoke<string>("vault_create", { masterPassword });
+export const createVault = (masterPassword: string | null, useHello: boolean) => invoke<string>("vault_create", { masterPassword, useHello });
 export const unlockVault = (password: string) => invoke<void>("vault_unlock", { password });
 export const unlockVaultWithRecovery = (recoveryKey: string) => invoke<void>("vault_unlock_recovery", { recoveryKey });
+/** Windows asks for the PIN, fingerprint or face; nothing secret passes through the interface. */
+export const unlockVaultWithHello = () => invoke<void>("vault_unlock_hello");
+export const enableVaultHello = () => invoke<void>("vault_hello_enable");
+export const disableVaultHello = () => invoke<void>("vault_hello_disable");
+export const enableVaultPassword = (newPassword: string) => invoke<void>("vault_password_enable", { newPassword });
+export const disableVaultPassword = (current: string) => invoke<void>("vault_password_disable", { current });
 export const lockVault = () => invoke<void>("vault_lock");
 export const listVaultEntries = () => invoke<VaultListing>("vault_list");
 export const revealVaultEntry = (id: string) => invoke<VaultRevealed>("vault_reveal", { id });

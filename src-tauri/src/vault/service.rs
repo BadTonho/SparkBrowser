@@ -123,7 +123,7 @@ mod tests {
     use crate::vault::crypto;
 
     fn key() -> Key {
-        crypto::create("correct horse battery").unwrap().1
+        crypto::create(Some("correct horse battery"), None).unwrap().1
     }
 
     #[test]

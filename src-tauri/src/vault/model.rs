@@ -43,6 +43,12 @@ pub struct Revealed {
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct Status {
     pub initialized: bool,
+    /// The vault opens with a master password.
+    pub has_password: bool,
+    /// The vault opens with Windows Hello.
+    pub has_hello: bool,
+    /// This computer offers Windows Hello (always false outside Windows).
+    pub hello_available: bool,
     pub unlocked: bool,
     pub entry_count: usize,
     pub auto_lock_minutes: u32,

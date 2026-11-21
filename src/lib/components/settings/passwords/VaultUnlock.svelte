@@ -1,17 +1,24 @@
 <script lang="ts">
   import { t } from "../../../i18n";
-  import { eraseVault, unlockWithPassword, unlockWithRecoveryKey, vaultBusy } from "../../../stores/vaultStore";
+  import { eraseVault, unlockWithHello, unlockWithPassword, unlockWithRecoveryKey, vaultBusy, vaultStatus } from "../../../stores/vaultStore";
 
   let useRecovery = $state(false);
   let secret = $state("");
   let resetting = $state(false);
+
+  const hasPassword = $derived($vaultStatus?.has_password !== false);
+  const hasHello = $derived($vaultStatus?.has_hello === true);
+  // The secret form takes the master password, or the recovery key when the person switched to it
+  // (or when the vault has no master password).
+  const recoveryForm = $derived(useRecovery || !hasPassword);
+  const showSecretForm = $derived(hasPassword || useRecovery || !hasHello);
 
   async function submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     const value = secret;
     secret = "";
     if (!value) return;
-    if (useRecovery) await unlockWithRecoveryKey(value);
+    if (recoveryForm) await unlockWithRecoveryKey(value);
     else await unlockWithPassword(value);
   }
 
@@ -30,16 +37,27 @@
   <form class="vault-form" onsubmit={submit}>
     <h3>{$t("passwords.unlock_title")}</h3>
     <p>{$t("passwords.unlock_description")}</p>
-    <label class="vault-field">
-      <span>{$t(useRecovery ? "passwords.recovery_key" : "passwords.master_password")}</span>
-      <input type={useRecovery ? "text" : "password"} bind:value={secret} autocomplete="off" spellcheck="false" maxlength="256"
-        disabled={$vaultBusy} data-testid="vault-unlock-secret" />
-    </label>
-    <div class="vault-actions">
-      <button class="pill-action primary-pill" type="submit" disabled={$vaultBusy || !secret} data-testid="vault-unlock-submit">{$t("passwords.unlock")}</button>
-    </div>
+    {#if hasHello && !useRecovery}
+      <div class="vault-actions">
+        <button class="pill-action primary-pill" type="button" onclick={() => void unlockWithHello()} disabled={$vaultBusy} data-testid="vault-unlock-hello">{$t("passwords.unlock_hello")}</button>
+      </div>
+    {/if}
+    {#if showSecretForm}
+      <label class="vault-field">
+        <span>{$t(recoveryForm ? "passwords.recovery_key" : "passwords.master_password")}</span>
+        <input type={recoveryForm ? "text" : "password"} bind:value={secret} autocomplete="off" spellcheck="false" maxlength="256"
+          disabled={$vaultBusy} data-testid="vault-unlock-secret" />
+      </label>
+      <div class="vault-actions">
+        <button class="pill-action primary-pill" type="submit" disabled={$vaultBusy || !secret} data-testid="vault-unlock-submit">{$t("passwords.unlock")}</button>
+      </div>
+    {/if}
   </form>
-  <button class="vault-link" type="button" onclick={switchMode}>{$t(useRecovery ? "passwords.use_password" : "passwords.use_recovery")}</button>
+  {#if hasPassword}
+    <button class="vault-link" type="button" onclick={switchMode}>{$t(useRecovery ? "passwords.use_password" : "passwords.use_recovery")}</button>
+  {:else if hasHello}
+    <button class="vault-link" type="button" onclick={switchMode}>{$t(useRecovery ? "passwords.use_hello" : "passwords.use_recovery")}</button>
+  {/if}
   {#if !resetting}
     <button class="vault-link" type="button" onclick={() => (resetting = true)} data-testid="vault-reset-open">{$t("passwords.reset_open")}</button>
   {:else}

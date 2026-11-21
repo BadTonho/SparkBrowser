@@ -1,9 +1,11 @@
 //! Cryptography of the password vault.
 //!
-//! A random 32-byte data key (DEK) encrypts every entry with AES-256-GCM. The DEK is stored twice,
-//! each copy wrapped by a key derived with Argon2id: one from the master password and one from the
-//! recovery key shown once at creation. Nothing here touches the disk or logs; callers get opaque
-//! errors that never contain secret material.
+//! A random 32-byte data key (DEK) encrypts every entry with AES-256-GCM. The DEK is stored once per
+//! unlock method, each copy wrapped by its own key: the master password and the recovery key (shown
+//! once at creation) go through Argon2id, and Windows Hello supplies a secret that only the operating
+//! system can produce after the user proves who they are. The master password and Windows Hello are
+//! optional and independent; the recovery key always exists. Nothing here touches the disk or logs;
+//! callers get opaque errors that never contain secret material.
 //!
 //! This code has not been independently audited (see `docs/en/security/account-containers-vault-review.md`).
 use aes_gcm::{
@@ -13,6 +15,7 @@ use aes_gcm::{
 use argon2::{Algorithm, Argon2, Params, Version};
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
 pub const HEADER_VERSION: u32 = 1;
@@ -72,7 +75,12 @@ pub struct Wrapped {
 pub struct Header {
     pub version: u32,
     pub kdf: Kdf,
-    pub password: Wrapped,
+    /// The master password copy. None when the vault is opened with Windows Hello instead.
+    #[serde(default)]
+    pub password: Option<Wrapped>,
+    /// The Windows Hello copy. None when Windows Hello is not used.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hello: Option<Wrapped>,
     pub recovery: Wrapped,
 }
 
@@ -85,6 +93,10 @@ pub enum CryptoError {
     /// The system could not provide the randomness or memory needed.
     Unavailable,
     InvalidPassword,
+    /// The vault has no copy for this unlock method (it was never turned on, or was turned off).
+    MethodUnavailable,
+    /// Turning the method off would leave only the recovery key to open the vault.
+    LastMethod,
 }
 
 impl CryptoError {
@@ -94,6 +106,8 @@ impl CryptoError {
             CryptoError::Corrupt => "vault.corrupt",
             CryptoError::Unavailable => "vault.crypto_failed",
             CryptoError::InvalidPassword => "vault.password_invalid",
+            CryptoError::MethodUnavailable => "vault.method_unavailable",
+            CryptoError::LastMethod => "vault.last_method",
         }
     }
 }
@@ -186,6 +200,43 @@ fn unwrap(kind: &str, secret: &[u8], wrapped: &Wrapped, kdf: &Kdf) -> Result<Key
     Ok(Key(Zeroizing::new(bytes)))
 }
 
+/// The wrapping key of the Windows Hello copy. The secret is a signature only the operating system can
+/// produce (after Windows Hello), already high entropy, so a hash with a label is enough: no slow KDF.
+fn hello_kek(secret: &[u8]) -> Result<Zeroizing<[u8; KEY_LEN]>, CryptoError> {
+    if secret.len() < 16 {
+        return Err(CryptoError::Unavailable);
+    }
+    let mut hasher = Sha256::new();
+    hasher.update(b"spark-vault-hello-kek-v1");
+    hasher.update(secret);
+    Ok(Zeroizing::new(hasher.finalize().into()))
+}
+
+fn wrap_hello(secret: &[u8], dek: &Key) -> Result<Wrapped, CryptoError> {
+    let kek = hello_kek(secret)?;
+    let (nonce, ciphertext) = seal(kek.as_ref(), &wrap_aad("hello"), dek.0.as_ref())?;
+    Ok(Wrapped {
+        salt: String::new(),
+        nonce: B64.encode(nonce),
+        ciphertext: B64.encode(ciphertext),
+    })
+}
+
+fn unwrap_hello(secret: &[u8], wrapped: &Wrapped) -> Result<Key, CryptoError> {
+    let decode = |text: &str| B64.decode(text).map_err(|_| CryptoError::Corrupt);
+    let (nonce, ciphertext) = (decode(&wrapped.nonce)?, decode(&wrapped.ciphertext)?);
+    let kek = hello_kek(secret)?;
+    let plain = Zeroizing::new(
+        open(kek.as_ref(), &wrap_aad("hello"), &nonce, &ciphertext)
+            .map_err(|_| CryptoError::WrongSecret)?,
+    );
+    let bytes: [u8; KEY_LEN] = plain
+        .as_slice()
+        .try_into()
+        .map_err(|_| CryptoError::Corrupt)?;
+    Ok(Key(Zeroizing::new(bytes)))
+}
+
 // RFC 4648 base32 without padding, in groups of four, so the recovery key is easy to copy by hand.
 const ALPHABET: &[u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
@@ -233,8 +284,17 @@ fn decode_recovery(text: &str) -> Option<Zeroizing<Vec<u8>>> {
 }
 
 /// Creates a vault: returns its header, the open data key and the recovery key (shown to the user once).
-pub fn create(master_password: &str) -> Result<(Header, Key, String), CryptoError> {
-    validate_password(master_password)?;
+/// At least one of the master password and the Windows Hello secret is required.
+pub fn create(
+    master_password: Option<&str>,
+    hello_secret: Option<&[u8]>,
+) -> Result<(Header, Key, String), CryptoError> {
+    if master_password.is_none() && hello_secret.is_none() {
+        return Err(CryptoError::LastMethod);
+    }
+    if let Some(password) = master_password {
+        validate_password(password)?;
+    }
     let dek = Key(Zeroizing::new(random::<KEY_LEN>()?));
     let recovery = Zeroizing::new(random::<RECOVERY_BYTES>()?);
     let kdf = Kdf {
@@ -244,7 +304,10 @@ pub fn create(master_password: &str) -> Result<(Header, Key, String), CryptoErro
     };
     let header = Header {
         version: HEADER_VERSION,
-        password: wrap("password", master_password.as_bytes(), &dek, &kdf)?,
+        password: master_password
+            .map(|password| wrap("password", password.as_bytes(), &dek, &kdf))
+            .transpose()?,
+        hello: hello_secret.map(|secret| wrap_hello(secret, &dek)).transpose()?,
         recovery: wrap("recovery", recovery.as_ref(), &dek, &kdf)?,
         kdf,
     };
@@ -261,7 +324,14 @@ fn check(header: &Header) -> Result<(), CryptoError> {
 
 pub fn unlock_with_password(header: &Header, password: &str) -> Result<Key, CryptoError> {
     check(header)?;
-    unwrap("password", password.as_bytes(), &header.password, &header.kdf)
+    let wrapped = header.password.as_ref().ok_or(CryptoError::MethodUnavailable)?;
+    unwrap("password", password.as_bytes(), wrapped, &header.kdf)
+}
+
+pub fn unlock_with_hello(header: &Header, secret: &[u8]) -> Result<Key, CryptoError> {
+    check(header)?;
+    let wrapped = header.hello.as_ref().ok_or(CryptoError::MethodUnavailable)?;
+    unwrap_hello(secret, wrapped)
 }
 
 pub fn unlock_with_recovery(header: &Header, recovery_key: &str) -> Result<Key, CryptoError> {
@@ -270,21 +340,44 @@ pub fn unlock_with_recovery(header: &Header, recovery_key: &str) -> Result<Key, 
     unwrap("recovery", bytes.as_ref(), &header.recovery, &header.kdf)
 }
 
-/// A new header whose password copy opens with `new_password`. The data key, the recovery copy and
-/// therefore every stored entry stay the same.
+/// A new header whose password copy opens with `new_password` (adding the copy if there was none).
+/// The data key, the other copies and therefore every stored entry stay the same.
 pub fn change_password(
     header: &Header,
     dek: &Key,
     new_password: &str,
 ) -> Result<Header, CryptoError> {
     validate_password(new_password)?;
-    let kdf = header.kdf.clone();
-    Ok(Header {
-        version: header.version,
-        password: wrap("password", new_password.as_bytes(), dek, &kdf)?,
-        recovery: header.recovery.clone(),
-        kdf,
-    })
+    let mut updated = header.clone();
+    updated.password = Some(wrap("password", new_password.as_bytes(), dek, &header.kdf)?);
+    Ok(updated)
+}
+
+/// A new header without the password copy. Refused unless Windows Hello still opens the vault.
+pub fn remove_password(header: &Header) -> Result<Header, CryptoError> {
+    if header.hello.is_none() {
+        return Err(CryptoError::LastMethod);
+    }
+    let mut updated = header.clone();
+    updated.password = None;
+    Ok(updated)
+}
+
+/// A new header with a Windows Hello copy of the data key (replacing any earlier one).
+pub fn set_hello(header: &Header, dek: &Key, secret: &[u8]) -> Result<Header, CryptoError> {
+    let mut updated = header.clone();
+    updated.hello = Some(wrap_hello(secret, dek)?);
+    Ok(updated)
+}
+
+/// A new header without the Windows Hello copy. Refused unless the master password still opens the vault.
+pub fn remove_hello(header: &Header) -> Result<Header, CryptoError> {
+    if header.password.is_none() {
+        return Err(CryptoError::LastMethod);
+    }
+    let mut updated = header.clone();
+    updated.hello = None;
+    Ok(updated)
 }
 
 fn entry_aad(id: &str) -> Vec<u8> {
@@ -316,7 +409,7 @@ mod tests {
 
     #[test]
     fn a_new_vault_opens_with_the_password_and_with_the_recovery_key() {
-        let (header, dek, recovery) = create(PASSWORD).unwrap();
+        let (header, dek, recovery) = create(Some(PASSWORD), None).unwrap();
         assert_eq!(
             unlock_with_password(&header, PASSWORD).unwrap().0.as_ref(),
             dek.0.as_ref()
@@ -332,7 +425,7 @@ mod tests {
 
     #[test]
     fn wrong_secrets_never_open_the_vault() {
-        let (header, _, recovery) = create(PASSWORD).unwrap();
+        let (header, _, recovery) = create(Some(PASSWORD), None).unwrap();
         assert_eq!(
             unlock_with_password(&header, "not the password").unwrap_err(),
             CryptoError::WrongSecret
@@ -352,8 +445,8 @@ mod tests {
 
     #[test]
     fn the_recovery_key_has_the_expected_shape_and_is_random() {
-        let (_, _, one) = create(PASSWORD).unwrap();
-        let (_, _, two) = create(PASSWORD).unwrap();
+        let (_, _, one) = create(Some(PASSWORD), None).unwrap();
+        let (_, _, two) = create(Some(PASSWORD), None).unwrap();
         assert_eq!(one.len(), 32 + 7);
         assert!(one.split('-').all(|group| group.len() == 4));
         assert_ne!(one, two);
@@ -361,17 +454,17 @@ mod tests {
 
     #[test]
     fn password_length_is_bounded() {
-        assert_eq!(create("short").err(), Some(CryptoError::InvalidPassword));
+        assert_eq!(create(Some("short"), None).err(), Some(CryptoError::InvalidPassword));
         assert_eq!(
-            create(&"a".repeat(MAX_PASSWORD_CHARS + 1)).err(),
+            create(Some(&"a".repeat(MAX_PASSWORD_CHARS + 1)), None).err(),
             Some(CryptoError::InvalidPassword)
         );
-        assert!(create(&"a".repeat(MAX_PASSWORD_CHARS)).is_ok());
+        assert!(create(Some(&"a".repeat(MAX_PASSWORD_CHARS)), None).is_ok());
     }
 
     #[test]
     fn entries_round_trip_and_use_a_new_nonce_each_time() {
-        let (_, dek, _) = create(PASSWORD).unwrap();
+        let (_, dek, _) = create(Some(PASSWORD), None).unwrap();
         let a = seal_entry(&dek, "id1", b"secret").unwrap();
         let b = seal_entry(&dek, "id1", b"secret").unwrap();
         assert_ne!(a, b);
@@ -382,7 +475,7 @@ mod tests {
 
     #[test]
     fn tampering_or_moving_an_entry_is_detected() {
-        let (_, dek, _) = create(PASSWORD).unwrap();
+        let (_, dek, _) = create(Some(PASSWORD), None).unwrap();
         let blob = seal_entry(&dek, "id1", b"secret").unwrap();
         assert_eq!(
             open_entry(&dek, "id2", &blob).unwrap_err(),
@@ -398,13 +491,13 @@ mod tests {
             open_entry(&dek, "id1", &blob[..5]).unwrap_err(),
             CryptoError::Corrupt
         );
-        let (_, other, _) = create(PASSWORD).unwrap();
+        let (_, other, _) = create(Some(PASSWORD), None).unwrap();
         assert!(open_entry(&other, "id1", &blob).is_err());
     }
 
     #[test]
     fn changing_the_password_keeps_the_key_the_recovery_and_the_entries() {
-        let (header, dek, recovery) = create(PASSWORD).unwrap();
+        let (header, dek, recovery) = create(Some(PASSWORD), None).unwrap();
         let blob = seal_entry(&dek, "id1", b"secret").unwrap();
         let changed = change_password(&header, &dek, "a brand new password").unwrap();
         assert!(unlock_with_password(&changed, PASSWORD).is_err());
@@ -422,7 +515,7 @@ mod tests {
 
     #[test]
     fn a_header_cannot_demand_unbounded_work() {
-        let (mut header, _, _) = create(PASSWORD).unwrap();
+        let (mut header, _, _) = create(Some(PASSWORD), None).unwrap();
         header.kdf.memory_kib = MAX_MEMORY_KIB + 1;
         assert_eq!(
             unlock_with_password(&header, PASSWORD).unwrap_err(),
@@ -444,9 +537,68 @@ mod tests {
 
     #[test]
     fn the_two_wrapped_copies_are_bound_to_their_kind() {
-        let (mut header, _, _) = create(PASSWORD).unwrap();
+        let (mut header, _, _) = create(Some(PASSWORD), None).unwrap();
         // Swapping the two wrapped copies must not let the password open the recovery slot.
-        std::mem::swap(&mut header.password, &mut header.recovery);
+        let password = header.password.take().unwrap();
+        header.password = Some(std::mem::replace(&mut header.recovery, password));
         assert!(unlock_with_password(&header, PASSWORD).is_err());
+    }
+
+    const HELLO: &[u8] = b"a signature produced by windows hello after the user proved who they are";
+
+    #[test]
+    fn the_vault_can_open_with_windows_hello_alone_or_next_to_the_password() {
+        let (only_hello, dek, recovery) = create(None, Some(HELLO)).unwrap();
+        assert!(only_hello.password.is_none());
+        assert_eq!(unlock_with_hello(&only_hello, HELLO).unwrap().0.as_ref(), dek.0.as_ref());
+        assert_eq!(unlock_with_password(&only_hello, PASSWORD).unwrap_err(), CryptoError::MethodUnavailable);
+        assert!(unlock_with_recovery(&only_hello, &recovery).is_ok());
+        let (both, dek, _) = create(Some(PASSWORD), Some(HELLO)).unwrap();
+        assert_eq!(unlock_with_hello(&both, HELLO).unwrap().0.as_ref(), dek.0.as_ref());
+        assert_eq!(unlock_with_password(&both, PASSWORD).unwrap().0.as_ref(), dek.0.as_ref());
+        let (only_password, _, _) = create(Some(PASSWORD), None).unwrap();
+        assert_eq!(unlock_with_hello(&only_password, HELLO).unwrap_err(), CryptoError::MethodUnavailable);
+        assert_eq!(create(None, None).err(), Some(CryptoError::LastMethod));
+    }
+
+    #[test]
+    fn a_wrong_hello_secret_or_a_swapped_copy_never_opens_the_vault() {
+        let (mut header, _, _) = create(Some(PASSWORD), Some(HELLO)).unwrap();
+        assert_eq!(
+            unlock_with_hello(&header, b"another signature that is long enough").unwrap_err(),
+            CryptoError::WrongSecret
+        );
+        assert_eq!(unlock_with_hello(&header, b"short").unwrap_err(), CryptoError::Unavailable);
+        // The hello copy is bound to its kind: it cannot stand in for the recovery copy.
+        header.recovery = header.hello.clone().unwrap();
+        assert!(unlock_with_recovery(&header, "AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA").is_err());
+    }
+
+    #[test]
+    fn each_method_can_be_added_and_removed_but_one_always_remains() {
+        let (header, dek, _) = create(Some(PASSWORD), None).unwrap();
+        assert_eq!(remove_password(&header).unwrap_err(), CryptoError::LastMethod);
+        let with_hello = set_hello(&header, &dek, HELLO).unwrap();
+        assert!(unlock_with_hello(&with_hello, HELLO).is_ok());
+        assert!(unlock_with_password(&with_hello, PASSWORD).is_ok());
+        let without_password = remove_password(&with_hello).unwrap();
+        assert!(unlock_with_password(&without_password, PASSWORD).is_err());
+        assert!(unlock_with_hello(&without_password, HELLO).is_ok());
+        assert_eq!(remove_hello(&without_password).unwrap_err(), CryptoError::LastMethod);
+        // A password can be added back to a vault that only had Windows Hello.
+        let again = change_password(&without_password, &dek, "a brand new password").unwrap();
+        assert!(unlock_with_password(&again, "a brand new password").is_ok());
+        let without_hello = remove_hello(&again).unwrap();
+        assert_eq!(unlock_with_hello(&without_hello, HELLO).unwrap_err(), CryptoError::MethodUnavailable);
+    }
+
+    #[test]
+    fn a_header_written_before_windows_hello_still_reads() {
+        let (header, _, _) = create(Some(PASSWORD), None).unwrap();
+        let text = serde_json::to_string(&header).unwrap();
+        assert!(!text.contains("hello"), "an unused method leaves no trace");
+        let read: Header = serde_json::from_str(&text).unwrap();
+        assert_eq!(read, header);
+        assert!(unlock_with_password(&read, PASSWORD).is_ok());
     }
 }

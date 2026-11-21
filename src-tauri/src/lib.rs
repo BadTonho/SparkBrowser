@@ -32,7 +32,8 @@ use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runt
 use commands::vault::{
     vault_change_master_password, vault_copy_password, vault_copy_text, vault_create, vault_delete_entry, vault_list, vault_lock,
     vault_reset, vault_reveal, vault_save_entry, vault_set_auto_lock, vault_status, vault_unlock,
-    vault_unlock_recovery,
+    vault_unlock_recovery, vault_unlock_hello, vault_hello_enable, vault_hello_disable, vault_password_enable,
+    vault_password_disable,
 };
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod backup;
@@ -651,6 +652,11 @@ pub fn run() {
             vault_create,
             vault_unlock,
             vault_unlock_recovery,
+            vault_unlock_hello,
+            vault_hello_enable,
+            vault_hello_disable,
+            vault_password_enable,
+            vault_password_disable,
             vault_lock,
             vault_list,
             vault_reveal,

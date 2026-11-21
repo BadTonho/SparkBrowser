@@ -158,11 +158,11 @@ mod tests {
     #[test]
     fn the_header_is_stored_once_and_can_be_replaced() {
         let conn = db();
-        let (header, _, _) = crypto::create("correct horse battery").unwrap();
+        let (header, _, _) = crypto::create(Some("correct horse battery"), None).unwrap();
         create(&conn, &header, 5).unwrap();
         assert_eq!(load_header(&conn).unwrap(), Some(header.clone()));
         assert_eq!(create(&conn, &header, 5).unwrap_err(), "vault.already_initialized");
-        let (other, _, _) = crypto::create("another long password").unwrap();
+        let (other, _, _) = crypto::create(Some("another long password"), None).unwrap();
         update_header(&conn, &other).unwrap();
         assert_eq!(load_header(&conn).unwrap(), Some(other));
         set_auto_lock_minutes(&conn, 15).unwrap();
@@ -187,7 +187,7 @@ mod tests {
     #[test]
     fn wiping_removes_everything_and_allows_a_new_vault() {
         let conn = db();
-        let (header, _, _) = crypto::create("correct horse battery").unwrap();
+        let (header, _, _) = crypto::create(Some("correct horse battery"), None).unwrap();
         create(&conn, &header, 5).unwrap();
         put(&conn, "a", b"one", 1).unwrap();
         wipe(&conn).unwrap();

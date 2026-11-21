@@ -9,6 +9,12 @@ const KNOWN = {
   'vault.corrupt': 'passwords.error_corrupt',
   'vault.private_window': 'passwords.private_unavailable',
   'vault.clipboard_failed': 'passwords.copy_failed',
+  'vault.hello_cancelled': 'passwords.error_hello_cancelled',
+  'vault.hello_failed': 'passwords.error_hello_failed',
+  'vault.hello_unavailable': 'passwords.error_hello_unavailable',
+  'vault.method_unavailable': 'passwords.error_method_unavailable',
+  'vault.method_already_on': 'passwords.error_method_already_on',
+  'vault.last_method': 'passwords.error_last_method',
 };
 
 /**

@@ -1437,6 +1437,18 @@
           "markdownDescription": "Enables the vault_delete_entry command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_hello_disable command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-hello-disable",
+          "markdownDescription": "Enables the vault_hello_disable command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_hello_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-hello-enable",
+          "markdownDescription": "Enables the vault_hello_enable command without any pre-configured scope."
+        },
+        {
           "description": "Enables the vault_list command without any pre-configured scope.",
           "type": "string",
           "const": "allow-vault-list",
@@ -1447,6 +1459,18 @@
           "type": "string",
           "const": "allow-vault-lock",
           "markdownDescription": "Enables the vault_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_password_disable command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-password-disable",
+          "markdownDescription": "Enables the vault_password_disable command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_password_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-password-enable",
+          "markdownDescription": "Enables the vault_password_enable command without any pre-configured scope."
         },
         {
           "description": "Enables the vault_reset command without any pre-configured scope.",
@@ -1483,6 +1507,12 @@
           "type": "string",
           "const": "allow-vault-unlock",
           "markdownDescription": "Enables the vault_unlock command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_unlock_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-unlock-hello",
+          "markdownDescription": "Enables the vault_unlock_hello command without any pre-configured scope."
         },
         {
           "description": "Enables the vault_unlock_recovery command without any pre-configured scope.",
@@ -2751,6 +2781,18 @@
           "markdownDescription": "Denies the vault_delete_entry command without any pre-configured scope."
         },
         {
+          "description": "Denies the vault_hello_disable command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-hello-disable",
+          "markdownDescription": "Denies the vault_hello_disable command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_hello_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-hello-enable",
+          "markdownDescription": "Denies the vault_hello_enable command without any pre-configured scope."
+        },
+        {
           "description": "Denies the vault_list command without any pre-configured scope.",
           "type": "string",
           "const": "deny-vault-list",
@@ -2761,6 +2803,18 @@
           "type": "string",
           "const": "deny-vault-lock",
           "markdownDescription": "Denies the vault_lock command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_password_disable command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-password-disable",
+          "markdownDescription": "Denies the vault_password_disable command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_password_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-password-enable",
+          "markdownDescription": "Denies the vault_password_enable command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_reset command without any pre-configured scope.",
@@ -2797,6 +2851,12 @@
           "type": "string",
           "const": "deny-vault-unlock",
           "markdownDescription": "Denies the vault_unlock command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_unlock_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-unlock-hello",
+          "markdownDescription": "Denies the vault_unlock_hello command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_unlock_recovery command without any pre-configured scope.",

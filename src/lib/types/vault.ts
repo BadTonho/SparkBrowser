@@ -1,5 +1,11 @@
 export interface VaultStatus {
   initialized: boolean;
+  /** The vault opens with a master password. */
+  has_password: boolean;
+  /** The vault opens with Windows Hello. */
+  has_hello: boolean;
+  /** This computer offers Windows Hello (always false outside Windows). */
+  hello_available: boolean;
   unlocked: boolean;
   entry_count: number;
   auto_lock_minutes: number;

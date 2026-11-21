@@ -3,6 +3,8 @@
 //! Only the trusted shell reaches these (`shell_only`), private windows refuse them, and secrets
 //! passed in or out are never written to the log.
 use crate::database::executor;
+use crate::error_log::{self, Level};
+use crate::vault::hello::{self, HelloError};
 use crate::vault::model::{EntryData, Revealed, Status, Summary};
 use crate::vault::ops::{self, Listing};
 use crate::vault::service::VaultService;
@@ -32,11 +34,59 @@ fn timestamp() -> i64 {
         .map_or(0, |elapsed| elapsed.as_secs() as i64)
 }
 
+/// Runs one Windows Hello step off the interface and database threads: it waits for the person to
+/// answer the Windows prompt. Failures are logged here; only a stable code goes back to the interface.
+async fn hello_step(
+    what: &'static str,
+    work: fn() -> Result<Zeroizing<Vec<u8>>, HelloError>,
+) -> Result<Zeroizing<Vec<u8>>, String> {
+    let outcome = tauri::async_runtime::spawn_blocking(work).await.map_err(|error| {
+        error_log::report(Level::Error, "vault", &format!("{what} stopped unexpectedly"), &error.to_string());
+        HelloError::Failed(String::new()).code().to_string()
+    })?;
+    outcome.map_err(|error| {
+        let (level, summary, detail) = match &error {
+            HelloError::Cancelled => (Level::Info, format!("{what} was cancelled in Windows Hello"), String::new()),
+            HelloError::Unavailable => {
+                (Level::Warning, format!("{what} needs Windows Hello, which is not available here"), String::new())
+            }
+            HelloError::Failed(detail) => (Level::Error, format!("{what} failed in Windows Hello"), detail.clone()),
+        };
+        error_log::report(level, "vault", &summary, &detail);
+        error.code().to_string()
+    })
+}
+
+/// Deletes the Windows Hello key pair of the vault (best effort: the vault no longer uses it).
+async fn forget_hello() {
+    if !hello::is_available() {
+        return;
+    }
+    match tauri::async_runtime::spawn_blocking(hello::forget).await {
+        Ok(Ok(())) => {}
+        Ok(Err(error)) => error_log::report(
+            Level::Warning,
+            "vault",
+            "the Windows Hello key of the vault could not be deleted",
+            &format!("{error:?}"),
+        ),
+        Err(error) => error_log::report(
+            Level::Warning,
+            "vault",
+            "deleting the Windows Hello key of the vault stopped unexpectedly",
+            &error.to_string(),
+        ),
+    }
+}
+
 #[tauri::command]
 pub async fn vault_status(app: AppHandle, service: State<'_, VaultService>) -> Result<Status, String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    executor::run(app, move |conn| ops::status(conn, &service, Instant::now())).await
+    let available = tauri::async_runtime::spawn_blocking(hello::is_available).await.unwrap_or(false);
+    let mut status = executor::run(app, move |conn| ops::status(conn, &service, Instant::now())).await?;
+    status.hello_available = available;
+    Ok(status)
 }
 
 /// Creates the vault and returns the recovery key, which is shown once and never stored.
@@ -44,15 +94,32 @@ pub async fn vault_status(app: AppHandle, service: State<'_, VaultService>) -> R
 pub async fn vault_create(
     app: AppHandle,
     service: State<'_, VaultService>,
-    master_password: String,
+    master_password: Option<String>,
+    use_hello: bool,
 ) -> Result<String, String> {
     allowed(&app)?;
     let service = service.inner().clone();
-    let password = Zeroizing::new(master_password);
-    executor::run(app, move |conn| {
-        ops::create(conn, &service, &password, Instant::now()).map(|key| (*key).clone())
+    let password = master_password.map(Zeroizing::new);
+    let secret = if use_hello {
+        Some(hello_step("turning on Windows Hello for the new vault", hello::enroll).await?)
+    } else {
+        None
+    };
+    let created = executor::run(app, move |conn| {
+        ops::create(
+            conn,
+            &service,
+            password.as_ref().map(|p| p.as_str()),
+            secret.as_ref().map(|s| s.as_slice()),
+            Instant::now(),
+        )
+        .map(|key| (*key).clone())
     })
-    .await
+    .await;
+    if created.is_err() && use_hello {
+        forget_hello().await;
+    }
+    created
 }
 
 #[tauri::command]
@@ -65,6 +132,58 @@ pub async fn vault_unlock(
     let service = service.inner().clone();
     let password = Zeroizing::new(password);
     executor::run(app, move |conn| ops::unlock(conn, &service, &password, Instant::now())).await
+}
+
+/// Opens the vault after the person proves who they are to Windows (PIN, fingerprint or face).
+#[tauri::command]
+pub async fn vault_unlock_hello(app: AppHandle, service: State<'_, VaultService>) -> Result<(), String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    let secret = hello_step("unlocking the vault with Windows Hello", hello::secret).await?;
+    executor::run(app, move |conn| ops::unlock_with_hello(conn, &service, &secret, Instant::now())).await
+}
+
+#[tauri::command]
+pub async fn vault_hello_enable(app: AppHandle, service: State<'_, VaultService>) -> Result<(), String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    // Ask Windows only for an open vault: asking replaces the key pair, so a locked vault must not get that far.
+    service.key(Instant::now())?;
+    let secret = hello_step("turning on Windows Hello", hello::enroll).await?;
+    executor::run(app, move |conn| ops::enable_hello(conn, &service, &secret, Instant::now())).await
+}
+
+#[tauri::command]
+pub async fn vault_hello_disable(app: AppHandle, service: State<'_, VaultService>) -> Result<(), String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    executor::run(app, move |conn| ops::disable_hello(conn, &service, Instant::now())).await?;
+    forget_hello().await;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn vault_password_enable(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+    new_password: String,
+) -> Result<(), String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    let new_password = Zeroizing::new(new_password);
+    executor::run(app, move |conn| ops::enable_password(conn, &service, &new_password, Instant::now())).await
+}
+
+#[tauri::command]
+pub async fn vault_password_disable(
+    app: AppHandle,
+    service: State<'_, VaultService>,
+    current: String,
+) -> Result<(), String> {
+    allowed(&app)?;
+    let service = service.inner().clone();
+    let current = Zeroizing::new(current);
+    executor::run(app, move |conn| ops::disable_password(conn, &service, &current, Instant::now())).await
 }
 
 #[tauri::command]
@@ -194,5 +313,7 @@ pub async fn vault_reset(
         return Err("vault.not_confirmed".into());
     }
     let service = service.inner().clone();
-    executor::run(app, move |conn| ops::reset(conn, &service)).await
+    executor::run(app, move |conn| ops::reset(conn, &service)).await?;
+    forget_hello().await;
+    Ok(())
 }
