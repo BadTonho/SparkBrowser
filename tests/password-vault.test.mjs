@@ -82,7 +82,7 @@ test('every message the vault screens use exists in both catalogs', () => {
 
 test('Settings has a Passwords category with search entries and the not-audited warning', () => {
   assert.match(read('src/lib/stores/settingsStore.ts'), /\| "passwords"/);
-  assert.match(read('src/lib/stores/settingsStore.ts'), /"passwords",\r?\n\s*"shortcuts"/);
+  assert.match(read('src/lib/stores/settingsStore.ts'), /"passwords",\r?\n\s*"downloads",\r?\n\s*"shortcuts"/);
   const catalog = read('src/lib/components/settings/settings-catalog.ts');
   assert.match(catalog, /id: "passwords", icon: "lock", label: "Autofill & Passwords"/);
   assert.match(catalog, /category: "passwords", targetId: "passwords-heading"/);
@@ -308,8 +308,8 @@ test('the password screens only use what the Settings tab projects (allowed tags
   const projection = read('src/lib/services/panel-presentation.ts');
   const allowed = new Set(projection.match(/const tags = new Set\(\[([^\]]*)\]\)/)[1].replaceAll('"', '').split(',').map(tag => tag.trim()));
   assert.ok(allowed.has('div') && allowed.has('button') && !allowed.has('dialog'), 'read the allowed list');
-  const folder = 'src/lib/components/settings/passwords/';
-  for (const file of readdirSync(new URL(`../${folder}`, import.meta.url)).filter(name => name.endsWith('.svelte'))) {
+  const folders = ['src/lib/components/settings/passwords/', 'src/lib/components/settings/autofill/', 'src/lib/components/settings/'];
+  for (const [folder, file] of folders.flatMap(folder => readdirSync(new URL(`../${folder}`, import.meta.url)).filter(name => name.endsWith('.svelte') && (folder.endsWith('settings/') ? name === 'DownloadSettings.svelte' : true)).map(name => [folder, name]))) {
     const markup = read(folder + file)
       .replace(/<script[\s\S]*?<\/script>/g, '')
       .replace(/<style[\s\S]*?<\/style>/g, '')

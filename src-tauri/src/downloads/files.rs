@@ -6,6 +6,18 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
+/// The folder downloads go to without asking: the one chosen in Settings while it is usable,
+/// otherwise the system Downloads folder.
+fn default_directory(app: &AppHandle) -> Result<PathBuf, String> {
+    let chosen = app
+        .try_state::<super::location::DownloadLocation>()
+        .and_then(|location| super::location::chosen(location.custom()));
+    match chosen {
+        Some(path) => Ok(path),
+        None => app.path().download_dir().map_err(|e| e.to_string()),
+    }
+}
+
 pub fn directory(app: &AppHandle) -> Result<PathBuf, String> {
     let path = if app.config().identifier == "org.spark.browser.native-tests" {
         app.path()
@@ -13,7 +25,7 @@ pub fn directory(app: &AppHandle) -> Result<PathBuf, String> {
             .map_err(|e| e.to_string())?
             .join("downloads")
     } else {
-        app.path().download_dir().map_err(|e| e.to_string())?
+        default_directory(app)?
     };
     std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
     std::fs::canonicalize(path).map_err(|e| e.to_string())

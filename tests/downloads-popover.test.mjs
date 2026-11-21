@@ -49,18 +49,18 @@ function fixture(tick = async () => {}, settle = async () => {}) {
     'svelte/store': { writable }, '../services/storage.js': { safeStorage: { getItem: () => null, setItem: () => true } },
     '../services/download-notices': { createDownloadNotices },
   });
-  let onTask, resolveTasks, loads = 0;
+  let onTask, resolveTasks, loads = 0, showWhenDone = false;
   const api = load('src/lib/stores/downloadsStore.ts', {
     'svelte/store': { get, writable, derived }, '../services/ignored-error': { logIgnored() {} }, svelte: { tick }, '../i18n': { t: writable(key => key) },
     '../services/download-progress': { summarizeDownloads }, '../services/user-errors.js': { describeError: String },
-    './downloadNoticesStore': noticesModule,
+    './downloadNoticesStore': noticesModule, './downloadSettingsStore': { isShowingDownloadsWhenDone: () => showWhenDone },
     '../services/bridge/overlays': { notifyOpening: id => notices.push(id), settleOverlayVisibility: settle }, '../services/bridge/downloads-popover': { setDownloadsPopover: async (...args) => calls.push(args) },
     './settingsStore': { isZenMode: zen }, '../services/tauri-bridge': {
       fetchDownloads: async () => [], fetchDownloadTasks: () => { loads++; return new Promise(resolve => resolveTasks = resolve); },
       onDownloadTaskUpdated: async callback => { onTask = callback; return () => {}; }, onDownloadsUpdated: async () => () => {}, isTauriRuntime: () => true,
     },
-  }, { document: { querySelector: selector => selector.includes('titlebar-actions') ? button : more } });
-  return { ...api, get, button, more, zen, calls, notices, emit: value => onTask(value), resolve: value => resolveTasks(value), loads: () => loads };
+  }, { document: { hasFocus: () => true, querySelector: selector => selector.includes('titlebar-actions') ? button : more } });
+  return { ...api, showWhenDone: value => { showWhenDone = value; }, get, button, more, zen, calls, notices, emit: value => onTask(value), resolve: value => resolveTasks(value), loads: () => loads };
 }
 test('startup loads progress without opening the panel and a late snapshot preserves newer events', async () => {
   const f = fixture(), stop = f.initializeDownloadEvents(); await new Promise(setImmediate);
@@ -125,4 +125,25 @@ test('trigger hit testing distinguishes the button from an ordinary outside dism
   const anchor = { left: 100, top: 30, width: 28, height: 28 };
   assert.equal(isPanelTrigger(anchor, 114, 44), true);
   for (const [x, y] of [[99, 44], [129, 44], [114, 29], [114, 59], [NaN, 44]]) assert.equal(isPanelTrigger(anchor, x, y), false);
+});
+
+test('a download that finishes opens the panel only when asked to, and only if it was seen running', async () => {
+  const f = fixture(); f.initializeDownloadEvents(); await new Promise(setImmediate);
+  f.resolve([]); await new Promise(setImmediate);
+  const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(setImmediate); };
+  f.showWhenDone(true);
+  // Seen for the first time already completed (an old one coming back): nothing opens.
+  f.emit({ id: 'old', revision: 1, ...task('Completed', 100, 100) }); await settle();
+  assert.equal(f.get(f.isDownloadsDrawerOpen), false);
+  // Seen running, then completed: the panel opens.
+  f.emit({ id: 'new', revision: 1, ...task('Downloading', 10, 100) }); await settle();
+  assert.equal(f.get(f.isDownloadsDrawerOpen), false, 'a running download never opens it');
+  f.emit({ id: 'new', revision: 2, ...task('Completed', 100, 100) }); await settle();
+  assert.equal(f.get(f.isDownloadsDrawerOpen), true);
+  await f.closeDownloadsDrawer();
+  // Turned off: it stays closed.
+  f.showWhenDone(false);
+  f.emit({ id: 'quiet', revision: 1, ...task('Downloading', 10, 100) });
+  f.emit({ id: 'quiet', revision: 2, ...task('Completed', 100, 100) }); await settle();
+  assert.equal(f.get(f.isDownloadsDrawerOpen), false);
 });

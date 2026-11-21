@@ -9,6 +9,7 @@ import { describeError } from "../services/user-errors.js";
 import { notifyOpening, settleOverlayVisibility } from "../services/bridge/overlays";
 import { setDownloadsPopover } from "../services/bridge/downloads-popover";
 import { isZenMode } from "./settingsStore";
+import { isShowingDownloadsWhenDone } from "./downloadSettingsStore";
 import type { DownloadItem, DownloadTask } from "../types/browser";
 import {
   fetchDownloads,
@@ -43,12 +44,17 @@ const changedAt = new Map<string, number>();
 function applyTask(task: DownloadTask): void {
   if (clearedTasks.has(task.id)) return;
   changedAt.set(task.id, ++taskSequence);
+  let justFinished = false;
   confirmedDownloadTasks.update(tasks => {
     const previous = tasks.find(item => item.id === task.id);
     if (previous && previous.revision >= task.revision) return tasks;
+    // Only a download seen running that now says Completed counts: reloading old ones must not pop the panel.
+    justFinished = Boolean(previous) && previous!.status !== "Completed" && task.status === "Completed";
     observeDownloadNotices([task], "event");
     return [task, ...tasks.filter(item => item.id !== task.id)].sort((a, b) => b.id.localeCompare(a.id)).slice(0, 164);
   });
+  // Only in the window the person is using, so a second window does not open its own panel too.
+  if (justFinished && isShowingDownloadsWhenDone() && !get(isDownloadsDrawerOpen) && document.hasFocus()) void openDownloadsDrawer().catch(logIgnored);
 }
 
 function startDownloadEvents(): () => void {

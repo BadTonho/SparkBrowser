@@ -304,11 +304,14 @@ pub fn install(
                         .policies()
                         .ask_download_destination()
                     {
-                        let selected = a
+                        let mut dialog = a
                             .dialog()
                             .file()
-                            .set_file_name(super::transfer::file_name(&parsed))
-                            .blocking_save_file();
+                            .set_file_name(super::transfer::file_name(&parsed));
+                        if let Ok(start) = super::files::directory(&a) {
+                            dialog = dialog.set_directory(start);
+                        }
+                        let selected = dialog.blocking_save_file();
                         let Some(path) = selected else {
                             unsafe {
                                 crate::error_log::ignored(args.SetCancel(true));

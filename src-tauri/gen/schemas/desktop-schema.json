@@ -231,6 +231,12 @@
           "markdownDescription": "Enables the choose_backup_sync_folder command without any pre-configured scope."
         },
         {
+          "description": "Enables the choose_download_location command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-choose-download-location",
+          "markdownDescription": "Enables the choose_download_location command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-all-downloads",
@@ -535,6 +541,12 @@
           "type": "string",
           "const": "allow-get-diagnostics",
           "markdownDescription": "Enables the get_diagnostics command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_download_location command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-download-location",
+          "markdownDescription": "Enables the get_download_location command without any pre-configured scope."
         },
         {
           "description": "Enables the get_download_tasks command without any pre-configured scope.",
@@ -955,6 +967,12 @@
           "type": "string",
           "const": "allow-report-frontend-error",
           "markdownDescription": "Enables the report_frontend_error command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the reset_download_location command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-reset-download-location",
+          "markdownDescription": "Enables the reset_download_location command without any pre-configured scope."
         },
         {
           "description": "Enables the reset_experimental_flags command without any pre-configured scope.",
@@ -1653,6 +1671,12 @@
           "markdownDescription": "Denies the choose_backup_sync_folder command without any pre-configured scope."
         },
         {
+          "description": "Denies the choose_download_location command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-choose-download-location",
+          "markdownDescription": "Denies the choose_download_location command without any pre-configured scope."
+        },
+        {
           "description": "Denies the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "deny-clear-all-downloads",
@@ -1957,6 +1981,12 @@
           "type": "string",
           "const": "deny-get-diagnostics",
           "markdownDescription": "Denies the get_diagnostics command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_download_location command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-download-location",
+          "markdownDescription": "Denies the get_download_location command without any pre-configured scope."
         },
         {
           "description": "Denies the get_download_tasks command without any pre-configured scope.",
@@ -2377,6 +2407,12 @@
           "type": "string",
           "const": "deny-report-frontend-error",
           "markdownDescription": "Denies the report_frontend_error command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the reset_download_location command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-reset-download-location",
+          "markdownDescription": "Denies the reset_download_location command without any pre-configured scope."
         },
         {
           "description": "Denies the reset_experimental_flags command without any pre-configured scope.",

@@ -54,11 +54,14 @@ pub fn handler(
                         .policies()
                         .ask_download_destination()
                     {
-                        let selected = app
+                        let mut dialog = app
                             .dialog()
                             .file()
-                            .set_file_name(super::transfer::file_name(&url))
-                            .blocking_save_file();
+                            .set_file_name(super::transfer::file_name(&url));
+                        if let Ok(start) = super::files::directory(&app) {
+                            dialog = dialog.set_directory(start);
+                        }
+                        let selected = dialog.blocking_save_file();
                         let Some(path) = selected else {
                             return Err("downloads.cancelled".into());
                         };

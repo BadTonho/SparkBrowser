@@ -83,8 +83,9 @@ use commands::windows::{
 
 use commands::diagnostics::get_diagnostics;
 use commands::downloads::{
-    cancel_download, clear_all_downloads, control_download, enqueue_download, get_download_tasks,
-    get_download_visual, get_downloads, set_download_checksum,
+    cancel_download, choose_download_location, clear_all_downloads, control_download,
+    enqueue_download, get_download_location, get_download_tasks, get_download_visual,
+    get_downloads, reset_download_location, set_download_checksum,
 };
 use commands::experiments::{
     get_experimental_flags, reset_experimental_flags, set_experimental_flag,
@@ -260,6 +261,7 @@ pub fn run() {
         .manage(backup::service::BackupService::default())
         .manage(site_permissions::PermissionRequests::default())
         .manage(downloads::manager::DownloadManager::default())
+        .manage(downloads::location::DownloadLocation::default())
         .on_window_event(|window, event| {
             if matches!(
                 event,
@@ -391,6 +393,9 @@ pub fn run() {
                 .map_err(std::io::Error::other)?;
             app.state::<autofill::AutofillService>()
                 .apply(autofill::load_settings(&conn).map_err(std::io::Error::other)?);
+            app.state::<downloads::location::DownloadLocation>()
+                .load(&conn)
+                .map_err(std::io::Error::other)?;
             // Secrets saved under the pre-rename names follow the profile; a locked keyring just retries next start.
             crate::error_log::ignored(backup::migrate_legacy_secrets(
                 &conn,
@@ -816,6 +821,9 @@ pub fn run() {
             reorder_tabs,
             move_tab_to_workspace,
             get_downloads,
+            get_download_location,
+            choose_download_location,
+            reset_download_location,
             get_download_tasks,
             get_download_visual,
             cancel_download,

@@ -37,3 +37,19 @@ export async function clearAllDownloads(olderThanDays: number | null = null): Pr
 
 export const controlDownload = (taskId: string, action: "pause" | "resume" | "restart" | "cancel" | "verify") => invoke<void>("control_download", { taskId, action });
 export const setDownloadChecksum = (taskId: string, checksum: string | null) => invoke<void>("set_download_checksum", { taskId, checksum });
+
+export interface DownloadLocation {
+  path: string;
+  /** True while the system Downloads folder is used. */
+  is_default: boolean;
+}
+export async function fetchDownloadLocation(): Promise<DownloadLocation | null> {
+  return isTauriRuntime() ? await invoke<DownloadLocation>("get_download_location") : null;
+}
+/** Opens the folder picker. Resolves null when it was cancelled. */
+export async function chooseDownloadLocation(): Promise<DownloadLocation | null> {
+  return isTauriRuntime() ? await invoke<DownloadLocation | null>("choose_download_location") : null;
+}
+export async function resetDownloadLocation(): Promise<DownloadLocation | null> {
+  return isTauriRuntime() ? await invoke<DownloadLocation>("reset_download_location") : null;
+}

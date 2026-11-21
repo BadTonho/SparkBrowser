@@ -413,5 +413,12 @@
   "resources.network_limit": "Speed limit",
   "settings.repository_title": "Browser repository",
   "settings.repository_description": "The source code, releases and issue tracker of Spark live on GitHub.",
-  "settings.repository_open": "Open repository"
+  "settings.repository_open": "Open repository",
+  "settings.downloads_category": "Downloads",
+  "settings.download_location": "Location",
+  "settings.download_location_change": "Change",
+  "settings.download_location_reset": "Use the default folder",
+  "settings.download_location_error": "That folder cannot be used. Choose one that exists and that you can write to.",
+  "settings.show_downloads_when_done": "Show downloads when they finish",
+  "settings.show_downloads_when_done_description": "Open the downloads panel when a download completes."
 }

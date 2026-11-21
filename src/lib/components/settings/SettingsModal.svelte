@@ -11,6 +11,7 @@ import PasswordSettings from "./passwords/PasswordSettings.svelte";
 import ChangelogSettings from "./ChangelogSettings.svelte";
 import NavigationSettings from "./NavigationSettings.svelte";
 import PerformanceSettings from "./PerformanceSettings.svelte";
+import DownloadSettings from "./DownloadSettings.svelte";
 import PrivacySecuritySettings from "./PrivacySecuritySettings.svelte";
 import ShortcutSettings from "./ShortcutSettings.svelte";
   import DiagnosticsSettings from "./DiagnosticsSettings.svelte";
@@ -326,6 +327,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             <PrivacySecuritySettings />
           {:else if $activeSettingsCategory === "passwords"}
             <PasswordSettings />
+          {:else if $activeSettingsCategory === "downloads"}
+            <DownloadSettings />
           {:else if $activeSettingsCategory === "shortcuts"}
             <ShortcutSettings error={recorder.error} onStart={recorder.start} />
           {:else if $activeSettingsCategory === "diagnostics"}

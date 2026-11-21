@@ -40,12 +40,13 @@ pub async fn enqueue_download(
     let target = if state.policies().ask_download_destination() {
         let dialog_app = app.clone();
         let name = crate::downloads::transfer::file_name(&parsed);
+        let start = crate::downloads::files::directory(&app).ok();
         let selected = tauri::async_runtime::spawn_blocking(move || {
-            dialog_app
-                .dialog()
-                .file()
-                .set_file_name(name)
-                .blocking_save_file()
+            let mut dialog = dialog_app.dialog().file().set_file_name(name);
+            if let Some(start) = start {
+                dialog = dialog.set_directory(start);
+            }
+            dialog.blocking_save_file()
         })
         .await
         .map_err(|e| e.to_string())?;
@@ -101,4 +102,81 @@ pub async fn set_download_checksum(
     checksum: Option<String>,
 ) -> Result<(), String> {
     manager.set_checksum(&app, &task_id, checksum).await
+}
+
+/// Where downloads go when Spark does not ask, for Settings → Downloads.
+#[tauri::command]
+pub fn get_download_location(
+    app: AppHandle,
+) -> Result<crate::downloads::location::Location, String> {
+    current_location(&app)
+}
+
+fn current_location(app: &AppHandle) -> Result<crate::downloads::location::Location, String> {
+    use tauri::Manager;
+    let custom = app
+        .state::<crate::downloads::location::DownloadLocation>()
+        .custom();
+    let chosen = crate::downloads::location::chosen(custom);
+    let is_default = chosen.is_none();
+    let path = match chosen {
+        Some(path) => path,
+        None => app.path().download_dir().map_err(|e| e.to_string())?,
+    };
+    Ok(crate::downloads::location::Location {
+        path: path
+            .to_string_lossy()
+            .trim_start_matches(r"\?\")
+            .to_string(),
+        is_default,
+    })
+}
+
+/// Opens the folder picker and keeps the choice. `None` when the picker was cancelled.
+#[tauri::command]
+pub async fn choose_download_location(
+    app: AppHandle,
+) -> Result<Option<crate::downloads::location::Location>, String> {
+    use tauri::Manager;
+    let start = crate::downloads::files::directory(&app).ok();
+    let dialog_app = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        let mut dialog = dialog_app.dialog().file();
+        if let Some(start) = start {
+            dialog = dialog.set_directory(start);
+        }
+        dialog.blocking_pick_folder()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    let Some(picked) = picked else {
+        return Ok(None);
+    };
+    let path = picked
+        .into_path()
+        .map_err(|_| "downloads.invalid_location")?;
+    let folder = crate::downloads::location::usable(&path)?;
+    let saved = folder.clone();
+    crate::database::executor::run(app.clone(), move |conn| {
+        crate::downloads::location::store(conn, Some(&saved))
+    })
+    .await?;
+    app.state::<crate::downloads::location::DownloadLocation>()
+        .set(Some(folder));
+    current_location(&app).map(Some)
+}
+
+/// Goes back to the system Downloads folder.
+#[tauri::command]
+pub async fn reset_download_location(
+    app: AppHandle,
+) -> Result<crate::downloads::location::Location, String> {
+    use tauri::Manager;
+    crate::database::executor::run(app.clone(), |conn| {
+        crate::downloads::location::store(conn, None)
+    })
+    .await?;
+    app.state::<crate::downloads::location::DownloadLocation>()
+        .set(None);
+    current_location(&app)
 }

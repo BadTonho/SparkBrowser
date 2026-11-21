@@ -2,7 +2,13 @@
 
 The manager opens below its toolbar button and shows combined progress on the button border; see [the floating panel](downloads-popover.md).
 
-The download manager supports Pause, Resume, Restart, Cancel and optional SHA-256 verification. URL transfers and their partial files persist locally. Restarting the application restores their state without opening connections; resume is always explicit. Up to two operations run simultaneously, with at most 64 unfinished tasks including paused transfers. **Settings → Performance & Privacy → Ask where to save each download** opens the native save dialog before each page or URL-panel download. It defaults on when no saved value exists; canceling the dialog creates no task or partial file.
+The download manager supports Pause, Resume, Restart, Cancel and optional SHA-256 verification. URL transfers and their partial files persist locally. Restarting the application restores their state without opening connections; resume is always explicit. Up to two operations run simultaneously, with at most 64 unfinished tasks including paused transfers. **Settings → Downloads → Ask where to save each download** opens the native save dialog before each page or URL-panel download (see [Settings → Downloads](#settings--downloads)). It defaults on when no saved value exists; canceling the dialog creates no task or partial file.
+
+## Settings → Downloads
+
+- **Location** shows the folder downloads are saved to when Spark does not ask each time, and **Change** opens a folder picker. The folder must exist and accept a new file (Spark checks with a short temporary file that it removes). **Use the default folder** goes back to the system Downloads folder. If the chosen folder disappears or stops being writable, downloads fall back to the system folder and the error log says why. The save dialog of **Ask where to save** also opens in this folder. The choice is stored on this computer only and is not part of backups, since a path means nothing on another machine. Downloads already finished stay where they are.
+- **Ask where to save each download** (on by default) is described above. It moved here from Performance.
+- **Show downloads when they finish** (on by default) opens the downloads panel when a download you watched running completes. It only acts in the window you are using, and does not open for old downloads that merely load again.
 
 URL transfers use asynchronous HTTP, a 20-second connection timeout and a 30-second read inactivity timeout, without an overall duration limit while data progresses. Resumption requires a strong ETag, the same final URL and a matching `206 Content-Range`. Weak/missing validators, changed representations, ignored ranges and inconsistent responses require an explicit restart. Current shield and redirect restrictions apply to each new request.
 

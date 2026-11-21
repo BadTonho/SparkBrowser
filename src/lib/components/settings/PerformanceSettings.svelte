@@ -1,18 +1,15 @@
 <script lang="ts">
-  import { logIgnored } from "../../services/ignored-error";
   import AppIcon from "../icons/AppIcon.svelte";
   import { t } from "../../i18n";
 import {
   autoHibernateMode,
   residentTabLimit,
   hibernationExemptions,
-  askDownloadDestination,
   hibernateOtherWorkspaces,
   setHibernateOtherWorkspaces,
   setResidentTabLimit,
   setAutoHibernateMode,
   setHibernationExemptions,
-  setAskDownloadDestination,
 } from "../../stores/settingsStore";
 import { addHibernationDomain } from "../../services/hibernation-domains.js";
 import { graphicsBusy, graphicsError, graphicsStatus, refreshGraphics, restartForGraphics, setHardwareAcceleration } from "../../stores/graphicsStore";
@@ -112,11 +109,6 @@ async function removeDomain(domain: string) {
         <ul>{#each $hibernationExemptions as domain (domain)}<li><span>{domain}</span><button type="button" aria-label={$t("settings.remove_domain", { domain })} onclick={() => void removeDomain(domain)}>×</button></li>{/each}</ul>
       {/if}
     </div>
-  </div>
-
-  <div class="setting-row" id="setting-download-destination" tabindex="-1">
-    <div class="row-text"><span class="row-label">{$t("settings.ask_download_destination")}</span><span class="row-desc">{$t("settings.ask_download_destination_description")}</span></div>
-    <input type="checkbox" checked={$askDownloadDestination} aria-label={$t("settings.ask_download_destination")} onchange={event => void setAskDownloadDestination(event.currentTarget.checked).catch(logIgnored)} />
   </div>
 
   <div class="setting-row" id="setting-skip-exit-review" tabindex="-1" data-testid="skip-exit-review">

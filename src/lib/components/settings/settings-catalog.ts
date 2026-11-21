@@ -12,6 +12,7 @@ export const categories: {
     { id: "performance_privacy", icon: "rocket", label: "Performance" },
     { id: "privacy_security", icon: "shield", label: "Privacy & Security" },
     { id: "passwords", icon: "lock", label: "Autofill & Passwords" },
+    { id: "downloads", icon: "download", label: "Downloads" },
     { id: "shortcuts", icon: "keyboard", label: "Keyboard Shortcuts" },
     { id: "updates", icon: "↻", label: "About & Updates" },
     { id: "changelog", icon: "books", label: "Changelog" },
@@ -138,7 +139,9 @@ export const searchableSettings: SearchEntry[] = [
   },
   { id: "hibernate-exceptions", title: "Hibernation exceptions", description: "Keep selected domains and subdomains out of automatic hibernation.", category: "performance_privacy", targetId: "setting-hibernation-exceptions", keywords: "performance memory ram domain exclude exception" },
   { id: "skip-exit-review", title: "Skip the close confirmation", description: "Close without asking when only media or resumable transfers are open.", category: "performance_privacy", targetId: "setting-skip-exit-review", keywords: "close exit quit confirm dialog warning dont show again fechar sair confirmacao aviso" },
-  { id: "ask-download-destination", title: "Ask download location", description: "Choose a destination before each download starts.", category: "performance_privacy", targetId: "setting-download-destination", keywords: "download save folder path location" },
+  { id: "download-location", title: "Download location", description: "Choose the folder where downloads are saved.", category: "downloads", targetId: "setting-download-location", keywords: "download folder path directory save location change pasta local alterar" },
+  { id: "show-downloads-when-done", title: "Show downloads when they finish", description: "Open the downloads panel when a download completes.", category: "downloads", targetId: "setting-show-downloads-when-done", keywords: "download complete finished panel show open concluído mostrar" },
+  { id: "ask-download-destination", title: "Ask download location", description: "Choose a destination before each download starts.", category: "downloads", targetId: "setting-download-destination", keywords: "download save folder path location" },
   { id: "site-zoom", title: "Page zoom", description: "Reset page zoom", category: "search_navigation", targetId: "zoom-heading", keywords: "zoom origin site scale" },
   ...SHORTCUT_DEFINITIONS.map((shortcut) => ({
     id: `setting-${shortcut.id}`,
