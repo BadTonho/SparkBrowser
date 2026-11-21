@@ -49,7 +49,11 @@ pub fn read(dir: &Path) -> Option<(Staged, Vec<u8>)> {
 }
 
 pub fn clear(dir: &Path) {
-    crate::error_log::ignored(std::fs::remove_dir_all(dir));
+    if let Err(error) = std::fs::remove_dir_all(dir) {
+        if error.kind() != std::io::ErrorKind::NotFound {
+            crate::error_log::ignored(Err::<(), _>(error));
+        }
+    }
 }
 
 pub fn clear_for(app: &tauri::AppHandle) {

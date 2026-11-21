@@ -106,11 +106,23 @@ pub fn directory(data_directory: &Path) -> PathBuf {
     data_directory.join("logs")
 }
 
+fn open_log(data_directory: &Path) -> bool {
+    let directory = directory(data_directory);
+    fs::create_dir_all(&directory).is_ok() && LOG_FILE.set(directory.join(FILE_NAME)).is_ok()
+}
+
+/// Records a launch rejected before acquiring the profile, without touching its run marker.
+pub fn rejected_launch(data_directory: &Path, level: Level, summary: &str, details: &str) {
+    if open_log(data_directory) {
+        report(level, "startup", summary, details);
+    }
+}
+
 /// Installs the panic hook. Call once, as early as the data directory is known. The previous hook
 /// still runs, so the console output in development builds is unchanged.
 pub fn install(data_directory: &Path) {
     let directory = directory(data_directory);
-    if fs::create_dir_all(&directory).is_err() || LOG_FILE.set(directory.join(FILE_NAME)).is_err() {
+    if !open_log(data_directory) {
         return;
     }
     let marker = directory.join(SESSION_MARKER);

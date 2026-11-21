@@ -55,8 +55,8 @@ pub async fn contexts(app: &AppHandle, id: &str) -> Result<(String, Vec<String>)
     .map_err(|_| "media.unavailable")?;
     tokio::time::timeout(Duration::from_secs(5), rx)
         .await
-        .map_err(|_| "media.error")?
-        .map_err(|_| "media.error")?
+        .map_err(|_| "media.error: timed out reading WebView2 media contexts")?
+        .map_err(|_| "media.error: WebView2 media context response was lost")?
         .ok_or_else(|| "media.unavailable".into())
 }
 
@@ -83,7 +83,7 @@ pub async fn evaluate(
         let handler=CallDevToolsProtocolMethodCompletedHandler::create(Box::new(move |result,raw| {
             let value=if !current(&a,&l,&t) || !valid_context(&l,&t,&c) || result.is_err() {Err("media.stale".into())} else {
                 let v:Value=serde_json::from_str(&raw.to_string()).unwrap_or(Value::Null);
-                if !v["exceptionDetails"].is_null() {Err("media.error".into())} else if v["result"]["value"].is_null(){Err("media.unavailable".into())} else {Ok(v["result"]["value"].clone())}
+                if !v["exceptionDetails"].is_null() {Err("media.error: WebView2 media controller threw an exception".into())} else if v["result"]["value"].is_null(){Err("media.unavailable".into())} else {Ok(v["result"]["value"].clone())}
             };
             if let Ok(mut slot)=cb.lock(){if let Some(tx)=slot.take(){let _=tx.send(value);}}
             Ok(())
@@ -93,6 +93,6 @@ pub async fn evaluate(
     }).map_err(|_|"media.unavailable")?;
     tokio::time::timeout(Duration::from_secs(5), rx)
         .await
-        .map_err(|_| "media.error")?
-        .map_err(|_| "media.error")?
+        .map_err(|_| "media.error: timed out waiting for the WebView2 media controller")?
+        .map_err(|_| "media.error: WebView2 media controller response was lost")?
 }

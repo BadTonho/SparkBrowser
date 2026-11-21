@@ -179,7 +179,8 @@
   });
 
   $effect(() => {
-    const tab = $tabs.find(item => item.url === "spark://settings" && (item.is_active || item.is_visible));
+    const visible = $isSettingsModalOpen ? [] : $tabs.filter(item => item.url === "spark://settings" && !item.is_hibernated && (item.is_active || item.is_visible));
+    const tab = visible.find(item => item.is_active) ?? visible[0];
     syncSettingsTabSession(tab?.id ?? null);
   });
 

@@ -19,13 +19,30 @@ import { isTauriRuntime } from "../../services/bridge/runtime";
 import { mountPanelHost } from "../panels/panel-host";
 import { settingsOverlaySession, settingsTabSession, closeSettingsTab } from "../../stores/settingsStore";
 import { setSettingsOverlay, onSettingsOverlayAction, setSettingsTab, onSettingsTabAction } from "../../services/bridge/settings-overlay";
+import { tabs } from "../../stores/browserStore";
 const native = isTauriRuntime();
 function host(node: HTMLElement) {
   if (!native) return focusDialog(node, { onEscape: () => closeSettingsModal(), ignoreEscape: () => Boolean($recordingShortcutId) });
   const tab = $isSettingsModalOpen ? null : $settingsTabSession;
   if (tab) {
-    const stop = mountPanelHost(node, true, { id: "settings", independent: true, sessionStore: settingsTabSession, close: () => closeSettingsTab(), set: (visible, session, presentation) => setSettingsTab(tab.tabId, visible, session, presentation, () => !$isSettingsModalOpen && $settingsTabSession?.id === session), listen: callback => onSettingsTabAction(tab.tabId, callback) });
-    return { destroy: stop };
+    let disposed = false;
+    let latestRevision: number | undefined;
+    const stop = mountPanelHost(node, true, {
+      id: "settings",
+      independent: true,
+      sessionStore: settingsTabSession,
+      close: () => closeSettingsTab(),
+      set(visible, session, presentation) {
+        const revision = presentation?.revision;
+        latestRevision = revision;
+        return setSettingsTab(tab.tabId, visible, session, presentation, () =>
+          !disposed && revision === latestRevision && !$isSettingsModalOpen && $settingsTabSession?.id === session &&
+          $tabs.some(item => item.id === tab.tabId && item.url === "spark://settings" && !item.is_hibernated && (item.is_active || item.is_visible))
+        );
+      },
+      listen: callback => onSettingsTabAction(tab.tabId, callback),
+    });
+    return { destroy() { disposed = true; stop(); } };
   }
   const stop = mountPanelHost(node, true, { id: "settings", sessionStore: settingsOverlaySession, close: (_restore, immediate) => closeSettingsModal(immediate), set: setSettingsOverlay, listen: onSettingsOverlayAction });
   return { destroy: stop };

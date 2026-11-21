@@ -42,10 +42,7 @@ pub fn data_directory(config: &tauri::utils::config::Config) -> Option<PathBuf> 
             return Some(data.clone());
         }
     }
-    crate::legacy::identifier_roots()
-        .into_iter()
-        .next()
-        .map(|root| root.join(&config.identifier))
+    dirs::data_dir().map(|root| root.join(&config.identifier))
 }
 
 /// `true` (accelerated) unless the file exists, parses and says `false`. A leading byte order mark,

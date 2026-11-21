@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::{File, OpenOptions, TryLockError},
     path::Path,
 };
 
@@ -8,17 +8,16 @@ pub struct ProfileLock {
     _file: File,
 }
 impl ProfileLock {
-    pub fn acquire(directory: &Path) -> Result<Self, String> {
-        std::fs::create_dir_all(directory).map_err(|e| format!("recovery.profile_lock: {e}"))?;
+    pub fn acquire(directory: &Path) -> Result<Self, TryLockError> {
+        std::fs::create_dir_all(directory).map_err(TryLockError::Error)?;
         let file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .truncate(false)
             .open(directory.join("profile.lock"))
-            .map_err(|e| format!("recovery.profile_lock: {e}"))?;
-        file.try_lock()
-            .map_err(|e| format!("recovery.profile_in_use: {e}"))?;
+            .map_err(TryLockError::Error)?;
+        file.try_lock()?;
         Ok(Self { _file: file })
     }
 }
@@ -29,7 +28,10 @@ mod tests {
     fn profile_lock_is_exclusive_and_released_without_deleting_the_file() {
         let dir = tempfile::tempdir().unwrap();
         let first = ProfileLock::acquire(dir.path()).unwrap();
-        assert!(ProfileLock::acquire(dir.path()).is_err());
+        assert!(matches!(
+            ProfileLock::acquire(dir.path()),
+            Err(TryLockError::WouldBlock)
+        ));
         drop(first);
         assert!(dir.path().join("profile.lock").exists());
         assert!(ProfileLock::acquire(dir.path()).is_ok());

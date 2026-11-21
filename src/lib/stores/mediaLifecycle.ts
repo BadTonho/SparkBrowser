@@ -23,7 +23,8 @@ function startMedia() {
 
   function refreshFocused() {
     const active = get(tabs).find(tab => tab.is_active);
-    if (disposed || !focused || document.hidden || !active || active.is_hibernated || active.navigation?.loading) return;
+    // Settings has no page media controls. Poll again when a content tab is selected.
+    if (disposed || !focused || document.hidden || !active || active.url === "spark://settings" || active.is_hibernated || active.navigation?.loading) return;
     void refreshMedia(active.id, true);
   }
   function reconcile() {

@@ -4,6 +4,7 @@ use windows::Security::Credentials::{
     KeyCredential, KeyCredentialCreationOption, KeyCredentialManager, KeyCredentialStatus,
 };
 use windows::Security::Cryptography::CryptographicBuffer;
+use windows::Win32::Foundation::NTE_NO_KEY;
 use windows_core::HSTRING;
 use zeroize::Zeroizing;
 
@@ -97,7 +98,11 @@ pub fn secret() -> Result<Zeroizing<Vec<u8>>, HelloError> {
 }
 
 pub fn forget() -> Result<(), HelloError> {
-    KeyCredentialManager::DeleteAsync(&HSTRING::from(CREDENTIAL))
+    match KeyCredentialManager::DeleteAsync(&HSTRING::from(CREDENTIAL))
         .and_then(|operation| operation.join())
-        .map_err(|e| failed("deleting the Windows Hello key", e))
+    {
+        // The key may already be absent when resetting a password-only vault.
+        Err(error) if error.code() == NTE_NO_KEY => Ok(()),
+        result => result.map_err(|e| failed("deleting the Windows Hello key", e)),
+    }
 }

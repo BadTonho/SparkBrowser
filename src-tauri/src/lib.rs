@@ -161,34 +161,53 @@ pub fn run() {
     updates::initialize_crypto();
     let mut context = tauri::generate_context!();
     native_tests::configure(&mut context).expect("invalid native test directory");
-    // Move a profile created under the old name before any webview opens it.
-    if matches!(mode, private_session::Mode::Normal) {
-        legacy::migrate_profile(&context.config().identifier);
-    }
-    // Graphics flags are read once, when the first webview starts, so they are set here. Private
-    // windows and restarted children keep whatever their parent put in the environment.
-    if matches!(mode, private_session::Mode::Normal) {
-        let accelerated = graphics::data_directory(context.config())
-            .is_none_or(|directory| graphics::load(&directory));
-        graphics::apply_environment(accelerated);
-        // The same goes for the DNS over HTTPS proxy: the engine takes its address when it starts.
-        network::apply_environment(
-            graphics::data_directory(context.config())
-                .and_then(|directory| network::load(&directory)),
-        );
-        if let Some(directory) = graphics::data_directory(context.config()) {
-            error_log::install(&directory);
-        }
-    }
-    let graphics_service = graphics::GraphicsService::new(graphics::running_accelerated());
     let role = private_session::PrivateRole::from_mode(mode);
     private_session::configure(&mut context, role.launch());
+    // Move a profile created under the old name before any webview opens it.
+    if !role.is_private() {
+        legacy::migrate_profile(&context.config().identifier);
+    }
+    let Some(data_directory) = graphics::data_directory(context.config()) else {
+        eprintln!("Spark startup failed: application data directory is unavailable");
+        return;
+    };
+    let profile_lock = match recovery::profile_lock::ProfileLock::acquire(&data_directory) {
+        Ok(lock) => lock,
+        Err(error) => {
+            let (level, message) = if matches!(error, std::fs::TryLockError::WouldBlock) {
+                (
+                    error_log::Level::Warning,
+                    "Spark startup skipped: the profile is already in use",
+                )
+            } else {
+                (
+                    error_log::Level::Error,
+                    "Spark startup failed: could not lock the profile",
+                )
+            };
+            if !role.is_private() {
+                error_log::rejected_launch(&data_directory, level, message, &error.to_string());
+            }
+            eprintln!("{message}: {error}");
+            return;
+        }
+    };
+    // Graphics flags are read once, when the first webview starts, so they are set here. Private
+    // windows and restarted children keep whatever their parent put in the environment.
+    if !role.is_private() {
+        graphics::apply_environment(graphics::load(&data_directory));
+        // The same goes for the DNS over HTTPS proxy: the engine takes its address when it starts.
+        network::apply_environment(network::load(&data_directory));
+        error_log::install(&data_directory);
+    }
+    let graphics_service = graphics::GraphicsService::new(graphics::running_accelerated());
     let builder = tauri::Builder::default();
     #[cfg(target_os = "linux")]
     let builder = builder.plugin(security::linux_shell_navigation_guard());
     builder
         .plugin(tauri_plugin_dialog::init())
         .manage(role)
+        .manage(profile_lock)
         .manage(graphics_service)
         .manage(BrowserState::default())
         .manage(window::fullscreen::FullscreenState::default())
@@ -323,10 +342,6 @@ pub fn run() {
             error_log::watch(app.handle());
 
             let data_directory = app.path().app_data_dir()?;
-            app.manage(
-                recovery::profile_lock::ProfileLock::acquire(&data_directory)
-                    .map_err(std::io::Error::other)?,
-            );
             window::ephemeral::purge_all_ephemeral_data(app.handle())
                 .map_err(std::io::Error::other)?;
             if app.state::<private_session::PrivateRole>().is_private() {

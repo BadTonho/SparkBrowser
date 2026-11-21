@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 adblock = { version = "0.13.5", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling", "content-blocking"] }
 quick-xml = "0.42"
+dirs = "7"
 tauri = { version = "2", features = ["unstable", "macos-private-api"] }
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }

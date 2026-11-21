@@ -24,8 +24,10 @@ export async function setSettingsTab(tabId: string, visible: boolean, sessionId:
       await invoke<void>("set_settings_overlay", { visible: true, sessionId, presentation: presentation ?? null, restoreFocus: false, animateClose: false, tabId });
       return;
     } catch (error) {
+      if (!active()) return;
       lastError = error;
-      if (errorDetails(error).code !== "settings_tab.not_ready") throw error;
+      const code = errorDetails(error).code;
+      if (code !== "settings_tab.not_ready" && code !== "settings_tab.invalid_tab" && code !== "settings_tab.stale_session") throw error;
       await new Promise(resolve => setTimeout(resolve, 40));
     }
   }
