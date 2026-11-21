@@ -131,16 +131,13 @@ pub(super) fn sync_changed_content_geometry(
         let window = state.window_of_tab(id).unwrap_or_default();
         !full_sizes.iter().any(|(_, full, _)| full == &window)
     });
+    // The tab and bookmark context menus are layers above the page, like the workspace switcher: they
+    // must not hide the page, which used to turn the whole tab black while the menu was open.
     let hidden = *state
         .surfaces()
         .is_overlay_open()
         .lock()
-        .map_err(|e| e.to_string())?
-        || *state
-            .surfaces()
-            .bookmark_context_menu_open()
-            .lock()
-            .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())?;
     let previous = previous.filter(|_| fullscreen.is_empty() && !hidden);
     for (label, _view) in app.webviews() {
         let Some(tab_id) = label.strip_prefix(CONTENT_WEBVIEW_PREFIX) else {

@@ -24,3 +24,4 @@
 - Fixed the mouse back/forward side buttons (4 and 5) going more than one page at a time: the browser was also navigating by itself when the button was released. Now they move exactly one page.
 - Fixed the YouTube card on the new tab: its progress bar could not be clicked or dragged. It now jumps to the moment you click or drag to, in the tab that is playing.
 - Fixed the YouTube card on the new tab doing nothing when the tab it controls was hibernated. Pressing play (or any control) now wakes that tab in the background, reloads its page and starts the video, without leaving the new tab.
+- Fixed the page of a tab turning black while the right-click menu of a tab (or of a bookmark) was open. The page now stays visible behind the menu.
