@@ -73,6 +73,7 @@
     "allow-vault-set-require-hello",
     "allow-vault-import-csv",
     "allow-vault-export-csv",
+    "allow-vault-save-recovery-file",
     "allow-vault-lock",
     "allow-vault-list",
     "allow-vault-reveal",

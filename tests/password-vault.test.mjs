@@ -105,7 +105,7 @@ test('the vault screens never keep secrets around after use', () => {
 });
 
 test('every vault command is registered end to end', () => {
-  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_hello_enable', 'vault_hello_disable', 'vault_password_enable', 'vault_password_disable', 'vault_set_require_hello', 'vault_import_csv', 'vault_export_csv', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
+  const commands = ['vault_status', 'vault_create', 'vault_unlock', 'vault_unlock_recovery', 'vault_unlock_hello', 'vault_hello_enable', 'vault_hello_disable', 'vault_password_enable', 'vault_password_disable', 'vault_set_require_hello', 'vault_import_csv', 'vault_export_csv', 'vault_save_recovery_file', 'vault_lock', 'vault_list', 'vault_reveal', 'vault_save_entry', 'vault_delete_entry', 'vault_change_master_password', 'vault_set_auto_lock', 'vault_reset', 'vault_copy_password', 'vault_copy_text'];
   const manifest = read('src-tauri/src/commands/manifest.rs');
   const capabilities = read('src-tauri/capabilities/default.json');
   const lib = read('src-tauri/src/lib.rs');
@@ -208,4 +208,13 @@ test('settings rows: Windows Hello each time, import, export and delete, all thr
   for (const code of ['hello_required', 'import_invalid', 'import_too_large', 'import_failed', 'export_failed']) {
     assert.equal(vaultError(`vault.${code}`).key, `passwords.error_${code}`);
   }
+});
+
+test('the recovery key can be saved to a file, only when the text is shaped like a key', () => {
+  const dialog = read('src/lib/components/settings/passwords/RecoveryKeyDialog.svelte');
+  assert.match(dialog, /vault-recovery-download/);
+  assert.match(dialog, /saveRecoveryKeyFile\(\$vaultRecoveryKey\)/);
+  const commands = read('src-tauri/src/commands/vault.rs');
+  assert.match(commands, /vault_save_recovery_file[\s\S]*?is_recovery_key_shape[\s\S]*?blocking_save_file/);
+  assert.equal(vaultError('vault.save_failed').key, 'passwords.error_save_failed');
 });

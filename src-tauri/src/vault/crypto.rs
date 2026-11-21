@@ -283,6 +283,12 @@ fn decode_recovery(text: &str) -> Option<Zeroizing<Vec<u8>>> {
     (out.len() == RECOVERY_BYTES).then_some(out)
 }
 
+/// True when the text has the shape of a recovery key this vault could have issued. It says nothing
+/// about whether the key opens a vault; it only keeps other text from being written as one.
+pub fn is_recovery_key_shape(text: &str) -> bool {
+    decode_recovery(text).is_some()
+}
+
 /// Creates a vault: returns its header, the open data key and the recovery key (shown to the user once).
 /// At least one of the master password and the Windows Hello secret is required.
 pub fn create(
@@ -441,6 +447,15 @@ mod tests {
         // The password is not accepted as the recovery key, nor the other way around.
         assert!(unlock_with_recovery(&header, PASSWORD).is_err());
         assert!(unlock_with_password(&header, &recovery).is_err());
+    }
+
+    #[test]
+    fn only_text_shaped_like_a_recovery_key_passes_the_shape_check() {
+        let (_, _, recovery) = create(Some(PASSWORD), None).unwrap();
+        assert!(is_recovery_key_shape(&recovery));
+        for bad in ["", "short", PASSWORD, "AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAAA-AAA1", &format!("{recovery}\nextra")] {
+            assert!(!is_recovery_key_shape(bad), "{bad:?}");
+        }
     }
 
     #[test]

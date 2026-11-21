@@ -20,6 +20,8 @@ export const importVaultCsv = () => invoke<VaultImportResult | null>("vault_impo
  * opens the save dialog and writes the file. Resolves the number of passwords written, or null when cancelled.
  */
 export const exportVaultCsv = (currentPassword: string | null) => invoke<number | null>("vault_export_csv", { currentPassword });
+/** The backend opens the save dialog and writes the file. Resolves false when the dialog was cancelled. */
+export const saveVaultRecoveryFile = (recoveryKey: string) => invoke<boolean>("vault_save_recovery_file", { recoveryKey });
 export const lockVault = () => invoke<void>("vault_lock");
 export const listVaultEntries = () => invoke<VaultListing>("vault_list");
 export const revealVaultEntry = (id: string) => invoke<VaultRevealed>("vault_reveal", { id });

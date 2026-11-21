@@ -20,6 +20,7 @@ const KNOWN = {
   'vault.import_too_large': 'passwords.error_import_too_large',
   'vault.import_failed': 'passwords.error_import_failed',
   'vault.export_failed': 'passwords.error_export_failed',
+  'vault.save_failed': 'passwords.error_save_failed',
 };
 
 /**

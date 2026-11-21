@@ -466,6 +466,66 @@ pub async fn vault_copy_password(
     crate::vault::clipboard::copy(&app, password).await
 }
 
+/// What the recovery key file says (in both languages the interface offers). The key sits on its own line.
+fn recovery_file(recovery_key: &str) -> String {
+    format!(
+        "Spark Browser - password vault recovery key\r\n\
+         Spark Browser - chave de recuperacao do cofre de senhas\r\n\
+         \r\n\
+         {recovery_key}\r\n\
+         \r\n\
+         EN: This key opens the vault if you forget the master password or Windows Hello stops working. \
+         Keep this file somewhere safe, away from this computer (for example a USB drive), and do not share it: \
+         anyone who has it and your vault data can open the vault.\r\n\
+         PT: Esta chave abre o cofre se voce esquecer a senha mestra ou o Windows Hello deixar de funcionar. \
+         Guarde este arquivo em um lugar seguro, longe deste computador (por exemplo um pendrive), e nao o compartilhe: \
+         quem tiver o arquivo e os dados do seu cofre consegue abri-lo.\r\n"
+    )
+}
+
+/// Saves the recovery key shown after creating the vault to a text file the person chooses. The text
+/// must have the shape of a recovery key, so this cannot be used to write anything else. The file is
+/// not encrypted, which the interface says. `false` means the dialog was cancelled.
+#[tauri::command]
+pub async fn vault_save_recovery_file(app: AppHandle, recovery_key: String) -> Result<bool, String> {
+    allowed(&app)?;
+    let recovery_key = Zeroizing::new(recovery_key);
+    if !crate::vault::crypto::is_recovery_key_shape(&recovery_key) {
+        error_log::report(Level::Warning, "vault", "saving the recovery key file was refused: the text is not a recovery key", "");
+        return Err("vault.save_failed".into());
+    }
+    let contents = Zeroizing::new(recovery_file(recovery_key.trim()));
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(path) = app
+            .dialog()
+            .file()
+            .add_filter("Text", &["txt"])
+            .set_file_name("spark-recovery-key.txt")
+            .blocking_save_file()
+        else {
+            return Ok(false);
+        };
+        let path = path.into_path().map_err(|e| {
+            error_log::report(Level::Error, "vault", "the chosen recovery key file has no usable path", &e.to_string());
+            "vault.save_failed".to_string()
+        })?;
+        if !path.to_string_lossy().to_lowercase().ends_with(".txt") {
+            return Err("vault.save_failed".to_string());
+        }
+        crate::backup::files::write_bytes(&path, contents.as_bytes()).map_err(|detail| {
+            error_log::report(Level::Error, "vault", "the recovery key file could not be written", &detail);
+            "vault.save_failed".to_string()
+        })?;
+        error_log::report(Level::Info, "vault", "the recovery key was saved to a file", "");
+        Ok(true)
+    })
+    .await
+    .map_err(|error| {
+        error_log::report(Level::Error, "vault", "saving the recovery key file stopped unexpectedly", &error.to_string());
+        "vault.save_failed".to_string()
+    })?
+}
+
 /// Copies text the interface already shows (a username, the recovery key) with the same clean-up.
 #[tauri::command]
 pub async fn vault_copy_text(app: AppHandle, text: String) -> Result<(), String> {

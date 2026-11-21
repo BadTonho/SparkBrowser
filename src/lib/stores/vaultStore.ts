@@ -4,7 +4,7 @@ import { isTauriRuntime } from "../services/bridge/runtime";
 import {
   changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, disableVaultHello, disableVaultPassword,
   enableVaultHello, enableVaultPassword, exportVaultCsv, getVaultStatus, importVaultCsv, listVaultEntries, lockVault, resetVault,
-  revealVaultEntry, saveVaultEntry, setVaultAutoLock, setVaultRequireHello, unlockVault, unlockVaultWithHello, unlockVaultWithRecovery,
+  revealVaultEntry, saveVaultEntry, saveVaultRecoveryFile, setVaultAutoLock, setVaultRequireHello, unlockVault, unlockVaultWithHello, unlockVaultWithRecovery,
 } from "../services/bridge/vault";
 import { vaultError } from "../services/vault/errors.js";
 import { logIgnored } from "../services/ignored-error";
@@ -86,6 +86,11 @@ export async function createNewVault(masterPassword: string | null, useHello: bo
   vaultRecoveryKey.set(recovery);
   await refreshVaultStatus();
   return true;
+}
+
+/** Saves the recovery key just shown to a text file. True when a file was written (not when cancelled). */
+export async function saveRecoveryKeyFile(recoveryKey: string): Promise<boolean> {
+  return (await run(() => saveVaultRecoveryFile(recoveryKey))) === true;
 }
 
 export function dismissRecoveryKey(): void {

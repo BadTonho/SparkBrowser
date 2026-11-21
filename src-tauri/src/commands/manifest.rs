@@ -112,6 +112,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "vault_set_require_hello",
     "vault_import_csv",
     "vault_export_csv",
+    "vault_save_recovery_file",
     "vault_lock",
     "vault_list",
     "vault_reveal",
