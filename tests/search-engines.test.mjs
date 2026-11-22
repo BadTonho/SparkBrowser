@@ -47,13 +47,22 @@ test('unknown engines fall back to the default and the omnibox preview follows t
   assert.equal(new URL(resolvePreviewInput('missing term', [], 'nonsense')).hostname, 'www.google.com');
 });
 
-test('every engine has a logo path and nothing else does', async () => {
+test('every engine has one bundled logo', async () => {
   const { SEARCH_ENGINE_ICON_PATHS } = await import('../src/lib/components/icons/searchEngineIcons.js');
-  assert.deepEqual(Object.keys(SEARCH_ENGINE_ICON_PATHS).sort(), SEARCH_ENGINES.map((engine) => engine.id).sort());
+  const bundledLogos = ['google', 'duckduckgo'];
+  assert.deepEqual([...Object.keys(SEARCH_ENGINE_ICON_PATHS), ...bundledLogos].sort(), SEARCH_ENGINES.map((engine) => engine.id).sort());
   for (const [id, path] of Object.entries(SEARCH_ENGINE_ICON_PATHS)) {
     // Path data only: no markup, scripts or external references can ride along.
     assert.match(path, /^[Mm][MmLlHhVvCcSsQqTtAaZz0-9eE+\-., ]*$/, id);
     assert.ok(path.length > 40 && path.length < 4000, id);
+  }
+  const component = readFileSync(new URL('../src/lib/components/icons/SearchEngineIcon.svelte', import.meta.url), 'utf8');
+  for (const id of bundledLogos) {
+    const file = `./search-engines/${id}.svg`;
+    const svg = readFileSync(new URL(`../src/lib/components/icons/${file.slice(2)}`, import.meta.url), 'utf8');
+    assert.ok(component.includes(`url("${file}")`), id);
+    assert.match(svg, /<path\s/, id);
+    assert.doesNotMatch(svg, /<(?:script|foreignObject|image)\b|\b(?:href|on\w+)\s*=|url\(/i, id);
   }
 });
 

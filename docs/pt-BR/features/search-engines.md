@@ -23,7 +23,7 @@ Os atalhos de busca por site (por exemplo `yt gatos`) continuam tendo prioridade
 
 ## Logotipos
 
-Os logotipos são caminhos vetoriais de uma cor do projeto [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0 1.0), guardados como texto em `src/lib/components/icons/searchEngineIcons.js` e desenhados na cor de cada marca sobre um cartão claro, para que cores escuras continuem legíveis no tema escuro. Google, DuckDuckGo, Brave, Startpage, Ecosia, Qwant, Mojeek e Kagi vêm da versão 13, o Bing da versão 12 e o Yahoo da versão 9, porque as versões seguintes removeram esses dois. Nada é baixado em tempo de execução, então abrir as configurações não contata nenhum mecanismo de busca. As marcas continuam sendo propriedade de seus donos e só identificam o mecanismo.
+Os logotipos ficam sobre bases neutras que acompanham o tema atual. O G multicolorido e o pato Dax usam elementos do [kit de marca do Google](https://developers.google.com/identity/branding-guidelines#download_pre-approved_brand_icons) e do [kit de imprensa do DuckDuckGo](https://duckduckgo.com/press). Os demais usam vetores monocromáticos do [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0 1.0). O Bing usa a versão 12, o Yahoo usa a versão 9 e os demais usam a versão 13. O Spark inclui os elementos para uso offline. Cada marca identifica seu mecanismo de busca e pertence ao respectivo titular.
 
 ## Compatibilidade
 
@@ -38,9 +38,9 @@ Os logotipos são caminhos vetoriais de uma cor do projeto [Simple Icons](https:
 3. Adicione `settings.engine_<id>_desc` nos dois catálogos de configurações.
 4. Adicione o caminho do logotipo em `src/lib/components/icons/searchEngineIcons.js` (24×24, somente dados de caminho).
 
-`tests/search-engines.test.mjs` falha se as duas listas divergirem, se faltar uma descrição ou um logotipo, se um logotipo tiver algo além de dados de caminho ou se um mecanismo usar endereço que não seja https; os testes Rust conferem que cada mecanismo monta uma URL de busca válida.
+`tests/search-engines.test.mjs` confere se as listas coincidem, se todos os mecanismos têm uma descrição e um ícone incluído e se todos usam HTTPS. Os testes Rust conferem se cada mecanismo monta uma URL de busca válida.
 
 ## Implementação
 
 - Nativo: `search_engines.rs` é o registro único usado por `url_input.rs`, pelas preferências da nova aba e pela validação do backup.
-- Interface: `search-engines.js` alimenta `searchEngineStore.ts`, a prévia offline em `site-search.js` e `SearchEnginePicker.svelte`. O seletor usa botões simples com `role="radio"`, que também funcionam na superfície nativa de configurações. Essa superfície não copia estilos inline, então as cores das marcas vão no atributo `fill` do ícone.
+- Interface: `search-engines.js` alimenta `searchEngineStore.ts`, a prévia offline em `site-search.js` e `SearchEnginePicker.svelte`. O seletor usa botões com `role="radio"`. Os estilos dos ícones e os atributos SVG de preenchimento funcionam nas duas formas de exibir as Configurações.

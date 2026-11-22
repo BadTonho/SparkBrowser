@@ -6,8 +6,7 @@
 
 <!--
   One tile per engine; the chosen one is outlined. Plain buttons (not a <select>) so the choice is visible at a
-  glance and also works in the native settings surface, which only forwards clicks on buttons. Colors live in
-  the icon's fill attribute because inline styles are not copied into that surface.
+  glance and also works in the native settings surface, which only forwards clicks on buttons.
 -->
 <div class="picker" role="radiogroup" aria-label={$t("settings.default_search_engine_f52d")} data-testid="search-engine-picker">
   {#each SEARCH_ENGINES as engine (engine.id)}
@@ -36,8 +35,17 @@
   .tile:hover { background: rgba(255, 255, 255, 0.07); }
   .tile:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
   .tile.selected { border-color: var(--accent-primary); box-shadow: none; }
-  /* A light tile keeps dark brand colors (Yahoo, Kagi) readable on the dark theme. */
-  .logo { display: grid; flex: 0 0 auto; width: 38px; height: 38px; place-items: center; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+  .logo {
+    display: grid;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  }
   .text { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
   strong { overflow: hidden; font-size: 13px; font-weight: 700; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
   small { color: var(--text-secondary); font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; }

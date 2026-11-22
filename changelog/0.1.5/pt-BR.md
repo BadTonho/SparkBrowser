@@ -13,6 +13,7 @@
 
 ## Melhorias
 
+- Os cartões dos buscadores exibem ícones de marca atualizados sobre fundos neutros que acompanham o tema.
 - O estilo Vidro usa fundos neutros, mais transparência e bordas mais definidas. No tema escuro, a base é preta, sem reflexos.
 - As Configurações rápidas têm contornos mais marcados e textos mais legíveis nos dois temas.
 - Escolha o formato da miniatura e o modo de pré-visualização do widget do YouTube em um painel mais compacto com cartões de exemplo. A demonstração de vídeo sem som se anima ao passar o mouse ou dar foco pelo teclado.

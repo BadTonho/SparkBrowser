@@ -13,6 +13,7 @@
 
 ## Improvements
 
+- Search engine cards use refreshed brand icons on neutral backgrounds that follow the theme.
 - Glass uses neutral backgrounds, more transparency and clearer borders. In dark mode, its base is black, with no reflections.
 - Quick Settings has stronger outlines and clearer labels in both themes.
 - Choose the YouTube widget's thumbnail layout and preview mode in a more compact panel with example cards. The muted video example moves on hover or keyboard focus.

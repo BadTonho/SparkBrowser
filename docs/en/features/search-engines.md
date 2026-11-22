@@ -23,7 +23,7 @@ Site search shortcuts (for example `yt cats`) still win over the default engine;
 
 ## Logos
 
-The logos are single-color vector paths from the [Simple Icons](https://github.com/simple-icons/simple-icons) project (CC0 1.0), stored as text in `src/lib/components/icons/searchEngineIcons.js` and drawn in each brand's color on a light tile so dark colors stay readable on the dark theme. Google, DuckDuckGo, Brave, Startpage, Ecosia, Qwant, Mojeek and Kagi come from version 13, Bing from version 12 and Yahoo from version 9, because later releases dropped those two. Nothing is downloaded at run time, so opening the settings contacts no search engine. The marks remain trademarks of their owners and only identify the engine.
+Brand icons sit on neutral tiles that follow the current theme. The multicolor G and Dax use artwork from the [Google brand assets](https://developers.google.com/identity/branding-guidelines#download_pre-approved_brand_icons) and [DuckDuckGo press kit](https://duckduckgo.com/press). The other marks use single-color paths from [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0 1.0). Bing uses version 12, Yahoo uses version 9, and the others use version 13. Spark bundles the artwork for offline use. Each mark identifies its search engine and remains the trademark of its owner.
 
 ## Compatibility
 
@@ -38,9 +38,9 @@ The logos are single-color vector paths from the [Simple Icons](https://github.c
 3. Add `settings.engine_<id>_desc` to both settings catalogs.
 4. Add the logo path to `src/lib/components/icons/searchEngineIcons.js` (24×24, path data only).
 
-`tests/search-engines.test.mjs` fails if the two lists differ, a description or logo is missing, a logo contains anything but path data, or an engine uses a non-https address; Rust tests check that every engine builds a valid search URL.
+`tests/search-engines.test.mjs` checks that the lists match, that every engine has a description and a bundled icon, and that every engine uses HTTPS. Rust tests check that every engine builds a valid search URL.
 
 ## Implementation
 
 - Native: `search_engines.rs` is the single registry used by `url_input.rs`, the new-tab preferences and backup validation.
-- Interface: `search-engines.js` feeds `searchEngineStore.ts`, the offline preview in `site-search.js` and `SearchEnginePicker.svelte`. The picker uses plain buttons with `role="radio"`, which also work in the native settings surface. That surface does not copy inline styles, so brand colors are set through the icon's `fill` attribute.
+- Interface: `search-engines.js` feeds `searchEngineStore.ts`, the offline preview in `site-search.js` and `SearchEnginePicker.svelte`. The picker uses buttons with `role="radio"`. Its icon styles and SVG fill attributes work in both native Settings surfaces.
