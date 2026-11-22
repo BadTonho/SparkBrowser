@@ -21,7 +21,12 @@ export async function checkProfilePicker(context) {
   // With a single profile there is nothing to choose; the toggle is saved for the next start.
   assert.deepEqual(await invoke('get_launch_state'), { mode: 'browser', locked: false });
   assert.deepEqual(await invoke('get_launcher_prefs'), { ask_every_time: false });
-  const work = await invoke('create_profile', { name: 'Work' });
+  const avatar = await script(`const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 96;
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'coral'; context.fillRect(0, 0, 96, 96);
+    return canvas.toDataURL('image/png');`);
+  const work = await invoke('create_profile', { name: 'Work', avatar });
   await invoke('set_ask_profile_at_startup', { enabled: true });
   assert.deepEqual(await invoke('get_launcher_prefs'), { ask_every_time: true });
   assert.match(await refusal('get_picker_state'), /profile\.not_picker/, 'only the picker answers the picker commands');
@@ -35,9 +40,12 @@ export async function checkProfilePicker(context) {
   assert.match(await refusal('list_profiles'), /still in progress/i);
   const picker = await invoke('get_picker_state');
   assert.deepEqual(picker.profiles.map(profile => profile.name), ['', 'Work']);
+  assert.equal(picker.profiles[1].avatar, work.avatar);
   assert.equal(picker.ask_every_time, true);
   assert.equal(picker.last_profile, null, 'nothing was chosen yet');
   assert.equal(await script('return document.querySelectorAll("[data-testid=profile-picker-item]").length'), 2);
+  assert.equal(await script(`return document.querySelector('[data-profile-id="${work.id}"] img').getAttribute('src')`), work.avatar);
+  assert.equal(await script(`return document.querySelector('[data-profile-id="default"] .profile-avatar').textContent.trim().length`), 1);
   assert.equal(await script('return document.querySelector("[data-testid=profile-picker-ask]").checked'), true);
   assert.equal(await script('return !!document.querySelector(".browser-root, .titlebar, .h-tabbar")'), false, 'none of the browser is on screen');
   await screenshot('profile-picker');

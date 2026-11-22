@@ -4,6 +4,7 @@ use super::{DEFAULT_ID, PROFILES_DIR};
 use crate::error_log::{self, Level};
 use crate::recovery::profile_lock::ProfileLock;
 use serde::{Deserialize, Serialize};
+use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 
 pub const MAX_PROFILES: usize = 10;
@@ -17,6 +18,8 @@ struct Stored {
     id: String,
     name: String,
     created_at: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    avatar: Option<String>,
 }
 
 /// What the interface sees of a profile. The Default profile has an empty name: the interface
@@ -27,6 +30,7 @@ pub struct ProfileInfo {
     pub name: String,
     pub is_default: bool,
     pub created_at: i64,
+    pub avatar: Option<String>,
 }
 
 pub fn folder(root: &Path, id: &str) -> PathBuf {
@@ -85,6 +89,7 @@ fn default_profile() -> ProfileInfo {
         name: String::new(),
         is_default: true,
         created_at: 0,
+        avatar: None,
     }
 }
 
@@ -106,6 +111,9 @@ pub fn list(root: &Path) -> Vec<ProfileInfo> {
                     name: stored.name,
                     is_default: false,
                     created_at: stored.created_at,
+                    avatar: stored
+                        .avatar
+                        .filter(|value| super::avatar::is_thumbnail(value)),
                 }),
                 Ok(_) => error_log::report(
                     Level::Warning,
@@ -144,7 +152,42 @@ fn name_taken(all: &[ProfileInfo], name: &str, except: Option<&str>) -> bool {
         .any(|profile| profile.name.to_lowercase() == wanted)
 }
 
+fn lock_profile_names(root: &Path) -> Result<File, String> {
+    let directory = root.join(PROFILES_DIR);
+    let acquire = || -> std::io::Result<File> {
+        std::fs::create_dir_all(&directory)?;
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(directory.join("names.lock"))?;
+        file.lock()?;
+        Ok(file)
+    };
+    acquire().map_err(|error| {
+        error_log::report(
+            Level::Error,
+            "profiles",
+            "profile names could not be locked",
+            &error.to_string(),
+        );
+        "profile.failed".into()
+    })
+}
+
+#[cfg(test)]
 pub fn create(root: &Path, raw_name: &str, now: i64) -> Result<ProfileInfo, String> {
+    create_with_options(root, raw_name, None, None, now)
+}
+
+pub fn create_with_options(
+    root: &Path,
+    raw_name: &str,
+    avatar: Option<&str>,
+    password: Option<&str>,
+    now: i64,
+) -> Result<ProfileInfo, String> {
     let name = clean_name(raw_name).inspect_err(|code| {
         error_log::report(
             Level::Info,
@@ -153,6 +196,19 @@ pub fn create(root: &Path, raw_name: &str, now: i64) -> Result<ProfileInfo, Stri
             code,
         );
     })?;
+    let avatar = avatar
+        .map(super::avatar::normalize)
+        .transpose()
+        .inspect_err(|code| {
+            error_log::report(
+                Level::Info,
+                "profiles",
+                "a profile photo was rejected",
+                code,
+            );
+        })?;
+    let password = password.filter(|value| !value.is_empty());
+    let _names = lock_profile_names(root)?;
     let all = list(root);
     if all.len() >= MAX_PROFILES {
         error_log::report(
@@ -179,25 +235,77 @@ pub fn create(root: &Path, raw_name: &str, now: i64) -> Result<ProfileInfo, Stri
         id: id.clone(),
         name: name.clone(),
         created_at: now,
+        avatar: avatar.clone(),
     };
-    let created = std::fs::create_dir_all(&directory)
-        .map_err(|e| e.to_string())
-        .and_then(|()| write(&directory, &stored));
-    if let Err(details) = created {
-        error_log::report(
-            Level::Error,
-            "profiles",
-            "the profile folder could not be created",
-            &details,
-        );
-        error_log::ignored(std::fs::remove_dir_all(&directory));
-        return Err("profile.create_failed".into());
+    let failed = |step: &str, details: &str| {
+        error_log::report(Level::Error, "profiles", step, details);
+        "profile.create_failed".to_string()
+    };
+    let staging = tempfile::Builder::new()
+        .prefix(".creating-")
+        .tempdir_in(root.join(PROFILES_DIR))
+        .map_err(|error| {
+            failed(
+                "the temporary profile folder could not be created",
+                &error.to_string(),
+            )
+        })?;
+    let publish = || {
+        if let Some(password) = password {
+            initialize_lock(staging.path(), password)?;
+        }
+        write(staging.path(), &stored)
+            .map_err(|details| failed("profile metadata could not be written", &details))?;
+        // The names lock is held by every creator. Keep an existing folder even on an id collision.
+        if directory.exists() {
+            return Err(failed("the profile id already has a folder", ""));
+        }
+        std::fs::rename(staging.path(), &directory).map_err(|error| {
+            failed(
+                "the profile folder could not be published",
+                &error.to_string(),
+            )
+        })
+    };
+    if let Err(error) = publish() {
+        if let Err(cleanup) = staging.close() {
+            failed(
+                "the temporary profile folder could not be removed",
+                &cleanup.to_string(),
+            );
+        }
+        return Err(error);
     }
     Ok(ProfileInfo {
         id,
         name,
         is_default: false,
         created_at: now,
+        avatar,
+    })
+}
+
+fn initialize_lock(directory: &Path, password: &str) -> Result<(), String> {
+    use crate::app_lock::ops::{self, First};
+    let result = (|| {
+        let conn =
+            crate::database::connection::initialize_profile_database(&directory.join("data"))?;
+        ops::enable(&conn, First::Password(password))?;
+        conn.close().map_err(|(_, error)| error.to_string())
+    })();
+    result.map_err(|error| {
+        let (level, code) = if error == "lock.password_invalid" {
+            (Level::Info, "profile.invalid_password")
+        } else {
+            (Level::Error, "profile.lock_failed")
+        };
+        error_log::report(
+            level,
+            "profiles",
+            "the new profile's app lock could not be initialized",
+            code,
+        );
+        code.into()
     })
 }
 
@@ -209,6 +317,7 @@ pub fn rename(root: &Path, id: &str, raw_name: &str) -> Result<ProfileInfo, Stri
         return Err("profile.not_found".into());
     }
     let name = clean_name(raw_name)?;
+    let _names = lock_profile_names(root)?;
     let all = list(root);
     let Some(current) = all.iter().find(|profile| profile.id == id) else {
         return Err("profile.not_found".into());
@@ -221,6 +330,7 @@ pub fn rename(root: &Path, id: &str, raw_name: &str) -> Result<ProfileInfo, Stri
         id: id.to_string(),
         name: name.clone(),
         created_at: current.created_at,
+        avatar: current.avatar.clone(),
     };
     write(&folder(root, id), &stored).map_err(|details| {
         error_log::report(
@@ -236,6 +346,7 @@ pub fn rename(root: &Path, id: &str, raw_name: &str) -> Result<ProfileInfo, Stri
         name,
         is_default: false,
         created_at: current.created_at,
+        avatar: current.avatar.clone(),
     })
 }
 
@@ -359,6 +470,76 @@ mod tests {
             create(root.path(), "One more", 11).unwrap_err(),
             "profile.limit"
         );
+    }
+
+    #[test]
+    fn the_photo_and_lock_are_ready_when_the_profile_is_published() {
+        use crate::app_lock::{ops, Method};
+        use base64::{engine::general_purpose::STANDARD, Engine};
+
+        let root = tempfile::tempdir().unwrap();
+        let mut png = std::io::Cursor::new(Vec::new());
+        image::RgbaImage::new(96, 96)
+            .write_to(&mut png, image::ImageFormat::Png)
+            .unwrap();
+        let avatar = format!(
+            "data:image/png;base64,{}",
+            STANDARD.encode(png.into_inner())
+        );
+        let protected = create_with_options(
+            root.path(),
+            "Work",
+            Some(&avatar),
+            Some("fixture passphrase"),
+            1,
+        )
+        .unwrap();
+        let loaded = get(root.path(), &protected.id).unwrap();
+        assert!(loaded.avatar.is_some());
+        rename(root.path(), &protected.id, "Office").unwrap();
+        assert_eq!(
+            get(root.path(), &protected.id).unwrap().avatar,
+            loaded.avatar
+        );
+
+        let data = folder(root.path(), &protected.id).join("data");
+        let conn = crate::database::connection::initialize_profile_database(&data).unwrap();
+        assert!(ops::is_enabled(&conn).unwrap());
+        assert!(ops::verify(&conn, &ops::Proof::Password("wrong fixture"), 2).is_err());
+        assert_eq!(
+            ops::verify(&conn, &ops::Proof::Password("fixture passphrase"), 3).unwrap(),
+            Method::Password
+        );
+        assert!(
+            !std::fs::read_to_string(folder(root.path(), &protected.id).join(FILE))
+                .unwrap()
+                .contains("fixture passphrase")
+        );
+
+        let unprotected = create_with_options(root.path(), "Home", None, Some(""), 2).unwrap();
+        let data = folder(root.path(), &unprotected.id).join("data");
+        let conn = crate::database::connection::initialize_profile_database(&data).unwrap();
+        assert!(!ops::is_enabled(&conn).unwrap());
+    }
+
+    #[test]
+    fn invalid_creation_options_leave_no_profile_or_staging_directory() {
+        let root = tempfile::tempdir().unwrap();
+        assert_eq!(
+            create_with_options(root.path(), "Work", Some("invalid"), None, 1).unwrap_err(),
+            "profile.invalid_avatar"
+        );
+        assert_eq!(
+            create_with_options(root.path(), "Work", None, Some("short"), 1).unwrap_err(),
+            "profile.invalid_password"
+        );
+        assert_eq!(list(root.path()).len(), 1);
+        let names: Vec<_> = std::fs::read_dir(root.path().join(PROFILES_DIR))
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(names, ["names.lock"]);
+        assert!(create(root.path(), "Work", 1).is_ok());
     }
 
     #[test]

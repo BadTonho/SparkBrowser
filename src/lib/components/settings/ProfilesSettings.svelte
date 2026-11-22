@@ -1,13 +1,23 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { t } from "../../i18n";
+  import { t, type MessageKey } from "../../i18n";
   import {
-    addProfile, askProfileAtStartup, changeAskAtStartup, changeProfileName, loadProfiles, loadStartupPrefs, openProfileWindow, profiles, profilesBusy, profilesFailure, profilesNotice, removeProfile,
+    askProfileAtStartup, changeAskAtStartup, changeProfileName, loadProfiles, loadStartupPrefs, openProfileWindow, profiles, profilesBusy, profilesFailure, profilesNotice, removeProfile, submitProfile,
   } from "../../stores/profilesStore";
   import type { ProfileInfo } from "../../types/profiles";
+  import { isTauriRuntime } from "../../services/bridge/runtime";
+  import { newProfileFormKey, openProfileForm } from "../../services/profile/create-form";
+  import { logIgnored } from "../../services/ignored-error";
+  import CreateProfileDialog from "../profile/CreateProfileDialog.svelte";
+  import ProfileAvatar from "../profile/ProfileAvatar.svelte";
+  import "../profile/profile-avatar.css";
   import AppLockCard from "./AppLockCard.svelte";
 
-  let newName = $state("");
+  const projected = isTauriRuntime();
+  const formKey = projected ? newProfileFormKey() : undefined;
+  let creating = $state(false);
+  let reply = $state<{ request: number; error: MessageKey | null }>();
+  let handlingRequest = false;
   /** The profile being renamed, with the text typed so far. */
   let renaming = $state<{ id: string; value: string } | null>(null);
   /** The profile about to be deleted, with the name typed to confirm. */
@@ -20,9 +30,37 @@
 
   const label = (profile: ProfileInfo) => (profile.is_default ? $t("profiles.default_name") : profile.name);
 
-  async function create(event: SubmitEvent): Promise<void> {
-    event.preventDefault();
-    if (await addProfile(newName)) newName = "";
+  function reportPhotoFailure() {
+    logIgnored(new Error("Profile photo could not be prepared in Settings"));
+  }
+
+  function receiveProfile(button: HTMLButtonElement) {
+    const receive = async (event: Event) => {
+      if (!formKey) return;
+      const { request, packet } = (event as CustomEvent<{ request: number; packet: string }>).detail;
+      if (request === 0) {
+        if (packet === "photo-invalid") reportPhotoFailure();
+        else logIgnored(new Error(`Submitting the profile form in Settings failed (${packet})`));
+        return;
+      }
+      if (handlingRequest) return;
+      handlingRequest = true;
+      try {
+        const form = await openProfileForm(packet, formKey, request);
+        try {
+          reply = { request, error: await submitProfile(form) };
+        } finally {
+          form.password = "";
+        }
+      } catch {
+        logIgnored(new Error("The profile form from Settings could not be read"));
+        reply = { request, error: "profiles.error_failed" };
+      } finally {
+        handlingRequest = false;
+      }
+    };
+    button.addEventListener("profilecreate", receive);
+    return { destroy: () => button.removeEventListener("profilecreate", receive) };
   }
 
   async function saveName(event: SubmitEvent): Promise<void> {
@@ -58,9 +96,12 @@
               </div>
             </form>
           {:else}
-            <div class="row-text">
-              <span class="row-label" data-testid="profile-name">{label(profile)}</span>
-              {#if profile.id === list.current}<span class="row-desc" data-testid="profile-current">{$t("profiles.current_badge")}</span>{/if}
+            <div class="profile-identity">
+              <ProfileAvatar name={label(profile)} avatar={profile.avatar} />
+              <div class="row-text">
+                <span class="row-label" data-testid="profile-name">{label(profile)}</span>
+                {#if profile.id === list.current}<span class="row-desc" data-testid="profile-current">{$t("profiles.current_badge")}</span>{/if}
+              </div>
             </div>
             <div>
               <button class="pill-action" type="button" disabled={$profilesBusy} onclick={() => void openProfileWindow(profile.id)} data-testid="profile-open">{$t("profiles.open")}</button>
@@ -100,18 +141,24 @@
         onchange={event => void changeAskAtStartup(event.currentTarget.checked)} data-testid="profile-ask-startup" />
     </div>
 
-    <form class="setting-row" id="setting-profile-new" tabindex="-1" onsubmit={create} data-testid="profile-new">
+    <div class="setting-row" id="setting-profile-new" tabindex="-1" data-testid="profile-new">
       <div class="row-text">
-        <label class="row-label" for="profile-new-name">{$t("profiles.new_label")}</label>
+        <span class="row-label">{$t("profiles.new_label")}</span>
         <span class="row-desc">{$t("profiles.new_description", { max: list.max })}</span>
-        <input id="profile-new-name" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder={$t("profiles.new_placeholder")}
-          bind:value={newName} disabled={$profilesBusy} data-testid="profile-new-input" />
       </div>
-      <button class="pill-action" type="submit" disabled={$profilesBusy || !newName.trim() || list.items.length >= list.max} data-testid="profile-create">{$t("profiles.create")}</button>
-    </form>
+      <button class="pill-action" type="button" disabled={$profilesBusy || list.items.length >= list.max} data-testid="profile-create"
+        aria-haspopup="dialog" data-profile-create-key={formKey} data-profile-create-request={reply?.request}
+        data-profile-create-error={reply?.error ?? undefined} use:receiveProfile onclick={() => { if (!projected) creating = true; }}>
+        {$t("profiles.create")}
+      </button>
+    </div>
   {/if}
   <AppLockCard />
 </section>
+
+{#if creating}
+  <CreateProfileDialog onclose={() => (creating = false)} oncreate={submitProfile} onphotofailure={reportPhotoFailure} />
+{/if}
 
 <style>
   input[type="text"] { min-width: 0; width: min(320px, 100%); padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border-subtle); background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 12px; font-family: inherit; }

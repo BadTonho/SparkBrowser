@@ -5,6 +5,7 @@ use crate::profile::store::{self, ProfileInfo, MAX_PROFILES};
 use crate::profile::{launch, launcher, ProfileRole};
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
+use zeroize::Zeroizing;
 
 #[derive(Serialize)]
 pub struct ProfileList {
@@ -75,11 +76,20 @@ pub async fn create_profile(
     app: AppHandle,
     role: State<'_, ProfileRole>,
     name: String,
+    avatar: Option<String>,
+    password: Option<String>,
 ) -> Result<ProfileInfo, String> {
     allowed(&app)?;
     let role = role.inner().clone();
+    let password = password.map(Zeroizing::new);
     blocking("creating a profile", move || {
-        store::create(role.local_root(), &name, timestamp())
+        store::create_with_options(
+            role.local_root(),
+            &name,
+            avatar.as_deref(),
+            password.as_ref().map(|value| value.as_str()),
+            timestamp(),
+        )
     })
     .await
 }

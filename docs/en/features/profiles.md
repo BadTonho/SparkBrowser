@@ -9,7 +9,7 @@ Open **Settings → Profiles** to manage them.
 ## What you can do
 
 - **See your profiles.** The list shows every profile and marks the one this window uses (**In use**). The profile Spark has always used is called **Default**.
-- **Create** a profile by typing a name and selecting **Create profile**. A new profile starts empty. Names have 1 to 40 characters, no line breaks, and cannot repeat (upper and lower case count as the same). You can have up to 10 profiles.
+- **Create** a profile by selecting **Create profile** and entering a name in the dialog. Select the avatar to choose or replace a PNG, JPEG or WebP photo. The avatar shows the name's initial when there is no photo. Enter a password of 8 to 256 characters to enable the [app lock](./app-lock.md) from the first time you open the profile. Use the eye icon inside the field to show or hide the password. Leave the password blank to open the profile without a password. A new profile starts empty. Names have 1 to 40 characters, no line breaks, and cannot repeat (upper and lower case count as the same). You can have up to 10 profiles.
 - **Open** a profile in its own window. Each profile runs as its own Spark process, so you can have several open at once. Opening one that is already open brings a new window of it instead of starting it twice.
 - **Rename** a profile. The Default profile cannot be renamed.
 - **Delete** a profile. Spark asks you to type its name, then erases its history, favorites, cookies, logins, passwords and settings **from this computer, for good**. You cannot delete the Default profile, the profile you are using, or a profile that is open in another window (close it first).
@@ -36,7 +36,7 @@ Each profile can also be locked with a password, Windows Hello or the vault mast
 
 ## Where the data lives
 
-The Default profile stays where Spark has always stored its data. Every other profile has its own folder inside the local data folder of the Default profile, under `profiles/<id>/`, with its own database, logs, cache and web engine data. Each folder has a small `profile.json` with the profile's name. Spark finds the profiles by looking at these folders, so no shared file can be damaged by two profiles running at once.
+The Default profile stays where Spark has always stored its data. Every other profile has its own folder inside the local data folder of the Default profile, under `profiles/<id>/`, with its own database, logs, cache and web engine data. Each folder has a `profile.json` with the profile's name and its photo thumbnail if one was chosen. The app-lock password verifier is kept in the profile's database.
 
 ## How it works (for developers)
 

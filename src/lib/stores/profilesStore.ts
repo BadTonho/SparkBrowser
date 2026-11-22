@@ -3,7 +3,8 @@ import { createProfile, deleteProfile, getLauncherPrefs, listProfiles, openProfi
 import { isTauriRuntime } from "../services/bridge/runtime";
 import { profileError } from "../services/profile/errors.js";
 import type { MessageKey } from "../i18n";
-import type { ProfileInfo, ProfileList } from "../types/profiles";
+import type { CreateProfileForm, ProfileInfo, ProfileList } from "../types/profiles";
+import { logIgnored } from "../services/ignored-error";
 
 /** The profiles on this computer and which one this window runs (null until the backend answered). */
 export const profiles = writable<ProfileList | null>(null);
@@ -41,10 +42,21 @@ async function reload(): Promise<void> {
   }
 }
 
-export async function addProfile(name: string): Promise<ProfileInfo | undefined> {
-  const created = await run(() => createProfile(name));
+export async function addProfile(form: CreateProfileForm): Promise<ProfileInfo | undefined> {
+  const created = await run(() => createProfile(form));
   if (created) await reload();
   return created;
+}
+
+export async function submitProfile(form: CreateProfileForm): Promise<MessageKey | null> {
+  const created = await addProfile(form);
+  const failure = get(profilesFailure);
+  // Errors from the form are displayed by its own dialog, even on projected settings surfaces.
+  if (!created) {
+    logIgnored(new Error(`Creating a profile from Settings failed (${failure ?? "profiles.error_failed"})`));
+    profilesFailure.set(null);
+  }
+  return created ? null : (failure ?? "profiles.error_failed");
 }
 
 export async function changeProfileName(id: string, name: string): Promise<boolean> {

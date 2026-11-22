@@ -13,6 +13,7 @@
 
 ## Melhorias
 
+- **Criar perfil** abre uma janela para escolher nome, foto e senha opcional. Selecione o avatar central para escolher ou trocar a foto e use o ícone de olho dentro do campo de senha para mostrar ou ocultar a senha. A foto aparece nas Configurações e no seletor de perfis ao iniciar. Deixe a senha em branco para abrir o perfil sem senha.
 - Os cartões dos buscadores exibem ícones de marca atualizados sobre fundos neutros que acompanham o tema.
 - O estilo Vidro usa fundos neutros, mais transparência e bordas mais definidas. No tema escuro, a base é preta, sem reflexos.
 - As Configurações rápidas têm contornos mais marcados e textos mais legíveis nos dois temas.

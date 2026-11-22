@@ -117,6 +117,7 @@ mod tests {
             name: if is_default { String::new() } else { id.into() },
             is_default,
             created_at: 0,
+            avatar: None,
         }
     }
 

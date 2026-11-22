@@ -1,6 +1,9 @@
 /** @type {Record<string, string>} */
 const KNOWN = {
   'profile.invalid_name': 'profiles.error_invalid_name',
+  'profile.invalid_avatar': 'profiles.error_invalid_avatar',
+  'profile.invalid_password': 'profiles.error_invalid_password',
+  'profile.lock_failed': 'profiles.error_lock_failed',
   'profile.duplicate': 'profiles.error_duplicate',
   'profile.limit': 'profiles.error_limit',
   'profile.not_found': 'profiles.error_not_found',

@@ -7,6 +7,7 @@
 //! same mechanism private windows use) before any WebView exists. Profiles are described by a small
 //! `profile.json` in each folder, so listing them is a folder scan and no file is shared between
 //! processes that could be written at the same time.
+mod avatar;
 pub mod launch;
 pub mod launcher;
 pub mod store;

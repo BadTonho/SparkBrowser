@@ -13,6 +13,7 @@
 
 ## Improvements
 
+- **Create profile** opens a dialog to choose a name, photo and optional password. Select the centered avatar to choose or change the photo, and use the eye icon inside the password field to show or hide the password. The photo appears in Settings and the startup profile picker. Leave the password blank to open the profile without a password.
 - Search engine cards use refreshed brand icons on neutral backgrounds that follow the theme.
 - Glass uses neutral backgrounds, more transparency and clearer borders. In dark mode, its base is black, with no reflections.
 - Quick Settings has stronger outlines and clearer labels in both themes.

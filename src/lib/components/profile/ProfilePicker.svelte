@@ -7,6 +7,8 @@
   import { profileError } from "../../services/profile/errors.js";
   import type { MessageKey } from "../../i18n";
   import type { PickerState } from "../../types/profiles";
+  import ProfileAvatar from "./ProfileAvatar.svelte";
+  import "./profile-avatar.css";
 
   // The first screen of Spark when more than one profile exists and the person has not chosen one yet
   // (or asked to be asked every time). It runs in a process with no profile of its own: choosing one
@@ -55,7 +57,7 @@
         {#each picker.profiles as profile (profile.id)}
           <li>
             <button class="picker-item" type="button" disabled={busy} onclick={() => void choose(profile.id)} data-testid="profile-picker-item" data-profile-id={profile.id}>
-              <span class="picker-avatar" aria-hidden="true">{label(profile).charAt(0).toUpperCase()}</span>
+              <ProfileAvatar name={label(profile)} avatar={profile.avatar} />
               <span class="picker-name">{label(profile)}</span>
               {#if picker.last_profile === profile.id}<span class="picker-last">{$t("profiles.picker_last")}</span>{/if}
             </button>
@@ -84,7 +86,6 @@
   .picker-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 14px; text-align: left; cursor: pointer; }
   .picker-item:hover:not(:disabled) { background: var(--bg-glass-hover); }
   .picker-item:disabled { opacity: 0.6; cursor: default; }
-  .picker-avatar { display: inline-grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--bg-glass-active); font-weight: 700; }
   .picker-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
   .picker-last { flex: none; color: var(--text-secondary); font-size: 12px; }
   .picker-ask { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--text-secondary); font-size: 13px; cursor: pointer; }

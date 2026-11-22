@@ -185,9 +185,12 @@ export async function runScenario(name, scenario) {
     return result.value;
   }
   // The profile picker has no profile: its WebView data lives in its own folder, which is where the driver must look.
-  async function openSession({ launcher = false, lockScreen = false } = {}) {
+  async function openSession({ launcher = false, lockScreen = false, profileId } = {}) {
     const options = { application: binary };
-    if (process.platform === 'win32') options.webviewOptions = { userDataFolder: resolve(directory, 'profile', ...(launcher ? ['launcher', 'profile'] : [])), additionalBrowserArguments: ['--use-fake-device-for-media-stream', ...(name.startsWith('media') ? ['--autoplay-policy=no-user-gesture-required'] : [])] };
+    if (profileId) assert.match(profileId, /^[0-9a-f]{12}$/);
+    const profileRoot = profileId ? resolve(directory, 'profile', 'profiles', profileId) : directory;
+    const webviewFolder = launcher ? resolve(directory, 'profile', 'launcher', 'profile') : resolve(profileRoot, 'profile');
+    if (process.platform === 'win32') options.webviewOptions = { userDataFolder: webviewFolder, additionalBrowserArguments: ['--use-fake-device-for-media-stream', ...(name.startsWith('media') ? ['--autoplay-policy=no-user-gesture-required'] : [])] };
     const result = await request('POST', '/session', { capabilities: { alwaysMatch: { 'tauri:options': options } } });
     session = result.sessionId;
     // A local new-tab child can become WebDriver's initial target. Select the shell explicitly.
@@ -209,7 +212,7 @@ export async function runScenario(name, scenario) {
     // Never operate on the user's production profile if a wrong binary was supplied.
     const diagnostics = await invoke('get_diagnostics');
     assert.equal(diagnostics.application_identifier, 'org.spark.browser.native-tests');
-    assert.equal(toNamespacedPath(resolve(diagnostics.application_data_directory)).toLowerCase(), toNamespacedPath(resolve(directory, 'data')).toLowerCase());
+    assert.equal(toNamespacedPath(resolve(diagnostics.application_data_directory)).toLowerCase(), toNamespacedPath(resolve(profileRoot, 'data')).toLowerCase());
     await until(async () => (await invoke('get_diagnostics')).startup_ready, 'native startup completes');
     await until(() => script('return document.querySelectorAll(".h-tab,.tab-row").length > 0'), 'shell initialization');
     // The browser starts with only a few toolbar buttons; the scenarios drive the whole toolbar, so the isolated
@@ -263,7 +266,7 @@ export async function runScenario(name, scenario) {
       await wait(250);
     }
   }
-  async function restart({ crash = false, beforeStart, expectFailure = false, launcher = false, lockScreen = false } = {}) {
+  async function restart({ crash = false, beforeStart, expectFailure = false, launcher = false, lockScreen = false, profileId } = {}) {
     if (session && !crash) {
       await invoke('get_history', { limit: 10 });
       await script(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }); return null;`).catch(() => {});
@@ -291,7 +294,7 @@ export async function runScenario(name, scenario) {
     session = undefined;
     await beforeStart?.(directory);
     await startDriver();
-    if (!expectFailure) return openSession({ launcher, lockScreen });
+    if (!expectFailure) return openSession({ launcher, lockScreen, profileId });
     let failure;
     try { await openSession(); } catch (error) { failure = error; }
     await stopDriver(); session = undefined;

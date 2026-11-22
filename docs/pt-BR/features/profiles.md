@@ -9,7 +9,7 @@ Abra **Configurações → Perfis** para gerenciá-los.
 ## O que você pode fazer
 
 - **Ver seus perfis.** A lista mostra todos os perfis e marca o que esta janela usa (**Em uso**). O perfil que o Spark sempre usou se chama **Padrão**.
-- **Criar** um perfil digitando um nome e selecionando **Criar perfil**. Um perfil novo começa vazio. Os nomes têm de 1 a 40 caracteres, sem quebras de linha, e não podem se repetir (maiúsculas e minúsculas contam como iguais). Você pode ter até 10 perfis.
+- **Criar** um perfil selecionando **Criar perfil** e digitando um nome na janela. Selecione o avatar para escolher ou trocar uma foto PNG, JPEG ou WebP. Quando não há foto, o avatar mostra a inicial do nome. Digite uma senha de 8 a 256 caracteres para ativar o [bloqueio do app](./app-lock.md) desde a primeira abertura. Use o ícone de olho dentro do campo para mostrar ou ocultar a senha. Deixe a senha em branco para abrir o perfil sem senha. Um perfil novo começa vazio. Os nomes têm de 1 a 40 caracteres, sem quebras de linha, e não podem se repetir (maiúsculas e minúsculas contam como iguais). Você pode ter até 10 perfis.
 - **Abrir** um perfil na própria janela. Cada perfil roda como um processo próprio do Spark, então você pode ter vários abertos ao mesmo tempo. Abrir um que já está aberto traz uma nova janela dele em vez de iniciá-lo duas vezes.
 - **Renomear** um perfil. O perfil Padrão não pode ser renomeado.
 - **Apagar** um perfil. O Spark pede que você digite o nome dele e depois apaga o histórico, os favoritos, os cookies, os logins, as senhas e as configurações **deste computador, para sempre**. Não dá para apagar o perfil Padrão, o perfil que você está usando, nem um perfil aberto em outra janela (feche-o primeiro).
@@ -36,7 +36,7 @@ Cada perfil também pode ser bloqueado com uma senha, o Windows Hello ou a senha
 
 ## Onde ficam os dados
 
-O perfil Padrão continua onde o Spark sempre guardou os dados. Cada outro perfil tem a própria pasta dentro da pasta de dados locais do perfil Padrão, em `profiles/<id>/`, com banco de dados, logs, cache e dados do motor web próprios. Cada pasta tem um pequeno `profile.json` com o nome do perfil. O Spark encontra os perfis olhando essas pastas, então nenhum arquivo compartilhado pode ser danificado por dois perfis rodando ao mesmo tempo.
+O perfil Padrão continua onde o Spark sempre guardou os dados. Cada outro perfil tem a própria pasta dentro da pasta de dados locais do perfil Padrão, em `profiles/<id>/`, com banco de dados, logs, cache e dados do motor web próprios. Cada pasta tem um `profile.json` com o nome do perfil e a miniatura da foto, se houver. O verificador da senha de bloqueio fica no banco de dados do perfil.
 
 ## Como funciona (para desenvolvedores)
 

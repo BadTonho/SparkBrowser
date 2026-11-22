@@ -12,6 +12,7 @@
   }
 
   .settings-tab-surface { width: 100vw; height: 100dvh; background: var(--settings-tab-bg); }
+  .profile-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .settings-tab-surface > .settings-modal { width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; }
   .settings-tab-loading { padding: 24px; color: var(--text-primary); }
 

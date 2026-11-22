@@ -17,12 +17,24 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
     }
 
     crate::legacy::rename_database_files(&app_data_dir);
-    Ok(app_data_dir.join("spark_browser.db"))
+    Ok(database_path(&app_data_dir))
+}
+
+fn database_path(data_dir: &std::path::Path) -> PathBuf {
+    data_dir.join("spark_browser.db")
+}
+
+pub fn initialize_profile_database(data_dir: &std::path::Path) -> Result<Connection, String> {
+    fs::create_dir_all(data_dir).map_err(|error| error.to_string())?;
+    open_database(database_path(data_dir))
 }
 
 /// Opens the SQLite connection and ensures all required tables exist.
 pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
-    let db_path = resolve_db_path(app)?;
+    open_database(resolve_db_path(app)?)
+}
+
+fn open_database(db_path: PathBuf) -> Result<Connection, String> {
     let conn =
         Connection::open(db_path).map_err(|e| format!("Failed to open SQLite database: {}", e))?;
 

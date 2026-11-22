@@ -4,6 +4,13 @@ export interface ProfileInfo {
   name: string;
   is_default: boolean;
   created_at: number;
+  avatar: string | null;
+}
+
+export interface CreateProfileForm {
+  name: string;
+  avatar: string | null;
+  password: string;
 }
 
 export interface ProfileList {

@@ -1,4 +1,4 @@
-use super::{current, Action, Panel, Popover};
+use super::{current, Action, Panel, Popover, Settings};
 use crate::state::browser_state::BrowserState;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, Url};
@@ -26,6 +26,11 @@ pub(crate) enum UiAction {
     },
     Submit {
         target: u32,
+    },
+    ProfileCreate {
+        target: u32,
+        request: u32,
+        packet: String,
     },
     Input {
         target: u32,
@@ -67,6 +72,24 @@ impl UiAction {
             Self::Click { target } | Self::Submit { target } | Self::Key { target, .. } => {
                 *target > 0
             }
+            Self::ProfileCreate {
+                target,
+                request,
+                packet,
+            } => {
+                *target > 0
+                    && if *request == 0 {
+                        matches!(
+                            packet.as_str(),
+                            "photo-invalid" | "seal-failed" | "response-timeout"
+                        )
+                    } else {
+                        (40..=90_000).contains(&packet.len())
+                            && packet.bytes().all(|byte| {
+                                byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_')
+                            })
+                    }
+            }
             Self::Keyboard { target, key, .. } => *target > 0 && key.len() <= 64,
             Self::Mouse { target, button, .. } => *target > 0 && (*button == 3 || *button == 4),
             Self::Input { target, value, .. } | Self::Change { target, value, .. } => {
@@ -99,7 +122,9 @@ pub(super) fn navigation<P: Panel>(app: &AppHandle, url: &Url) {
     else {
         return;
     };
-    if !value.valid() {
+    if !value.valid()
+        || (matches!(value, UiAction::ProfileCreate { .. }) && P::HOST != Settings::HOST)
+    {
         return;
     }
     let service = app.state::<Popover<P>>();

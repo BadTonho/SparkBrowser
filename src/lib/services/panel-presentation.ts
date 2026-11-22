@@ -11,6 +11,7 @@ export interface PanelViewNode {
 }
 export type PanelViewAction =
   | { kind: "click" | "submit"; target: number }
+  | { kind: "profilecreate"; target: number; request: number; packet: string }
   | { kind: "input" | "change"; target: number; value: string; checked: boolean }
   | { kind: "key"; target: number; key: "ArrowLeft" | "ArrowRight" | "Home" | "End" }
   | { kind: "keyboard"; target: number; key: string; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean }
@@ -64,7 +65,9 @@ export function createPanelProjection(root: HTMLElement) {
       if (action.kind === "dismiss") return;
       const target = handles.get(action.target);
       if (!target?.isConnected || !root.contains(target) || target.closest("[disabled]")) return;
-      if (action.kind === "click" && target.matches("button, summary")) target.click();
+      if (action.kind === "profilecreate" && target instanceof HTMLButtonElement && target.hasAttribute("data-profile-create-key")) {
+        target.dispatchEvent(new CustomEvent("profilecreate", { detail: { request: action.request, packet: action.packet } }));
+      } else if (action.kind === "click" && target.matches("button, summary")) target.click();
       else if (action.kind === "submit" && target instanceof HTMLFormElement) target.requestSubmit();
       else if ((action.kind === "input" || action.kind === "change") &&
         (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) {
