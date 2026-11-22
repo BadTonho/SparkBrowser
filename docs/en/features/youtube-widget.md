@@ -15,6 +15,8 @@ Under **Customize new tab → Music and video → YouTube**:
 
 These two choices are local to the device and are shared by all new tabs. They are not part of the account-style widget settings and are excluded from backups.
 
+Choose either option by clicking its example card or by using Tab and the arrow keys. The Preview examples follow the selected thumbnail layout. Hover over or focus the **Muted video** example to see it move if reduced motion is off. Examples are local and available even when no YouTube video is open.
+
 The muted video is a second, muted copy of the video loaded in YouTube's privacy-enhanced player (`youtube-nocookie.com`) inside the card; the tab you are watching keeps the sound. It follows the tab: it starts at the tab's position, pauses and resumes with it and jumps when you seek by more than a few seconds. It cannot be clicked, never shows controls, and stops while the new tab is hidden. The player is zoomed in so YouTube's own title bar and logo fall outside the card, and it is shown only while the video is really playing: while it loads, when you pause the tab, or when the video refuses embedding, the thumbnail is shown instead. It uses extra data and can show ads, and videos that disallow embedding fall back to the thumbnail. It is the only case where the new-tab page contacts YouTube: the page's policy allows frames from that single host (`frame-src https://www.youtube-nocookie.com`, also listed in the app's `tauri.conf.json`) and still blocks every other connection.
 
 ## In the vertical tabs sidebar
@@ -22,6 +24,8 @@ The muted video is a second, muted copy of the video loaded in YouTube's privacy
 With the vertical tab layout, the same card also appears at the bottom of the sidebar, under the tab list, whenever a YouTube or YouTube Music video is open. It is a compact version: the logo (click it to go to the tab), the thumbnail, the one-line scrolling title, the progress bar with the elapsed and total time, and previous, play/pause and next controls. It follows the same **Thumbnail** choice as the new-tab card (small, or covering the whole card), but never plays the muted video preview. It disappears when no YouTube video is open.
 
 It needs the widget to be on (**Show YouTube now playing**). Turn off **Also show in the vertical tabs sidebar** in the same settings to keep the card on the new tab only. Because the sidebar is always on screen, Spark asks the video tab for its position every few seconds while this option is on, even when no new tab is visible. That request is the same local media report described below; it adds no network traffic. The option is saved with the widget settings and, like them, stays on the device and out of backups.
+
+The illustration below the switch shows where the widget sits and follows the selected thumbnail layout. It stays visible when the sidebar switch is off.
 
 ## How it works
 

@@ -3,6 +3,7 @@
 // that already listens to the select needs no changes. Variants:
 //  - "segmented": a row of pill buttons, with an optional small diagram per option;
 //  - "font": a card per option showing a sample time in that clock font.
+//  - data-choice-sample: clone the supplied template into each option and expose its value for styling.
 (() => {
   const ICONS = {
     'clock-position:bottom': '<rect x="1" y="1" width="26" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="8" y="6" width="12" height="3" rx="1.5" fill="currentColor" opacity=".45"/><rect x="9" y="12" width="10" height="4" rx="1" fill="currentColor" opacity=".8"/>',
@@ -13,6 +14,12 @@
   const groups = [];
   function enhance(select) {
     const variant = select.dataset.choice;
+    const sampleId = select.dataset.choiceSample;
+    const sampleContent = sampleId ? document.getElementById(sampleId)?.content : null;
+    if (sampleId && !sampleContent) {
+      window.__sparkLogIgnored?.(new Error(`New tab choice picker: missing sample template for ${select.id}`));
+      return;
+    }
     const heading = select.parentElement?.querySelector(`label[for="${select.id}"]`);
     if (heading) heading.id ||= `${select.id}-label`;
     const group = document.createElement('div');
@@ -29,9 +36,12 @@
     for (const option of select.options) {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'choice'; button.setAttribute('role', 'radio');
-      let label = document.createElement('span');
+      const label = document.createElement('span');
       label.className = 'choice-label';
-      if (variant === 'font') {
+      if (sampleContent) {
+        button.dataset.value = option.value;
+        button.append(sampleContent.cloneNode(true), label);
+      } else if (variant === 'font') {
         const sample = document.createElement('span');
         sample.className = `choice-sample clock-font-${option.value}`; sample.textContent = SAMPLE; sample.setAttribute('aria-hidden', 'true');
         button.append(sample, label);

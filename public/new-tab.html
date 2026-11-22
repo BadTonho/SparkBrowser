@@ -161,20 +161,45 @@
         <div id="youtube-panel" role="tabpanel" aria-labelledby="media-tab-youtube" hidden>
           <label class="toggle"><input id="youtube-enabled" type="checkbox"><span data-label="showYoutube"></span></label>
           <div id="youtube-options" hidden>
-            <p data-label="youtubeHint"></p>
             <label class="toggle"><input id="youtube-sidebar" type="checkbox"><span data-label="youtubeSidebar"></span></label>
+            <div id="youtube-sidebar-example" role="img" aria-labelledby="youtube-sidebar-example-label">
+              <span id="youtube-sidebar-example-label" class="mc-sr" data-label="youtubeSidebarExample"></span>
+              <div class="youtube-example-toolbar" aria-hidden="true"></div>
+              <div class="youtube-example-window" aria-hidden="true">
+                <div class="youtube-example-sidebar">
+                  <div class="youtube-example-tabs"><span></span><span></span><span></span></div>
+                  <div id="youtube-sidebar-sample"></div>
+                </div>
+                <div class="youtube-example-page"><span></span></div>
+              </div>
+            </div>
             <label for="youtube-thumb" data-label="mediaThumb"></label>
-            <select id="youtube-thumb">
+            <select id="youtube-thumb" data-choice="youtube" data-choice-sample="youtube-choice-sample">
               <option value="small" data-label="mediaThumbSmall"></option>
               <option value="cover" data-label="mediaThumbCover"></option>
             </select>
             <label for="youtube-preview" data-label="youtubePreview"></label>
-            <select id="youtube-preview">
+            <select id="youtube-preview" data-choice="youtube" data-choice-sample="youtube-choice-sample">
               <option value="image" data-label="youtubePreviewImage"></option>
               <option value="video" data-label="youtubePreviewVideo"></option>
             </select>
-            <p data-label="youtubeVideoNote"></p>
           </div>
+          <template id="youtube-choice-sample">
+            <span class="youtube-choice-sample" aria-hidden="true">
+              <span class="youtube-sample-heading">
+                <span class="youtube-sample-logo"></span>
+                <span class="youtube-sample-muted">🔇</span>
+              </span>
+              <span class="youtube-sample-body">
+                <span class="youtube-sample-media"><span class="youtube-sample-art"></span></span>
+                <span class="youtube-sample-meta">
+                  <span class="youtube-sample-title" data-label="youtubeSampleTitle"></span>
+                  <span class="youtube-sample-progress"></span>
+                </span>
+              </span>
+              <span class="youtube-sample-controls"><span>‹</span><span>▸</span><span>›</span></span>
+            </span>
+          </template>
         </div>
         <div id="spotify-panel" role="tabpanel" aria-labelledby="media-tab-spotify">
         <label class="toggle"><input id="spotify-enabled" type="checkbox"><span data-label="showSpotify"></span></label>

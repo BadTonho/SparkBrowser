@@ -19,6 +19,10 @@ function fixture(storage = {}) {
   };
   const frameWindow = {postMessage: (message, origin) => posts.push({message: JSON.parse(message), origin})};
   node('youtube-frame').contentWindow = frameWindow;
+  node('youtube-choice-sample').content = {cloneNode: () => ({ sample: true })};
+  const sidebarSample = node('youtube-sidebar-sample');
+  sidebarSample.children = [];
+  sidebarSample.append = child => sidebarSample.children.push(child);
   const window = {
     addEventListener: (name, fn) => events.set(name, fn),
     dispatchEvent: event => dispatched.push(event),
@@ -115,6 +119,8 @@ test('only JPEG data URLs are used as thumbnails', () => {
 
 test('the thumbnail style and the preview kind are local choices that default to small and still', () => {
   const f = fixture();
+  let visualSyncs = 0;
+  f.window.__sparkChoicePickers = { sync: () => visualSyncs++ };
   f.window.__sparkYoutubeRender({youtube_enabled: true}, {...video, image: jpeg}, false);
   assert.equal(f.node('youtube-widget').attrs['data-thumb'], 'small');
   assert.equal(f.node('youtube-widget').attrs['data-preview'], 'image');
@@ -122,12 +128,17 @@ test('the thumbnail style and the preview kind are local choices that default to
   f.node('youtube-thumb').listeners.change({target: {value: 'cover'}});
   assert.equal(f.store.get('spark_youtube_thumbnail'), 'cover');
   assert.equal(f.node('youtube-widget').attrs['data-thumb'], 'cover');
+  assert.equal(f.node('youtube-options').attrs['data-thumb'], 'cover');
+  assert.equal(visualSyncs, 2);
   f.node('youtube-thumb').listeners.change({target: {value: '<script>'}});
   assert.equal(f.node('youtube-widget').attrs['data-thumb'], 'small', 'unknown values fall back');
   const restored = fixture({spark_youtube_thumbnail: 'cover', spark_youtube_preview: 'video'});
   restored.window.__sparkYoutubeRender({youtube_enabled: true}, video, false);
   assert.equal(restored.node('youtube-widget').attrs['data-thumb'], 'cover');
   assert.equal(restored.node('youtube-widget').attrs['data-preview'], 'video');
+  restored.store.set('spark_youtube_thumbnail', 'small');
+  restored.events.get('storage')({key: 'spark_youtube_thumbnail'});
+  assert.equal(restored.node('youtube-options').attrs['data-thumb'], 'small');
 });
 
 test('the muted preview embeds only the privacy-enhanced player for a valid ID and follows the tab', () => {
@@ -230,6 +241,17 @@ test('controls send native operations and the setting is emitted as a widget pre
   f.node('youtube-enabled').listeners.change({target: {checked: true}});
   assert.equal(f.dispatched.at(-1).type, 'spark-youtube-setting');
   assert.equal(f.dispatched.at(-1).detail.youtube_enabled, true);
+
+  for (const youtube_sidebar of [false, true]) {
+    f.node('youtube-sidebar').listeners.change({target: {checked: youtube_sidebar}});
+    assert.equal(f.dispatched.at(-1).type, 'spark-youtube-setting');
+    assert.equal(f.dispatched.at(-1).detail.youtube_sidebar, youtube_sidebar);
+    f.window.__sparkYoutubeRender({youtube_enabled: true, youtube_sidebar});
+    assert.equal(f.node('youtube-sidebar').checked, youtube_sidebar);
+    assert.equal(f.node('youtube-options').hidden, false);
+    assert.equal(f.node('youtube-sidebar-example').hidden, false);
+    assert.equal(f.node('youtube-sidebar-sample').children.length, 1);
+  }
 });
 
 test('the media category switches between Spotify and YouTube panels with the up and down arrow keys', () => {

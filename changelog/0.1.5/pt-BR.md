@@ -13,6 +13,8 @@
 
 ## Melhorias
 
+- Escolha o formato da miniatura e o modo de pré-visualização do widget do YouTube em um painel mais compacto com cartões de exemplo. A demonstração de vídeo sem som se anima ao passar o mouse ou dar foco pelo teclado.
+- Veja no exemplo da barra lateral onde o widget do YouTube aparece abaixo das guias verticais.
 - Enquadre imagens e vídeos para a nova aba em uma prévia maior com grade. Role para ajustar o zoom, arraste mídias menores até os cantos e passe o mouse sobre o ícone **?** para ver as dicas.
 - Segure Shift ao arrastar a mídia de fundo para encaixá-la no centro com guias de alinhamento.
 - Abrir o Spark de novo com ele já em execução agora abre uma nova janela do navegador na instância aberta, então também dá para criar uma janela por monitor pelo atalho.

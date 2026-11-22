@@ -15,6 +15,8 @@ Em **Personalizar nova guia → Música e vídeo → YouTube**:
 
 Essas duas escolhas são locais ao dispositivo e compartilhadas por todas as novas guias. Elas ficam fora dos backups.
 
+Escolha uma opção clicando no cartão de exemplo ou usando Tab e as setas. Os exemplos de Pré-visualização acompanham o formato de miniatura escolhido. Passe o mouse sobre **Vídeo sem som** ou dê foco ao cartão pelo teclado para ver a animação quando o movimento reduzido estiver desativado. Os exemplos são locais e aparecem mesmo sem um vídeo do YouTube aberto.
+
 O vídeo sem som é uma segunda cópia, sem áudio, carregada no player com privacidade aprimorada do YouTube (`youtube-nocookie.com`) dentro do cartão; a aba que você assiste continua com o som. Ele acompanha a aba: começa na posição dela, pausa e retoma junto e salta quando você avança ou volta mais do que alguns segundos. Não é clicável, nunca mostra controles e para enquanto a nova guia está oculta. O player é ampliado para que a barra de título e o logotipo do próprio YouTube fiquem fora do cartão, e só aparece enquanto o vídeo está realmente tocando: ao carregar, ao pausar a aba ou quando o vídeo recusa a incorporação, a miniatura é mostrada no lugar. Usa mais dados e pode mostrar anúncios, e vídeos que proíbem incorporação voltam para a miniatura. É o único caso em que a nova guia contata o YouTube: a política da página permite quadros apenas desse host (`frame-src https://www.youtube-nocookie.com`, também listado no `tauri.conf.json` do app) e continua bloqueando qualquer outra conexão.
 
 ## Na barra lateral de guias verticais
@@ -22,6 +24,8 @@ O vídeo sem som é uma segunda cópia, sem áudio, carregada no player com priv
 Com o layout de guias verticais, o mesmo cartão também aparece na parte de baixo da barra lateral, abaixo da lista de guias, sempre que um vídeo do YouTube ou do YouTube Music estiver aberto. É uma versão compacta: o logotipo (clique nele para ir à aba), a miniatura, o título em uma linha que rola, a barra de progresso com o tempo decorrido e o total, e os controles de anterior, reproduzir/pausar e próximo. Ele segue a mesma escolha de **Miniatura** do cartão da nova guia (pequena ou cobrindo o cartão inteiro), mas nunca reproduz a pré-visualização em vídeo sem som. Some quando nenhum vídeo do YouTube está aberto.
 
 Ele exige que o widget esteja ativado (**Mostrar o que está tocando no YouTube**). Desative **Mostrar também na barra lateral de guias verticais** nas mesmas configurações para manter o cartão só na nova guia. Como a barra lateral está sempre à vista, o Spark pede a posição à aba do vídeo a cada poucos segundos enquanto essa opção está ativa, mesmo sem nova guia visível. Esse pedido é o mesmo relatório de mídia local descrito abaixo e não gera tráfego de rede. A opção é salva com as configurações do widget e, como elas, fica no dispositivo e fora dos backups.
+
+A ilustração abaixo do interruptor mostra onde o widget fica e acompanha o formato de miniatura escolhido. Ela continua visível com a opção da barra lateral desligada.
 
 ## Como funciona
 

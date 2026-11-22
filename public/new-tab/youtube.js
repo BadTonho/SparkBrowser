@@ -28,6 +28,10 @@
   }
   $('youtube-enabled').addEventListener('change', event => window.dispatchEvent(new CustomEvent('spark-youtube-setting', { detail: { youtube_enabled: event.target.checked } })));
   $('youtube-sidebar').addEventListener('change', event => window.dispatchEvent(new CustomEvent('spark-youtube-setting', { detail: { youtube_sidebar: event.target.checked } })));
+  const sidebarSample = $('youtube-sidebar-sample');
+  const sampleTemplate = $('youtube-choice-sample')?.content;
+  if (sidebarSample && sampleTemplate) sidebarSample.append(sampleTemplate.cloneNode(true));
+  else window.__sparkLogIgnored?.(new Error('YouTube settings: missing sidebar example container or sample template'));
   for (const [id, key] of [['youtube-thumb', 'spark_youtube_thumbnail'], ['youtube-preview', 'spark_youtube_preview']]) {
     $(id).addEventListener('change', event => {
       card.save(key, OPTIONS[key], event.target.value);
@@ -151,7 +155,10 @@
     $('youtube-sidebar').checked = config.youtube_sidebar !== false;
     $('youtube-sidebar').disabled = saving;
     $('youtube-thumb').value = thumb; $('youtube-preview').value = preview;
-    $('youtube-options').hidden = !enabled;
+    const options = $('youtube-options');
+    options.hidden = !enabled;
+    options.setAttribute('data-thumb', thumb);
+    window.__sparkChoicePickers?.sync();
     $('youtube-content').hidden = !video;
     $('youtube-controls').hidden = !video;
     $('youtube-status').textContent = video ? '' : text('youtubeNothingPlaying');
