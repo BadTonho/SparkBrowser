@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
+import { validateRunDirectory } from './run-directory.mjs';
 
 /**
  * The profile picker at start-up, in the real app. With two profiles and "ask every time" on, Spark
@@ -10,13 +11,35 @@ import { spawn, spawnSync } from 'node:child_process';
  * picker. The next start then opens the remembered profile straight away.
  */
 export async function checkProfilePicker(context) {
-  const { invoke, until, script, directory, restart, screenshot, wait, forgetSession } = context;
-  const profilesRoot = join(directory, 'profile', 'profiles');
-  const launcherFile = join(directory, 'profile', 'launcher.json');
+  const { invoke, until, script, directory, restart, screenshot, wait, forgetSession, resizeWindow, request, sessionId } = context;
+  const root = validateRunDirectory(directory);
+  const profilesRoot = join(root, 'profile', 'profiles');
+  const launcherFile = join(root, 'profile', 'launcher.json');
   const refusal = async (command, args) => {
     try { await invoke(command, args); return ''; } catch (error) { return String(error?.message ?? error); }
   };
   const killProfile = id => process.platform === 'win32' && spawnSync('powershell', ['-NoProfile', '-Command', `Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'spark-browser*' -and $_.CommandLine -like '*--profile ${id}*' } | ForEach-Object { taskkill /PID $_.ProcessId /T /F 2>&1 | Out-Null }; exit 0`], { encoding: 'utf8' });
+  const visibleCards = () => script('return document.querySelectorAll("[data-testid=profile-picker-item]").length');
+  async function checkRows(expected) {
+    const rows = await script(`
+      const list = document.querySelector('[data-testid=profile-picker-list]');
+      const bounds = list.getBoundingClientRect();
+      const center = bounds.left + bounds.width / 2;
+      const rows = new Map();
+      for (const card of list.querySelectorAll('[data-testid=profile-picker-item]')) {
+        const rect = card.getBoundingClientRect();
+        const top = Math.round(rect.top);
+        if (!rows.has(top)) rows.set(top, []);
+        rows.get(top).push(rect);
+      }
+      return [...rows.values()].map(cards => ({ count: cards.length,
+        centered: Math.abs((cards[0].left + cards.at(-1).right) / 2 - center) < 2,
+        vertical: cards.every(card => card.height >= card.width) }));`);
+    assert.deepEqual(rows, expected.map(count => ({ count, centered: true, vertical: true })));
+  }
+  const press = value => request('POST', `/session/${sessionId()}/actions`, { actions: [
+    { type: 'key', id: 'profile-picker-keyboard', actions: [{ type: 'keyDown', value }, { type: 'keyUp', value }] },
+  ] });
 
   // With a single profile there is nothing to choose; the toggle is saved for the next start.
   assert.deepEqual(await invoke('get_launch_state'), { mode: 'browser', locked: false });
@@ -43,17 +66,54 @@ export async function checkProfilePicker(context) {
   assert.equal(picker.profiles[1].avatar, work.avatar);
   assert.equal(picker.ask_every_time, true);
   assert.equal(picker.last_profile, null, 'nothing was chosen yet');
-  assert.equal(await script('return document.querySelectorAll("[data-testid=profile-picker-item]").length'), 2);
+  await until(async () => await visibleCards() === 2, 'the two profile cards appear');
   assert.equal(await script(`return document.querySelector('[data-profile-id="${work.id}"] img').getAttribute('src')`), work.avatar);
   assert.equal(await script(`return document.querySelector('[data-profile-id="default"] .profile-avatar').textContent.trim().length`), 1);
   assert.equal(await script('return document.querySelector("[data-testid=profile-picker-ask]").checked'), true);
   assert.equal(await script('return !!document.querySelector(".browser-root, .titlebar, .h-tabbar")'), false, 'none of the browser is on screen');
+  await checkRows([2]);
   await screenshot('profile-picker');
+  await resizeWindow(680, 480);
+  await until(() => script('return innerWidth < 704'), 'picker is at minimum width');
+  await checkRows([2]);
+  await screenshot('profile-picker-minimum');
+
+  // Add fixture profiles to the isolated store while the picker is open, then let a fresh document read them.
+  const longName = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCD';
+  for (let index = 1; index <= 8; index++) {
+    const id = index.toString(16).padStart(12, 'f');
+    const folder = join(profilesRoot, id);
+    mkdirSync(folder);
+    writeFileSync(join(folder, 'profile.json'), JSON.stringify({
+      version: 1, id, name: index === 1 ? longName : `Profile ${index + 2}`, created_at: work.created_at + index,
+    }), { flag: 'wx' });
+  }
+  writeFileSync(launcherFile, JSON.stringify({ ask_every_time: true, last_profile: work.id }));
+  await request('POST', `/session/${sessionId()}/refresh`, {});
+  await until(async () => await visibleCards() === 10, 'all ten profiles are shown');
+  await checkRows([3, 3, 3, 1]);
+  assert.equal(await script(`const body = document.querySelector('.picker-body');
+    body.scrollTop = body.scrollHeight;
+    const preference = document.querySelector('[data-testid=profile-picker-ask]').getBoundingClientRect();
+    return body.scrollHeight > body.clientHeight && preference.bottom <= body.getBoundingClientRect().bottom;`), true, 'the checkbox stays reachable by scrolling');
+  await script('document.querySelector(".picker-body").scrollTop = 0; return true');
+  await screenshot('profile-picker-ten-minimum');
+  await resizeWindow(1280, 820);
+  await until(() => script('return innerWidth >= 704'), 'picker is back at desktop width');
+  await checkRows([4, 4, 2]);
+  assert.equal(await script(`const name = Array.from(document.querySelectorAll('.picker-name')).find(item => item.textContent.trim() === arguments[0]);
+    return name.title === arguments[0] && name.offsetHeight <= 2 * parseFloat(getComputedStyle(name).lineHeight) + 1;`, longName), true);
+  assert.equal(await script(`return [...document.querySelectorAll('.picker-last')].map(badge => badge.closest('button').dataset.profileId).join(',')`), work.id);
+  await screenshot('profile-picker-ten');
 
   // Choosing Work (and turning "always ask" off) starts that profile and ends the picker.
   await script('document.querySelector("[data-testid=profile-picker-ask]").click(); return true');
   assert.equal(await script('return document.querySelector("[data-testid=profile-picker-ask]").checked'), false);
-  await script(`document.querySelector('[data-testid="profile-picker-item"][data-profile-id="${work.id}"]').click(); return true`);
+  await script('document.querySelector(\'[data-profile-id="default"]\').focus(); return true');
+  await press('\uE004');
+  assert.equal(await script('return document.activeElement.dataset.profileId'), work.id, 'Tab follows the card order');
+  assert.equal(await script('return document.activeElement.matches(":focus-visible")'), true);
+  await press('\uE00D');
   await until(() => existsSync(join(profilesRoot, work.id, 'data', 'spark_browser.db')), 'the chosen profile started with its own database', 60_000);
   await until(() => existsSync(launcherFile), 'the choice was saved');
   assert.deepEqual(JSON.parse(readFileSync(launcherFile, 'utf8')), { ask_every_time: false, last_profile: work.id });

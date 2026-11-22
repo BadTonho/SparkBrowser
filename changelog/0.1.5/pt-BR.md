@@ -13,6 +13,7 @@
 
 ## Melhorias
 
+- O seletor de perfis ao iniciar usa cartões com fotos ou iniciais maiores e mostra a indicação de último uso abaixo do nome do perfil.
 - Ao fechar o Spark, um cartão compacto aparece se o salvamento demorar. A janela de confirmação destaca formulários alterados e downloads que não podem ser retomados, e os erros de salvamento têm uma ação clara para tentar novamente.
 - **Criar perfil** abre uma janela para escolher nome, foto e senha opcional. Selecione o avatar central para escolher ou trocar a foto e use o ícone de olho dentro do campo de senha para mostrar ou ocultar a senha. A foto aparece nas Configurações e no seletor de perfis ao iniciar. Deixe a senha em branco para abrir o perfil sem senha.
 - Os cartões dos buscadores exibem ícones de marca atualizados sobre fundos neutros que acompanham o tema.

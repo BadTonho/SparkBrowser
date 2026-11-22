@@ -20,7 +20,7 @@ Each profile can also be locked with a password, Windows Hello or the vault mast
 
 ## Choosing a profile when Spark starts
 
-- The first time you have more than one profile, Spark starts with a small window that asks **which profile to open**. Pick one and Spark opens it in its own window. Starting Spark with a single profile never asks.
+- The first time you have more than one profile, Spark asks **which profile to open**. Select a card to open that profile in its own window. Each card shows the profile photo or initial, and Spark marks the last profile you chose. Starting Spark with a single profile never asks.
 - The window has **Always ask when Spark starts**. Left off, the next starts open the profile you chose last, with no window in between. Turned on, the window shows every time. You can change this later in **Settings → Profiles → Ask which profile to open when Spark starts**.
 - If the profile you chose last was deleted, Spark asks again.
 - Starting a profile directly (for example from a shortcut with `--profile <id>`) skips the question.

@@ -20,7 +20,7 @@ Cada perfil também pode ser bloqueado com uma senha, o Windows Hello ou a senha
 
 ## Escolher o perfil ao iniciar o Spark
 
-- Na primeira vez em que você tem mais de um perfil, o Spark inicia com uma janela pequena que pergunta **qual perfil abrir**. Escolha um e o Spark o abre na própria janela. Iniciar o Spark com um único perfil nunca pergunta.
+- Na primeira vez em que você tem mais de um perfil, o Spark pergunta **qual perfil abrir**. Selecione um cartão para abrir o perfil na própria janela. Cada cartão mostra a foto ou a inicial do perfil, e o Spark indica o último perfil escolhido. Iniciar o Spark com um único perfil nunca pergunta.
 - A janela tem **Sempre perguntar ao iniciar o Spark**. Desligada, as próximas inicializações abrem o último perfil que você escolheu, sem janela no meio. Ligada, a janela aparece toda vez. Você pode mudar isso depois em **Configurações → Perfis → Perguntar qual perfil abrir ao iniciar o Spark**.
 - Se o último perfil que você escolheu foi apagado, o Spark pergunta de novo.
 - Iniciar um perfil diretamente (por exemplo por um atalho com `--profile <id>`) pula a pergunta.

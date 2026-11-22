@@ -13,6 +13,7 @@
 
 ## Improvements
 
+- The startup profile picker uses cards with larger photos or initials and shows the last-used label below the profile name.
 - Closing Spark shows a compact saving card when needed. The confirmation dialog makes unsaved forms and downloads that cannot resume easier to spot, and save errors have a clear retry action.
 - **Create profile** opens a dialog to choose a name, photo and optional password. Select the centered avatar to choose or change the photo, and use the eye icon inside the password field to show or hide the password. The photo appears in Settings and the startup profile picker. Leave the password blank to open the profile without a password.
 - Search engine cards use refreshed brand icons on neutral backgrounds that follow the theme.
