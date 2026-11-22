@@ -8,8 +8,6 @@ use windows::Win32::Foundation::NTE_NO_KEY;
 use windows_core::HSTRING;
 use zeroize::Zeroizing;
 
-/// Name of the key pair in the user's Windows profile.
-const CREDENTIAL_BASE: &str = "SparkBrowserPasswordVault";
 /// What Windows signs. It never changes, so the (RSA PKCS#1) signature never changes either.
 const CHALLENGE: &[u8] = b"spark-vault-hello-challenge-v1";
 
@@ -60,9 +58,9 @@ fn sign(credential: &KeyCredential) -> Result<Zeroizing<Vec<u8>>, HelloError> {
     Ok(Zeroizing::new(bytes.to_vec()))
 }
 
-pub fn enroll() -> Result<Zeroizing<Vec<u8>>, HelloError> {
+pub fn enroll(name: &str) -> Result<Zeroizing<Vec<u8>>, HelloError> {
     let result = KeyCredentialManager::RequestCreateAsync(
-        &HSTRING::from(super::credential_name(CREDENTIAL_BASE)),
+        &HSTRING::from(name),
         KeyCredentialCreationOption::ReplaceExisting,
     )
     .and_then(|operation| operation.join())
@@ -80,11 +78,10 @@ pub fn enroll() -> Result<Zeroizing<Vec<u8>>, HelloError> {
     )
 }
 
-pub fn secret() -> Result<Zeroizing<Vec<u8>>, HelloError> {
-    let result =
-        KeyCredentialManager::OpenAsync(&HSTRING::from(super::credential_name(CREDENTIAL_BASE)))
-            .and_then(|operation| operation.join())
-            .map_err(|e| failed("opening the Windows Hello key", e))?;
+pub fn secret(name: &str) -> Result<Zeroizing<Vec<u8>>, HelloError> {
+    let result = KeyCredentialManager::OpenAsync(&HSTRING::from(name))
+        .and_then(|operation| operation.join())
+        .map_err(|e| failed("opening the Windows Hello key", e))?;
     let status = result
         .Status()
         .map_err(|e| failed("reading the open status", e))?;
@@ -98,8 +95,8 @@ pub fn secret() -> Result<Zeroizing<Vec<u8>>, HelloError> {
     )
 }
 
-pub fn forget() -> Result<(), HelloError> {
-    match KeyCredentialManager::DeleteAsync(&HSTRING::from(super::credential_name(CREDENTIAL_BASE)))
+pub fn forget(name: &str) -> Result<(), HelloError> {
+    match KeyCredentialManager::DeleteAsync(&HSTRING::from(name))
         .and_then(|operation| operation.join())
     {
         // The key may already be absent when resetting a password-only vault.

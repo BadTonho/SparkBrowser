@@ -56,7 +56,9 @@ import autofillEn from "./catalogs/en/autofill.json";
 import autofillPt from "./catalogs/pt-BR/autofill.json";
 import profilesEn from "./catalogs/en/profiles.json";
 import profilesPt from "./catalogs/pt-BR/profiles.json";
+import lockEn from "./catalogs/en/lock.json";
+import lockPt from "./catalogs/pt-BR/lock.json";
 
-export const english = { ...newtabEn, ...mediaEn, ...searchEn, ...zoomEn, ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn, ...extensionsEn, ...readerEn, ...passwordsEn, ...autofillEn, ...profilesEn };
+export const english = { ...newtabEn, ...mediaEn, ...searchEn, ...zoomEn, ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn, ...extensionsEn, ...readerEn, ...passwordsEn, ...autofillEn, ...profilesEn, ...lockEn };
 export type MessageKey = keyof typeof english;
-export const portuguese: Record<MessageKey, string> = { ...newtabPt, ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt, ...extensionsPt, ...readerPt, ...passwordsPt, ...autofillPt, ...profilesPt };
+export const portuguese: Record<MessageKey, string> = { ...newtabPt, ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt, ...extensionsPt, ...readerPt, ...passwordsPt, ...autofillPt, ...profilesPt, ...lockPt };

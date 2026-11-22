@@ -5,10 +5,6 @@ use super::model::DEFAULT_AUTO_LOCK_MINUTES;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
-const MAX_DELAY_SECONDS: u64 = 60;
-/// Wrong guesses allowed before every further attempt has to wait.
-const FREE_ATTEMPTS: u32 = 3;
-
 struct Inner {
     key: Option<Key>,
     last_activity: Instant,
@@ -111,9 +107,7 @@ impl VaultService {
     pub fn failure(&self, now: Instant) {
         let mut inner = self.inner();
         inner.failures = inner.failures.saturating_add(1);
-        if inner.failures >= FREE_ATTEMPTS {
-            let exponent = (inner.failures - FREE_ATTEMPTS).min(6);
-            let delay = (1u64 << exponent).min(MAX_DELAY_SECONDS);
+        if let Some(delay) = crate::brake::delay_after(inner.failures) {
             inner.blocked_until = Some(now + Duration::from_secs(delay));
         }
     }
@@ -182,7 +176,10 @@ mod tests {
             service.failure(now);
         }
         let wait = service.check_attempt(now).unwrap_err();
-        assert!(wait <= MAX_DELAY_SECONDS + 1, "the delay is capped");
+        assert!(
+            wait <= crate::brake::MAX_DELAY_SECONDS + 1,
+            "the delay is capped"
+        );
         service.unlock(key(), now);
         assert!(service.check_attempt(now).is_ok());
         assert_eq!(service.retry_after_seconds(now), 0);

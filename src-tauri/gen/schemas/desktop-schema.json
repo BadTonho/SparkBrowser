@@ -183,6 +183,48 @@
           "markdownDescription": "Enables the allow_http_once command without any pre-configured scope."
         },
         {
+          "description": "Enables the app_lock_add_method command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-app-lock-add-method",
+          "markdownDescription": "Enables the app_lock_add_method command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the app_lock_disable command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-app-lock-disable",
+          "markdownDescription": "Enables the app_lock_disable command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the app_lock_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-app-lock-enable",
+          "markdownDescription": "Enables the app_lock_enable command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the app_lock_remove_method command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-app-lock-remove-method",
+          "markdownDescription": "Enables the app_lock_remove_method command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the app_unlock_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-app-unlock-hello",
+          "markdownDescription": "Enables the app_unlock_hello command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the app_unlock_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-app-unlock-password",
+          "markdownDescription": "Enables the app_unlock_password command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the app_unlock_vault_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-app-unlock-vault-password",
+          "markdownDescription": "Enables the app_unlock_vault_password command without any pre-configured scope."
+        },
+        {
           "description": "Enables the apply_backup_zoom command without any pre-configured scope.",
           "type": "string",
           "const": "allow-apply-backup-zoom",
@@ -459,6 +501,12 @@
           "markdownDescription": "Enables the enter_video_pip command without any pre-configured scope."
         },
         {
+          "description": "Enables the erase_locked_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-erase-locked-profile",
+          "markdownDescription": "Enables the erase_locked_profile command without any pre-configured scope."
+        },
+        {
           "description": "Enables the estimate_cleanup command without any pre-configured scope.",
           "type": "string",
           "const": "allow-estimate-cleanup",
@@ -649,6 +697,12 @@
           "type": "string",
           "const": "allow-get-local-backup-state",
           "markdownDescription": "Enables the get_local_backup_state command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_lock_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-lock-state",
+          "markdownDescription": "Enables the get_lock_state command without any pre-configured scope."
         },
         {
           "description": "Enables the get_network_status command without any pre-configured scope.",
@@ -1021,6 +1075,12 @@
           "type": "string",
           "const": "allow-report-frontend-error",
           "markdownDescription": "Enables the report_frontend_error command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the request_exit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-request-exit",
+          "markdownDescription": "Enables the request_exit command without any pre-configured scope."
         },
         {
           "description": "Enables the reset_download_location command without any pre-configured scope.",
@@ -1701,6 +1761,48 @@
           "markdownDescription": "Denies the allow_http_once command without any pre-configured scope."
         },
         {
+          "description": "Denies the app_lock_add_method command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-app-lock-add-method",
+          "markdownDescription": "Denies the app_lock_add_method command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the app_lock_disable command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-app-lock-disable",
+          "markdownDescription": "Denies the app_lock_disable command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the app_lock_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-app-lock-enable",
+          "markdownDescription": "Denies the app_lock_enable command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the app_lock_remove_method command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-app-lock-remove-method",
+          "markdownDescription": "Denies the app_lock_remove_method command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the app_unlock_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-app-unlock-hello",
+          "markdownDescription": "Denies the app_unlock_hello command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the app_unlock_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-app-unlock-password",
+          "markdownDescription": "Denies the app_unlock_password command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the app_unlock_vault_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-app-unlock-vault-password",
+          "markdownDescription": "Denies the app_unlock_vault_password command without any pre-configured scope."
+        },
+        {
           "description": "Denies the apply_backup_zoom command without any pre-configured scope.",
           "type": "string",
           "const": "deny-apply-backup-zoom",
@@ -1977,6 +2079,12 @@
           "markdownDescription": "Denies the enter_video_pip command without any pre-configured scope."
         },
         {
+          "description": "Denies the erase_locked_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-erase-locked-profile",
+          "markdownDescription": "Denies the erase_locked_profile command without any pre-configured scope."
+        },
+        {
           "description": "Denies the estimate_cleanup command without any pre-configured scope.",
           "type": "string",
           "const": "deny-estimate-cleanup",
@@ -2167,6 +2275,12 @@
           "type": "string",
           "const": "deny-get-local-backup-state",
           "markdownDescription": "Denies the get_local_backup_state command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_lock_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-lock-state",
+          "markdownDescription": "Denies the get_lock_state command without any pre-configured scope."
         },
         {
           "description": "Denies the get_network_status command without any pre-configured scope.",
@@ -2539,6 +2653,12 @@
           "type": "string",
           "const": "deny-report-frontend-error",
           "markdownDescription": "Denies the report_frontend_error command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the request_exit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-request-exit",
+          "markdownDescription": "Denies the request_exit command without any pre-configured scope."
         },
         {
           "description": "Denies the reset_download_location command without any pre-configured scope.",

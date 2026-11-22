@@ -117,6 +117,15 @@ fn handle(app: &AppHandle, token: &str, mut stream: TcpStream) {
         );
         return;
     }
+    if crate::app_lock::is_locked(app) {
+        // A locked profile opens no window for anyone: the lock screen comes forward instead.
+        if let Some(window) = app.get_webview_window("main") {
+            error_log::ignored(window.unminimize());
+            error_log::ignored(window.set_focus());
+        }
+        error_log::ignored(writeln!(stream, "{REPLY_OK}"));
+        return;
+    }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         match crate::window::browser_windows::open(&app, crate::state::tab_model::MAIN_WINDOW_ID)

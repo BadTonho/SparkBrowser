@@ -148,18 +148,24 @@ pub fn refresh_title(app: &AppHandle) {
 pub struct LaunchState {
     /// `"picker"` while this process only asks which profile to open, `"browser"` otherwise.
     pub mode: &'static str,
+    /// The profile has an app lock that is still closed: the lock screen is what to show.
+    pub locked: bool,
 }
 
 /// What this process is for. It answers before start-up is ready, so the first screen can choose
 /// between the browser and the profile picker.
 #[tauri::command]
-pub fn get_launch_state(role: State<'_, ProfileRole>) -> LaunchState {
+pub fn get_launch_state(
+    role: State<'_, ProfileRole>,
+    lock: State<'_, crate::app_lock::AppLockService>,
+) -> LaunchState {
     LaunchState {
         mode: if role.is_picker() {
             "picker"
         } else {
             "browser"
         },
+        locked: lock.is_locked(),
     }
 }
 

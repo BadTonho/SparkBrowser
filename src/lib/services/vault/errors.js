@@ -26,6 +26,7 @@ const KNOWN = {
   'vault.import_failed': 'passwords.error_import_failed',
   'vault.export_failed': 'passwords.error_export_failed',
   'vault.save_failed': 'passwords.error_save_failed',
+  'vault.required_by_app_lock': 'passwords.error_required_by_app_lock',
 };
 
 /**

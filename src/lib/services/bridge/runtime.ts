@@ -12,7 +12,10 @@ import { UserError } from "../user-errors.js";
 const lastFailureLogged = new Map<string, number>();
 
 /** Commands that answer before start-up is ready (the first screen needs them), so they never wait for it. */
-const ANSWERS_BEFORE_READY = new Set(["get_diagnostics", "get_launch_state", "get_picker_state", "choose_profile"]);
+const ANSWERS_BEFORE_READY = new Set([
+  "get_diagnostics", "get_launch_state", "get_picker_state", "choose_profile",
+  "get_lock_state", "app_unlock_password", "app_unlock_vault_password", "app_unlock_hello", "request_exit", "erase_locked_profile",
+]);
 
 let startup: Promise<void> | undefined;
 function waitForStartup(): Promise<void> {

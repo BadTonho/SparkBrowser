@@ -27,7 +27,6 @@ pub fn use_profile(id: Option<&str>) {
 }
 
 /// The name of the key pair in the user's Windows profile.
-#[cfg_attr(not(windows), allow(dead_code))]
 pub(crate) fn credential_name(base: &str) -> String {
     match PROFILE.get() {
         Some(id) => format!("{base}-{id}"),
@@ -59,17 +58,47 @@ pub fn is_available() -> bool {
     platform::is_available()
 }
 
+/// What a Windows Hello key pair protects. Each purpose (and each profile) has its own key pair, so
+/// turning one off never affects another.
+#[derive(Clone, Copy)]
+enum Purpose {
+    Vault,
+    AppLock,
+}
+
+impl Purpose {
+    fn name(self) -> String {
+        credential_name(match self {
+            Purpose::Vault => "SparkBrowserPasswordVault",
+            Purpose::AppLock => "SparkBrowserAppLock",
+        })
+    }
+}
+
 /// Creates (or replaces) the vault's key pair and returns the secret it signs. Shows the Windows prompt.
 pub fn enroll() -> Result<Zeroizing<Vec<u8>>, HelloError> {
-    platform::enroll()
+    platform::enroll(&Purpose::Vault.name())
 }
 
 /// The secret of the existing key pair. Shows the Windows prompt.
 pub fn secret() -> Result<Zeroizing<Vec<u8>>, HelloError> {
-    platform::secret()
+    platform::secret(&Purpose::Vault.name())
 }
 
 /// Deletes the vault's key pair. Nothing is left to open the Windows Hello copy afterwards.
 pub fn forget() -> Result<(), HelloError> {
-    platform::forget()
+    platform::forget(&Purpose::Vault.name())
+}
+
+/// The same three steps for the key pair of the app lock (opening Spark), separate from the vault's.
+pub fn enroll_app_lock() -> Result<Zeroizing<Vec<u8>>, HelloError> {
+    platform::enroll(&Purpose::AppLock.name())
+}
+
+pub fn secret_app_lock() -> Result<Zeroizing<Vec<u8>>, HelloError> {
+    platform::secret(&Purpose::AppLock.name())
+}
+
+pub fn forget_app_lock() -> Result<(), HelloError> {
+    platform::forget(&Purpose::AppLock.name())
 }

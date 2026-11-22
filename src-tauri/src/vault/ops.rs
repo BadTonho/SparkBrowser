@@ -227,6 +227,38 @@ pub fn set_require_hello(
     Ok(())
 }
 
+/// Turning the master password off, or erasing the vault, is refused while it is the only way to open
+/// the app lock: the person would be locked out of their own browser.
+fn refuse_if_app_lock_needs_the_password(conn: &Connection) -> Result<(), String> {
+    if crate::app_lock::ops::depends_only_on_vault(conn)? {
+        error_log::report(
+            Level::Info,
+            "vault",
+            "a vault change was refused: the app lock opens only with the vault master password",
+            "",
+        );
+        return Err("vault.required_by_app_lock".into());
+    }
+    Ok(())
+}
+
+/// Whether the vault of this profile opens with a master password (as opposed to Windows Hello only).
+pub fn has_master_password(conn: &Connection) -> Result<bool, String> {
+    Ok(repo::load_header(conn)?.is_some_and(|header| header.password.is_some()))
+}
+
+/// Whether `password` is the master password of the vault, **without opening it**: nothing is unlocked
+/// and the vault's own brake is not touched. The app lock uses it to accept that password as one of
+/// the ways to open Spark; whoever calls it applies its own brake.
+pub fn matches_master_password(conn: &Connection, password: &str) -> Result<bool, String> {
+    let header = header(conn)?;
+    match crypto::unlock_with_password(&header, password) {
+        Ok(_) => Ok(true),
+        Err(CryptoError::WrongSecret) => Ok(false),
+        Err(error) => Err(fail(error, "checking the vault password for the app lock")),
+    }
+}
+
 /// Checks the master password of an open vault (it counts toward the brake on wrong guesses).
 pub fn verify_password(
     conn: &Connection,
@@ -520,6 +552,8 @@ pub fn disable_password(
     now: Instant,
 ) -> Result<(), String> {
     let header = verify_password(conn, service, current, now)?;
+    // The app lock may rely on this very password: removing it would make Spark impossible to open.
+    refuse_if_app_lock_needs_the_password(conn)?;
     let updated = crypto::remove_password(&header)
         .map_err(|e| fail(e, "turning off the vault master password"))?;
     repo::update_header(conn, &updated)?;
@@ -642,6 +676,7 @@ pub fn set_auto_lock(
 
 /// Starts over after both secrets were lost: every entry is deleted (they cannot be read anyway).
 pub fn reset(conn: &Connection, service: &VaultService) -> Result<(), String> {
+    refuse_if_app_lock_needs_the_password(conn)?;
     repo::wipe(conn)?;
     service.lock();
     error_log::report(
@@ -662,6 +697,7 @@ mod tests {
     fn setup() -> (Connection, VaultService, Instant) {
         let conn = Connection::open_in_memory().unwrap();
         repo::migrate(&conn).unwrap();
+        crate::database::app_lock_repo::migrate(&conn).unwrap();
         (conn, VaultService::default(), Instant::now())
     }
 
@@ -1224,5 +1260,31 @@ mod tests {
         assert!(!s.initialized && !s.unlocked && s.entry_count == 0);
         create(&conn, &service, Some("a brand new password"), None, now).unwrap();
         assert_eq!(list(&conn, &service, now).unwrap().entries.len(), 0);
+    }
+
+    #[test]
+    fn the_master_password_and_the_vault_stay_while_the_app_lock_needs_them() {
+        use crate::app_lock::ops::{enable, First};
+        let (conn, service, now) = setup();
+        create(&conn, &service, Some(PASSWORD), None, now).unwrap();
+        enable(&conn, First::Vault(PASSWORD)).unwrap();
+        assert_eq!(
+            disable_password(&conn, &service, PASSWORD, now).unwrap_err(),
+            "vault.required_by_app_lock"
+        );
+        assert_eq!(
+            reset(&conn, &service).unwrap_err(),
+            "vault.required_by_app_lock"
+        );
+        assert!(has_master_password(&conn).unwrap(), "nothing was removed");
+        // Once another way in exists, the vault is free to change.
+        crate::app_lock::ops::add_hello(
+            &conn,
+            &crate::app_lock::ops::Proof::Vault(PASSWORD),
+            b"sig",
+            0,
+        )
+        .unwrap();
+        reset(&conn, &service).unwrap();
     }
 }

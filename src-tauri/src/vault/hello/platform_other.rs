@@ -6,14 +6,14 @@ pub fn is_available() -> bool {
     false
 }
 
-pub fn enroll() -> Result<Zeroizing<Vec<u8>>, HelloError> {
+pub fn enroll(_name: &str) -> Result<Zeroizing<Vec<u8>>, HelloError> {
     Err(HelloError::Unavailable)
 }
 
-pub fn secret() -> Result<Zeroizing<Vec<u8>>, HelloError> {
+pub fn secret(_name: &str) -> Result<Zeroizing<Vec<u8>>, HelloError> {
     Err(HelloError::Unavailable)
 }
 
-pub fn forget() -> Result<(), HelloError> {
+pub fn forget(_name: &str) -> Result<(), HelloError> {
     Err(HelloError::Unavailable)
 }

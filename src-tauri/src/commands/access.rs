@@ -14,7 +14,16 @@ pub fn caller_window(webview: &tauri::Webview) -> String {
 pub fn answers_before_ready(command: &str) -> bool {
     matches!(
         command,
-        "get_diagnostics" | "get_launch_state" | "get_picker_state" | "choose_profile"
+        "get_diagnostics"
+            | "get_launch_state"
+            | "get_picker_state"
+            | "choose_profile"
+            | "get_lock_state"
+            | "app_unlock_password"
+            | "app_unlock_vault_password"
+            | "app_unlock_hello"
+            | "request_exit"
+            | "erase_locked_profile"
     )
 }
 

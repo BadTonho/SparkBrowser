@@ -9,7 +9,7 @@ export const deleteProfile = (id: string) => invoke<void>("delete_profile", { id
 export const openProfile = (id: string) => invoke<void>("open_profile", { id });
 
 /** What this process is for: the browser, or only the profile picker shown when Spark starts. */
-export const getLaunchState = () => invoke<{ mode: "browser" | "picker" }>("get_launch_state");
+export const getLaunchState = () => invoke<{ mode: "browser" | "picker"; locked: boolean }>("get_launch_state");
 export const getPickerState = () => invoke<PickerState>("get_picker_state");
 /** Opens the chosen profile in its own process, remembers the choice, and ends the picker. */
 export const chooseProfile = (id: string, askEveryTime: boolean) => invoke<void>("choose_profile", { id, askEveryTime });

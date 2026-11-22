@@ -18,7 +18,7 @@ use tauri::utils::config::{AppDirectoriesOverride, AppDirectoryOverrides};
 pub const DEFAULT_ID: &str = "default";
 /// Folder (inside the local data folder of the Default profile) that holds the other profiles.
 pub const PROFILES_DIR: &str = "profiles";
-const FLAG: &str = "--profile";
+pub const FLAG: &str = "--profile";
 
 /// Managed state: which profile this process is, and where the others are.
 #[derive(Clone, Debug, PartialEq)]

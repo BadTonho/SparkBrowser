@@ -1,3 +1,4 @@
+pub mod app_lock_repo;
 pub mod bookmarks_repo;
 pub mod connection;
 pub mod downloads_repo;

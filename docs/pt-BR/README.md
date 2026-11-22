@@ -34,6 +34,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Paletas de cores](./features/color-palettes.md)
 - [Gerenciador de senhas](./features/password-manager.md)
 - [Perfis](./features/profiles.md)
+- [Bloqueio do app](./features/app-lock.md)
 - [Preenchimento automático (cartões e contatos)](./features/autofill.md)
 - [Aparência da Barra de Comandos](./features/command-bar.md)
 - [Painel de recursos](./features/resources.md)

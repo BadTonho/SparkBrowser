@@ -127,6 +127,30 @@ fn random<const N: usize>() -> Result<[u8; N], CryptoError> {
     Ok(bytes)
 }
 
+/// The work factor new secrets use (smaller in test builds). It travels with what it protects.
+pub fn default_kdf() -> Kdf {
+    Kdf {
+        memory_kib: MEMORY_KIB,
+        iterations: ITERATIONS,
+        parallelism: PARALLELISM,
+    }
+}
+
+/// A fresh random salt.
+pub fn random_salt() -> Result<[u8; SALT_LEN], CryptoError> {
+    random::<SALT_LEN>()
+}
+
+/// Stretches a secret with Argon2id under the given (bounded) work factor. Used by the app lock, which
+/// keeps only a hash of the result.
+pub fn derive_secret(
+    secret: &[u8],
+    salt: &[u8],
+    kdf: &Kdf,
+) -> Result<Zeroizing<[u8; KEY_LEN]>, CryptoError> {
+    derive(secret, salt, kdf)
+}
+
 fn derive(secret: &[u8], salt: &[u8], kdf: &Kdf) -> Result<Zeroizing<[u8; KEY_LEN]>, CryptoError> {
     if kdf.memory_kib == 0
         || kdf.memory_kib > MAX_MEMORY_KIB

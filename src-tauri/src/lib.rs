@@ -2,6 +2,11 @@ use commands::account_containers::{
     create_account_container, create_container_tab, delete_account_container,
     get_account_containers, rename_account_container, set_tab_account_container,
 };
+use commands::app_lock::{
+    app_lock_add_method, app_lock_disable, app_lock_enable, app_lock_remove_method,
+    app_unlock_hello, app_unlock_password, app_unlock_vault_password, erase_locked_profile,
+    get_lock_state, request_exit,
+};
 use commands::autofill::{get_autofill_settings, set_autofill_settings};
 use commands::backup::{
     cancel_backup_unlock, choose_backup_file, choose_backup_sync_folder, commit_backup_import,
@@ -47,8 +52,10 @@ use commands::vault_records::{
 use commands::vault_totp::{vault_scan_qr, vault_totp_code};
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
+pub mod app_lock;
 pub mod autofill;
 pub mod backup;
+pub mod brake;
 pub mod commands;
 pub mod database;
 pub mod downloads;
@@ -69,6 +76,7 @@ pub mod recovery;
 pub mod resources;
 pub mod search_engines;
 pub mod security;
+pub mod session_start;
 pub mod shutdown;
 pub mod site_permissions;
 pub mod state;
@@ -162,7 +170,7 @@ use state::browser_state::BrowserState;
 use tauri::{Manager, WindowEvent};
 use window::tab_drag_preview::set_tab_drag_preview;
 use window::vibrancy::apply_native_vibrancy;
-use window::webview_manager::{spawn_content_webview, BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL};
+use window::webview_manager::BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -191,6 +199,17 @@ pub fn run() {
         eprintln!("Spark startup failed: application data directory is unavailable");
         return;
     };
+    // The helper that erases a profile after the process that asked has exited: no window, no profile.
+    match app_lock::erase::requested() {
+        Ok(Some(id)) => {
+            if let Err(details) = app_lock::erase::run_helper(&local_root, &default_data, &id) {
+                eprintln!("Spark could not erase the profile: {details}");
+            }
+            return;
+        }
+        Ok(None) => {}
+        Err(code) => panic!("invalid erase argument: {code}"),
+    }
     // A start that names no profile opens the one chosen last, or asks which one (the first time there
     // is a choice, and every time when the person wants that).
     let picker = !role.is_private()
@@ -270,6 +289,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(role)
         .manage(profile_role)
+        .manage(app_lock::AppLockService::default())
         .manage(profile_lock)
         .manage(graphics_service)
         .manage(BrowserState::default())
@@ -341,6 +361,13 @@ pub fn run() {
             }
             if window.label() == "main" {
                 if let WindowEvent::CloseRequested { api, .. } = event {
+                    // A locked profile has nothing to save either, and the interface that would ask the
+                    // usual questions is not there: closing ends the process.
+                    if app_lock::is_locked(window.app_handle()) {
+                        api.prevent_close();
+                        app_lock::exit_locked(window.app_handle());
+                        return;
+                    }
                     // The profile picker has nothing to save: closing it just ends the process.
                     if window
                         .try_state::<profile::ProfileRole>()
@@ -444,6 +471,9 @@ pub fn run() {
             let conn = init_database(app.handle()).map_err(std::io::Error::other)?;
             database::preferences_repo::initialize_preferences_table(&conn)
                 .map_err(std::io::Error::other)?;
+            if app_lock::ops::is_enabled(&conn).map_err(std::io::Error::other)? {
+                app.state::<app_lock::AppLockService>().set_locked(true);
+            }
             app.state::<autofill::AutofillService>()
                 .apply(autofill::load_settings(&conn).map_err(std::io::Error::other)?);
             app.state::<downloads::location::DownloadLocation>()
@@ -615,20 +645,18 @@ pub fn run() {
                 lists.set_on_update(move || privacy::content_filter_linux::refresh(&handle));
                 privacy::content_filter_linux::refresh(app.handle());
             }
-            spawn_content_webview(app.handle())?;
-            if !cfg!(test) && app.config().identifier != "org.spark.browser.native-tests" {
-                lists.start_updates();
+            if app.state::<app_lock::AppLockService>().is_locked() {
+                // A profile with an app lock shows nothing of itself until it is unlocked: no tab, page
+                // or window. Unlocking runs the same last step.
+                error_log::report(
+                    error_log::Level::Info,
+                    "app-lock",
+                    "the profile is locked: waiting for the secret before showing anything",
+                    "",
+                );
+            } else {
+                session_start::start(app.handle())?;
             }
-            // The other windows of the last session come back once the first one is up.
-            let reopening = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                window::browser_windows::restore_saved(&reopening).await;
-            });
-            state
-                .infrastructure()
-                .startup_ready()
-                .store(true, std::sync::atomic::Ordering::Release);
-            feeds::start(app.handle().clone());
             // A second launch of Spark asks this process for a new window instead of failing.
             if !app.state::<private_session::PrivateRole>().is_private() {
                 if let Err(error) = instance_link::serve(app.handle(), &data_directory) {
@@ -803,6 +831,16 @@ pub fn run() {
             choose_profile,
             get_launcher_prefs,
             set_ask_profile_at_startup,
+            get_lock_state,
+            app_unlock_password,
+            app_unlock_vault_password,
+            app_unlock_hello,
+            request_exit,
+            erase_locked_profile,
+            app_lock_enable,
+            app_lock_add_method,
+            app_lock_remove_method,
+            app_lock_disable,
             close_tabs_reviewed,
             set_split_view,
             dock_tab_to_split,
@@ -912,6 +950,10 @@ pub fn run() {
                 code: None, api, ..
             } => {
                 api.prevent_exit();
+                if app_lock::is_locked(app) {
+                    app_lock::exit_locked(app);
+                    return;
+                }
                 crate::error_log::ignored(
                     app.state::<shutdown::ShutdownService>().request(app, None),
                 );

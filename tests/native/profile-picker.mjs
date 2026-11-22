@@ -19,7 +19,7 @@ export async function checkProfilePicker(context) {
   const killProfile = id => process.platform === 'win32' && spawnSync('powershell', ['-NoProfile', '-Command', `Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'spark-browser*' -and $_.CommandLine -like '*--profile ${id}*' } | ForEach-Object { taskkill /PID $_.ProcessId /T /F 2>&1 | Out-Null }; exit 0`], { encoding: 'utf8' });
 
   // With a single profile there is nothing to choose; the toggle is saved for the next start.
-  assert.deepEqual(await invoke('get_launch_state'), { mode: 'browser' });
+  assert.deepEqual(await invoke('get_launch_state'), { mode: 'browser', locked: false });
   assert.deepEqual(await invoke('get_launcher_prefs'), { ask_every_time: false });
   const work = await invoke('create_profile', { name: 'Work' });
   await invoke('set_ask_profile_at_startup', { enabled: true });
@@ -29,7 +29,7 @@ export async function checkProfilePicker(context) {
 
   // The next start is the picker.
   await restart({ launcher: true });
-  assert.deepEqual(await invoke('get_launch_state'), { mode: 'picker' });
+  assert.deepEqual(await invoke('get_launch_state'), { mode: 'picker', locked: false });
   assert.equal((await invoke('get_diagnostics')).startup_ready, false, 'the picker never becomes the browser');
   assert.match(await refusal('get_tabs'), /start-up is still in progress|startup is still in progress/i, 'no browser command works in the picker');
   assert.match(await refusal('list_profiles'), /still in progress/i);

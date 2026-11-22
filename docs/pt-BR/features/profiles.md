@@ -16,6 +16,8 @@ Abra **Configurações → Perfis** para gerenciá-los.
 
 As janelas de um perfil diferente do Padrão mostram o nome do perfil no título ("Spark - Trabalho").
 
+Cada perfil também pode ser bloqueado com uma senha, o Windows Hello ou a senha mestra do cofre: veja [Bloqueio do app](./app-lock.md).
+
 ## Escolher o perfil ao iniciar o Spark
 
 - Na primeira vez em que você tem mais de um perfil, o Spark inicia com uma janela pequena que pergunta **qual perfil abrir**. Escolha um e o Spark o abre na própria janela. Iniciar o Spark com um único perfil nunca pergunta.

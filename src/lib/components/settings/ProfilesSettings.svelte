@@ -5,6 +5,7 @@
     addProfile, askProfileAtStartup, changeAskAtStartup, changeProfileName, loadProfiles, loadStartupPrefs, openProfileWindow, profiles, profilesBusy, profilesFailure, profilesNotice, removeProfile,
   } from "../../stores/profilesStore";
   import type { ProfileInfo } from "../../types/profiles";
+  import AppLockCard from "./AppLockCard.svelte";
 
   let newName = $state("");
   /** The profile being renamed, with the text typed so far. */
@@ -109,6 +110,7 @@
       <button class="pill-action" type="submit" disabled={$profilesBusy || !newName.trim() || list.items.length >= list.max} data-testid="profile-create">{$t("profiles.create")}</button>
     </form>
   {/if}
+  <AppLockCard />
 </section>
 
 <style>

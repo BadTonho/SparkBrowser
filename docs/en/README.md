@@ -34,6 +34,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Color palettes](./features/color-palettes.md)
 - [Password manager](./features/password-manager.md)
 - [Profiles](./features/profiles.md)
+- [App lock](./features/app-lock.md)
 - [Autofill (cards and contact info)](./features/autofill.md)
 - [Command Bar appearance](./features/command-bar.md)
 - [Resources panel](./features/resources.md)

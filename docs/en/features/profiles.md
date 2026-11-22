@@ -16,6 +16,8 @@ Open **Settings → Profiles** to manage them.
 
 Windows of a profile other than the Default one show the profile name in their title ("Spark - Work").
 
+Each profile can also be locked with a password, Windows Hello or the vault master password: see [App lock](./app-lock.md).
+
 ## Choosing a profile when Spark starts
 
 - The first time you have more than one profile, Spark starts with a small window that asks **which profile to open**. Pick one and Spark opens it in its own window. Starting Spark with a single profile never asks.
