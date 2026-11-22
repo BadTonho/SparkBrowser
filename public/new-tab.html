@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/new-tab/youtube.css">
   <script src="/new-tab/youtube.js" defer></script>
   <link rel="stylesheet" href="/new-tab/wallpaper.css">
+  <script src="/new-tab/wallpaper-framing.js" defer></script>
   <script src="/new-tab/wallpaper.js" defer></script>
   <link rel="stylesheet" href="/new-tab/audio-background.css">
   <script src="/new-tab/audio-styles.js" defer></script>
@@ -33,7 +34,7 @@
   <div id="wallpaper-container" aria-hidden="true" hidden>
     <img id="wallpaper-image" alt="" hidden>
     <video id="wallpaper-video" autoplay loop muted playsinline hidden></video>
-    <div id="wallpaper-overlay"></div>
+    <div id="wallpaper-overlay" class="wallpaper-dim-overlay"></div>
   </div>
   <canvas id="audio-background" aria-hidden="true" hidden></canvas>
   <div id="widgets" hidden>
@@ -320,22 +321,36 @@
           <button id="wallpaper-remove" type="button" data-label="removeWallpaper" hidden></button>
         </div>
         <p id="wallpaper-status" role="status"></p>
-        <div id="wallpaper-preview-wrap" hidden>
-          <img id="wallpaper-preview" alt="" hidden>
-          <video id="wallpaper-video-preview" muted loop autoplay playsinline hidden></video>
-        </div>
-        <div class="wallpaper-slider-wrap">
-          <label for="wallpaper-dim" data-label="wallpaperDim"></label>
-          <div class="wallpaper-slider-row">
-            <input id="wallpaper-dim" type="range" min="0" max="90" value="40" step="5">
-            <span id="wallpaper-dim-val">40%</span>
+        <div id="wallpaper-editor" hidden>
+          <div class="wallpaper-editor-caption">
+            <strong id="wallpaper-preview-label" data-label="wallpaperPreview"></strong>
+            <div class="wallpaper-preview-controls">
+              <span id="wallpaper-zoom-val" aria-live="off">100%</span>
+              <div id="wallpaper-help">
+                <button id="wallpaper-help-button" class="icon-button" type="button" aria-labelledby="wallpaper-help-label" aria-describedby="wallpaper-help-tooltip">
+                  <span id="wallpaper-help-label" data-label="wallpaperHelp"></span>
+                  <span aria-hidden="true">?</span>
+                </button>
+                <div id="wallpaper-help-tooltip" role="tooltip">
+                  <p data-label="wallpaperFramingHelp"></p>
+                  <p data-label="wallpaperSnapHelp"></p>
+                  <p data-label="wallpaperKeyboardHelp"></p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="wallpaper-slider-wrap">
-          <label for="wallpaper-zoom" data-label="wallpaperZoom"></label>
-          <div class="wallpaper-slider-row">
-            <input id="wallpaper-zoom" type="range" min="25" max="300" value="100" step="5">
-            <span id="wallpaper-zoom-val">100%</span>
+          <div id="wallpaper-preview-wrap" role="group" tabindex="0" aria-labelledby="wallpaper-preview-label" aria-describedby="wallpaper-help-tooltip wallpaper-zoom-val">
+            <img id="wallpaper-preview" alt="" hidden>
+            <video id="wallpaper-video-preview" muted loop autoplay playsinline aria-hidden="true" hidden></video>
+            <div id="wallpaper-preview-overlay" class="wallpaper-dim-overlay" aria-hidden="true"></div>
+            <div class="wallpaper-guide" aria-hidden="true"></div>
+          </div>
+          <div class="wallpaper-slider-wrap">
+            <label for="wallpaper-dim" data-label="wallpaperDim"></label>
+            <div class="wallpaper-slider-row">
+              <input id="wallpaper-dim" type="range" min="0" max="90" value="40" step="5">
+              <span id="wallpaper-dim-val">40%</span>
+            </div>
           </div>
         </div>
       </div>

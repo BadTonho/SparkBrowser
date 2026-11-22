@@ -45,12 +45,13 @@ Você pode definir uma imagem ou vídeo em loop personalizado a partir do seu di
 - **Escolher imagem ou vídeo**: Abre o seletor de arquivos do sistema para escolher uma imagem (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`) ou vídeo (`.mp4`, `.webm`, `.ogg`).
 - **Reprodução de vídeo**: Vídeos são reproduzidos automaticamente em loop contínuo, sem som (*muted*) e ajustados para cobrir a tela (`object-fit: cover`) sob a busca e os widgets. Há suporte para arquivos de até 50 MB.
 - **Escala e Otimização de imagens**: Imagens de alta resolução são redimensionadas e otimizadas localmente via HTML Canvas para manter a fluidez e reduzir o uso de memória.
-- **Escurecimento do fundo**: Um controle deslizante ajusta a camada escura sobre a mídia (0% a 90%, padrão de 40%) para garantir legibilidade dos textos, widgets e atalhos.
+- **Escurecimento do fundo**: Um controle deslizante ajusta a camada escura na prévia e na nova aba (0% a 90%, padrão de 40%).
 - **Efeito translúcido (Glassmorphism)**: Com uma mídia de fundo ativa, os cartões de busca e widgets adotam transparência com desfoque de fundo (*backdrop blur*).
 - **Sincronização entre guias e persistência**: A mídia escolhida fica salva localmente no armazenamento do dispositivo (Blobs no IndexedDB e preferências locais) e sincroniza entre todas as novas guias abertas em tempo real, sem vazar para backups.
 - **Remover**: Excluir a mídia limpa as URLs de objetos e restaura imediatamente a cor sólida padrão.
-- **Zoom**: Um controle define quanto da imagem ou do vídeo aparece, de 25% a 300%: 100% preenche a tela, menos mostra mais dela (o fundo aparece ao redor) e mais amplia. Mudar o zoom sempre recentraliza a imagem. Onde a imagem cabe na tela ela fica centralizada; onde é maior você pode arrastá-la para escolher o que aparece. A pré-visualização tem o formato da tela. O valor é salvo, sincronizado entre guias e volta a 100% ao escolher outra mídia.
-- **Reposicionar**: Arraste a pré-visualização nas configurações para escolher qual parte da imagem ou do vídeo continua visível quando ele é cortado para caber na tela. A posição é salva, sincronizada entre guias e volta ao centro ao escolher outra mídia.
+- **Enquadramento**: A prévia tem as mesmas proporções da nova aba e inclui uma grade de terços. Role sobre ela para ajustar o zoom de 25% a 300%. Em 100%, a mídia preenche o fundo. Arraste para posicionar a mídia ou ajustar o recorte. Mídias menores podem encostar nas bordas e nos cantos da moldura. Passe o mouse sobre o ícone **?** ou dê foco a ele para ver as dicas de mouse e teclado.
+- **Salvamento do enquadramento**: Os ajustes aparecem na nova aba enquanto você edita. O zoom preserva a posição escolhida e os dois ajustes são salvos automaticamente e sincronizados entre novas abas. Escolher outra imagem ou vídeo restaura a posição central e o zoom de 100%.
+- **Encaixe no centro**: Segure Shift enquanto arrasta. Uma guia aparece quando a mídia encaixa no centro horizontal ou vertical. Solte o mouse com Shift pressionado para salvar a posição encaixada.
 
 ## Relógio
 

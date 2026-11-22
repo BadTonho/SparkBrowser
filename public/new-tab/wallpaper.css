@@ -1,8 +1,6 @@
 #wallpaper-container {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
   overflow: hidden;
   pointer-events: none;
   z-index: -1;
@@ -19,7 +17,7 @@
   pointer-events: none;
 }
 
-#wallpaper-overlay {
+.wallpaper-dim-overlay {
   position: absolute;
   inset: 0;
   background-color: #000000;
@@ -38,26 +36,71 @@
 }
 
 #wallpaper-preview-wrap {
-  border: 1px solid #ffffff24;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
-  width: 320px;
-  height: 180px;
-  max-width: 100%;
-  margin: 10px auto;
+  isolation: isolate;
+  --wallpaper-aspect: 1.77778;
+  --wallpaper-preview-height: min(42vh, 360px);
+  width: min(100%, calc(var(--wallpaper-aspect) * var(--wallpaper-preview-height)));
+  aspect-ratio: var(--wallpaper-aspect);
+  margin: 8px auto 0;
+  background: var(--nt-page-background);
   cursor: grab;
   touch-action: none;
   user-select: none;
+}
+
+#settings-panel[data-layout="corner"] #wallpaper-preview-wrap {
+  --wallpaper-preview-height: min(30vh, 145px);
+}
+
+#settings-panel[data-layout="corner"] .wallpaper-actions #wallpaper-choose {
+  flex-grow: 1.5;
+}
+
+#wallpaper-preview-wrap:focus-visible {
+  outline: 2px solid var(--nt-focus-ring);
+  outline-offset: 3px;
 }
 
 #wallpaper-preview-wrap.dragging {
   cursor: grabbing;
 }
 
+.wallpaper-guide {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--nt-focus-ring);
+  background-image: linear-gradient(to right, transparent calc(100% - 2px), #0004 0 calc(100% - 1px), #fff6 0),
+    linear-gradient(to bottom, transparent calc(100% - 2px), #0004 0 calc(100% - 1px), #fff6 0);
+  background-size: calc(100% / 3) 100%, 100% calc(100% / 3);
+  pointer-events: none;
+}
+
+.snap-center-x .wallpaper-guide::before,
+.snap-center-y .wallpaper-guide::after {
+  content: '';
+  position: absolute;
+  background: var(--nt-accent);
+  box-shadow: 0 0 0 1px var(--nt-accent-fg);
+}
+
+.snap-center-x .wallpaper-guide::before {
+  inset: 0 auto 0 calc(50% - 1px);
+  width: 2px;
+}
+
+.snap-center-y .wallpaper-guide::after {
+  inset: calc(50% - 1px) 0 auto;
+  height: 2px;
+}
+
 #wallpaper-preview,
 #wallpaper-video-preview {
   position: absolute;
+  inset: 0;
   max-width: none;
   width: 100%;
   height: 100%;
@@ -65,6 +108,85 @@
   display: block;
   pointer-events: none;
   -webkit-user-drag: none;
+}
+
+.wallpaper-editor-caption {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.wallpaper-preview-controls {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  gap: 8px;
+}
+
+#wallpaper-help {
+  display: grid;
+  align-self: stretch;
+  align-items: center;
+}
+
+#wallpaper-help-button {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-weight: 650;
+}
+
+#wallpaper-help-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+#wallpaper-help-tooltip {
+  display: none;
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-end: 0;
+  z-index: 1;
+  width: max-content;
+  max-width: min(100%, 265px);
+  padding: 8px 10px;
+  border: 1px solid #ffffff26;
+  border-radius: 8px;
+  background: #222;
+  color: #f1f1f1;
+  box-shadow: 0 4px 14px #0004;
+}
+
+#wallpaper-help:not([data-dismissed]):is(:hover, :focus-within) #wallpaper-help-tooltip {
+  display: block;
+}
+
+#wallpaper-help-tooltip p {
+  margin: 0;
+  color: inherit;
+  text-align: left;
+}
+
+#wallpaper-help-tooltip p + p {
+  margin-top: 4px;
+}
+
+html[data-theme="light"] #wallpaper-help-tooltip {
+  border-color: #0002;
+  background: #fff;
+  color: #202020;
+}
+
+#wallpaper-zoom-val {
+  flex: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .wallpaper-slider-wrap {
@@ -127,10 +249,6 @@ body.has-wallpaper .icon-button {
   background: rgba(30, 30, 30, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-}
-
-html[data-theme="light"] #wallpaper-preview-wrap {
-  border-color: rgba(0, 0, 0, 0.12);
 }
 
 html[data-theme="light"] #wallpaper-dim-val,

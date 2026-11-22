@@ -58,7 +58,6 @@ dialog input:focus-visible,dialog select:focus-visible { outline:2px solid var(-
 #city-results button { padding:9px 10px; text-align:left; }
 #gmail-options > p,
 #wallpaper-options > p { line-height:1.55; }
-#wallpaper-preview-wrap { border-color:rgba(255, 255, 255, 0.1); border-radius:12px; }
 #clock-options { display:grid; gap:3px; }
 #clock-options .toggle { min-height:42px; padding:0 10px; border:1px solid rgba(255, 255, 255, 0.07); border-radius:9px; background:rgba(255, 255, 255, 0.025); }
 #settings-status,#city-status,#weather-status,#gmail-status,#gmail-config-status { color:#a3a3a3; font-size:12px; }
@@ -181,7 +180,6 @@ html[data-theme="light"] .settings-view button:not(.icon-button):hover {
   background: rgba(0, 0, 0, 0.07);
   border-color: rgba(0, 0, 0, 0.18);
 }
-html[data-theme="light"] #wallpaper-preview-wrap { border-color:rgba(0, 0, 0, 0.1); }
 
 html[data-theme="light"] #clock-options .toggle + .toggle {
   border-color: rgba(0, 0, 0, 0.08);

@@ -101,11 +101,6 @@ html[data-theme="light"] #audio-style-grid .style-card:hover:not(:disabled) { ba
 html[data-theme="light"] #audio-style-grid .style-card[aria-checked="true"] { background:var(--nt-selected-bg); border-color:var(--nt-selected-border); }
 html[data-private="true"] #audio-style-grid { display:none !important; }
 
-/* Background media: use the room of the centered panel for a larger preview. */
-#settings-panel[data-layout="center"] #wallpaper-preview-wrap { max-height:none; margin:12px 0 4px; }
-#settings-panel[data-layout="center"] #wallpaper-preview,
-#settings-panel[data-layout="center"] #wallpaper-video-preview { height:clamp(180px, 36vh, 320px); }
-
 /* Two-column groups (Music and video, Wallpaper): the section keeps still and only the right column scrolls,
    so the list on the left stays in view. A divider gives the list its own full-height column. */
 #settings-panel[data-layout="center"] #settings-content > :is(#spotify-section, #wallpaper-section):not([hidden]) { overflow:hidden; grid-template-rows:minmax(0, 1fr); align-items:stretch; gap:0 24px; }

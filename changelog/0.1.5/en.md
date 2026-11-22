@@ -13,6 +13,8 @@
 
 ## Improvements
 
+- Frame images and videos for the new tab in a larger preview with a grid. Scroll to zoom, drag smaller media to the corners, and hover over the **?** icon for control tips.
+- Hold Shift while dragging background media to snap it to the center, with alignment guides.
 - Opening Spark again while it is already running now opens a new browser window in the running instance, so one window per monitor can be started from the shortcut as well.
 
 ## Fixes

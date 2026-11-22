@@ -43,12 +43,13 @@ You can set a custom background image or looping video from your device through 
 - **Choose image or video**: Opens the system file picker to select an image (`.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.avif`) or video (`.mp4`, `.webm`, `.ogg`).
 - **Video Playback**: Videos play automatically on loop, muted, and scaled to fill the viewport (`object-fit: cover`) behind the central search area and widgets. Files up to 50 MB are supported.
 - **Image Scaling & Optimization**: High-resolution images are scaled and optimized locally via HTML Canvas to preserve smooth rendering performance and minimize memory usage.
-- **Background dimming**: A slider controls the dark overlay level (0% to 90%, default 40%) to ensure all search text, widgets, and recent-site cards maintain crisp readability.
+- **Background dimming**: A slider adjusts the dark overlay in the preview and on the new tab (0% to 90%, default 40%).
 - **Glassmorphism**: When a wallpaper is active, widgets and search cards gain subtle translucency and backdrop blur.
 - **Cross-tab sync & Persistence**: The chosen media is stored locally in device storage (IndexedDB Blobs and local preferences) and updates across all open new tabs in real time without entering backups.
 - **Remove**: Deleting the wallpaper immediately cleans up object URLs and restores the default solid background.
-- **Zoom**: A slider sets how much of the image or video is shown, from 25% to 300%: 100% fills the screen, lower shows more of it (the background shows around it) and higher enlarges it. Changing the zoom always recenters the picture. Where the picture fits inside the screen it stays centered; where it is larger you can drag it to choose what shows. The preview has the shape of the screen. It is saved, synced across tabs and reset when you choose new media.
-- **Reposition**: Drag the preview in the settings to choose which part of the image or video stays visible when it is cropped to fit the screen. The position is saved, synced across tabs and reset when you choose new media.
+- **Framing**: The preview matches the proportions of the new tab and includes a rule-of-thirds grid. Scroll over it to zoom from 25% to 300%. At 100% the media fills the background. Drag to position the media or adjust its crop. Media smaller than the frame can be placed against the edges and in the corners. Hover over or focus the **?** icon for mouse and keyboard tips.
+- **Saving the framing**: Adjustments appear on the new tab as you make them. Zoom preserves the chosen position, and both settings are saved automatically and synced across new tabs. Choosing another image or video resets the framing to the center at 100%.
+- **Center snapping**: Hold Shift while dragging. A guide appears when the media snaps to the horizontal or vertical center. Release the mouse while holding Shift to save the snapped position.
 
 ## Clock
 

@@ -17,7 +17,8 @@
   const getStorage = key => {
     try {
       return (typeof localStorage !== 'undefined' && localStorage.getItem(key)) || null;
-    } catch {
+    } catch (error) {
+      logFailure(`Wallpaper preferences: read ${key}`, error);
       return null;
     }
   };
@@ -25,124 +26,25 @@
   const setStorage = (key, value) => {
     try {
       if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
-    } catch (error) { window.__sparkLogIgnored?.(error); }
+    } catch (error) { logFailure(`Wallpaper preferences: write ${key}`, error); }
   };
 
-  const removeStorage = key => {
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
-    } catch (error) { window.__sparkLogIgnored?.(error); }
+  const logFailure = (context, error) => {
+    window.__sparkLogIgnored?.(new Error(`${context}: ${error?.message ?? error}`, { cause: error }));
   };
+  const framing = window.__sparkCreateWallpaperFraming(getStorage, setStorage, logFailure);
 
-  const clampPct = value => Math.min(100, Math.max(0, Number.isFinite(value) ? value : 50));
-
-  function readPosition() {
-    const [x, y] = (getStorage('spark_wallpaper_pos') ?? '50,50').split(',').map(Number);
-    return { x: clampPct(x), y: clampPct(y) };
+  function readDimming() {
+    const dim = Number.parseInt(getStorage('spark_wallpaper_dim') ?? '40', 10);
+    return Math.min(90, Math.max(0, Number.isFinite(dim) ? dim : 40));
   }
 
-  function readZoom() {
-    const value = Number(getStorage('spark_wallpaper_zoom') ?? 100);
-    return Math.min(300, Math.max(25, Number.isFinite(value) ? value : 100));
-  }
-
-  const MEDIA = [
-    ['wallpaper-image', 'wallpaper-container'], ['wallpaper-video', 'wallpaper-container'],
-    ['wallpaper-preview', 'wallpaper-preview-wrap'], ['wallpaper-video-preview', 'wallpaper-preview-wrap']
-  ];
-  let zoomLive = null;
-
-  const naturalSize = node => ({ w: node.naturalWidth || node.videoWidth || 0, h: node.naturalHeight || node.videoHeight || 0 });
-
-  // Zoom 100% is the picture filling the whole area; lower shows more of it (and the margins around),
-  // higher enlarges it. Where the picture overflows the area it can be panned; where it fits, it is centred.
-  function mediaGeometry(node, box, pos, zoom) {
-    const { w: nw, h: nh } = naturalSize(node);
-    const W = box.clientWidth, H = box.clientHeight;
-    if (!nw || !nh || !W || !H) return null;
-    const scale = Math.max(W / nw, H / nh) * (zoom / 100);
-    const w = nw * scale, h = nh * scale;
-    // Only an axis where the picture is bigger than the area can be panned; otherwise it stays centred.
-    const place = (room, focus) => (room >= 0 ? room / 2 : room * focus / 100);
-    return { w, h, W, H, left: place(W - w, pos.x), top: place(H - h, pos.y) };
-  }
-
-  function fitPreviewBox() {
-    const wrap = $('wallpaper-preview-wrap');
-    if (!wrap || !window.innerWidth || !window.innerHeight) return;
-    // The preview has the shape of the screen, so it shows the same framing as the new tab.
-    const ratio = window.innerWidth / window.innerHeight, avail = wrap.parentElement?.clientWidth || 0;
-    let width = 180 * ratio;
-    if (avail && width > avail) width = avail;
-    const size = [`${Math.round(width)}px`, `${Math.round(width / ratio)}px`];
-    if (wrap.style.width !== size[0]) wrap.style.width = size[0];
-    if (wrap.style.height !== size[1]) wrap.style.height = size[1];
-  }
-
-  function applyPosition(pos = readPosition(), zoom = zoomLive ?? readZoom()) {
-    fitPreviewBox();
-    for (const [id, boxId] of MEDIA) {
-      const node = $(id), box = $(boxId);
-      if (!node || !box) continue;
-      const g = mediaGeometry(node, box, pos, zoom);
-      const style = node.style;
-      if (!g) {
-        // Not measurable yet (hidden or still loading): the stylesheet's "cover" applies meanwhile.
-        for (const key of ['left', 'top', 'width', 'height', 'objectFit', 'inset']) style[key] = '';
-        continue;
-      }
-      style.inset = 'auto'; style.objectFit = 'fill';
-      style.width = `${g.w}px`; style.height = `${g.h}px`;
-      style.left = `${g.left}px`; style.top = `${g.top}px`;
+  function renderDimming(dim) {
+    for (const id of ['wallpaper-overlay', 'wallpaper-preview-overlay']) {
+      $(id)?.style.setProperty('--wallpaper-dim', String(dim / 100));
     }
-  }
-
-  function resetPosition() {
-    setStorage('spark_wallpaper_pos', '50,50');
-    setStorage('spark_wallpaper_zoom', '100');
-  }
-
-  function initPositionDrag() {
-    const wrap = $('wallpaper-preview-wrap');
-    if (!wrap) return;
-    for (const [id] of MEDIA) {
-      const node = $(id);
-      node?.addEventListener?.('load', () => applyPosition());
-      node?.addEventListener?.('loadedmetadata', () => applyPosition());
-    }
-    window.addEventListener('resize', () => applyPosition());
-    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => applyPosition()).observe(wrap);
-    let drag = null;
-    wrap.addEventListener('pointerdown', event => {
-      if (event.button !== 0) return;
-      const media = currentMedia?.mediaType === 'video' ? $('wallpaper-video-preview') : $('wallpaper-preview');
-      if (!media || media.hidden) return;
-      const origin = readPosition();
-      const g = mediaGeometry(media, wrap, origin, zoomLive ?? readZoom());
-      if (!g) return;
-      drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, origin, slackX: g.W - g.w, slackY: g.H - g.h, pos: origin };
-      try { wrap.setPointerCapture(event.pointerId); } catch (error) { window.__sparkLogIgnored?.(error); }
-      wrap.classList.add('dragging');
-      event.preventDefault();
-    });
-    wrap.addEventListener('pointermove', event => {
-      if (!drag || event.pointerId !== drag.id) return;
-      // The picture follows the pointer: left = slack * x, so x moves by dx / slack (slack < 0 when it overflows).
-      const x = drag.slackX < -0.5 ? drag.origin.x + ((event.clientX - drag.startX) / drag.slackX) * 100 : drag.origin.x;
-      const y = drag.slackY < -0.5 ? drag.origin.y + ((event.clientY - drag.startY) / drag.slackY) * 100 : drag.origin.y;
-      drag.pos = { x: clampPct(x), y: clampPct(y) };
-      applyPosition(drag.pos);
-    });
-    const finish = event => {
-      if (!drag || event.pointerId !== drag.id) return;
-      const { pos } = drag;
-      drag = null;
-      wrap.classList.remove('dragging');
-      setStorage('spark_wallpaper_pos', `${Math.round(pos.x * 10) / 10},${Math.round(pos.y * 10) / 10}`);
-      notifyUpdated();
-    };
-    wrap.addEventListener('pointerup', finish);
-    wrap.addEventListener('pointercancel', finish);
+    const dimVal = $('wallpaper-dim-val');
+    if (dimVal) dimVal.textContent = `${dim}%`;
   }
 
   function cleanupUrls() {
@@ -240,6 +142,7 @@
     const record = await getStoredWallpaper();
     if (version !== recordVersion) return loadMediaRecord();
     if (record === renderedRecord) return;
+    framing.discardGesture();
     renderedRecord = record;
     cleanupUrls();
 
@@ -280,35 +183,31 @@
   }
 
   async function applyWallpaper() {
-    const isEnabled = getStorage('spark_wallpaper_enabled') === 'true';
-    const dim = Math.min(90, Math.max(0, parseInt(getStorage('spark_wallpaper_dim') ?? '40', 10) || 40));
-
     await loadMediaRecord();
 
+    const isEnabled = getStorage('spark_wallpaper_enabled') === 'true';
+    const dim = readDimming();
     const container = $('wallpaper-container');
     const image = $('wallpaper-image');
     const video = $('wallpaper-video');
-    const overlay = $('wallpaper-overlay');
     const enabledToggle = $('wallpaper-enabled');
     const options = $('wallpaper-options');
     const dimInput = $('wallpaper-dim');
-    const dimVal = $('wallpaper-dim-val');
     const preview = $('wallpaper-preview');
     const videoPreview = $('wallpaper-video-preview');
-    const previewWrap = $('wallpaper-preview-wrap');
+    const editor = $('wallpaper-editor');
     const removeBtn = $('wallpaper-remove');
 
     if (enabledToggle) enabledToggle.checked = isEnabled;
     if (options) options.hidden = !isEnabled;
     if (dimInput) dimInput.value = dim.toString();
-    if (dimVal) dimVal.textContent = `${dim}%`;
+    renderDimming(dim);
 
     const active = isEnabled && Boolean(currentMedia?.url);
 
     if (container) {
       if (active) {
         container.hidden = false;
-        if (overlay) overlay.style.setProperty('--wallpaper-dim', (dim / 100).toString());
         if (document.body) document.body.classList.add('has-wallpaper');
 
         if (currentMedia.mediaType === 'video') {
@@ -331,7 +230,7 @@
           }
           if (image) {
             image.hidden = false;
-            image.src = currentMedia.url;
+            if (image.getAttribute('src') !== currentMedia.url) image.src = currentMedia.url;
           }
         }
       } else {
@@ -349,9 +248,9 @@
       }
     }
 
-    if (previewWrap && removeBtn) {
+    if (editor && removeBtn) {
       if (currentMedia?.url) {
-        previewWrap.hidden = false;
+        editor.hidden = false;
         removeBtn.hidden = false;
         if (currentMedia.mediaType === 'video') {
           if (preview) {
@@ -362,7 +261,11 @@
             videoPreview.hidden = false;
             if (videoPreview.getAttribute('src') !== currentMedia.url) {
               videoPreview.src = currentMedia.url;
-              try { videoPreview.play?.(); } catch (error) { window.__sparkLogIgnored?.(error); }
+              try {
+                videoPreview.play()?.catch(error => logFailure('Wallpaper preview: play video', error));
+              } catch (error) {
+                logFailure('Wallpaper preview: start video playback', error);
+              }
             }
           }
         } else {
@@ -373,11 +276,11 @@
           }
           if (preview) {
             preview.hidden = false;
-            preview.src = currentMedia.url;
+            if (preview.getAttribute('src') !== currentMedia.url) preview.src = currentMedia.url;
           }
         }
       } else {
-        previewWrap.hidden = true;
+        editor.hidden = true;
         removeBtn.hidden = true;
         if (preview) {
           preview.hidden = true;
@@ -390,17 +293,36 @@
         }
       }
     }
-    const zoomInput = $('wallpaper-zoom'), zoomVal = $('wallpaper-zoom-val');
-    if (zoomInput) zoomInput.value = String(readZoom());
-    if (zoomVal) zoomVal.textContent = `${readZoom()}%`;
-    applyPosition();
+    framing.render();
+  }
+
+  function initFramingHelp() {
+    const help = $('wallpaper-help');
+    const tooltip = $('wallpaper-help-tooltip');
+    const reopen = () => help.removeAttribute('data-dismissed');
+    help.addEventListener('pointerenter', reopen);
+    help.addEventListener('focusin', reopen);
+    $('wallpaper-help-button').addEventListener('click', reopen);
+    $('settings-panel').addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || getComputedStyle(tooltip).display === 'none') return;
+      event.preventDefault();
+      help.setAttribute('data-dismissed', '');
+    });
   }
 
   function initControls() {
-    initPositionDrag();
+    framing.init();
+    initFramingHelp();
+    for (const type of ['image', 'video']) {
+      const preview = $(type === 'image' ? 'wallpaper-preview' : 'wallpaper-video-preview');
+      preview?.addEventListener('error', () => {
+        if (!preview.getAttribute('src')) return;
+        logFailure(`Wallpaper preview: load ${type}`, preview.error ?? new Error('Could not decode media'));
+        setStatus(text('wallpaperError'));
+      });
+    }
     const enabledToggle = $('wallpaper-enabled');
     const dimInput = $('wallpaper-dim');
-    const dimVal = $('wallpaper-dim-val');
     const fileInput = $('wallpaper-file');
     const chooseBtn = $('wallpaper-choose');
     const removeBtn = $('wallpaper-remove');
@@ -410,7 +332,6 @@
         $('menu-item-wallpaper')?.click();
         const checked = event.target.checked;
         setStorage('spark_wallpaper_enabled', checked ? 'true' : 'false');
-        notifyUpdated();
         await applyWallpaper();
         if (checked && !currentMedia?.url) {
           setStatus(text('chooseWallpaper'));
@@ -420,35 +341,10 @@
       });
     }
 
-    const zoomInput = $('wallpaper-zoom');
-    if (zoomInput) {
-      const zoomVal = $('wallpaper-zoom-val');
-      zoomInput.addEventListener('input', event => {
-        const val = Number(event.target.value);
-        if (zoomVal) zoomVal.textContent = `${val}%`;
-        zoomLive = val;
-        // Zooming always happens around the centre; drag the preview afterwards to pan.
-        applyPosition({ x: 50, y: 50 }, val);
-      });
-      zoomInput.addEventListener('change', event => {
-        zoomLive = null;
-        setStorage('spark_wallpaper_pos', '50,50');
-        setStorage('spark_wallpaper_zoom', String(event.target.value));
-        notifyUpdated();
-      });
-    }
-
     if (dimInput) {
-      dimInput.addEventListener('input', event => {
-        const val = event.target.value;
-        if (dimVal) dimVal.textContent = `${val}%`;
-        const overlay = $('wallpaper-overlay');
-        if (overlay) overlay.style.setProperty('--wallpaper-dim', (parseInt(val, 10) / 100).toString());
-      });
+      dimInput.addEventListener('input', event => renderDimming(Number(event.target.value)));
       dimInput.addEventListener('change', event => {
-        const val = event.target.value;
-        setStorage('spark_wallpaper_dim', val);
-        notifyUpdated();
+        setStorage('spark_wallpaper_dim', event.target.value);
       });
     }
 
@@ -478,7 +374,7 @@
             blob: file
           })
           .then(async () => {
-            resetPosition();
+            framing.reset();
             setStorage('spark_wallpaper_enabled', 'true');
             notifyUpdated();
             await applyWallpaper();
@@ -502,8 +398,8 @@
               blob: file
             })
               .then(async () => {
-                resetPosition();
-            setStorage('spark_wallpaper_enabled', 'true');
+                framing.reset();
+                setStorage('spark_wallpaper_enabled', 'true');
                 notifyUpdated();
                 await applyWallpaper();
                 setStatus(text('wallpaperSaved'));
@@ -548,8 +444,8 @@
                 mime: finalBlob.type || file.type || 'image/jpeg',
                 blob: finalBlob
               });
-              resetPosition();
-            setStorage('spark_wallpaper_enabled', 'true');
+              framing.reset();
+              setStorage('spark_wallpaper_enabled', 'true');
               notifyUpdated();
               await applyWallpaper();
               setStatus(text('wallpaperSaved'));
@@ -588,12 +484,14 @@
   // Cross-tab synchronization via storage events
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('storage', event => {
+      if (framing.handlesStorage(event.key)) {
+        framing.render();
+        return;
+      }
       if (
         event.key === 'spark_wallpaper_updated' ||
         event.key === 'spark_wallpaper_enabled' ||
-        event.key === 'spark_wallpaper_dim' ||
-        event.key === 'spark_wallpaper_pos' ||
-        event.key === 'spark_wallpaper_zoom'
+        event.key === 'spark_wallpaper_dim'
       ) {
         if (event.key === 'spark_wallpaper_updated') invalidateRecord();
         applyWallpaper();

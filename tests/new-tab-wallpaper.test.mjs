@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { setImmediate as flushWallpaper } from 'node:timers/promises';
+import { setImmediate as flushWallpaper, setTimeout as delay } from 'node:timers/promises';
 import { runInNewContext } from 'node:vm';
 
 function createWallpaperFixture(initialStorage = {}) {
@@ -39,7 +39,8 @@ function createWallpaperFixture(initialStorage = {}) {
       this.classList = {
         classes: new Set(),
         add(c) { this.classes.add(c); },
-        remove(c) { this.classes.delete(c); },
+        remove(...names) { for (const name of names) this.classes.delete(name); },
+        toggle(c, enabled) { if (enabled) this.add(c); else this.remove(c); },
         contains(c) { return this.classes.has(c); }
       };
     }
@@ -52,6 +53,11 @@ function createWallpaperFixture(initialStorage = {}) {
     }
     play() { return Promise.resolve(); }
     pause() {}
+    focus() { this.focused = true; }
+    setPointerCapture(id) { this.pointer = id; }
+    hasPointerCapture(id) { return this.pointer === id; }
+    releasePointerCapture() { this.pointer = undefined; }
+    getBoundingClientRect() { return { width: this.clientWidth ?? 0, height: this.clientHeight ?? 0 }; }
     click() { this.listeners.click?.({ target: this }); }
   }
 
@@ -117,14 +123,16 @@ function createWallpaperFixture(initialStorage = {}) {
     }
   };
 
-  const script = readFileSync('public/new-tab/wallpaper.js', 'utf8');
-  runInNewContext(script, {
+  const scripts = ['wallpaper-framing.js', 'wallpaper.js'];
+  runInNewContext(scripts.map(file => readFileSync(`public/new-tab/${file}`, 'utf8')).join('\n'), {
     window,
     document,
     localStorage,
     indexedDB,
     console,
     Date,
+    setTimeout,
+    clearTimeout,
     parseInt,
     Math,
     URL: {
@@ -159,8 +167,8 @@ test('wallpaper reads are shared until another tab changes the stored record', a
   assert.equal(f.nodes.get('wallpaper-image').src, 'data:image/png;base64,two');
 });
 
-test('images are size-limited and stored as one blob', async () => {
-  const f = createWallpaperFixture();
+test('images are size-limited and replacing media resets framing', async () => {
+  const f = createWallpaperFixture({ spark_wallpaper_zoom: '200', spark_wallpaper_pos: '33,80' });
   await flushWallpaper();
   const labels = JSON.parse(readFileSync('src/lib/i18n/catalogs/en/newtab.json', 'utf8'));
   f.window.dispatchEvent({ type: 'spark-new-tab', detail: { labels } });
@@ -175,6 +183,8 @@ test('images are size-limited and stored as one blob', async () => {
   await flushWallpaper();
   assert.equal(f.idbStore.get('current').blob, image);
   assert.equal('dataUrl' in f.idbStore.get('current'), false);
+  assert.equal(f.storage.get('spark_wallpaper_zoom'), '100');
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '50,50');
 });
 
 test('wallpaper starts hidden when no custom image is saved', async () => {
@@ -185,7 +195,7 @@ test('wallpaper starts hidden when no custom image is saved', async () => {
   const toggle = f.nodes.get('wallpaper-enabled');
   assert.equal(container.hidden, true);
   assert.equal(toggle.checked, false);
-  assert.equal(f.nodes.get('wallpaper-preview-wrap').hidden, true);
+  assert.equal(f.nodes.get('wallpaper-editor').hidden, true);
   assert.equal(f.nodes.get('wallpaper-remove').hidden, true);
 });
 
@@ -211,7 +221,7 @@ test('wallpaper applies stored image and activates background container with dim
   assert.equal(image.src, testData);
   assert.equal(overlay.style.properties['--wallpaper-dim'], '0.5');
   assert.equal(f.document.body.classList.contains('has-wallpaper'), true);
-  assert.equal(f.nodes.get('wallpaper-preview-wrap').hidden, false);
+  assert.equal(f.nodes.get('wallpaper-editor').hidden, false);
   assert.equal(f.nodes.get('wallpaper-preview').src, testData);
   assert.equal(f.nodes.get('wallpaper-remove').hidden, false);
 });
@@ -226,13 +236,22 @@ test('dimming slider updates dimming value and saves preference', async () => {
   const slider = f.nodes.get('wallpaper-dim');
   const dimVal = f.nodes.get('wallpaper-dim-val');
   const overlay = f.nodes.get('wallpaper-overlay');
+  const previewOverlay = f.nodes.get('wallpaper-preview-overlay');
 
   slider.listeners.input({ target: { value: '65' } });
   assert.equal(dimVal.textContent, '65%');
   assert.equal(overlay.style.properties['--wallpaper-dim'], '0.65');
+  assert.equal(previewOverlay.style.properties['--wallpaper-dim'], '0.65');
 
   slider.listeners.change({ target: { value: '65' } });
   assert.equal(f.storage.get('spark_wallpaper_dim'), '65');
+
+  f.storage.set('spark_wallpaper_dim', '0');
+  f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_dim' });
+  await flushWallpaper();
+  assert.equal(dimVal.textContent, '0%');
+  assert.equal(overlay.style.properties['--wallpaper-dim'], '0');
+  assert.equal(previewOverlay.style.properties['--wallpaper-dim'], '0');
 });
 
 test('remove button deletes wallpaper and clears DOM presentation', async () => {
@@ -250,7 +269,7 @@ test('remove button deletes wallpaper and clears DOM presentation', async () => 
   assert.equal(f.idbStore.has('current'), false);
   assert.equal(f.nodes.get('wallpaper-container').hidden, true);
   assert.equal(f.nodes.get('wallpaper-image').src, undefined);
-  assert.equal(f.nodes.get('wallpaper-preview-wrap').hidden, true);
+  assert.equal(f.nodes.get('wallpaper-editor').hidden, true);
   assert.equal(f.document.body.classList.contains('has-wallpaper'), false);
 });
 
@@ -319,7 +338,7 @@ test('wallpaper applies stored video and plays in wallpaper-video element', asyn
   const container = f.nodes.get('wallpaper-container');
   const video = f.nodes.get('wallpaper-video');
   const image = f.nodes.get('wallpaper-image');
-  const previewWrap = f.nodes.get('wallpaper-preview-wrap');
+  const editor = f.nodes.get('wallpaper-editor');
   const videoPreview = f.nodes.get('wallpaper-video-preview');
 
   assert.equal(container.hidden, false);
@@ -327,9 +346,16 @@ test('wallpaper applies stored video and plays in wallpaper-video element', asyn
   assert.equal(video.src, 'blob:http://tauri.localhost/test-blob');
   assert.equal(image.hidden, true);
   assert.equal(image.src, undefined);
-  assert.equal(previewWrap.hidden, false);
+  assert.equal(editor.hidden, false);
   assert.equal(videoPreview.hidden, false);
   assert.equal(videoPreview.src, 'blob:http://tauri.localhost/test-blob');
+
+  Object.assign(container, { clientWidth: 800, clientHeight: 600 });
+  Object.assign(f.nodes.get('wallpaper-preview-wrap'), { clientWidth: 400, clientHeight: 300 });
+  for (const node of [video, videoPreview]) Object.assign(node, { videoWidth: 1600, videoHeight: 900 });
+  videoPreview.listeners.loadedmetadata();
+  assert.equal(Number.parseFloat(video.style.left), 2 * Number.parseFloat(videoPreview.style.left));
+  assert.equal(Number.parseFloat(video.style.width), 2 * Number.parseFloat(videoPreview.style.width));
 });
 
 test('video file size limit rejects files larger than 50MB', async () => {
@@ -406,7 +432,7 @@ test('panel and widget layout choices are segmented radios, validated, persisted
   assert.ok(!group.includes('weather-widget')&&!group.includes('gmail-widget')&&!group.includes('clock-card-widget'),'other widgets stay put');
 });
 
-test('zoom 100% fills the area, lower zoom shows the whole picture centred and only overflowing axes pan', async () => {
+test('saved alignment applies to both spare space and overflow at different zoom levels', async () => {
   const testData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
   const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true', spark_wallpaper_zoom: '50', spark_wallpaper_pos: '100,0' });
   f.idbStore.set('current', testData);
@@ -415,10 +441,10 @@ test('zoom 100% fills the area, lower zoom shows the whole picture centred and o
   Object.assign(image, { naturalWidth: 1000, naturalHeight: 1000 });
   await flushWallpaper();
   // At 100% a square picture covers a 1000x500 area, so it is 1000x1000 and cropped vertically.
-  // At 50% it is 500x500: fully visible and centred horizontally despite the saved x = 100%, since it fits.
+  // At 50% it is 500x500: fully visible and aligned to the right by the saved x = 100%.
   assert.equal(image.style.width, '500px');
   assert.equal(image.style.height, '500px');
-  assert.equal(image.style.left, '250px');
+  assert.equal(image.style.left, '500px');
   assert.equal(image.style.top, '0px');
   assert.equal(image.style.objectFit, 'fill');
   f.storage.set('spark_wallpaper_zoom', '100');
@@ -430,21 +456,183 @@ test('zoom 100% fills the area, lower zoom shows the whole picture centred and o
   assert.equal(image.style.top, '0px');
 });
 
-test('changing the zoom recenters the picture before it can be panned again', async () => {
-  const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true', spark_wallpaper_pos: '100,100' });
-  f.idbStore.set('current', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
-  Object.assign(f.nodes.get('wallpaper-container'), { clientWidth: 1000, clientHeight: 500 });
-  Object.assign(f.nodes.get('wallpaper-image'), { naturalWidth: 1000, naturalHeight: 1000 });
+test('a smaller image reaches all four corners and restores its alignment in another tab', async () => {
+  const preferences = { spark_wallpaper_enabled: 'true', spark_wallpaper_zoom: '70' };
+  function setup(fixture) {
+    fixture.idbStore.set('current', 'data:image/png;base64,landscape');
+    const frame = fixture.nodes.get('wallpaper-preview-wrap');
+    const preview = fixture.nodes.get('wallpaper-preview');
+    const image = fixture.nodes.get('wallpaper-image');
+    Object.assign(frame, { clientWidth: 400, clientHeight: 200 });
+    Object.assign(fixture.nodes.get('wallpaper-container'), { clientWidth: 1000, clientHeight: 500 });
+    for (const node of [preview, image]) Object.assign(node, { naturalWidth: 1000, naturalHeight: 500 });
+    return { frame, preview, image };
+  }
+
+  const f = createWallpaperFixture(preferences);
+  const { frame, preview, image } = setup(f);
   await flushWallpaper();
+  assert.equal(preview.style.left, '60px');
+  assert.equal(preview.style.top, '30px');
+
+  for (const [x, y] of [[0, 0], [100, 0], [0, 100], [100, 100]]) {
+    frame.listeners.pointerdown({ button: 0, pointerId: 1, clientX: 200, clientY: 100, preventDefault() {} });
+    frame.listeners.pointermove({ pointerId: 1, clientX: x ? 450 : -50, clientY: y ? 250 : -50, shiftKey: true });
+    assert.equal(preview.style.left, x ? '120px' : '0px');
+    assert.equal(preview.style.top, y ? '60px' : '0px');
+    assert.equal(image.style.left, x ? '300px' : '0px');
+    assert.equal(image.style.top, y ? '150px' : '0px');
+    frame.listeners.pointerup({ pointerId: 1, shiftKey: true });
+    assert.equal(f.storage.get('spark_wallpaper_pos'), `${x},${y}`);
+  }
+
+  const other = createWallpaperFixture(Object.fromEntries(f.storage));
+  const reopened = setup(other);
+  await flushWallpaper();
+  assert.equal(reopened.image.style.left, '300px');
+  assert.equal(reopened.image.style.top, '150px');
+  other.storage.set('spark_wallpaper_pos', '0,0');
+  other.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_pos' });
+  assert.equal(reopened.image.style.left, '0px');
+  assert.equal(reopened.image.style.top, '0px');
+});
+
+test('wheel zoom and pointer drag keep preview and background in sync and save the framing', async () => {
+  const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true', spark_wallpaper_pos: '80,80' });
+  f.idbStore.set('current', 'data:image/png;base64,portrait');
+  const frame = f.nodes.get('wallpaper-preview-wrap');
+  const background = f.nodes.get('wallpaper-container');
   const image = f.nodes.get('wallpaper-image');
-  // The saved corner position (100%, 100%) shows the bottom right: 1000x1000 in a 1000x500 area.
-  assert.equal(image.style.top, '-500px');
-  const zoom = f.nodes.get('wallpaper-zoom');
-  zoom.listeners.input({ target: { value: '200' } });
-  // 200% is 2000x2000, centred in the area: the same amount cropped on every side.
-  assert.equal(image.style.left, '-500px');
-  assert.equal(image.style.top, '-750px');
-  zoom.listeners.change({ target: { value: '200' } });
+  const preview = f.nodes.get('wallpaper-preview');
+  Object.assign(background, { clientWidth: 1000, clientHeight: 500 });
+  Object.assign(frame, { clientWidth: 400, clientHeight: 200 });
+  for (const node of [image, preview]) Object.assign(node, { naturalWidth: 1000, naturalHeight: 1250 });
+  await flushWallpaper();
+
+  let prevented = 0;
+  const preventDefault = () => prevented++;
+  frame.listeners.wheel({ deltaY: -20, deltaMode: 0, preventDefault });
+  frame.listeners.wheel({ deltaY: -20, deltaMode: 0, preventDefault });
+  assert.equal(prevented, 2);
+  assert.equal(f.nodes.get('wallpaper-zoom-val').textContent, '105%');
+  assert.equal(image.style.top, '-650px');
+  assert.equal(preview.style.top, '-260px');
+  assert.equal(f.storage.has('spark_wallpaper_zoom'), false);
+  await delay(200);
+  assert.equal(f.storage.get('spark_wallpaper_zoom'), '105');
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '80,80');
+
+  frame.listeners.pointerdown({ button: 0, pointerId: 1, clientX: 120, clientY: 100, preventDefault });
+  frame.listeners.pointermove({ pointerId: 1, clientX: 300, clientY: 165 });
+  assert.equal(frame.focused, true);
+  assert.equal(preview.style.left, '0px');
+  assert.equal(image.style.top, '-487.5px');
+  assert.equal(preview.style.top, '-195px');
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '80,80');
+  frame.listeners.pointerup({ pointerId: 1 });
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '0,60');
+
+  Object.assign(background, { clientWidth: 500, clientHeight: 1000 });
+  Object.assign(frame, { clientWidth: 150, clientHeight: 300 });
+  f.window.dispatchEvent({ type: 'resize' });
+  assert.equal(frame.style.properties['--wallpaper-aspect'], '0.5');
+  assert.equal(preview.style.top, '-9px');
+  assert.equal(image.style.top, '-30px');
+});
+
+test('Shift snaps each axis independently and saves the shown position for spare space or overflow', async () => {
+  for (const [zoom, roomX, roomY] of [[70, 120, 60], [150, -200, -100]]) {
+    const f = createWallpaperFixture({
+      spark_wallpaper_enabled: 'true', spark_wallpaper_zoom: String(zoom), spark_wallpaper_pos: '25,75'
+    });
+    f.idbStore.set('current', 'data:image/png;base64,landscape');
+    const frame = f.nodes.get('wallpaper-preview-wrap');
+    const preview = f.nodes.get('wallpaper-preview');
+    const image = f.nodes.get('wallpaper-image');
+    Object.assign(frame, { clientWidth: 400, clientHeight: 200 });
+    Object.assign(f.nodes.get('wallpaper-container'), { clientWidth: 1000, clientHeight: 500 });
+    for (const node of [preview, image]) Object.assign(node, { naturalWidth: 1000, naturalHeight: 500 });
+    await flushWallpaper();
+
+    const key = (type, shiftKey) => f.window.dispatchEvent({ type, key: 'Shift', shiftKey });
+    const move = (dx, dy, shiftKey) => frame.listeners.pointermove({
+      pointerId: 1, clientX: 200 + roomX / 4 + dx, clientY: 100 - roomY / 4 + dy, shiftKey
+    });
+    const near = (actual, expected) => assert.ok(Math.abs(Number.parseFloat(actual) - expected) < 1e-6);
+    frame.listeners.pointerdown({ button: 0, pointerId: 1, clientX: 200, clientY: 100, preventDefault() {} });
+    move(8, 9, false);
+    near(preview.style.left, roomX / 2 + 8);
+    key('keydown', true);
+    near(preview.style.left, roomX / 2);
+    near(preview.style.top, roomY / 2 + 9);
+    assert.equal(frame.classList.contains('snap-center-x'), true);
+    assert.equal(frame.classList.contains('snap-center-y'), false);
+
+    move(-9, 4, true);
+    near(preview.style.left, roomX / 2 - 9);
+    near(preview.style.top, roomY / 2);
+    assert.equal(frame.classList.contains('snap-center-x'), false);
+    assert.equal(frame.classList.contains('snap-center-y'), true);
+
+    move(4, -4, true);
+    near(image.style.left, roomX * 1.25);
+    near(image.style.top, roomY * 1.25);
+    assert.equal(frame.classList.contains('snap-center-x'), true);
+    assert.equal(frame.classList.contains('snap-center-y'), true);
+    key('keyup', false);
+    near(preview.style.left, roomX / 2 + 4);
+    near(preview.style.top, roomY / 2 - 4);
+    key('keydown', true);
+    frame.listeners.pointerup({ pointerId: 1, shiftKey: true });
+    assert.equal(f.storage.get('spark_wallpaper_pos'), '50,50');
+    assert.equal(frame.classList.contains('snap-center-x'), false);
+    assert.equal(frame.classList.contains('snap-center-y'), false);
+    f.storage.set('spark_wallpaper_pos', '50,50');
+    f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_pos' });
+    near(preview.style.left, roomX / 2);
+    near(preview.style.top, roomY / 2);
+
+    f.storage.set('spark_wallpaper_zoom', '99');
+    f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_zoom' });
+    f.storage.set('spark_wallpaper_pos', '65,65');
+    f.window.dispatchEvent({ type: 'storage', key: 'spark_wallpaper_pos' });
+    frame.listeners.pointerdown({ button: 0, pointerId: 1, clientX: 200, clientY: 100, shiftKey: true, preventDefault() {} });
+    frame.listeners.pointerup({ pointerId: 1, shiftKey: true });
+    assert.equal(f.storage.get('spark_wallpaper_pos'), '65,65');
+    frame.listeners.pointerdown({ button: 0, pointerId: 1, clientX: 200, clientY: 100, shiftKey: true, preventDefault() {} });
+    frame.listeners.pointermove({ pointerId: 1, clientX: 202, clientY: 101, shiftKey: true });
+    assert.equal(frame.classList.contains('snap-center-x'), false);
+    assert.equal(frame.classList.contains('snap-center-y'), false);
+    frame.listeners.pointerup({ pointerId: 1, shiftKey: true });
+    assert.equal(f.storage.get('spark_wallpaper_pos'), '100,100');
+  }
+});
+
+test('keyboard framing follows the arrows with spare space, overflow, or an exact fit', async () => {
+  const f = createWallpaperFixture({ spark_wallpaper_enabled: 'true', spark_wallpaper_zoom: '25' });
+  f.idbStore.set('current', 'data:image/png;base64,landscape');
+  const frame = f.nodes.get('wallpaper-preview-wrap');
+  Object.assign(frame, { clientWidth: 300, clientHeight: 200 });
+  Object.assign(f.nodes.get('wallpaper-preview'), { naturalWidth: 1000, naturalHeight: 500 });
+  await flushWallpaper();
+  const key = key => frame.listeners.keydown({ key, preventDefault() {} });
+  key('-');
+  assert.equal(f.storage.get('spark_wallpaper_zoom'), '25');
+  key('ArrowLeft');
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '45,50');
+  key('ArrowDown');
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '45,55');
+  f.storage.set('spark_wallpaper_zoom', '90'); // 360x180 in a 300x200 preview.
+  key('ArrowLeft');
+  key('ArrowUp');
   assert.equal(f.storage.get('spark_wallpaper_pos'), '50,50');
-  assert.equal(f.storage.get('spark_wallpaper_zoom'), '200');
+  f.storage.set('spark_wallpaper_zoom', '100');
+  key('ArrowLeft');
+  key('ArrowUp');
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '55,50');
+  f.storage.set('spark_wallpaper_zoom', '295');
+  key('+');
+  key('+');
+  assert.equal(f.storage.get('spark_wallpaper_zoom'), '300');
+  assert.equal(f.storage.get('spark_wallpaper_pos'), '55,50');
 });
