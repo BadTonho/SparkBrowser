@@ -29,6 +29,7 @@ export const ICON_PATHS: Record<string, string> = {
   "status-online": "M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z",
   leaf: "M5 21c0-7 5-12 14-14-1 9-6 14-14 14Zm0 0 8-8",
   briefcase: "M3 7h18v12H3Z M9 7V4h6v3M3 12h18",
+  user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9c0-3.9 3.1-7 7-7s7 3.1 7 7",
   books: "M4 4h4v16H4Zm6 0h4v16h-4Zm6 2 4 1-3.5 13-4-1Z",
   gamepad: "M6 8h12a4 4 0 0 1 4 4v1a3 3 0 0 1-5.4 1.8L15 14h-6l-1.6 1.8A3 3 0 0 1 2 13v-1a4 4 0 0 1 4-4Zm-3 4h3m-1.5-1.5v3M15 11h.01M17 13h.01",
   bell: "M6 16v-5a6 6 0 0 1 12 0v5l2 2H4Zm4 3a2 2 0 0 0 4 0",

@@ -11,11 +11,13 @@ pub use service::UpdateService;
 #[cfg(windows)]
 pub use windows::{download, install};
 
-/// Updates only exist for the installed Windows x64 release of the normal profile.
+/// Updates only exist for the installed Windows x64 release, and only the Default profile installs them:
+/// two profiles open at once must not run the same installer.
 pub(crate) fn platform_supported(app: &tauri::AppHandle) -> bool {
     cfg!(all(windows, target_arch = "x86_64", not(debug_assertions)))
         && app.config().identifier == "org.spark.browser"
         && !is_portable()
+        && crate::profiles::is_default_profile(app)
 }
 
 /// The portable zip ships a `portable.txt` next to the executable. Updates run the installer, which

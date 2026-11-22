@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { loadProfiles, profiles } from "../../stores/profilesStore";
   import RuntimeSettings from "./RuntimeSettings.svelte";
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { t, formatDate, formatNumber } from "../../i18n";
@@ -24,6 +26,9 @@
   });
   function openRepository() { void createNewTab(REPOSITORY_URL).catch(logIgnored); }
   function date(timestamp: number) { return $formatDate(timestamp * 1000, { dateStyle: "medium", timeStyle: "short" }); }
+  // A profile other than the Default one does not install updates: say so instead of a dead button.
+  const otherProfile = $derived(!!$profiles && $profiles.current !== "default");
+  onMount(() => { void loadProfiles(); });
 </script>
 
 <section class="setting-group" aria-labelledby="updates-heading">
@@ -50,6 +55,7 @@
   {#if $updateState.channel === "stable" && $updateState.current_version.includes("-beta.")}
     <p>{$t("settings.you_will_stay_on_this_beta_until_a_newer_stable_release_is_available_cha_2ff7")}</p>
   {/if}
+  {#if otherProfile}<p role="note" data-testid="updates-other-profile">{$t("profiles.updates_note")}</p>{/if}
   <p role="status" aria-live="polite">{status}</p>
   <p>{$t("settings.last_check_4941")} {$updateState.last_checked ? date($updateState.last_checked) : $t("settings.not_checked_yet_881d")}</p>
   {#if $updateState.error || $updateActionError}<ErrorMessage error={$updateActionError || $updateState.error} />{/if}

@@ -7,6 +7,7 @@
 - **Salvar o que você digita:** depois de enviar um formulário de login, pagamento ou endereço, o Spark pergunta se deve salvar (ou atualizar uma senha alterada). Só pergunta com o cofre desbloqueado, nunca em janelas privadas, e não repete uma pergunta que você recusou.
 - Seção **Preenchimento automático e senhas** nas Configurações, com **Pagamentos** (cartões salvos; o código de segurança nunca é guardado e abrir um cartão pede a senha mestra ou o Windows Hello) e **Dados de contato** (nomes, e-mails, telefones e endereços), ambos guardados no cofre criptografado junto das senhas.
 - Arraste uma aba para fora da janela do navegador e solte para abri-la em uma nova janela, posicionada onde você soltou.
+- **Perfis:** as Configurações ganharam uma seção Perfis para criar perfis separados, cada um com o próprio histórico, favoritos, cookies, logins, cofre de senhas e configurações, e abri-los em janelas próprias (vários ao mesmo tempo). Dá para renomear e apagar; um perfil diferente do Padrão mostra o nome no título da janela. As atualizações são instaladas pelo perfil Padrão.
 - **Códigos 2FA opcionais no gerenciador de senhas:** um login pode guardar o segredo de dois fatores (cole a chave de configuração ou o link `otpauth://` que o site mostra, ou leia o QR code de uma imagem) e o código de seis dígitos aparece junto da senha, com contagem regressiva e botão de copiar. O segredo é cifrado junto com o login e o código é calculado pelo navegador. Logins sem ele continuam iguais.
 
 ## Melhorias

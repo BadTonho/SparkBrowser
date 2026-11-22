@@ -16,6 +16,24 @@ mod platform;
 #[path = "platform_other.rs"]
 mod platform;
 
+static PROFILE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+/// Names the key pair after the profile this process runs, so two profiles never share (or replace)
+/// one Windows Hello key. The Default profile keeps the name it has always had, so nothing migrates.
+pub fn use_profile(id: Option<&str>) {
+    if let Some(id) = id {
+        crate::error_log::ignored(PROFILE.set(id.to_string()));
+    }
+}
+
+/// The name of the key pair in the user's Windows profile.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn credential_name(base: &str) -> String {
+    match PROFILE.get() {
+        Some(id) => format!("{base}-{id}"),
+        None => base.to_string(),
+    }
+}
 #[derive(Debug, PartialEq, Eq)]
 pub enum HelloError {
     /// The person closed the Windows prompt, or chose another way to sign in.

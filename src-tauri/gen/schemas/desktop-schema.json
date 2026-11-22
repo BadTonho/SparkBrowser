@@ -345,6 +345,12 @@
           "markdownDescription": "Enables the create_private_tab command without any pre-configured scope."
         },
         {
+          "description": "Enables the create_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-create-profile",
+          "markdownDescription": "Enables the create_profile command without any pre-configured scope."
+        },
+        {
           "description": "Enables the create_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-create-tab",
@@ -391,6 +397,12 @@
           "type": "string",
           "const": "allow-delete-page-note",
           "markdownDescription": "Enables the delete_page_note command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-profile",
+          "markdownDescription": "Enables the delete_profile command without any pre-configured scope."
         },
         {
           "description": "Enables the delete_site_search_shortcut command without any pre-configured scope.",
@@ -813,6 +825,12 @@
           "markdownDescription": "Enables the install_update command without any pre-configured scope."
         },
         {
+          "description": "Enables the list_profiles command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-list-profiles",
+          "markdownDescription": "Enables the list_profiles command without any pre-configured scope."
+        },
+        {
           "description": "Enables the load_unpacked_extension command without any pre-configured scope.",
           "type": "string",
           "const": "allow-load-unpacked-extension",
@@ -853,6 +871,12 @@
           "type": "string",
           "const": "allow-open-private-window",
           "markdownDescription": "Enables the open_private_window command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-profile",
+          "markdownDescription": "Enables the open_profile command without any pre-configured scope."
         },
         {
           "description": "Enables the open_whatsapp_window command without any pre-configured scope.",
@@ -949,6 +973,12 @@
           "type": "string",
           "const": "allow-rename-named-session",
           "markdownDescription": "Enables the rename_named_session command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the rename_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-rename-profile",
+          "markdownDescription": "Enables the rename_profile command without any pre-configured scope."
         },
         {
           "description": "Enables the reopen_closed_tab command without any pre-configured scope.",
@@ -1803,6 +1833,12 @@
           "markdownDescription": "Denies the create_private_tab command without any pre-configured scope."
         },
         {
+          "description": "Denies the create_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-create-profile",
+          "markdownDescription": "Denies the create_profile command without any pre-configured scope."
+        },
+        {
           "description": "Denies the create_tab command without any pre-configured scope.",
           "type": "string",
           "const": "deny-create-tab",
@@ -1849,6 +1885,12 @@
           "type": "string",
           "const": "deny-delete-page-note",
           "markdownDescription": "Denies the delete_page_note command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-profile",
+          "markdownDescription": "Denies the delete_profile command without any pre-configured scope."
         },
         {
           "description": "Denies the delete_site_search_shortcut command without any pre-configured scope.",
@@ -2271,6 +2313,12 @@
           "markdownDescription": "Denies the install_update command without any pre-configured scope."
         },
         {
+          "description": "Denies the list_profiles command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-list-profiles",
+          "markdownDescription": "Denies the list_profiles command without any pre-configured scope."
+        },
+        {
           "description": "Denies the load_unpacked_extension command without any pre-configured scope.",
           "type": "string",
           "const": "deny-load-unpacked-extension",
@@ -2311,6 +2359,12 @@
           "type": "string",
           "const": "deny-open-private-window",
           "markdownDescription": "Denies the open_private_window command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-profile",
+          "markdownDescription": "Denies the open_profile command without any pre-configured scope."
         },
         {
           "description": "Denies the open_whatsapp_window command without any pre-configured scope.",
@@ -2407,6 +2461,12 @@
           "type": "string",
           "const": "deny-rename-named-session",
           "markdownDescription": "Denies the rename_named_session command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the rename_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-rename-profile",
+          "markdownDescription": "Denies the rename_profile command without any pre-configured scope."
         },
         {
           "description": "Denies the reopen_closed_tab command without any pre-configured scope.",

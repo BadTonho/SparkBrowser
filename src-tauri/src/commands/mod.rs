@@ -9,6 +9,7 @@ pub mod notes;
 pub mod persistence;
 pub mod privacy;
 pub mod privacy_settings;
+pub mod profiles;
 pub mod saved_sessions;
 pub mod shortcuts;
 pub mod site_permissions;

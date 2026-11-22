@@ -245,7 +245,7 @@ export async function runScenario(name, scenario) {
   async function startDriver() {
     driverError = undefined;
     driverStderr = '';
-    driver = spawn(driverPath, args, { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: { ...process.env, SPARK_NATIVE_TEST_RUN_DIR: directory, SPARK_NATIVE_REAL_PROFILES: name === 'account-containers' ? '1' : '0' }, detached: process.platform !== 'win32' });
+    driver = spawn(driverPath, args, { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: { ...process.env, SPARK_NATIVE_TEST_RUN_DIR: directory, SPARK_NATIVE_REAL_PROFILES: ['account-containers', 'profiles'].includes(name) ? '1' : '0' }, detached: process.platform !== 'win32' });
     driver.stderr.on('data', chunk => { driverStderr = (driverStderr + chunk.toString()).slice(-8192); });
     driver.on('error', error => { driverError = error; });
     driver.on('exit', (code, signal) => { const hint = /cannotfindbinarypath|can not find binary/i.test(driverStderr) ? '; native WebDriver not found: install the matching driver or set SPARK_NATIVE_DRIVER' : ''; driverError = new Error(`Scenario driver exited (${code ?? signal})${hint}`); });

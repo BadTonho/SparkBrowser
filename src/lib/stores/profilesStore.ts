@@ -1,0 +1,71 @@
+import { get, writable } from "svelte/store";
+import { createProfile, deleteProfile, listProfiles, openProfile, renameProfile } from "../services/bridge/profiles";
+import { isTauriRuntime } from "../services/bridge/runtime";
+import { profileError } from "../services/profiles/errors.js";
+import type { MessageKey } from "../i18n";
+import type { ProfileInfo, ProfileList } from "../types/profiles";
+
+/** The profiles on this computer and which one this window runs (null until the backend answered). */
+export const profiles = writable<ProfileList | null>(null);
+export const profilesBusy = writable(false);
+/** The last thing that went wrong, as a message key; cleared by the next action. */
+export const profilesFailure = writable<MessageKey | null>(null);
+/** A short confirmation of the last successful action. */
+export const profilesNotice = writable<"opened" | null>(null);
+
+async function run<T>(work: () => Promise<T>): Promise<T | undefined> {
+  profilesBusy.set(true);
+  profilesFailure.set(null);
+  profilesNotice.set(null);
+  try {
+    return await work();
+  } catch (error) {
+    profilesFailure.set(profileError(error).key as MessageKey);
+    return undefined;
+  } finally {
+    profilesBusy.set(false);
+  }
+}
+
+export async function loadProfiles(): Promise<void> {
+  if (!isTauriRuntime()) return;
+  const list = await run(listProfiles);
+  if (list) profiles.set(list);
+}
+
+async function reload(): Promise<void> {
+  try {
+    profiles.set(await listProfiles());
+  } catch (error) {
+    profilesFailure.set(profileError(error).key as MessageKey);
+  }
+}
+
+export async function addProfile(name: string): Promise<ProfileInfo | undefined> {
+  const created = await run(() => createProfile(name));
+  if (created) await reload();
+  return created;
+}
+
+export async function changeProfileName(id: string, name: string): Promise<boolean> {
+  const renamed = await run(() => renameProfile(id, name));
+  if (renamed) await reload();
+  return renamed !== undefined;
+}
+
+export async function removeProfile(id: string): Promise<boolean> {
+  const done = await run(async () => { await deleteProfile(id); return true; });
+  await reload();
+  return done === true;
+}
+
+export async function openProfileWindow(id: string): Promise<boolean> {
+  const done = await run(async () => { await openProfile(id); return true; });
+  if (done) profilesNotice.set("opened");
+  return done === true;
+}
+
+export function currentProfile(): ProfileInfo | undefined {
+  const list = get(profiles);
+  return list?.items.find(item => item.id === list.current);
+}

@@ -12,6 +12,7 @@ import ChangelogSettings from "./ChangelogSettings.svelte";
 import NavigationSettings from "./NavigationSettings.svelte";
 import PerformanceSettings from "./PerformanceSettings.svelte";
 import DownloadSettings from "./DownloadSettings.svelte";
+import ProfilesSettings from "./ProfilesSettings.svelte";
 import PrivacySecuritySettings from "./PrivacySecuritySettings.svelte";
 import ShortcutSettings from "./ShortcutSettings.svelte";
   import DiagnosticsSettings from "./DiagnosticsSettings.svelte";
@@ -325,6 +326,8 @@ function handleWindowMousedown(event: MouseEvent): void {
             <PerformanceSettings />
           {:else if $activeSettingsCategory === "privacy_security"}
             <PrivacySecuritySettings />
+          {:else if $activeSettingsCategory === "profiles"}
+            <ProfilesSettings />
           {:else if $activeSettingsCategory === "passwords"}
             <PasswordSettings />
           {:else if $activeSettingsCategory === "downloads"}

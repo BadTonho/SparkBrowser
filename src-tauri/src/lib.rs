@@ -23,6 +23,9 @@ use commands::network::{get_network_status, restart_for_network, set_doh_provide
 use commands::new_tab::set_new_tab_preferences;
 use commands::panels::prepare_panel;
 use commands::private_session::{get_private_window_state, open_private_window};
+use commands::profiles::{
+    create_profile, delete_profile, list_profiles, open_profile, rename_profile,
+};
 use commands::resources::{
     get_resource_usage, set_resource_limits, set_resource_monitor, set_tab_memory_levels,
 };
@@ -60,6 +63,7 @@ mod native_tests;
 pub mod network;
 pub mod privacy;
 pub mod private_session;
+pub mod profiles;
 pub mod recovery;
 pub mod resources;
 pub mod search_engines;
@@ -172,11 +176,29 @@ pub fn run() {
     let mut context = tauri::generate_context!();
     native_tests::configure(&mut context).expect("invalid native test directory");
     let role = private_session::PrivateRole::from_mode(mode);
+    // Private windows are not profiles: they ignore `--profile`.
+    let profile_id = if role.is_private() {
+        None
+    } else {
+        profiles::requested_id().expect("invalid profile argument")
+    };
+    // Where the Default profile lives, read before any directory is redirected.
+    let (Some(local_root), Some(default_data)) = (
+        profiles::local_root(context.config()),
+        graphics::data_directory(context.config()),
+    ) else {
+        eprintln!("Spark startup failed: application data directory is unavailable");
+        return;
+    };
+    profiles::configure(&mut context, profile_id.as_deref(), &local_root);
     private_session::configure(&mut context, role.launch());
     // Move a profile created under the old name before any webview opens it.
-    if !role.is_private() {
+    if !role.is_private() && profile_id.is_none() {
         legacy::migrate_profile(&context.config().identifier);
     }
+    // Each profile has its own Windows Hello key, so two profiles never replace each other's.
+    vault::hello::use_profile(profile_id.as_deref());
+    let profile_role = profiles::ProfileRole::new(profile_id.as_deref(), local_root, default_data);
     let Some(data_directory) = graphics::data_directory(context.config()) else {
         eprintln!("Spark startup failed: application data directory is unavailable");
         return;
@@ -230,6 +252,7 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_dialog::init())
         .manage(role)
+        .manage(profile_role)
         .manage(profile_lock)
         .manage(graphics_service)
         .manage(BrowserState::default())
@@ -379,6 +402,7 @@ pub fn run() {
             } else {
                 private_session::purge_stale_sessions(app.handle())
                     .map_err(std::io::Error::other)?;
+                commands::profiles::refresh_title(app.handle());
             }
             let filter_cache = data_directory.join("filter-lists").join("last-valid.json");
             let prepare_filters = std::thread::Builder::new()
@@ -741,6 +765,11 @@ pub fn run() {
             vault_copy_text,
             vault_totp_code,
             vault_scan_qr,
+            list_profiles,
+            create_profile,
+            rename_profile,
+            delete_profile,
+            open_profile,
             close_tabs_reviewed,
             set_split_view,
             dock_tab_to_split,
