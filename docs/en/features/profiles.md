@@ -16,6 +16,14 @@ Open **Settings → Profiles** to manage them.
 
 Windows of a profile other than the Default one show the profile name in their title ("Spark - Work").
 
+## Choosing a profile when Spark starts
+
+- The first time you have more than one profile, Spark starts with a small window that asks **which profile to open**. Pick one and Spark opens it in its own window. Starting Spark with a single profile never asks.
+- The window has **Always ask when Spark starts**. Left off, the next starts open the profile you chose last, with no window in between. Turned on, the window shows every time. You can change this later in **Settings → Profiles → Ask which profile to open when Spark starts**.
+- If the profile you chose last was deleted, Spark asks again.
+- Starting a profile directly (for example from a shortcut with `--profile <id>`) skips the question.
+- The window only asks: it has no history, tabs or settings of its own, and it keeps its own small folder (`launcher`) away from every profile.
+
 ## Good to know
 
 - **Updates are installed by the Default profile.** Two profiles open at once must not run the same installer, so other profiles do not install updates; their **About & Updates** page says updates are not available there. Open the Default profile now and then to keep Spark up to date.

@@ -184,9 +184,10 @@ export async function runScenario(name, scenario) {
     if (result.error) throw new Error(`${command}: ${result.error}`);
     return result.value;
   }
-  async function openSession() {
+  // The profile picker has no profile: its WebView data lives in its own folder, which is where the driver must look.
+  async function openSession({ launcher = false } = {}) {
     const options = { application: binary };
-    if (process.platform === 'win32') options.webviewOptions = { userDataFolder: resolve(directory, 'profile'), additionalBrowserArguments: ['--use-fake-device-for-media-stream', ...(name.startsWith('media') ? ['--autoplay-policy=no-user-gesture-required'] : [])] };
+    if (process.platform === 'win32') options.webviewOptions = { userDataFolder: resolve(directory, 'profile', ...(launcher ? ['launcher', 'profile'] : [])), additionalBrowserArguments: ['--use-fake-device-for-media-stream', ...(name.startsWith('media') ? ['--autoplay-policy=no-user-gesture-required'] : [])] };
     const result = await request('POST', '/session', { capabilities: { alwaysMatch: { 'tauri:options': options } } });
     session = result.sessionId;
     // A local new-tab child can become WebDriver's initial target. Select the shell explicitly.
@@ -195,7 +196,7 @@ export async function runScenario(name, scenario) {
       for (const handle of handles) {
         try {
           await request('POST', `/session/${session}/window`, { handle });
-          if (await script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))')) { shellWebview = handle; return true; }
+          if (await script(launcher ? 'return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector("[data-testid=profile-picker]"))' : 'return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".browser-root"))')) { shellWebview = handle; return true; }
         } catch (error) {
           if (!/no such window|web view not found/i.test(String(error))) throw error;
         }
@@ -203,6 +204,8 @@ export async function runScenario(name, scenario) {
       return false;
     }, 'isolated test shell');
     await request('POST', `/session/${session}/timeouts`, { script: 30_000, implicit: 0, pageLoad: 30_000 });
+    // The profile picker is not the browser: it never becomes ready and has no tabs to wait for.
+    if (launcher) return;
     // Never operate on the user's production profile if a wrong binary was supplied.
     const diagnostics = await invoke('get_diagnostics');
     assert.equal(diagnostics.application_identifier, 'org.spark.browser.native-tests');
@@ -245,7 +248,7 @@ export async function runScenario(name, scenario) {
   async function startDriver() {
     driverError = undefined;
     driverStderr = '';
-    driver = spawn(driverPath, args, { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: { ...process.env, SPARK_NATIVE_TEST_RUN_DIR: directory, SPARK_NATIVE_REAL_PROFILES: ['account-containers', 'profiles'].includes(name) ? '1' : '0' }, detached: process.platform !== 'win32' });
+    driver = spawn(driverPath, args, { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: { ...process.env, SPARK_NATIVE_TEST_RUN_DIR: directory, SPARK_NATIVE_REAL_PROFILES: ['account-containers', 'profiles', 'profile-picker'].includes(name) ? '1' : '0' }, detached: process.platform !== 'win32' });
     driver.stderr.on('data', chunk => { driverStderr = (driverStderr + chunk.toString()).slice(-8192); });
     driver.on('error', error => { driverError = error; });
     driver.on('exit', (code, signal) => { const hint = /cannotfindbinarypath|can not find binary/i.test(driverStderr) ? '; native WebDriver not found: install the matching driver or set SPARK_NATIVE_DRIVER' : ''; driverError = new Error(`Scenario driver exited (${code ?? signal})${hint}`); });
@@ -260,7 +263,7 @@ export async function runScenario(name, scenario) {
       await wait(250);
     }
   }
-  async function restart({ crash = false, beforeStart, expectFailure = false } = {}) {
+  async function restart({ crash = false, beforeStart, expectFailure = false, launcher = false } = {}) {
     if (session && !crash) {
       await invoke('get_history', { limit: 10 });
       await script(`window.__TAURI_INTERNALS__.invoke('plugin:window|close', { label: 'main' }); return null;`).catch(() => {});
@@ -288,7 +291,7 @@ export async function runScenario(name, scenario) {
     session = undefined;
     await beforeStart?.(directory);
     await startDriver();
-    if (!expectFailure) return openSession();
+    if (!expectFailure) return openSession({ launcher });
     let failure;
     try { await openSession(); } catch (error) { failure = error; }
     await stopDriver(); session = undefined;
@@ -299,7 +302,7 @@ export async function runScenario(name, scenario) {
     fixture = await createFixture();
     await startDriver();
     await openSession();
-    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, openSettings, closeSettings, floatingWindow, sessionId: () => session, restart, directory, ownCleanup: cleanup => resourceCleanups.push(cleanup) });
+    await scenario({ invoke, until, fixture, script, click, wait, screenshot, request, withWebview, resizeWindow, focusWindow, openSettings, closeSettings, floatingWindow, sessionId: () => session, forgetSession: () => { session = undefined; }, restart, directory, ownCleanup: cleanup => resourceCleanups.push(cleanup) });
     if (process.env.SPARK_NATIVE_FAIL_CASE === name) throw new Error('Intentional failure to verify finally cleanup');
   } catch (error) {
     failure = error;

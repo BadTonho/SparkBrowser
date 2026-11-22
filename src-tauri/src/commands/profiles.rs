@@ -1,8 +1,8 @@
 //! Commands of the profiles section in Settings. Only the trusted shell reaches them; private windows
 //! refuse them (a private window is not a profile).
 use crate::error_log::{self, Level};
-use crate::profiles::store::{self, ProfileInfo, MAX_PROFILES};
-use crate::profiles::{launch, ProfileRole};
+use crate::profile::store::{self, ProfileInfo, MAX_PROFILES};
+use crate::profile::{launch, launcher, ProfileRole};
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 
@@ -142,4 +142,115 @@ pub fn refresh_title(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         error_log::ignored(window.set_title(&format!("Spark - {}", profile.name)));
     }
+}
+
+#[derive(Serialize)]
+pub struct LaunchState {
+    /// `"picker"` while this process only asks which profile to open, `"browser"` otherwise.
+    pub mode: &'static str,
+}
+
+/// What this process is for. It answers before start-up is ready, so the first screen can choose
+/// between the browser and the profile picker.
+#[tauri::command]
+pub fn get_launch_state(role: State<'_, ProfileRole>) -> LaunchState {
+    LaunchState {
+        mode: if role.is_picker() {
+            "picker"
+        } else {
+            "browser"
+        },
+    }
+}
+
+#[derive(Serialize)]
+pub struct PickerState {
+    pub profiles: Vec<ProfileInfo>,
+    pub ask_every_time: bool,
+    pub last_profile: Option<String>,
+}
+
+/// The list the picker shows. Only the picker process answers.
+#[tauri::command]
+pub async fn get_picker_state(role: State<'_, ProfileRole>) -> Result<PickerState, String> {
+    require_picker(&role)?;
+    let role = role.inner().clone();
+    blocking("listing the profiles for the picker", move || {
+        let prefs = launcher::load(role.local_root());
+        Ok(PickerState {
+            profiles: store::list(role.local_root()),
+            ask_every_time: prefs.ask_every_time,
+            last_profile: prefs.last_profile,
+        })
+    })
+    .await
+}
+
+fn require_picker(role: &ProfileRole) -> Result<(), String> {
+    if role.is_picker() {
+        return Ok(());
+    }
+    error_log::report(
+        Level::Warning,
+        "profiles",
+        "a picker command was refused: this process is not the profile picker",
+        "",
+    );
+    Err("profile.not_picker".into())
+}
+
+/// Opens the chosen profile in its own process, remembers the choice, and ends the picker.
+#[tauri::command]
+pub async fn choose_profile(
+    app: AppHandle,
+    role: State<'_, ProfileRole>,
+    id: String,
+    ask_every_time: bool,
+) -> Result<(), String> {
+    require_picker(&role)?;
+    let role = role.inner().clone();
+    blocking("opening the chosen profile", move || {
+        launcher::remember(role.local_root(), &id, ask_every_time)?;
+        launch::open(&role, &id)
+    })
+    .await?;
+    app.exit(0);
+    Ok(())
+}
+
+#[derive(Serialize)]
+pub struct LauncherPrefs {
+    pub ask_every_time: bool,
+}
+
+#[tauri::command]
+pub async fn get_launcher_prefs(
+    app: AppHandle,
+    role: State<'_, ProfileRole>,
+) -> Result<LauncherPrefs, String> {
+    allowed(&app)?;
+    let role = role.inner().clone();
+    blocking("reading the profile choice at start-up", move || {
+        Ok(LauncherPrefs {
+            ask_every_time: launcher::load(role.local_root()).ask_every_time,
+        })
+    })
+    .await
+}
+
+/// "Ask which profile to open when Spark starts". The profile chosen last stays remembered.
+#[tauri::command]
+pub async fn set_ask_profile_at_startup(
+    app: AppHandle,
+    role: State<'_, ProfileRole>,
+    enabled: bool,
+) -> Result<(), String> {
+    allowed(&app)?;
+    let role = role.inner().clone();
+    blocking("saving the profile choice at start-up", move || {
+        let mut prefs = launcher::load(role.local_root());
+        prefs.ask_every_time = enabled;
+        launcher::save(role.local_root(), &prefs)
+    })
+    .await
 }

@@ -35,7 +35,7 @@ tauri.conf.local.json
 *.sqlite3-journal
 .cache/
 user-data/
-/profiles/
+profiles/
 
 # =============================================================================
 # 2. RUST & TAURI BUILD ARTIFACTS

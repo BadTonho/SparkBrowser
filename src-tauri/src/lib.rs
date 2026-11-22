@@ -24,7 +24,8 @@ use commands::new_tab::set_new_tab_preferences;
 use commands::panels::prepare_panel;
 use commands::private_session::{get_private_window_state, open_private_window};
 use commands::profiles::{
-    create_profile, delete_profile, list_profiles, open_profile, rename_profile,
+    choose_profile, create_profile, delete_profile, get_launch_state, get_launcher_prefs,
+    get_picker_state, list_profiles, open_profile, rename_profile, set_ask_profile_at_startup,
 };
 use commands::resources::{
     get_resource_usage, set_resource_limits, set_resource_monitor, set_tab_memory_levels,
@@ -63,7 +64,7 @@ mod native_tests;
 pub mod network;
 pub mod privacy;
 pub mod private_session;
-pub mod profiles;
+pub mod profile;
 pub mod recovery;
 pub mod resources;
 pub mod search_engines;
@@ -177,28 +178,44 @@ pub fn run() {
     native_tests::configure(&mut context).expect("invalid native test directory");
     let role = private_session::PrivateRole::from_mode(mode);
     // Private windows are not profiles: they ignore `--profile`.
-    let profile_id = if role.is_private() {
+    let mut profile_id = if role.is_private() {
         None
     } else {
-        profiles::requested_id().expect("invalid profile argument")
+        profile::requested_id().expect("invalid profile argument")
     };
     // Where the Default profile lives, read before any directory is redirected.
     let (Some(local_root), Some(default_data)) = (
-        profiles::local_root(context.config()),
+        profile::local_root(context.config()),
         graphics::data_directory(context.config()),
     ) else {
         eprintln!("Spark startup failed: application data directory is unavailable");
         return;
     };
-    profiles::configure(&mut context, profile_id.as_deref(), &local_root);
+    // A start that names no profile opens the one chosen last, or asks which one (the first time there
+    // is a choice, and every time when the person wants that).
+    let picker = !role.is_private()
+        && !profile::profile_requested()
+        && match profile::launcher::startup(&local_root) {
+            profile::launcher::Startup::Picker => true,
+            profile::launcher::Startup::Profile(id) => {
+                profile_id = id;
+                false
+            }
+        };
+    if picker {
+        profile::configure_launcher(&mut context, &local_root);
+    } else {
+        profile::configure(&mut context, profile_id.as_deref(), &local_root);
+    }
     private_session::configure(&mut context, role.launch());
     // Move a profile created under the old name before any webview opens it.
-    if !role.is_private() && profile_id.is_none() {
+    if !role.is_private() && profile_id.is_none() && !picker {
         legacy::migrate_profile(&context.config().identifier);
     }
     // Each profile has its own Windows Hello key, so two profiles never replace each other's.
     vault::hello::use_profile(profile_id.as_deref());
-    let profile_role = profiles::ProfileRole::new(profile_id.as_deref(), local_root, default_data);
+    let profile_role = profile::ProfileRole::new(profile_id.as_deref(), local_root, default_data)
+        .with_picker(picker);
     let Some(data_directory) = graphics::data_directory(context.config()) else {
         eprintln!("Spark startup failed: application data directory is unavailable");
         return;
@@ -324,6 +341,13 @@ pub fn run() {
             }
             if window.label() == "main" {
                 if let WindowEvent::CloseRequested { api, .. } = event {
+                    // The profile picker has nothing to save: closing it just ends the process.
+                    if window
+                        .try_state::<profile::ProfileRole>()
+                        .is_some_and(|role| role.is_picker())
+                    {
+                        return;
+                    }
                     api.prevent_close();
                     if let Some(service) = window.try_state::<shutdown::ShutdownService>() {
                         crate::error_log::ignored(service.request(window.app_handle(), None));
@@ -388,6 +412,10 @@ pub fn run() {
             }
             let state = app.state::<BrowserState>();
             error_log::watch(app.handle());
+            if app.state::<profile::ProfileRole>().is_picker() {
+                // The profile picker is only a window with a list: no database, tabs or page content.
+                return Ok(());
+            }
 
             let data_directory = app.path().app_data_dir()?;
             window::ephemeral::purge_all_ephemeral_data(app.handle())
@@ -770,6 +798,11 @@ pub fn run() {
             rename_profile,
             delete_profile,
             open_profile,
+            get_launch_state,
+            get_picker_state,
+            choose_profile,
+            get_launcher_prefs,
+            set_ask_profile_at_startup,
             close_tabs_reviewed,
             set_split_view,
             dock_tab_to_split,

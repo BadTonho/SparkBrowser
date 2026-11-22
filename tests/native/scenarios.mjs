@@ -48,6 +48,7 @@ import { checkDarkModeProbe } from './dark-mode-probe.mjs';
 import { checkForcedDark } from './forced-dark.mjs';
 import { checkAutofill } from './autofill.mjs';
 import { checkProfiles } from './profiles.mjs';
+import { checkProfilePicker } from './profile-picker.mjs';
 import { checkVaultTotp } from './vault-totp.mjs';
 import { checkCaretBrowsing } from './caret-browsing.mjs';
 import { checkMinimumFontProbe } from './minimum-font-probe.mjs';
@@ -75,6 +76,7 @@ export const scenarios = {
   'forced-dark': checkForcedDark,
   'autofill': checkAutofill,
   'profiles': checkProfiles,
+  'profile-picker': checkProfilePicker,
   'vault-totp': checkVaultTotp,
   'caret-browsing': checkCaretBrowsing,
   'minimum-font-probe': checkMinimumFontProbe,

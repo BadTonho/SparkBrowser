@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { t } from "../../i18n";
   import {
-    addProfile, changeProfileName, loadProfiles, openProfileWindow, profiles, profilesBusy, profilesFailure, profilesNotice, removeProfile,
+    addProfile, askProfileAtStartup, changeAskAtStartup, changeProfileName, loadProfiles, loadStartupPrefs, openProfileWindow, profiles, profilesBusy, profilesFailure, profilesNotice, removeProfile,
   } from "../../stores/profilesStore";
   import type { ProfileInfo } from "../../types/profiles";
 
@@ -15,7 +15,7 @@
   const list = $derived($profiles);
   const current = $derived(list?.items.find(item => item.id === list.current));
 
-  onMount(() => { void loadProfiles(); });
+  onMount(() => { void loadProfiles(); void loadStartupPrefs(); });
 
   const label = (profile: ProfileInfo) => (profile.is_default ? $t("profiles.default_name") : profile.name);
 
@@ -88,6 +88,15 @@
           </div>
         {/if}
       {/each}
+    </div>
+
+    <div class="setting-row" id="setting-profile-startup" tabindex="-1">
+      <div class="row-text">
+        <span class="row-label">{$t("profiles.startup_label")}</span>
+        <span class="row-desc">{$t("profiles.startup_description")}</span>
+      </div>
+      <input type="checkbox" checked={$askProfileAtStartup} disabled={$profilesBusy} aria-label={$t("profiles.startup_label")}
+        onchange={event => void changeAskAtStartup(event.currentTarget.checked)} data-testid="profile-ask-startup" />
     </div>
 
     <form class="setting-row" id="setting-profile-new" tabindex="-1" onsubmit={create} data-testid="profile-new">

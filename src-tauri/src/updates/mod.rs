@@ -17,7 +17,7 @@ pub(crate) fn platform_supported(app: &tauri::AppHandle) -> bool {
     cfg!(all(windows, target_arch = "x86_64", not(debug_assertions)))
         && app.config().identifier == "org.spark.browser"
         && !is_portable()
-        && crate::profiles::is_default_profile(app)
+        && crate::profile::is_default_profile(app)
 }
 
 /// The portable zip ships a `portable.txt` next to the executable. Updates run the installer, which

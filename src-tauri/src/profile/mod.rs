@@ -8,6 +8,7 @@
 //! `profile.json` in each folder, so listing them is a folder scan and no file is shared between
 //! processes that could be written at the same time.
 pub mod launch;
+pub mod launcher;
 pub mod store;
 
 use std::path::{Path, PathBuf};
@@ -27,6 +28,8 @@ pub struct ProfileRole {
     local_root: PathBuf,
     /// The data folder of the Default profile (its lock and instance link live there).
     default_data: PathBuf,
+    /// This process only asks which profile to open (see `launcher`): it has no profile of its own.
+    picker: bool,
 }
 
 impl ProfileRole {
@@ -35,7 +38,17 @@ impl ProfileRole {
             id: id.unwrap_or(DEFAULT_ID).to_string(),
             local_root,
             default_data,
+            picker: false,
         }
+    }
+
+    pub fn with_picker(mut self, picker: bool) -> Self {
+        self.picker = picker;
+        self
+    }
+
+    pub fn is_picker(&self) -> bool {
+        self.picker
     }
 
     pub fn id(&self) -> &str {
@@ -72,6 +85,12 @@ pub fn requested_id() -> Result<Option<String>, String> {
     parse_id(&std::env::args().collect::<Vec<_>>())
 }
 
+/// Whether this launch named a profile at all (`--profile default` counts). A launch that did not
+/// leaves the choice to `launcher`.
+pub fn profile_requested() -> bool {
+    std::env::args().any(|arg| arg == FLAG)
+}
+
 fn parse_id(args: &[String]) -> Result<Option<String>, String> {
     let Some(position) = args.iter().position(|arg| arg == FLAG) else {
         return Ok(None);
@@ -102,6 +121,19 @@ pub fn configure(context: &mut tauri::Context<tauri::Wry>, id: Option<&str>, loc
         return;
     };
     let folder = store::folder(local_root, id);
+    context.config_mut().app.app_directories_override =
+        Some(AppDirectoriesOverride::Directories(AppDirectoryOverrides {
+            config: Some(folder.join("config")),
+            data: Some(folder.join("data")),
+            local_data: Some(folder.join("profile")),
+            cache: Some(folder.join("cache")),
+            log: Some(folder.join("logs")),
+        }));
+}
+
+/// Points every app directory of the profile picker into its own folder, away from every profile.
+pub fn configure_launcher(context: &mut tauri::Context<tauri::Wry>, local_root: &Path) {
+    let folder = local_root.join(launcher::LAUNCHER_DIR);
     context.config_mut().app.app_directories_override =
         Some(AppDirectoriesOverride::Directories(AppDirectoryOverrides {
             config: Some(folder.join("config")),

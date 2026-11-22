@@ -11,3 +11,10 @@ export interface ProfileList {
   items: ProfileInfo[];
   max: number;
 }
+
+/** What the profile picker shows when Spark starts. */
+export interface PickerState {
+  profiles: ProfileInfo[];
+  ask_every_time: boolean;
+  last_profile: string | null;
+}

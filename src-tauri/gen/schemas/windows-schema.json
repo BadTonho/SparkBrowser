@@ -237,6 +237,12 @@
           "markdownDescription": "Enables the choose_download_location command without any pre-configured scope."
         },
         {
+          "description": "Enables the choose_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-choose-profile",
+          "markdownDescription": "Enables the choose_profile command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-all-downloads",
@@ -627,6 +633,18 @@
           "markdownDescription": "Enables the get_installed_extensions command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_launch_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-launch-state",
+          "markdownDescription": "Enables the get_launch_state command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_launcher_prefs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-launcher-prefs",
+          "markdownDescription": "Enables the get_launcher_prefs command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_local_backup_state command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-local-backup-state",
@@ -649,6 +667,12 @@
           "type": "string",
           "const": "allow-get-page-note",
           "markdownDescription": "Enables the get_page_note command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_picker_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-picker-state",
+          "markdownDescription": "Enables the get_picker_state command without any pre-configured scope."
         },
         {
           "description": "Enables the get_privacy_settings command without any pre-configured scope.",
@@ -1099,6 +1123,12 @@
           "type": "string",
           "const": "allow-set-ask-download-destination",
           "markdownDescription": "Enables the set_ask_download_destination command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_ask_profile_at_startup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-ask-profile-at-startup",
+          "markdownDescription": "Enables the set_ask_profile_at_startup command without any pre-configured scope."
         },
         {
           "description": "Enables the set_auto_skip_ads command without any pre-configured scope.",
@@ -1725,6 +1755,12 @@
           "markdownDescription": "Denies the choose_download_location command without any pre-configured scope."
         },
         {
+          "description": "Denies the choose_profile command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-choose-profile",
+          "markdownDescription": "Denies the choose_profile command without any pre-configured scope."
+        },
+        {
           "description": "Denies the clear_all_downloads command without any pre-configured scope.",
           "type": "string",
           "const": "deny-clear-all-downloads",
@@ -2115,6 +2151,18 @@
           "markdownDescription": "Denies the get_installed_extensions command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_launch_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-launch-state",
+          "markdownDescription": "Denies the get_launch_state command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_launcher_prefs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-launcher-prefs",
+          "markdownDescription": "Denies the get_launcher_prefs command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_local_backup_state command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-local-backup-state",
@@ -2137,6 +2185,12 @@
           "type": "string",
           "const": "deny-get-page-note",
           "markdownDescription": "Denies the get_page_note command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_picker_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-picker-state",
+          "markdownDescription": "Denies the get_picker_state command without any pre-configured scope."
         },
         {
           "description": "Denies the get_privacy_settings command without any pre-configured scope.",
@@ -2587,6 +2641,12 @@
           "type": "string",
           "const": "deny-set-ask-download-destination",
           "markdownDescription": "Denies the set_ask_download_destination command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_ask_profile_at_startup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-ask-profile-at-startup",
+          "markdownDescription": "Denies the set_ask_profile_at_startup command without any pre-configured scope."
         },
         {
           "description": "Denies the set_auto_skip_ads command without any pre-configured scope.",

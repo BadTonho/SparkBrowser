@@ -45,5 +45,5 @@ const component = new URLSearchParams(location.search).get("surface") === "tools
         ? import("./lib/components/titlebar/SuggestionsSurface.svelte")
         : ["settings", "settings-tab"].includes(new URLSearchParams(location.search).get("surface") ?? "")
         ? import("./lib/components/settings/SettingsSurface.svelte")
-        : import("./App.svelte");
+        : import("./LaunchGate.svelte");
 void component.then(({ default: view }) => mount(view, { target: document.getElementById("app")! }));

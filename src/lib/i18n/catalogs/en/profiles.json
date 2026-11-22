@@ -29,5 +29,13 @@
   "profiles.error_cannot_delete_default": "The Default profile cannot be deleted.",
   "profiles.error_cannot_rename_default": "The Default profile cannot be renamed.",
   "profiles.error_private": "Profiles are not available in private windows.",
-  "profiles.error_failed": "Something went wrong with the profiles. The error log has the details."
+  "profiles.error_failed": "Something went wrong with the profiles. The error log has the details.",
+  "profiles.picker_title": "Choose a profile",
+  "profiles.picker_hint": "Each profile has its own history, favorites, logins and settings.",
+  "profiles.picker_last": "Last used",
+  "profiles.picker_ask": "Always ask when Spark starts",
+  "profiles.picker_close": "Close",
+  "profiles.error_open_failed": "The profile could not be started. The error log has the details.",
+  "profiles.startup_label": "Ask which profile to open when Spark starts",
+  "profiles.startup_description": "Show a window to choose the profile every time Spark starts. When off, Spark opens the profile you chose last."
 }

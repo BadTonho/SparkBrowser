@@ -9,6 +9,15 @@ pub fn caller_window(webview: &tauri::Webview) -> String {
     }
 }
 
+/// The commands that work while start-up is still in progress (or, for the profile picker, forever):
+/// the first screen needs them to decide what to show. Everything else waits for `startup_ready`.
+pub fn answers_before_ready(command: &str) -> bool {
+    matches!(
+        command,
+        "get_diagnostics" | "get_launch_state" | "get_picker_state" | "choose_profile"
+    )
+}
+
 /// Child WebViews cannot invoke application commands, including after navigation to a local URL.
 pub fn shell_only(
     handler: impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static,
@@ -28,7 +37,7 @@ pub fn shell_only(
                 .reject("Application commands are restricted to the browser shell");
             true
         } else {
-            if invoke.message.command() != "get_diagnostics"
+            if !answers_before_ready(invoke.message.command())
                 && !invoke
                     .message
                     .webview_ref()

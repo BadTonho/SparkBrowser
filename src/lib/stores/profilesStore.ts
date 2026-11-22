@@ -1,7 +1,7 @@
 import { get, writable } from "svelte/store";
-import { createProfile, deleteProfile, listProfiles, openProfile, renameProfile } from "../services/bridge/profiles";
+import { createProfile, deleteProfile, getLauncherPrefs, listProfiles, openProfile, renameProfile, setAskProfileAtStartup } from "../services/bridge/profiles";
 import { isTauriRuntime } from "../services/bridge/runtime";
-import { profileError } from "../services/profiles/errors.js";
+import { profileError } from "../services/profile/errors.js";
 import type { MessageKey } from "../i18n";
 import type { ProfileInfo, ProfileList } from "../types/profiles";
 
@@ -68,4 +68,21 @@ export async function openProfileWindow(id: string): Promise<boolean> {
 export function currentProfile(): ProfileInfo | undefined {
   const list = get(profiles);
   return list?.items.find(item => item.id === list.current);
+}
+
+/** Ask which profile to open every time Spark starts. */
+export const askProfileAtStartup = writable(false);
+
+export async function loadStartupPrefs(): Promise<void> {
+  if (!isTauriRuntime()) return;
+  try {
+    askProfileAtStartup.set((await getLauncherPrefs()).ask_every_time);
+  } catch (error) {
+    profilesFailure.set(profileError(error).key as MessageKey);
+  }
+}
+
+export async function changeAskAtStartup(enabled: boolean): Promise<void> {
+  const done = await run(async () => { await setAskProfileAtStartup(enabled); return true; });
+  askProfileAtStartup.set(done ? enabled : get(askProfileAtStartup));
 }

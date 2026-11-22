@@ -29,5 +29,13 @@
   "profiles.error_cannot_delete_default": "O perfil Padrão não pode ser apagado.",
   "profiles.error_cannot_rename_default": "O perfil Padrão não pode ser renomeado.",
   "profiles.error_private": "Perfis não estão disponíveis em janelas privadas.",
-  "profiles.error_failed": "Algo deu errado com os perfis. O log de erros tem os detalhes."
+  "profiles.error_failed": "Algo deu errado com os perfis. O log de erros tem os detalhes.",
+  "profiles.picker_title": "Escolha um perfil",
+  "profiles.picker_hint": "Cada perfil tem o próprio histórico, favoritos, logins e configurações.",
+  "profiles.picker_last": "Último usado",
+  "profiles.picker_ask": "Sempre perguntar ao iniciar o Spark",
+  "profiles.picker_close": "Fechar",
+  "profiles.error_open_failed": "Não foi possível iniciar o perfil. O log de erros tem os detalhes.",
+  "profiles.startup_label": "Perguntar qual perfil abrir ao iniciar o Spark",
+  "profiles.startup_description": "Mostra uma janela para escolher o perfil toda vez que o Spark inicia. Desligado, o Spark abre o último perfil que você escolheu."
 }

@@ -11,6 +11,9 @@ import { UserError } from "../user-errors.js";
 // command that is retried in a loop does not turn into a flood of log calls.
 const lastFailureLogged = new Map<string, number>();
 
+/** Commands that answer before start-up is ready (the first screen needs them), so they never wait for it. */
+const ANSWERS_BEFORE_READY = new Set(["get_diagnostics", "get_launch_state", "get_picker_state", "choose_profile"]);
+
 let startup: Promise<void> | undefined;
 function waitForStartup(): Promise<void> {
   return startup ??= (async () => {
@@ -28,7 +31,7 @@ export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> 
   const started = performance.now();
   let success = false;
   try {
-    if (command !== "get_diagnostics") await waitForStartup();
+    if (!ANSWERS_BEFORE_READY.has(command)) await waitForStartup();
     const result = await nativeInvoke<T>(command, args);
     success = true;
     return result;

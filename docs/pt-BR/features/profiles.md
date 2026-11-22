@@ -16,6 +16,14 @@ Abra **Configurações → Perfis** para gerenciá-los.
 
 As janelas de um perfil diferente do Padrão mostram o nome do perfil no título ("Spark - Trabalho").
 
+## Escolher o perfil ao iniciar o Spark
+
+- Na primeira vez em que você tem mais de um perfil, o Spark inicia com uma janela pequena que pergunta **qual perfil abrir**. Escolha um e o Spark o abre na própria janela. Iniciar o Spark com um único perfil nunca pergunta.
+- A janela tem **Sempre perguntar ao iniciar o Spark**. Desligada, as próximas inicializações abrem o último perfil que você escolheu, sem janela no meio. Ligada, a janela aparece toda vez. Você pode mudar isso depois em **Configurações → Perfis → Perguntar qual perfil abrir ao iniciar o Spark**.
+- Se o último perfil que você escolheu foi apagado, o Spark pergunta de novo.
+- Iniciar um perfil diretamente (por exemplo por um atalho com `--profile <id>`) pula a pergunta.
+- A janela só pergunta: ela não tem histórico, abas nem configurações próprias e usa uma pasta pequena só dela (`launcher`), longe de todos os perfis.
+
 ## Bom saber
 
 - **As atualizações são instaladas pelo perfil Padrão.** Dois perfis abertos ao mesmo tempo não podem rodar o mesmo instalador, então os outros perfis não instalam atualizações; a página **Sobre e atualizações** deles diz que as atualizações não estão disponíveis ali. Abra o perfil Padrão de vez em quando para manter o Spark atualizado.
