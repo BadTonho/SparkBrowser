@@ -6,7 +6,10 @@ export interface HistoryOverlayPresentation {
   url: string;
   locale: "pt-BR" | "en";
   labels: { title: string; clear: string; close: string; search: string; empty: string; loadMore: string };
-  theme: { surface: string; border: string; text: string; muted: string; accent: string; hover: string; field: string };
+  theme: {
+    surface: string; border: string; text: string; muted: string; accent: string; hover: string; field: string;
+    surfaceBorder?: string; surfaceFilter?: string; surfaceShadow?: string;
+  };
   query: string;
   entries: Array<{ id: number; title: string; url: string; time: string }>;
   busy: boolean;

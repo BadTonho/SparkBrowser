@@ -6,6 +6,11 @@
   --modal-surface-filter: none;
   --modal-surface-border: 1px solid rgba(255, 255, 255, 0.08);
   --modal-surface-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+  --settings-backdrop-bg: rgba(8, 8, 8, 0.62);
+  --settings-tab-bg: var(--modal-surface-bg);
+  --settings-row-bg: rgba(255, 255, 255, 0.03);
+  --settings-row-border: var(--border-subtle);
+  --settings-control-scheme: dark;
 
   --bg-glass-primary: rgba(12, 12, 12, 0.72);
   --bg-glass-elevated: rgba(28, 28, 28, 0.78);
@@ -107,6 +112,8 @@ html[data-theme="light"] {
   --modal-surface-bg: rgba(255, 255, 255, var(--modal-surface-opacity));
   --modal-surface-border: 1px solid rgba(0, 0, 0, 0.12);
   --modal-surface-shadow: 0 24px 64px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --settings-backdrop-bg: rgba(0, 0, 0, 0.32);
+  --settings-control-scheme: light;
 
   --bg-glass-primary: rgba(246, 247, 249, 0.88);
   --bg-glass-elevated: rgba(255, 255, 255, 0.95);
@@ -135,10 +142,6 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb {
 }
 
 html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.32);
-}
-
-html[data-theme="light"] .settings-backdrop {
   background: rgba(0, 0, 0, 0.32);
 }
 
@@ -202,29 +205,29 @@ html[data-theme="light"][data-window-style="frosted"],
   --bg-downloads-panel: var(--modal-surface-bg);
 }
 
-/* Glass: clear and light-catching. A faint diagonal sheen, a bright edge and a softer blur than Ice. */
-html[data-window-style="glass"],
+/* Glass uses a neutral translucent surface and a uniform outline. */
 :root[data-window-style="glass"] {
-  --modal-surface-bg:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.1) 100%),
-    rgba(22, 22, 28, calc(var(--modal-surface-opacity) * 0.6));
-  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.8)) saturate(190%) brightness(1.12);
-  --modal-surface-border: 1px solid rgba(255, 255, 255, 0.28);
-  --modal-surface-shadow: 0 24px 64px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.08), inset 0 0 24px rgba(255, 255, 255, 0.05);
+  --modal-surface-bg: rgb(0 0 0 / calc(0.16 + var(--modal-surface-opacity) * 0.25));
+  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.45)) brightness(0.64);
+  --modal-surface-border: 1px solid rgb(255 255 255 / 0.40);
+  --modal-surface-shadow: 0 14px 40px rgb(0 0 0 / 0.27);
+  --settings-backdrop-bg: rgb(0 0 0 / 0.29);
+  --settings-tab-bg: #000;
+  --settings-row-bg: rgb(255 255 255 / 0.045);
+  --settings-row-border: rgb(255 255 255 / 0.24);
   --bg-permission-popover: var(--modal-surface-bg);
   --bg-downloads-panel: var(--modal-surface-bg);
 }
 
-html[data-theme="light"][data-window-style="glass"],
 :root[data-theme="light"][data-window-style="glass"] {
-  --modal-surface-bg:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.2) 45%, rgba(255, 255, 255, 0.5) 100%),
-    rgba(255, 255, 255, calc(var(--modal-surface-opacity) * 0.55));
-  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.8)) saturate(190%) brightness(1.04);
-  --modal-surface-border: 1px solid rgba(255, 255, 255, 0.85);
-  --modal-surface-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --bg-permission-popover: var(--modal-surface-bg);
-  --bg-downloads-panel: var(--modal-surface-bg);
+  --modal-surface-bg: rgb(255 255 255 / calc(0.27 + var(--modal-surface-opacity) * 0.31));
+  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.45)) contrast(0.65) brightness(1.22);
+  --modal-surface-border: 1px solid rgb(0 0 0 / 0.24);
+  --modal-surface-shadow: 0 14px 38px rgb(0 0 0 / 0.16);
+  --settings-backdrop-bg: rgb(0 0 0 / 0.16);
+  --settings-tab-bg: #fff;
+  --settings-row-bg: rgb(0 0 0 / 0.035);
+  --settings-row-border: rgb(0 0 0 / 0.16);
 }
 
 html[data-window-style="solid"],

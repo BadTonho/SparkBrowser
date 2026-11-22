@@ -33,7 +33,7 @@
   "settings.workspaces_bookmarks_and_tabs_in_the_sidebar_5cff": "Workspaces, bookmarks, and tabs in the sidebar",
   "settings.vertical_b6d6": "↕ Vertical",
   "settings.window_surface_style": "Window Background Style",
-  "settings.window_surface_style_desc": "Choose Matte (solid), Glass (clear and light-catching) or Ice (strong blur) for windows and menus",
+  "settings.window_surface_style_desc": "Choose Matte (solid), Glass (translucent) or Ice (strong blur) for windows and menus",
   "settings.window_surface_frosted": "Ice",
   "settings.window_surface_glass": "Glass",
   "settings.window_surface_solid": "Matte",

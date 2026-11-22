@@ -33,6 +33,9 @@ pub struct Labels {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Theme {
     surface: String,
+    surface_border: Option<String>,
+    surface_filter: Option<String>,
+    surface_shadow: Option<String>,
     border: String,
     text: String,
     muted: String,

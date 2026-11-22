@@ -13,6 +13,7 @@
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import { onHistoryOverlayAction, setHistoryOverlay, type HistoryOverlayPresentation } from "../../services/bridge/history-overlay";
   import { describeError } from "../../services/user-errors.js";
+  import { observePanelTheme, readGlassFrame } from "../panels/panel-host";
   import {
     historyEntries,
     historyBusy,
@@ -58,6 +59,7 @@
       accent: style.getPropertyValue("--accent-primary").trim() || (light ? "#171717" : "#e5e5e5"),
       hover: style.getPropertyValue("--bg-glass-hover").trim() || (light ? "#0000000d" : "#ffffff14"),
       field: light ? "#f4f4f5" : "#242424",
+      ...readGlassFrame(style),
     };
   }
 
@@ -131,11 +133,15 @@
   onMount(() => {
     let disposed = false;
     let stop: (() => void) | undefined;
+    const stopTheme = native ? observePanelTheme(() => {
+      if (nativeSessionKey) void pushNativeOverlay().catch(logIgnored);
+    }) : undefined;
     void onHistoryOverlayAction(handleNativeAction).then((unlisten) => {
       if (disposed) unlisten(); else stop = unlisten;
     });
     return () => {
       disposed = true;
+      stopTheme?.();
       stop?.();
       if (nativeSessionKey) void setHistoryOverlay(false, nativeSessionId);
     };

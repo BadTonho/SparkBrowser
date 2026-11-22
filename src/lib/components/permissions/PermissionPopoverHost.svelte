@@ -9,6 +9,8 @@
   import { onPermissionPopoverAction, setPermissionPopover, type PermissionPopoverPresentation, type PermissionPopoverAction } from "../../services/bridge/permission-popover";
   import { describeError } from "../../services/user-errors.js";
   import { isTauriRuntime } from "../../services/bridge/runtime";
+  import { logIgnored } from "../../services/ignored-error";
+  import { observePanelTheme, readGlassFrame } from "../panels/panel-host";
 
   const native = isTauriRuntime();
   let anchor = $state({ left: 0, top: 0, width: 0, height: 0 });
@@ -37,6 +39,7 @@
       border: style.getPropertyValue("--border-subtle").trim(), text: style.getPropertyValue("--text-primary").trim(),
       muted: style.getPropertyValue("--text-secondary").trim(), accent: style.getPropertyValue("--accent-primary").trim(),
       accentText: style.getPropertyValue("--accent-foreground").trim(), control: light ? "#f4f4f5" : "#292929",
+      ...readGlassFrame(style),
     };
   }
   function labels(kindLabels: Record<string, string>) {
@@ -153,8 +156,11 @@
   });
   onMount(() => {
     let disposed = false, stop: (() => void) | undefined;
+    const stopTheme = native ? observePanelTheme(() => {
+      if (sessionKey) void push().catch(logIgnored);
+    }) : undefined;
     void onPermissionPopoverAction(action => { void handleAction(action); }).then(unlisten => { if (disposed) unlisten(); else stop = unlisten; });
     void refresh();
-    return () => { disposed = true; stop?.(); if (sessionKey) void setPermissionPopover(false, sessionId); };
+    return () => { disposed = true; stopTheme?.(); stop?.(); if (sessionKey) void setPermissionPopover(false, sessionId); };
   });
 </script>

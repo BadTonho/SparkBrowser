@@ -13,6 +13,8 @@
 
 ## Improvements
 
+- Glass uses neutral backgrounds, more transparency and clearer borders. In dark mode, its base is black, with no reflections.
+- Quick Settings has stronger outlines and clearer labels in both themes.
 - Choose the YouTube widget's thumbnail layout and preview mode in a more compact panel with example cards. The muted video example moves on hover or keyboard focus.
 - See where the YouTube widget appears below the vertical tabs in the sidebar example.
 - Frame images and videos for the new tab in a larger preview with a grid. Scroll to zoom, drag smaller media to the corners, and hover over the **?** icon for control tips.

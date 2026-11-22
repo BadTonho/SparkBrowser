@@ -13,6 +13,8 @@
 
 ## Melhorias
 
+- O estilo Vidro usa fundos neutros, mais transparência e bordas mais definidas. No tema escuro, a base é preta, sem reflexos.
+- As Configurações rápidas têm contornos mais marcados e textos mais legíveis nos dois temas.
 - Escolha o formato da miniatura e o modo de pré-visualização do widget do YouTube em um painel mais compacto com cartões de exemplo. A demonstração de vídeo sem som se anima ao passar o mouse ou dar foco pelo teclado.
 - Veja no exemplo da barra lateral onde o widget do YouTube aparece abaixo das guias verticais.
 - Enquadre imagens e vídeos para a nova aba em uma prévia maior com grade. Role para ajustar o zoom, arraste mídias menores até os cantos e passe o mouse sobre o ícone **?** para ver as dicas.

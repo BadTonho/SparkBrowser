@@ -113,6 +113,9 @@ mod tests {
             },
             theme: super::super::Theme {
                 surface: "#fff".into(),
+                surface_border: None,
+                surface_filter: None,
+                surface_shadow: None,
                 border: "#ddd".into(),
                 text: "#111".into(),
                 muted: "#555".into(),

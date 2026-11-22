@@ -61,6 +61,9 @@
     panel.dataset.mode = payload.mode;
     document.documentElement.lang = payload.locale; document.title = payload.labels.title;
     panel.style.setProperty('--surface', payload.theme.surface); panel.style.setProperty('--border', payload.theme.border);
+    panel.style.setProperty('--surface-border', payload.theme.surfaceBorder ?? '');
+    panel.style.setProperty('--surface-filter', payload.theme.surfaceFilter ?? '');
+    panel.style.setProperty('--surface-shadow', payload.theme.surfaceShadow ?? '');
     panel.style.setProperty('--text', payload.theme.text); panel.style.setProperty('--muted', payload.theme.muted);
     panel.style.setProperty('--accent', payload.theme.accent); panel.style.setProperty('--accent-text', payload.theme.accentText);
     panel.style.setProperty('--control', payload.theme.control);

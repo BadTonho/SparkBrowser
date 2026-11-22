@@ -15,9 +15,9 @@ Users can choose between three surface styles in **Settings → Appearance & Lay
 - Disables backdrop blur for users who prefer flat, high-contrast surfaces without transparency.
 
 ### 💧 Glass
-A clear, light-catching glass look:
-- **Sheen and bright edge:** A faint diagonal highlight over a lightly tinted base, with a bright rim and an inner highlight along the top edge.
-- **Soft blur, rich color:** A gentler blur than Ice with boosted saturation and brightness, so whatever is behind the window stays recognizable.
+- Floating windows and menus use a translucent black base in dark mode and a translucent white base in light mode. A thin, uniform border defines the edge.
+- Settings in a tab uses a flat black or white background depending on the theme. The Spark palette still colors controls and selections.
+- Floating surfaces use a gentler blur than Ice.
 - **Adjustable:** Follows the opacity and blur sliders below.
 
 ### ❄️ Ice
@@ -32,12 +32,14 @@ The saved value of Ice is still `frosted`, so a choice made in an earlier versio
 
 ## 2. Controls & Configuration
 
+Quick Settings uses more pronounced outlines and higher-contrast labels in both themes. Selected options use the current palette’s accent color.
+
 All controls are accessible under **Appearance & Layout** in Browser Settings:
 
 1. **Window Background Style (`settings.window_surface_style`)**:
    - Switch between **Matte**, **Glass** and **Ice** (Matte is enabled by default).
 2. **Window Background Opacity (`settings.window_surface_opacity`)**:
-   - A fine-tuning slider ranging from **30%** (ultra-translucent jelly aesthetic) to **100%** (fully opaque).
+   - A slider from **30%** to **100%** that controls the intensity of the tint. Ice is opaque at 100%, and Glass retains its translucent finish.
    - Default value: **70%**.
 3. **Window Blur (`settings.window_surface_blur`)**:
    - Adjusts the diffusion radius from **0 px** to **32 px** (Glass and Ice only).
@@ -50,5 +52,5 @@ All controls are accessible under **Appearance & Layout** in Browser Settings:
 ## 3. Persistence & Platform Compatibility
 
 - **Persistence:** Values are stored in `safeStorage` under `spark_window_surface_style`, `spark_window_surface_opacity`, and `spark_window_surface_blur_px`, persisting across browser sessions.
-- **Cross-Platform:** Built using standard CSS custom properties and hardware-accelerated CSS `backdrop-filter`, ensuring smooth, zero-latency performance across both **Windows** (WebView2) and **Linux** (WebKitGTK and modern Wayland/X11 compositors).
+- **Cross-Platform:** Glass uses CSS for the translucent surface and blur. How much of the background a WebView can blur depends on the rendering engine and which surfaces it composites together.
 

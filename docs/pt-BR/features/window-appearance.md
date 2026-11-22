@@ -15,9 +15,9 @@ Os usuários podem escolher entre três estilos de superfície em **Configuraç�
 - Desativa o desfoque de fundo para usuários que preferem superfícies planas e de alto contraste sem transparência.
 
 ### 💧 Vidro
-Um visual de vidro claro, que reflete a luz:
-- **Brilho e borda clara:** Um leve reflexo diagonal sobre uma base de tom suave, com borda brilhante e um realce interno no alto.
-- **Desfoque suave, cor viva:** Um desfoque mais leve que o do Gelo, com saturação e brilho realçados, para que o que está atrás da janela continue reconhecível.
+- Janelas flutuantes e menus usam uma base preta translúcida no tema escuro e branca translúcida no tema claro. Uma borda fina e uniforme define o contorno.
+- As Configurações em aba usam um fundo liso, preto ou branco, de acordo com o tema. A paleta do Spark continua colorindo os controles e as seleções.
+- As superfícies flutuantes usam um desfoque mais leve que o do Gelo.
 - **Ajustável:** Acompanha os controles de opacidade e desfoque abaixo.
 
 ### ❄️ Gelo
@@ -32,12 +32,14 @@ O valor salvo do Gelo continua sendo `frosted`, então a escolha feita em versõ
 
 ## 2. Controles e Configuração
 
+As Configurações rápidas têm contornos mais marcados e rótulos com maior contraste nos dois temas. As opções selecionadas usam a cor de destaque da paleta atual.
+
 Todos os controles estão disponíveis na seção **Aparência e disposição** nas Configurações:
 
 1. **Estilo do fundo das janelas (`settings.window_surface_style`)**:
    - Alternância rápida entre **Fosco**, **Vidro** e **Gelo** (Fosco vem ativado por padrão).
 2. **Opacidade do fundo das janelas (`settings.window_surface_opacity`)**:
-   - Controle deslizante (slider) de **30%** (estética de gelatina vívida e translúcida) a **100%** (opaco).
+   - Controle de **30%** a **100%** que ajusta a intensidade da camada de cor. O Gelo fica opaco em 100%, enquanto o Vidro mantém o acabamento translúcido.
    - Valor padrão: **70%**.
 3. **Desfoque das janelas (`settings.window_surface_blur`)**:
    - Ajusta o raio de difusão do desfoque de **0 px** a **32 px** (apenas Vidro e Gelo).
@@ -50,5 +52,5 @@ Todos os controles estão disponíveis na seção **Aparência e disposição** 
 ## 3. Persistência e Compatibilidade Multiplataforma
 
 - **Persistência:** Os valores são armazenados no `safeStorage` sob as chaves `spark_window_surface_style`, `spark_window_surface_opacity` e `spark_window_surface_blur_px`, sendo mantidos entre reinicializações do navegador.
-- **Multiplataforma:** Desenvolvido com variáveis CSS e `backdrop-filter` nativo acelerado por hardware, garantindo desempenho fluido e sem travamentos tanto no **Windows** (WebView2) quanto no **Linux** (WebKitGTK e compositores modernos Wayland/X11).
+- **Multiplataforma:** O Vidro usa CSS para a superfície translúcida e o desfoque. A parte do fundo que uma WebView consegue desfocar depende do motor de renderização e das superfícies que ele compõe juntas.
 
