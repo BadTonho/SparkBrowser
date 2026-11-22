@@ -92,6 +92,8 @@
     "allow-vault-reset",
     "allow-vault-copy-password",
     "allow-vault-copy-text",
+    "allow-vault-totp-code",
+    "allow-vault-scan-qr",
     "allow-close-tabs-reviewed",
     "allow-set-split-view",
     "allow-dock-tab-to-split",

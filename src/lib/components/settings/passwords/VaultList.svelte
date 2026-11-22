@@ -9,7 +9,7 @@
   import VaultDetail from "./VaultDetail.svelte";
   import VaultIcon from "./VaultIcon.svelte";
 
-  const blank: VaultEntryData = { title: "", url: "", username: "", password: "", notes: "" };
+  const blank: VaultEntryData = { title: "", url: "", username: "", password: "", notes: "", totp: "" };
 
   let query = $state("");
   let opened = $state<string[]>([]);
@@ -60,8 +60,8 @@
 
   function edit(): void {
     if (!detail) return;
-    const { id, title, url, username, password, notes } = detail;
-    editing = { id, data: { title, url, username, password, notes } };
+    const { id, title, url, username, password, notes, totp } = detail;
+    editing = { id, data: { title, url, username, password, notes, totp } };
     detail = null;
   }
 

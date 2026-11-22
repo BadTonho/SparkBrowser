@@ -1,8 +1,9 @@
 <script lang="ts">
   import { t } from "../../../i18n";
   import { generatePassword } from "../../../services/vault/password-generator.js";
-  import { saveEntry, vaultBusy } from "../../../stores/vaultStore";
+  import { saveEntry, scanTotpQr, vaultBusy } from "../../../stores/vaultStore";
   import type { VaultEntryData } from "../../../types/vault";
+  import TotpCode from "./TotpCode.svelte";
 
   let { id, initial, onclose }: { id: string | null; initial: VaultEntryData; onclose: () => void } = $props();
 
@@ -17,7 +18,22 @@
   let password = $state(initial.password);
   /* svelte-ignore state_referenced_locally */
   let notes = $state(initial.notes);
+  /* svelte-ignore state_referenced_locally */
+  let totp = $state(initial.totp);
   let visible = $state(false);
+  let totpVisible = $state(false);
+
+  let scanned = $state(false);
+
+  /** Picks a picture of the QR code: the backend opens the file dialog, reads it and only accepts a valid 2FA setup. */
+  async function scan(): Promise<void> {
+    scanned = false;
+    const secret = await scanTotpQr();
+    if (secret) {
+      totp = secret;
+      scanned = true;
+    }
+  }
 
   function generate(): void {
     password = generatePassword();
@@ -26,9 +42,10 @@
 
   async function submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (await saveEntry(id, { title, url, username, password, notes })) {
+    if (await saveEntry(id, { title, url, username, password, notes, totp: totp.trim() })) {
       password = "";
       notes = "";
+      totp = "";
       onclose();
     }
   }
@@ -36,6 +53,7 @@
   function cancel(): void {
     password = "";
     notes = "";
+    totp = "";
     onclose();
   }
 </script>
@@ -62,6 +80,20 @@
       <button class="pill-action" type="button" onclick={() => (visible = !visible)}>{$t(visible ? "passwords.hide" : "passwords.show")}</button>
       <button class="pill-action" type="button" onclick={generate} data-testid="vault-generate">{$t("passwords.generate")}</button>
     </div>
+  </div>
+  <div class="vault-field">
+    <label for="vault-field-totp">{$t("passwords.field_totp")}</label>
+    <div class="vault-row">
+      <input id="vault-field-totp" type={totpVisible ? "text" : "password"} bind:value={totp} maxlength="1024" placeholder={$t("passwords.totp_placeholder")}
+        autocomplete="off" spellcheck="false" disabled={$vaultBusy} data-testid="vault-field-totp" />
+      <button class="pill-action" type="button" onclick={() => (totpVisible = !totpVisible)}>{$t(totpVisible ? "passwords.hide" : "passwords.show")}</button>
+    </div>
+    <div class="vault-row">
+      <button class="pill-action" type="button" disabled={$vaultBusy} onclick={scan} data-testid="vault-totp-qr">{$t("passwords.totp_scan")}</button>
+    </div>
+    {#if scanned}<p class="vault-ok" role="status" data-testid="vault-totp-scanned">{$t("passwords.totp_scan_done")}</p>{/if}
+    <TotpCode secret={totp} preview />
+    <p class="vault-totp-advice">{$t("passwords.totp_advice")}</p>
   </div>
   <label class="vault-field">
     <span>{$t("passwords.field_notes")}</span>

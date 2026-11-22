@@ -406,6 +406,7 @@ mod tests {
                 username: "ana".into(),
                 password: "pw-one".into(),
                 notes: String::new(),
+                totp: String::new(),
             },
             1,
             Instant::now(),

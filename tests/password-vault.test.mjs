@@ -325,3 +325,22 @@ test('the password page has no containment that would pin its fixed dialogs to a
   const css = read('src/lib/components/settings/passwords/passwords.css');
   assert.ok(!/container-type|contain\s*:/.test(css));
 });
+
+test('the optional 2FA code is computed by the backend, only with an open vault, and the secret is never logged', () => {
+  const command = read('src-tauri/src/commands/vault_totp.rs');
+  assert.match(command, /allowed_read\(&app\)\?;/);
+  assert.match(command, /service\.key\(Instant::now\(\)\)\?;/);
+  for (const [file, text] of [['src-tauri/src/commands/manifest.rs', '"vault_totp_code"'], ['src-tauri/capabilities/default.json', '"allow-vault-totp-code"'], ['src/lib/services/bridge/vault.ts', '"vault_totp_code"'], ['src-tauri/src/commands/manifest.rs', '"vault_scan_qr"'], ['src-tauri/capabilities/default.json', '"allow-vault-scan-qr"'], ['src/lib/services/bridge/vault.ts', '"vault_scan_qr"']]) {
+    assert.ok(read(file).includes(text), `${text} in ${file}`);
+  }
+  assert.match(read('src-tauri/src/lib.rs'), /\bvault_totp_code,/);
+  assert.match(read('src-tauri/src/lib.rs'), /\bvault_scan_qr,/);
+  // Reading a QR picture changes nothing in the vault but still refuses private windows and a locked vault.
+  const qrCommand = command.slice(command.indexOf('pub async fn vault_scan_qr'));
+  assert.match(qrCommand, /super::vault::allowed\(&app\)\?;\s*service\.key\(Instant::now\(\)\)\?;/);
+  assert.doesNotMatch(qrCommand.replace(/"[^"]*"/g, '""'), /report\([^;]*image/, 'the picture is never logged');
+  // Only the stable error code reaches the log, never the secret that was typed.
+  const logged = /error_log::report\(([^;]*)\);/.exec(command)[1];
+  assert.match(logged, /^\s*Level::Warning,\s*"vault",\s*"[^"]*",\s*code,\s*$/, 'only the error code is logged');
+  assert.match(read('src-tauri/src/vault/model.rs'), /pub totp: String/);
+});

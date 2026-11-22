@@ -40,6 +40,7 @@ use commands::vault::{
 use commands::vault_records::{
     vault_record_delete, vault_record_reveal, vault_record_save, vault_records_list,
 };
+use commands::vault_totp::{vault_scan_qr, vault_totp_code};
 use commands::webview_runtime::{get_webview_runtime_status, restart_webview_runtime};
 use commands::zoom::{apply_backup_zoom, get_site_zoom, set_site_zoom};
 pub mod autofill;
@@ -738,6 +739,8 @@ pub fn run() {
             vault_reset,
             vault_copy_password,
             vault_copy_text,
+            vault_totp_code,
+            vault_scan_qr,
             close_tabs_reviewed,
             set_split_view,
             dock_tab_to_split,

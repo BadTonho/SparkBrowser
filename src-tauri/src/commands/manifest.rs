@@ -132,6 +132,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "vault_reset",
     "vault_copy_password",
     "vault_copy_text",
+    "vault_totp_code",
+    "vault_scan_qr",
     "close_tabs_reviewed",
     "set_split_view",
     "dock_tab_to_split",

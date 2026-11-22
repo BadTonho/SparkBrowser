@@ -18,15 +18,20 @@ pub struct EntryData {
     pub username: String,
     pub password: String,
     pub notes: String,
+    /// Optional two-factor secret: an `otpauth://` link or the setup key a website shows. Empty when
+    /// the login has no 2FA. The code is computed in the backend (`vault::totp`).
+    pub totp: String,
 }
 
-/// An entry as the list shows it: no password and no notes.
+/// An entry as the list shows it: no password, no notes and no 2FA secret.
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct Summary {
     pub id: String,
     pub title: String,
     pub url: String,
     pub username: String,
+    /// The login has a 2FA secret (the secret itself never appears in the list).
+    pub has_totp: bool,
     pub updated_at: i64,
 }
 
@@ -73,6 +78,9 @@ impl EntryData {
         {
             return Err("vault.invalid_entry".into());
         }
+        if !self.totp.trim().is_empty() {
+            super::totp::Totp::parse(&self.totp)?;
+        }
         Ok(())
     }
 
@@ -82,6 +90,7 @@ impl EntryData {
             title: self.title.clone(),
             url: self.url.clone(),
             username: self.username.clone(),
+            has_totp: !self.totp.trim().is_empty(),
             updated_at,
         }
     }
@@ -103,6 +112,7 @@ mod tests {
             username: "me".into(),
             password: "pw".into(),
             notes: String::new(),
+            totp: String::new(),
         }
     }
 
@@ -137,6 +147,25 @@ mod tests {
         assert!(serde_json::from_str::<EntryData>(r#"{"title":"a","extra":1}"#).is_err());
         let json = serde_json::to_string(&entry().summary("id", 1)).unwrap();
         assert!(!json.contains("pw") && !json.contains("password") && !json.contains("notes"));
+        let mut with_2fa = entry();
+        with_2fa.totp = "GEZDGNBVGY3TQOJQ".into();
+        let json = serde_json::to_string(&with_2fa.summary("id", 1)).unwrap();
+        assert!(json.contains("\"has_totp\":true") && !json.contains("GEZDG"));
+    }
+
+    #[test]
+    fn the_two_factor_secret_is_optional_but_must_be_valid_when_given() {
+        assert!(entry().validate().is_ok());
+        let mut e = entry();
+        e.totp = "otpauth://totp/x?secret=GEZDGNBVGY3TQOJQ".into();
+        assert!(e.validate().is_ok());
+        e.totp = "not a secret!".into();
+        assert_eq!(e.validate().unwrap_err(), "vault.invalid_totp");
+        e.totp = "   ".into();
+        assert!(e.validate().is_ok());
+        // Entries saved before 2FA existed still open.
+        let old: EntryData = serde_json::from_str(r#"{"title":"a","password":"b"}"#).unwrap();
+        assert!(old.totp.is_empty());
     }
 
     #[test]

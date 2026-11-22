@@ -665,6 +665,32 @@ mod tests {
         (conn, VaultService::default(), Instant::now())
     }
 
+    #[test]
+    fn the_two_factor_secret_is_encrypted_with_the_entry_and_survives_a_reveal() {
+        let (conn, service, now) = setup();
+        service.unlock(crypto::create(Some(PASSWORD), None).unwrap().1, now);
+        let mut with_2fa = entry("Mail", "pw");
+        with_2fa.totp = "GEZDGNBVGY3TQOJQ".into();
+        let summary = save(&conn, &service, None, &with_2fa, 1, now).unwrap();
+        assert!(summary.has_totp);
+        let row = repo::row(&conn, &summary.id).unwrap().unwrap();
+        assert!(!String::from_utf8_lossy(&row.blob).contains("GEZDG"));
+        assert_eq!(
+            reveal(&conn, &service, &summary.id, now).unwrap().data.totp,
+            "GEZDGNBVGY3TQOJQ"
+        );
+        // A login without 2FA stays without it.
+        let plain = save(&conn, &service, None, &entry("Shop", "pw"), 1, now).unwrap();
+        assert!(!plain.has_totp);
+        // A wrong secret is refused before anything is stored.
+        let mut bad = entry("Bad", "pw");
+        bad.totp = "!!".into();
+        assert_eq!(
+            save(&conn, &service, None, &bad, 1, now).unwrap_err(),
+            "vault.invalid_totp"
+        );
+    }
+
     fn entry(title: &str, password: &str) -> EntryData {
         EntryData {
             title: title.into(),
@@ -672,6 +698,7 @@ mod tests {
             username: "me@example.test".into(),
             password: password.into(),
             notes: "private note".into(),
+            totp: String::new(),
         }
     }
 
@@ -1102,6 +1129,7 @@ mod tests {
             username: "u".into(),
             password: "p".into(),
             notes: String::new(),
+            totp: String::new(),
         };
         let invalid = EntryData {
             title: " ".into(),

@@ -1,5 +1,5 @@
 import { invoke } from "./runtime";
-import type { VaultEntryData, VaultImportResult, VaultListing, VaultRevealed, VaultStatus, VaultSummary } from "../../types/vault";
+import type { VaultEntryData, VaultImportResult, VaultListing, VaultRevealed, VaultStatus, VaultSummary, VaultTotpCode } from "../../types/vault";
 
 export const getVaultStatus = () => invoke<VaultStatus>("vault_status");
 /** Resolves with the recovery key, which the backend shows once and never stores. */
@@ -37,3 +37,7 @@ export const setVaultAutoLock = (minutes: number) => invoke<void>("vault_set_aut
 export const copyVaultPassword = (id: string) => invoke<void>("vault_copy_password", { id });
 export const copyVaultText = (text: string) => invoke<void>("vault_copy_text", { text });
 export const resetVault = () => invoke<void>("vault_reset", { confirm: true });
+/** The current 2FA code for a secret, computed by the backend; it also says how many seconds are left. */
+export const getVaultTotpCode = (secret: string) => invoke<VaultTotpCode>("vault_totp_code", { secret });
+/** The backend opens the file dialog, reads the picture and resolves the 2FA `otpauth://` link in its QR code (null when cancelled). */
+export const scanVaultQr = () => invoke<string | null>("vault_scan_qr");

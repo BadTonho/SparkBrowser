@@ -8,5 +8,7 @@ pub mod dev;
 pub mod hello;
 pub mod model;
 pub mod ops;
+pub mod qr;
 pub mod records;
 pub mod service;
+pub mod totp;

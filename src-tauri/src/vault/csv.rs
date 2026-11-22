@@ -140,6 +140,7 @@ pub fn parse(bytes: &[u8]) -> Result<Parsed, String> {
                 .and_then(|i| row.get(i))
                 .map(|s| s.trim().to_string())
                 .unwrap_or_default(),
+            totp: String::new(),
         };
         if entry.password.is_empty() || entry.validate().is_err() {
             skipped += 1;
@@ -190,6 +191,7 @@ mod tests {
             username: user.into(),
             password: pw.into(),
             notes: notes.into(),
+            totp: String::new(),
         }
     }
 

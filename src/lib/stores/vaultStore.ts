@@ -2,7 +2,7 @@ import { get, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { isTauriRuntime } from "../services/bridge/runtime";
 import {
-  changeVaultPassword, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, devRemoveVault, devSeedVault, disableVaultHello, disableVaultPassword,
+  changeVaultPassword, scanVaultQr, copyVaultPassword, copyVaultText, createVault, deleteVaultEntry, devRemoveVault, devSeedVault, disableVaultHello, disableVaultPassword,
   enableVaultHello, enableVaultPassword, exportVaultCsv, getVaultStatus, importVaultCsv, listVaultEntries, lockVault, resetVault,
   revealVaultEntry, saveVaultEntry, saveVaultRecoveryFile, setVaultAutoLock, setVaultRequireHello, unlockVault, unlockVaultWithHello, unlockVaultWithRecovery,
 } from "../services/bridge/vault";
@@ -255,3 +255,10 @@ export function initializeVaultEvents(): () => void {
 // Shared with the autofill store (cards and contact details live in the same vault).
 export const runVaultCall = run;
 export const syncVaultLock = syncLockState;
+
+/** Picks a picture of a 2FA QR code and reads it in the backend. Resolves the secret; null when the dialog was cancelled, undefined with the reason in `vaultFailure` otherwise. */
+export async function scanTotpQr(): Promise<string | null | undefined> {
+  const secret = await run(() => scanVaultQr());
+  if (secret === undefined) await syncLockState();
+  return secret;
+}

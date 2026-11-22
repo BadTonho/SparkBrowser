@@ -22,6 +22,7 @@ fn sample(title: &str, url: &str, username: &str, password: &str, note: &str) ->
         username: username.into(),
         password: password.into(),
         notes: format!("{MARKER} {note}").trim_end().to_string(),
+        totp: String::new(),
     }
 }
 

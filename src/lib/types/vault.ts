@@ -20,6 +20,8 @@ export interface VaultEntryData {
   username: string;
   password: string;
   notes: string;
+  /** Optional 2FA secret: an `otpauth://` link or a setup key. Empty when the login has no 2FA. */
+  totp: string;
 }
 
 export interface VaultSummary {
@@ -27,6 +29,8 @@ export interface VaultSummary {
   title: string;
   url: string;
   username: string;
+  /** The login has a 2FA secret (the secret itself is never in the list). */
+  has_totp: boolean;
   updated_at: number;
 }
 
@@ -48,3 +52,10 @@ export interface VaultListing {
 }
 
 export const VAULT_AUTO_LOCK_MINUTES = [1, 5, 15, 30, 60] as const;
+
+/** A 2FA code and how long it stays valid. */
+export interface VaultTotpCode {
+  code: string;
+  seconds_left: number;
+  period: number;
+}

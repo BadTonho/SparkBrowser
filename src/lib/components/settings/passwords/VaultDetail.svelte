@@ -3,6 +3,7 @@
   import { avatarSlot } from "../../../services/vault/groups.js";
   import { copyEntryPassword, copyVaultSecret, vaultBusy } from "../../../stores/vaultStore";
   import type { VaultRevealed } from "../../../types/vault";
+  import TotpCode from "./TotpCode.svelte";
   import VaultDialog from "./VaultDialog.svelte";
   import VaultIcon from "./VaultIcon.svelte";
 
@@ -54,6 +55,10 @@
           <button class="vault-icon-button" type="button" onclick={() => (visible = !visible)} aria-label={$t(visible ? "passwords.hide" : "passwords.show")} aria-pressed={visible} data-testid="vault-detail-eye"><VaultIcon name={visible ? "eye-off" : "eye"} /></button>
           <button class="vault-icon-button" type="button" disabled={$vaultBusy} onclick={copyPassword} aria-label={$t("passwords.copy_password")} data-testid="vault-detail-copy"><VaultIcon name="copy" /></button>
         </div>
+        {#if entry.totp}
+          <span class="vault-detail-label">{$t("passwords.detail_totp")}</span>
+          <TotpCode secret={entry.totp} />
+        {/if}
       </div>
       <div class="vault-detail-column">
         <span class="vault-detail-label">{$t("passwords.detail_sites")}</span>

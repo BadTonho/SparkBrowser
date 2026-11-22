@@ -1533,6 +1533,12 @@
           "markdownDescription": "Enables the vault_password_enable command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_read_qr command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-read-qr",
+          "markdownDescription": "Enables the vault_read_qr command without any pre-configured scope."
+        },
+        {
           "description": "Enables the vault_record_delete command without any pre-configured scope.",
           "type": "string",
           "const": "allow-vault-record-delete",
@@ -1581,6 +1587,12 @@
           "markdownDescription": "Enables the vault_save_recovery_file command without any pre-configured scope."
         },
         {
+          "description": "Enables the vault_scan_qr command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-scan-qr",
+          "markdownDescription": "Enables the vault_scan_qr command without any pre-configured scope."
+        },
+        {
           "description": "Enables the vault_set_auto_lock command without any pre-configured scope.",
           "type": "string",
           "const": "allow-vault-set-auto-lock",
@@ -1597,6 +1609,12 @@
           "type": "string",
           "const": "allow-vault-status",
           "markdownDescription": "Enables the vault_status command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the vault_totp_code command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-vault-totp-code",
+          "markdownDescription": "Enables the vault_totp_code command without any pre-configured scope."
         },
         {
           "description": "Enables the vault_unlock command without any pre-configured scope.",
@@ -2973,6 +2991,12 @@
           "markdownDescription": "Denies the vault_password_enable command without any pre-configured scope."
         },
         {
+          "description": "Denies the vault_read_qr command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-read-qr",
+          "markdownDescription": "Denies the vault_read_qr command without any pre-configured scope."
+        },
+        {
           "description": "Denies the vault_record_delete command without any pre-configured scope.",
           "type": "string",
           "const": "deny-vault-record-delete",
@@ -3021,6 +3045,12 @@
           "markdownDescription": "Denies the vault_save_recovery_file command without any pre-configured scope."
         },
         {
+          "description": "Denies the vault_scan_qr command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-scan-qr",
+          "markdownDescription": "Denies the vault_scan_qr command without any pre-configured scope."
+        },
+        {
           "description": "Denies the vault_set_auto_lock command without any pre-configured scope.",
           "type": "string",
           "const": "deny-vault-set-auto-lock",
@@ -3037,6 +3067,12 @@
           "type": "string",
           "const": "deny-vault-status",
           "markdownDescription": "Denies the vault_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the vault_totp_code command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-vault-totp-code",
+          "markdownDescription": "Denies the vault_totp_code command without any pre-configured scope."
         },
         {
           "description": "Denies the vault_unlock command without any pre-configured scope.",
