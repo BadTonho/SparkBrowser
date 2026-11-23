@@ -251,7 +251,7 @@ mod tests {
     fn a_profile_starts_without_a_lock_and_nothing_can_be_verified() {
         let conn = db();
         assert!(!is_enabled(&conn).unwrap());
-        assert_eq!(status(&conn, 0).unwrap().enabled, false);
+        assert!(!status(&conn, 0).unwrap().enabled);
         assert_eq!(
             verify(&conn, &Proof::Password(PASSWORD), 0).unwrap_err(),
             "lock.not_enabled"

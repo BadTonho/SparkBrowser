@@ -64,6 +64,7 @@ export async function checkPrivacy(context) {
   await open(); await script('document.querySelector("[data-testid=open-media]").click()'); await expanded(false);
   await script('document.querySelector("[data-testid=open-media]").click()');
   await open(); await script('document.querySelector("[data-testid=open-settings]").click()'); await expanded(false);
+  await until(() => script('return !!document.querySelector("[data-testid=settings-quick-menu]")'), 'quick settings takes over from privacy');
   await context.closeSettings();
   const b = (await invoke('create_tab', { url: fixture.origin + '/page/privacy-b' })).tabs.find(t => t.is_active);
   await until(() => fixture.reports.has('privacy-b'), 'privacy split fixture');

@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { prepareTabs } from './setup.mjs';
 export async function checkCommandSearch(context) {
-  const { invoke, fixture, script, until, wait, request, sessionId } = context;
-  // The bar is drawn in a native layer, but the real bar (and all its logic) is in the shell page: items are clicked there, which does not depend on when the layer finishes drawing.
+  const { click, focusWindow, invoke, fixture, script, until, wait, withWebview } = context;
+  // Inspect search state in the shell and exercise the native layer for the handoff to Tools.
   const shellClick = selector => script('document.querySelector(arguments[0]).click()', selector);
+  const clickCommand = selector => withWebview('/index.html?surface=commands', () => click(selector));
   const { a,b,fixtureWorkspace } = await prepareTabs(context);
+  await focusWindow();
   const nulUrl = fixture.origin + '/page/nul-note';
   await invoke('save_page_note', { url: nulUrl, title: 'Literal note', text: 'before abc\u0000xyz after' });
   assert.equal((await invoke('search_command_items', { query: 'abc\u0000xyz' })).notes[0].url, nulUrl);
@@ -22,8 +24,6 @@ export async function checkCommandSearch(context) {
     await wait(300);
     await script(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true}));`);
     await until(()=>script('return Boolean(document.querySelector(".command-input"))'),'command bar');
-    // Wait for the opening select/focus timer before setting the test query.
-    await wait(30);
     await script(`const input=document.querySelector('.command-input'); input.value=arguments[0];input.dispatchEvent(new Event('input',{bubbles:true}));`,value);
   };
   const calculatorUrl = (await invoke('get_tabs')).tabs.find(tab => tab.is_active).url;
@@ -65,10 +65,13 @@ export async function checkCommandSearch(context) {
   assert.equal(await script('return document.querySelector(".command-item.selected").dataset.commandId'),'navigate-current','selection survives arriving results');
   assert.ok(await script('return document.querySelectorAll(".command-item").length<=12'));
   assert.equal(await script('return document.querySelectorAll("[data-command-id=open-new-tab],[data-command-id=navigate-current]").length'),2);
-  await shellClick(`[data-command-id="note-${noteUrl}"]`);
+  await clickCommand(`[data-command-id="note-${noteUrl}"]`);
   await until(()=>script('return document.querySelector("[data-testid=page-note-editor]")?.value.startsWith("100%_")'),'saved note editor');
+  await until(() => script('return !document.querySelector(".command-modal")'), 'the command bar closes before the note takes focus');
   assert.equal((await invoke('get_tabs')).tabs.length,before,'opening a note editor does not navigate');
   await until(()=>script('return document.querySelector("[data-testid=note-pinned-url]")?.textContent===arguments[0]',noteUrl),'note pinned to its URL');
+  await withWebview('/index.html?surface=tools', () => until(() => script(
+    'return document.querySelector("[data-testid=note-pinned-url]")?.textContent === arguments[0]', noteUrl), 'projected note keeps its original URL'));
   // A draft for the selected URL survives page changes and another search selection.
   await script(`const editor=document.querySelector('[data-testid=page-note-editor]');editor.value='Unsaved draft for original saved URL';editor.dispatchEvent(new Event('input',{bubbles:true}));`);
   // Switching tabs closes the bar (it is a layer above the page), but the draft is kept for its note.
@@ -76,7 +79,7 @@ export async function checkCommandSearch(context) {
   await until(()=>script('return !document.querySelector(".command-modal")'),'switching tabs closes the command bar');
   await query('cafe');
   await until(()=>script('return Boolean(document.querySelector(`[data-command-id="note-${arguments[0]}"]`))',noteUrl),'saved note result after reopening');
-  await shellClick(`[data-command-id="note-${noteUrl}"]`);
+  await clickCommand(`[data-command-id="note-${noteUrl}"]`);
   await until(()=>script('return document.querySelector("textarea")?.value==="Unsaved draft for original saved URL"'),'draft survives closing the bar');
   await until(()=>script('return document.querySelector("[data-testid=note-pinned-url]")?.textContent===arguments[0]',noteUrl),'note remains bound to original URL');
   await shellClick('[data-testid="note-follow-active"]');
@@ -84,7 +87,7 @@ export async function checkCommandSearch(context) {
   await script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))');
   await query('cafe');
   await until(()=>script('return Boolean(document.querySelector("[data-command-id^=session-]"))'),'session result');
-  await shellClick(`[data-command-id="session-${session.id}"]`);
+  await clickCommand(`[data-command-id="session-${session.id}"]`);
   await until(()=>script('return Boolean(document.querySelector("[data-testid=session-details]"))'),'session details');
   assert.equal((await invoke('get_tabs')).tabs.length,before,'Enter on a session only opens details');
   assert.ok(await script('return document.querySelector("[data-testid=session-details]").textContent.includes("Café")'));
@@ -101,7 +104,7 @@ export async function checkCommandSearch(context) {
   await until(()=>script('return Boolean(document.querySelector("[data-command-id^=note-]"))'),'note to remove');
   await invoke('delete_page_note',{url:fixture.origin+'/page/other-note'});
   await shellClick(`[data-command-id="note-${fixture.origin}/page/other-note"]`);
-  assert.ok(await script('return Boolean(document.querySelector(".command-input"))'),'removed item keeps command bar open');
+  await until(() => script('return Boolean(document.querySelector(".command-modal [role=alert]"))'), 'removed item reports an error and keeps the command bar open');
   await script(`document.querySelector('.command-input').value='';document.querySelector('.command-input').dispatchEvent(new Event('input',{bubbles:true}));`);
   await script(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));`);
   await invoke('switch_tab',{tabId:a.id});

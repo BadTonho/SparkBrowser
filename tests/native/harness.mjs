@@ -105,7 +105,11 @@ export async function runScenario(name, scenario) {
       await until(() => script('return !document.querySelector("#settings-search-input")'), 'full settings closed');
     }
     if (await script('return Boolean(document.querySelector("[data-testid=settings-quick-menu]"))')) {
-      await withWebview('/index.html?surface=settings-quick', () => script('document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}))'));
+      await withWebview('/index.html?surface=settings-quick', () => until(() => script(`
+        const menu = document.querySelector('[data-testid=settings-quick-menu]');
+        if (!menu) return false;
+        menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        return true;`), 'projected quick settings ready to close'));
       await until(() => script('return !document.querySelector("[data-testid=settings-quick-menu]")'), 'quick settings closed');
     }
   }

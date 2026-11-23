@@ -330,10 +330,22 @@ pub fn focus_lost<P: Panel>(app: &AppHandle) {
 }
 
 pub fn dismiss<P: Panel>(app: &AppHandle) {
+    dismiss_session::<P>(app, None);
+}
+
+fn dismiss_session<P: Panel>(app: &AppHandle, expected: Option<u64>) {
     let service = app.state::<Popover<P>>();
     let Ok(mut inner) = service.0.lock() else {
         return;
     };
+    if expected.is_some_and(|expected| {
+        inner
+            .session
+            .as_ref()
+            .is_none_or(|session| session.id != expected)
+    }) {
+        return;
+    }
     let Some(session) = inner.session.take() else {
         return;
     };

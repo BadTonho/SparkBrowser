@@ -4,6 +4,7 @@ import { createPanelProjection, type PanelPresentation } from "../../services/pa
 import type { Readable } from "svelte/store";
 import type { PanelViewAction } from "../../services/panel-presentation";
 import { onOverlayOpening } from "../../services/bridge/overlays";
+import { logIgnored } from "../../services/ignored-error";
 
 import { locale } from "../../i18n";
 
@@ -75,8 +76,9 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     dirty = false;
     last = encoded;
     const payload: Omit<PanelPresentation, "revision"> = { ...meta, tree: projection.snapshot() };
-    if (native) void set(true, session.id, { ...payload, revision: ++revision }).catch(() => {
-      console.error("Panel presentation failed"); if (!options.independent && get(sessionStore) === session) void close(true);
+    if (native) void set(true, session.id, { ...payload, revision: ++revision }).catch(error => {
+      logIgnored(new Error(`Failed to present ${id} panel: ${String(error)}`));
+      if (!options.independent && get(sessionStore) === session) void close(true).catch(logIgnored);
     });
   };
   const follow = () => { publish(); if (!disposed) frame = requestAnimationFrame(follow); };

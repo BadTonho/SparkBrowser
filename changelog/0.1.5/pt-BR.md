@@ -27,6 +27,8 @@
 
 ## Correções
 
+- O Spark remove o filtro quando um site troca para o próprio tema escuro com uma transição de fundo.
+- Abrir uma nota ou sessão salva pela barra de comandos mantém o painel Ferramentas aberto e dá foco a ele.
 - Corrigida a falha intermitente ao exibir Configurações quando a aba era aberta ou trocada rapidamente.
 - Uma segunda abertura com o mesmo perfil não trava mais e mantém a primeira instância em execução.
 - O Spark deixou de registrar falhas de limpeza quando a pasta da atualização preparada ou a chave do Windows Hello já estava ausente.

@@ -27,6 +27,8 @@
 
 ## Fixes
 
+- Sites that switch to their own dark theme through a background transition no longer stay inverted.
+- Opening a saved note or session from the Command Bar keeps the Tools panel open and gives it focus.
 - Fixed Settings tabs sometimes failing to display when opened or switched quickly.
 - A second launch with the same browser profile no longer crashes and leaves the first instance running.
 - Stopped reporting cleanup failures when the staged update folder or Windows Hello key was already absent.

@@ -10,14 +10,14 @@ function load(path, imports = {}, globals = {}) {
     { exports, require: name => { if (name === './download-visual') return load('src/lib/services/download-visual.ts', {}, { atob }); if (!(name in imports)) throw Error(name); return imports[name]; }, ...globals });
   return exports;
 }
-function fixture(tick = async () => {}) {
+function fixture(tick = async () => {}, settleOverlayVisibility = async () => {}) {
   const writable = value => ({ set: next => { value = next; }, subscribe: fn => { fn(value); return () => {}; } });
   const get = store => { let result; store.subscribe(value => result = value)(); return result; };
   const anchor = () => ({ isConnected: true, visible: true, focused: 0, getClientRects() { return this.visible ? [1] : []; }, focus() { this.focused++; } });
   const tools = anchor(), menu = anchor(), calls = [], notices = [], zen = writable(true);
   const api = load('src/lib/stores/toolsStore.ts', {
     'svelte/store': { get, writable }, svelte: { tick },
-    '../services/bridge/overlays': { notifyOpening: id => notices.push(id) },
+    '../services/bridge/overlays': { notifyOpening: id => notices.push(id), settleOverlayVisibility },
     '../services/bridge/tools-popover': { setToolsPopover: async (...args) => calls.push(args) }, './settingsStore': { isZenMode: zen },
   }, { document: { querySelector: selector => selector.includes('titlebar-actions') ? tools : menu } });
   return { ...api, get, tools, menu, calls, notices, zen };
@@ -41,6 +41,22 @@ test('compact mode anchors to More and a dismissed pending opening cannot reopen
   let resolve; const pending = fixture(() => new Promise(r => resolve = r));
   const opening = pending.openTools(); await pending.closeTools(); resolve(); await opening;
   assert.equal(pending.get(pending.isToolsOpen), false); assert.equal(pending.calls.length, 0);
+
+  let finishOverlay;
+  let enterOverlay;
+  const overlayEntered = new Promise(resolve => { enterOverlay = resolve; });
+  const settling = fixture(undefined, () => new Promise(resolve => {
+    finishOverlay = resolve;
+    enterOverlay();
+  }));
+  const waiting = settling.openTools('notes');
+  await overlayEntered;
+  assert.deepEqual(settling.notices, ['tools']);
+  assert.equal(settling.get(settling.isToolsOpen), false);
+  await settling.closeTools();
+  finishOverlay();
+  await waiting;
+  assert.equal(settling.get(settling.isToolsOpen), false);
 });
 
 test('panel remains below its anchor and within horizontal window margins', () => {

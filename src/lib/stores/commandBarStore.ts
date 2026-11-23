@@ -17,12 +17,11 @@ export function beginCommandBarSession(anchor: HTMLElement): void {
   if (get(commandBarSession)) return;
   commandBarSession.set({ id: ++sessionCounter, anchor });
 }
-export function endCommandBarSession(): void {
+function endCommandBarSession(restoreFocus: boolean): Promise<void> {
   const session = get(commandBarSession);
-  if (!session) return;
+  if (!session) return Promise.resolve();
   commandBarSession.set(null);
-  // Focus goes back to the browser window, so the keyboard is never left in the layer that just closed.
-  void setCommandsPopover(false, session.id, undefined, true).catch(() => {});
+  return setCommandsPopover(false, session.id, undefined, restoreFocus);
 }
 
 /**
@@ -40,11 +39,11 @@ export async function openCommandBar(initialQuery = ""): Promise<void> {
   await setOverlayVisibility(true, "command-bar");
 }
 
-export async function closeCommandBar(): Promise<void> {
+export async function closeCommandBar(restoreFocus = true): Promise<void> {
   commandBarScale.set(0.92);
   isCommandBarOpen.set(false);
   commandQuery.set("");
-  await setOverlayVisibility(false, "command-bar");
+  await Promise.all([endCommandBarSession(restoreFocus), setOverlayVisibility(false, "command-bar")]);
 }
 
 export async function toggleCommandBar(): Promise<void> {

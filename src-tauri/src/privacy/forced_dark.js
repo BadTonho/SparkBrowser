@@ -3,6 +3,7 @@
   const token = __FORCED_DARK_TOKEN__;
   const CLASS = '__spark-forced-dark';
   const STYLE_ID = '__spark-forced-dark-style';
+  const THEME_ATTRIBUTES = ['class', 'style', 'data-theme', 'data-color-mode'];
   // Dark pages are left alone: the filter only makes sense on a page that is actually light.
   const LIGHT_LUMINANCE = 0.6;
   let enabled = __FORCED_DARK_INITIAL__, applied = false, observer = null, timer = 0;
@@ -45,6 +46,7 @@
     (document.head || document.documentElement).append(style);
   }
   function evaluate() {
+    clearTimeout(timer);
     timer = 0;
     const root = document.documentElement;
     if (!root) return;
@@ -55,13 +57,24 @@
     else if (!light && applied) { root.classList.remove(CLASS); applied = false; }
   }
   function schedule() { if (!timer) timer = setTimeout(evaluate, 120); }
+  function backgroundTransition(event) {
+    if (event.propertyName === 'background-color' && (event.target === document.body || event.target === document.documentElement)) {
+      schedule();
+    }
+  }
   function watch() {
     observer?.disconnect(); observer = null;
-    if (!enabled) return;
+    if (!enabled) {
+      document.removeEventListener('transitionend', backgroundTransition, true);
+      document.removeEventListener('transitioncancel', backgroundTransition, true);
+      return;
+    }
+    // The first sample can still see the old colour when the site's transition starts late.
+    document.addEventListener('transitionend', backgroundTransition, true);
+    document.addEventListener('transitioncancel', backgroundTransition, true);
     observer = new MutationObserver(schedule);
-    // Themes are switched through attributes on the root and body, so those are all that needs watching.
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'data-color-mode'] });
-    if (document.body) observer.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: THEME_ATTRIBUTES });
+    if (document.body) observer.observe(document.body, { attributes: true, attributeFilter: THEME_ATTRIBUTES });
   }
   Object.defineProperty(window, '__sparkSetForcedDark', { writable: false, configurable: false,
     value(secret, value) {

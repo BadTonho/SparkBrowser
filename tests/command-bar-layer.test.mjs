@@ -29,7 +29,7 @@ test("the arrow keys and Enter of the layer reach the real bar, which keeps the 
   assert.match(surface, /kind: "keyboard", target: Number\(target\.dataset\.panelControl\)/);
   const bar = read("src/lib/components/commandbar/CommandBar.svelte");
   assert.ok(bar.includes("mountPanelHost") && bar.includes('id: "commands"') && bar.includes('class="command-controller"'));
-  assert.ok(bar.includes("beginCommandBarSession") && bar.includes("endCommandBarSession"));
+  assert.ok(bar.includes("beginCommandBarSession"));
 });
 
 test("the bar uses the browser's own surface instead of its own blue tint and glow", () => {
@@ -44,5 +44,10 @@ test("the bar uses the browser's own surface instead of its own blue tint and gl
 
 test("closing the bar gives the keyboard back to the browser window", () => {
   const store = read("src/lib/stores/commandBarStore.ts");
-  assert.match(store, /setCommandsPopover\(false, session\.id, undefined, true\)/);
+  assert.match(store, /closeCommandBar\(restoreFocus = true\)/);
+  assert.match(store, /setCommandsPopover\(false, session\.id, undefined, restoreFocus\)/);
+  assert.match(store, /await Promise\.all\(\[endCommandBarSession\(restoreFocus\), setOverlayVisibility\(false, "command-bar"\)\]\)/);
+  const bar = read("src/lib/components/commandbar/CommandBar.svelte");
+  assert.match(bar, /openSavedNote\(note\.url, \(\) => closeCommandBar\(false\)\)/);
+  assert.match(bar, /openSavedSession\(session\.id, \(\) => closeCommandBar\(false\)\)/);
 });

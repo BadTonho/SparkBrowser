@@ -5,7 +5,7 @@
 ## What it does and does not do
 
 - It acts **only on light pages**. After a page loads, the browser reads the colour actually painted behind the content (the page background, or the white canvas when the page paints none). If it is light, the page is darkened. A page that is already dark, or that switched itself to a dark theme through the system preference, is left exactly as authored.
-- The decision is re-checked when the page changes its own theme (class or style changes on the page root or body), so a site that switches to its dark theme loses the filter instead of being flipped back to light.
+- Spark checks the background again when a site changes its theme, including after a background-color transition on the document root or body. A site that switches to its own dark theme loses the filter.
 - Darkening inverts the page's colours and rotates the hue back, so accent colours stay close to the original. Images, video, canvas, embeds and frames are inverted back so photos keep their real colours. Side effects: logos drawn in black can end up dark on dark, and background images are inverted along with the page.
 - It works the same on Windows and Linux because it is applied by a script in the page, not by an engine flag. Only top-level pages are handled; the browser's own screens are not.
 - The script has no way to talk to the application; the shell switches it on with a per-view token, the same way as the automatic ad skipping.

@@ -26,7 +26,6 @@
     commandBarScale,
     commandBarSession,
     beginCommandBarSession,
-    endCommandBarSession,
     closeCommandBar,
   } from "../../stores/commandBarStore";
   import {
@@ -59,8 +58,6 @@
     if ($isCommandBarOpen && !$commandBarSession) {
       const anchor = document.querySelector(".browser-root");
       if (anchor instanceof HTMLElement) beginCommandBarSession(anchor);
-    } else if (!$isCommandBarOpen && $commandBarSession) {
-      endCommandBarSession();
     }
   });
   function host(node: HTMLElement) {
@@ -108,10 +105,13 @@
   $effect(() => {
     if ($isCommandBarOpen) {
       selectedId = null;
-      setTimeout(() => {
-        inputEl?.focus();
-        inputEl?.select();
-      }, 20);
+      // The projected input receives focus when the native panel is shown.
+      if (!native) {
+        setTimeout(() => {
+          inputEl?.focus();
+          inputEl?.select();
+        }, 20);
+      }
     }
   });
 
@@ -174,12 +174,12 @@
     for (const note of searchResults.notes) items.push({
       id: `note-${note.url}`, title: note.title || note.url, subtitle: note.preview || note.url,
       icon: "✎", badge: $t("search.notes"),
-      action: async () => { await openSavedNote(note.url); await closeCommandBar(); },
+      action: () => openSavedNote(note.url, () => closeCommandBar(false)),
     });
     for (const session of searchResults.sessions) items.push({
       id: `session-${session.id}`, title: session.name, subtitle: session.preview,
       icon: "▤", badge: $t("search.session_pages", { count: session.page_count }),
-      action: async () => { await openSavedSession(session.id); await closeCommandBar(); },
+      action: () => openSavedSession(session.id, () => closeCommandBar(false)),
     });
 
     // Matching open tabs

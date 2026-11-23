@@ -84,6 +84,7 @@ export async function checkShutdown(context) {
   assert.ok(changed.review.tabs.some(t=>t.id===b.id && t.form));
   await script(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));`);
   await until(async () => (await invoke('get_shutdown_state')).phase==='idle', 'cancel close');
+  await until(async () => await dialogView() === null, 'shutdown dialog has been dismissed');
   assert.ok((await invoke('get_tabs')).tabs.find(t=>t.id===a.id));
   assert.equal(await script('return Boolean(document.querySelector("[data-testid=tools-dialog]"))'), false, 'shutdown dismisses the floating tools panel');
 

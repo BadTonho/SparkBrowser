@@ -1,6 +1,6 @@
 import { get, writable } from "svelte/store";
 import { tick } from "svelte";
-import { notifyOpening } from "../services/bridge/overlays";
+import { notifyOpening, settleOverlayVisibility } from "../services/bridge/overlays";
 import { setToolsPopover } from "../services/bridge/tools-popover";
 import { isZenMode } from "./settingsStore";
 export type ToolsSection = "sessions" | "tabs" | "notes" | "closed" | "diagnostics" | "feeds";
@@ -21,6 +21,8 @@ export async function openTools(section: ToolsSection = "sessions", anchor?: HTM
   toolsSection.set(section);
   if (get(isToolsOpen)) return;
   notifyOpening("tools");
+  await settleOverlayVisibility();
+  if (request !== revision || !visible(reference)) return;
   toolsSession.set({ id: request, anchor: reference });
   isToolsOpen.set(true);
 }

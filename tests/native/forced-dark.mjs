@@ -22,8 +22,10 @@ export async function checkForcedDark(context) {
   assert.match((await state(light)).filter, /invert/);
 
   // A site that switches itself to a dark theme must lose the filter, or it would be flipped back to light.
-  await light(`document.body.style.background='#111820';document.body.style.color='#f2f4f8';`);
+  await light(`document.body.style.transitionDelay='250ms';document.body.style.background='#111820';document.body.style.color='#f2f4f8';`);
   await until(async () => !(await state(light)).dark, 'filter is removed when the page turns dark');
+  await light(`document.body.style.background=''; document.body.style.color='';`);
+  await until(async () => (await state(light)).dark, 'filter returns when the page goes back to its light theme');
 
   await invoke('set_forced_dark_mode', { enabled: false });
   const dark = await open('already-dark');
