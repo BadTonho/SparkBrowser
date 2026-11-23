@@ -283,3 +283,6 @@ html[data-theme="light"] body.has-wallpaper .recent-site {
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
+
+#custom-background { position:fixed; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; }
+#custom-background[hidden] { display:none; }

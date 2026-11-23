@@ -203,7 +203,9 @@
     if (dimInput) dimInput.value = dim.toString();
     renderDimming(dim);
 
-    const active = isEnabled && Boolean(currentMedia?.url);
+    // A custom background (Nebula, chosen in Personalizado) is drawn instead of the picture or video.
+    const customOn = getStorage('spark_custom_background') !== null;
+    const active = isEnabled && Boolean(currentMedia?.url) && !customOn;
 
     if (container) {
       if (active) {
@@ -235,7 +237,7 @@
         }
       } else {
         container.hidden = true;
-        if (document.body) document.body.classList.remove('has-wallpaper');
+        if (document.body) document.body.classList.toggle('has-wallpaper', customOn);
         if (image) {
           image.hidden = true;
           image.removeAttribute('src');
@@ -491,12 +493,16 @@
       if (
         event.key === 'spark_wallpaper_updated' ||
         event.key === 'spark_wallpaper_enabled' ||
-        event.key === 'spark_wallpaper_dim'
+        event.key === 'spark_wallpaper_dim' ||
+        event.key === 'spark_custom_background'
       ) {
         if (event.key === 'spark_wallpaper_updated') invalidateRecord();
         applyWallpaper();
       }
     });
+
+    // The custom background was chosen or removed in this same page.
+    window.addEventListener('spark-custom-background', () => { applyWallpaper(); });
 
     window.addEventListener('spark-new-tab', event => {
       labels = event.detail.labels || {};

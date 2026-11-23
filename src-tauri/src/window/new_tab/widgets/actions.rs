@@ -183,6 +183,16 @@ async fn perform(
             youtube::control(app, operation, None).await?;
             Ok(serde_json::json!({}))
         }
+        "wallpaper_editor" => {
+            // The shell of this window opens the editor in a tab of its own.
+            crate::error_log::ignored(crate::security::emit_shell_for_tab(
+                app,
+                &source.id,
+                "open-wallpaper-editor",
+                (),
+            ));
+            Ok(serde_json::json!({}))
+        }
         "youtube_seek" => {
             let seconds = data["seconds"].as_f64().ok_or("invalid_action")?;
             youtube::control(app, operation, Some(seconds)).await?;

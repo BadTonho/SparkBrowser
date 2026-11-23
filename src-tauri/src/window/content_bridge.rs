@@ -6,7 +6,9 @@ use tauri::{AppHandle, Manager, Url};
 /// Edits only count as unsaved work on web pages. The browser's own pages (new tab, settings) apply every
 /// control as soon as it changes, so flagging them made the exit review appear for no reason.
 fn tracks_form_edits(url: &str) -> bool {
-    !super::new_tab::is_new_tab(url) && !super::settings_tab::is_settings_url(url)
+    !super::new_tab::is_new_tab(url)
+        && !super::settings_tab::is_settings_url(url)
+        && !super::wallpaper_tab::is_wallpaper_url(url)
 }
 
 pub(super) fn handle(

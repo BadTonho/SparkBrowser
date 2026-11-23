@@ -19,6 +19,8 @@ pub fn tab_url(raw: &str) -> Result<String, String> {
         Ok(crate::window::new_tab::URL.into())
     } else if crate::window::settings_tab::is_settings_url(raw) {
         Ok(crate::window::settings_tab::URL.into())
+    } else if crate::window::wallpaper_tab::is_wallpaper_url(raw) {
+        Ok(crate::window::wallpaper_tab::URL.into())
     } else {
         page_url(raw)
     }

@@ -27,9 +27,17 @@
   }
 })();
 
-// Plano de fundo: a vertical list of its two groups (audio equalizer, background media), one panel shown at a time.
+// Plano de fundo > Personalizado: the button that opens the editor in a tab of its own. The preset cards
+// are built by custom-background.js.
 (() => {
-  const ids = [['wallpaper-tab-audio', 'audio-panel'], ['wallpaper-tab-media', 'wallpaper-media-panel']];
+  document.getElementById('wallpaper-customize')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('spark-new-tab-action', { detail: { action: 'widgets', operation: 'wallpaper_editor', data: {} } }));
+  });
+})();
+
+// Plano de fundo: a vertical list of its groups (audio equalizer, background media, custom), one panel shown at a time.
+(() => {
+  const ids = [['wallpaper-tab-audio', 'audio-panel'], ['wallpaper-tab-media', 'wallpaper-media-panel'], ['wallpaper-tab-custom', 'wallpaper-custom-panel']];
   const tabs = ids.map(([tab, panel]) => ({ tab: document.getElementById(tab), panel: document.getElementById(panel) }));
   if (tabs.some(({ tab, panel }) => !tab || !panel)) return;
   const available = () => tabs.filter(item => !(document.documentElement.dataset.private === 'true' && item.tab.id === 'wallpaper-tab-audio'));

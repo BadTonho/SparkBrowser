@@ -17,6 +17,7 @@
   import { initializeRecovery } from "./lib/stores/recoveryStore";
   import ClosedTabsNotice from "./lib/components/status/ClosedTabsNotice.svelte";
   import { initializeClosedTabEvents, restoreClosedTab } from "./lib/stores/closedTabsStore";
+  import { initializeWallpaperEditorEvents } from "./lib/stores/wallpaperEditorStore";
   import BackupNotice from "./lib/components/status/BackupNotice.svelte";
   import { initializeBackupStatus } from "./lib/stores/backupStore";
   import { initializePrivateWindow } from "./lib/stores/privateWindowStore";
@@ -195,6 +196,7 @@
     const stopBackup = initializeBackupStatus();
     const stopPrivateWindow = initializePrivateWindow();
     const stopClosedTabs = initializeClosedTabEvents();
+    const stopWallpaperEditor = initializeWallpaperEditorEvents();
     const stopUpdates = initializeUpdates();
     const stopPermissionEvents = initializePermissionEvents();
     const stopDownloadEvents = initializeDownloadEvents();
@@ -344,6 +346,7 @@
       stopPermissionEvents();
       stopUpdates();
       stopClosedTabs();
+      stopWallpaperEditor();
       stopBackup();
       stopPrivateWindow();
       stopDownloadEvents();

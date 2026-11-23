@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "build:nebula": "node tools/build-nebula-background.mjs",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "validate": "node tools/testing/validate.mjs",
     "validate:quick": "node tools/testing/validate.mjs --quick",

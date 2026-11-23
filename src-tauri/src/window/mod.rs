@@ -54,6 +54,7 @@ pub fn prepare_panel(app: &tauri::AppHandle, window_id: &str, panel: &str) -> Re
 pub mod quick_settings_popover;
 pub mod settings_overlay;
 pub(crate) mod settings_tab;
+pub(crate) mod wallpaper_tab;
 
 pub fn create_webview_builder(
     label: &str,

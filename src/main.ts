@@ -43,6 +43,8 @@ const component = new URLSearchParams(location.search).get("surface") === "tools
         ? import("./lib/components/commandbar/CommandsSurface.svelte")
         : new URLSearchParams(location.search).get("surface") === "suggestions"
         ? import("./lib/components/titlebar/SuggestionsSurface.svelte")
+        : new URLSearchParams(location.search).get("surface") === "wallpaper-editor"
+        ? import("./lib/components/wallpaper/WallpaperEditorSurface.svelte")
         : ["settings", "settings-tab"].includes(new URLSearchParams(location.search).get("surface") ?? "")
         ? import("./lib/components/settings/SettingsSurface.svelte")
         : import("./LaunchGate.svelte");

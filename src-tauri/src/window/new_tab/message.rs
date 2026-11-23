@@ -35,7 +35,8 @@ fn widget(operation: &str, data: &str) -> bool {
         | "connect" | "cancel_connect" | "disconnect" | "spotify_connect" | "spotify_cancel"
         | "spotify_disconnect" | "spotify_open" | "spotify_play" | "spotify_pause"
         | "spotify_next" | "spotify_previous" | "audio_subscribe" | "audio_unsubscribe"
-        | "youtube_toggle" | "youtube_next" | "youtube_previous" | "youtube_open" => {
+        | "youtube_toggle" | "youtube_next" | "youtube_previous" | "youtube_open"
+        | "wallpaper_editor" => {
             serde_json::from_str::<Empty>(data).is_ok()
         }
         "youtube_seek" => serde_json::from_str::<Seek>(data).is_ok_and(|value| {

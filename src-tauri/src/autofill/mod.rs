@@ -197,7 +197,8 @@ fn page_of(app: &AppHandle, label: &str) -> Option<Url> {
     let text = url.as_str();
     let web = matches!(url.scheme(), "http" | "https");
     (web && !crate::window::new_tab::is_new_tab(text)
-        && !crate::window::settings_tab::is_settings_url(text))
+        && !crate::window::settings_tab::is_settings_url(text)
+        && !crate::window::wallpaper_tab::is_wallpaper_url(text))
     .then_some(url)
 }
 

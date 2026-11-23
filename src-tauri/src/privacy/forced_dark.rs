@@ -6,6 +6,7 @@ use tauri::{AppHandle, Manager};
 /// The browser's own pages: they paint their own theme and must never be darkened by the filter.
 pub fn is_own_document(app: &AppHandle, url: &tauri::Url) -> bool {
     crate::window::settings_tab::is_document(app, url)
+        || crate::window::wallpaper_tab::is_document(app, url)
         || crate::window::new_tab::is_document(app, url)
 }
 

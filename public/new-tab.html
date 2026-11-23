@@ -18,7 +18,9 @@
   <script src="/new-tab/youtube.js" defer></script>
   <link rel="stylesheet" href="/new-tab/wallpaper.css">
   <script src="/new-tab/wallpaper-framing.js" defer></script>
+  <script src="/new-tab/nebula-background.js" defer></script>
   <script src="/new-tab/wallpaper.js" defer></script>
+  <script src="/new-tab/custom-background.js" defer></script>
   <link rel="stylesheet" href="/new-tab/audio-background.css">
   <script src="/new-tab/audio-styles.js" defer></script>
   <script src="/new-tab/audio-background.js" defer></script>
@@ -36,6 +38,7 @@
     <video id="wallpaper-video" autoplay loop muted playsinline hidden></video>
     <div id="wallpaper-overlay" class="wallpaper-dim-overlay"></div>
   </div>
+  <canvas id="custom-background" aria-hidden="true" hidden></canvas>
   <canvas id="audio-background" aria-hidden="true" hidden></canvas>
   <div id="widgets" hidden>
     <section id="clock-card-widget" class="widget clock-widget clock-card" aria-labelledby="clock-card-heading" hidden>
@@ -295,6 +298,7 @@
       <div id="wallpaper-tabs" role="tablist" aria-orientation="vertical">
         <button id="wallpaper-tab-audio" type="button" role="tab" aria-selected="true" aria-controls="audio-panel"><span class="tab-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10v4M8 6v12M12 3v18M16 8v8M20 11v2"/></svg></span><span class="tab-label" data-label="audioBackground"></span></button>
         <button id="wallpaper-tab-media" type="button" role="tab" aria-selected="false" aria-controls="wallpaper-media-panel" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg></span><span class="tab-label" data-label="wallpaperMedia"></span></button>
+        <button id="wallpaper-tab-custom" type="button" role="tab" aria-selected="false" aria-controls="wallpaper-custom-panel" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span><span class="tab-label" data-label="wallpaperCustom"></span></button>
       </div>
       <div id="audio-panel" role="tabpanel" aria-labelledby="wallpaper-tab-audio">
       <fieldset id="audio-background-settings">
@@ -379,6 +383,14 @@
           </div>
         </div>
       </div>
+      </div>
+      <div id="wallpaper-custom-panel" role="tabpanel" aria-labelledby="wallpaper-tab-custom" hidden>
+        <div id="wallpaper-custom-home">
+          <div id="wallpaper-presets" role="radiogroup" aria-labelledby="wallpaper-presets-label">
+            <span id="wallpaper-presets-label" class="mc-sr" data-label="wallpaperPresets"></span>
+          </div>
+          <button id="wallpaper-customize" type="button" class="wallpaper-customize"><span data-label="wallpaperCustomize"></span></button>
+        </div>
       </div>
     </section>
     <section id="clock-section" class="settings-view" aria-labelledby="settings-heading" hidden>

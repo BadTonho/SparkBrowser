@@ -112,7 +112,8 @@ pub(super) fn create_tab_webview(
             crate::privacy::forced_dark::effective(
                 app.state::<BrowserState>().policies().forced_dark_enabled(),
                 super::new_tab::is_new_tab(initial_url_str)
-                    || super::settings_tab::is_settings_url(initial_url_str),
+                    || super::settings_tab::is_settings_url(initial_url_str)
+                    || super::wallpaper_tab::is_wallpaper_url(initial_url_str),
             ),
         ))
         .zoom_hotkeys_enabled(false)
@@ -262,6 +263,7 @@ pub(super) fn create_tab_webview(
 
         if super::new_tab::is_document(&app_handle_for_nav, nav_url)
             || super::settings_tab::is_document(&app_handle_for_nav, nav_url)
+            || super::wallpaper_tab::is_document(&app_handle_for_nav, nav_url)
         {
             return true;
         }
@@ -375,7 +377,9 @@ pub(super) fn create_tab_webview(
 
     // The settings page is the app's own and dark by default: it must not show white while it loads.
     #[cfg(windows)]
-    if super::settings_tab::is_settings_url(initial_url_str) {
+    if super::settings_tab::is_settings_url(initial_url_str)
+        || super::wallpaper_tab::is_wallpaper_url(initial_url_str)
+    {
         super::windows_background::dark_until_painted(
             &app.get_webview(&label).ok_or("New WebView was not found")?,
         );

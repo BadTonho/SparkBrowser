@@ -111,3 +111,18 @@ html[data-theme="light"] #settings-panel[data-layout="center"] :is(#spotify-sect
 
 /* The right column uses all the room that is left, so no empty strip remains beside it. */
 #settings-panel[data-layout="center"] :is(#spotify-section, #wallpaper-section) > [role="tabpanel"] { max-width:none; }
+
+.settings-note { margin:8px 0; font-size:12px; opacity:.7; }
+
+#wallpaper-presets { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin:0 0 16px; }
+.wallpaper-preset { display:flex; flex-direction:column; gap:8px; padding:8px; border:1px solid rgba(255, 255, 255, 0.085); border-radius:12px; background:rgba(255, 255, 255, 0.035); color:inherit; font:inherit; font-size:12px; font-weight:600; text-align:left; cursor:pointer; transition:background 140ms ease, border-color 140ms ease; }
+.wallpaper-preset:hover { background:rgba(255, 255, 255, 0.07); border-color:rgba(255, 255, 255, 0.16); }
+.wallpaper-preset[aria-checked="true"] { background:rgba(255, 255, 255, 0.12); border-color:rgba(255, 255, 255, 0.34); }
+.wallpaper-preset:focus-visible, .wallpaper-customize:focus-visible { outline:2px solid var(--nt-focus-ring); outline-offset:2px; }
+.wallpaper-preset-art { display:block; aspect-ratio:16 / 10; border-radius:8px; background:linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)); border:1px dashed rgba(255, 255, 255, 0.16); }
+.wallpaper-customize { width:100%; min-height:44px; border:1px solid rgba(255, 255, 255, 0.085); border-radius:11px; background:rgba(255, 255, 255, 0.035); color:inherit; font:inherit; font-size:12px; font-weight:600; cursor:pointer; transition:background 140ms ease; }
+.wallpaper-customize:hover { background:rgba(255, 255, 255, 0.07); }
+html[data-theme="light"] .wallpaper-preset, html[data-theme="light"] .wallpaper-customize { border-color:rgba(0, 0, 0, 0.09); background:rgba(0, 0, 0, 0.025); }
+html[data-theme="light"] .wallpaper-preset:hover, html[data-theme="light"] .wallpaper-customize:hover { background:rgba(0, 0, 0, 0.06); }
+html[data-theme="light"] .wallpaper-preset[aria-checked="true"] { background:rgba(0, 0, 0, 0.09); border-color:rgba(0, 0, 0, 0.28); }
+html[data-theme="light"] .wallpaper-preset-art { background:linear-gradient(135deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.02)); border-color:rgba(0, 0, 0, 0.18); }

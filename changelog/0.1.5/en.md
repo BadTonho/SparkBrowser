@@ -2,6 +2,7 @@
 
 ## New features
 
+- **Custom background editor:** in the new tab's Background settings, **Custom → Customize** opens an editor in its own tab with the **Nebula** look drawn live: colors (random palette or from an image), gradient map with draggable stops, shape, motion, grade and effects such as grain, tone, vignette and dither. Save your settings as named presets and bring them back later. Presets show up in the new tab's Background settings, and choosing one draws it live as the new tab background.
 - **Tab groups:** in the vertical tab list, right-click a tab to create a named, colored group (from one tab or from the selected tabs) and drag tabs into it. Each group can fold in place or open its tabs in a side list. Groups are saved and come back when Spark restarts.
 - **Own right-click menu in the tab list:** right-clicking a tab or the empty part of the vertical tab list opens Spark's menu instead of the browser one, with **New tab**, **Reopen closed tab**, **Add tab to bookmarks** and **Add divider below** (a line that separates groups of tabs; drag it to move it, double-click it to give it a name, right-click it to rename or remove it).
 - **Downloads** section in Settings: choose the folder downloads are saved to (and go back to the default), keep or turn off the question about where to save each file, and choose whether the downloads panel opens when a download finishes. The question about where to save moved here from Performance.

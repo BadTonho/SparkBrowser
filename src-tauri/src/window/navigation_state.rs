@@ -283,6 +283,7 @@ pub(super) fn with_page_events(
         }
         if super::new_tab::is_document(&app_for_page_load, payload.url())
             || super::settings_tab::is_document(&app_for_page_load, payload.url())
+            || super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
         {
             crate::error_log::ignored(webview.set_zoom(1.0));
         }
@@ -308,6 +309,8 @@ pub(super) fn with_page_events(
                         tab.title = super::new_tab::title(&app_for_page_load);
                     } else if super::settings_tab::is_settings_url(&tab.url) {
                         tab.title = super::new_tab::settings_title(&app_for_page_load);
+                    } else if super::wallpaper_tab::is_wallpaper_url(&tab.url) {
+                        tab.title = super::new_tab::wallpaper_title(&app_for_page_load);
                     }
                 }
             },
@@ -315,6 +318,7 @@ pub(super) fn with_page_events(
         if matches!(payload.url().scheme(), "http" | "https")
             && !super::new_tab::is_document(&app_for_page_load, payload.url())
             && !super::settings_tab::is_document(&app_for_page_load, payload.url())
+            && !super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
         {
             crate::error_log::ignored(crate::zoom::apply(
                 &app_for_page_load,
@@ -352,6 +356,7 @@ pub(super) fn with_page_events(
             .unwrap_or_default();
         if super::new_tab::is_document(&app_for_page_load, payload.url())
             || super::settings_tab::is_document(&app_for_page_load, payload.url())
+            || super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
         {
             if let Some(writer) = app_for_page_load
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
@@ -367,6 +372,7 @@ pub(super) fn with_page_events(
         } else if matches!(payload.url().scheme(), "http" | "https")
             && !super::new_tab::is_document(&app_for_page_load, payload.url())
             && !super::settings_tab::is_document(&app_for_page_load, payload.url())
+            && !super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
             && !is_ephemeral
         {
             if let Some(writer) = app_for_page_load
