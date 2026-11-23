@@ -1,4 +1,5 @@
 import { logIgnored } from "../../services/ignored-error";
+import { isLook, DEFAULT_LOOK } from "../../wallpaper/looks";
 import { sanitizeParams, type EditorParams } from "../../wallpaper/params";
 import { editor } from "./editorState.svelte";
 
@@ -15,7 +16,7 @@ function load(): Preset[] {
     return raw.items.slice(0, MAX_PRESETS).flatMap((item: unknown): Preset[] => {
       const entry = item as Partial<Preset> | null;
       if (!entry || typeof entry.id !== "string" || typeof entry.name !== "string") return [];
-      return [{ id: entry.id.slice(0, 64), name: entry.name.slice(0, MAX_NAME), look: typeof entry.look === "string" ? entry.look : "nebula", params: sanitizeParams(entry.params) }];
+      return [{ id: entry.id.slice(0, 64), name: entry.name.slice(0, MAX_NAME), look: isLook(entry.look) ? entry.look : DEFAULT_LOOK, params: sanitizeParams(entry.params) }];
     });
   } catch (error) { logIgnored(error); return []; }
 }
@@ -46,7 +47,7 @@ class Presets {
   apply(id: string) {
     const preset = this.items.find(item => item.id === id);
     if (!preset) return;
-    editor.look = preset.look;
+    editor.look = isLook(preset.look) ? preset.look : DEFAULT_LOOK;
     editor.params = sanitizeParams(preset.params);
   }
   remove(id: string) {

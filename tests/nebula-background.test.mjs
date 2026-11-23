@@ -37,7 +37,7 @@ function fixture(items = []) {
     __sparkNebula: {
       sanitize: value => ({ ...value, checked: true }),
       gradientCss: () => 'linear-gradient(red, blue)',
-      start() { calls.start++; return { update: params => calls.update.push(params), destroy() { calls.destroy++; } }; },
+      start() { calls.start++; return { update: (params, look) => calls.update.push({ ...params, look }), destroy() { calls.destroy++; } }; },
     },
   };
   const document = {
@@ -52,7 +52,7 @@ function fixture(items = []) {
   return { nodes, store, calls, window };
 }
 const presetsOf = fx => fx.nodes['wallpaper-presets'].children.filter(child => child.id !== 'wallpaper-presets-label');
-const saved = [{ id: 'a', name: 'Warm', params: { bias: 0.3 } }, { id: 'b', name: 'Cold', params: { bias: 0.1 } }];
+const saved = [{ id: 'a', name: 'Warm', look: 'space', params: { bias: 0.3 } }, { id: 'b', name: 'Cold', params: { bias: 0.1 } }];
 
 test('with no preset saved the list explains how to make one and nothing is drawn', () => {
   const fx = fixture();
@@ -119,4 +119,17 @@ test('damaged storage is ignored instead of breaking the page', () => {
   fx.window.listeners.storage({ key: 'spark_custom_background' });
   assert.equal(fx.calls.start, 0);
   assert.equal(fx.nodes['custom-background'].hidden, true);
+});
+
+test('the look of a preset is drawn, and a choice saved before looks existed is a Nebula', () => {
+  const fx = fixture(saved);
+  presetsOf(fx)[0].listeners.click();
+  assert.equal(fx.calls.update.at(-1).look, 'space');
+  assert.equal(JSON.parse(fx.store.get('spark_custom_background')).look, 'space');
+  presetsOf(fx)[1].listeners.click();
+  assert.equal(fx.calls.update.at(-1).look, 'nebula', 'a preset without a look is a Nebula');
+  const old = fixture(saved);
+  old.store.set('spark_custom_background', JSON.stringify({ id: 'x', params: { bias: 0.2 } }));
+  old.window.listeners.storage({ key: 'spark_custom_background' });
+  assert.equal(old.calls.update.at(-1).look, 'nebula');
 });

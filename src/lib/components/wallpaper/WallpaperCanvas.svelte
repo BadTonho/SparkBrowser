@@ -15,7 +15,7 @@
     failed = !renderer;
     return () => renderer?.destroy();
   });
-  $effect(() => { renderer?.update($state.snapshot(editor.params), editor.lut); });
+  $effect(() => { renderer?.update($state.snapshot(editor.params), editor.lut, editor.look); });
 </script>
 
 <canvas bind:this={canvas} aria-hidden="true"></canvas>

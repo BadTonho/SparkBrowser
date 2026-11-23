@@ -1,19 +1,20 @@
-/** Entry of the bundle the new tab page loads (`public/new-tab/nebula-background.js`): the same engine as the
- *  editor, behind a small global API, because the new tab page is plain scripts with no build step.
+/** Entry of the bundle the new tab page loads (`public/new-tab/nebula-background.js`): the same engine and
+ *  looks as the editor, behind a small global API, because the new tab page is plain scripts with no build step.
  *  Rebuild with `npm run build:nebula`. */
 import { createRenderer } from "./renderer";
 import { lutFromParams, lutToCss } from "./gradient";
+import { lookById } from "./looks";
 import { sanitizeParams } from "./params";
 
-export interface NebulaBackground { update(settings: unknown): void; destroy(): void }
+export interface NebulaBackground { update(settings: unknown, look?: string): void; destroy(): void }
 
 function start(canvas: HTMLCanvasElement, report: (error: unknown) => void): NebulaBackground | null {
   const renderer = createRenderer(canvas, report);
   if (!renderer) return null;
   return {
-    update(settings) {
+    update(settings, look) {
       const params = sanitizeParams(settings);
-      renderer.update(params, lutFromParams(params));
+      renderer.update(params, lutFromParams(params), lookById(look).id);
     },
     destroy() { renderer.destroy(); },
   };

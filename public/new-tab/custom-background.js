@@ -21,17 +21,18 @@
     if (!stored || !Array.isArray(stored.items) || !nebula()) return [];
     return stored.items.slice(0, MAX_PRESETS)
       .filter(item => item && typeof item.id === 'string' && typeof item.name === 'string')
-      .map(item => ({ id: item.id, name: item.name.slice(0, 40), params: nebula().sanitize(item.params) }));
+      .map(item => ({ id: item.id, name: item.name.slice(0, 40), look: typeof item.look === 'string' ? item.look : 'nebula', params: nebula().sanitize(item.params) }));
   }
   function active() {
     const value = read(ACTIVE_KEY);
-    return value && typeof value.id === 'string' && nebula() ? { id: value.id, params: nebula().sanitize(value.params) } : null;
+    // A choice saved before there were several looks has none, and was a Nebula.
+    return value && typeof value.id === 'string' && nebula() ? { id: value.id, look: typeof value.look === 'string' ? value.look : 'nebula', params: nebula().sanitize(value.params) } : null;
   }
 
   function choose(preset) {
     try {
       if (active()?.id === preset.id) localStorage.removeItem(ACTIVE_KEY);
-      else localStorage.setItem(ACTIVE_KEY, JSON.stringify({ id: preset.id, name: preset.name, params: preset.params }));
+      else localStorage.setItem(ACTIVE_KEY, JSON.stringify({ id: preset.id, name: preset.name, look: preset.look, params: preset.params }));
     } catch (error) { report(error); }
     apply();
     renderList();
@@ -77,7 +78,7 @@
     if (current && !background) background = nebula().start(canvas, report);
     if (current && background) {
       canvas.hidden = false;
-      background.update(current.params);
+      background.update(current.params, current.look);
       return;
     }
     background?.destroy();

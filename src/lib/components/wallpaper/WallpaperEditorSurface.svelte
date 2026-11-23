@@ -6,7 +6,7 @@
   import WallpaperCanvas from "./WallpaperCanvas.svelte";
   import WallpaperPresetsPanel from "./WallpaperPresetsPanel.svelte";
   import Segmented from "./controls/Segmented.svelte";
-  import { LOOKS } from "./looks";
+  import { LOOKS } from "../../wallpaper/looks";
   import { editor } from "./editorState.svelte";
   import { L } from "./strings";
 

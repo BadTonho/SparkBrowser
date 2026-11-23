@@ -8,14 +8,17 @@
   import { lutToCss } from "../../wallpaper/gradient";
   import { editor } from "./editorState.svelte";
   import { L } from "./strings";
+  import { lookById } from "../../wallpaper/looks";
   import PanelSection from "./controls/PanelSection.svelte";
   import ParamSlider from "./controls/ParamSlider.svelte";
   import Segmented from "./controls/Segmented.svelte";
   import ToggleRow from "./controls/ToggleRow.svelte";
   import ColorSwatch from "./controls/ColorSwatch.svelte";
   import GradientStops from "./controls/GradientStops.svelte";
+  import LookControl from "./controls/LookControl.svelte";
 
   const p = $derived(editor.params);
+  const look = $derived(lookById(editor.look));
   const gradient = $derived(lutToCss(editor.lut));
   const sign = (value: number, unit = "") => `${value >= 0 ? "+" : "−"}${Math.abs(value).toFixed(2)}${unit}`;
 
@@ -74,14 +77,15 @@
   </PanelSection>
 
   <PanelSection title={L.shape}>
-    <ParamSlider label={L.scale} value={p.shape.scale} spec={SPECS.scale} onchange={(value) => (editor.params.shape.scale = value)} />
-    <ParamSlider label={L.billow} value={p.shape.billow} spec={SPECS.billow} onchange={(value) => (editor.params.shape.billow = value)} />
-    <ParamSlider label={L.contrast} value={p.shape.contrast} spec={SPECS.shapeContrast} onchange={(value) => (editor.params.shape.contrast = value)} />
-    <ParamSlider label={L.stars} value={p.shape.stars} spec={SPECS.stars} onchange={(value) => (editor.params.shape.stars = value)} />
+    {#each look.controls.filter((item) => item.group === "shape") as item (`${look.id}-${item.key}`)}
+      <LookControl {item} value={p.shapes[look.id]?.[item.key] ?? item.default} onchange={(value) => (editor.params.shapes[look.id][item.key] = value)} />
+    {/each}
   </PanelSection>
 
   <PanelSection title={L.motion}>
-    <ParamSlider label={L.drift} value={p.drift} spec={SPECS.drift} onchange={(value) => (editor.params.drift = value)} />
+    {#each look.controls.filter((item) => item.group === "motion") as item (`${look.id}-${item.key}`)}
+      <LookControl {item} value={p.shapes[look.id]?.[item.key] ?? item.default} onchange={(value) => (editor.params.shapes[look.id][item.key] = value)} />
+    {/each}
   </PanelSection>
 
   <PanelSection title={L.grade}>
