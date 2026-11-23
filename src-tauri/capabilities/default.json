@@ -246,6 +246,8 @@
     "allow-get-closed-tabs",
     "allow-get-tab-dividers",
     "allow-set-tab-dividers",
+    "allow-get-tab-groups",
+    "allow-set-tab-groups",
     "allow-reopen-closed-tab",
     "allow-clear-closed-tabs",
     "allow-get-shutdown-state",

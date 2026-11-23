@@ -21,6 +21,7 @@ use commands::browser_data::{clear_browser_data, estimate_cleanup};
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::tab_dividers::{get_tab_dividers, set_tab_dividers};
+use commands::tab_groups::{get_tab_groups, set_tab_groups};
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::error_report::report_frontend_error;
@@ -742,6 +743,8 @@ pub fn run() {
             get_closed_tabs,
             get_tab_dividers,
             set_tab_dividers,
+            get_tab_groups,
+            set_tab_groups,
             reopen_closed_tab,
             clear_closed_tabs,
             export_backup,

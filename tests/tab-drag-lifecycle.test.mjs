@@ -57,6 +57,8 @@ function fixture({ failDrop = false } = {}) {
     './workspaceSelectionStore': { activeWorkspaceId: writable('ws') },
     './splitViewStore': { splitLayout: writable(null), splitKey: () => null },
     './settingsStore': { tabLayout: writable('horizontal') },
+    './tabGroupsStore': { tabGroups: writable({ groups: [], members: {} }), addTabsToGroup() {}, removeTabsFromGroup() {} },
+    './tabSelectionStore': { selectedTabIds: writable([]) },
     '../i18n': { locale: writable('en'), tr: key => key },
     '../services/ignored-error': { logIgnored() {} }, '../services/bridge/overlays': { onOverlayOpening: () => () => {} },
     '../services/bridge/tab-drag': bridge,

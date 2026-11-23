@@ -1,8 +1,11 @@
 <script lang="ts">
   import { createListFlip } from "../../services/list-flip";
-  import { showTabContextMenu } from "../../stores/persistenceStore";
+  import { showTabContextMenu, openTabGroupPopover } from "../../stores/persistenceStore";
   import { tabDividers, moveTabDivider, loadTabDividers, reanchorTabDividers } from "../../stores/tabDividersStore";
   import TabDivider from "./TabDivider.svelte";
+  import TabGroupHeader from "./TabGroupHeader.svelte";
+  import { tabGroups, loadTabGroups, removeTabsFromGroup } from "../../stores/tabGroupsStore";
+  
   import AppIcon from "../icons/AppIcon.svelte";
   import TabFavicon from "./TabFavicon.svelte";
   import ContainerBadge from "./ContainerBadge.svelte";
@@ -34,11 +37,44 @@
       (t) => !t.workspace_id || t.workspace_id === $activeWorkspaceId
     )
   );
-  onMount(() => { void loadTabDividers(); });
+  /** Tabs in the order they are shown: the tabs of a group are gathered where its first tab is. */
+  let displayTabs = $derived.by(() => {
+    const members = $tabGroups.members;
+    const present = new Map<string, typeof workspaceTabs>();
+    for (const tab of workspaceTabs) {
+      const group = members[tab.id];
+      if (group) present.set(group, [...(present.get(group) ?? []), tab]);
+    }
+    const shown = new Set<string>();
+    return workspaceTabs.flatMap((tab) => {
+      const group = members[tab.id];
+      if (!group) return [tab];
+      if (shown.has(group)) return [];
+      shown.add(group);
+      return present.get(group) ?? [];
+    });
+  });
+  /** One entry per group that has a tab in this workspace, placed just before its first tab. */
+  let visibleGroups = $derived(
+    $tabGroups.groups.flatMap((group) => {
+      const first = displayTabs.findIndex((tab) => $tabGroups.members[tab.id] === group.id);
+      const count = displayTabs.filter((tab) => $tabGroups.members[tab.id] === group.id).length;
+      return first >= 0 ? [{ group, count, order: 4 * (first + 1) - 2 }] : [];
+    }),
+  );
+  /** A tab of a collapsed group is hidden, unless it is the one being viewed. */
+  const isHidden = (tab: (typeof workspaceTabs)[number]) => {
+    const group = $tabGroups.groups.find((item) => item.id === $tabGroups.members[tab.id]);
+    if (!group) return false;
+    // A side-list group keeps all of its tabs in the list; a folded one keeps only the tab being viewed.
+    return group.mode === "popup" || (group.collapsed && !tab.is_active);
+  };
+  const groupOf = (tabId: string) => $tabGroups.groups.find((item) => item.id === $tabGroups.members[tabId]);
+  onMount(() => { void loadTabDividers(); void loadTabGroups(); });
   let visibleDividers = $derived(
     $tabDividers.flatMap((divider) => {
-      const index = divider.after === "" ? -1 : workspaceTabs.findIndex((tab) => tab.id === divider.after);
-      return divider.after === "" || index >= 0 ? [{ divider, order: 2 * (index + 1) + 1 }] : [];
+      const index = divider.after === "" ? -1 : displayTabs.findIndex((tab) => tab.id === divider.after);
+      return divider.after === "" || index >= 0 ? [{ divider, order: 4 * (index + 1) + 1 }] : [];
     }),
   );
   /** Right-click on empty space: the same menu as a tab, applied to the end of the list. */
@@ -52,9 +88,10 @@
   function tabAfterPointer(y: number): string {
     if (!listEl) return "";
     const top = listEl.getBoundingClientRect().top - listEl.scrollTop;
-    let after = "";
+    let after = "", lowest = -1;
     for (const row of listEl.querySelectorAll<HTMLElement>(".tab-row")) {
-      if (top + (row.offsetTop - listEl.offsetTop) + row.offsetHeight / 2 < y) after = row.dataset.tabId ?? after;
+      const middle = row.offsetTop - listEl.offsetTop + row.offsetHeight / 2;
+      if (top + middle < y && middle > lowest) { after = row.dataset.tabId ?? after; lowest = middle; }
     }
     return after;
   }
@@ -65,7 +102,7 @@
     await tick();
     flip.play();
   }
-  const order = $derived(workspaceTabs.map(tab => tab.id).join("|"));
+  const order = $derived(displayTabs.map(tab => tab.id).join("|") + "#" + $tabGroups.groups.map(group => group.collapsed ? group.id : "").join("") + $tabGroups.groups.map(group => group.mode).join(""));
   $effect.pre(() => { order; flip.measure(); });
   $effect(() => { order; flip.play(); });
 
@@ -90,6 +127,7 @@
     event.stopPropagation();
     const index = workspaceTabs.findIndex((tab) => tab.id === tabId);
     reanchorTabDividers(tabId, index > 0 ? workspaceTabs[index - 1].id : "");
+    removeTabsFromGroup([tabId]);
     removeTab(tabId);
   }
 
@@ -159,10 +197,17 @@
   </div>
 
   <div class="tabs-list" bind:this={listEl}>
-    {#each workspaceTabs as tab, index (tab.id)}
+    {#each visibleGroups as item (item.group.id)}
+      <TabGroupHeader group={item.group} order={item.order} count={item.count} onopen={openTabGroupPopover} />
+    {/each}
+    {#each displayTabs as tab, index (tab.id)}
+      {#if !isHidden(tab)}
       <div
         class="tab-row"
-        style:order={2 * (index + 1)}
+        class:in-group={!!groupOf(tab.id)}
+        data-group-id={groupOf(tab.id)?.id}
+        data-color={groupOf(tab.id)?.color}
+        style:order={4 * (index + 1)}
         data-tab-id={tab.id}
         class:active={tab.is_active}
         class:multi-selected={$selectedTabIds.includes(tab.id)}
@@ -230,6 +275,7 @@
           </button>
         </div>
       </div>
+      {/if}
     {/each}
     <!-- Dividers are placed with CSS `order` instead of living between the rows: moving one to another
          slot then never moves its element in the DOM, so a drag in progress is not interrupted. -->
@@ -447,6 +493,22 @@
     background: var(--accent-gradient);
     height: 24px;
   }
+
+  .tab-row.in-group {
+    --group-color: #9aa0a6;
+    margin-left: 10px;
+    border-left: 3px solid var(--group-color);
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+  }
+  .tab-row[data-color="grey"] { --group-color: #9aa0a6; }
+  .tab-row[data-color="blue"] { --group-color: #5b9cf5; }
+  .tab-row[data-color="red"] { --group-color: #f26b6b; }
+  .tab-row[data-color="yellow"] { --group-color: #f2c14e; }
+  .tab-row[data-color="green"] { --group-color: #4cc38a; }
+  .tab-row[data-color="pink"] { --group-color: #f472b6; }
+  .tab-row[data-color="purple"] { --group-color: #a78bfa; }
+  .tab-row[data-color="cyan"] { --group-color: #4cc9f0; }
 
   .tab-glyph {
     font-size: 14px;

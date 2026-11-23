@@ -30,6 +30,7 @@ Native web views, workspaces, split view and local-first privacy tools, in one c
 - **Workspaces and layouts:** group tabs into workspaces, arrange them horizontally or vertically, or use [split view](./docs/en/features/split-view.md) and Zen mode.
 - **Command bar:** search, switch tabs and run actions from the [command bar](./docs/en/features/command-search.md), with [keyboard shortcuts](./docs/en/features/keyboard-shortcuts.md) across tabs.
 - **Profiles:** separate [profiles](./docs/en/features/profiles.md), each with its own history, bookmarks, logins and settings, opened in their own windows and optionally protected by an [app lock](./docs/en/features/app-lock.md).
+- **Tab groups and dividers:** organize the vertical tab list with [named, colored groups and dividers](./docs/en/features/tab-groups.md) and a tab menu of its own.
 - **Tab care:** [hibernation](./docs/en/features/hibernation.md) for idle tabs, restore recently closed tabs, and [tab media controls](./docs/en/features/tab-media.md).
 
 ### Privacy and security

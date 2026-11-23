@@ -449,7 +449,7 @@ pub async fn set_bookmark_context_menu_overlay(
 
     let presentation = presentation.unwrap_or_default();
     let token = create_internal_bridge_token();
-    let actions = actions.unwrap_or_default();
+    let actions: Vec<_> = actions.unwrap_or_default().into_iter().map(BookmarkContextMenuAction::sanitized).collect();
     let script = build_bookmark_context_menu_script(
         x.unwrap_or(8.0),
         y.unwrap_or(8.0),
@@ -464,7 +464,7 @@ pub async fn set_bookmark_context_menu_overlay(
         *current_token = Some(token);
     }
     if let Ok(mut allowed_actions) = state.surfaces().bookmark_context_menu_actions().lock() {
-        *allowed_actions = actions.into_iter().map(|action| action.id).collect();
+        *allowed_actions = actions.iter().filter(|action| !action.heading).map(|action| action.id.clone()).collect();
     }
     if let Ok(mut open) = state.surfaces().bookmark_context_menu_open().lock() {
         *open = true;

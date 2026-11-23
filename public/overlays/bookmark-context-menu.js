@@ -47,11 +47,61 @@
           menu.style.backdropFilter = `blur(${Math.min(24, Math.max(0, Number(payload.backdropBlurPx) || 0))}px)`;
 
           for (const action of payload.actions || []) {
+            if (action.heading) {
+              const heading = document.createElement("div");
+              heading.className = "heading";
+              if (/^#[0-9a-f]{6}$/i.test(action.color || "")) {
+                const dot = document.createElement("span");
+                dot.className = "dot";
+                dot.style.background = action.color;
+                heading.appendChild(dot);
+                menu.style.borderColor = action.color + "66";
+              } else {
+                menu.style.borderColor = "";
+              }
+              const name = document.createElement("span");
+              name.textContent = action.label;
+              heading.appendChild(name);
+              menu.appendChild(heading);
+              continue;
+            }
             const button = document.createElement("button");
             button.type = "button";
             button.setAttribute("role", "menuitem");
             button.dataset.danger = String(Boolean(action.danger));
-            button.textContent = action.label;
+            const rich = action.icon !== undefined || action.subtitle || action.active;
+            if (rich) {
+              button.classList.add("rich");
+              if (action.active) button.classList.add("active");
+              if (/^#[0-9a-f]{6}$/i.test(action.color || "")) button.style.setProperty("--item-color", action.color);
+              const icon = document.createElement("span");
+              icon.className = "icon";
+              if (typeof action.icon === "string" && /^data:image\//.test(action.icon)) {
+                const image = document.createElement("img");
+                image.alt = "";
+                image.draggable = false;
+                image.src = action.icon;
+                icon.appendChild(image);
+              } else {
+                icon.textContent = "\u2726";
+              }
+              const text = document.createElement("span");
+              text.className = "text";
+              const title = document.createElement("span");
+              title.className = "title";
+              title.textContent = action.label;
+              text.appendChild(title);
+              if (action.subtitle) {
+                const subtitle = document.createElement("span");
+                subtitle.className = "subtitle";
+                subtitle.textContent = action.subtitle;
+                text.appendChild(subtitle);
+              }
+              button.append(icon, text);
+              if (action.active) button.setAttribute("aria-current", "true");
+            } else {
+              button.textContent = action.label;
+            }
             button.addEventListener("click", (event) => {
               event.preventDefault();
               event.stopPropagation();

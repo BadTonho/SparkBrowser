@@ -14,7 +14,8 @@
     openBookmarkFolderManager,
     tabBookmarkTarget,
   } from "../../stores/persistenceStore";
-  import { addTab } from "../../stores/browserStore";
+  import { addTab, selectTab } from "../../stores/browserStore";
+  import { addTabsToGroup, createGroup, editingGroupId, removeTabsFromGroup, setGroupColor, setGroupMode, tabGroups, ungroup, GROUP_COLORS, type GroupColor } from "../../stores/tabGroupsStore";
   import { restoreClosedTab } from "../../stores/closedTabsStore";
   import { activeWorkspaceId } from "../../stores/workspaceStore";
   import { addTabDivider, editingDividerId, removeTabDivider } from "../../stores/tabDividersStore";
@@ -27,7 +28,24 @@
     closeBookmarkContextMenu();
 
     try {
-      if (action === "new-tab" && menu.kind === "tab") {
+      if (action.startsWith("select-tab:") && menu.kind === "group-tabs") {
+        await selectTab(action.slice("select-tab:".length));
+      } else if (action === "create-group" && menu.kind === "tab") {
+        createGroup(menu.targets);
+      } else if (action.startsWith("add-to-group:") && menu.kind === "tab") {
+        addTabsToGroup(menu.targets, action.slice("add-to-group:".length));
+      } else if (action === "remove-from-group" && menu.kind === "tab") {
+        removeTabsFromGroup(menu.targets);
+      } else if (menu.kind === "group") {
+        const group = get(tabGroups).groups.find((item) => item.id === menu.groupId);
+        if (action === "rename-group") editingGroupId.set(menu.groupId);
+        else if (action === "ungroup") ungroup(menu.groupId);
+        else if (action === "toggle-group-mode" && group) setGroupMode(menu.groupId, group.mode === "popup" ? "collapse" : "popup");
+        else if (action.startsWith("color:")) {
+          const color = action.slice("color:".length) as GroupColor;
+          if (GROUP_COLORS.includes(color)) setGroupColor(menu.groupId, color);
+        }
+      } else if (action === "new-tab" && menu.kind === "tab") {
         await addTab(undefined, get(activeWorkspaceId));
       } else if (action === "reopen-closed-tab" && menu.kind === "tab") {
         await restoreClosedTab();

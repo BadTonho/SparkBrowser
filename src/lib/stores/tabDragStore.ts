@@ -10,6 +10,8 @@ import { onOverlayOpening } from "../services/bridge/overlays";
 import { detachTabToNewWindow } from "../services/bridge/windows";
 import { dockTabToSplit, moveTabInSplit, setDragPreview, flushDragPreview, type DockSide, type DockContext } from "../services/bridge/tab-drag";
 import { crossedDragThreshold, splitDropSide } from "../services/tab-drag-geometry.js";
+import { tabGroups, addTabsToGroup, removeTabsFromGroup } from "./tabGroupsStore";
+import { selectedTabIds } from "./tabSelectionStore";
 import { mediaPopover, closeMedia } from "./mediaPopoverStore";
 import { privacyPopover, closePrivacy } from "./privacyPopoverStore";
 import { zoomPopover, closeZoom } from "./zoomPopoverStore";
@@ -27,6 +29,7 @@ interface Drag {
 export const tabDrag = writable<{ id: string; dragging: boolean; side: DockSide | null } | null>(null);
 let drag: Drag | null = null, busy = false, frame = 0, lastPreview = "", pendingMove = false;
 let hoveredWorkspace: Element | null = null;
+let hoveredGroup: Element | null = null;
 let lastReorderTarget: string | null = null;
 
 function publish() { tabDrag.set(drag ? { id: drag.id, dragging: drag.moved, side: drag.side } : null); }
@@ -60,7 +63,7 @@ function cleanup(keepDockPreview = false) {
   if (previous?.root.hasPointerCapture(previous.pointerId)) previous.root.releasePointerCapture(previous.pointerId);
   document.body.style.cursor = previous?.cursor ?? ''; document.body.style.userSelect = previous?.userSelect ?? '';
   document.querySelectorAll('.drop-hover').forEach(element => element.classList.remove('drop-hover'));
-  hoveredWorkspace = null; lastReorderTarget = null;
+  hoveredWorkspace = null; hoveredGroup = null; lastReorderTarget = null;
   tabDrag.set(null);
   const hidden = keepDockPreview ? flushDragPreview() : setDragPreview(null);
   void hidden.catch(logIgnored);
@@ -103,6 +106,18 @@ function move(event: PointerEvent) {
   drag.ghost?.move(drag.x, drag.y);
   pendingMove = true;
 }
+/** The group header (or a tab of a group) under the pointer, unless the dragged tab already belongs to it. */
+function groupUnder(target: Element | null | undefined): HTMLElement | null {
+  if (!drag) return null;
+  const element = target?.closest<HTMLElement>('.tab-group-header,.tab-row[data-group-id]') ?? null;
+  const id = element?.dataset.groupId;
+  return element && id && get(tabGroups).members[drag.id] !== id ? element : null;
+}
+/** The tabs a drag moves: the whole selection when the dragged tab is part of it. */
+function draggedIds(id: string) {
+  const selected = get(selectedTabIds);
+  return selected.includes(id) ? [...selected] : [id];
+}
 function processMove() {
   if (!drag || !pendingMove) return;
   pendingMove = false;
@@ -113,6 +128,12 @@ function processMove() {
     hoveredWorkspace?.classList.remove('drop-hover');
     pill?.classList.add('drop-hover');
     hoveredWorkspace = pill ?? null;
+  }
+  const group = groupUnder(target);
+  if (hoveredGroup !== group) {
+    hoveredGroup?.classList.remove('drop-hover');
+    group?.classList.add('drop-hover');
+    hoveredGroup = group;
   }
   const over = target?.closest<HTMLElement>('.h-tab,.tab-row')?.dataset.tabId;
   if (drag.side || !over || over === drag.id) lastReorderTarget = null;
@@ -141,6 +162,10 @@ async function release(event: PointerEvent) {
   const targetTab = target?.closest<HTMLElement>('.h-tab')?.dataset.tabId;
   const displayed = targetSide && get(splitLayout) ? get(tabs).filter(tab => get(splitLayout)![targetSide === 'left' ? 'left_tab_ids' : 'right_tab_ids'].includes(tab.id)).map(tab => tab.id) : [];
   const beforeId = targetTab && targetTab !== drag.id ? targetTab : displayed.includes(drag.id) ? displayed[displayed.indexOf(drag.id) + 1] ?? null : null;
+  const dropGroup = drag.moved ? groupUnder(target)?.dataset.groupId : undefined;
+  const dropRow = drag.moved ? target?.closest<HTMLElement>('.tab-row') : null;
+  const leaveGroup = Boolean(dropRow && !dropRow.dataset.groupId && get(tabGroups).members[drag.id]);
+  const movedIds = draggedIds(drag.id);
   const docking = drag.moved && drag.side !== null;
   const ended = cleanup(docking);
   if (!ended) return;
@@ -155,7 +180,10 @@ async function release(event: PointerEvent) {
       if (isTauriRuntime()) applyTabsSnapshot(await moveTabInSplit(ended.id, targetSide, beforeId, ended.context));
     } else if (ended.moved && targetWorkspace) {
       await finishTabReorder(true); await changeTabWorkspace(ended.id, targetWorkspace);
+    } else if (ended.moved && dropGroup) {
+      await finishTabReorder(true); addTabsToGroup(movedIds, dropGroup);
     } else {
+      if (leaveGroup) removeTabsFromGroup(movedIds);
       await finishTabReorder(ended.moved && !targetTabList);
       if (!ended.moved) await selectTab(ended.id);
     }

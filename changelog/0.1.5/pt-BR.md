@@ -2,6 +2,7 @@
 
 ## Novas funcionalidades
 
+- **Grupos de guias:** na lista de guias vertical, clique com o botão direito em uma guia para criar um grupo com nome e cor (a partir de uma guia ou das guias selecionadas) e arraste guias para dentro dele. Cada grupo pode recolher no lugar ou abrir as guias em uma lista ao lado. Os grupos ficam salvos e voltam quando o Spark reinicia.
 - **Menu próprio ao clicar com o botão direito na lista de guias:** clicar com o botão direito em uma guia ou no espaço vazio da lista de guias verticais abre o menu do Spark em vez do menu do navegador, com **Nova guia**, **Reabrir guia fechada**, **Adicionar guia aos favoritos** e **Adicionar divisão abaixo** (uma linha que separa grupos de guias; arraste para movê-la, clique duas vezes para dar um nome, clique com o botão direito para renomear ou remover).
 - Seção **Downloads** nas Configurações: escolha a pasta onde os downloads são salvos (e volte ao padrão), mantenha ou desligue a pergunta de onde salvar cada arquivo e defina se o painel de downloads abre quando um download termina. A pergunta de onde salvar saiu do Desempenho e veio para cá.
 - **Preenchimento automático nas páginas:** clique em um campo de login, cartão ou contato e escolha um item salvo para preencher o formulário. Logins só aparecem no próprio site, cartões nunca preenchem o código de segurança e, com o Windows Hello configurado para ser pedido sempre, ele é pedido antes de preencher um login ou cartão. Interruptores para desligar e para permitir em janelas privadas (uma cópia somente leitura do cofre).

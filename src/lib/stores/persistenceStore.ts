@@ -19,6 +19,9 @@ import {
   windowNumber,
 } from "../services/tauri-bridge";
 import { overlayBlurPx } from "./settingsStore";
+import { siteIcons, siteKey, ensureSiteIcon } from "./siteIconStore";
+import { selectedTabIds } from "./tabSelectionStore";
+import { tabGroups, GROUP_COLORS, GROUP_COLOR_HEX } from "./tabGroupsStore";
 import { tabs } from "./browserStore";
 import { closedTabs } from "./closedTabsStore";
 
@@ -39,7 +42,9 @@ export type BookmarkContextMenuState =
   | { kind: "bookmark"; x: number; y: number; bookmark: BookmarkItem }
   | { kind: "folder"; x: number; y: number; folder: BookmarkFolder }
   | { kind: "empty"; x: number; y: number }
-  | { kind: "tab"; x: number; y: number; tabId: string; windows: string[]; empty?: boolean }
+  | { kind: "tab"; x: number; y: number; tabId: string; windows: string[]; empty?: boolean; targets: string[] }
+  | { kind: "group"; x: number; y: number; groupId: string }
+  | { kind: "group-tabs"; x: number; y: number; groupId: string }
   | { kind: "divider"; x: number; y: number; dividerId: string }
   | null;
 
@@ -121,6 +126,29 @@ export function showBookmarkContextMenu(
   refreshBookmarkContextMenu();
 }
 
+const groupLabel = (name: string) => name || tr("tabs.group_unnamed");
+
+/** Right-click on a group header. */
+export function showTabGroupContextMenu(event: MouseEvent, groupId: string): void {
+  event.preventDefault();
+  event.stopPropagation();
+  bookmarkContextMenuState.set({
+    kind: "group",
+    groupId,
+    x: Math.max(8, Math.min(event.clientX, window.innerWidth - 236)),
+    y: Math.max(8, Math.min(event.clientY, window.innerHeight - 180)),
+  });
+  refreshBookmarkContextMenu();
+}
+
+/** A group set to open aside: its tabs appear in a list next to the header. */
+export function openTabGroupPopover(group: { id: string }, anchor: HTMLElement): void {
+  for (const tab of get(tabs)) if (get(tabGroups).members[tab.id] === group.id) ensureSiteIcon(tab.url);
+  const box = anchor.getBoundingClientRect();
+  bookmarkContextMenuState.set({ kind: "group-tabs", groupId: group.id, x: box.right + 6, y: box.top });
+  refreshBookmarkContextMenu();
+}
+
 /** Right-click on a divider line between tabs: offers to remove it. */
 export function showTabDividerContextMenu(event: MouseEvent, dividerId: string): void {
   event.preventDefault();
@@ -144,6 +172,8 @@ export async function showTabContextMenu(event: MouseEvent, tabId: string, empty
     kind: "tab",
     tabId,
     empty,
+    // A tab that is part of the selection acts for the whole selection.
+    targets: get(selectedTabIds).includes(tabId) ? [...get(selectedTabIds)] : [tabId],
     windows: others,
     x: Math.max(8, Math.min(event.clientX, window.innerWidth - 236)),
     y: Math.max(8, Math.min(event.clientY, window.innerHeight - 180)),
@@ -154,13 +184,43 @@ export async function showTabContextMenu(event: MouseEvent, tabId: string, empty
 function refreshBookmarkContextMenu(): void {
   const menu = get(bookmarkContextMenuState);
   if (!menu) return;
+  const groupState = get(tabGroups);
+  const groupActions = menu.kind === "tab" && !menu.empty ? [
+    { id: "create-group", label: menu.targets.length > 1 ? tr("tabs.menu_group_create_many", { count: menu.targets.length }) : tr("tabs.menu_group_create") },
+    ...groupState.groups.map(group => ({ id: `add-to-group:${group.id}`, label: tr("tabs.menu_group_add", { name: groupLabel(group.name) }) })),
+    ...(menu.targets.some(id => id in groupState.members) ? [{ id: "remove-from-group", label: tr("tabs.menu_group_remove") }] : []),
+  ] : [];
   const tabActions = menu.kind === "tab" ? [
     { id: "new-tab", label: tr("tabs.menu_new_tab") },
     ...(get(closedTabs).length ? [{ id: "reopen-closed-tab", label: tr("closed.reopen") }] : []),
     ...(tabBookmarkTarget(menu) ? [{ id: "bookmark-tab", label: tr("tabs.menu_bookmark_tab") }] : []),
+    ...groupActions,
     { id: "add-divider", label: tr("tabs.menu_add_divider") },
   ] : [];
-  const actions = menu.kind === "divider"
+  const group = menu.kind === "group" || menu.kind === "group-tabs" ? groupState.groups.find(item => item.id === menu.groupId) : undefined;
+  const actions = menu.kind === "group-tabs"
+    ? [
+        { id: "heading", label: groupLabel(group?.name ?? ""), heading: true, color: group ? GROUP_COLOR_HEX[group.color] : undefined },
+        ...get(tabs).filter(tab => groupState.members[tab.id] === menu.groupId).map(tab => {
+          const key = siteKey(tab.url);
+          return {
+            id: `select-tab:${tab.id}`,
+            label: tab.title || tab.url,
+            subtitle: key ?? undefined,
+            icon: (key && get(siteIcons)[key]) || "",
+            active: tab.is_active,
+            color: group ? GROUP_COLOR_HEX[group.color] : undefined,
+          };
+        }),
+      ]
+    : menu.kind === "group"
+    ? [
+        { id: "rename-group", label: tr("tabs.menu_group_rename") },
+        ...GROUP_COLORS.filter(color => color !== group?.color).map(color => ({ id: `color:${color}`, label: tr("tabs.menu_group_color", { color: tr(`tabs.color_${color}`) }) })),
+        { id: "toggle-group-mode", label: group?.mode === "popup" ? tr("tabs.menu_group_mode_collapse") : tr("tabs.menu_group_mode_popup") },
+        { id: "ungroup", label: tr("tabs.menu_group_ungroup"), danger: true },
+      ]
+    : menu.kind === "divider"
     ? [
         { id: "rename-divider", label: tr("tabs.menu_rename_divider") },
         { id: "remove-divider", label: tr("tabs.menu_remove_divider"), danger: true },

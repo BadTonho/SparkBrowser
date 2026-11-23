@@ -54,6 +54,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_closed_tabs",
     "get_tab_dividers",
     "set_tab_dividers",
+    "get_tab_groups",
+    "set_tab_groups",
     "reopen_closed_tab",
     "clear_closed_tabs",
     "export_backup",

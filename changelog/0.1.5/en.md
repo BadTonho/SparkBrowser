@@ -2,6 +2,7 @@
 
 ## New features
 
+- **Tab groups:** in the vertical tab list, right-click a tab to create a named, colored group (from one tab or from the selected tabs) and drag tabs into it. Each group can fold in place or open its tabs in a side list. Groups are saved and come back when Spark restarts.
 - **Own right-click menu in the tab list:** right-clicking a tab or the empty part of the vertical tab list opens Spark's menu instead of the browser one, with **New tab**, **Reopen closed tab**, **Add tab to bookmarks** and **Add divider below** (a line that separates groups of tabs; drag it to move it, double-click it to give it a name, right-click it to rename or remove it).
 - **Downloads** section in Settings: choose the folder downloads are saved to (and go back to the default), keep or turn off the question about where to save each file, and choose whether the downloads panel opens when a download finishes. The question about where to save moved here from Performance.
 - **Autofill in pages:** click a login, card or contact field and pick a saved item to fill the form. Logins are offered only on their own site, cards never fill the security code, and with Windows Hello set to be asked each time it is asked before a login or card is filled. Switches to turn it off and to allow it in private windows (a read-only copy of the vault).

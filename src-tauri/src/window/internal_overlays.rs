@@ -26,6 +26,38 @@ pub struct BookmarkContextMenuAction {
     pub label: String,
     #[serde(default)]
     pub danger: bool,
+    /// Small site icon (an image data URL); anything else is dropped.
+    #[serde(default)]
+    pub icon: Option<String>,
+    #[serde(default)]
+    pub subtitle: Option<String>,
+    /// Marks the entry for the tab being viewed.
+    #[serde(default)]
+    pub active: bool,
+    /// A title line that cannot be chosen.
+    #[serde(default)]
+    pub heading: bool,
+    /// Accent color as `#rrggbb`; anything else is dropped.
+    #[serde(default)]
+    pub color: Option<String>,
+}
+
+impl BookmarkContextMenuAction {
+    /// Keeps only what the menu may show: a small image data URL and short text.
+    pub fn sanitized(mut self) -> Self {
+        let icon_ok = |icon: &str| {
+            icon.len() <= 32_768
+                && icon.starts_with("data:image/")
+                && icon.chars().all(|c| !c.is_control() && c != '"' && c != '\'' && c != ' ')
+        };
+        self.icon = self.icon.filter(|icon| icon_ok(icon));
+        self.color = self.color.filter(|color| {
+            color.len() == 7 && color.starts_with('#') && color[1..].chars().all(|c| c.is_ascii_hexdigit())
+        });
+        self.label = self.label.chars().take(200).collect();
+        self.subtitle = self.subtitle.map(|text| text.chars().take(200).collect());
+        self
+    }
 }
 
 pub fn create_internal_bridge_token() -> String {
@@ -340,4 +372,30 @@ pub(super) fn spawn_bookmark_context_menu_webview(
         crate::error_log::ignored(webview.hide());
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod menu_action_tests {
+    use super::BookmarkContextMenuAction;
+    fn action(icon: &str) -> BookmarkContextMenuAction {
+        serde_json::from_value(serde_json::json!({"id":"a","label":"A","icon":icon})).unwrap()
+    }
+    #[test]
+    fn only_hex_colors_survive() {
+        let color = |value: &str| -> BookmarkContextMenuAction {
+            serde_json::from_value(serde_json::json!({"id":"a","label":"A","color":value})).unwrap()
+        };
+        assert_eq!(color("#f2c14e").sanitized().color.as_deref(), Some("#f2c14e"));
+        assert!(color("red").sanitized().color.is_none());
+        assert!(color("#12345;}").sanitized().color.is_none());
+    }
+    #[test]
+    fn only_small_image_data_urls_survive() {
+        assert!(action("data:image/png;base64,AAAA").sanitized().icon.is_some());
+        assert!(action("https://evil.test/a.png").sanitized().icon.is_none());
+        assert!(action("data:text/html;base64,AAAA").sanitized().icon.is_none());
+        assert!(action("data:image/png;base64,\"onerror=1").sanitized().icon.is_none());
+        let big = format!("data:image/png;base64,{}", "A".repeat(40_000));
+        assert!(action(&big).sanitized().icon.is_none());
+    }
 }

@@ -79,6 +79,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Suporte a WebExtensions do Chrome](features/extensions.md)
 - [Modo Leitura Imersivo](features/reader-mode.md)
 - [Abas Efêmeras e containers descartáveis](features/ephemeral-tabs.md)
+- [Menu da guia, divisões e grupos](features/tab-groups.md)
 - [Fronteiras de segurança do aplicativo](security/application-boundaries.md)
 - [Privacidade de rede: modo somente HTTPS e DNS sobre HTTPS](features/network-privacy.md)
 - [Investigação de privacidade de rede](security/network-privacy-investigation.md)
