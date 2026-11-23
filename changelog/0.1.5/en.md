@@ -13,6 +13,7 @@
 
 ## Improvements
 
+- Vertical tabs no longer show the site address under the tab name; sleeping and private tabs still show their badge.
 - The startup profile picker uses cards with larger photos or initials and shows the last-used label below the profile name.
 - Closing Spark shows a compact saving card when needed. The confirmation dialog makes unsaved forms and downloads that cannot resume easier to spot, and save errors have a clear retry action.
 - **Create profile** opens a dialog to choose a name, photo and optional password. Select the centered avatar to choose or change the photo, and use the eye icon inside the password field to show or hide the password. The photo appears in Settings and the startup profile picker. Leave the password blank to open the profile without a password.
@@ -34,3 +35,4 @@
 - Stopped reporting cleanup failures when the staged update folder or Windows Hello key was already absent.
 - Stopped polling for page media while Settings is the active tab.
 - Fixed **Return to tab** in the floating video player so it closes the pop-up and restores the video in its original tab.
+- The YouTube widget can now be shown only in the vertical tabs sidebar: a new **Show on the new tab page** switch lets you turn off the new tab card while keeping the sidebar one.

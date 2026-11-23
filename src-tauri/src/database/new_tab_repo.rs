@@ -22,6 +22,8 @@ pub struct Settings {
     pub youtube_enabled: bool,
     /// Also show the now-playing card at the bottom of the vertical-tabs sidebar.
     pub youtube_sidebar: bool,
+    /// Show the now-playing card on the new tab page (can be off while the sidebar card is on).
+    pub youtube_new_tab: bool,
     pub automatic_location: bool,
     pub fahrenheit: bool,
     pub city: Option<City>,
@@ -36,6 +38,7 @@ impl Default for Settings {
             spotify_client_id: String::new(),
             youtube_enabled: false,
             youtube_sidebar: true,
+            youtube_new_tab: true,
             automatic_location: false,
             fahrenheit: false,
             city: None,

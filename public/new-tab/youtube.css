@@ -288,3 +288,10 @@ html[data-theme="light"] .youtube-choice-sample {
     to { transform: scale(1.22) translateX(5%); }
   }
 }
+
+.toggle-described { min-height:60px; }
+.toggle-text { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.toggle-title { font-size:13px; font-weight:650; }
+.toggle-hint { color:#a3a3a3; font-size:11px; font-weight:500; line-height:1.35; }
+html[data-theme="light"] .toggle-hint { color:#666; }
+#youtube-sidebar-example { margin:0 0 16px; }

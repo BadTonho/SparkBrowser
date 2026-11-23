@@ -13,6 +13,7 @@
 
 ## Melhorias
 
+- As guias verticais não mostram mais o endereço do site abaixo do nome da guia; guias dormindo e privadas continuam mostrando o selo.
 - O seletor de perfis ao iniciar usa cartões com fotos ou iniciais maiores e mostra a indicação de último uso abaixo do nome do perfil.
 - Ao fechar o Spark, um cartão compacto aparece se o salvamento demorar. A janela de confirmação destaca formulários alterados e downloads que não podem ser retomados, e os erros de salvamento têm uma ação clara para tentar novamente.
 - **Criar perfil** abre uma janela para escolher nome, foto e senha opcional. Selecione o avatar central para escolher ou trocar a foto e use o ícone de olho dentro do campo de senha para mostrar ou ocultar a senha. A foto aparece nas Configurações e no seletor de perfis ao iniciar. Deixe a senha em branco para abrir o perfil sem senha.
@@ -34,3 +35,4 @@
 - O Spark deixou de registrar falhas de limpeza quando a pasta da atualização preparada ou a chave do Windows Hello já estava ausente.
 - O Spark deixou de consultar a mídia da página quando Configurações é a aba ativa.
 - Corrigido o botão **Voltar à aba** do vídeo flutuante para fechar a janela e restaurar o vídeo na aba de origem.
+- O widget do YouTube agora pode aparecer só na barra lateral de guias verticais: a nova opção **Mostrar na página de nova guia** permite desligar o cartão da nova guia e manter o da barra lateral.

@@ -238,18 +238,26 @@ test('controls send native operations and the setting is emitted as a widget pre
     f.node(id).listeners.click();
     assert.equal(f.dispatched.at(-1).detail.operation, operation);
   }
-  f.node('youtube-enabled').listeners.change({target: {checked: true}});
-  assert.equal(f.dispatched.at(-1).type, 'spark-youtube-setting');
-  assert.equal(f.dispatched.at(-1).detail.youtube_enabled, true);
+  f.window.__sparkYoutubeRender({youtube_enabled: false});
+  assert.equal(f.node('youtube-new-tab').checked, false);
+  assert.equal(f.node('youtube-sidebar').checked, false);
+  f.node('youtube-new-tab').checked = true;
+  f.node('youtube-new-tab').listeners.change({target: {checked: true}});
+  assert.deepEqual({...f.dispatched.at(-1).detail}, {youtube_new_tab: true, youtube_sidebar: false, youtube_enabled: true});
+  f.window.__sparkYoutubeRender({youtube_enabled: true, youtube_new_tab: false, youtube_sidebar: true});
+  assert.equal(f.node('youtube-new-tab').checked, false);
+  assert.equal(f.node('youtube-sidebar').checked, true);
+  assert.equal(f.node('youtube-widget').hidden, true);
 
   for (const youtube_sidebar of [false, true]) {
+    f.node('youtube-sidebar').checked = youtube_sidebar; f.node('youtube-new-tab').checked = true;
     f.node('youtube-sidebar').listeners.change({target: {checked: youtube_sidebar}});
     assert.equal(f.dispatched.at(-1).type, 'spark-youtube-setting');
     assert.equal(f.dispatched.at(-1).detail.youtube_sidebar, youtube_sidebar);
     f.window.__sparkYoutubeRender({youtube_enabled: true, youtube_sidebar});
     assert.equal(f.node('youtube-sidebar').checked, youtube_sidebar);
     assert.equal(f.node('youtube-options').hidden, false);
-    assert.equal(f.node('youtube-sidebar-example').hidden, false);
+    assert.equal(f.node('youtube-sidebar-example').hidden, !youtube_sidebar);
     assert.equal(f.node('youtube-sidebar-sample').children.length, 1);
   }
 });

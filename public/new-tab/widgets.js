@@ -106,8 +106,9 @@
     else if (typeof patch.spotify_client_id === 'string') change({ spotify_client_id: patch.spotify_client_id });
   });
   window.addEventListener('spark-youtube-setting', event => {
-    if (typeof event.detail.youtube_enabled === 'boolean') change({ youtube_enabled: event.detail.youtube_enabled });
-    if (typeof event.detail.youtube_sidebar === 'boolean') change({ youtube_sidebar: event.detail.youtube_sidebar });
+    const patch = {};
+    for (const key of ['youtube_enabled', 'youtube_sidebar', 'youtube_new_tab']) if (typeof event.detail[key] === 'boolean') patch[key] = event.detail[key];
+    if (Object.keys(patch).length) change(patch);
   });
   window.addEventListener('spark-audio-setting', event => {
     if (!settings()) return;
@@ -196,8 +197,8 @@
     if (!snapshot) return;
     const config = settings();
     gear.disabled = false;
-    $('widgets').hidden = !config.weather_enabled && !config.gmail_enabled && !config.spotify_enabled && !config.youtube_enabled && $('clock-card-widget').hidden;
-    $('widgets-left').hidden = !config.weather_enabled && !config.spotify_enabled && !config.youtube_enabled;
+    $('widgets').hidden = !config.weather_enabled && !config.gmail_enabled && !config.spotify_enabled && !(config.youtube_enabled && config.youtube_new_tab !== false) && $('clock-card-widget').hidden;
+    $('widgets-left').hidden = !config.weather_enabled && !config.spotify_enabled && !(config.youtube_enabled && config.youtube_new_tab !== false);
     window.__sparkSpotifyRender?.(config, snapshot.spotify, saving);
     window.__sparkYoutubeRender?.(config, snapshot.youtube, saving);
     window.__sparkAudioRender?.(config.audio_background, saving);

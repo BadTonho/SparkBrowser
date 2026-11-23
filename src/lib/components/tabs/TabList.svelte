@@ -42,14 +42,6 @@
   );
   let activeTabId = $derived(workspaceTabs.find((tab) => tab.is_active)?.id);
 
-  function getTabHost(rawUrl: string): string {
-    try {
-      return new URL(rawUrl).hostname.replace(/^www\./, "");
-    } catch {
-      return rawUrl;
-    }
-  }
-
   function getTabGlyph(rawUrl: string, isHibernated: boolean): string {
     if (isHibernated) return "sleep";
     const lower = rawUrl.toLowerCase();
@@ -167,15 +159,16 @@
         {#if tab.container_id}<ContainerBadge id={tab.container_id} />{/if}
         <div class="tab-meta">
           <span class="tab-title" class:is-hibernated={tab.is_hibernated}>{tab.title}</span>
-          <span class="tab-host">
-            {getTabHost(tab.url)}
-            {#if tab.is_hibernated}
-              <span class="hibernated-badge">· <AppIcon name="sleep" /> {formatTabSavings(tab.id)}</span>
-            {/if}
-            {#if tab.is_ephemeral}
-              <span class="ephemeral-tag">· <AppIcon name="eye-off" /> {$t("tabs.ephemeral_badge")}</span>
-            {/if}
-          </span>
+          {#if tab.is_hibernated || tab.is_ephemeral}
+            <span class="tab-host">
+              {#if tab.is_hibernated}
+                <span class="hibernated-badge"><AppIcon name="sleep" /> {formatTabSavings(tab.id)}</span>
+              {/if}
+              {#if tab.is_ephemeral}
+                <span class="ephemeral-tag"><AppIcon name="eye-off" /> {$t("tabs.ephemeral_badge")}</span>
+              {/if}
+            </span>
+          {/if}
         </div>
 
         <div class="tab-actions">

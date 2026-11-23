@@ -26,8 +26,13 @@
       selectTab(next); $(`media-tab-${next}`).focus();
     });
   }
-  $('youtube-enabled').addEventListener('change', event => window.dispatchEvent(new CustomEvent('spark-youtube-setting', { detail: { youtube_enabled: event.target.checked } })));
-  $('youtube-sidebar').addEventListener('change', event => window.dispatchEvent(new CustomEvent('spark-youtube-setting', { detail: { youtube_sidebar: event.target.checked } })));
+  // The widget has no master switch: it is on while it is shown on the new tab, in the sidebar, or both.
+  for (const [id, key] of [['youtube-new-tab', 'youtube_new_tab'], ['youtube-sidebar', 'youtube_sidebar']]) {
+    $(id).addEventListener('change', event => {
+      const value = { youtube_new_tab: $('youtube-new-tab').checked, youtube_sidebar: $('youtube-sidebar').checked, [key]: event.target.checked };
+      window.dispatchEvent(new CustomEvent('spark-youtube-setting', { detail: { ...value, youtube_enabled: value.youtube_new_tab || value.youtube_sidebar } }));
+    });
+  }
   const sidebarSample = $('youtube-sidebar-sample');
   const sampleTemplate = $('youtube-choice-sample')?.content;
   if (sidebarSample && sampleTemplate) sidebarSample.append(sampleTemplate.cloneNode(true));
@@ -148,11 +153,14 @@
     const enabled = Boolean(config.youtube_enabled) && !privateWindow;
     const thumb = stored('spark_youtube_thumbnail'), preview = stored('spark_youtube_preview');
     const widget = $('youtube-widget');
-    widget.hidden = !enabled;
+    const onPage = enabled && config.youtube_new_tab !== false;
+    widget.hidden = !onPage;
     widget.setAttribute('data-thumb', thumb); widget.setAttribute('data-preview', preview);
-    $('youtube-enabled').checked = enabled;
-    $('youtube-enabled').disabled = saving;
-    $('youtube-sidebar').checked = config.youtube_sidebar !== false;
+    $('youtube-new-tab').checked = onPage;
+    $('youtube-new-tab').disabled = saving;
+    const inSidebar = enabled && config.youtube_sidebar !== false;
+    $('youtube-sidebar').checked = inSidebar;
+    $('youtube-sidebar-example').hidden = !inSidebar;
     $('youtube-sidebar').disabled = saving;
     $('youtube-thumb').value = thumb; $('youtube-preview').value = preview;
     const options = $('youtube-options');
@@ -181,7 +189,7 @@
     $('youtube-progress').setAttribute('aria-label', text('youtubeProgress'));
     if (known) paintProgress();
     schedule();
-    const playing = syncFrame(video, preview === 'video' && enabled);
+    const playing = syncFrame(video, preview === 'video' && onPage);
     $('youtube-frame').setAttribute('title', text('youtubePreviewVideo'));
     const cover = $('youtube-cover'), image = video?.image;
     const safe = typeof image === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(image);
