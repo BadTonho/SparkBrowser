@@ -1,13 +1,15 @@
 <script lang="ts">
   import { createListFlip } from "../../services/list-flip";
   import { showTabContextMenu } from "../../stores/persistenceStore";
+  import { tabDividers, moveTabDivider, loadTabDividers, reanchorTabDividers } from "../../stores/tabDividersStore";
+  import TabDivider from "./TabDivider.svelte";
   import AppIcon from "../icons/AppIcon.svelte";
   import TabFavicon from "./TabFavicon.svelte";
   import ContainerBadge from "./ContainerBadge.svelte";
   import { startTabDrag, cancelTabDrag, tabDrag } from "../../stores/tabDragStore";
   import TabMuteButton from "../media/TabMuteButton.svelte";
   import { t } from "../../i18n";
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import { slide, fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import {
@@ -25,13 +27,44 @@
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
 
   let listEl = $state<HTMLDivElement>();
-  const flip = createListFlip(() => listEl, ".tab-row");
+  const flip = createListFlip(() => listEl, ".tab-row, .tab-divider:not(.dragging)");
 
   let workspaceTabs = $derived(
     $tabs.filter(
       (t) => !t.workspace_id || t.workspace_id === $activeWorkspaceId
     )
   );
+  onMount(() => { void loadTabDividers(); });
+  let visibleDividers = $derived(
+    $tabDividers.flatMap((divider) => {
+      const index = divider.after === "" ? -1 : workspaceTabs.findIndex((tab) => tab.id === divider.after);
+      return divider.after === "" || index >= 0 ? [{ divider, order: 2 * (index + 1) + 1 }] : [];
+    }),
+  );
+  /** Right-click on empty space: the same menu as a tab, applied to the end of the list. */
+  function handleListContextMenu(event: MouseEvent) {
+    const last = workspaceTabs.at(-1);
+    if (!last) { event.preventDefault(); return; }
+    void showTabContextMenu(event, last.id, true);
+  }
+  /** The tab a divider dragged to height `y` belongs below: the last tab whose middle is above the pointer.
+   *  Uses layout positions, so rows that are still sliding into place do not disturb the answer. */
+  function tabAfterPointer(y: number): string {
+    if (!listEl) return "";
+    const top = listEl.getBoundingClientRect().top - listEl.scrollTop;
+    let after = "";
+    for (const row of listEl.querySelectorAll<HTMLElement>(".tab-row")) {
+      if (top + (row.offsetTop - listEl.offsetTop) + row.offsetHeight / 2 < y) after = row.dataset.tabId ?? after;
+    }
+    return after;
+  }
+  /** Moves a divider and slides the tabs (and other dividers) around it into their new places. */
+  async function moveDivider(id: string, after: string) {
+    flip.measure();
+    moveTabDivider(id, after);
+    await tick();
+    flip.play();
+  }
   const order = $derived(workspaceTabs.map(tab => tab.id).join("|"));
   $effect.pre(() => { order; flip.measure(); });
   $effect(() => { order; flip.play(); });
@@ -55,6 +88,8 @@
 
   function handleCloseClick(event: MouseEvent, tabId: string) {
     event.stopPropagation();
+    const index = workspaceTabs.findIndex((tab) => tab.id === tabId);
+    reanchorTabDividers(tabId, index > 0 ? workspaceTabs[index - 1].id : "");
     removeTab(tabId);
   }
 
@@ -99,7 +134,7 @@
 
 </script>
 
-<div class="tabs-section">
+<div class="tabs-section" role="presentation" oncontextmenu={handleListContextMenu}>
   <div class="tabs-header">
     <span class="section-label">
       {currentWorkspaceName.toUpperCase()} {$t("tabs.tabs_d820")}{workspaceTabs.length})
@@ -124,9 +159,10 @@
   </div>
 
   <div class="tabs-list" bind:this={listEl}>
-    {#each workspaceTabs as tab (tab.id)}
+    {#each workspaceTabs as tab, index (tab.id)}
       <div
         class="tab-row"
+        style:order={2 * (index + 1)}
         data-tab-id={tab.id}
         class:active={tab.is_active}
         class:multi-selected={$selectedTabIds.includes(tab.id)}
@@ -194,6 +230,11 @@
           </button>
         </div>
       </div>
+    {/each}
+    <!-- Dividers are placed with CSS `order` instead of living between the rows: moving one to another
+         slot then never moves its element in the DOM, so a drag in progress is not interrupted. -->
+    {#each visibleDividers as item (item.divider.id)}
+      <TabDivider divider={item.divider} order={item.order} locate={tabAfterPointer} move={moveDivider} />
     {/each}
   </div>
 </div>

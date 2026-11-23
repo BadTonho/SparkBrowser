@@ -12,7 +12,12 @@
     openBookmarkEditor,
     openBookmarkFolderEditor,
     openBookmarkFolderManager,
+    tabBookmarkTarget,
   } from "../../stores/persistenceStore";
+  import { addTab } from "../../stores/browserStore";
+  import { restoreClosedTab } from "../../stores/closedTabsStore";
+  import { activeWorkspaceId } from "../../stores/workspaceStore";
+  import { addTabDivider, editingDividerId, removeTabDivider } from "../../stores/tabDividersStore";
   import { onBookmarkContextMenuAction } from "../../services/tauri-bridge";
   import { moveTabToWindow, openBrowserWindow } from "../../services/bridge/windows";
 
@@ -22,7 +27,20 @@
     closeBookmarkContextMenu();
 
     try {
-      if (action.startsWith("move-window:") && menu.kind === "tab") {
+      if (action === "new-tab" && menu.kind === "tab") {
+        await addTab(undefined, get(activeWorkspaceId));
+      } else if (action === "reopen-closed-tab" && menu.kind === "tab") {
+        await restoreClosedTab();
+      } else if (action === "bookmark-tab" && menu.kind === "tab") {
+        const tab = tabBookmarkTarget(menu);
+        if (tab) await openBookmarkEditor(tab.title, tab.url);
+      } else if (action === "add-divider" && menu.kind === "tab") {
+        addTabDivider(menu.tabId);
+      } else if (action === "rename-divider" && menu.kind === "divider") {
+        editingDividerId.set(menu.dividerId);
+      } else if (action === "remove-divider" && menu.kind === "divider") {
+        removeTabDivider(menu.dividerId);
+      } else if (action.startsWith("move-window:") && menu.kind === "tab") {
         const target = action.slice("move-window:".length);
         const windowId = target === "new" ? await openBrowserWindow() : target;
         if (windowId) await moveTabToWindow(menu.tabId, windowId);

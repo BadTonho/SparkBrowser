@@ -52,6 +52,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_download_checksum",
     "get_recovery_status",
     "get_closed_tabs",
+    "get_tab_dividers",
+    "set_tab_dividers",
     "reopen_closed_tab",
     "clear_closed_tabs",
     "export_backup",

@@ -30,5 +30,11 @@
   "tabs.ephemeral_badge": "Ephemeral",
   "tabs.ephemeral_tooltip": "Disposable container: cookies and storage are wiped on close and never saved.",
   "tabs.move_to_window": "Move to window {number}",
+  "tabs.menu_new_tab": "New tab",
+  "tabs.menu_bookmark_tab": "Add tab to bookmarks",
+  "tabs.menu_add_divider": "Add divider below",
+  "tabs.menu_rename_divider": "Rename divider",
+  "tabs.divider_name": "Divider name",
+  "tabs.menu_remove_divider": "Remove divider",
   "tabs.move_to_new_window": "Move to a new window"
 }

@@ -244,6 +244,8 @@
     "allow-delete-local-backup",
     "allow-restore-local-backup",
     "allow-get-closed-tabs",
+    "allow-get-tab-dividers",
+    "allow-set-tab-dividers",
     "allow-reopen-closed-tab",
     "allow-clear-closed-tabs",
     "allow-get-shutdown-state",

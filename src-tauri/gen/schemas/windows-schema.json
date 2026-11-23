@@ -807,6 +807,12 @@
           "markdownDescription": "Enables the get_site_zoom command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_tab_dividers command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-tab-dividers",
+          "markdownDescription": "Enables the get_tab_dividers command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_tab_media command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-tab-media",
@@ -1441,6 +1447,12 @@
           "type": "string",
           "const": "allow-set-tab-account-container",
           "markdownDescription": "Enables the set_tab_account_container command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_tab_dividers command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-dividers",
+          "markdownDescription": "Enables the set_tab_dividers command without any pre-configured scope."
         },
         {
           "description": "Enables the set_tab_drag_preview command without any pre-configured scope.",
@@ -2385,6 +2397,12 @@
           "markdownDescription": "Denies the get_site_zoom command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_tab_dividers command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-tab-dividers",
+          "markdownDescription": "Denies the get_tab_dividers command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_tab_media command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-tab-media",
@@ -3019,6 +3037,12 @@
           "type": "string",
           "const": "deny-set-tab-account-container",
           "markdownDescription": "Denies the set_tab_account_container command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_dividers command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-dividers",
+          "markdownDescription": "Denies the set_tab_dividers command without any pre-configured scope."
         },
         {
           "description": "Denies the set_tab_drag_preview command without any pre-configured scope.",

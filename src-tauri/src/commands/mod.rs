@@ -40,6 +40,7 @@ pub mod graphics;
 pub mod network;
 
 pub mod closed_tabs;
+pub mod tab_dividers;
 pub mod recovery;
 
 pub mod shutdown;

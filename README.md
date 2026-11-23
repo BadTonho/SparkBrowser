@@ -20,7 +20,7 @@ Native web views, workspaces, split view and local-first privacy tools, in one c
 ---
 
 > [!NOTE]
-> Spark is in **early development** (latest release 0.1.3, version 0.1.4 in progress). Expect rough edges and changes between releases. Windows is the most tested platform; Linux support is described in the [Linux support guide](./docs/en/features/linux-support.md).
+> Spark is in **early development** (latest release 0.1.4, version 0.1.5 in progress). Expect rough edges and changes between releases. Windows is the most tested platform; Linux support is described in the [Linux support guide](./docs/en/features/linux-support.md).
 
 ## Highlights
 
@@ -29,6 +29,7 @@ Native web views, workspaces, split view and local-first privacy tools, in one c
 - **Native web views:** each tab keeps its page and navigation state while you switch between tabs. Spark uses the web view runtime of your operating system, so there is no bundled browser engine.
 - **Workspaces and layouts:** group tabs into workspaces, arrange them horizontally or vertically, or use [split view](./docs/en/features/split-view.md) and Zen mode.
 - **Command bar:** search, switch tabs and run actions from the [command bar](./docs/en/features/command-search.md), with [keyboard shortcuts](./docs/en/features/keyboard-shortcuts.md) across tabs.
+- **Profiles:** separate [profiles](./docs/en/features/profiles.md), each with its own history, bookmarks, logins and settings, opened in their own windows and optionally protected by an [app lock](./docs/en/features/app-lock.md).
 - **Tab care:** [hibernation](./docs/en/features/hibernation.md) for idle tabs, restore recently closed tabs, and [tab media controls](./docs/en/features/tab-media.md).
 
 ### Privacy and security
@@ -36,11 +37,12 @@ Native web views, workspaces, split view and local-first privacy tools, in one c
 - **Ad and tracker shield:** a network rule engine with bundled filter lists, plus [link cleaning](./docs/en/features/tracking-protection.md) of tracking parameters.
 - **Ephemeral tabs:** [disposable tabs](./docs/en/features/ephemeral-tabs.md) with isolated, temporary storage that is deleted when the tab closes.
 - **Workspace isolation (opt-in):** [separate cookies and storage per workspace](./docs/en/features/workspace-isolation.md), off by default.
+- **Passwords and autofill:** an encrypted [password manager](./docs/en/features/password-manager.md) with [autofill](./docs/en/features/autofill.md) for logins, cards and contact info.
 - **You decide:** per-site [permissions](./docs/en/features/site-permissions.md), local history and privacy settings.
 
 ### Tools and customization
 
-- **New tab page:** an offline-first page with recent sites and optional [clock, weather, Gmail and wallpaper widgets](./docs/en/features/new-tab-widgets.md).
+- **New tab page:** an offline-first page with recent sites and optional [clock, weather, Gmail, Spotify, YouTube and wallpaper widgets](./docs/en/features/new-tab-widgets.md).
 - **Reader view and dark mode:** a distraction-free [reader](./docs/en/features/reader-mode.md) and an optional [dark mode for websites](./docs/en/features/forced-dark-mode.md).
 - **Built-in tools:** [downloads manager](./docs/en/features/downloads.md), [feed reader](./docs/en/features/feed-reader.md), notes, bookmarks with [export](./docs/en/features/bookmark-export.md), and several [search engines](./docs/en/features/search-engines.md).
 - **Local backup:** export and review your settings, workspaces and bookmarks in a [versioned file](./docs/en/features/backup.md).

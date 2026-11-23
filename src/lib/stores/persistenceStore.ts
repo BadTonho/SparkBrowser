@@ -19,6 +19,8 @@ import {
   windowNumber,
 } from "../services/tauri-bridge";
 import { overlayBlurPx } from "./settingsStore";
+import { tabs } from "./browserStore";
+import { closedTabs } from "./closedTabsStore";
 
 export type BookmarkEditorState =
   | {
@@ -37,7 +39,8 @@ export type BookmarkContextMenuState =
   | { kind: "bookmark"; x: number; y: number; bookmark: BookmarkItem }
   | { kind: "folder"; x: number; y: number; folder: BookmarkFolder }
   | { kind: "empty"; x: number; y: number }
-  | { kind: "tab"; x: number; y: number; tabId: string; windows: string[] }
+  | { kind: "tab"; x: number; y: number; tabId: string; windows: string[]; empty?: boolean }
+  | { kind: "divider"; x: number; y: number; dividerId: string }
   | null;
 
 export const bookmarks = writable<BookmarkItem[]>([]);
@@ -118,15 +121,29 @@ export function showBookmarkContextMenu(
   refreshBookmarkContextMenu();
 }
 
-/** Right-click on a tab: offers to send it to another browser window. */
-export async function showTabContextMenu(event: MouseEvent, tabId: string): Promise<void> {
+/** Right-click on a divider line between tabs: offers to remove it. */
+export function showTabDividerContextMenu(event: MouseEvent, dividerId: string): void {
+  event.preventDefault();
+  event.stopPropagation();
+  bookmarkContextMenuState.set({
+    kind: "divider",
+    dividerId,
+    x: Math.max(8, Math.min(event.clientX, window.innerWidth - 236)),
+    y: Math.max(8, Math.min(event.clientY, window.innerHeight - 180)),
+  });
+  refreshBookmarkContextMenu();
+}
+
+/** Right-click on a tab, or on the empty part of the tab list: offers to send it to another browser window. */
+export async function showTabContextMenu(event: MouseEvent, tabId: string, empty = false): Promise<void> {
   event.preventDefault();
   event.stopPropagation();
   const own = currentWindowId();
-  const others = (await getBrowserWindows()).map((item) => item.id).filter((id) => id !== own);
+  const others = empty ? [] : (await getBrowserWindows()).map((item) => item.id).filter((id) => id !== own);
   bookmarkContextMenuState.set({
     kind: "tab",
     tabId,
+    empty,
     windows: others,
     x: Math.max(8, Math.min(event.clientX, window.innerWidth - 236)),
     y: Math.max(8, Math.min(event.clientY, window.innerHeight - 180)),
@@ -137,8 +154,20 @@ export async function showTabContextMenu(event: MouseEvent, tabId: string): Prom
 function refreshBookmarkContextMenu(): void {
   const menu = get(bookmarkContextMenuState);
   if (!menu) return;
-  const actions = menu.kind === "tab"
+  const tabActions = menu.kind === "tab" ? [
+    { id: "new-tab", label: tr("tabs.menu_new_tab") },
+    ...(get(closedTabs).length ? [{ id: "reopen-closed-tab", label: tr("closed.reopen") }] : []),
+    ...(tabBookmarkTarget(menu) ? [{ id: "bookmark-tab", label: tr("tabs.menu_bookmark_tab") }] : []),
+    { id: "add-divider", label: tr("tabs.menu_add_divider") },
+  ] : [];
+  const actions = menu.kind === "divider"
     ? [
+        { id: "rename-divider", label: tr("tabs.menu_rename_divider") },
+        { id: "remove-divider", label: tr("tabs.menu_remove_divider"), danger: true },
+      ]
+    : menu.kind === "tab"
+    ? [
+        ...tabActions,
         ...menu.windows.map((id) => ({ id: `move-window:${id}`, label: tr("tabs.move_to_window", { number: windowNumber(id) }) })),
         { id: "move-window:new", label: tr("tabs.move_to_new_window") },
       ]
@@ -163,6 +192,13 @@ function refreshBookmarkContextMenu(): void {
     actions,
     get(overlayBlurPx),
   );
+}
+
+/** The tab a "bookmark" action applies to: the clicked tab, or the active one for the empty area. */
+export function tabBookmarkTarget(menu: { tabId: string; empty?: boolean }) {
+  const all = get(tabs);
+  const tab = menu.empty ? all.find(item => item.is_active) : all.find(item => item.id === menu.tabId);
+  return tab && /^https?:/i.test(tab.url) ? tab : null;
 }
 
 export function closeBookmarkContextMenu(): void {
