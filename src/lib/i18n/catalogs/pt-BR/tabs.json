@@ -44,6 +44,7 @@
   "tabs.menu_group_add": "Adicionar ao grupo: {name}",
   "tabs.menu_group_remove": "Tirar do grupo",
   "tabs.menu_group_rename": "Renomear grupo",
+  "tabs.menu_group_color_heading": "Cor",
   "tabs.menu_group_color": "Cor: {color}",
   "tabs.menu_group_mode_popup": "Abrir guias em uma lista ao lado",
   "tabs.menu_group_mode_collapse": "Recolher e expandir no lugar",

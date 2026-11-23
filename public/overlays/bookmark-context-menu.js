@@ -45,8 +45,40 @@
           root.setAttribute("aria-hidden", "false");
           menu.replaceChildren();
           menu.style.backdropFilter = `blur(${Math.min(24, Math.max(0, Number(payload.backdropBlurPx) || 0))}px)`;
+          menu.style.borderColor = "";
 
           for (const action of payload.actions || []) {
+            if (action.separator) {
+              const line = document.createElement("div");
+              line.className = "separator";
+              line.setAttribute("role", "separator");
+              menu.appendChild(line);
+              continue;
+            }
+            if (Array.isArray(action.swatches) && action.swatches.length) {
+              const row = document.createElement("div");
+              row.className = "swatches";
+              row.setAttribute("role", "group");
+              for (const swatch of action.swatches) {
+                if (!/^#[0-9a-f]{6}$/i.test(swatch.color || "")) continue;
+                const dot = document.createElement("button");
+                dot.type = "button";
+                dot.className = "swatch";
+                dot.setAttribute("role", "menuitemradio");
+                dot.setAttribute("aria-checked", String(Boolean(swatch.selected)));
+                dot.setAttribute("aria-label", swatch.label);
+                dot.title = swatch.label;
+                dot.style.setProperty("--swatch", swatch.color);
+                dot.addEventListener("click", (event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  sendRequest(swatch.id);
+                });
+                row.appendChild(dot);
+              }
+              menu.appendChild(row);
+              continue;
+            }
             if (action.heading) {
               const heading = document.createElement("div");
               heading.className = "heading";
@@ -69,7 +101,7 @@
             button.type = "button";
             button.setAttribute("role", "menuitem");
             button.dataset.danger = String(Boolean(action.danger));
-            const rich = action.icon !== undefined || action.subtitle || action.active;
+            const rich = typeof action.icon === "string" || action.subtitle || action.active;
             if (rich) {
               button.classList.add("rich");
               if (action.active) button.classList.add("active");

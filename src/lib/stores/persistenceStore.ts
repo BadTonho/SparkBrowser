@@ -216,8 +216,21 @@ function refreshBookmarkContextMenu(): void {
     : menu.kind === "group"
     ? [
         { id: "rename-group", label: tr("tabs.menu_group_rename") },
-        ...GROUP_COLORS.filter(color => color !== group?.color).map(color => ({ id: `color:${color}`, label: tr("tabs.menu_group_color", { color: tr(`tabs.color_${color}`) }) })),
+        { id: "sep-color", label: "", separator: true },
+        { id: "color-heading", label: tr("tabs.menu_group_color_heading"), heading: true },
+        {
+          id: "colors",
+          label: "",
+          swatches: GROUP_COLORS.map(color => ({
+            id: `color:${color}`,
+            label: tr("tabs.menu_group_color", { color: tr(`tabs.color_${color}`) }),
+            color: GROUP_COLOR_HEX[color],
+            selected: color === group?.color,
+          })),
+        },
+        { id: "sep-mode", label: "", separator: true },
         { id: "toggle-group-mode", label: group?.mode === "popup" ? tr("tabs.menu_group_mode_collapse") : tr("tabs.menu_group_mode_popup") },
+        { id: "sep-end", label: "", separator: true },
         { id: "ungroup", label: tr("tabs.menu_group_ungroup"), danger: true },
       ]
     : menu.kind === "divider"

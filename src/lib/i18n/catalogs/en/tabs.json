@@ -44,6 +44,7 @@
   "tabs.menu_group_add": "Add to group: {name}",
   "tabs.menu_group_remove": "Remove from group",
   "tabs.menu_group_rename": "Rename group",
+  "tabs.menu_group_color_heading": "Color",
   "tabs.menu_group_color": "Color: {color}",
   "tabs.menu_group_mode_popup": "Open tabs in a side list",
   "tabs.menu_group_mode_collapse": "Collapse and expand in place",

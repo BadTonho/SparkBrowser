@@ -464,7 +464,15 @@ pub async fn set_bookmark_context_menu_overlay(
         *current_token = Some(token);
     }
     if let Ok(mut allowed_actions) = state.surfaces().bookmark_context_menu_actions().lock() {
-        *allowed_actions = actions.iter().filter(|action| !action.heading).map(|action| action.id.clone()).collect();
+        *allowed_actions = actions
+            .iter()
+            .flat_map(|action| {
+                let own = (!action.heading && !action.separator && action.swatches.is_empty())
+                    .then(|| action.id.clone());
+                own.into_iter()
+                    .chain(action.swatches.iter().map(|swatch| swatch.id.clone()))
+            })
+            .collect();
     }
     if let Ok(mut open) = state.surfaces().bookmark_context_menu_open().lock() {
         *open = true;

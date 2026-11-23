@@ -40,6 +40,26 @@ pub struct BookmarkContextMenuAction {
     /// Accent color as `#rrggbb`; anything else is dropped.
     #[serde(default)]
     pub color: Option<String>,
+    /// A thin line between groups of entries; it cannot be chosen.
+    #[serde(default)]
+    pub separator: bool,
+    /// A row of round color buttons (each one chooses its own `id`).
+    #[serde(default)]
+    pub swatches: Vec<MenuSwatch>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MenuSwatch {
+    pub id: String,
+    pub label: String,
+    pub color: String,
+    #[serde(default)]
+    pub selected: bool,
+}
+
+fn hex_color(color: &str) -> bool {
+    color.len() == 7 && color.starts_with('#') && color[1..].chars().all(|c| c.is_ascii_hexdigit())
 }
 
 impl BookmarkContextMenuAction {
@@ -51,9 +71,12 @@ impl BookmarkContextMenuAction {
                 && icon.chars().all(|c| !c.is_control() && c != '"' && c != '\'' && c != ' ')
         };
         self.icon = self.icon.filter(|icon| icon_ok(icon));
-        self.color = self.color.filter(|color| {
-            color.len() == 7 && color.starts_with('#') && color[1..].chars().all(|c| c.is_ascii_hexdigit())
-        });
+        self.color = self.color.filter(|color| hex_color(color));
+        self.swatches.retain(|swatch| hex_color(&swatch.color));
+        self.swatches.truncate(12);
+        for swatch in &mut self.swatches {
+            swatch.label = swatch.label.chars().take(60).collect();
+        }
         self.label = self.label.chars().take(200).collect();
         self.subtitle = self.subtitle.map(|text| text.chars().take(200).collect());
         self
@@ -379,6 +402,16 @@ mod menu_action_tests {
     use super::BookmarkContextMenuAction;
     fn action(icon: &str) -> BookmarkContextMenuAction {
         serde_json::from_value(serde_json::json!({"id":"a","label":"A","icon":icon})).unwrap()
+    }
+    #[test]
+    fn swatches_keep_only_hex_colors() {
+        let action: BookmarkContextMenuAction = serde_json::from_value(serde_json::json!({
+            "id": "colors", "label": "",
+            "swatches": [{"id":"a","label":"A","color":"#112233"},{"id":"b","label":"B","color":"url(x)"}]
+        })).unwrap();
+        let action = action.sanitized();
+        assert_eq!(action.swatches.len(), 1);
+        assert_eq!(action.swatches[0].id, "a");
     }
     #[test]
     fn only_hex_colors_survive() {

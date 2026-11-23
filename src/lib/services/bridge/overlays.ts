@@ -99,6 +99,8 @@ export interface BookmarkContextMenuAction {
   active?: boolean;
   heading?: boolean;
   color?: string;
+  separator?: boolean;
+  swatches?: { id: string; label: string; color: string; selected?: boolean }[];
 }
 
 let bookmarkContextMenuSyncQueue: Promise<void> = Promise.resolve();
