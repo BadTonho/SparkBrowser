@@ -1,5 +1,7 @@
 # Spark 0.1.5
 
+Released: 2026-11-23
+
 ## New features
 
 - **Custom background editor:** in the new tab's Background settings, **Custom → Customize** opens an editor in its own tab with three looks drawn live, **Nebula**, **Space** (stars in depth) and **Galaxy** (a turning spiral), each with its own shape and motion settings (speed, direction and more): colors (random palette or from an image), gradient map with draggable stops, shape, motion, grade and effects such as grain, tone, vignette and dither. Save your settings as named presets and bring them back later. Presets show up in the new tab's Background settings, and choosing one draws it live as the new tab background.

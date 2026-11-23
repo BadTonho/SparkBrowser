@@ -1,5 +1,7 @@
 # Spark 0.1.5
 
+Lançada em: 2026-11-23
+
 ## Novas funcionalidades
 
 - **Editor de plano de fundo personalizado:** nas configurações de Plano de fundo da nova guia, **Personalizado → Personalizar** abre um editor em uma guia própria com três looks desenhados ao vivo, **Nebula**, **Space** (estrelas em profundidade) e **Galaxy** (uma espiral girando), cada um com suas próprias configurações de forma e movimento (velocidade, direção e mais): cores (paleta aleatória ou de uma imagem), mapa de gradiente com paradas arrastáveis, forma, movimento, correção e efeitos como granulação, tom, vinheta e dither. Guarde suas configurações como presets com nome e traga de volta depois. Os presets aparecem nas configurações de Plano de fundo da nova guia, e escolher um desenha o fundo da nova guia ao vivo.
