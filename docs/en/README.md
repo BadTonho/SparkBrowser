@@ -52,6 +52,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Acknowledgements and third-party licenses](./legal/acknowledgements.md)
 - [Release channels and updates](./features/updates.md)
 - [Local signed releases](./contributing/releases.md)
+- [Urgent bug fixes (hotfixes)](./contributing/urgent-bug-fixes.md)
 - [Changelog guide](./contributing/changelog.md)
 - [Interface languages](./features/localization.md)
 - [Local backup and reviewed import](./features/backup.md)
