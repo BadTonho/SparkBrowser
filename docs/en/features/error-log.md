@@ -33,6 +33,7 @@ Every entry has one of four levels. Only the two serious ones interrupt the user
 | `native` | Any error Spark already showed through the `browser-error` event (downloads, privacy, tab operations, and so on). Blocks by the shield ("Navigation blocked") are intentional and are not reported |
 | `interface` | A script error or unhandled rejection in the browser interface (shell, settings, tools, downloads) |
 | `new-tab` | A script error or unhandled rejection in the new-tab page (limited to 3 per page load) |
+| `shutdown` | Saving or closing Spark failed (save error, installer or restart). The log has the exact failure, the purpose and the phase; the closing dialog shows only a friendly message |
 | `unclean-exit` | The previous run left its `session.running` marker behind: a crash, a force-closed freeze or a power loss. Shown a few seconds after start |
 
 ### Context of a freeze
@@ -54,7 +55,7 @@ Everything that used to be printed only to the console (`eprintln!`) is now logg
 
 ## Log file
 
-`logs/spark-errors.log` inside the Spark data directory (on Windows, `%APPDATA%\org.spark.browser\logs`). Every entry, each start and each normal close is appended there, one line per entry with its level (`[INFO]`, `[WARN]`, `[ERROR]`, `[CRITICAL]`). The same entry is written at most once every 10 seconds, except `critical`. At 512 KB it is renamed to `spark-errors.log.old`, so it never uses more than about 1 MB. Private windows do not write to it or show these cards.
+`logs/spark-errors.log` inside the Spark data directory (on Windows, `%APPDATA%\org.spark.browser\logs`). Every entry, each start and each normal close is appended there, one line per entry with its level (`[INFO]`, `[WARN]`, `[ERROR]`, `[CRITICAL]`). The same entry is written at most once every 10 seconds, except `critical`; the next entry written for it says how many repeats were skipped (`repeated N more times since the last entry`). At 512 KB it is renamed to `spark-errors.log.old`, so it never uses more than about 1 MB. Private windows do not write to it or show these cards.
 
 ## Privacy
 

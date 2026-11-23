@@ -83,6 +83,16 @@ impl ShutdownService {
     }
     pub fn failed(&self, app: &AppHandle, error: String) -> Result<ShutdownState, String> {
         let mut state = self.0.lock().map_err(|e| e.to_string())?;
+        // The dialog only shows a friendly message: the exact failure must reach the log.
+        crate::error_log::report(
+            crate::error_log::Level::Error,
+            "shutdown",
+            &format!("Closing Spark failed: {error}"),
+            &format!(
+                "purpose: {:?}, phase before the failure: {}, update: {:?}",
+                state.purpose, state.phase, state.update_version
+            ),
+        );
         state.phase = "error".into();
         state.error = Some(error);
         state.revision += 1;

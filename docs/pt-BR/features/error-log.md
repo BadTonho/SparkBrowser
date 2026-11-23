@@ -33,6 +33,7 @@ Toda entrada tem um de quatro níveis. Só os dois sérios interrompem o usuári
 | `native` | Qualquer erro que o Spark já mostrava pelo evento `browser-error` (downloads, privacidade, operações de abas etc.). Bloqueios do escudo ("Navigation blocked") são intencionais e não são reportados |
 | `interface` | Erro de script ou rejeição não tratada na interface do navegador (shell, configurações, ferramentas, downloads) |
 | `new-tab` | Erro de script ou rejeição não tratada na página de nova guia (até 3 por carregamento) |
+| `shutdown` | Falha ao salvar ou fechar o Spark (erro de gravação, instalador ou reinício). O log tem a falha exata, o motivo e a fase; o diálogo de fechamento mostra só uma mensagem amigável |
 | `unclean-exit` | A execução anterior deixou o marcador `session.running`: uma queda, um travamento fechado à força ou falta de energia. Aparece alguns segundos depois de iniciar |
 
 ### Contexto de um travamento
@@ -54,7 +55,7 @@ Tudo que antes só era impresso no console (`eprintln!`) agora também vai para 
 
 ## Arquivo de registro
 
-`logs/spark-errors.log` dentro da pasta de dados do Spark (no Windows, `%APPDATA%\org.spark.browser\logs`). Cada entrada, cada início e cada fechamento normal são acrescentados ali, uma linha por entrada com o nível (`[INFO]`, `[WARN]`, `[ERROR]`, `[CRITICAL]`). A mesma entrada é escrita no máximo uma vez a cada 10 segundos, exceto `critical`. Em 512 KB ele é renomeado para `spark-errors.log.old`, então nunca usa mais de cerca de 1 MB. Janelas privadas não escrevem nele nem mostram esses cartões.
+`logs/spark-errors.log` dentro da pasta de dados do Spark (no Windows, `%APPDATA%\org.spark.browser\logs`). Cada entrada, cada início e cada fechamento normal são acrescentados ali, uma linha por entrada com o nível (`[INFO]`, `[WARN]`, `[ERROR]`, `[CRITICAL]`). A mesma entrada é escrita no máximo uma vez a cada 10 segundos, exceto `critical`; a próxima entrada gravada para ela informa quantas repetições foram ignoradas (`repeated N more times since the last entry`). Em 512 KB ele é renomeado para `spark-errors.log.old`, então nunca usa mais de cerca de 1 MB. Janelas privadas não escrevem nele nem mostram esses cartões.
 
 ## Privacidade
 

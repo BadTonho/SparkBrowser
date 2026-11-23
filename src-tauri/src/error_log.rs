@@ -52,8 +52,8 @@ static HEARTBEAT: AtomicU64 = AtomicU64::new(0);
 static COUNTER: AtomicU64 = AtomicU64::new(0);
 /// Notifications shown in the last minute: (time, key).
 static SHOWN: Mutex<Vec<(u64, String)>> = Mutex::new(Vec::new());
-/// Last time each entry was written to the log: key -> time.
-static WRITTEN: Mutex<Option<HashMap<String, u64>>> = Mutex::new(None);
+/// Each entry's last write to the log and how many repeats were skipped since: key -> (time, skipped).
+static WRITTEN: Mutex<Option<HashMap<String, (u64, u32)>>> = Mutex::new(None);
 /// The most recent things the app was asked to do, oldest first. A freeze has no error to show, so
 /// its log entry lists these: the last lines are what the app was doing when it stopped answering.
 static TRAIL: Mutex<VecDeque<String>> = Mutex::new(VecDeque::new());
@@ -92,7 +92,7 @@ impl Level {
 pub struct ErrorReport {
     pub id: String,
     pub level: Level,
-    /// `panic`, `hang`, `native`, `interface`, `new-tab` or `unclean-exit`.
+    /// `panic`, `hang`, `native`, `interface`, `new-tab`, `shutdown` or `unclean-exit`.
     pub kind: String,
     pub summary: String,
     pub details: String,
@@ -265,16 +265,25 @@ pub fn report(level: Level, kind: &str, summary: &str, details: &str) {
     let summary = truncate(&redact(summary), MAX_SUMMARY);
     let details = truncate(&redact(details), MAX_DETAILS);
     let key = format!("{kind}:{summary}:{details}");
-    if level == Level::Critical || first_in(&WRITTEN, &key, LOG_REPEAT_SECONDS) {
-        record(&format!(
-            "[{}] {kind}: {summary}{}",
-            level.label(),
-            if details.is_empty() {
-                String::new()
-            } else {
-                format!("\n{details}")
-            }
-        ));
+    let skipped = if level == Level::Critical {
+        Some(0)
+    } else {
+        first_in(&WRITTEN, &key, LOG_REPEAT_SECONDS)
+    };
+    if let Some(skipped) = skipped {
+        let mut text = format!("[{}] {kind}: {summary}", level.label());
+        if skipped > 0 {
+            text.push_str(&format!(
+                " (repeated {skipped} more times since the last entry)"
+            ));
+        }
+        if !details.is_empty() {
+            text.push_str(&format!(
+                "
+{details}"
+            ));
+        }
+        record(&text);
     }
     if !level.notifies() || !may_notify(&format!("{kind}:{summary}")) {
         return;
@@ -325,24 +334,37 @@ pub fn clean_exit() {
     }
 }
 
-/// `true` when `key` was not written in the last `within` seconds. Remembers it for next time.
-fn first_in(table: &Mutex<Option<HashMap<String, u64>>>, key: &str, within: u64) -> bool {
+/// `Some(n)` when `key` was not written in the last `within` seconds: write it, and `n` is how many
+/// identical entries were skipped since the previous write. `None` when it is a repeat to skip.
+fn first_in(
+    table: &Mutex<Option<HashMap<String, (u64, u32)>>>,
+    key: &str,
+    within: u64,
+) -> Option<u32> {
     let now = unix_seconds();
     let Ok(mut guard) = table.lock() else {
-        return true;
+        return Some(0);
     };
     let seen = guard.get_or_insert_with(HashMap::new);
     if seen.len() >= MAX_REMEMBERED {
-        seen.retain(|_, at| now.saturating_sub(*at) < within);
+        seen.retain(|_, (at, _)| now.saturating_sub(*at) < within);
         if seen.len() >= MAX_REMEMBERED {
             seen.clear();
         }
     }
-    match seen.get(key) {
-        Some(at) if now.saturating_sub(*at) < within => false,
-        _ => {
-            seen.insert(key.to_owned(), now);
-            true
+    match seen.get_mut(key) {
+        Some((at, skipped)) if now.saturating_sub(*at) < within => {
+            *skipped = skipped.saturating_add(1);
+            None
+        }
+        Some((at, skipped)) => {
+            let before = std::mem::take(skipped);
+            *at = now;
+            Some(before)
+        }
+        None => {
+            seen.insert(key.to_owned(), (now, 0));
+            Some(0)
         }
     }
 }
@@ -479,13 +501,24 @@ mod tests {
     #[test]
     fn repeats_inside_the_window_are_skipped_and_the_table_stays_bounded() {
         let table = Mutex::new(None);
-        assert!(first_in(&table, "a", 60));
-        assert!(!first_in(&table, "a", 60));
-        assert!(first_in(&table, "b", 60));
+        assert_eq!(first_in(&table, "a", 60), Some(0));
+        assert_eq!(first_in(&table, "a", 60), None);
+        assert_eq!(first_in(&table, "b", 60), Some(0));
         for n in 0..MAX_REMEMBERED * 2 {
             first_in(&table, &n.to_string(), 60);
         }
         assert!(table.lock().unwrap().as_ref().unwrap().len() <= MAX_REMEMBERED);
+    }
+
+    #[test]
+    fn skipped_repeats_are_counted_and_reported_with_the_next_entry() {
+        let table = Mutex::new(None);
+        assert_eq!(first_in(&table, "a", 60), Some(0));
+        assert_eq!(first_in(&table, "a", 60), None);
+        assert_eq!(first_in(&table, "a", 60), None);
+        // With a zero window the entry is written again and reports what was skipped.
+        assert_eq!(first_in(&table, "a", 0), Some(2));
+        assert_eq!(first_in(&table, "a", 0), Some(0));
     }
 
     #[test]
