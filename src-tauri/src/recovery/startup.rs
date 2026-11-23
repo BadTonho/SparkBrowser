@@ -25,14 +25,7 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
     let layouts = split_repo::load(&conn)?;
     let windows = session_windows_repo::load_session_windows(&conn)?;
     if !tabs.is_empty() {
-        let ids: HashSet<_> = tabs.iter().map(|tab| tab.id.as_str()).collect();
-        if ids.len() != tabs.len()
-            || tabs
-                .iter()
-                .any(|tab| tab.id.is_empty() || !crate::window::new_tab::valid_tab_url(&tab.url))
-        {
-            return Err("recovery.invalid_session: Invalid saved tab".into());
-        }
+        drop_invalid_tabs(&mut tabs);
         for tab in &mut tabs {
             if !workspaces.iter().any(|ws| ws.id == tab.workspace_id) {
                 tab.workspace_id = "ws-personal".into();
@@ -52,6 +45,24 @@ pub fn restore(state: &BrowserState, conn: Connection) -> Result<RecoveryStatus,
         recovered: interrupted && restored_tabs > 0,
         restored_tabs,
     })
+}
+
+/// A saved tab this version cannot open (for example one with an address from a newer version, after
+/// a downgrade) or that repeats an id is skipped and logged. It must never stop Spark from starting.
+fn drop_invalid_tabs(tabs: &mut Vec<TabInfo>) {
+    let mut seen = HashSet::new();
+    tabs.retain(|tab| {
+        let valid = !tab.id.is_empty()
+            && crate::window::new_tab::valid_tab_url(&tab.url)
+            && seen.insert(tab.id.clone());
+        if !valid {
+            crate::error_log::warn(&format!(
+                "recovery: skipped saved tab '{}' that cannot be restored (address '{}')",
+                tab.id, tab.url
+            ));
+        }
+        valid
+    });
 }
 
 /// Tabs of a window that no longer exists move to the main window, and every window keeps exactly
@@ -107,6 +118,19 @@ mod tests {
             id: id.into(),
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn an_unrestorable_saved_tab_is_skipped_instead_of_blocking_startup() {
+        let conn = database();
+        let mut bad = tab("b", "main", false);
+        bad.url = "spark://from-a-newer-version".into();
+        session_repo::save_session_tabs(&conn, &[tab("a", "main", true), bad]).unwrap();
+        let state = BrowserState::default();
+        let status = restore(&state, conn).unwrap();
+        assert_eq!(status.restored_tabs, 2);
+        let ids: Vec<_> = state.snapshot_tabs().iter().map(|t| t.id.clone()).collect();
+        assert_eq!(ids, vec!["a"]);
     }
 
     #[test]
