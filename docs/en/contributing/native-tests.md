@@ -47,6 +47,8 @@ The `recovery` scenario force-stops its own test process, verifies all tabs and 
 
 The `ephemeral-cleanup` scenario checks removal after closing individual and hibernated tabs, preservation while hibernated, and startup cleanup of an isolated leftover directory.
 
+The `tab-dividers` scenario checks that the sidebar button, the Windows close shortcut and bulk closing preserve dividers. It injects a divider write failure into the isolated database to verify that closing rolls back, then checks the saved positions after restart.
+
 The suite also includes `downloads` (durable checkpoints, HTTP ranges, integrity and native controls), `shutdown` (note flushing, changed-risk review, cancellation and SQLite failure), `tab-diagnostics` (real residency and revalidated protection), `zoom` (resident page scale, origins, navigation, shortcuts, restart and backup preferences), and `command-search` (bounded Unicode results, stable selection, original note URLs and reviewed session details). Download fixtures write exclusively under each scenario's `data/downloads`, never the personal Downloads folder. Use `npm run test:native -- --list` for the current scenario list. On Windows, `keyboard` sends real input only to the foreground isolated executable and verifies closing/reopening consecutive tabs while modifiers remain pressed; keep the test desktop available. It does not execute installers or use a VM.
 
 ## Measurements

@@ -79,7 +79,8 @@ pub(super) fn close_one(
         .lock()
         .map_err(|e| e.to_string())?
         .clone();
-    let rows = closed_tabs_repo::records(&before.tabs, &[id.to_string()], &workspaces, now());
+    let closed_ids = [id.to_owned()];
+    let rows = closed_tabs_repo::records(&before.tabs, &closed_ids, &workspaces, now());
     let mut remaining_layouts = before.layouts.clone();
     remaining_layouts.retain(|_, layout| layout.remove_member(id));
     let partner = remaining_layouts
@@ -150,12 +151,13 @@ pub(super) fn close_one(
             };
             state.select_tab(&target)?;
         }
-        state.persist_tab_change(&rows, None)
+        state.persist_tab_closure(&rows, &before.tabs, &closed_ids)
     })();
     if let Err(error) = result {
         before.restore(state)?;
         return Err(error);
     }
+    crate::commands::tab_dividers::notify(app);
     if before
         .tabs
         .iter()

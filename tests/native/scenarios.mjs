@@ -11,6 +11,7 @@ import {checkNewTabWidgets} from './new-tab-widgets.mjs';
 import {newTabDriver} from './new-tab-driver.mjs';
 import {checkAudioBackground} from './audio-background.mjs';
 import { checkSplitTabGroups } from './split-tab-groups.mjs';
+import { checkTabDividers } from './tab-dividers.mjs';
 import { checkPrivacy } from './privacy.mjs';
 import { checkMediaMute, checkMediaVolume, checkMediaPip } from "./media.mjs";
 import { checkMediaLinux } from "./media-linux.mjs";
@@ -89,6 +90,7 @@ export const scenarios = {
   'downloads-popover': checkDownloadsPopover,
   'quick-settings': checkQuickSettings,
   'downloads-list': checkDownloadsList,
+  'tab-dividers': checkTabDividers,
   'titlebar-actions': checkTitlebarActions,
   'new-tab': checkNewTab,
   'new-tab-widgets': context=>checkNewTabWidgets(context,newTabDriver(context)),

@@ -31,6 +31,8 @@
 
 ## Fixes
 
+- Fixed tab dividers disappearing when tabs are closed with a keyboard shortcut or through the tab organizer.
+- Updated the bundled SQLite to address CVE-2026-119375.
 - Sites that switch to their own dark theme through a background transition no longer stay inverted.
 - Opening a saved note or session from the Command Bar keeps the Tools panel open and gives it focus.
 - Fixed Settings tabs sometimes failing to display when opened or switched quickly.

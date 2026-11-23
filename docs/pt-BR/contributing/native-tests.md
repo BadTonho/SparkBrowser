@@ -115,3 +115,5 @@ O cenário `new-tab` exercita a página interna sem internet, foco inicial no ca
 O cenário `titlebar-actions` usa entrada real do ponteiro para verificar a espera de meio segundo, o marcador de inserção, as duas direções de arraste, cancelamentos, bloqueio de movimento antecipado e cliques rápidos nos atalhos visíveis, incluindo QR Code. Ele confere que os arrastes nos layouts horizontal e vertical preservam a posição da janela nativa, favoritos ocultos mantêm sua posição salva, a ordem permanece após reiniciar e o modo compacto mantém o menu existente. Execute `npm run test:native -- --case titlebar-actions` após compilar o aplicativo isolado.
 
 O cenário `ephemeral-cleanup` verifica a exclusão após o fechamento individual e em lote de abas hibernadas, a preservação durante a hibernação e a limpeza de um diretório residual isolado na inicialização.
+
+O cenário `tab-dividers` verifica que o botão da barra lateral, o atalho de fechamento do Windows e o fechamento em lote preservam as divisões. Ele simula uma falha de gravação no banco de dados isolado para verificar que o fechamento é revertido e confere as posições salvas após reiniciar.

@@ -18,6 +18,30 @@ pub struct TabDivider {
     pub name: String,
 }
 
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum DividerEdit {
+    Add { divider: TabDivider },
+    Rename { id: String, name: String },
+    Move { id: String, after: String },
+    Remove { id: String },
+    Import { dividers: Vec<TabDivider> },
+}
+
+impl DividerEdit {
+    /// An edit queued just before its target tab closed can still use the top of the list.
+    pub fn repair_anchor(&mut self, exists: impl FnOnce(&str) -> bool) {
+        let after = match self {
+            Self::Add { divider } => &mut divider.after,
+            Self::Move { after, .. } => after,
+            _ => return,
+        };
+        if !after.is_empty() && !exists(after) {
+            after.clear();
+        }
+    }
+}
+
 fn validate(items: &[TabDivider]) -> Result<(), String> {
     if items.len() > MAX_DIVIDERS {
         return Err("tab_dividers.too_many".into());
@@ -49,6 +73,56 @@ pub fn save(conn: &Connection, items: &[TabDivider]) -> Result<(), String> {
     validate(items)?;
     let raw = serde_json::to_string(items).map_err(|e| e.to_string())?;
     preferences_repo::store(conn, KEY, &raw)
+}
+
+pub fn edit(conn: &Connection, edit: DividerEdit) -> Result<Vec<TabDivider>, String> {
+    let mut items = load(conn)?;
+    match edit {
+        DividerEdit::Add { divider } => {
+            if !items.iter().any(|item| item.id == divider.id) {
+                items.push(divider);
+            }
+        }
+        DividerEdit::Rename { id, name } => {
+            if let Some(item) = items.iter_mut().find(|item| item.id == id) {
+                item.name = name;
+            }
+        }
+        DividerEdit::Move { id, after } => {
+            if let Some(item) = items.iter_mut().find(|item| item.id == id) {
+                item.after = after;
+            }
+        }
+        DividerEdit::Remove { id } => items.retain(|item| item.id != id),
+        DividerEdit::Import { dividers } => {
+            validate(&dividers)?;
+            for divider in dividers {
+                if !items.iter().any(|item| item.id == divider.id) {
+                    items.push(divider);
+                }
+            }
+        }
+    }
+    save(conn, &items)?;
+    Ok(items)
+}
+
+pub fn reanchor(
+    conn: &Connection,
+    anchors: &std::collections::HashMap<&str, &str>,
+) -> Result<(), String> {
+    let mut items = load(conn)?;
+    let mut changed = false;
+    for item in &mut items {
+        if let Some(&after) = anchors.get(item.after.as_str()) {
+            item.after = after.to_owned();
+            changed = true;
+        }
+    }
+    if changed {
+        save(conn, &items)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

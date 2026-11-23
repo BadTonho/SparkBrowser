@@ -310,6 +310,32 @@ impl BrowserState {
         self.persist_change(closed, reopened, None, None, |_| Ok(()))
     }
 
+    pub(in crate::state) fn persist_tab_closure(
+        &self,
+        closed: &[crate::database::closed_tabs_repo::ClosedTab],
+        previous: &[TabInfo],
+        closed_ids: &[String],
+    ) -> Result<(), String> {
+        use std::collections::{HashMap, HashSet};
+
+        let closed_ids: HashSet<_> = closed_ids.iter().map(String::as_str).collect();
+        let mut predecessors = HashMap::new();
+        let mut anchors = HashMap::new();
+        for tab in previous {
+            let list = (tab.window_id.as_str(), tab.workspace_id.as_str());
+            let id = tab.id.as_str();
+            if closed_ids.contains(id) {
+                anchors.insert(id, predecessors.get(&list).copied().unwrap_or(""));
+            } else {
+                predecessors.insert(list, id);
+            }
+        }
+        self.persist_change(closed, None, None, None, |conn| {
+            crate::database::tab_dividers_repo::reanchor(conn, &anchors)
+                .map_err(|error| format!("Saving tab dividers while closing tabs: {error}"))
+        })
+    }
+
     pub fn persist_run_checkpoint(
         &self,
         checkpoint: crate::database::recovery_repo::RunCheckpoint,

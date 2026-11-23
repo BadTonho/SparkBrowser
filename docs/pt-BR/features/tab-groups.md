@@ -20,7 +20,7 @@ Uma divisão é uma linha, com nome opcional, que separa grupos de guias.
 - Crie com **Adicionar divisão abaixo**; o campo de nome abre na hora. Enter salva e Escape cancela.
 - Arraste a divisão para cima ou para baixo para movê-la; as guias deslizam para dar lugar.
 - Dê um duplo clique, ou clique com o botão direito e escolha **Renomear divisão**, para mudar o nome. Botão direito → **Remover divisão** apaga.
-- Uma divisão fica abaixo de uma guia. Se você fechar essa guia pelo botão **✕**, a divisão passa para a guia de cima.
+- Ao fechar a guia logo acima de uma divisão, a divisão passa para baixo da guia anterior que permaneceu aberta no mesmo espaço de trabalho e janela. Se não restar nenhuma guia acima, a divisão vai para o topo da lista.
 
 ## Grupos
 

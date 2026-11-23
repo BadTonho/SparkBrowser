@@ -30,6 +30,7 @@ export async function checkShutdown(context) {
   assert.equal(relative(data,file),'spark_browser.db');
   function sql(statement) { const db=new DatabaseSync(file); try { db.exec('PRAGMA busy_timeout=5000'); db.exec(statement); } finally { db.close(); } }
   async function openNoteEditor() {
+    await context.focusWindow();
     await click('[data-testid="open-tools"]');
     await withWebview('/index.html?surface=tools', () => until(() => script(`
       const notes = document.querySelector('[data-testid=tools-notes]:enabled');

@@ -31,6 +31,8 @@
 
 ## Correções
 
+- Corrigido o desaparecimento de divisões ao fechar guias por um atalho de teclado ou pelo organizador de guias.
+- Atualizado o SQLite incluído no Spark para corrigir a CVE-2026-119375.
 - O Spark remove o filtro quando um site troca para o próprio tema escuro com uma transição de fundo.
 - Abrir uma nota ou sessão salva pela barra de comandos mantém o painel Ferramentas aberto e dá foco a ele.
 - Corrigida a falha intermitente ao exibir Configurações quando a aba era aberta ou trocada rapidamente.

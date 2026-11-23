@@ -18,6 +18,7 @@ function domain(bridge = {}) {
     [resolve('src/lib/services/tab-snapshots.js')]: { createSnapshotGate },
     [resolve('src/lib/services/session-reconciliation.js')]: { mergeSessionObservations, mergeNavigationObservation },
     [resolve('src/lib/stores/searchEngineStore')]: { defaultSearchEngine: stores.writable('google') },
+    [resolve('src/lib/stores/tabDividersStore')]: { reanchorPreviewDividers: () => {} },
     [resolve('src/lib/services/tauri-bridge')]: { isTauriRuntime: () => true, currentWindowId: () => 'main', ...bridge },
     [resolve('src/lib/services/split-tab-groups.js')]: {},
   };

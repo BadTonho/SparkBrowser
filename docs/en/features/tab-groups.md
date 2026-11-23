@@ -20,7 +20,7 @@ A divider is a line, with an optional name, that separates groups of tabs.
 - Add one with **Add divider below**; the name field opens right away. Press Enter to save or Escape to cancel.
 - Drag a divider up or down to move it; the tabs slide out of the way.
 - Double-click it, or right-click it and choose **Rename divider**, to change the name. Right-click → **Remove divider** deletes it.
-- A divider sits below one tab. If you close that tab with its **✕** button the divider moves to the tab above it.
+- When you close the tab above a divider, the divider moves below the previous remaining tab in the same workspace and window. If none remains above it, the divider moves to the top of the list.
 
 ## Groups
 

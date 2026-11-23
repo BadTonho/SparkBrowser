@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createListFlip } from "../../services/list-flip";
   import { showTabContextMenu, openTabGroupPopover } from "../../stores/persistenceStore";
-  import { tabDividers, moveTabDivider, loadTabDividers, reanchorTabDividers } from "../../stores/tabDividersStore";
+  import { tabDividers, moveTabDivider } from "../../stores/tabDividersStore";
   import TabDivider from "./TabDivider.svelte";
   import TabGroupHeader from "./TabGroupHeader.svelte";
   import { tabGroups, loadTabGroups, removeTabsFromGroup } from "../../stores/tabGroupsStore";
@@ -70,7 +70,7 @@
     return group.mode === "popup" || (group.collapsed && !tab.is_active);
   };
   const groupOf = (tabId: string) => $tabGroups.groups.find((item) => item.id === $tabGroups.members[tabId]);
-  onMount(() => { void loadTabDividers(); void loadTabGroups(); });
+  onMount(() => { void loadTabGroups(); });
   let visibleDividers = $derived(
     $tabDividers.flatMap((divider) => {
       const index = divider.after === "" ? -1 : displayTabs.findIndex((tab) => tab.id === divider.after);
@@ -125,8 +125,6 @@
 
   function handleCloseClick(event: MouseEvent, tabId: string) {
     event.stopPropagation();
-    const index = workspaceTabs.findIndex((tab) => tab.id === tabId);
-    reanchorTabDividers(tabId, index > 0 ? workspaceTabs[index - 1].id : "");
     removeTabsFromGroup([tabId]);
     removeTab(tabId);
   }

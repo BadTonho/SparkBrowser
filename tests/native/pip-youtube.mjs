@@ -6,16 +6,42 @@ import {samplePipFrames} from './pip-performance.mjs';
 
 // Network-dependent, explicitly invoked only; excluded from the local fixture suite.
 export async function checkYoutubePip(context) {
-  const {invoke,until,script,wait,screenshot,directory}=context;
+  const {invoke,until,script,wait,screenshot,directory,withWebview}=context;
+  await context.focusWindow();
   const id=(await invoke('create_tab',{url:'https://www.youtube.com/watch?v=WKc0w7t6mzE'})).tabs.find(t=>t.is_active).id;
+  let previousPlaybackTime = null;
+  await until(async () => {
+    const playbackTime = await withWebview('/watch', () => script(`
+      const player = document.querySelector('#movie_player');
+      const video = player?.querySelector('video');
+      return player && !player.classList.contains('ad-showing') && video
+        && !video.paused && !video.seeking && video.readyState >= 3 ? video.currentTime : null;
+    `));
+    const advancing = playbackTime !== null && previousPlaybackTime !== null && playbackTime > previousPlaybackTime;
+    previousPlaybackTime = playbackTime;
+    return advancing;
+  }, 'YouTube main video is playing', 60000);
   await until(async()=>{
     const state=(await invoke('refresh_tab_media',{tabId:id})).tabs.find(t=>t.tab_id===id);
     const candidates=state.frames.flatMap(frame=>frame.videos.filter(v=>v.eligible).map(video=>({frame,video}))).sort((a,b)=>b.video.width*b.video.height-a.video.width*a.video.height);
     if(!candidates.length)return false;
     const {frame,video}=candidates[0];
-    try{await invoke('enter_video_pip',{tabId:id,context:frame.context,document:frame.document,video:video.id});return true;}
+    try {
+      const opened = await invoke('enter_video_pip', {tabId:id,context:frame.context,document:frame.document,video:video.id});
+      const active = opened.tabs.find(tab => tab.tab_id === id)?.frames.find(frame => frame.picture_in_picture);
+      assert.equal(active?.pip_mode, 'custom', 'the playing YouTube video uses Spark Picture-in-Picture');
+      return true;
+    }
     catch(error){if(/media.stale|media.pip_unavailable/.test(String(error)))return false;throw error;}
   },'YouTube eligible source',60000);
+  await until(async () => {
+    try {
+      return await withFloatingPlayer(context, () => true);
+    } catch (error) {
+      if (error.message === 'Custom floating player not found') return false;
+      throw error;
+    }
+  }, 'YouTube floating window ready', 10000);
   await withFloatingPlayer(context,async()=>{
     await until(()=>script('return document.querySelector("video").readyState>=2;'),'YouTube mirrored image');
     await script('const s=window.opener.document.querySelector("video");window.__pipTestTransitions=0;const changed=()=>window.__pipTestTransitions++;s.addEventListener("loadedmetadata",changed);window.addEventListener("pagehide",()=>s.removeEventListener("loadedmetadata",changed),{once:true});');

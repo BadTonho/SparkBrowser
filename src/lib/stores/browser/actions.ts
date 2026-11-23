@@ -35,6 +35,7 @@ import { tabs, currentUrl, addressInput, isAddressEditing, isSidebarOpen,
   confirmedTabs, previewTabOrder, replaceTabs, updateTabs, setConfirmedUrl, setSidebarOpen } from "./state";
 import { applyConfirmedSplit } from "../splitViewStore";
 import { confirmWorkspaceSelection } from "../workspaceSelectionStore";
+import { reanchorPreviewDividers } from "../tabDividersStore";
 export { tabs, currentUrl, addressInput, isAddressEditing, activeNavigation, isLoading,
   isSidebarOpen, sidebarWidth, SIDEBAR_EXPANDED_WIDTH, SIDEBAR_COLLAPSED_WIDTH,
   setSidebarOpen } from "./state";
@@ -168,7 +169,14 @@ export async function selectTab(tabId: string): Promise<void> {
 
 export async function removeTab(tabId: string, focusContent = false): Promise<void> {
   if (!isTauriRuntime()) {
-    const filtered = get(tabs).filter((t) => t.id !== tabId);
+    const current = get(tabs);
+    const index = current.findIndex(tab => tab.id === tabId);
+    if (index !== -1) {
+      const workspaceId = current[index].workspace_id;
+      const previous = current.slice(0, index).findLast(tab => tab.workspace_id === workspaceId);
+      reanchorPreviewDividers(tabId, previous?.id ?? "");
+    }
+    const filtered = current.filter((t) => t.id !== tabId);
     if (filtered.length === 0) {
       replaceTabs([]);
       await addTab();

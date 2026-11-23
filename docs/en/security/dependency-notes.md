@@ -12,6 +12,8 @@ The npm override resolves `deepmerge` to `tools/vendor/deepmerge`, a private for
 
 ## Rust and Linux upstream warnings
 
+Spark bundles SQLite through `rusqlite 0.41`. The locked `libsqlite3-sys 0.39.1` includes the fix for [CVE-2026-119375](https://rustsec.org/advisories/RUSTSEC-2026-0459.html) on Windows and Linux.
+
 `cargo audit --no-fetch` uses the local advisory database. It does not certify that the database is current. The current Tauri dependency tree still includes Linux GTK3 crates marked unmaintained and `glib 0.18.5`, affected by [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html), plus an unmaintained `proc-macro-error` dependency.
 
 The affected glib iterator is fixed upstream in `glib >=0.20`, outside the GTK3 binding stack's compatible dependency range. Forcing that version into the existing graph is not a supported upgrade. These warnings remain visible: no audit exceptions hide them. A supported upstream Tauri/GTK migration is still required before claiming that the Linux dependency warnings are resolved.
