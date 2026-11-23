@@ -1,6 +1,4 @@
 pub mod app_lock_repo;
-pub mod tab_dividers_repo;
-pub mod tab_groups_repo;
 pub mod bookmarks_repo;
 pub mod connection;
 pub mod downloads_repo;
@@ -17,6 +15,8 @@ pub mod site_icons_repo;
 pub mod site_permissions_repo;
 pub mod site_search_repo;
 pub mod split_repo;
+pub mod tab_dividers_repo;
+pub mod tab_groups_repo;
 pub mod tab_usage_repo;
 pub mod updates_repo;
 pub mod vault_repo;

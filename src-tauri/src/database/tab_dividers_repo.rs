@@ -55,7 +55,11 @@ pub fn save(conn: &Connection, items: &[TabDivider]) -> Result<(), String> {
 mod tests {
     use super::*;
     fn divider(id: &str, name: &str) -> TabDivider {
-        TabDivider { id: id.into(), after: "tab-1".into(), name: name.into() }
+        TabDivider {
+            id: id.into(),
+            after: "tab-1".into(),
+            name: name.into(),
+        }
     }
     fn database() -> Connection {
         let conn = Connection::open_in_memory().unwrap();

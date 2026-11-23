@@ -10,7 +10,9 @@ const MAX_GROUPS: usize = 50;
 const MAX_MEMBERS: usize = 1000;
 const MAX_ID: usize = 64;
 const MAX_NAME: usize = 40;
-pub const COLORS: [&str; 8] = ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan"];
+pub const COLORS: [&str; 8] = [
+    "grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan",
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -79,7 +81,13 @@ pub fn save(conn: &Connection, value: &TabGroups) -> Result<(), String> {
 mod tests {
     use super::*;
     fn group(id: &str) -> Group {
-        Group { id: id.into(), name: "Work".into(), color: "blue".into(), mode: Mode::Collapse, collapsed: false }
+        Group {
+            id: id.into(),
+            name: "Work".into(),
+            color: "blue".into(),
+            mode: Mode::Collapse,
+            collapsed: false,
+        }
     }
     fn database() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
@@ -101,18 +109,49 @@ mod tests {
     fn invalid_documents_are_rejected() {
         let conn = database();
         let member = |group: &str| HashMap::from([("tab-1".to_string(), group.to_string())]);
-        assert!(save(&conn, &TabGroups { groups: vec![group("g1")], members: member("missing") }).is_err());
-        assert!(save(&conn, &TabGroups { groups: vec![group("g1"), group("g1")], members: HashMap::new() }).is_err());
+        assert!(save(
+            &conn,
+            &TabGroups {
+                groups: vec![group("g1")],
+                members: member("missing")
+            }
+        )
+        .is_err());
+        assert!(save(
+            &conn,
+            &TabGroups {
+                groups: vec![group("g1"), group("g1")],
+                members: HashMap::new()
+            }
+        )
+        .is_err());
         let mut bad = group("g1");
         bad.color = "orange".into();
-        assert!(save(&conn, &TabGroups { groups: vec![bad], members: HashMap::new() }).is_err());
+        assert!(save(
+            &conn,
+            &TabGroups {
+                groups: vec![bad],
+                members: HashMap::new()
+            }
+        )
+        .is_err());
         let mut long = group("g1");
         long.name = "n".repeat(41);
-        assert!(save(&conn, &TabGroups { groups: vec![long], members: HashMap::new() }).is_err());
+        assert!(save(
+            &conn,
+            &TabGroups {
+                groups: vec![long],
+                members: HashMap::new()
+            }
+        )
+        .is_err());
     }
     #[test]
     fn unknown_fields_and_modes_are_rejected() {
-        assert!(serde_json::from_str::<TabGroups>(r#"{"groups":[{"id":"a","name":"","color":"blue","mode":"fly","collapsed":false}]}"#).is_err());
+        assert!(serde_json::from_str::<TabGroups>(
+            r#"{"groups":[{"id":"a","name":"","color":"blue","mode":"fly","collapsed":false}]}"#
+        )
+        .is_err());
         assert!(serde_json::from_str::<TabGroups>(r#"{"extra":1}"#).is_err());
     }
 }

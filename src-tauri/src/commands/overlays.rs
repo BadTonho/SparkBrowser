@@ -449,7 +449,11 @@ pub async fn set_bookmark_context_menu_overlay(
 
     let presentation = presentation.unwrap_or_default();
     let token = create_internal_bridge_token();
-    let actions: Vec<_> = actions.unwrap_or_default().into_iter().map(BookmarkContextMenuAction::sanitized).collect();
+    let actions: Vec<_> = actions
+        .unwrap_or_default()
+        .into_iter()
+        .map(BookmarkContextMenuAction::sanitized)
+        .collect();
     let script = build_bookmark_context_menu_script(
         x.unwrap_or(8.0),
         y.unwrap_or(8.0),

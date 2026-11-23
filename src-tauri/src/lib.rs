@@ -20,8 +20,6 @@ use commands::bookmark_export::export_bookmarks;
 use commands::browser_data::{clear_browser_data, estimate_cleanup};
 use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
-use commands::tab_dividers::{get_tab_dividers, set_tab_dividers};
-use commands::tab_groups::{get_tab_groups, set_tab_groups};
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
 use commands::error_report::report_frontend_error;
@@ -40,6 +38,8 @@ use commands::resources::{
 use commands::search_suggestions::fetch_search_suggestions;
 use commands::shutdown::{cancel_shutdown, confirm_shutdown, get_shutdown_state, prepare_shutdown};
 use commands::site_icons::site_icons;
+use commands::tab_dividers::{get_tab_dividers, set_tab_dividers};
+use commands::tab_groups::{get_tab_groups, set_tab_groups};
 use commands::vault::{
     vault_change_master_password, vault_copy_password, vault_copy_text, vault_create,
     vault_delete_entry, vault_dev_remove, vault_dev_seed, vault_export_csv, vault_hello_disable,

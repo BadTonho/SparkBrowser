@@ -40,9 +40,9 @@ pub mod graphics;
 pub mod network;
 
 pub mod closed_tabs;
+pub mod recovery;
 pub mod tab_dividers;
 pub mod tab_groups;
-pub mod recovery;
 
 pub mod shutdown;
 

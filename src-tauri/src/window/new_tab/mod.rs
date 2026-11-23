@@ -131,7 +131,12 @@ pub fn wallpaper_title(app: &AppHandle) -> String {
         .lock()
         .map(|p| p.language == "pt-BR")
         .unwrap_or(false);
-    if pt { "Plano de fundo personalizado" } else { "Custom background" }.into()
+    if pt {
+        "Plano de fundo personalizado"
+    } else {
+        "Custom background"
+    }
+    .into()
 }
 pub fn initializer(app: &AppHandle, token: &str, id: &str) -> Result<String, String> {
     Ok(include_str!("bridge.js")

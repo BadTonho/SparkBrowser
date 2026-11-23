@@ -68,7 +68,9 @@ impl BookmarkContextMenuAction {
         let icon_ok = |icon: &str| {
             icon.len() <= 32_768
                 && icon.starts_with("data:image/")
-                && icon.chars().all(|c| !c.is_control() && c != '"' && c != '\'' && c != ' ')
+                && icon
+                    .chars()
+                    .all(|c| !c.is_control() && c != '"' && c != '\'' && c != ' ')
         };
         self.icon = self.icon.filter(|icon| icon_ok(icon));
         self.color = self.color.filter(|color| hex_color(color));
@@ -418,16 +420,28 @@ mod menu_action_tests {
         let color = |value: &str| -> BookmarkContextMenuAction {
             serde_json::from_value(serde_json::json!({"id":"a","label":"A","color":value})).unwrap()
         };
-        assert_eq!(color("#f2c14e").sanitized().color.as_deref(), Some("#f2c14e"));
+        assert_eq!(
+            color("#f2c14e").sanitized().color.as_deref(),
+            Some("#f2c14e")
+        );
         assert!(color("red").sanitized().color.is_none());
         assert!(color("#12345;}").sanitized().color.is_none());
     }
     #[test]
     fn only_small_image_data_urls_survive() {
-        assert!(action("data:image/png;base64,AAAA").sanitized().icon.is_some());
+        assert!(action("data:image/png;base64,AAAA")
+            .sanitized()
+            .icon
+            .is_some());
         assert!(action("https://evil.test/a.png").sanitized().icon.is_none());
-        assert!(action("data:text/html;base64,AAAA").sanitized().icon.is_none());
-        assert!(action("data:image/png;base64,\"onerror=1").sanitized().icon.is_none());
+        assert!(action("data:text/html;base64,AAAA")
+            .sanitized()
+            .icon
+            .is_none());
+        assert!(action("data:image/png;base64,\"onerror=1")
+            .sanitized()
+            .icon
+            .is_none());
         let big = format!("data:image/png;base64,{}", "A".repeat(40_000));
         assert!(action(&big).sanitized().icon.is_none());
     }

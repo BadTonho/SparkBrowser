@@ -28,7 +28,12 @@ mod tests {
     #[test]
     fn only_the_exact_internal_address_is_the_editor() {
         assert!(super::is_wallpaper_url("spark://wallpaper"));
-        for raw in ["spark://wallpaper/", "spark://wallpaper?x=1", "spark://newtab", "https://wallpaper"] {
+        for raw in [
+            "spark://wallpaper/",
+            "spark://wallpaper?x=1",
+            "spark://newtab",
+            "https://wallpaper",
+        ] {
             assert!(!super::is_wallpaper_url(raw), "{raw}");
         }
     }
