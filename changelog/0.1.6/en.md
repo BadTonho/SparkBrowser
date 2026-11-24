@@ -3,6 +3,7 @@
 ## Improvements
 
 - The error log now says how many times an identical entry was repeated and skipped, shown on the next entry written for it.
+- Redesigned the About & Updates settings section with a status summary card, clearer update progress and notices, and side-by-side cards for the browser repository and WebView2 runtime.
 
 ## Fixes
 
