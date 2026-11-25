@@ -84,19 +84,29 @@ pub fn initialize(app: &AppHandle, settings: &Settings, fixture: Option<String>)
         return;
     }
     let service = app.state::<Widgets>();
-    let mut s = service.spotify.runtime.lock().unwrap();
+    let isolated = app.config().identifier == "org.spark.browser.native-tests";
+    let restore = !isolated
+        && !blocked(app, None).unwrap_or_else(|e| {
+            crate::error_log::report(
+                crate::error_log::Level::Warning,
+                "new-tab",
+                "Spotify widget could not read whether the account was disconnected; it stays signed out",
+                &e,
+            );
+            true
+        });
+    let mut s = crate::error_log::lock(&service.spotify.runtime);
     s.settings = settings.clone();
     s.fixture = fixture;
-    s.isolated = app.config().identifier == "org.spark.browser.native-tests";
+    s.isolated = isolated;
     let epoch = s.epoch;
-    let restore = !s.isolated && !blocked(app, None).unwrap_or(true);
     drop(s);
     if restore {
         let app = app.clone();
         std::thread::spawn(move || {
             let result = platform::read(&app);
             let service = app.state::<Widgets>();
-            let mut s = service.spotify.runtime.lock().unwrap();
+            let mut s = crate::error_log::lock(&service.spotify.runtime);
             if s.epoch != epoch {
                 return;
             }
@@ -122,7 +132,7 @@ pub fn snapshot(app: &AppHandle) -> View {
         return View::default();
     }
     let service = app.state::<Widgets>();
-    let s = service.spotify.runtime.lock().unwrap();
+    let s = crate::error_log::lock(&service.spotify.runtime);
     if s.settings.spotify_enabled {
         s.view.clone()
     } else {
@@ -142,7 +152,7 @@ fn cancel(s: &mut Runtime) {
 }
 pub fn revoke(app: &AppHandle, owner: &str) {
     let service = app.state::<Widgets>();
-    let mut s = service.spotify.runtime.lock().unwrap();
+    let mut s = crate::error_log::lock(&service.spotify.runtime);
     if s.connection
         .as_ref()
         .is_some_and(|(label, _)| label == owner)
@@ -152,13 +162,21 @@ pub fn revoke(app: &AppHandle, owner: &str) {
 }
 pub fn configure(app: &AppHandle, settings: &Settings) {
     let service = app.state::<Widgets>();
-    let mut s = service.spotify.runtime.lock().unwrap();
+    let mut s = crate::error_log::lock(&service.spotify.runtime);
     if s.settings.spotify_client_id != settings.spotify_client_id {
         cancel(&mut s);
         s.credential = None;
         s.access = None;
         s.view = View::default();
+        // Written under this lock, like `connect` and `disconnect`, so a connection finishing at the
+        // same time cannot overwrite the tombstone. Lock order is always Spotify, then database.
         if let Err(e) = blocked(app, Some(true)) {
+            crate::error_log::report(
+                crate::error_log::Level::Warning,
+                "new-tab",
+                "Spotify widget could not save that the account was disconnected",
+                &e,
+            );
             s.view.error = Some(e);
         }
     } else if s.settings.spotify_enabled != settings.spotify_enabled {
@@ -184,7 +202,7 @@ pub async fn connect(app: &AppHandle, owner: String) -> Result<(), String> {
     }
     let service = app.state::<Widgets>();
     let (epoch, client_id, fixture, flag) = {
-        let mut s = service.spotify.runtime.lock().unwrap();
+        let mut s = crate::error_log::lock(&service.spotify.runtime);
         if !s.settings.spotify_enabled
             || s.view.busy
             || s.view.connecting
@@ -228,7 +246,7 @@ pub async fn connect(app: &AppHandle, owner: String) -> Result<(), String> {
     .await
     .map_err(|_| "oauth_error".to_owned())
     .and_then(|r| r);
-    let mut s = service.spotify.runtime.lock().unwrap();
+    let mut s = crate::error_log::lock(&service.spotify.runtime);
     if s.epoch != epoch || flag.load(Ordering::SeqCst) {
         return Err("cancelled".into());
     }
@@ -264,7 +282,7 @@ pub fn disconnect(app: &AppHandle) -> Result<(), String> {
         return Err("cancelled".into());
     }
     let service = app.state::<Widgets>();
-    let mut s = service.spotify.runtime.lock().unwrap();
+    let mut s = crate::error_log::lock(&service.spotify.runtime);
     cancel(&mut s);
     s.credential = None;
     s.access = None;
@@ -289,7 +307,7 @@ pub fn schedule(app: &AppHandle, action: Option<&str>) {
         return;
     }
     let service = app.state::<Widgets>();
-    let mut s = service.spotify.runtime.lock().unwrap();
+    let mut s = crate::error_log::lock(&service.spotify.runtime);
     if !s.settings.spotify_enabled
         || s.view.busy
         || s.view.connecting
@@ -347,7 +365,7 @@ pub fn schedule(app: &AppHandle, action: Option<&str>) {
             // A disable/disconnect during refresh prevents a subsequent control request.
             {
                 let service = app.state::<Widgets>();
-                let mut s = service.spotify.runtime.lock().unwrap();
+                let mut s = crate::error_log::lock(&service.spotify.runtime);
                 if s.epoch != epoch {
                     return Err("cancelled".to_owned().into());
                 }
@@ -368,7 +386,7 @@ pub fn schedule(app: &AppHandle, action: Option<&str>) {
             Ok::<_, api::Failure>((access, data))
         })();
         let service = app.state::<Widgets>();
-        let mut s = service.spotify.runtime.lock().unwrap();
+        let mut s = crate::error_log::lock(&service.spotify.runtime);
         if s.epoch != epoch {
             return;
         }

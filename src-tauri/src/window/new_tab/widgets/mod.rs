@@ -249,7 +249,7 @@ pub fn revoke(app: &AppHandle, label: &str) {
 }
 fn snapshot(app: &AppHandle) -> serde_json::Value {
     let service = app.state::<Widgets>();
-    let state = service.runtime.lock().unwrap();
+    let state = crate::error_log::lock(&service.runtime);
     serde_json::json!({"version":service.version.fetch_add(1,Ordering::SeqCst),"settings":state.settings,"revision":state.revision,"settings_error":state.settings_error,"weather":state.weather,"spotify":spotify::snapshot(app),"youtube":if state.settings.youtube_enabled {youtube::snapshot(app)}else{None},"gmail":if state.settings.gmail_enabled {state.gmail.clone()}else{GmailState {configured:state.gmail.configured,email:state.gmail.email.clone(),..Default::default()}},"location_busy":state.location_busy})
 }
 fn broadcast(app: &AppHandle) {
@@ -278,7 +278,7 @@ fn schedule(app: &AppHandle) {
         crate::state::tab_model::is_window_label(&label) && w.is_focused().unwrap_or(false)
     });
     let service = app.state::<Widgets>();
-    let mut state = service.runtime.lock().unwrap();
+    let mut state = crate::error_log::lock(&service.runtime);
     let time = now();
     if state.settings.weather_enabled
         && state.settings.automatic_location
@@ -316,7 +316,7 @@ fn schedule(app: &AppHandle) {
             tauri::async_runtime::spawn_blocking(move || {
                 let result = weather::fetch(&endpoint, coordinates);
                 let service = app.state::<Widgets>();
-                let mut state = service.runtime.lock().unwrap();
+                let mut state = crate::error_log::lock(&service.runtime);
                 if state.weather_epoch != epoch {
                     return;
                 }
@@ -373,7 +373,7 @@ fn schedule(app: &AppHandle) {
                     Ok::<_, String>((access, credential, inbox))
                 })();
                 let service = app.state::<Widgets>();
-                let mut state = service.runtime.lock().unwrap();
+                let mut state = crate::error_log::lock(&service.runtime);
                 if state.mail_epoch != epoch {
                     return;
                 }
@@ -434,7 +434,7 @@ fn schedule(app: &AppHandle) {
                     _ => Err("not_connected".into()),
                 };
                 let service = app.state::<Widgets>();
-                let mut state = service.runtime.lock().unwrap();
+                let mut state = crate::error_log::lock(&service.runtime);
                 if state.mail_epoch != epoch {
                     return;
                 }
@@ -471,7 +471,7 @@ fn schedule(app: &AppHandle) {
 async fn locate(app: &AppHandle, epoch: u64) {
     let result = platform::locate(app).await;
     let service = app.state::<Widgets>();
-    let mut state = service.runtime.lock().unwrap();
+    let mut state = crate::error_log::lock(&service.runtime);
     if state.weather_epoch != epoch {
         return;
     }
