@@ -227,34 +227,8 @@
     padding: 18px 20px;
     border-radius: var(--radius-lg);
     border: 1px solid var(--settings-row-border);
-    background:
-      radial-gradient(
-        460px 180px at 0% 0%,
-        color-mix(in srgb, var(--accent-primary) 11%, transparent),
-        transparent 72%
-      ),
-      var(--settings-row-bg);
+    background: var(--settings-row-bg);
     overflow: hidden;
-  }
-
-  .hero-card[data-tone="ok"] {
-    background:
-      radial-gradient(
-        460px 180px at 0% 0%,
-        color-mix(in srgb, var(--status-on) 12%, transparent),
-        transparent 72%
-      ),
-      var(--settings-row-bg);
-  }
-
-  .hero-card[data-tone="error"] {
-    background:
-      radial-gradient(
-        460px 180px at 0% 0%,
-        color-mix(in srgb, var(--download-status-error) 12%, transparent),
-        transparent 72%
-      ),
-      var(--settings-row-bg);
   }
 
   .hero-top {
