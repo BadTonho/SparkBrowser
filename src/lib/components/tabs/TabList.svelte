@@ -28,6 +28,10 @@
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
+  import { splitLayout } from "../../stores/splitViewStore";
+
+  type SplitPane = "left" | "right" | "other";
+  const PANES: SplitPane[] = ["left", "right", "other"];
 
   let listEl = $state<HTMLDivElement>();
   const flip = createListFlip(() => listEl, ".tab-row, .tab-divider:not(.dragging)");
@@ -37,8 +41,16 @@
       (t) => !t.workspace_id || t.workspace_id === $activeWorkspaceId
     )
   );
+  /** The split being shown in this workspace, if any. */
+  let activeSplit = $derived($splitLayout && $splitLayout.workspace_id === $activeWorkspaceId ? $splitLayout : null);
+  /** Which side of the split a tab belongs to; "other" for tabs that are not in the split. */
+  const paneOf = (tabId: string): SplitPane => {
+    if (activeSplit?.left_tab_ids.includes(tabId)) return "left";
+    if (activeSplit?.right_tab_ids.includes(tabId)) return "right";
+    return "other";
+  };
   /** Tabs in the order they are shown: the tabs of a group are gathered where its first tab is. */
-  let displayTabs = $derived.by(() => {
+  let groupedTabs = $derived.by(() => {
     const members = $tabGroups.members;
     const present = new Map<string, typeof workspaceTabs>();
     for (const tab of workspaceTabs) {
@@ -54,6 +66,19 @@
       return present.get(group) ?? [];
     });
   });
+  /** While split, the list is gathered by side (left, right, then the rest); otherwise it is unchanged. */
+  let displayTabs = $derived(
+    activeSplit ? PANES.flatMap((pane) => groupedTabs.filter((tab) => paneOf(tab.id) === pane)) : groupedTabs,
+  );
+  /** One separator per side that has tabs, placed just before its first tab (same slot as a group header). */
+  let paneSeparators = $derived(
+    activeSplit
+      ? PANES.flatMap((pane) => {
+          const first = displayTabs.findIndex((tab) => paneOf(tab.id) === pane);
+          return first >= 0 ? [{ pane, order: 4 * (first + 1) - 2 }] : [];
+        })
+      : [],
+  );
   /** One entry per group that has a tab in this workspace, placed just before its first tab. */
   let visibleGroups = $derived(
     $tabGroups.groups.flatMap((group) => {
@@ -195,6 +220,14 @@
   </div>
 
   <div class="tabs-list" bind:this={listEl}>
+    <!-- Rendered before the group headers: on the same slot, the separator then stays above the header. -->
+    {#each paneSeparators as item (item.pane)}
+      <div class="pane-separator" style:order={item.order} data-pane-side={item.pane === "other" ? undefined : item.pane} data-testid={`split-separator-${item.pane}`} role="separator" aria-label={$t(`tabs.split_pane_${item.pane}`)} transition:slide={{ duration: 160, easing: cubicOut }}>
+        <span class="line"></span>
+        <span class="name">{$t(`tabs.split_pane_${item.pane}`)}</span>
+        <span class="line"></span>
+      </div>
+    {/each}
     {#each visibleGroups as item (item.group.id)}
       <TabGroupHeader group={item.group} order={item.order} count={item.count} onopen={openTabGroupPopover} />
     {/each}
@@ -203,6 +236,7 @@
       <div
         class="tab-row"
         class:in-group={!!groupOf(tab.id)}
+        data-pane-side={activeSplit && paneOf(tab.id) !== "other" ? paneOf(tab.id) : undefined}
         data-group-id={groupOf(tab.id)?.id}
         data-color={groupOf(tab.id)?.color}
         style:order={4 * (index + 1)}
@@ -362,6 +396,25 @@
     gap: 6px;
     overflow-y: auto;
     padding-right: 2px;
+  }
+
+  .pane-separator {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 6px 2px;
+    padding: 2px 4px;
+    user-select: none;
+  }
+  .pane-separator .line { flex: 1; height: 1px; background: color-mix(in srgb, var(--accent-primary) 45%, transparent); }
+  .pane-separator .name {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    white-space: nowrap;
   }
 
   .drag-grip {

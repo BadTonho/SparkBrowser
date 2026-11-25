@@ -16,10 +16,13 @@ export function createTabGhost(source: HTMLElement, container: HTMLElement, poin
   const grabY = pointerY - rect.top;
   const node = source.cloneNode(true) as HTMLElement;
   // The copy must never be found as a tab, a target or a form control.
-  for (const element of [node, ...node.querySelectorAll<HTMLElement>("[id],[data-tab-id],[tabindex]")]) {
+  for (const element of [node, ...node.querySelectorAll<HTMLElement>("[id],[data-tab-id],[tabindex],[data-pane-side],[data-group-id]")]) {
     element.removeAttribute("id");
     element.removeAttribute("data-tab-id");
     element.removeAttribute("tabindex");
+    // The copy must not count as a row of the split side or group it was taken from.
+    element.removeAttribute("data-pane-side");
+    element.removeAttribute("data-group-id");
   }
   node.classList.remove("is-dragging");
   node.classList.add("tab-drag-ghost");

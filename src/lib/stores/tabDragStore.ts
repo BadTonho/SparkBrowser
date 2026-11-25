@@ -106,6 +106,17 @@ function move(event: PointerEvent) {
   drag.ghost?.move(drag.x, drag.y);
   pendingMove = true;
 }
+/** The split side of the vertical list section under the pointer: from a side's separator down to the next separator.
+ *  Undefined outside the list, above the first separator or in the section of tabs outside the split. */
+function verticalPaneAt(target: Element | null | undefined, y: number): DockSide | undefined {
+  const section = target?.closest('.tabs-section');
+  if (!section) return undefined;
+  let side: string | undefined;
+  for (const separator of section.querySelectorAll<HTMLElement>('.pane-separator')) {
+    if (separator.getBoundingClientRect().top <= y) side = separator.dataset.paneSide;
+  }
+  return side === 'left' || side === 'right' ? side : undefined;
+}
 /** The group header (or a tab of a group) under the pointer, unless the dragged tab already belongs to it. */
 function groupUnder(target: Element | null | undefined): HTMLElement | null {
   if (!drag) return null;
@@ -158,8 +169,15 @@ async function release(event: PointerEvent) {
   const target = document.elementFromPoint(event.clientX, event.clientY);
   const targetWorkspace = target?.closest<HTMLElement>('.ws-pill')?.dataset.wsId;
   const targetTabList = target?.closest('.tabs-scroll,.tabs-list');
-  const targetSide = (targetTabList as HTMLElement | undefined)?.dataset.paneSide as DockSide | undefined;
-  const targetTab = target?.closest<HTMLElement>('.h-tab')?.dataset.tabId;
+  // Vertical list: the side under the pointer is the section between two separators, so a drop anywhere in it counts.
+  const split = get(splitLayout);
+  const sourceSide: DockSide | undefined = split?.left_tab_ids.includes(drag.id) ? 'left' : split?.right_tab_ids.includes(drag.id) ? 'right' : undefined;
+  const sectionSide = drag.layout === 'vertical' ? verticalPaneAt(target, event.clientY) : undefined;
+  const crossSide = sectionSide && sourceSide && sectionSide !== sourceSide ? sectionSide : undefined;
+  const targetSide = (targetTabList as HTMLElement | undefined)?.dataset.paneSide as DockSide | undefined ?? crossSide;
+  // A tab only works as the drop position when it is on the destination side.
+  const rowUnder = target?.closest<HTMLElement>('.h-tab,.tab-row');
+  const targetTab = !rowUnder || (rowUnder.dataset.paneSide && rowUnder.dataset.paneSide !== targetSide) ? undefined : rowUnder.dataset.tabId;
   const displayed = targetSide && get(splitLayout) ? get(tabs).filter(tab => get(splitLayout)![targetSide === 'left' ? 'left_tab_ids' : 'right_tab_ids'].includes(tab.id)).map(tab => tab.id) : [];
   const beforeId = targetTab && targetTab !== drag.id ? targetTab : displayed.includes(drag.id) ? displayed[displayed.indexOf(drag.id) + 1] ?? null : null;
   const dropGroup = drag.moved ? groupUnder(target)?.dataset.groupId : undefined;
