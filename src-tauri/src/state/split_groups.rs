@@ -126,7 +126,9 @@ impl SplitLayout {
         } else {
             DockSide::Left
         };
-        if self.selected_mut(other) == id {
+        // Only when the other pane would be left empty do the two shown tabs trade places (keeping the split).
+        // Otherwise the tab just changes side and the pane it left shows its next tab.
+        if self.selected_mut(other) == id && self.group(other).len() == 1 {
             let replaced = self.selected_mut(side).clone();
             for member in self.group_mut(other) {
                 if member == id {
@@ -140,7 +142,7 @@ impl SplitLayout {
             }
             *self.selected_mut(other) = replaced;
         } else if self.side_of(id) != Some(side) {
-            self.group_mut(other).retain(|tab| tab != id);
+            self.remove_member(id);
             self.group_mut(side).push(id.to_string());
         }
         *self.selected_mut(side) = id.to_string();

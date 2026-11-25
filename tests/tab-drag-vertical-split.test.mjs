@@ -50,7 +50,7 @@ function fixture(under, y) {
     '../services/bridge/tab-drag': bridge, '../services/bridge/windows': { detachTabToNewWindow: async () => {} },
     '../services/tab-drag-ghost': { createTabGhost: () => ({ move() {}, setHidden() {}, destroy() {} }) },
     '../services/split-tab-groups.js': { replaceGroupOrder },
-    '../services/tab-drag-geometry.js': { crossedDragThreshold: () => true, splitDropSide: () => null },
+    '../services/tab-drag-geometry.js': { crossedDragThreshold: () => true, splitDropSide: () => null, splitPaneDropSide: () => null },
     './mediaPopoverStore': { mediaPopover: writable(null), closeMedia: async () => {} },
     './privacyPopoverStore': { privacyPopover: writable(null), closePrivacy: async () => {} },
     './zoomPopoverStore': { zoomPopover: writable(null), closeZoom: async () => {} },
@@ -105,4 +105,14 @@ test('dropping in the section of tabs outside the split does not move it', async
   const f = fixture(list(null), 560);
   await f.release();
   assert.equal(f.calls.some(c => c.command === 'move_tab_in_split'), false);
+});
+
+test('in split view the whole pane under the pointer is the drop target', async () => {
+  const { splitPaneDropSide } = await import('../src/lib/services/tab-drag-geometry.js');
+  const bounds = { left: 300, top: 40, width: 808, height: 520 };
+  assert.equal(splitPaneDropSide(bounds, .5, 700, 300), 'left');
+  assert.equal(splitPaneDropSide(bounds, .5, 710, 300), 'right');
+  assert.equal(splitPaneDropSide(bounds, .5, 1000, 300), 'right');
+  assert.equal(splitPaneDropSide(bounds, .5, 100, 300), null, 'outside the page area');
+  assert.equal(splitPaneDropSide(bounds, .25, 600, 300), 'right', 'follows the split ratio');
 });

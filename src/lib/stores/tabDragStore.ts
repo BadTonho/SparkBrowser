@@ -9,7 +9,7 @@ import { locale, tr } from "../i18n";
 import { onOverlayOpening } from "../services/bridge/overlays";
 import { detachTabToNewWindow } from "../services/bridge/windows";
 import { dockTabToSplit, moveTabInSplit, setDragPreview, flushDragPreview, type DockSide, type DockContext } from "../services/bridge/tab-drag";
-import { crossedDragThreshold, splitDropSide } from "../services/tab-drag-geometry.js";
+import { crossedDragThreshold, splitDropSide, splitPaneDropSide } from "../services/tab-drag-geometry.js";
 import { tabGroups, addTabsToGroup, removeTabsFromGroup } from "./tabGroupsStore";
 import { selectedTabIds } from "./tabSelectionStore";
 import { mediaPopover, closeMedia } from "./mediaPopoverStore";
@@ -82,7 +82,12 @@ function updateDestination() {
   if (!drag) return;
   const bounds = document.querySelector('.viewport-frame')?.getBoundingClientRect();
   const eligible = drag.original.filter(tab => tab.workspace_id === drag!.context.workspaceId).length > 1;
-  const side = bounds && eligible ? splitDropSide(bounds, drag.x, drag.y) : null;
+  // In split view the whole pane under the pointer takes the tab (dropping on the side it is already on does nothing).
+  const split = get(splitLayout);
+  const inSplit = split && split.workspace_id === drag.context.workspaceId ? split : null;
+  const found = bounds && eligible ? (inSplit ? splitPaneDropSide(bounds, inSplit.ratio, drag.x, drag.y) : splitDropSide(bounds, drag.x, drag.y)) : null;
+  const own = inSplit?.left_tab_ids.includes(drag.id) ? 'left' : inSplit?.right_tab_ids.includes(drag.id) ? 'right' : null;
+  const side = found && found === own ? null : found;
   // Over the page the shell is covered by the page's own layer, so the native preview shows the tab there.
   const overPage = Boolean(bounds && drag.x >= bounds.left && drag.x <= bounds.right && drag.y >= bounds.top && drag.y <= bounds.bottom);
   drag.ghost?.setHidden(overPage);

@@ -100,6 +100,33 @@ fn replacement_swaps_existing_members_and_preserves_ratio_order_and_selection() 
     assert_eq!(split.ratio, 0.65);
 }
 #[test]
+fn moving_the_shown_tab_of_a_pane_with_other_tabs_does_not_swap_the_panes() {
+    let (state, context) = fixture();
+    let split = SplitLayout {
+        left_tab_ids: vec!["tab-1".into()],
+        right_tab_ids: vec!["tab-2".into(), "tab-3".into()],
+        workspace_id: context.workspace_id.clone(),
+        left_tab_id: "tab-1".into(),
+        right_tab_id: "tab-2".into(),
+        ratio: 0.5,
+        focused_tab_id: "tab-2".into(),
+    };
+    let next = layout(
+        &state.snapshot_tabs(),
+        Some(split),
+        &context,
+        "tab-2",
+        DockSide::Left,
+    )
+    .unwrap();
+    assert_eq!(next.left_tab_ids, ["tab-1", "tab-2"]);
+    assert_eq!(next.right_tab_ids, ["tab-3"]);
+    assert_eq!(
+        (&*next.left_tab_id, &*next.right_tab_id),
+        ("tab-2", "tab-3")
+    );
+}
+#[test]
 fn changed_workspace_active_split_or_dragged_tab_invalidates_drop() {
     let (state, mut context) = fixture();
     context.workspace_id = "ws-work".into();
