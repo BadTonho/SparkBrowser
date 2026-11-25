@@ -33,9 +33,20 @@ pub fn same_family(site_url: &str, page: &Url) -> bool {
     same_site(&site, host.strip_prefix("www.").unwrap_or(&host))
 }
 
-/// Same site, or one is a subdomain of the other (`login.example.com` and `example.com`).
+/// Same host, or one is a subdomain of the other (`login.example.com` and `example.com`) inside one
+/// registrable domain. The registrable domain comes from the Public Suffix List, so hosts that merely
+/// share a public suffix never match: a login for `github.io` is not offered on `anyone.github.io`,
+/// nor the other way round, and the same goes for `co.uk`, `blogspot.com` and similar suffixes.
 fn same_site(a: &str, b: &str) -> bool {
-    a == b || a.ends_with(&format!(".{b}")) || b.ends_with(&format!(".{a}"))
+    if a == b {
+        return true;
+    }
+    let nested = a.ends_with(&format!(".{b}")) || b.ends_with(&format!(".{a}"));
+    nested
+        && matches!(
+            (psl::domain_str(a), psl::domain_str(b)),
+            (Some(x), Some(y)) if x.eq_ignore_ascii_case(y)
+        )
 }
 
 /// A login is offered on a page of its own site. A login saved for an HTTPS site is never offered on
@@ -100,6 +111,40 @@ mod tests {
             &page("https://other.org/")
         ));
         assert!(!login_applies("", &page("https://example.com/")));
+    }
+
+    #[test]
+    fn hosts_that_only_share_a_public_suffix_never_match() {
+        for (saved, visited) in [
+            ("https://github.io", "https://attacker.github.io/"),
+            ("https://alice.github.io", "https://github.io/"),
+            ("https://alice.github.io", "https://bob.github.io/"),
+            ("https://myshop.blogspot.com", "https://blogspot.com/"),
+            ("https://co.uk", "https://bank.co.uk/"),
+            ("https://bank.co.uk", "https://co.uk/"),
+        ] {
+            assert!(
+                !login_applies(saved, &page(visited)),
+                "{saved} on {visited}"
+            );
+        }
+        // Inside one registrable domain, subdomains still match both ways.
+        assert!(login_applies(
+            "https://bank.co.uk",
+            &page("https://login.bank.co.uk/")
+        ));
+        assert!(login_applies(
+            "https://alice.github.io",
+            &page("https://docs.alice.github.io/")
+        ));
+        assert!(login_applies(
+            "http://localhost:8080",
+            &page("http://localhost:8080/")
+        ));
+        assert!(login_applies(
+            "http://192.168.0.10",
+            &page("http://192.168.0.10/")
+        ));
     }
 
     #[test]

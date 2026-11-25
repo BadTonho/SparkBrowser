@@ -3814,6 +3814,7 @@ dependencies = [
  "libc",
  "libloading 0.8.9",
  "png 0.17.16",
+ "psl",
  "qrcode",
  "quick-xml",
  "reqwest 0.12.28",

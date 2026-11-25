@@ -24,7 +24,7 @@ Save names, emails, phones and addresses. Every field is optional but at least o
 
 Click a login, card or contact field and Spark lists what fits under it. Pick an item with the mouse (or ArrowDown and Enter) and the form fills in.
 
-- **Logins** are offered on a page of the site they were saved for (the saved address or one of its subdomains), never on look-alike addresses, and never on the plain `http://` version of a site saved with `https://`. Click the username or password field.
+- **Logins** are offered on a page of the site they were saved for (the saved address or one of its subdomains), never on look-alike addresses, never on other sites that only share a public suffix such as `github.io` or `co.uk` (Spark uses the Public Suffix List), and never on the plain `http://` version of a site saved with `https://`. Click the username or password field.
 - **Cards** are offered under card number, name and expiry fields. The security code is never filled: type it yourself. Month and year fill selects and `MM/YY` or `MM/YYYY` fields alike.
 - **Contact info** is offered under name, email, phone and address fields.
 - The list only shows titles (an email, `Visa •••• 4242`), never a password or a whole card number. It lives in a closed part of the page that the site cannot read, and only reacts to real clicks and keys. What fills the form comes from Spark after you pick, and Spark only fills an item that was in the list it just showed on that page. The script that shows the list keeps its secret and its handlers away from the site's own code, so a site cannot pick an item for you.
