@@ -261,4 +261,5 @@ pub const APP_COMMANDS: &[&str] = &[
     "save_qr_code_png",
     "toggle_whatsapp_popover",
     "report_frontend_error",
+    "get_recent_errors",
 ];

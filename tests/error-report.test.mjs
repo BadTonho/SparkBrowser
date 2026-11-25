@@ -34,3 +34,11 @@ test('silent failures are logged as warnings instead of being swallowed', () => 
   assert.match(readFileSync('src-tauri/src/commands/error_report.rs', 'utf8'), /Level::Warning/);
   assert.doesNotMatch(readFileSync('src/lib/stores/downloadsStore.ts', 'utf8'), /\.catch\(\(\) => \{\}\)/);
 });
+
+test('the settings can list the latest entries of the error log', () => {
+  assert.match(readFileSync('src-tauri/src/commands/manifest.rs', 'utf8'), /"get_recent_errors"/);
+  assert.match(readFileSync('src-tauri/src/lib.rs', 'utf8'), /get_recent_errors/);
+  assert.match(readFileSync('src-tauri/capabilities/default.json', 'utf8'), /"allow-get-recent-errors"/);
+  assert.match(readFileSync('src/lib/services/bridge/diagnostics.ts', 'utf8'), /invoke<RecentErrors>\("get_recent_errors"\)/);
+  assert.match(readFileSync('src/lib/components/settings/DiagnosticsSettings.svelte', 'utf8'), /fetchRecentErrors/);
+});

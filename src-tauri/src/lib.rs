@@ -22,7 +22,7 @@ use commands::capture_probe::full_page_capture_probe;
 use commands::closed_tabs::{clear_closed_tabs, get_closed_tabs, reopen_closed_tab};
 use commands::command_search::{get_saved_session, search_command_items};
 use commands::dark_mode_probe::set_dark_mode_probe_scheme;
-use commands::error_report::report_frontend_error;
+use commands::error_report::{get_recent_errors, report_frontend_error};
 use commands::graphics::{get_graphics_status, restart_for_graphics, set_hardware_acceleration};
 use commands::network::{get_network_status, restart_for_network, set_doh_provider};
 use commands::new_tab::set_new_tab_preferences;
@@ -947,7 +947,8 @@ pub fn run() {
             install_extension_from_archive,
             save_qr_code_png,
             toggle_whatsapp_popover,
-            report_frontend_error
+            report_frontend_error,
+            get_recent_errors
         ]))
         .build(context)
         .expect("error while building Spark")

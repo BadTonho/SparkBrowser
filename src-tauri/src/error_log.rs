@@ -326,6 +326,69 @@ pub fn ignored<T, E: Debug>(result: Result<T, E>) {
     }
 }
 
+/// One entry of the log file, as the settings screen lists it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct LogEntry {
+    pub time: String,
+    pub level: String,
+    pub text: String,
+}
+
+/// How much of the end of the log the settings screen reads.
+const READ_TAIL_BYTES: u64 = 192 * 1024;
+
+/// Splits the text of the log into entries. An entry starts with `[time] [LEVEL] ` and continues on the
+/// following lines (the details) until the next entry starts. Text before the first entry (a cut line) is dropped.
+fn parse_entries(text: &str) -> Vec<LogEntry> {
+    let mut entries: Vec<LogEntry> = Vec::new();
+    for line in text.lines() {
+        if let Some((time, level, first)) = split_entry_start(line) {
+            entries.push(LogEntry {
+                time: time.into(),
+                level: level.into(),
+                text: first.into(),
+            });
+        } else if let Some(last) = entries.last_mut() {
+            last.text.push_str("\n");
+            last.text.push_str(line);
+        }
+    }
+    entries
+}
+
+fn split_entry_start(line: &str) -> Option<(&str, &str, &str)> {
+    let rest = line.strip_prefix('[')?;
+    let (time, rest) = rest.split_once("] [")?;
+    let (level, text) = rest.split_once("] ")?;
+    let known = ["INFO", "WARN", "ERROR", "CRITICAL"];
+    (known.contains(&level) && time.chars().next().is_some_and(|c| c.is_ascii_digit()))
+        .then_some((time, level, text))
+}
+
+/// The latest entries of the log file, newest first, and the file's path. Empty when nothing was logged yet.
+pub fn read_recent(max_entries: usize) -> (String, Vec<LogEntry>) {
+    use std::io::{Read, Seek, SeekFrom};
+    let Some(path) = LOG_FILE.get() else {
+        return (String::new(), Vec::new());
+    };
+    let shown = path.display().to_string();
+    let Ok(mut file) = fs::File::open(path) else {
+        return (shown, Vec::new());
+    };
+    let length = file.metadata().map(|m| m.len()).unwrap_or(0);
+    if file.seek(SeekFrom::Start(length.saturating_sub(READ_TAIL_BYTES))).is_err() {
+        return (shown, Vec::new());
+    }
+    let mut bytes = Vec::new();
+    if file.read_to_end(&mut bytes).is_err() {
+        return (shown, Vec::new());
+    }
+    let mut entries = parse_entries(&String::from_utf8_lossy(&bytes));
+    entries.reverse();
+    entries.truncate(max_entries);
+    (shown, entries)
+}
+
 /// Removes the running marker so the next start knows this run ended normally.
 pub fn clean_exit() {
     if let Some(path) = LOG_FILE.get() {
@@ -485,6 +548,18 @@ fn format_utc(seconds: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_log_is_split_into_entries_with_their_details() {
+        let text = "cut line\n[2026-11-25 10:00:00] [WARN] native: one\n[2026-11-25 10:00:01] [ERROR] interface: two\nmore\ndetails\n[2026-11-25 10:00:02] [INFO] start\n";
+        let entries = parse_entries(text);
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0].level, "WARN");
+        assert_eq!(entries[1].time, "2026-11-25 10:00:01");
+        assert_eq!(entries[1].text, "interface: two\nmore\ndetails");
+        assert_eq!(entries[2].text, "start");
+        assert!(parse_entries("[not a time] [ERROR] x").is_empty());
+    }
 
     #[test]
     fn only_error_and_critical_interrupt_the_user() {

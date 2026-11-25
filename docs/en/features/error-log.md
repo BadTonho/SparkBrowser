@@ -57,6 +57,10 @@ Everything that used to be printed only to the console (`eprintln!`) is now logg
 
 `logs/spark-errors.log` inside the Spark data directory (on Windows, `%APPDATA%\org.spark.browser\logs`). Every entry, each start and each normal close is appended there, one line per entry with its level (`[INFO]`, `[WARN]`, `[ERROR]`, `[CRITICAL]`). The same entry is written at most once every 10 seconds, except `critical`; the next entry written for it says how many repeats were skipped (`repeated N more times since the last entry`). At 512 KB it is renamed to `spark-errors.log.old`, so it never uses more than about 1 MB. Private windows do not write to it or show these cards.
 
+## Viewing the log in the app
+
+**Settings → Local diagnostics** lists the latest entries of the log (up to 150, newest first, read from the end of `spark-errors.log`), each with its level and time (UTC) and the full text with details. A filter picks one level, **Copy** puts the listed entries on the clipboard so they can be pasted into a report, and the path of the log file is shown at the bottom. Nothing is sent anywhere. The internal performance counters (operation timings and interface commands) are in a collapsed "Internal performance" block below. The `get_recent_errors` command is in [`src-tauri/src/commands/error_report.rs`](../../../src-tauri/src/commands/error_report.rs).
+
 ## Privacy
 
 Reports are redacted before they are logged or shown: the user's home folder becomes `~`, and any `http(s)://` address is cut after the host (`https://example.test/…`). Summaries are limited to 300 characters and details to 6,000.

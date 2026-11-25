@@ -269,7 +269,8 @@
     "allow-install-extension-from-archive",
     "allow-save-qr-code-png",
     "allow-toggle-whatsapp-popover",
-    "allow-report-frontend-error"
+    "allow-report-frontend-error",
+    "allow-get-recent-errors"
   ],
   "webviews": [
     "main",

@@ -14,6 +14,12 @@ export interface NativeDiagnostics {
   resident_limit: number;
   tab_details: TabDiagnostic[];
 }
+export interface RecentErrorEntry { time: string; level: "INFO" | "WARN" | "ERROR" | "CRITICAL"; text: string }
+export interface RecentErrors { path: string; entries: RecentErrorEntry[] }
+/** The latest entries of the local error log, newest first. */
+export async function fetchRecentErrors(): Promise<RecentErrors | null> {
+  return isTauriRuntime() ? invoke<RecentErrors>("get_recent_errors") : null;
+}
 export async function fetchDiagnostics(): Promise<NativeDiagnostics | null> {
   return isTauriRuntime() ? invoke<NativeDiagnostics>("get_diagnostics") : null;
 }

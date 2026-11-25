@@ -6,6 +6,7 @@
 
 ## Melhorias
 
+- A seção **Diagnósticos locais** das configurações agora mostra os problemas que o Spark registrou: as últimas entradas do log local de erros (Crítico, Erro, Aviso e Info), da mais nova para a mais antiga, com filtro por nível, botão para copiar e o caminho do arquivo de log. Os contadores internos de desempenho foram para um bloco recolhido, "Desempenho interno".
 - As sugestões da barra de endereço vindas do histórico e dos favoritos não mostram mais o endereço da página abaixo do título.
 - O estilo de fundo Vidro agora tem dois tipos: **Normal** (o visual translúcido de sempre) e **Vidro líquido** (superfície mais transparente, com desfoque forte, cores realçadas e bordas brilhantes que refletem a luz). Escolha em Configurações → Aparência e layout depois de selecionar Vidro.
 - O cabeçalho da lista vertical de abas ficou mais simples: mostra só "Abas (n)" e seus botões (modo split, aba efêmera e nova aba) agora têm o mesmo tamanho e mostram só um ícone; passe o mouse sobre um para ver o nome.

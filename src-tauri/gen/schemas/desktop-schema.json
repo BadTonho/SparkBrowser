@@ -753,6 +753,12 @@
           "markdownDescription": "Enables the get_reader_article command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_recent_errors command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-recent-errors",
+          "markdownDescription": "Enables the get_recent_errors command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_recovery_status command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-recovery-status",
@@ -2353,6 +2359,12 @@
           "type": "string",
           "const": "deny-get-reader-article",
           "markdownDescription": "Denies the get_reader_article command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_recent_errors command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-recent-errors",
+          "markdownDescription": "Denies the get_recent_errors command without any pre-configured scope."
         },
         {
           "description": "Denies the get_recovery_status command without any pre-configured scope.",
