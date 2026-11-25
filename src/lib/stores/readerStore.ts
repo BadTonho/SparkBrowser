@@ -3,6 +3,7 @@ import type { ReaderArticle, ReaderTheme, ReaderFont, ReaderWidth } from "../typ
 import { invoke, isTauriRuntime } from "../services/tauri-bridge";
 import { setOverlayVisibility } from "../services/bridge/overlays";
 import { sanitizeArticleHtml } from "../services/reader-sanitizer";
+import { t } from "../i18n";
 
 export const isReaderOpen = writable<boolean>(false);
 export const readerArticle = writable<ReaderArticle | null>(null);
@@ -13,6 +14,16 @@ export const readerTheme = writable<ReaderTheme>("sepia");
 export const readerFont = writable<ReaderFont>("serif");
 export const readerFontSize = writable<number>(18);
 export const readerWidth = writable<ReaderWidth>("medium");
+
+const NO_CONTENT = "reader.no_content";
+/** Codes the reader can fail with, shown in the interface's language. */
+const READER_ERRORS = { [NO_CONTENT]: "reader.no_content", "reader.unsupported": "reader.unsupported" } as const;
+
+function readerErrorMessage(error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error);
+  const key = READER_ERRORS[detail as keyof typeof READER_ERRORS];
+  return key ? get(t)(key) : detail;
+}
 
 export async function openReaderMode(tabId?: string): Promise<void> {
   try {
@@ -36,12 +47,21 @@ export async function openReaderMode(tabId?: string): Promise<void> {
     }
 
     const article = await invoke<ReaderArticle>("get_reader_article", { tabId: tabId ?? null });
-    if (!article || !article.content_html) {
-      throw new Error("Não foi possível extrair o conteúdo principal desta página.");
+    const content = article?.content_html
+      ? sanitizeArticleHtml(article.content_html, article.images ?? {})
+      : "";
+    if (!content.trim()) {
+      // Not a fault of the browser (the page has no article), but still written to the log.
+      void invoke("report_frontend_error", {
+        summary: "Reader view found no article content on the page",
+        details: "",
+        level: "info",
+      }).catch(() => {});
+      throw new Error(NO_CONTENT);
     }
-    readerArticle.set({ ...article, content_html: sanitizeArticleHtml(article.content_html, article.images ?? {}), images: {} });
-  } catch (err: any) {
-    readerError.set(err?.message ?? String(err));
+    readerArticle.set({ ...article, content_html: content, images: {} });
+  } catch (err: unknown) {
+    readerError.set(readerErrorMessage(err));
   } finally {
     readerLoading.set(false);
   }

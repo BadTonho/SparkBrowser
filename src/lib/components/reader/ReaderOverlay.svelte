@@ -238,7 +238,7 @@
             {/if}
             <h1 class="article-title">{$readerArticle.title}</h1>
             {#if $readerArticle.byline}
-              <div class="article-byline">Por {$readerArticle.byline}</div>
+              <div class="article-byline">{$t("reader.byline", { name: $readerArticle.byline })}</div>
             {/if}
             <div class="article-divider"></div>
           </div>

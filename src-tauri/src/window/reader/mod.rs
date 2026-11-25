@@ -129,16 +129,6 @@ const EXTRACT_SCRIPT: &str = r#"
 })()
 "#;
 
-#[cfg_attr(windows, allow(dead_code))]
-fn escape_html(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&#39;")
-}
-
 pub async fn extract_article(
     app: &AppHandle,
     window_id: &str,
@@ -230,26 +220,8 @@ pub async fn extract_article(
 
     #[cfg(not(windows))]
     {
-        // Linux stub / WebKitGTK fallback
-        let tab = state
-            .snapshot_tabs()
-            .into_iter()
-            .find(|t| t.id == id)
-            .ok_or_else(|| "Tab not found".to_string())?;
-
-        Ok(ReaderArticle {
-            title: tab.title,
-            byline: String::new(),
-            site_name: String::new(),
-            content_html: format!(
-                "<p>Reading mode for {} is available on Windows.</p>",
-                escape_html(&tab.url)
-            ),
-            text_content: String::new(),
-            word_count: 10,
-            reading_time_mins: 1,
-            url: tab.url,
-            images: HashMap::new(),
-        })
+        // WebKitGTK has no article extraction yet. The interface shows this code in its own
+        // language instead of a made-up article.
+        Err("reader.unsupported".into())
     }
 }

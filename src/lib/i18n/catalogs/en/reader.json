@@ -18,6 +18,8 @@
   "reader.width_wide": "Wide",
   "reader.decrease_font": "Decrease font size",
   "reader.increase_font": "Increase font size",
-  "reader.button_tooltip": "Toggle Reader View (Immersive article reader)"
+  "reader.button_tooltip": "Toggle Reader View (Immersive article reader)",
+  "reader.byline": "By {name}",
+  "reader.no_content": "Could not extract the main content of this page.",
+  "reader.unsupported": "Reader View is available on Windows only."
 }
-

@@ -25,6 +25,6 @@
   "extensions.error_loading": "Falha ao carregar extensão",
   "extensions.install_in_spark": "Instalar no Spark",
   "extensions.installed_badge": "Instalada no Spark",
-  "extensions.install_success": "Extensão {name} instalada com sucesso!"
+  "extensions.install_success": "Extensão {name} instalada com sucesso!",
+  "extensions.load_archive_desc": "Instalar extensão a partir de arquivo .zip ou .crx"
 }
-

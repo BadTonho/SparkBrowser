@@ -6,7 +6,8 @@ const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'
 test('article HTML from web pages passes through the allowlist sanitizer before rendering', () => {
   const store = read('src/lib/stores/readerStore.ts');
   assert.match(store, /import \{ sanitizeArticleHtml \} from "\.\.\/services\/reader-sanitizer"/);
-  assert.match(store, /content_html: sanitizeArticleHtml\(article\.content_html, article\.images \?\? \{\}\)/);
+  assert.match(store, /sanitizeArticleHtml\(article\.content_html, article\.images \?\? \{\}\)/);
+  assert.match(store, /readerArticle\.set\(\{ \.\.\.article, content_html: content, images: \{\} \}\)/, 'only the sanitized HTML is stored');
   assert.match(read('src/lib/components/reader/ReaderOverlay.svelte'), /\{@html \$readerArticle\.content_html\}/, 'store must be the only sanitization boundary');
 });
 
@@ -31,11 +32,20 @@ test('reader images come from the tab cache as data: URLs because the shell CSP 
   assert.match(sanitizer, /if \(!source\) \{\s*child\.remove\(\);/, 'images missing from the cache are removed instead of shown broken');
 });
 
-test('Windows reader extraction has a timeout and the Linux stub escapes the page URL', () => {
+test('Windows reader extraction has a timeout and other systems report a translated code', () => {
   const reader = read('src-tauri/src/window/reader/mod.rs');
   assert.match(reader, /tokio::time::timeout\(std::time::Duration::from_secs\(10\), receiver\)/);
-  assert.match(reader, /escape_html\(&tab\.url\)/);
-  assert.match(reader, /fn escape_html\(value: &str\) -> String/);
+  assert.match(reader, /#\[cfg\(not\(windows\)\)\]\s*\{[^}]*Err\("reader\.unsupported"\.into\(\)\)/);
+  assert.match(read('src/lib/services/bridge/runtime.ts'), /"get_reader_article:reader\.unsupported"/, 'an expected limitation is not logged as a failure');
+});
+
+test('reader messages follow the interface language', () => {
+  const store = read('src/lib/stores/readerStore.ts');
+  assert.doesNotMatch(store, /throw new Error\("[^"]*[ãçéõ]/, 'no hardcoded Portuguese error text');
+  assert.match(store, /get\(t\)\(key\)/);
+  const overlay = read('src/lib/components/reader/ReaderOverlay.svelte');
+  assert.match(overlay, /\$t\("reader\.byline", \{ name: \$readerArticle\.byline \}\)/);
+  assert.doesNotMatch(overlay, />Por \{/);
 });
 
 test('reader documentation describes the content safety behavior in both languages', () => {

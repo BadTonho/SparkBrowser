@@ -1,9 +1,10 @@
 <script lang="ts">
   import { activeToasts, dismissToast } from "../../stores/notificationStore";
+  import { t } from "../../i18n";
 </script>
 
 {#if $activeToasts.length > 0}
-  <div class="toast-container" role="region" aria-label="Notificações">
+  <div class="toast-container" role="region" aria-label={$t("status.toast_region")}>
     {#each $activeToasts as toast (toast.id)}
       <div class="toast-card {toast.type}" role="status" aria-live="polite">
         <div class="toast-icon">
@@ -44,7 +45,7 @@
         <button
           type="button"
           class="toast-close-btn"
-          aria-label="Fechar notificação"
+          aria-label={$t("status.toast_dismiss")}
           onclick={() => dismissToast(toast.id)}
         >
           ×
