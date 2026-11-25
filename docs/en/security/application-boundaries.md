@@ -19,6 +19,8 @@ The scripts Spark adds to web pages (autofill, keyboard shortcuts, page activity
 - **One token per channel.** The high-value channels get their own token, derived from the tab's bridge token with HMAC-SHA256 under a key that exists only in the browser process: `autofill` (suggestions, filling, saving) and `keyboard` (shortcuts, links opened in a new tab, pane focus). A page that obtains the token of a lower-value script cannot compute these.
 - **No observable transport.** Messages never travel as a navigation, which the page could read through the Navigation API. On Windows they go through a DevTools binding whose name is random per tab; the bridge takes the function before the page runs, removes it from `window` and sends only strings it serialized itself. On Linux they go through the `sparkContent` WebKit script message handler, read at document start. The binding is installed only in the top-level session; out-of-process frames never see its name.
 
+The autofill script additionally captures, at document start, every function it uses on the token, the item ids and the handlers that act for the person (`addEventListener`, event getters, element creation, shadow roots, query building), so a page that replaces them later receives nothing it could replay. The browser process fills only an item id that was in the list it last sent for that request.
+
 Remaining limit: if the native function is not yet installed when a document starts (a race with WebView creation), messages wait for it under its random name instead of being sent another way. On Linux, a handler that appears only after the page started is looked up by name when the first message is sent.
 
 ## Internal messages
