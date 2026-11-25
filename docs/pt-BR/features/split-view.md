@@ -10,6 +10,8 @@ A prévia não navega, acorda, hiberna, seleciona nem persiste abas. Soltar na d
 
 A prévia nativa usa uma janela auxiliar transparente, vinculada à principal e que ignora o mouse, cobrindo a área interna da janela principal. O cartão permanece dentro da janela, afastado do ponteiro, e compartilha essa superfície com o destaque de encaixe. Mudanças de geometria redimensionam a superfície; atualizações do ponteiro apenas redesenham seu conteúdo e são agrupadas. A superfície converte limites lógicos para coordenadas físicas do desktop usando a escala da janela principal. O encaixe valida o workspace, a aba ativa, a identidade da divisão e a ordem dos grupos originais, depois salva layout, seleção e ativação juntos antes de reconciliar os documentos nativos. Falhas de persistência preservam a divisão, os grupos e o histórico residente anteriores e exibem um erro.
 
+Na lista vertical de abas, o botão **◫** ao lado dos botões de nova aba abre um split: a aba que você está vendo fica à esquerda e a outra aba do workspace usada mais recentemente abre à direita (empates mantêm a ordem das abas); se for a única aba, uma nova guia em branco abre à direita. Com o split ativo, esse botão dá lugar a um botão **✕** na ponta direita da linha entre os painéis, que sai do split.
+
 Em **Tools → Tabs**, selecione duas abas diferentes do workspace atual e escolha **Split selected tabs**. As páginas aparecem lado a lado com um divisor de 8 px. Arraste o divisor ou dê foco a ele e use Esquerda/Direita; Home restaura 50%. As proporções vão de 20% a 80%, com cada view nativa tendo pelo menos 100 pixels lógicos de largura.
 
 ## Abas independentes por painel

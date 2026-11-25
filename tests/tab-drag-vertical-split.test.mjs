@@ -116,3 +116,16 @@ test('in split view the whole pane under the pointer is the drop target', async 
   assert.equal(splitPaneDropSide(bounds, .5, 100, 300), null, 'outside the page area');
   assert.equal(splitPaneDropSide(bounds, .25, 600, 300), 'right', 'follows the split ratio');
 });
+
+test('the split companion is the most recently used other tab of the workspace', async () => {
+  const { pickSplitCompanion } = await import('../src/lib/services/split-tab-groups.js');
+  const tabs = [
+    { id: 'a', workspace_id: 'ws', last_active_epoch: 9 },
+    { id: 'b', workspace_id: 'ws', last_active_epoch: 3 },
+    { id: 'c', workspace_id: 'ws', last_active_epoch: 7 },
+    { id: 'd', workspace_id: 'other', last_active_epoch: 99 },
+  ];
+  assert.equal(pickSplitCompanion(tabs, 'a', 'ws'), 'c');
+  assert.equal(pickSplitCompanion([{ id: 'x', workspace_id: 'ws', last_active_epoch: 1 }, { id: 'y', workspace_id: 'ws', last_active_epoch: 1 }], 'a', 'ws'), 'x', 'ties keep the tab order');
+  assert.equal(pickSplitCompanion([tabs[0], tabs[3]], 'a', 'ws'), null, 'alone in the workspace');
+});

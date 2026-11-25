@@ -24,3 +24,16 @@ export function splitHeaderGeometry(bounds, ratio) {
   const left = Math.max(100, Math.min(available - 100, available * Math.max(.2, Math.min(.8, ratio))));
   return { left: bounds.x, leftWidth: left, right: bounds.x + left + 8, rightWidth: available - left };
 }
+
+/** The tab that opens beside the active one when a split starts: the other tab of the workspace used most recently
+ *  (a strictly greater epoch wins, so ties keep the tab order, like the docking rule). Null when there is none.
+ * @param {{id: string, workspace_id?: string, last_active_epoch?: number}[]} tabs @param {string} activeId @param {string} workspaceId */
+export function pickSplitCompanion(tabs, activeId, workspaceId) {
+  /** @type {typeof tabs[number] | null} */
+  let best = null;
+  for (const tab of tabs) {
+    if (tab.id === activeId || (tab.workspace_id && tab.workspace_id !== workspaceId)) continue;
+    if (!best || (tab.last_active_epoch ?? 0) > (best.last_active_epoch ?? 0)) best = tab;
+  }
+  return best ? best.id : null;
+}

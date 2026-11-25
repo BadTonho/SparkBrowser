@@ -30,6 +30,7 @@
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
   import { splitLayout } from "../../stores/splitViewStore";
   import { splitDragPreview } from "../../stores/tabDragStore";
+  import { enterSplitView, exitSplitView } from "../../stores/splitViewActions";
 
   type SplitPane = "left" | "right" | "other";
   const PANES: SplitPane[] = ["left", "right", "other"];
@@ -218,6 +219,9 @@
       {currentWorkspaceName.toUpperCase()} {$t("tabs.tabs_d820")}{workspaceTabs.length})
     </span>
     <div class="tabs-header-actions">
+      {#if !activeSplit}
+        <button class="split-toggle" data-testid="split-enter" onclick={() => void enterSplitView()} title={$t("tabs.split_enter")} aria-label={$t("tabs.split_enter")}>◫</button>
+      {/if}
       <button
         class="new-tab-pill ephemeral"
         onclick={() => addEphemeralTab()}
@@ -241,6 +245,9 @@
     {#each paneSeparators as item (item.pane)}
       <div class="pane-separator" style:order={item.order} data-pane-side={item.pane === "other" ? undefined : item.pane} data-testid={`split-separator-${item.pane}`} role="separator" aria-label={$t(`tabs.split_pane_${item.pane}`)} transition:slide={{ duration: 160, easing: cubicOut }}>
         <span class="line"></span>
+        {#if item.pane === "right"}
+          <button class="split-toggle" data-testid="split-exit" onpointerdown={(event) => event.stopPropagation()} onclick={() => void exitSplitView()} title={$t("tabs.split_exit")} aria-label={$t("tabs.split_exit")}>✕</button>
+        {/if}
       </div>
     {/each}
     {#each visibleGroups as item (item.group.id)}
@@ -423,6 +430,25 @@
     user-select: none;
   }
   .pane-separator .line { flex: 1; height: 1px; background: color-mix(in srgb, var(--accent-primary) 45%, transparent); }
+
+  .split-toggle {
+    flex: none;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .split-toggle:hover {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--text-primary);
+  }
 
   .drag-grip {
     display: flex;

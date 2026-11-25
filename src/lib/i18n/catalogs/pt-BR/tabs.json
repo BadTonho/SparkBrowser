@@ -19,6 +19,8 @@
   "tabs.hibernate_tab_1b5f": "Hibernar aba",
   "tabs.close_tab_p0_14f2": "Fechar aba ({p0})",
   "tabs.close_tab_f271": "Fechar aba",
+  "tabs.split_enter": "Abrir modo split",
+  "tabs.split_exit": "Sair do modo split",
   "tabs.split_pane_right": "Painel direito",
   "tabs.split_pane_other": "Fora do split",
   "tabs.split_drop_left": "Solte para dividir à esquerda",

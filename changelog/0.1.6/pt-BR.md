@@ -1,5 +1,9 @@
 # Spark 0.1.6
 
+## Novas funcionalidades
+
+- Novos botões para abrir e sair do modo split na lista vertical de abas. O botão no topo da lista abre um split com a aba que você está vendo à esquerda e a última aba usada à direita (uma nova guia em branco, se for a única). O botão na linha entre os painéis sai do split.
+
 ## Melhorias
 
 - Com abas verticais e o modo split ativos, agora dá para arrastar uma aba de um lado do split para o outro na lista de abas. Solte em qualquer ponto do outro lado, e a lista mostra onde ela vai ficar enquanto você arrasta. Também dá para soltar sobre a página do outro painel.
