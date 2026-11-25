@@ -37,6 +37,7 @@ function waitForStartup(): Promise<void> {
  */
 const EXPECTED_FAILURES = new Set([
   "refresh_tab_media:media.unavailable",
+  "get_reader_article:reader.unsupported",
   "set_settings_overlay:settings_tab.not_ready",
   "set_settings_overlay:settings_tab.invalid_tab",
 ]);

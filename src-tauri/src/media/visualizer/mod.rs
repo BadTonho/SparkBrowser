@@ -105,7 +105,7 @@ fn run(app: AppHandle) {
         // main thread, and the main thread may be waiting for this very lock (a new tab replacing an
         // old one unsubscribes from here); holding the lock across that question deadlocks the app.
         let (enabled, snapshot, generation) = {
-            let state = service.state.lock().unwrap();
+            let state = crate::error_log::lock(&service.state);
             (
                 state.preferences.enabled,
                 state.consumers.values().cloned().collect::<Vec<_>>(),
@@ -118,7 +118,7 @@ fn run(app: AppHandle) {
             .map(|c| (c.label.clone(), c.token.clone()))
             .collect();
         if !stale.is_empty() {
-            let mut state = service.state.lock().unwrap();
+            let mut state = crate::error_log::lock(&service.state);
             for (label, token) in &stale {
                 // A newer subscription under the same label is not stale.
                 if state
@@ -169,7 +169,7 @@ fn run(app: AppHandle) {
         // Disabled consumers receive one clear frame, never the stale spectrum.
         let deliver = active || previous_idle != Some((generation, consumers.len()));
         if deliver {
-            let mut state = service.state.lock().unwrap();
+            let mut state = crate::error_log::lock(&service.state);
             if state.generation == generation {
                 state.sequence += 1;
                 let frame = Frame {

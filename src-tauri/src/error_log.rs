@@ -311,6 +311,32 @@ pub fn warn(summary: &str) {
     report(Level::Warning, "native", summary, "");
 }
 
+/// Locks `mutex`, recovering it when a panic poisoned it. Use instead of `.lock().unwrap()`: the
+/// panic is already in the log, so the state it left is kept, the poison flag is cleared and the
+/// recovery is logged as a `Warning` with its place in the code, instead of every later call
+/// panicking too.
+#[track_caller]
+pub fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    match mutex.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => {
+            let place = Location::caller();
+            report(
+                Level::Warning,
+                "native",
+                &format!(
+                    "Recovered a lock left poisoned by a panic, at {}:{}",
+                    place.file(),
+                    place.line()
+                ),
+                "",
+            );
+            mutex.clear_poison();
+            poisoned.into_inner()
+        }
+    }
+}
+
 /// Use instead of `let _ = result;`: the failure is still ignored, but it is written to the log as
 /// a `Warning` with the place in the code that ignored it, so nothing fails invisibly.
 #[track_caller]
@@ -616,6 +642,24 @@ mod tests {
     fn ignoring_a_success_or_a_failure_never_panics() {
         ignored(Ok::<_, String>(1));
         ignored(Err::<(), _>("boom"));
+    }
+
+    #[test]
+    fn a_lock_poisoned_by_a_panic_is_recovered_with_its_state_and_cleared() {
+        let mutex = std::sync::Arc::new(Mutex::new(1));
+        let poisoner = mutex.clone();
+        let outcome = std::thread::spawn(move || {
+            let mut guard = poisoner.lock().unwrap();
+            *guard = 2;
+            panic!("poison the lock");
+        })
+        .join();
+        assert!(outcome.is_err());
+        assert!(mutex.is_poisoned());
+        assert_eq!(*lock(&mutex), 2, "the state left by the panic is kept");
+        assert!(!mutex.is_poisoned(), "later callers lock normally again");
+        *lock(&mutex) = 3;
+        assert_eq!(*mutex.lock().unwrap(), 3);
     }
 
     #[test]

@@ -49,6 +49,7 @@ Todo comando da interface que falha é registrado como `warning` (`Command "nome
 O código que antes jogava o erro fora agora o registra como `warning`, com o local que o ignorou:
 
 - No Rust, `let _ = resultado;` virou `crate::error_log::ignored(resultado);`, que registra o erro com o arquivo e a linha. Use-o para todo novo `Result` ignorado de propósito.
+- No Rust, `mutex.lock().unwrap()` vira `crate::error_log::lock(&mutex)`. Quando um panic envenenou o lock, ele mantém o estado que o panic deixou, limpa o sinal de envenenamento e registra um `warning` com o arquivo e a linha, em vez de fazer todas as chamadas seguintes darem panic também. Os widgets da nova aba e o visualizador de áudio usam esse helper.
 - Na interface, um `.catch(() => {})` vazio virou `.catch(logIgnored)` (`src/lib/services/ignored-error.ts`). Filas de promessas que só mantêm a cadeia viva mantêm o catch vazio, porque o erro pertence a quem chamou.
 
 Tudo que antes só era impresso no console (`eprintln!`) agora também vai para o log como `warning` (`crate::error_log::warn`), e a página de nova guia registra suas falhas ignoradas por `window.__sparkLogIgnored`. Ainda não coberto: o código Rust que só compila no Linux foi convertido sem ser compilado aqui, os scripts injetados em páginas do Google Drive (`gdrive_bridge.js`) ainda têm catches vazios de melhor esforço, e alguns pontos do Rust transformam um erro em um "falhou" simples sem guardar o texto.

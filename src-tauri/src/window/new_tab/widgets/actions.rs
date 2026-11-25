@@ -212,12 +212,12 @@ async fn perform(
                 serde_json::from_value(data["settings"].clone()).map_err(|_| "invalid_settings")?;
             settings.validate()?;
             let revision = data["revision"].as_u64().ok_or("invalid_settings")?;
-            if service.runtime.lock().unwrap().revision != revision {
+            if crate::error_log::lock(&service.runtime).revision != revision {
                 return Err("settings_changed".into());
             }
             let saved = settings.clone();
             executor::run(app.clone(), move |conn| new_tab_repo::save(conn, &saved)).await?;
-            let mut state = service.runtime.lock().unwrap();
+            let mut state = crate::error_log::lock(&service.runtime);
             let old = state.settings.clone();
             if old.weather_enabled != settings.weather_enabled
                 || old.city != settings.city
@@ -242,12 +242,14 @@ async fn perform(
                 }
                 state.gmail.connecting = false;
             }
-            spotify::configure(app, &settings);
-            crate::media::visualizer::configure(app, &settings.audio_background);
-            state.settings = settings;
+            state.settings = settings.clone();
             state.settings_error = None;
             state.revision += 1;
+            // The other services take their own locks (and Spotify the database's), so they are
+            // configured after this lock is released: no lock is ever held while waiting on another.
             drop(state);
+            spotify::configure(app, &settings);
+            crate::media::visualizer::configure(app, &settings.audio_background);
             broadcast(app);
             schedule(app);
             Ok(serde_json::json!({}))
@@ -259,21 +261,14 @@ async fn perform(
                 .filter(|s| s.chars().count() >= 2 && s.len() <= 200)
                 .ok_or("invalid_city")?
                 .to_owned();
-            let endpoint = app
-                .state::<Widgets>()
-                .runtime
-                .lock()
-                .unwrap()
+            let endpoint = crate::error_log::lock(&app.state::<Widgets>().runtime)
                 .endpoints
                 .cities
                 .clone();
-            let language = app
-                .state::<super::super::NewTabService>()
-                .preferences
-                .lock()
-                .unwrap()
-                .language
-                .clone();
+            let language =
+                crate::error_log::lock(&app.state::<super::super::NewTabService>().preferences)
+                    .language
+                    .clone();
             let cities = tauri::async_runtime::spawn_blocking(move || {
                 weather::cities(&endpoint, &query, &language)
             })
@@ -287,7 +282,7 @@ async fn perform(
         "locate" => {
             let service = app.state::<Widgets>();
             let epoch = {
-                let mut state = service.runtime.lock().unwrap();
+                let mut state = crate::error_log::lock(&service.runtime);
                 if !state.settings.weather_enabled
                     || !state.settings.automatic_location
                     || state.location_busy
@@ -300,7 +295,7 @@ async fn perform(
             source.reply(serde_json::json!({}));
             let result = platform::locate(app).await;
             let current = source.valid();
-            let mut state = service.runtime.lock().unwrap();
+            let mut state = crate::error_log::lock(&service.runtime);
             if state.weather_epoch != epoch {
                 return Err("cancelled".into());
             }
@@ -327,7 +322,7 @@ async fn perform(
         }
         "refresh_weather" | "refresh_gmail" => {
             let service = app.state::<Widgets>();
-            let mut state = service.runtime.lock().unwrap();
+            let mut state = crate::error_log::lock(&service.runtime);
             // Manual retries have a small floor to prevent click storms.
             if operation == "refresh_weather" {
                 if now() >= state.weather_started + 2 {
@@ -351,7 +346,7 @@ async fn perform(
         "disconnect" => {
             let service = app.state::<Widgets>();
             let _guard = service.mutations.lock().await;
-            let mut state = service.runtime.lock().unwrap();
+            let mut state = crate::error_log::lock(&service.runtime);
             let token = state.credential.take().map(|c| c.refresh);
             state.access = None;
             state.mail_epoch += 1;
@@ -405,7 +400,7 @@ async fn connect(source: &Source) -> Result<serde_json::Value, String> {
     let config = oauth::config(app)?;
     let service = app.state::<Widgets>();
     let (epoch, endpoints, cancel) = {
-        let mut state = service.runtime.lock().unwrap();
+        let mut state = crate::error_log::lock(&service.runtime);
         if !state.settings.gmail_enabled || state.gmail.connecting || state.gmail.busy {
             return Err("cancelled".into());
         }
@@ -434,7 +429,7 @@ async fn connect(source: &Source) -> Result<serde_json::Value, String> {
     .map_err(|_| "oauth_error")?;
     let _guard = service.mutations.lock().await;
     let current = source.valid();
-    let mut state = service.runtime.lock().unwrap();
+    let mut state = crate::error_log::lock(&service.runtime);
     if state.mail_epoch != epoch || cancel.load(Ordering::SeqCst) || !current {
         return Err("cancelled".into());
     }

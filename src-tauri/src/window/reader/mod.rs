@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use tauri::{AppHandle, Manager};
+
+mod images;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReaderArticle {
@@ -11,6 +14,20 @@ pub struct ReaderArticle {
     pub word_count: usize,
     pub reading_time_mins: usize,
     pub url: String,
+    /// The article's images as `data:` URLs, keyed by their address in `content_html`. Images left
+    /// out here are removed by the interface's sanitizer.
+    #[serde(default)]
+    pub images: HashMap<String, String>,
+}
+
+/// What the extraction script returns: the article plus the addresses of its images.
+#[cfg(windows)]
+#[derive(Deserialize)]
+struct Extracted {
+    #[serde(flatten)]
+    article: ReaderArticle,
+    #[serde(default)]
+    image_urls: Vec<String>,
 }
 
 #[cfg(windows)]
@@ -68,6 +85,7 @@ const EXTRACT_SCRIPT: &str = r#"
     const unwanted = clone.querySelectorAll('script, style, noscript, iframe, svg, nav, header, footer, form, button, input, .advertisement, .ad, .social-share, .comments, .related-posts, [aria-hidden="true"]');
     unwanted.forEach(node => node.remove());
 
+    const image_urls = [];
     clone.querySelectorAll('img').forEach(img => {
       const src = img.getAttribute('src') || img.getAttribute('data-src') || '';
       if (!src || src.startsWith('data:image/svg')) {
@@ -75,8 +93,13 @@ const EXTRACT_SCRIPT: &str = r#"
         return;
       }
       try {
-        img.setAttribute('src', new URL(src, location.href).href);
-      } catch(e) {}
+        const absolute = new URL(src, location.href).href;
+        img.setAttribute('src', absolute);
+        if (/^https?:/i.test(absolute) && !image_urls.includes(absolute)) image_urls.push(absolute);
+      } catch(e) {
+        img.remove();
+        return;
+      }
       img.removeAttribute('srcset');
       img.removeAttribute('style');
       img.removeAttribute('class');
@@ -97,23 +120,14 @@ const EXTRACT_SCRIPT: &str = r#"
       text_content: textContent.slice(0, 5000),
       word_count,
       reading_time_mins,
-      url: location.href
+      url: location.href,
+      image_urls: image_urls.slice(0, __MAX_IMAGES__)
     });
   } catch(e) {
     return JSON.stringify({ error: String(e) });
   }
 })()
 "#;
-
-#[cfg_attr(windows, allow(dead_code))]
-fn escape_html(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&#39;")
-}
 
 pub async fn extract_article(
     app: &AppHandle,
@@ -148,7 +162,8 @@ pub async fn extract_article(
         let (sender, receiver) = tokio::sync::oneshot::channel();
         let sender = Arc::new(Mutex::new(Some(sender)));
 
-        let script_wide: Vec<u16> = EXTRACT_SCRIPT.encode_utf16().chain(Some(0)).collect();
+        let script = EXTRACT_SCRIPT.replace("__MAX_IMAGES__", &images::MAX_IMAGES.to_string());
+        let script_wide: Vec<u16> = script.encode_utf16().chain(Some(0)).collect();
 
         let sender_for_eval = sender.clone();
         view.with_webview(move |platform| {
@@ -193,33 +208,20 @@ pub async fn extract_article(
         // WebView2 ExecuteScript returns the result JSON-encoded as a JSON string
         let inner_json: String = serde_json::from_str(&raw_result).unwrap_or(raw_result);
 
-        let article: ReaderArticle = serde_json::from_str(&inner_json)
+        let Extracted {
+            mut article,
+            image_urls,
+        } = serde_json::from_str(&inner_json)
             .map_err(|e| format!("Failed to parse article data: {e}"))?;
+        article.images = images::cached(&view, image_urls).await;
 
         Ok(article)
     }
 
     #[cfg(not(windows))]
     {
-        // Linux stub / WebKitGTK fallback
-        let tab = state
-            .snapshot_tabs()
-            .into_iter()
-            .find(|t| t.id == id)
-            .ok_or_else(|| "Tab not found".to_string())?;
-
-        Ok(ReaderArticle {
-            title: tab.title,
-            byline: String::new(),
-            site_name: String::new(),
-            content_html: format!(
-                "<p>Reading mode for {} is available on Windows.</p>",
-                escape_html(&tab.url)
-            ),
-            text_content: String::new(),
-            word_count: 10,
-            reading_time_mins: 1,
-            url: tab.url,
-        })
+        // WebKitGTK has no article extraction yet. The interface shows this code in its own
+        // language instead of a made-up article.
+        Err("reader.unsupported".into())
     }
 }

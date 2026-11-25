@@ -4,6 +4,7 @@ import { buildSuggestions, looksLikeAddress, supportsWebSuggestions, type Sugges
 import { fetchSearchSuggestions } from "../services/bridge/search-suggestions";
 import { bookmarks } from "./persistenceStore";
 import { setSuggestionsPopover } from "../services/bridge/suggestions-popover";
+import { logIgnored } from "../services/ignored-error";
 import type { PanelSession } from "../components/panels/panel-host";
 import { addressInput, isAddressEditing, submitNavigation } from "./browserStore";
 import { defaultSearchEngine, getSearchEngineLabel } from "./searchEngineStore";
@@ -38,7 +39,7 @@ export function endSuggestionsSession(): void {
   const session = get(suggestionsSession);
   if (!session) return;
   suggestionsSession.set(null);
-  void setSuggestionsPopover(false, session.id).catch(() => {});
+  void setSuggestionsPopover(false, session.id).catch(logIgnored);
 }
 
 const DEBOUNCE_MS = 70;

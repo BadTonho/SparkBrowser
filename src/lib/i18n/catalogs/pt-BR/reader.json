@@ -18,6 +18,8 @@
   "reader.width_wide": "Largo",
   "reader.decrease_font": "Diminuir fonte",
   "reader.increase_font": "Aumentar fonte",
-  "reader.button_tooltip": "Alternar Modo Leitura (Leitura imersiva sem distrações)"
+  "reader.button_tooltip": "Alternar Modo Leitura (Leitura imersiva sem distrações)",
+  "reader.byline": "Por {name}",
+  "reader.no_content": "Não foi possível extrair o conteúdo principal desta página.",
+  "reader.unsupported": "O Modo Leitura está disponível apenas no Windows."
 }
-
