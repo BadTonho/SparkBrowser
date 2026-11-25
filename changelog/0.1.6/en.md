@@ -17,6 +17,8 @@
 
 ## Fixes
 
+- The error log no longer fills with entries for things that are normal: a page that has no media, and the settings tab that is still loading when it is opened. Real failures are still logged.
+- The **Copy** button in Local diagnostics now works even when the panel does not have keyboard focus, and says so when the text could not be copied.
 - In the quick settings, the selected option (such as the light or dark theme) is now clearly highlighted in both themes. Before, in the light theme the selected button looked fainter than the other one.
 - The address bar suggestions are readable again with the Glass and Ice window styles: the list no longer lets the page behind it show through the rows.
 - Address bar suggestions from your history and bookmarks now show each site's own icon, like the tabs do.

@@ -42,3 +42,16 @@ test('the settings can list the latest entries of the error log', () => {
   assert.match(readFileSync('src/lib/services/bridge/diagnostics.ts', 'utf8'), /invoke<RecentErrors>\("get_recent_errors"\)/);
   assert.match(readFileSync('src/lib/components/settings/DiagnosticsSettings.svelte', 'utf8'), /fetchRecentErrors/);
 });
+
+test('expected command answers are not logged as failures, real ones still are', () => {
+  const runtime = readFileSync('src/lib/services/bridge/runtime.ts', 'utf8');
+  assert.match(runtime, /"refresh_tab_media:media\.unavailable"/);
+  assert.match(runtime, /"set_settings_overlay:settings_tab\.not_ready"/);
+  assert.match(runtime, /!isExpectedFailure\(command, error\)/);
+  assert.doesNotMatch(runtime, /"refresh_tab_media:media\.error"/);
+});
+
+test('copying falls back to the copy command when the document has no focus', () => {
+  assert.match(readFileSync('src/lib/services/clipboard.ts', 'utf8'), /execCommand\("copy"\)/);
+  assert.match(readFileSync('src/lib/components/settings/DiagnosticsSettings.svelte', 'utf8'), /copyText/);
+});

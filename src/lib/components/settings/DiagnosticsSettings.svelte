@@ -5,6 +5,7 @@
   import { ipcDiagnostics } from "../../services/diagnostics.js";
   import { fetchDiagnostics, fetchRecentErrors, type NativeDiagnostics, type RecentErrorEntry } from "../../services/bridge/diagnostics";
   import { logIgnored } from "../../services/ignored-error";
+  import { copyText } from "../../services/clipboard";
   import { invoke, isTauriRuntime } from "../../services/bridge/runtime";
 
   let ipc = $state(ipcDiagnostics.snapshot());
@@ -19,6 +20,7 @@
   let logPath = $state("");
   let filter = $state<LevelFilter>("ALL");
   let copied = $state(false);
+  let copyFailed = $state(false);
   const visibleProblems = $derived(filter === "ALL" ? problems : problems.filter(entry => entry.level === filter));
   function levelLabel(level: RecentErrorEntry["level"]): string {
     return $t(level === "CRITICAL" ? "settings.problem_level_critical" : level === "ERROR" ? "settings.problem_level_error" : level === "WARN" ? "settings.problem_level_warning" : "settings.problem_level_info");
@@ -35,13 +37,11 @@
   }
   async function copyProblems() {
     const text = visibleProblems.map(entry => `[${entry.time}] [${entry.level}] ${entry.text}`).join("\n");
-    try {
-      await navigator.clipboard.writeText(text);
-      copied = true;
-      setTimeout(() => { copied = false; }, 1800);
-    } catch (failure) {
-      logIgnored(failure);
-    }
+    const done = await copyText(text);
+    copied = done;
+    copyFailed = !done;
+    if (!done) logIgnored(new Error("Could not copy the recent problems to the clipboard"));
+    setTimeout(() => { copied = false; copyFailed = false; }, 1800);
   }
   function nativeP95(operation: string): string {
     const values = (native?.metrics.samples ?? []).filter(sample => sample.operation === operation).map(sample => sample.duration_ms).sort((a, b) => a - b);
@@ -81,7 +81,7 @@
       {/each}
     </div>
     <button class="pill-action" onclick={refresh}>{$t("settings.refresh_0e91")}</button>
-    <button class="pill-action" disabled={!visibleProblems.length} onclick={copyProblems}>{copied ? $t("settings.problem_copied") : $t("settings.problem_copy")}</button>
+    <button class="pill-action" disabled={!visibleProblems.length} onclick={copyProblems}>{copied ? $t("settings.problem_copied") : copyFailed ? $t("settings.problem_copy_failed") : $t("settings.problem_copy")}</button>
   </div>
   {#if visibleProblems.length}
     <ul class="problem-list" aria-label={$t("settings.recent_problems")}>

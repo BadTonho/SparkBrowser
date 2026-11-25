@@ -48,6 +48,7 @@
   "settings.problem_level_info": "Info",
   "settings.problem_copy": "Copy",
   "settings.problem_copied": "Copied",
+  "settings.problem_copy_failed": "Could not copy",
   "settings.performance_counters": "Internal performance",
   "settings.glass_variant": "Glass type",
   "settings.glass_variant_desc": "Choose Classic (neutral translucent) or Liquid (clear, with a strong blur and light-catching edges)",

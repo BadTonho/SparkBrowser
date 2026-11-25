@@ -17,6 +17,8 @@
 
 ## Correções
 
+- O log de erros não se enche mais de entradas sobre coisas normais: uma página sem mídia e a aba de configurações que ainda está carregando quando é aberta. Falhas reais continuam sendo registradas.
+- O botão **Copiar** em Diagnósticos locais agora funciona mesmo quando o painel não está com o foco do teclado, e avisa quando não foi possível copiar.
 - Nas configurações rápidas, a opção selecionada (como o tema claro ou escuro) agora fica claramente destacada nos dois temas. Antes, no tema claro, o botão selecionado parecia mais apagado que o outro.
 - As sugestões da barra de endereço voltam a ser legíveis com os estilos de fundo Vidro e Gelo: a lista não deixa mais a página de trás aparecer através das linhas.
 - As sugestões da barra de endereço vindas do histórico e dos favoritos agora mostram o ícone de cada site, como nas abas.

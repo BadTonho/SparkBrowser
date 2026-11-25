@@ -30,6 +30,22 @@ function waitForStartup(): Promise<void> {
   })().catch(error => { startup = undefined; throw error; });
 }
 
+/**
+ * Failures that are an expected answer, not a problem, so they are not written to the error log: a page
+ * with no media (`media.unavailable`), and the settings tab that is still loading, which the caller asks
+ * again every 40 ms until it is ready (see `setSettingsTab`). Anything else a command returns is logged.
+ */
+const EXPECTED_FAILURES = new Set([
+  "refresh_tab_media:media.unavailable",
+  "set_settings_overlay:settings_tab.not_ready",
+  "set_settings_overlay:settings_tab.invalid_tab",
+]);
+
+function isExpectedFailure(command: string, error: unknown): boolean {
+  const text = typeof error === "string" ? error : "";
+  return EXPECTED_FAILURES.has(`${command}:${text.split(":", 1)[0]}`);
+}
+
 export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> {
   const started = performance.now();
   let success = false;
@@ -43,7 +59,7 @@ export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> 
     // handles it, so a bug never leaves without a trace. The log command itself is skipped to avoid a loop.
     const failure = `${command}:${typeof error === "string" ? error : (error as Error)?.message ?? String(error)}`;
     const recent = (lastFailureLogged.get(failure) ?? -Infinity) > performance.now() - 10_000;
-    if (!recent && command !== "report_frontend_error" && command !== "get_diagnostics") {
+    if (!recent && command !== "report_frontend_error" && command !== "get_diagnostics" && !isExpectedFailure(command, error)) {
       lastFailureLogged.set(failure, performance.now());
       void nativeInvoke("report_frontend_error", {
         summary: `Command "${command}" failed: ${typeof error === "string" ? error : (error as Error)?.message ?? String(error)}`,
