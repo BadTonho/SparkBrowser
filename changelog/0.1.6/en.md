@@ -6,6 +6,7 @@
 
 ## Improvements
 
+- Extensions installed from the Chrome Web Store or from a `.crx` file are now checked like Chrome does: the package must be signed by its developer and, from the store, be the extension you asked for. An altered or wrong package is refused and the version you already had stays installed. Old CRX2 files are no longer accepted.
 - The **Local diagnostics** section of the settings now shows the problems Spark recorded: the latest entries of the local error log (Critical, Error, Warning and Info), newest first, with a filter by level, a button to copy them and the path of the log file. The internal performance counters moved to a collapsed "Internal performance" block.
 - Address bar suggestions from history and bookmarks no longer show the page address under the title.
 - The Glass window background style now has two types: **Classic** (the current translucent look) and **Liquid glass** (a clearer surface with a strong blur, boosted color and bright, light-catching edges). Pick one in Settings → Appearance & Layout after choosing Glass.

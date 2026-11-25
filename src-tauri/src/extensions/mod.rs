@@ -1,4 +1,5 @@
 pub mod crx;
+pub mod crx_verify;
 mod io;
 pub mod manifest;
 pub mod storage;
@@ -137,13 +138,15 @@ pub async fn install_from_webstore(
     // Extract directly into the permanent extension directory: app_data_dir/extensions/<id>
     let worker_app = app.clone();
     let dest_dir = io::run(move || {
+        // Check the package before touching the installed copy, so a refused download keeps it.
+        crx::verify_webstore_package(&bytes, &id)?;
         let dest_dir = storage::extensions_dir(&worker_app)?.join(&id);
         if dest_dir.exists() {
             crate::error_log::ignored(std::fs::remove_dir_all(&dest_dir));
         }
         std::fs::create_dir_all(&dest_dir)
             .map_err(|e| format!("Failed to create extension directory: {}", e))?;
-        crx::extract_crx_or_zip(&bytes, &dest_dir)?;
+        crx::extract_crx_or_zip(&bytes, &dest_dir, Some(&id))?;
         Ok(dest_dir)
     })
     .await?;
@@ -161,7 +164,7 @@ pub async fn install_from_archive(
     let temp_dir = io::run(move || {
         let bytes = crx::read_archive(&archive_path)?;
         let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
-        crx::extract_crx_or_zip(&bytes, temp_dir.path())?;
+        crx::extract_crx_or_zip(&bytes, temp_dir.path(), None)?;
         Ok(temp_dir)
     })
     .await?;

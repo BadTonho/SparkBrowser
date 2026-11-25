@@ -100,7 +100,7 @@ pub fn parse_webstore_id(input: &str) -> Option<String> {
 /// Downloads a CRX package from Google's official update server for a given extension ID.
 pub fn download_webstore_crx(extension_id: &str) -> Result<Vec<u8>, String> {
     let url = format!(
-        "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=130.0&acceptformat=crx2,crx3&x=id%3D{}%26uc",
+        "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=130.0&acceptformat=crx3&x=id%3D{}%26uc",
         extension_id
     );
 
@@ -126,48 +126,40 @@ pub fn download_webstore_crx(extension_id: &str) -> Result<Vec<u8>, String> {
     read_bounded(response, MAX_ARCHIVE_BYTES)
 }
 
+/// Checks a package downloaded from the store: a signed CRX3 of exactly that extension.
+pub fn verify_webstore_package(bytes: &[u8], id: &str) -> Result<(), String> {
+    if !super::crx_verify::is_crx(bytes) {
+        return Err("The Chrome Web Store did not send a signed extension package".into());
+    }
+    super::crx_verify::verify(bytes, Some(id)).map(|_| ())
+}
+
 /// Extracts a `.crx` or standard `.zip` archive into target_dir.
-pub fn extract_crx_or_zip(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
+///
+/// A CRX package must be a CRX3 whose signatures hold and whose id matches its developer key (see
+/// `crx_verify`); with `expected_id` it must also be that extension. A plain ZIP carries no signature
+/// and is accepted only where `expected_id` is `None` (a file the person picked, like an unpacked
+/// folder).
+pub fn extract_crx_or_zip(
+    bytes: &[u8],
+    target_dir: &Path,
+    expected_id: Option<&str>,
+) -> Result<(), String> {
     if bytes.len() as u64 > MAX_ARCHIVE_BYTES {
         return Err("Extension archive exceeds the size limit".into());
     }
-    if !target_dir.exists() {
-        fs::create_dir_all(target_dir).map_err(|e| e.to_string())?;
-    }
-
-    let zip_bytes = if bytes.starts_with(b"Cr24") {
-        if bytes.len() < 16 {
-            return Err("Invalid CRX header".into());
-        }
-        let version = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
-        match version {
-            2 => {
-                let pubkey_len =
-                    u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]) as usize;
-                let sig_len =
-                    u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]) as usize;
-                let offset = 16 + pubkey_len + sig_len;
-                if bytes.len() < offset {
-                    return Err("CRX2 payload offset truncated".into());
-                }
-                &bytes[offset..]
-            }
-            3 => {
-                let header_len =
-                    u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]) as usize;
-                let offset = 12 + header_len;
-                if bytes.len() < offset {
-                    return Err("CRX3 payload offset truncated".into());
-                }
-                &bytes[offset..]
-            }
-            _ => return Err(format!("Unsupported CRX version: {}", version)),
-        }
+    let zip_bytes = if super::crx_verify::is_crx(bytes) {
+        super::crx_verify::verify(bytes, expected_id)?.archive
+    } else if expected_id.is_some() {
+        return Err("The Chrome Web Store did not send a signed extension package".into());
     } else if bytes.starts_with(b"PK\x03\x04") {
         bytes
     } else {
         return Err("Unrecognized file format: neither CRX nor ZIP".into());
     };
+    if !target_dir.exists() {
+        fs::create_dir_all(target_dir).map_err(|e| e.to_string())?;
+    }
 
     extract_zip_stream(zip_bytes, target_dir)
 }
@@ -501,7 +493,7 @@ mod tests {
         zip.extend_from_slice(&[0, 0]); // comment len
 
         let temp_dir = tempfile::tempdir().unwrap();
-        extract_crx_or_zip(&zip, temp_dir.path()).unwrap();
+        extract_crx_or_zip(&zip, temp_dir.path(), None).unwrap();
 
         let extracted_file = temp_dir.path().join("LICENSE.md");
         assert!(extracted_file.exists());

@@ -3818,6 +3818,7 @@ dependencies = [
  "qrcode",
  "quick-xml",
  "reqwest 0.12.28",
+ "ring",
  "rqrr",
  "rusqlite",
  "rustls",
