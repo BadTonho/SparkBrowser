@@ -74,8 +74,8 @@ function fixture(under, y) {
 /** The list as the real one lays out: separators at fixed heights; `y` is where the pointer is released. */
 const list = (row) => {
   const separator = (side, top) => ({ dataset: side ? { paneSide: side } : {}, getBoundingClientRect: () => ({ top }) });
-  const section = { querySelectorAll: () => [separator('left', 50), separator('right', 300), separator(undefined, 500)] };
-  return { closest: selector => selector === '.tabs-section' ? section : selector.includes('.tab-row') ? row ?? null : null };
+  const section = { querySelectorAll: () => [separator('right', 300), separator(undefined, 500)] };
+  return { closest: selector => selector === '.tabs-section' ? section : selector === '.tabs-list' ? {} : selector.includes('.tab-row') ? row ?? null : null };
 };
 
 test('dropping a left tab on a right-side row moves it before that row', async () => {

@@ -29,6 +29,7 @@
   import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
   import { splitLayout } from "../../stores/splitViewStore";
+  import { splitDragPreview } from "../../stores/tabDragStore";
 
   type SplitPane = "left" | "right" | "other";
   const PANES: SplitPane[] = ["left", "right", "other"];
@@ -45,6 +46,8 @@
   let activeSplit = $derived($splitLayout && $splitLayout.workspace_id === $activeWorkspaceId ? $splitLayout : null);
   /** Which side of the split a tab belongs to; "other" for tabs that are not in the split. */
   const paneOf = (tabId: string): SplitPane => {
+    // A tab being dragged to the other side is already shown there, so the drop place is visible.
+    if (activeSplit && $splitDragPreview?.id === tabId) return $splitDragPreview.side;
     if (activeSplit?.left_tab_ids.includes(tabId)) return "left";
     if (activeSplit?.right_tab_ids.includes(tabId)) return "right";
     return "other";
@@ -67,13 +70,27 @@
     });
   });
   /** While split, the list is gathered by side (left, right, then the rest); otherwise it is unchanged. */
-  let displayTabs = $derived(
-    activeSplit ? PANES.flatMap((pane) => groupedTabs.filter((tab) => paneOf(tab.id) === pane)) : groupedTabs,
-  );
-  /** One separator per side that has tabs, placed just before its first tab (same slot as a group header). */
+  let displayTabs = $derived.by(() => {
+    if (!activeSplit) return groupedTabs;
+    const list = PANES.flatMap((pane) => groupedTabs.filter((tab) => paneOf(tab.id) === pane));
+    const preview = $splitDragPreview;
+    const dragged = preview && list.find((tab) => tab.id === preview.id);
+    if (!preview || !dragged) return list;
+    // Where the dragged tab would land: before the tab it is over, or at the end of that side.
+    const rest = list.filter((tab) => tab !== dragged);
+    let index = preview.beforeId ? rest.findIndex((tab) => tab.id === preview.beforeId) : -1;
+    if (index < 0) {
+      const lastOnSide = rest.map((tab) => paneOf(tab.id)).lastIndexOf(preview.side);
+      index = lastOnSide >= 0 ? lastOnSide + 1 : rest.findIndex((tab) => paneOf(tab.id) === "other");
+    }
+    rest.splice(index < 0 ? rest.length : index, 0, dragged);
+    return rest;
+  });
+  /** A plain line before the right side and before the tabs outside the split, placed just before the first
+   *  tab of each (same slot as a group header). The left side, at the top, needs none. */
   let paneSeparators = $derived(
     activeSplit
-      ? PANES.flatMap((pane) => {
+      ? PANES.filter((pane) => pane !== "left").flatMap((pane) => {
           const first = displayTabs.findIndex((tab) => paneOf(tab.id) === pane);
           return first >= 0 ? [{ pane, order: 4 * (first + 1) - 2 }] : [];
         })
@@ -223,8 +240,6 @@
     <!-- Rendered before the group headers: on the same slot, the separator then stays above the header. -->
     {#each paneSeparators as item (item.pane)}
       <div class="pane-separator" style:order={item.order} data-pane-side={item.pane === "other" ? undefined : item.pane} data-testid={`split-separator-${item.pane}`} role="separator" aria-label={$t(`tabs.split_pane_${item.pane}`)} transition:slide={{ duration: 160, easing: cubicOut }}>
-        <span class="line"></span>
-        <span class="name">{$t(`tabs.split_pane_${item.pane}`)}</span>
         <span class="line"></span>
       </div>
     {/each}
@@ -403,19 +418,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 4px 6px 2px;
+    margin: 6px 6px 4px;
     padding: 2px 4px;
     user-select: none;
   }
   .pane-separator .line { flex: 1; height: 1px; background: color-mix(in srgb, var(--accent-primary) 45%, transparent); }
-  .pane-separator .name {
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    color: var(--accent-primary);
-    white-space: nowrap;
-  }
 
   .drag-grip {
     display: flex;

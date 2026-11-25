@@ -26,6 +26,8 @@ interface Drag {
   cursor: string; userSelect: string; original: import("../types/browser").TabItem[];
   ghost: TabGhost | null;
 }
+/** Vertical list in split view: where the dragged tab would land on the other side, so the list can show it. */
+export const splitDragPreview = writable<{ id: string; side: DockSide; beforeId: string | null } | null>(null);
 export const tabDrag = writable<{ id: string; dragging: boolean; side: DockSide | null } | null>(null);
 let drag: Drag | null = null, busy = false, frame = 0, lastPreview = "", pendingMove = false;
 let hoveredWorkspace: Element | null = null;
@@ -64,7 +66,7 @@ function cleanup(keepDockPreview = false) {
   document.body.style.cursor = previous?.cursor ?? ''; document.body.style.userSelect = previous?.userSelect ?? '';
   document.querySelectorAll('.drop-hover').forEach(element => element.classList.remove('drop-hover'));
   hoveredWorkspace = null; hoveredGroup = null; lastReorderTarget = null;
-  tabDrag.set(null);
+  tabDrag.set(null); splitDragPreview.set(null);
   const hidden = keepDockPreview ? flushDragPreview() : setDragPreview(null);
   void hidden.catch(logIgnored);
   return previous ? { ...previous, hidden } : null;
@@ -106,16 +108,32 @@ function move(event: PointerEvent) {
   drag.ghost?.move(drag.x, drag.y);
   pendingMove = true;
 }
-/** The split side of the vertical list section under the pointer: from a side's separator down to the next separator.
- *  Undefined outside the list, above the first separator or in the section of tabs outside the split. */
+/** The split side of the vertical list section under the pointer: the tabs above the separator are the left
+ *  side, the ones from the separator down to the next one are the right side. Undefined outside the list,
+ *  above it, and in the section of tabs outside the split. */
 function verticalPaneAt(target: Element | null | undefined, y: number): DockSide | undefined {
   const section = target?.closest('.tabs-section');
   if (!section) return undefined;
-  let side: string | undefined;
+  let side: string | undefined = target?.closest('.tabs-list') ? 'left' : undefined;
   for (const separator of section.querySelectorAll<HTMLElement>('.pane-separator')) {
-    if (separator.getBoundingClientRect().top <= y) side = separator.dataset.paneSide;
+    if (separator.getBoundingClientRect().top <= y) side = separator.dataset.paneSide ?? 'other';
   }
   return side === 'left' || side === 'right' ? side : undefined;
+}
+/** Shows the dragged tab on the other side of the split while the pointer is over it. */
+function updateSplitPreview(target: Element | null | undefined) {
+  if (!drag) return;
+  const split = get(splitLayout);
+  const source: DockSide | undefined = split?.left_tab_ids.includes(drag.id) ? 'left' : split?.right_tab_ids.includes(drag.id) ? 'right' : undefined;
+  const side = drag.layout === 'vertical' && drag.moved ? verticalPaneAt(target, drag.y) : undefined;
+  const previous = get(splitDragPreview);
+  if (!source || !side || side === source) { if (previous) splitDragPreview.set(null); return; }
+  const row = target?.closest<HTMLElement>('.tab-row');
+  const over = row && row.dataset.tabId !== drag.id && row.dataset.paneSide === side ? row.dataset.tabId ?? null : undefined;
+  // Over nothing in particular (a gap, or the placeholder itself): keep the place already chosen on this side.
+  const beforeId = over !== undefined ? over : previous?.side === side ? previous.beforeId : null;
+  if (previous?.side === side && previous.beforeId === beforeId) return;
+  splitDragPreview.set({ id: drag.id, side, beforeId });
 }
 /** The group header (or a tab of a group) under the pointer, unless the dragged tab already belongs to it. */
 function groupUnder(target: Element | null | undefined): HTMLElement | null {
@@ -134,6 +152,7 @@ function processMove() {
   pendingMove = false;
   updateDestination();
   const target = document.elementFromPoint(drag.x, drag.y);
+  updateSplitPreview(target);
   const pill = target?.closest<HTMLElement>('.ws-pill');
   if (hoveredWorkspace !== pill) {
     hoveredWorkspace?.classList.remove('drop-hover');
@@ -173,11 +192,13 @@ async function release(event: PointerEvent) {
   const split = get(splitLayout);
   const sourceSide: DockSide | undefined = split?.left_tab_ids.includes(drag.id) ? 'left' : split?.right_tab_ids.includes(drag.id) ? 'right' : undefined;
   const sectionSide = drag.layout === 'vertical' ? verticalPaneAt(target, event.clientY) : undefined;
-  const crossSide = sectionSide && sourceSide && sectionSide !== sourceSide ? sectionSide : undefined;
+  const shown = get(splitDragPreview);
+  // The place the list was showing wins, so the tab lands exactly where the preview put it.
+  const crossSide = shown?.side ?? (sectionSide && sourceSide && sectionSide !== sourceSide ? sectionSide : undefined);
   const targetSide = (targetTabList as HTMLElement | undefined)?.dataset.paneSide as DockSide | undefined ?? crossSide;
   // A tab only works as the drop position when it is on the destination side.
   const rowUnder = target?.closest<HTMLElement>('.h-tab,.tab-row');
-  const targetTab = !rowUnder || (rowUnder.dataset.paneSide && rowUnder.dataset.paneSide !== targetSide) ? undefined : rowUnder.dataset.tabId;
+  const targetTab = shown ? shown.beforeId ?? undefined : !rowUnder || (rowUnder.dataset.paneSide && rowUnder.dataset.paneSide !== targetSide) ? undefined : rowUnder.dataset.tabId;
   const displayed = targetSide && get(splitLayout) ? get(tabs).filter(tab => get(splitLayout)![targetSide === 'left' ? 'left_tab_ids' : 'right_tab_ids'].includes(tab.id)).map(tab => tab.id) : [];
   const beforeId = targetTab && targetTab !== drag.id ? targetTab : displayed.includes(drag.id) ? displayed[displayed.indexOf(drag.id) + 1] ?? null : null;
   const dropGroup = drag.moved ? groupUnder(target)?.dataset.groupId : undefined;
