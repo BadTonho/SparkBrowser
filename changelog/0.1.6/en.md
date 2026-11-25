@@ -16,6 +16,7 @@
 
 ## Fixes
 
+- In the quick settings, the selected option (such as the light or dark theme) is now clearly highlighted in both themes. Before, in the light theme the selected button looked fainter than the other one.
 - The address bar suggestions are readable again with the Glass and Ice window styles: the list no longer lets the page behind it show through the rows.
 - Address bar suggestions from your history and bookmarks now show each site's own icon, like the tabs do.
 - Dropping the tab shown in one split pane onto the other pane's page no longer swaps the two panes. The tab just moves, and the pane it left shows another of its tabs.
