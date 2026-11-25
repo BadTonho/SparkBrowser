@@ -24,10 +24,10 @@ Salve nomes, e-mails, telefones e endereços. Todos os campos são opcionais, ma
 
 Clique em um campo de login, cartão ou contato e o Spark lista o que combina embaixo dele. Escolha um item com o mouse (ou ↓ e Enter) e o formulário é preenchido.
 
-- **Logins** aparecem em páginas do site para o qual foram salvos (o endereço salvo ou um subdomínio dele), nunca em endereços parecidos, e nunca na versão `http://` simples de um site salvo com `https://`. Clique no campo de usuário ou de senha.
+- **Logins** aparecem em páginas do site para o qual foram salvos (o endereço salvo ou um subdomínio dele), nunca em endereços parecidos, nunca em outros sites que só compartilham um sufixo público como `github.io` ou `co.uk` (o Spark usa a Public Suffix List), e nunca na versão `http://` simples de um site salvo com `https://`. Clique no campo de usuário ou de senha.
 - **Cartões** aparecem nos campos de número, nome e validade. O código de segurança nunca é preenchido: digite você mesmo. Mês e ano preenchem tanto listas (select) quanto campos `MM/AA` ou `MM/AAAA`.
 - **Dados de contato** aparecem nos campos de nome, e-mail, telefone e endereço.
-- A lista mostra só títulos (um e-mail, `Visa •••• 4242`), nunca uma senha nem um cartão inteiro. Ela fica numa parte fechada da página que o site não consegue ler e só reage a cliques e teclas reais. O que preenche o formulário vem do Spark depois que você escolhe.
+- A lista mostra só títulos (um e-mail, `Visa •••• 4242`), nunca uma senha nem um cartão inteiro. Ela fica numa parte fechada da página que o site não consegue ler e só reage a cliques e teclas reais. O que preenche o formulário vem do Spark depois que você escolhe, e o Spark só preenche um item que estava na lista que ele acabou de mostrar naquela página. O script que mostra a lista mantém o segredo e os manipuladores longe do código do próprio site, então um site não consegue escolher um item por você.
 - Com **Usar o Windows Hello ao mostrar ou copiar senhas** ligado (veja o [gerenciador de senhas](./password-manager.md)), preencher um login ou um cartão pede o Windows Hello toda vez. Dados de contato nunca pedem.
 - **Cofre bloqueado:** a lista avisa. Com o Windows Hello ela oferece **Desbloquear com o Windows Hello**; senão, desbloqueie nas Configurações.
 - Caixas de busca, outros quadros dentro de uma página (como iframes de pagamento) e as páginas do próprio Spark não são preenchidos. Só a página em que você está: se você for para outro site antes de escolher, nada é preenchido.

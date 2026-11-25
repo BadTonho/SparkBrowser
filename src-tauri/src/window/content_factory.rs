@@ -66,10 +66,26 @@ pub(super) fn create_tab_webview(
     #[cfg(windows)]
     let initial_url = tauri::Url::parse("about:blank").expect("static blank URL");
     let webview_builder = super::create_webview_builder(&label, WebviewUrl::External(initial_url))
-        .initialization_script(include_str!("content_bridge.js").replace(
-            "__CONTENT_NATIVE__",
-            if cfg!(windows) { "true" } else { "false" },
-        ))
+        .initialization_script(
+            include_str!("content_bridge.js")
+                .replace(
+                    "__CONTENT_NATIVE__",
+                    if cfg!(windows) {
+                        "'windows'"
+                    } else if cfg!(target_os = "linux") {
+                        "'linux'"
+                    } else {
+                        "'none'"
+                    },
+                )
+                .replace(
+                    "__CONTENT_BINDING__",
+                    &serde_json::to_string(&crate::security::bridge::content_binding_name(
+                        &keyboard_bridge_token,
+                    ))
+                    .expect("binding name serializable"),
+                ),
+        )
         .initialization_script(super::new_tab::initializer(
             app,
             &keyboard_bridge_token,
@@ -122,7 +138,10 @@ pub(super) fn create_tab_webview(
             &serde_json::to_string(&keyboard_bridge_token).expect("token serializable"),
         ))
         .initialization_script(crate::autofill::initializer(
-            &keyboard_bridge_token,
+            &crate::security::bridge::channel_token(
+                &keyboard_bridge_token,
+                crate::security::bridge::AUTOFILL_CHANNEL,
+            ),
             app.config().identifier == "org.spark.browser.native-tests",
         ))
         .initialization_script(build_content_shield_script_with_exceptions(
@@ -191,7 +210,10 @@ pub(super) fn create_tab_webview(
     };
 
     let webview_builder = webview_builder.initialization_script(build_workspace_shortcut_script(
-        &keyboard_bridge_token,
+        &crate::security::bridge::channel_token(
+            &keyboard_bridge_token,
+            crate::security::bridge::KEYBOARD_CHANNEL,
+        ),
         native_alt_capture,
     ));
 
@@ -434,6 +456,12 @@ pub(super) fn create_tab_webview(
     )?;
     #[cfg(target_os = "linux")]
     crate::media::protocol::install(
+        app,
+        &app.get_webview(&label).ok_or("New WebView was not found")?,
+        &navigation_registration_token,
+    )?;
+    #[cfg(target_os = "linux")]
+    super::content_bridge::install(
         app,
         &app.get_webview(&label).ok_or("New WebView was not found")?,
         &navigation_registration_token,

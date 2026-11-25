@@ -9,7 +9,8 @@ No Windows, o Spark Browser pode carregar extensões do Chrome pelo WebView2; a 
 * **Instalação em 1-Clique na Chrome Web Store:** Ao navegar em qualquer extensão na `chromewebstore.google.com`, um botão interativo **`[🧩 Instalar no Spark]`** aparece automaticamente no Omnibox. Um clique baixa, valida e ativa a extensão na hora.
 * **Interceptador de Download de CRX:** O clique no botão "Usar no Chrome" da Google é interceptado nativamente antes da barreira de downloads do WebView2, direcionando o pacote diretamente para o instalador em segundo plano do Spark.
 * **Instalador da Chrome Web Store (Manual):** Cole qualquer URL da Chrome Web Store ou o ID de 32 caracteres da extensão no modal para baixar, descompactar e instalar diretamente.
-* **Instalador de Arquivos (.zip / .crx):** Instale extensões empacotadas diretamente a partir de arquivos `.zip` ou `.crx` locais (formatos CRX2 e CRX3).
+* **Instalador de Arquivos (.zip / .crx):** Instale extensões empacotadas diretamente a partir de arquivos `.zip` ou `.crx` locais (formato CRX3).
+* **Só pacotes assinados:** Todo `.crx` precisa ser um pacote CRX3 com assinaturas válidas e cujo ID corresponda à chave do desenvolvedor, a mesma verificação que o Chromium faz. Pacotes da Chrome Web Store também precisam ser a extensão pedida, e a cópia instalada só é substituída depois que o novo pacote passa na verificação. Arquivos CRX2 antigos são recusados. Um `.zip` não tem assinatura e é tratado como uma pasta descompactada que você escolheu.
 * **Extensões Descompactadas:** Carregue pastas de extensões descompactadas diretamente do disco.
 * **Instalação Persistente:** Extensões instaladas são salvas na pasta de dados do navegador e registradas no banco SQLite local, mantendo-se ativas após reinicializações.
 * **Ações na Barra de Ferramentas:** Extensões que declaram ações (`action` ou `browser_action`) exibem seu ícone na barra de ferramentas e abrem seus popups ao serem clicadas.

@@ -81,6 +81,9 @@ struct Pending {
     document: String,
     page: String,
     kind: Kind,
+    /// The ids of the items last shown for this request. Only these can be picked: a page that forges
+    /// a pick (or shows its own list) cannot reach any other saved item.
+    offered: Vec<String>,
 }
 
 #[derive(Default)]
@@ -128,6 +131,22 @@ impl AutofillService {
             set.insert(key);
         }
     }
+    /// Records what was shown for the request of a page, if that request is still the current one.
+    fn offer(&self, label: &str, page: &str, kind: Kind, ids: Vec<String>) {
+        if let Ok(mut map) = self.pending.lock() {
+            if let Some(pending) = map
+                .get_mut(label)
+                .filter(|pending| pending.page == page && pending.kind == kind)
+            {
+                pending.offered = ids;
+            }
+        }
+    }
+    /// Whether an item was in the list last shown to the page.
+    fn was_offered(&self, label: &str, id: &str) -> bool {
+        self.recall(label)
+            .is_some_and(|pending| pending.offered.iter().any(|offered| offered == id))
+    }
     fn recall(&self, label: &str) -> Option<Pending> {
         self.pending.lock().ok()?.get(label).cloned()
     }
@@ -154,16 +173,21 @@ fn active(app: &AppHandle) -> bool {
     settings.enabled && (!private || settings.in_private)
 }
 
-fn function_name(token: &str) -> String {
-    let short: String = token
-        .chars()
-        .filter(char::is_ascii_alphanumeric)
-        .take(24)
-        .collect();
+/// The name of the page script's entry point. A page can list the names on `window`, so this one is a
+/// hash of the channel token: it reveals nothing of the token itself.
+fn function_name(autofill_token: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(format!("spark-autofill-entry:{autofill_token}").as_bytes());
+    let short: String = digest[..12].iter().map(|b| format!("{b:02x}")).collect();
     format!("__sparkAF{short}")
 }
 
-/// The page script of one web view, bound to its bridge token.
+/// The token of the autofill page script, derived from the tab's bridge token.
+fn channel(token: &str) -> String {
+    crate::security::bridge::channel_token(token, crate::security::bridge::AUTOFILL_CHANNEL)
+}
+
+/// The page script of one web view, bound to the autofill token of its bridge.
 pub fn initializer(token: &str, inspectable: bool) -> String {
     include_str!("autofill.js")
         .replace(
@@ -187,7 +211,7 @@ fn send(app: &AppHandle, label: &str, token: &str, message: &serde_json::Value) 
     let Some(view) = app.get_webview(label) else {
         return;
     };
-    let name = serde_json::to_string(&function_name(token)).unwrap_or_default();
+    let name = serde_json::to_string(&function_name(&channel(token))).unwrap_or_default();
     let body = message.to_string();
     error_log::ignored(view.eval(format!("window[{name}]&&window[{name}]({body});")));
 }
@@ -221,7 +245,7 @@ pub(crate) fn handle(app: &AppHandle, label: &str, token: &str, url: &Url) {
     ) else {
         return;
     };
-    if values.get("token").map(String::as_str) != Some(token)
+    if values.get("token").map(String::as_str) != Some(channel(token).as_str())
         || !crate::window::navigation_state::is_current_generation(app, label, token)
     {
         return;
@@ -276,6 +300,7 @@ pub(crate) fn handle(app: &AppHandle, label: &str, token: &str, url: &Url) {
                     document,
                     page: page.to_string(),
                     kind,
+                    offered: Vec::new(),
                 },
             );
             tauri::async_runtime::spawn(async move {
@@ -336,11 +361,18 @@ async fn suggest(
         send(app, label, token, &payload::locked(hello));
         return Ok(());
     }
+    let shown = page.to_string();
     let page = page.clone();
     let items = executor::run(app.clone(), move |conn| {
         items_for(conn, &service, kind, &page)
     })
     .await?;
+    app.state::<AutofillService>().offer(
+        label,
+        &shown,
+        kind,
+        items.iter().map(|item| item.id.clone()).collect(),
+    );
     send(app, label, token, &payload::items(kind.as_str(), items));
     Ok(())
 }
@@ -413,6 +445,9 @@ async fn choose(
     id: &str,
 ) -> Result<(), String> {
     let page = still_current(app, label, document, kind)?;
+    if !app.state::<AutofillService>().was_offered(label, id) {
+        return Err("autofill.not_offered".into());
+    }
     let service = app.state::<VaultService>().inner().clone();
     service.key(Instant::now())?;
     // Logins and cards ask Windows Hello each time when the vault is set to; contact details do not.
@@ -488,4 +523,54 @@ async fn unlock(
         .await?;
     }
     suggest(app, label, token, kind, &page).await
+}
+
+#[cfg(test)]
+mod offered_tests {
+    use super::*;
+
+    fn pending(page: &str, kind: Kind) -> Pending {
+        Pending {
+            document: "doc".into(),
+            page: page.into(),
+            kind,
+            offered: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn only_items_shown_for_the_current_request_can_be_picked() {
+        let service = AutofillService::default();
+        assert!(!service.was_offered("tab", "card-1"), "nothing asked yet");
+        service.remember("tab", pending("https://shop.test/", Kind::Card));
+        assert!(
+            !service.was_offered("tab", "card-1"),
+            "asked, nothing shown"
+        );
+        service.offer(
+            "tab",
+            "https://shop.test/",
+            Kind::Card,
+            vec!["card-1".into()],
+        );
+        assert!(service.was_offered("tab", "card-1"));
+        assert!(!service.was_offered("tab", "card-2"), "never shown");
+        assert!(!service.was_offered("other-tab", "card-1"), "another tab");
+        // A list prepared for an older request (another page or kind) is not recorded.
+        service.remember("tab", pending("https://shop.test/", Kind::Contact));
+        service.offer(
+            "tab",
+            "https://shop.test/",
+            Kind::Card,
+            vec!["card-1".into()],
+        );
+        assert!(!service.was_offered("tab", "card-1"));
+        service.offer(
+            "tab",
+            "https://other.test/",
+            Kind::Contact,
+            vec!["c-1".into()],
+        );
+        assert!(!service.was_offered("tab", "c-1"));
+    }
 }

@@ -6,6 +6,7 @@
 
 ## Improvements
 
+- Extensions installed from the Chrome Web Store or from a `.crx` file are now checked like Chrome does: the package must be signed by its developer and, from the store, be the extension you asked for. An altered or wrong package is refused and the version you already had stays installed. Old CRX2 files are no longer accepted.
 - The **Local diagnostics** section of the settings now shows the problems Spark recorded: the latest entries of the local error log (Critical, Error, Warning and Info), newest first, with a filter by level, a button to copy them and the path of the log file. The internal performance counters moved to a collapsed "Internal performance" block.
 - Address bar suggestions from history and bookmarks no longer show the page address under the title.
 - The Glass window background style now has two types: **Classic** (the current translucent look) and **Liquid glass** (a clearer surface with a strong blur, boosted color and bright, light-catching edges). Pick one in Settings → Appearance & Layout after choosing Glass.
@@ -17,6 +18,9 @@
 
 ## Fixes
 
+- Updated a component that could make Spark crash on a specially crafted page address.
+- Saved passwords are no longer offered on other people's sites that only share an address ending with yours, such as two different `github.io` or `co.uk` sites. Passwords are still offered on the subdomains of your own site.
+- Fixed a security problem where a malicious website could read the secret Spark uses to talk to its own scripts on that page, and use it to request your saved cards, contact details and passwords or to trigger browser shortcuts without you doing anything. The scripts of each feature now have separate secrets, and their messages can no longer be seen by the page.
 - The error log no longer fills with entries for things that are normal: a page that has no media, and the settings tab that is still loading when it is opened. Real failures are still logged.
 - The **Copy** button in Local diagnostics now works even when the panel does not have keyboard focus, and says so when the text could not be copied.
 - In the quick settings, the selected option (such as the light or dark theme) is now clearly highlighted in both themes. Before, in the light theme the selected button looked fainter than the other one.

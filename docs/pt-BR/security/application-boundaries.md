@@ -12,6 +12,17 @@ Eventos internos com estado do navegador são enviados explicitamente à interfa
 
 Cada WebView de conteúdo recebe um token de ponte novo, de 256 bits, na criação. Fechar, hibernar ou reconstruir uma WebView remove o token dela, as sequências aceitas e as sessões de páginas internas, de modo que transações aposentadas não podem ser repetidas por um documento sucessor. A navegação confirmada revoga os privilégios de páginas internas antes de o novo documento carregar, e cada geração de WebView só aceita números de sequência crescentes a partir de um nonce único de documento.
 
+### Os scripts de página dividem o mundo da página
+
+Os scripts que o Spark adiciona às páginas web (preenchimento automático, atalhos de teclado, atividade da página, mídia) rodam no mesmo mundo JavaScript da página, então uma página hostil pode substituir globais e métodos de protótipo antes de eles serem usados. Duas regras limitam o que essa página consegue descobrir:
+
+- **Um token por canal.** Os canais de maior valor têm o próprio token, derivado do token de ponte da aba com HMAC-SHA256 sob uma chave que existe só no processo do navegador: `autofill` (sugestões, preenchimento, salvamento) e `keyboard` (atalhos, links abertos em nova aba, foco de painel). Uma página que obtenha o token de um script de menor valor não consegue calculá-los.
+- **Nenhum transporte observável.** As mensagens nunca viajam como navegação, que a página poderia ler pela Navigation API. No Windows elas passam por um binding do DevTools cujo nome é aleatório por aba; a ponte pega a função antes de a página rodar, remove-a de `window` e envia apenas textos que ela mesma serializou. No Linux elas passam pelo manipulador de mensagens de script `sparkContent` do WebKit, lido no início do documento. O binding é instalado só na sessão de nível superior; quadros em outro processo nunca veem o nome dele.
+
+Além disso, os scripts de preenchimento automático e de teclado capturam, no início do documento, toda função que usam com o token, os ids dos itens e os manipuladores que agem pela pessoa (`addEventListener`, `setTimeout`, leitores de propriedades de eventos, criação de elementos, shadow roots, montagem da consulta), então uma página que os substitua depois não recebe nada que possa repetir: ela não consegue chamar um manipulador de atalho ou de link com um evento falso para abrir abas ou executar ações do navegador. O processo do navegador só preenche um id de item que estava na lista que ele enviou por último para aquele pedido.
+
+Limite restante: se a função nativa ainda não estiver instalada quando um documento começa (uma disputa com a criação da WebView), as mensagens esperam por ela sob o nome aleatório em vez de seguirem por outro caminho. No Linux, um manipulador que só aparece depois de a página começar é procurado pelo nome no envio da primeira mensagem.
+
 ## Mensagens internas
 
 Somente ações e campos reconhecidos são aceitos. A leitura dos parâmetros rejeita nomes decodificados duplicados, campos desconhecidos, credenciais, fragmentos e requisições grandes demais antes de alterar o estado. Dados tipados, tokens da geração/sessão e sequências monotônicas continuam sendo verificados pela ponte responsável. Mensagens de atividade exigem valores booleanos literais; uma entrada inválida não pode remover a proteção de formulário/mídia. Os tokens das pontes contêm 256 bits obtidos da fonte criptográfica do sistema operacional.

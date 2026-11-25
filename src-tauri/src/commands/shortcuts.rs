@@ -37,6 +37,10 @@ pub async fn set_keyboard_shortcuts(
         .map_err(|e| e.to_string())?
         .clone();
     for (label, token) in keyboard_tokens {
+        let token = crate::security::bridge::channel_token(
+            &token,
+            crate::security::bridge::KEYBOARD_CHANNEL,
+        );
         if let Some(webview) = app.get_webview(&label) {
             let payload = serde_json::to_string(&shortcuts).map_err(|error| error.to_string())?;
             webview

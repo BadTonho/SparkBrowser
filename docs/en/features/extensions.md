@@ -9,7 +9,8 @@ On Windows, Spark Browser can load Chrome WebExtensions through WebView2; compat
 * **1-Click Chrome Web Store Install:** When browsing any extension on `chromewebstore.google.com`, an interactive **`[🧩 Install in Spark]`** button automatically appears in the Omnibox. Clicking it downloads, extracts, validates, and activates the extension with a single click.
 * **CRX Download Interceptor:** Clicking Google's "Add to Chrome" button is natively intercepted before the WebView2 download barrier, routing the package directly to Spark's background installer.
 * **Chrome Web Store Installer (Manual):** Paste any Chrome Web Store URL or 32-character extension ID into the Extensions modal to download, unpack, and install directly.
-* **Archive Installer (.zip / .crx):** Directly install packaged extensions from local `.zip` or `.crx` (CRX2 and CRX3) files.
+* **Archive Installer (.zip / .crx):** Directly install packaged extensions from local `.zip` or `.crx` (CRX3) files.
+* **Signed packages only:** Every `.crx` must be a CRX3 package whose signatures are valid and whose ID matches its developer key, the same check Chromium performs. Packages from the Chrome Web Store must also be the extension that was requested, and the installed copy is replaced only after the new package passes the check. Old CRX2 files are refused. A `.zip` has no signature and is treated like an unpacked folder you chose.
 * **Unpacked Extensions:** Load unpacked extension folders directly from your disk.
 * **Persistent Installation:** Installed extensions are preserved in your browser's application data folder and registered in the local SQLite database across restarts.
 * **Toolbar Actions:** Extensions declaring `action` or `browser_action` display their icon in the quick actions toolbar and open their popup interfaces upon clicking.

@@ -41,6 +41,18 @@ const PARALLELISM: u32 = 1;
 const MAX_MEMORY_KIB: u32 = 256 * 1024;
 const MAX_ITERATIONS: u32 = 10;
 const MAX_PARALLELISM: u32 = 4;
+// Nor ask for too little: the header is not authenticated, so someone able to write the database could
+// otherwise lower the work factor that the next password change wraps the data key with. This is the
+// OWASP minimum for Argon2id (19 MiB, 2 passes); every vault Spark has created uses more (64 MiB, 3).
+#[cfg(not(test))]
+const MIN_MEMORY_KIB: u32 = 19 * 1024;
+#[cfg(test)]
+const MIN_MEMORY_KIB: u32 = MEMORY_KIB;
+#[cfg(not(test))]
+const MIN_ITERATIONS: u32 = 2;
+#[cfg(test)]
+const MIN_ITERATIONS: u32 = ITERATIONS;
+const _: () = assert!(MIN_MEMORY_KIB <= MEMORY_KIB && MIN_ITERATIONS <= ITERATIONS);
 
 /// The data key. It is wiped from memory when dropped.
 #[derive(Clone)]
@@ -152,9 +164,9 @@ pub fn derive_secret(
 }
 
 fn derive(secret: &[u8], salt: &[u8], kdf: &Kdf) -> Result<Zeroizing<[u8; KEY_LEN]>, CryptoError> {
-    if kdf.memory_kib == 0
+    if kdf.memory_kib < MIN_MEMORY_KIB
         || kdf.memory_kib > MAX_MEMORY_KIB
-        || kdf.iterations == 0
+        || kdf.iterations < MIN_ITERATIONS
         || kdf.iterations > MAX_ITERATIONS
         || kdf.parallelism == 0
         || kdf.parallelism > MAX_PARALLELISM
@@ -600,6 +612,24 @@ mod tests {
             unlock_with_password(&header, PASSWORD).unwrap_err(),
             CryptoError::Corrupt
         );
+    }
+
+    #[test]
+    fn a_header_with_a_lowered_work_factor_is_refused_and_never_used_to_wrap() {
+        let (header, dek, _) = create(Some(PASSWORD), None).unwrap();
+        for (memory_kib, iterations) in [(MIN_MEMORY_KIB - 1, ITERATIONS), (MEMORY_KIB, 0)] {
+            let mut lowered = header.clone();
+            lowered.kdf.memory_kib = memory_kib;
+            lowered.kdf.iterations = iterations;
+            assert_eq!(
+                unlock_with_password(&lowered, PASSWORD).unwrap_err(),
+                CryptoError::Corrupt
+            );
+            assert_eq!(
+                change_password(&lowered, &dek, "another long password").unwrap_err(),
+                CryptoError::Corrupt
+            );
+        }
     }
 
     #[test]

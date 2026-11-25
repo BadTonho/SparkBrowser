@@ -349,7 +349,7 @@ fn parse_entries(text: &str) -> Vec<LogEntry> {
                 text: first.into(),
             });
         } else if let Some(last) = entries.last_mut() {
-            last.text.push_str("\n");
+            last.text.push('\n');
             last.text.push_str(line);
         }
     }
@@ -376,7 +376,10 @@ pub fn read_recent(max_entries: usize) -> (String, Vec<LogEntry>) {
         return (shown, Vec::new());
     };
     let length = file.metadata().map(|m| m.len()).unwrap_or(0);
-    if file.seek(SeekFrom::Start(length.saturating_sub(READ_TAIL_BYTES))).is_err() {
+    if file
+        .seek(SeekFrom::Start(length.saturating_sub(READ_TAIL_BYTES)))
+        .is_err()
+    {
         return (shown, Vec::new());
     }
     let mut bytes = Vec::new();

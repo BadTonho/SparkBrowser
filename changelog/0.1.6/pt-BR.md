@@ -6,6 +6,7 @@
 
 ## Melhorias
 
+- As extensões instaladas pela Chrome Web Store ou por um arquivo `.crx` agora são verificadas como o Chrome faz: o pacote precisa estar assinado pelo desenvolvedor e, na loja, ser a extensão que você pediu. Um pacote alterado ou errado é recusado, e a versão que você já tinha continua instalada. Arquivos CRX2 antigos não são mais aceitos.
 - A seção **Diagnósticos locais** das configurações agora mostra os problemas que o Spark registrou: as últimas entradas do log local de erros (Crítico, Erro, Aviso e Info), da mais nova para a mais antiga, com filtro por nível, botão para copiar e o caminho do arquivo de log. Os contadores internos de desempenho foram para um bloco recolhido, "Desempenho interno".
 - As sugestões da barra de endereço vindas do histórico e dos favoritos não mostram mais o endereço da página abaixo do título.
 - O estilo de fundo Vidro agora tem dois tipos: **Normal** (o visual translúcido de sempre) e **Vidro líquido** (superfície mais transparente, com desfoque forte, cores realçadas e bordas brilhantes que refletem a luz). Escolha em Configurações → Aparência e layout depois de selecionar Vidro.
@@ -17,6 +18,9 @@
 
 ## Correções
 
+- Atualizado um componente que podia fazer o Spark fechar com um endereço de página feito de propósito para isso.
+- As senhas salvas não são mais oferecidas em sites de outras pessoas que só compartilham o final do endereço com o seu, como dois sites diferentes em `github.io` ou `co.uk`. As senhas continuam sendo oferecidas nos subdomínios do seu próprio site.
+- Corrigido um problema de segurança em que um site malicioso podia ler o segredo que o Spark usa para falar com os próprios scripts naquela página e usá-lo para pedir seus cartões, dados de contato e senhas salvos ou acionar atalhos do navegador sem você fazer nada. Os scripts de cada função agora têm segredos separados, e as mensagens deles não podem mais ser vistas pela página.
 - O log de erros não se enche mais de entradas sobre coisas normais: uma página sem mídia e a aba de configurações que ainda está carregando quando é aberta. Falhas reais continuam sendo registradas.
 - O botão **Copiar** em Diagnósticos locais agora funciona mesmo quando o painel não está com o foco do teclado, e avisa quando não foi possível copiar.
 - Nas configurações rápidas, a opção selecionada (como o tema claro ou escuro) agora fica claramente destacada nos dois temas. Antes, no tema claro, o botão selecionado parecia mais apagado que o outro.

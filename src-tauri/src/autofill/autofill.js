@@ -3,10 +3,69 @@
   // for suggestions when one is focused and shows them in a list under the field. What is filled in
   // comes from the browser after the person picks an item: this script never holds saved data
   // beforehand. The list lives in a closed shadow root and only reacts to real (trusted) events.
+  //
+  // This script shares its JavaScript world with the page, which can replace any global or prototype
+  // method. Everything that touches the channel token, the item ids or the functions that act on
+  // the person's behalf is therefore taken now, before any page script runs, and called through
+  // `apply`: a page that later replaces `URLSearchParams`, `addEventListener`, `Array.prototype.push`
+  // or an event getter gains nothing (it can neither read the token nor call a handler itself).
   if (window.top !== window) return;
   const token = __AUTOFILL_TOKEN__;
   const entry = __AUTOFILL_FN__;
   const roles = __AUTOFILL_ROLES__;
+  const shadowMode = __AUTOFILL_SHADOW__;
+
+  const apply = Reflect.apply;
+  const describe = Object.getOwnPropertyDescriptor;
+  const define = Object.defineProperty;
+  const ownKeys = Object.keys;
+  const blank = () => Object.create(null);
+  const stringify = JSON.stringify;
+  const encode = encodeURIComponent;
+  const send = window.__sparkPostContent;
+  const getter = (proto, name) => describe(proto, name).get;
+  const setter = (proto, name) => describe(proto, name).set;
+  const listen = EventTarget.prototype.addEventListener;
+  const eventTarget = getter(Event.prototype, 'target');
+  const eventKey = getter(KeyboardEvent.prototype, 'key');
+  const preventDefault = Event.prototype.preventDefault;
+  const composedPath = Event.prototype.composedPath;
+  const activeElement = getter(Document.prototype, 'activeElement');
+  const rootElement = getter(Document.prototype, 'documentElement');
+  const createElement = Document.prototype.createElement;
+  const attachShadow = Element.prototype.attachShadow;
+  const appendToElement = Element.prototype.append;
+  const appendToFragment = DocumentFragment.prototype.append;
+  const removeElement = Element.prototype.remove;
+  const setAttribute = Element.prototype.setAttribute;
+  const setText = setter(Node.prototype, 'textContent');
+  const isConnected = getter(Node.prototype, 'isConnected');
+  const rectOf = Element.prototype.getBoundingClientRect;
+
+  const on = (target, type, handler, options) => apply(listen, target, [type, handler, options]);
+  /** Only an event the browser created for a real action of the person. */
+  function trusted(event) {
+    try { apply(eventTarget, event, []); } catch { return false; }
+    return event.isTrusted === true;
+  }
+  const targetOf = event => apply(eventTarget, event, []);
+  const keyOf = event => apply(eventKey, event, []);
+  const cancel = event => apply(preventDefault, event, []);
+  function element(tag, attributes, content) {
+    const node = apply(createElement, document, [tag]);
+    if (attributes) {
+      const names = ownKeys(attributes);
+      for (let i = 0; i < names.length; i++) apply(setAttribute, node, [names[i], attributes[names[i]]]);
+    }
+    if (content !== undefined) apply(setText, node, [content]);
+    return node;
+  }
+  function shadowHost() {
+    const host = element('div');
+    const options = blank(); options.mode = shadowMode;
+    return { host, root: apply(attachShadow, host, [options]) };
+  }
+
   const nonce = new Uint32Array(4); crypto.getRandomValues(nonce);
   const documentId = Array.from(nonce, n => n.toString(16).padStart(8, '0')).join('');
   const portuguese = /^pt/i.test(navigator.language || '');
@@ -27,10 +86,14 @@
   let current = null;
   let ui = null;
 
+  /** The query is built by hand: only captured functions and string concatenation touch the token. */
   function post(path, params) {
-    const query = new URLSearchParams({ token, document: documentId, sequence: String(++sequence), ...params });
-    const url = `spark-internal://autofill/${path}?${query}`;
-    if (window.__sparkPostContent) window.__sparkPostContent(url); else window.location.href = url;
+    if (typeof send !== 'function') return;
+    sequence += 1;
+    let query = 'token=' + encode(token) + '&document=' + encode(documentId) + '&sequence=' + sequence;
+    const names = ownKeys(params);
+    for (let i = 0; i < names.length; i++) query += '&' + encode(names[i]) + '=' + encode('' + params[names[i]]);
+    send('spark-internal://autofill/' + path + '?' + query);
   }
 
   function usable(el) {
@@ -69,17 +132,12 @@
   }
 
   function hide() {
-    if (ui) ui.host.remove();
+    if (ui) apply(removeElement, ui.host, []);
     ui = null;
   }
+  const focused = () => current && apply(isConnected, current.el, []) && apply(activeElement, document, []) === current.el;
 
-  function show(payload) {
-    if (!current || !current.el.isConnected || document.activeElement !== current.el) return;
-    hide();
-    const host = document.createElement('div');
-    const root = host.attachShadow({ mode: __AUTOFILL_SHADOW__ });
-    const style = document.createElement('style');
-    style.textContent = `
+  const LIST_STYLE = `
       :host { all: initial; }
       .list { position: fixed; z-index: 2147483647; box-sizing: border-box; min-width: 220px; max-width: 420px; max-height: 260px; overflow: auto;
         padding: 4px; border-radius: 10px; border: 1px solid rgba(128,128,128,.35); background: #20232a; color: #f2f3f5;
@@ -90,84 +148,105 @@
       small { display: block; opacity: .7; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       b { font-weight: 500; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       p { margin: 0; padding: 7px 10px; opacity: .8; }`;
-    const list = document.createElement('div');
-    list.className = 'list';
-    list.setAttribute('role', 'listbox');
-    const choices = [];
+
+  function show(payload) {
+    if (!focused()) return;
+    hide();
+    const { host, root } = shadowHost();
+    const list = element('div', { class: 'list', role: 'listbox' });
+    // Not an array: arrays go through Array.prototype, which the page controls.
+    const choices = blank();
+    let count = 0, shown = 0;
     const add = (title, subtitle, action) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.setAttribute('role', 'option');
-      const strong = document.createElement('b'); strong.textContent = title; button.append(strong);
-      if (subtitle) { const small = document.createElement('small'); small.textContent = subtitle; button.append(small); }
+      const button = element('button', { type: 'button', role: 'option' });
+      apply(appendToElement, button, [element('b', null, '' + title)]);
+      if (subtitle) apply(appendToElement, button, [element('small', null, '' + subtitle)]);
       // Real clicks only: a page cannot pick an item for the person.
-      button.addEventListener('click', event => { if (event.isTrusted) { event.preventDefault(); action(); } });
-      button.addEventListener('mousedown', event => event.preventDefault());
-      list.append(button); choices.push({ button, action });
+      on(button, 'click', event => { if (trusted(event)) { cancel(event); action(); } });
+      on(button, 'mousedown', event => cancel(event));
+      apply(appendToElement, list, [button]);
+      const choice = blank(); choice.button = button; choice.action = action;
+      choices[count] = choice; count += 1; shown += 1;
     };
+    const note = content => { apply(appendToElement, list, [element('p', null, content)]); shown += 1; };
     if (payload.state === 'locked') {
-      const note = document.createElement('p'); note.textContent = text.locked; list.append(note);
-      if (payload.hello) add(text.hello, '', () => post('unlock', { kind: current.kind }));
-      else { const hint = document.createElement('p'); hint.textContent = text.settings; list.append(hint); }
+      note(text.locked);
+      if (payload.hello) {
+        const kind = current.kind;
+        add(text.hello, '', () => post('unlock', { kind }));
+      } else note(text.settings);
     } else {
-      for (const item of payload.items) add(item.title, item.subtitle, () => post('choose', { kind: current.kind, id: item.id }));
+      const items = payload.items;
+      for (let i = 0; items && i < items.length; i++) {
+        const item = items[i];
+        const kind = current.kind, id = '' + item.id;
+        add(item.title, item.subtitle, () => post('choose', { kind, id }));
+      }
     }
-    if (!list.childElementCount) return;
-    const rect = current.el.getBoundingClientRect();
-    list.style.left = `${Math.max(4, Math.min(rect.left, innerWidth - 230))}px`;
-    list.style.top = `${rect.bottom + 4}px`;
-    root.append(style, list);
-    document.documentElement.append(host);
-    ui = { host, choices, active: -1 };
+    if (!shown) return;
+    const rect = apply(rectOf, current.el, []);
+    apply(setAttribute, list, ['style', `left: ${Math.max(4, Math.min(rect.left, innerWidth - 230))}px; top: ${rect.bottom + 4}px`]);
+    apply(appendToFragment, root, [element('style', null, LIST_STYLE), list]);
+    apply(appendToElement, apply(rootElement, document, []), [host]);
+    ui = blank(); ui.host = host; ui.choices = choices; ui.count = count; ui.active = -1;
+  }
+
+  function highlight(index) {
+    for (let i = 0; i < ui.count; i++) apply(setAttribute, ui.choices[i].button, ['class', i === index ? 'active' : '']);
   }
 
   function request() {
     if (!current) return;
-    const rect = current.el.getBoundingClientRect();
+    const rect = apply(rectOf, current.el, []);
     post('request', { kind: current.kind, role: current.role, x: Math.round(rect.left), y: Math.round(rect.top), w: Math.round(rect.width), h: Math.round(rect.height) });
   }
 
-  function target(event) {
-    const el = event.target;
+  function field(event) {
+    const el = targetOf(event);
     return el instanceof HTMLInputElement || el instanceof HTMLSelectElement ? el : null;
   }
-  document.addEventListener('focusin', event => {
-    if (!event.isTrusted) return;
-    const el = target(event);
+  on(document, 'focusin', event => {
+    if (!trusted(event)) return;
+    const el = field(event);
     const found = el && analyze(el);
     if (!found) { current = null; hide(); return; }
-    current = { el, ...found };
+    current = { el, role: found.role, kind: found.kind };
     request();
   }, true);
-  document.addEventListener('click', event => {
-    const el = target(event);
-    if (!event.isTrusted || !el || ui || !current || current.el !== el) return;
+  on(document, 'click', event => {
+    if (!trusted(event)) return;
+    const el = field(event);
+    if (!el || ui || !current || current.el !== el) return;
     request();
   }, true);
-  document.addEventListener('input', event => { if (event.isTrusted && current && event.target === current.el) hide(); }, true);
-  document.addEventListener('keydown', event => {
-    if (!event.isTrusted || !current || event.target !== current.el) return;
-    if (event.key === 'Escape') { hide(); return; }
-    if (event.key === 'ArrowDown' && !ui) { request(); event.preventDefault(); return; }
-    if (!ui || !ui.choices.length) return;
-    const move = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+  on(document, 'input', event => { if (trusted(event) && current && targetOf(event) === current.el) hide(); }, true);
+  on(document, 'keydown', event => {
+    if (!trusted(event) || !current || targetOf(event) !== current.el) return;
+    const key = keyOf(event);
+    if (key === 'Escape') { hide(); return; }
+    if (key === 'ArrowDown' && !ui) { request(); cancel(event); return; }
+    if (!ui || !ui.count) return;
+    const move = key === 'ArrowDown' ? 1 : key === 'ArrowUp' ? -1 : 0;
     if (move) {
-      event.preventDefault();
-      ui.active = (ui.active + move + ui.choices.length) % ui.choices.length;
-      ui.choices.forEach((choice, index) => choice.button.classList.toggle('active', index === ui.active));
-    } else if (event.key === 'Enter' && ui.active >= 0) {
-      event.preventDefault();
-      const { action } = ui.choices[ui.active];
+      cancel(event);
+      ui.active = (ui.active + move + ui.count) % ui.count;
+      highlight(ui.active);
+    } else if (key === 'Enter' && ui.active >= 0) {
+      cancel(event);
+      const action = ui.choices[ui.active].action;
       hide();
       action();
     }
   }, true);
-  document.addEventListener('pointerdown', event => {
-    if (ui && !event.composedPath().includes(ui.host)) hide();
+  on(document, 'pointerdown', event => {
+    if (!ui) return;
+    const path = apply(composedPath, event, []);
+    for (let i = 0; i < path.length; i++) if (path[i] === ui.host) return;
+    hide();
   }, true);
-  addEventListener('blur', hide);
-  addEventListener('resize', hide);
-  addEventListener('scroll', hide, true);
+  on(window, 'blur', hide);
+  on(window, 'resize', hide);
+  on(window, 'scroll', hide, true);
 
   function setValue(el, value) {
     const proto = el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
@@ -181,7 +260,7 @@
     if (match) setValue(select, match.value);
   }
   function fill(kind, values) {
-    if (!current || !current.el.isConnected) return;
+    if (!current || !apply(isConnected, current.el, [])) return;
     const root = container(current.el);
     for (const el of root.querySelectorAll('input,select')) {
       const found = analyze(el);
@@ -231,21 +310,17 @@
     for (const [role, value] of Object.entries(found)) if (!role.startsWith('cc-') && role !== 'username') contact[role] = value;
     return Object.keys(contact).length >= 3 ? { kind: 'contact', values: contact } : null;
   }
-  document.addEventListener('submit', event => {
-    if (!event.isTrusted || !(event.target instanceof HTMLFormElement)) return;
-    const found = capture(event.target);
-    if (found) post('capture', { kind: found.kind, data: JSON.stringify(found.values), origin: location.origin });
+  on(document, 'submit', event => {
+    if (!trusted(event)) return;
+    const form = targetOf(event);
+    if (!(form instanceof HTMLFormElement)) return;
+    const found = capture(form);
+    if (found) post('capture', { kind: found.kind, data: stringify(found.values), origin: location.origin });
   }, true);
 
   let banner = null;
-  function closeBanner() { if (banner) banner.host.remove(); banner = null; }
-  /** A bar at the top of the page: "Save the password for example.com?". Real clicks only. */
-  function prompt(message) {
-    closeBanner();
-    const host = document.createElement('div');
-    const root = host.attachShadow({ mode: __AUTOFILL_SHADOW__ });
-    const style = document.createElement('style');
-    style.textContent = `
+  function closeBanner() { if (banner) apply(removeElement, banner.host, []); banner = null; }
+  const BAR_STYLE = `
       :host { all: initial; }
       .bar { position: fixed; z-index: 2147483647; top: 12px; right: 12px; box-sizing: border-box; max-width: min(420px, calc(100vw - 24px));
         display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(128,128,128,.35);
@@ -255,32 +330,33 @@
       button { all: unset; padding: 6px 12px; border-radius: 8px; cursor: pointer; background: rgba(128,128,128,.22); }
       button.primary { background: #3b82f6; color: #fff; }
       button:focus-visible { outline: 2px solid #93c5fd; }`;
-    const bar = document.createElement('div');
-    bar.className = 'bar'; bar.setAttribute('role', 'alertdialog');
-    const label = document.createElement('div');
-    const sentence = message.kind === 'login' ? (message.mode === 'update' ? text.updateLogin : text.saveLogin)
-      : message.kind === 'card' ? text.saveCard : text.saveContact;
-    label.textContent = sentence(message.subject);
-    const row = document.createElement('div'); row.className = 'row';
+  /** A bar at the top of the page: "Save the password for example.com?". Real clicks only. */
+  function prompt(message) {
+    closeBanner();
+    const { host, root } = shadowHost();
+    const kind = '' + message.kind, mode = message.mode;
+    const sentence = kind === 'login' ? (mode === 'update' ? text.updateLogin : text.saveLogin)
+      : kind === 'card' ? text.saveCard : text.saveContact;
+    const bar = element('div', { class: 'bar', role: 'alertdialog' });
+    const row = element('div', { class: 'row' });
     const decide = (name, path, primary) => {
-      const button = document.createElement('button');
-      button.type = 'button'; button.textContent = name; if (primary) button.className = 'primary';
-      button.addEventListener('click', event => { if (!event.isTrusted) return; event.preventDefault(); closeBanner(); post(path, { kind: message.kind }); });
+      const button = element('button', primary ? { type: 'button', class: 'primary' } : { type: 'button' }, name);
+      on(button, 'click', event => { if (!trusted(event)) return; cancel(event); closeBanner(); post(path, { kind }); });
       return button;
     };
-    row.append(decide(text.notNow, 'dismiss', false), decide(message.mode === 'update' ? text.update : text.save, 'save', true));
-    bar.append(label, row);
-    root.append(style, bar);
-    document.documentElement.append(host);
-    banner = { host };
+    apply(appendToElement, row, [decide(text.notNow, 'dismiss', false), decide(mode === 'update' ? text.update : text.save, 'save', true)]);
+    apply(appendToElement, bar, [element('div', null, sentence('' + message.subject)), row]);
+    apply(appendToFragment, root, [element('style', null, BAR_STYLE), bar]);
+    apply(appendToElement, apply(rootElement, document, []), [host]);
+    banner = blank(); banner.host = host;
   }
   // A page that follows a submit (the login redirects) tells the browser it is there, so a pending
   // "save this?" can be shown on it.
   const announce = () => post('ready', { kind: 'login' });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', announce, { once: true }); else announce();
+  if (document.readyState === 'loading') on(document, 'DOMContentLoaded', announce, { once: true }); else announce();
 
   // The browser reaches the page only through this one name, which is not writable and not guessable.
-  Object.defineProperty(window, entry, {
+  define(window, entry, {
     value(message) {
       if (message.op === 'show') show(message);
       else if (message.op === 'fill') fill(message.kind, message.values);

@@ -14,6 +14,8 @@ O `tests/deepmerge-security.test.mjs` resolve a dependência a partir do própri
 
 O Spark inclui o SQLite por meio do `rusqlite 0.41`. A versão fixada do `libsqlite3-sys`, 0.39.1, inclui a correção da [CVE-2026-119375](https://rustsec.org/advisories/RUSTSEC-2026-0459.html) no Windows e no Linux.
 
+A versão fixada `url 2.5.9` corrige a [RUSTSEC-2026-0592](https://rustsec.org/advisories/RUSTSEC-2026-0592.html) (estouro de pilha em `Url::origin()` com endereços `blob:` aninhados, alcançável porque o Spark lê a origem dos endereços das páginas), e `cookie 0.18.3` corrige a [RUSTSEC-2026-0594](https://rustsec.org/advisories/RUSTSEC-2026-0594.html) (nonces de cookies privados repetidos após `fork`, algo que o Spark não faz).
+
 O `cargo audit --no-fetch` usa a base local de avisos e não certifica que ela esteja atualizada. A árvore atual do Tauri ainda inclui crates GTK3 para Linux marcados como sem manutenção e `glib 0.18.5`, afetado por [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html), além da dependência sem manutenção `proc-macro-error`.
 
 O iterador afetado do glib foi corrigido em `glib >=0.20`, fora da faixa compatível com as dependências GTK3 usadas. Forçar essa versão na árvore existente não é uma atualização suportada. Os avisos continuam visíveis, sem exceções de auditoria. Uma migração suportada pelo Tauri/GTK ainda é necessária para considerar os avisos de dependências Linux resolvidos.
