@@ -39,7 +39,7 @@ export async function openReaderMode(tabId?: string): Promise<void> {
     if (!article || !article.content_html) {
       throw new Error("Não foi possível extrair o conteúdo principal desta página.");
     }
-    readerArticle.set({ ...article, content_html: sanitizeArticleHtml(article.content_html) });
+    readerArticle.set({ ...article, content_html: sanitizeArticleHtml(article.content_html, article.images ?? {}), images: {} });
   } catch (err: any) {
     readerError.set(err?.message ?? String(err));
   } finally {

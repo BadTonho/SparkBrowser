@@ -19,6 +19,7 @@ Spark Browser features a distraction-free, customizable Reader View that strips 
   * **Dynamic Font Sizing:** Adjustable scaling from 14px to 28px.
   * **Adjustable Reading Width:** Narrow (640px), Medium (760px), and Wide (940px) columns.
 * **Content Safety:** Scripts, iframes, forms, embedded objects, and inline event handlers are removed from extracted articles. Links in article text appear as plain text.
+* **Article Images:** Images are read from the tab's own cache (the copy the page already loaded) and shown as embedded `data:` images, because the browser interface does not load remote images. Nothing is downloaded again. Images the page had not loaded yet (for example, lazy images further down), vector images, and images over 4 MB (or past 24 MB in total, up to 40 per article) are left out. Available on Windows.
 * **Reading Metrics:** Displays estimated reading time ("~4 min read") and article word counts.
 * **Native Viewport Protection:** Coordinates with Tauri native viewport overlays (`setOverlayVisibility(true, "reader-mode")`) to seamlessly obscure child WebViews beneath the reader canvas.
 

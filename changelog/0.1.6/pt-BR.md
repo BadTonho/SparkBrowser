@@ -29,3 +29,4 @@
 - Soltar a aba mostrada em um painel do split sobre a página do outro painel não troca mais os dois painéis de lado. A aba só muda de lado, e o painel de onde ela saiu passa a mostrar outra aba dele.
 - O Spark não fecha mais logo ao abrir quando a sessão salva tem uma aba que ele não consegue restaurar (por exemplo, depois de voltar para uma versão mais antiga). Essa aba é ignorada e o problema é registrado no log de erros.
 - Erros que impedem o Spark de salvar ou fechar (mostrados no diálogo de fechamento) agora são gravados no log de erros com a falha exata, para poderem ser reportados e corrigidos.
+- O modo leitura agora mostra as imagens do artigo. Antes elas apareciam quebradas, porque a interface do navegador não carrega imagens da web; agora vêm da cópia que a página já carregou, e as imagens que a página não tinha carregado ficam de fora em vez de aparecerem quebradas.

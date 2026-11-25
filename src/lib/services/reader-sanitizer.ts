@@ -17,7 +17,9 @@ const ALLOWED_TAGS = new Set([
 
 const DIMENSION = /^\d{1,5}$/;
 const COUNT = /^\d{1,4}$/;
-const SAFE_IMAGE_SRC = /^(https?:\/\/|data:image\/(png|jpe?g|gif|webp);)/i;
+// The shell's content security policy only loads `data:` images, so article images arrive from
+// the tab's cache as `data:` URLs (see `images`) and any other source is removed.
+const SAFE_IMAGE_SRC = /^data:image\/(png|jpe?g|gif|webp);base64,/i;
 
 const ATTRIBUTE_RULES: Record<string, Record<string, (value: string) => boolean>> = {
   img: {
@@ -50,7 +52,7 @@ function sanitizeAttributes(element: Element, tag: string): void {
   }
 }
 
-function sanitizeChildren(parent: Element): void {
+function sanitizeChildren(parent: Element, images: Record<string, string>): void {
   for (const child of Array.from(parent.childNodes)) {
     if (child.nodeType === Node.TEXT_NODE) continue;
     if (!(child instanceof Element)) {
@@ -66,19 +68,35 @@ function sanitizeChildren(parent: Element): void {
 
     if (!ALLOWED_TAGS.has(tag)) {
       // Keep the text of unknown or link wrappers, drop the element itself.
-      sanitizeChildren(child);
+      sanitizeChildren(child, images);
       child.replaceWith(...Array.from(child.childNodes));
       continue;
     }
 
+    if (tag === "img") {
+      // Only images read from the tab's cache can be shown; the others would appear broken.
+      const address = child.getAttribute("src") ?? "";
+      const source = Object.hasOwn(images, address) ? images[address] : undefined;
+      if (!source) {
+        child.remove();
+        continue;
+      }
+      child.setAttribute("src", source);
+    }
+
     sanitizeAttributes(child, tag);
-    sanitizeChildren(child);
+    if (tag === "img" && !child.hasAttribute("src")) {
+      child.remove();
+      continue;
+    }
+    sanitizeChildren(child, images);
   }
 }
 
-export function sanitizeArticleHtml(html: string): string {
+/** Sanitizes article HTML. `images` maps each image address in the article to its `data:` URL. */
+export function sanitizeArticleHtml(html: string, images: Record<string, string> = {}): string {
   if (typeof DOMParser === "undefined") return "";
   const body = new DOMParser().parseFromString(html, "text/html").body;
-  sanitizeChildren(body);
+  sanitizeChildren(body, images);
   return body.innerHTML;
 }

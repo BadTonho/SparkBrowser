@@ -29,3 +29,4 @@
 - Dropping the tab shown in one split pane onto the other pane's page no longer swaps the two panes. The tab just moves, and the pane it left shows another of its tabs.
 - Spark no longer closes right after opening when the saved session has a tab it cannot restore (for example after going back to an older version). That tab is skipped and the problem is written to the error log.
 - Errors that stop Spark from saving or closing (shown in the closing dialog) are now written to the error log with the exact failure, so they can be reported and fixed.
+- Reader view now shows the article's images. Before, they appeared broken because the browser interface does not load images from the web; they now come from the copy the page already loaded, and images the page had not loaded are left out instead of showing as broken.
