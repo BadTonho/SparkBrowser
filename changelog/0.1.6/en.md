@@ -6,6 +6,8 @@
 
 ## Improvements
 
+- Address bar suggestions from history and bookmarks no longer show the page address under the title.
+- The Glass window background style now has two types: **Classic** (the current translucent look) and **Liquid glass** (a clearer surface with a strong blur, boosted color and bright, light-catching edges). Pick one in Settings → Appearance & Layout after choosing Glass.
 - The header of the vertical tab list is simpler: it reads only "Tabs (n)" and its buttons (split view, ephemeral tab, new tab) are now the same size and show only an icon; hover one to see its name.
 - With vertical tabs and split view on, you can now drag a tab from one side of the split to the other in the tab list. Drop it anywhere on the other side, and the list shows where it will land while you drag. You can also drop it on the other pane's page.
 - With vertical tabs and split view on, the tab list now has a line separating the tabs of each side of the split (right side and tabs outside the split), so you can tell which tabs belong to which side.
@@ -14,6 +16,8 @@
 
 ## Fixes
 
+- The address bar suggestions are readable again with the Glass and Ice window styles: the list no longer lets the page behind it show through the rows.
+- Address bar suggestions from your history and bookmarks now show each site's own icon, like the tabs do.
 - Dropping the tab shown in one split pane onto the other pane's page no longer swaps the two panes. The tab just moves, and the pane it left shows another of its tabs.
 - Spark no longer closes right after opening when the saved session has a tab it cannot restore (for example after going back to an older version). That tab is skipped and the problem is written to the error log.
 - Errors that stop Spark from saving or closing (shown in the closing dialog) are now written to the error log with the exact failure, so they can be reported and fixed.

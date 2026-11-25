@@ -13,7 +13,7 @@ interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings
 
 export function observePanelTheme(onChange: () => void): () => void {
   const themeObserver = new MutationObserver(onChange);
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class", "data-theme", "data-palette", "data-window-style"] });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class", "data-theme", "data-palette", "data-window-style", "data-glass-variant"] });
   const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
   colorScheme.addEventListener("change", onChange);
   return () => { themeObserver.disconnect(); colorScheme.removeEventListener("change", onChange); };
@@ -46,7 +46,7 @@ export function mountPanelHost(root: HTMLElement, native: boolean, options: Host
     "--text-primary", "--text-secondary", "--text-muted", "--status-on", "--status-on-bg", "--status-on-border",
     "--accent-primary", "--accent-secondary", "--accent-gradient", "--accent-foreground", "--border-subtle",
     "--bg-glass-elevated", "--bg-glass-hover", "--bg-downloads-panel", "--bg-permission-popover",
-    "--modal-surface-bg", "--modal-surface-filter", "--modal-surface-border", "--modal-surface-shadow",
+    "--modal-surface-bg", "--suggestions-surface-bg", "--modal-surface-filter", "--modal-surface-border", "--modal-surface-shadow",
     "--settings-backdrop-bg", "--settings-tab-bg", "--settings-row-bg", "--settings-row-border",
     "--settings-control-scheme",
     "--overlay-backdrop-blur",

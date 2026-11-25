@@ -28,6 +28,8 @@ import {
   PALETTES,
   windowSurfaceStyle,
   setWindowSurfaceStyle,
+  glassVariant,
+  setGlassVariant,
   windowSurfaceOpacity,
   setWindowSurfaceOpacity,
   windowSurfaceBlurPx,
@@ -263,6 +265,33 @@ async function changeSettingsDisplay(mode: "popup" | "tab") {
       </button>
     </div>
   </div>
+
+  {#if $windowSurfaceStyle === "glass"}
+    <div class="setting-row" id="setting-glass-variant" tabindex="-1">
+      <div class="row-text">
+        <span class="row-label">{$t("settings.glass_variant")}</span>
+        <span class="row-desc">{$t("settings.glass_variant_desc")}</span>
+      </div>
+      <div class="timer-pills">
+        <button
+          class="mini-pill"
+          class:selected={$glassVariant === "classic"}
+          aria-pressed={$glassVariant === "classic"}
+          onclick={() => setGlassVariant("classic")}
+        >
+          {$t("settings.glass_variant_classic")}
+        </button>
+        <button
+          class="mini-pill"
+          class:selected={$glassVariant === "liquid"}
+          aria-pressed={$glassVariant === "liquid"}
+          onclick={() => setGlassVariant("liquid")}
+        >
+          {$t("settings.glass_variant_liquid")}
+        </button>
+      </div>
+    </div>
+  {/if}
 
   {#if $windowSurfaceStyle !== "solid"}
     <div class="setting-row" id="setting-window-surface-opacity" tabindex="-1">

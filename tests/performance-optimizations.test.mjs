@@ -14,7 +14,7 @@ test('panel host reads theme variables only after root style changes, not on eve
   const host = read('src/lib/components/panels/panel-host.ts');
   assert.match(host, /if \(themeChanged\) \{\s*const style = getComputedStyle\(document\.documentElement\);/);
   assert.doesNotMatch(host, /const r = session\.anchor\.getBoundingClientRect\(\), style = getComputedStyle/);
-  assert.match(host, /attributeFilter: \["style", "class", "data-theme", "data-palette", "data-window-style"\]/);
+  assert.match(host, /attributeFilter: \["style", "class", "data-theme", "data-palette", "data-window-style", "data-glass-variant"]/);
   assert.match(host, /themeObserver\.disconnect\(\);/);
 });
 

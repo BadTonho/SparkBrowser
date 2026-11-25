@@ -7,6 +7,7 @@
   import { mountPanelHost } from "../panels/panel-host";
   import { onSuggestionsPopoverAction, setSuggestionsPopover } from "../../services/bridge/suggestions-popover";
   import type { Suggestion } from "../../services/address-suggestions.js";
+  import SuggestionIcon from "./SuggestionIcon.svelte";
   import "./suggestions.css";
 
   const ROW_HEIGHT = 46;
@@ -89,22 +90,12 @@
             onclick={() => void chooseSuggestion(item)}
           >
             <span class="suggestion-icon" aria-hidden="true">
-              {#if item.kind === "bookmark"}
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z" /></svg>
-              {:else if item.kind === "history"}
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-              {:else if item.kind === "navigate"}
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18" /></svg>
-              {:else}
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-              {/if}
+              <SuggestionIcon kind={item.kind} url={item.target} />
             </span>
             <span class="suggestion-text">
               <span class="suggestion-primary">{item.primary}</span>
               {#if item.kind === "search" || item.kind === "navigate"}
                 <span class="suggestion-secondary">{label(item)}</span>
-              {:else if item.secondary}
-                <span class="suggestion-secondary">{item.secondary}</span>
               {/if}
             </span>
             {#if item.kind === "bookmark" || item.kind === "history" || item.kind === "web"}

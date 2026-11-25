@@ -6,6 +6,8 @@
 
 ## Melhorias
 
+- As sugestões da barra de endereço vindas do histórico e dos favoritos não mostram mais o endereço da página abaixo do título.
+- O estilo de fundo Vidro agora tem dois tipos: **Normal** (o visual translúcido de sempre) e **Vidro líquido** (superfície mais transparente, com desfoque forte, cores realçadas e bordas brilhantes que refletem a luz). Escolha em Configurações → Aparência e layout depois de selecionar Vidro.
 - O cabeçalho da lista vertical de abas ficou mais simples: mostra só "Abas (n)" e seus botões (modo split, aba efêmera e nova aba) agora têm o mesmo tamanho e mostram só um ícone; passe o mouse sobre um para ver o nome.
 - Com abas verticais e o modo split ativos, agora dá para arrastar uma aba de um lado do split para o outro na lista de abas. Solte em qualquer ponto do outro lado, e a lista mostra onde ela vai ficar enquanto você arrasta. Também dá para soltar sobre a página do outro painel.
 - Com abas verticais e o modo split ativos, a lista de abas agora tem uma linha separando as abas de cada lado do split (lado direito e abas fora do split), para você saber quais abas pertencem a cada lado.
@@ -14,6 +16,8 @@
 
 ## Correções
 
+- As sugestões da barra de endereço voltam a ser legíveis com os estilos de fundo Vidro e Gelo: a lista não deixa mais a página de trás aparecer através das linhas.
+- As sugestões da barra de endereço vindas do histórico e dos favoritos agora mostram o ícone de cada site, como nas abas.
 - Soltar a aba mostrada em um painel do split sobre a página do outro painel não troca mais os dois painéis de lado. A aba só muda de lado, e o painel de onde ela saiu passa a mostrar outra aba dele.
 - O Spark não fecha mais logo ao abrir quando a sessão salva tem uma aba que ele não consegue restaurar (por exemplo, depois de voltar para uma versão mais antiga). Essa aba é ignorada e o problema é registrado no log de erros.
 - Erros que impedem o Spark de salvar ou fechar (mostrados no diálogo de fechamento) agora são gravados no log de erros com a falha exata, para poderem ser reportados e corrigidos.

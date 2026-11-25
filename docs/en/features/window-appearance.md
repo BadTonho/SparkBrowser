@@ -19,6 +19,7 @@ Users can choose between three surface styles in **Settings → Appearance & Lay
 - Settings in a tab uses a flat black or white background depending on the theme. The Spark palette still colors controls and selections.
 - Floating surfaces use a gentler blur than Ice.
 - **Adjustable:** Follows the opacity and blur sliders below.
+- **Glass type:** With Glass selected, a second option picks **Classic** (the look above) or **Liquid glass**: a clearer, lightly tinted surface with a strong blur, boosted color, a bright edge and inner highlights that catch the light. Both follow the opacity and blur sliders.
 
 ### ❄️ Ice
 A strong blur, close to the frosted look of the COSMIC desktop:
@@ -38,6 +39,7 @@ All controls are accessible under **Appearance & Layout** in Browser Settings:
 
 1. **Window Background Style (`settings.window_surface_style`)**:
    - Switch between **Matte**, **Glass** and **Ice** (Matte is enabled by default).
+   - **Glass type (`settings.glass_variant`)**: shown only with Glass selected; choose **Classic** (default) or **Liquid glass**.
 2. **Window Background Opacity (`settings.window_surface_opacity`)**:
    - A slider from **30%** to **100%** that controls the intensity of the tint. Ice is opaque at 100%, and Glass retains its translucent finish.
    - Default value: **70%**.
@@ -51,6 +53,6 @@ All controls are accessible under **Appearance & Layout** in Browser Settings:
 
 ## 3. Persistence & Platform Compatibility
 
-- **Persistence:** Values are stored in `safeStorage` under `spark_window_surface_style`, `spark_window_surface_opacity`, and `spark_window_surface_blur_px`, persisting across browser sessions.
+- **Persistence:** Values are stored in `safeStorage` under `spark_window_surface_style`, `spark_glass_variant`, `spark_window_surface_opacity`, and `spark_window_surface_blur_px`, persisting across browser sessions.
 - **Cross-Platform:** Glass uses CSS for the translucent surface and blur. How much of the background a WebView can blur depends on the rendering engine and which surfaces it composites together.
 

@@ -295,6 +295,12 @@ export type WindowSurfaceStyle = "frosted" | "glass" | "solid";
 export const DEFAULT_WINDOW_SURFACE_STYLE: WindowSurfaceStyle = "solid";
 const WINDOW_SURFACE_STYLE_STORAGE_KEY = "spark_window_surface_style";
 
+// Glass has two looks: "classic" (the neutral translucent surface) and "liquid" (clearer, with a strong
+// blur, boosted color and light-catching edges).
+export type GlassVariant = "classic" | "liquid";
+export const DEFAULT_GLASS_VARIANT: GlassVariant = "classic";
+const GLASS_VARIANT_STORAGE_KEY = "spark_glass_variant";
+
 export const DEFAULT_WINDOW_SURFACE_OPACITY = 70;
 export const MIN_WINDOW_SURFACE_OPACITY = 30;
 export const MAX_WINDOW_SURFACE_OPACITY = 100;
@@ -311,6 +317,21 @@ function getInitialWindowSurfaceStyle(): WindowSurfaceStyle {
     return saved === "solid" || saved === "frosted" || saved === "glass" ? saved : DEFAULT_WINDOW_SURFACE_STYLE;
   } catch {
     return DEFAULT_WINDOW_SURFACE_STYLE;
+  }
+}
+
+function getInitialGlassVariant(): GlassVariant {
+  if (typeof safeStorage === "undefined") return DEFAULT_GLASS_VARIANT;
+  try {
+    return safeStorage.getItem(GLASS_VARIANT_STORAGE_KEY) === "liquid" ? "liquid" : DEFAULT_GLASS_VARIANT;
+  } catch {
+    return DEFAULT_GLASS_VARIANT;
+  }
+}
+
+function applyGlassVariant(variant: GlassVariant): void {
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.glassVariant = variant;
   }
 }
 
@@ -386,6 +407,24 @@ export function setWindowSurfaceStyle(style: WindowSurfaceStyle): void {
   if (typeof safeStorage !== "undefined") {
     try {
       safeStorage.setItem(WINDOW_SURFACE_STYLE_STORAGE_KEY, next);
+    } catch {
+      // Keep setting active in memory
+    }
+  }
+}
+
+export const glassVariant = writable<GlassVariant>(getInitialGlassVariant());
+applyGlassVariant(get(glassVariant));
+
+export function setGlassVariant(variant: GlassVariant): void {
+  const next: GlassVariant = variant === "liquid" ? "liquid" : "classic";
+  glassVariant.set(next);
+  applyGlassVariant(next);
+  repaintWindowSurfaces();
+
+  if (typeof safeStorage !== "undefined") {
+    try {
+      safeStorage.setItem(GLASS_VARIANT_STORAGE_KEY, next);
     } catch {
       // Keep setting active in memory
     }

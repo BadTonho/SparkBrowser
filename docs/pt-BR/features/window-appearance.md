@@ -19,6 +19,7 @@ Os usuários podem escolher entre três estilos de superfície em **Configuraç�
 - As Configurações em aba usam um fundo liso, preto ou branco, de acordo com o tema. A paleta do Spark continua colorindo os controles e as seleções.
 - As superfícies flutuantes usam um desfoque mais leve que o do Gelo.
 - **Ajustável:** Acompanha os controles de opacidade e desfoque abaixo.
+- **Tipo de vidro:** Com Vidro selecionado, uma segunda opção escolhe **Normal** (o visual acima) ou **Vidro líquido**: superfície mais transparente e levemente tingida, com desfoque forte, cores realçadas, borda brilhante e reflexos internos que captam a luz. Os dois acompanham os controles de opacidade e desfoque.
 
 ### ❄️ Gelo
 Um desfoque forte, próximo do visual fosco do desktop COSMIC:
@@ -38,6 +39,7 @@ Todos os controles estão disponíveis na seção **Aparência e disposição** 
 
 1. **Estilo do fundo das janelas (`settings.window_surface_style`)**:
    - Alternância rápida entre **Fosco**, **Vidro** e **Gelo** (Fosco vem ativado por padrão).
+   - **Tipo de vidro (`settings.glass_variant`)**: aparece só com Vidro selecionado; escolha **Normal** (padrão) ou **Vidro líquido**.
 2. **Opacidade do fundo das janelas (`settings.window_surface_opacity`)**:
    - Controle de **30%** a **100%** que ajusta a intensidade da camada de cor. O Gelo fica opaco em 100%, enquanto o Vidro mantém o acabamento translúcido.
    - Valor padrão: **70%**.
@@ -51,6 +53,6 @@ Todos os controles estão disponíveis na seção **Aparência e disposição** 
 
 ## 3. Persistência e Compatibilidade Multiplataforma
 
-- **Persistência:** Os valores são armazenados no `safeStorage` sob as chaves `spark_window_surface_style`, `spark_window_surface_opacity` e `spark_window_surface_blur_px`, sendo mantidos entre reinicializações do navegador.
+- **Persistência:** Os valores são armazenados no `safeStorage` sob as chaves `spark_window_surface_style`, `spark_glass_variant`, `spark_window_surface_opacity` e `spark_window_surface_blur_px`, sendo mantidos entre reinicializações do navegador.
 - **Multiplataforma:** O Vidro usa CSS para a superfície translúcida e o desfoque. A parte do fundo que uma WebView consegue desfocar depende do motor de renderização e das superfícies que ele compõe juntas.
 

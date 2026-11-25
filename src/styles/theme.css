@@ -230,6 +230,42 @@ html[data-theme="light"][data-window-style="frosted"],
   --settings-row-border: rgb(0 0 0 / 0.16);
 }
 
+/* Liquid glass: a clearer surface, a strong blur with boosted color, and bright edges and inner highlights
+   that catch the light. It only changes the Glass style; the opacity and blur sliders still apply. */
+:root[data-window-style="glass"][data-glass-variant="liquid"] {
+  --modal-surface-bg: rgb(20 20 30 / calc(0.08 + var(--modal-surface-opacity) * 0.30));
+  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.9)) saturate(190%) brightness(1.08);
+  --modal-surface-border: 1px solid rgb(255 255 255 / 0.30);
+  --modal-surface-shadow: inset 0 1.5px 0 rgb(255 255 255 / 0.55), inset 0 -1px 0 rgb(255 255 255 / 0.14),
+    inset 1px 0 0 rgb(255 255 255 / 0.18), inset -1px 0 0 rgb(255 255 255 / 0.10),
+    inset 0 0 28px rgb(255 255 255 / 0.07), 0 18px 48px rgb(0 0 0 / 0.32);
+  --settings-row-bg: rgb(255 255 255 / 0.07);
+  --settings-row-border: rgb(255 255 255 / 0.28);
+}
+
+:root[data-theme="light"][data-window-style="glass"][data-glass-variant="liquid"] {
+  --modal-surface-bg: rgb(255 255 255 / calc(0.14 + var(--modal-surface-opacity) * 0.30));
+  --modal-surface-filter: blur(calc(var(--modal-surface-blur) * 0.9)) saturate(180%) brightness(1.06);
+  --modal-surface-border: 1px solid rgb(255 255 255 / 0.70);
+  --modal-surface-shadow: inset 0 1.5px 0 rgb(255 255 255 / 0.95), inset 0 -1px 0 rgb(0 0 0 / 0.08),
+    inset 0 0 28px rgb(255 255 255 / 0.30), 0 16px 42px rgb(0 0 0 / 0.18);
+  --settings-row-bg: rgb(255 255 255 / 0.40);
+  --settings-row-border: rgb(0 0 0 / 0.12);
+}
+
+/* The address bar's suggestion list is drawn in its own native window, where the blur cannot reach the page
+   behind it. A translucent surface would show that page's text through the rows, so Glass and Ice keep it
+   nearly opaque there. */
+:root[data-window-style="glass"],
+:root[data-window-style="frosted"] {
+  --suggestions-surface-bg: rgb(14 14 20 / calc(0.86 + var(--modal-surface-opacity) * 0.12));
+}
+
+:root[data-theme="light"][data-window-style="glass"],
+:root[data-theme="light"][data-window-style="frosted"] {
+  --suggestions-surface-bg: rgb(255 255 255 / calc(0.88 + var(--modal-surface-opacity) * 0.10));
+}
+
 html[data-window-style="solid"],
 :root[data-window-style="solid"] {
   --modal-surface-bg: #18181b;

@@ -25,7 +25,7 @@
     {#each node.children ?? [] as child (child.id)}<PanelNodeView node={child} {pending} {ack} />{/each}
   </select>
 {:else if node.tag === "img"}
-  {#if isDownloadThumbnail(node.attributes?.src)}<img src={node.attributes.src} alt="" width="40" height="40" draggable="false" />{/if}
+  {#if isDownloadThumbnail(node.attributes?.src)}<img class={String(node.attributes.class ?? "")} src={node.attributes.src} alt="" width={String(node.attributes.width ?? 40)} height={String(node.attributes.height ?? 40)} draggable="false" />{/if}
 {:else}
   <svelte:element this={node.tag} {...node.attributes} data-panel-control={node.id}
     xmlns={["svg", "path", "circle"].includes(node.tag) ? "http://www.w3.org/2000/svg" : undefined}>
