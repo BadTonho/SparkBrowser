@@ -17,6 +17,7 @@
 
 ## Correções
 
+- Atualizado um componente que podia fazer o Spark fechar com um endereço de página feito de propósito para isso.
 - As senhas salvas não são mais oferecidas em sites de outras pessoas que só compartilham o final do endereço com o seu, como dois sites diferentes em `github.io` ou `co.uk`. As senhas continuam sendo oferecidas nos subdomínios do seu próprio site.
 - Corrigido um problema de segurança em que um site malicioso podia ler o segredo que o Spark usa para falar com os próprios scripts naquela página e usá-lo para pedir seus cartões, dados de contato e senhas salvos ou acionar atalhos do navegador sem você fazer nada. Os scripts de cada função agora têm segredos separados, e as mensagens deles não podem mais ser vistas pela página.
 - O log de erros não se enche mais de entradas sobre coisas normais: uma página sem mídia e a aba de configurações que ainda está carregando quando é aberta. Falhas reais continuam sendo registradas.

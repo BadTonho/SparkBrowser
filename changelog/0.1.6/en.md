@@ -17,6 +17,7 @@
 
 ## Fixes
 
+- Updated a component that could make Spark crash on a specially crafted page address.
 - Saved passwords are no longer offered on other people's sites that only share an address ending with yours, such as two different `github.io` or `co.uk` sites. Passwords are still offered on the subdomains of your own site.
 - Fixed a security problem where a malicious website could read the secret Spark uses to talk to its own scripts on that page, and use it to request your saved cards, contact details and passwords or to trigger browser shortcuts without you doing anything. The scripts of each feature now have separate secrets, and their messages can no longer be seen by the page.
 - The error log no longer fills with entries for things that are normal: a page that has no media, and the settings tab that is still loading when it is opened. Real failures are still logged.
