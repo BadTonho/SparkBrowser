@@ -24,7 +24,7 @@
     toggleTabPin,
     suspendTab,
   } from "../../stores/browserStore";
-  import { activeWorkspaceId, workspaces } from "../../stores/workspaceStore";
+  import { activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
@@ -150,9 +150,6 @@
   $effect(() => { order; flip.play(); });
 
 
-  let currentWorkspaceName = $derived(
-    $workspaces.find((w) => w.id === $activeWorkspaceId)?.name ?? "Workspace"
-  );
   let activeTabId = $derived(workspaceTabs.find((tab) => tab.is_active)?.id);
 
   function getTabGlyph(rawUrl: string, isHibernated: boolean): string {
@@ -216,26 +213,29 @@
 <div class="tabs-section" role="presentation" oncontextmenu={handleListContextMenu}>
   <div class="tabs-header">
     <span class="section-label">
-      {currentWorkspaceName.toUpperCase()} {$t("tabs.tabs_d820")}{workspaceTabs.length})
+      {$t("tabs.tabs_d820")}{workspaceTabs.length})
     </span>
     <div class="tabs-header-actions">
       {#if !activeSplit}
-        <button class="split-toggle" data-testid="split-enter" onclick={() => void enterSplitView()} title={$t("tabs.split_enter")} aria-label={$t("tabs.split_enter")}>◫</button>
+        <button class="header-icon-btn" data-testid="split-enter" onclick={() => void enterSplitView()} title={$t("tabs.split_enter")} aria-label={$t("tabs.split_enter")}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4v16" /></svg>
+        </button>
       {/if}
       <button
-        class="new-tab-pill ephemeral"
+        class="header-icon-btn ephemeral"
         onclick={() => addEphemeralTab()}
         title={$t("tabs.new_ephemeral") + " · " + $t("tabs.ephemeral_tooltip")}
+        aria-label={$t("tabs.new_ephemeral")}
       >
-        <span>{$t("tabs.ephemeral_badge")}</span>
+        <AppIcon name="eye-off" />
       </button>
       <button
-        class="new-tab-pill"
+        class="header-icon-btn primary"
         onclick={() => addTab(undefined, $activeWorkspaceId)}
         title={$t("tabs.create_new_tab_p0_8ca3", { p0: $keyboardShortcuts && shortcutLabel("new-tab") })}
+        aria-label={$t("tabs.new_af6a")}
       >
-        <span>{$t("tabs.new_af6a")}</span>
-        <kbd>{$keyboardShortcuts && shortcutLabel("new-tab")}</kbd>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
     </div>
   </div>
@@ -368,48 +368,48 @@
     gap: 6px;
   }
 
-  .new-tab-pill {
+  /* Every header button is the same square, icon only; the name shows as a tooltip. */
+  .header-icon-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    padding: 0;
     border-radius: var(--radius-sm);
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
-    color: var(--text-primary);
-    font-size: 11px;
-    font-weight: 600;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
     cursor: pointer;
     transition:
       background 0.18s ease,
-      transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.18s ease;
+      border-color 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .new-tab-pill.ephemeral {
+  .header-icon-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+  }
+
+  .header-icon-btn.primary {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    color: var(--text-primary);
+  }
+
+  .header-icon-btn.ephemeral {
     background: rgba(168, 85, 247, 0.12);
     border-color: rgba(168, 85, 247, 0.35);
     color: #d8b4fe;
   }
 
-  .new-tab-pill.ephemeral:hover {
+  .header-icon-btn.ephemeral:hover {
     background: rgba(168, 85, 247, 0.22);
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
-  }
-
-  .new-tab-pill:hover {
-    background: color-mix(in srgb, var(--accent-primary) 26%, transparent);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-primary) 22%, transparent);
-  }
-
-  .new-tab-pill kbd {
-    font-size: 9.5px;
-    padding: 1px 4px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.3);
-    color: var(--text-secondary);
-    font-family: inherit;
   }
 
   .tabs-list {

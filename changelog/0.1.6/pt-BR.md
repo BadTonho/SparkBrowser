@@ -6,6 +6,7 @@
 
 ## Melhorias
 
+- O cabeçalho da lista vertical de abas ficou mais simples: mostra só "Abas (n)" e seus botões (modo split, aba efêmera e nova aba) agora têm o mesmo tamanho e mostram só um ícone; passe o mouse sobre um para ver o nome.
 - Com abas verticais e o modo split ativos, agora dá para arrastar uma aba de um lado do split para o outro na lista de abas. Solte em qualquer ponto do outro lado, e a lista mostra onde ela vai ficar enquanto você arrasta. Também dá para soltar sobre a página do outro painel.
 - Com abas verticais e o modo split ativos, a lista de abas agora tem uma linha separando as abas de cada lado do split (lado direito e abas fora do split), para você saber quais abas pertencem a cada lado.
 - O log de erros agora informa quantas vezes uma entrada idêntica se repetiu e foi ignorada, na próxima entrada gravada para ela.

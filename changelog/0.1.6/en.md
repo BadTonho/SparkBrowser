@@ -6,6 +6,7 @@
 
 ## Improvements
 
+- The header of the vertical tab list is simpler: it reads only "Tabs (n)" and its buttons (split view, ephemeral tab, new tab) are now the same size and show only an icon; hover one to see its name.
 - With vertical tabs and split view on, you can now drag a tab from one side of the split to the other in the tab list. Drop it anywhere on the other side, and the list shows where it will land while you drag. You can also drop it on the other pane's page.
 - With vertical tabs and split view on, the tab list now has a line separating the tabs of each side of the split (right side and tabs outside the split), so you can tell which tabs belong to which side.
 - The error log now says how many times an identical entry was repeated and skipped, shown on the next entry written for it.
