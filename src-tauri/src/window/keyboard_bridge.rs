@@ -2,200 +2,23 @@ use crate::state::browser_state::BrowserState;
 use tauri::{AppHandle, Manager};
 
 pub(super) fn build_workspace_shortcut_script(token: &str, native_alt_capture: bool) -> String {
-    format!(
-        r#"
-        (() => {{
-          if (window.top !== window) return;
-          const bridgeToken = "{token}";
-          const nonce = new Uint32Array(4); crypto.getRandomValues(nonce);
-          const documentId = Array.from(nonce, n => n.toString(16).padStart(8, "0")).join("");
-          const nativeAltCapture = {native_alt_capture};
-          const nativeCaretBrowsingToggle = {native_caret_browsing_toggle};
-          window.__sparkWorkspaceSwitcherOpen = false;
-          let shortcuts = {{}};
-          let holdPressed = false;
-          let nextSequence = 0;
-          let requestInFlight = false;
-          const requestQueue = [];
-
-          function flushRequestQueue() {{
-            if (requestInFlight || requestQueue.length === 0) return;
-            requestInFlight = true;
-            const request = requestQueue[0];
-            const query = new URLSearchParams({{
-              token: bridgeToken,
-              document: documentId,
-              sequence: String(request.sequence)
-            }});
-            if (request.action) query.set("action", request.action);
-            if (request.key) query.set(request.type === "link" ? "input" : "key", request.key);
-            window.location.href = `spark-internal://keyboard-shortcut/${{request.type}}?${{query.toString()}}`;
-          }}
-
-          function notifyBrowser(type, action, key) {{
-            requestQueue.push({{ type, action, key, sequence: ++nextSequence }});
-            flushRequestQueue();
-          }}
-
-          function normalizeKey(key) {{
-            return key.length === 1 ? key.toUpperCase() : key;
-          }}
-
-          function modifierMatch(event, binding) {{
-            return event.ctrlKey === binding.ctrl && event.altKey === binding.alt &&
-              (binding.key === "+" && !binding.shift || event.shiftKey === binding.shift) && event.metaKey === binding.meta;
-          }}
-
-          function isHoldKey(event, binding) {{
-            return binding && event.key === binding.key;
-          }}
-
-          function resetHold(type) {{
-            if (!holdPressed) return;
-            holdPressed = false;
-            notifyBrowser(type);
-          }}
-
-          Object.defineProperty(window, "__sparkSetKeyboardShortcuts", {{
-            configurable: false,
-            enumerable: false,
-            writable: false,
-            value: (secret, value) => {{ if (secret === bridgeToken) shortcuts = value || {{}}; }}
-          }});
-
-          Object.defineProperty(window, "__sparkWorkspaceShortcutAck", {{
-            configurable: false,
-            enumerable: false,
-            writable: false,
-            value: (sequence) => {{
-              if (!requestInFlight || requestQueue[0]?.sequence !== sequence) return;
-              requestQueue.shift();
-              requestInFlight = false;
-              flushRequestQueue();
-            }}
-          }});
-
-          window.addEventListener("keydown", (event) => {{
-            if (!event.isTrusted) return;
-
-            if (event.key === "Escape" && document.fullscreenElement) {{
-              event.preventDefault();
-              void document.exitFullscreen();
-              return;
-            }}
-
-            if (nativeCaretBrowsingToggle && event.key === "F7" && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {{
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              if (!event.repeat) notifyBrowser("action", "toggle-caret-browsing");
-              return;
-            }}
-
-            if (event.key === "Escape" && window.__sparkWorkspaceSwitcherOpen) {{
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              notifyBrowser("alt-cancel");
-              return;
-            }}
-
-            const holdBinding = shortcuts["workspace-picker"]?.[0];
-            if (isHoldKey(event, holdBinding)) {{
-              if (nativeAltCapture && holdBinding.key === "Alt") return;
-              if (!event.repeat && !holdPressed) {{
-                holdPressed = true;
-                event.preventDefault();
-                notifyBrowser("alt-down");
-              }}
-              return;
-            }}
-
-            if (holdPressed) resetHold("alt-up");
-
-            if (event.repeat) return;
-            for (const [action, bindings] of Object.entries(shortcuts)) {{
-              if (action === "workspace-picker" || !Array.isArray(bindings)) continue;
-              const binding = bindings[0];
-              if (!binding || !modifierMatch(event, binding)) continue;
-              if (
-                nativeAltCapture && action === "switch-workspaces" &&
-                binding.key === "Digit" && binding.alt && !binding.ctrl && !binding.shift && !binding.meta
-              ) return;
-              const keyMatches = binding.key === "Digit"
-                ? /^[1-9]$/.test(event.key)
-                : normalizeKey(event.key) === normalizeKey(binding.key) || (binding.key === "+" && event.key === "=");
-              if (!keyMatches) continue;
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              notifyBrowser("action", action, event.key);
-              return;
-            }}
-          }}, true);
-
-          window.addEventListener("keyup", (event) => {{
-            if (!event.isTrusted) return;
-            const holdBinding = shortcuts["workspace-picker"]?.[0];
-            if (!isHoldKey(event, holdBinding)) return;
-            if (nativeAltCapture && holdBinding.key === "Alt") return;
-            resetHold("alt-up");
-          }}, true);
-
-          window.addEventListener("mousedown", (event) => {{
-            if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            const mouseKey = event.button === 3 ? "Mouse4" : "Mouse5";
-            for (const [action, bindings] of Object.entries(shortcuts)) {{
-              if (!Array.isArray(bindings)) continue;
-              const binding = bindings[0];
-              if (!binding || binding.key !== mouseKey || !modifierMatch(event, binding)) continue;
-              notifyBrowser("action", action);
-              return;
-            }}
-          }}, true);
-
-          // Chromium performs its own back/forward when a side button is released, on top of the
-          // shortcut handled on mousedown, so the page moved more than one entry. Cancel the native one.
-          for (const type of ["mouseup", "pointerup"]) {{
-            window.addEventListener(type, (event) => {{
-              if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
-              event.preventDefault();
-              event.stopImmediatePropagation();
-            }}, true);
-          }}
-
-          window.addEventListener("auxclick", (event) => {{
-            if (event.isTrusted && event.button === 1 && !event.defaultPrevented) {{
-              const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
-              if (anchor && anchor.href.length <= 1500 && !anchor.hasAttribute("download") && /^https?:$/.test(anchor.protocol)) {{
-                const href = anchor.href;
-                event.preventDefault(); setTimeout(() => notifyBrowser("link", undefined, href), 0); return;
-              }}
-            }}
-            if (!event.isTrusted || (event.button !== 3 && event.button !== 4)) return;
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }}, true);
-
-          window.addEventListener("click", (event) => {{
-            if (!event.isTrusted || event.defaultPrevented || event.button !== 0 || !(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) return;
-            const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
-            if (anchor && anchor.href.length <= 1500 && !anchor.hasAttribute("download") && /^https?:$/.test(anchor.protocol)) {{ const href = anchor.href; event.preventDefault(); setTimeout(() => notifyBrowser("link", undefined, href), 0); }}
-          }});
-
-          window.addEventListener("focus", () => {{
-            if (!nativeAltCapture) window.location.href = "spark-internal://pane-focus?token=" + encodeURIComponent(bridgeToken);
-            holdPressed = false;
-          }}, true);
-          document.addEventListener("visibilitychange", () => {{
-            if (document.visibilityState === "hidden") resetHold("alt-cancel");
-            else holdPressed = false;
-          }}, true);
-        }})();
-        "#,
-        token = token,
-        native_alt_capture = native_alt_capture,
-        native_caret_browsing_toggle = cfg!(target_os = "linux")
-    )
+    include_str!("keyboard_bridge.js")
+        .replace(
+            "__KEYBOARD_TOKEN__",
+            &serde_json::to_string(token).expect("token serializable"),
+        )
+        .replace(
+            "__NATIVE_ALT_CAPTURE__",
+            if native_alt_capture { "true" } else { "false" },
+        )
+        .replace(
+            "__NATIVE_CARET_TOGGLE__",
+            if cfg!(target_os = "linux") {
+                "true"
+            } else {
+                "false"
+            },
+        )
 }
 
 /// Captures WebView2 accelerator events before the browser consumes the bare Alt key.
