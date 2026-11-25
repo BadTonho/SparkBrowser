@@ -4,6 +4,7 @@
   import { t } from "../../i18n";
   import { createNewTab, isTauriRuntime } from "../../services/tauri-bridge";
   import { buildIssueUrl } from "../../services/error-report.js";
+  import { logIgnored } from "../../services/ignored-error";
   import { addErrorReport, dismissErrorReport, errorReports, type ErrorReport } from "../../stores/errorReportStore";
 
   const visible = 3;
@@ -16,7 +17,7 @@
     if (isTauriRuntime()) {
       void listen<ErrorReport>("error-report", (event) => addErrorReport(event.payload))
         .then((unlisten) => { if (disposed) unlisten(); else stop = unlisten; })
-        .catch(() => {});
+        .catch(logIgnored);
     }
     return () => { disposed = true; stop?.(); };
   });
