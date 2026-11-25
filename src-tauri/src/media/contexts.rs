@@ -90,16 +90,23 @@ fn remove_session(app: &AppHandle, label: &str, session: &str) {
         }
     }
 }
-fn enable(core: &ICoreWebView2, session: &str) {
+/// `content_binding` is the tab's random name for content messages (see
+/// `security::bridge::content_binding_name`). Only the top-level session gets it: content messages
+/// are accepted from the top frame alone, so out-of-process frames have no reason to see the name.
+fn enable(core: &ICoreWebView2, session: &str, content_binding: Option<&str>) {
+    let content = content_binding.map(|name| ("Runtime.addBinding", json!({ "name": name })));
     for (method, params) in [
-        ("Runtime.addBinding", json!({"name":"__sparkMediaSignal"})),
-        ("Runtime.addBinding", json!({"name":"__sparkContentSignal"})),
-        ("Runtime.enable", json!({})),
-        (
+        Some(("Runtime.addBinding", json!({"name":"__sparkMediaSignal"}))),
+        content,
+        Some(("Runtime.enable", json!({}))),
+        Some((
             "Target.setAutoAttach",
             json!({"autoAttach":true,"waitForDebuggerOnStart":false,"flatten":true,"filter":[{"type":"iframe","exclude":false},{"exclude":true}]}),
-        ),
-    ] {
+        )),
+    ]
+    .into_iter()
+    .flatten()
+    {
         crate::error_log::ignored(call(
             core,
             session,
@@ -168,7 +175,7 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                     if let (Some(core), Some(session)) =
                                         (sender, value["sessionId"].as_str())
                                     {
-                                        enable(&core, session);
+                                        enable(&core, session, None);
                                     }
                                 }
                             }
@@ -221,7 +228,10 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                                 }
                             }
                             "Runtime.bindingCalled" => {
-                                let content = value["name"] == "__sparkContentSignal";
+                                let content = value["name"].as_str()
+                                    == Some(
+                                        crate::security::bridge::content_binding_name(&t).as_str(),
+                                    );
                                 if !content && value["name"] != "__sparkMediaSignal" {
                                     return Ok(());
                                 }
@@ -294,7 +304,11 @@ pub fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<()
                 &mut 0,
             ));
         }
-        enable(&core, "");
+        enable(
+            &core,
+            "",
+            Some(&crate::security::bridge::content_binding_name(&token)),
+        );
     })
     .map_err(|_| "media.unavailable".into())
 }

@@ -154,16 +154,21 @@ fn active(app: &AppHandle) -> bool {
     settings.enabled && (!private || settings.in_private)
 }
 
-fn function_name(token: &str) -> String {
-    let short: String = token
-        .chars()
-        .filter(char::is_ascii_alphanumeric)
-        .take(24)
-        .collect();
+/// The name of the page script's entry point. A page can list the names on `window`, so this one is a
+/// hash of the channel token: it reveals nothing of the token itself.
+fn function_name(autofill_token: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(format!("spark-autofill-entry:{autofill_token}").as_bytes());
+    let short: String = digest[..12].iter().map(|b| format!("{b:02x}")).collect();
     format!("__sparkAF{short}")
 }
 
-/// The page script of one web view, bound to its bridge token.
+/// The token of the autofill page script, derived from the tab's bridge token.
+fn channel(token: &str) -> String {
+    crate::security::bridge::channel_token(token, crate::security::bridge::AUTOFILL_CHANNEL)
+}
+
+/// The page script of one web view, bound to the autofill token of its bridge.
 pub fn initializer(token: &str, inspectable: bool) -> String {
     include_str!("autofill.js")
         .replace(
@@ -187,7 +192,7 @@ fn send(app: &AppHandle, label: &str, token: &str, message: &serde_json::Value) 
     let Some(view) = app.get_webview(label) else {
         return;
     };
-    let name = serde_json::to_string(&function_name(token)).unwrap_or_default();
+    let name = serde_json::to_string(&function_name(&channel(token))).unwrap_or_default();
     let body = message.to_string();
     error_log::ignored(view.eval(format!("window[{name}]&&window[{name}]({body});")));
 }
@@ -221,7 +226,7 @@ pub(crate) fn handle(app: &AppHandle, label: &str, token: &str, url: &Url) {
     ) else {
         return;
     };
-    if values.get("token").map(String::as_str) != Some(token)
+    if values.get("token").map(String::as_str) != Some(channel(token).as_str())
         || !crate::window::navigation_state::is_current_generation(app, label, token)
     {
         return;

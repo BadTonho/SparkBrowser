@@ -90,9 +90,13 @@ pub(super) fn handle(
         if crate::security::bridge::query(nav_url, &["token"]).is_none() {
             return false;
         }
+        let expected = crate::security::bridge::channel_token(
+            token,
+            crate::security::bridge::KEYBOARD_CHANNEL,
+        );
         if nav_url
             .query_pairs()
-            .any(|(key, value)| key == "token" && value == token)
+            .any(|(key, value)| key == "token" && value == expected.as_str())
         {
             super::split_focus::focus_pane(app, tab_id, label, token);
         }
@@ -106,7 +110,7 @@ pub(super) fn handle(
     false
 }
 
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "linux", test))]
 fn message_url(json: &str, source: &str, current: &str, settings_document: bool) -> Option<Url> {
     if source != current
         || json.len()
@@ -126,13 +130,13 @@ fn message_url(json: &str, source: &str, current: &str, settings_document: bool)
     (url.scheme() == "spark-internal"
         && (matches!(
             url.host_str(),
-            Some("new-tab" | "page-activity" | "autofill")
+            Some("new-tab" | "page-activity" | "autofill" | "keyboard-shortcut" | "pane-focus")
         ) || (settings_document && url.host_str() == Some("settings-tab")))
         && (url.host_str() == Some("settings-tab") || json.len() <= 262_144))
         .then_some(url)
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "linux"))]
 pub(crate) fn receive(
     app: &AppHandle,
     label: &str,
@@ -144,7 +148,6 @@ pub(crate) fn receive(
     if !super::navigation_state::is_current_generation(app, label, token) {
         return;
     }
-    use tauri::Manager;
     let settings_document = app
         .get_webview(label)
         .and_then(|view| view.url().ok())
@@ -155,6 +158,51 @@ pub(crate) fn receive(
     ) {
         handle(app, id, label, token, &url);
     }
+}
+
+/// WebKitGTK has no runtime bindings: content messages arrive through a script message handler,
+/// so they never travel as a navigation the page could observe (Navigation API). Script message
+/// handlers carry no frame, so the source is the WebView's own document, like the legacy transport.
+#[cfg(target_os = "linux")]
+const LINUX_HANDLER: &str = "sparkContent";
+
+#[cfg(target_os = "linux")]
+pub(super) fn install(app: &AppHandle, view: &tauri::Webview, token: &str) -> Result<(), String> {
+    let (app, label, token) = (app.clone(), view.label().to_owned(), token.to_owned());
+    view.with_webview(move |platform| {
+        use javascriptcore::ValueExt as _;
+        use webkit2gtk::{UserContentManagerExt, WebViewExt};
+        let webview = platform.inner();
+        let Some(manager) = webview.user_content_manager() else {
+            crate::error_log::report(
+                crate::error_log::Level::Error,
+                "native",
+                "Content messages are unavailable: the WebView has no user content manager",
+                &label,
+            );
+            return;
+        };
+        manager.register_script_message_handler(LINUX_HANDLER);
+        manager.connect_script_message_received(Some(LINUX_HANDLER), move |_, result| {
+            let Some(raw) = result.js_value().filter(|value| value.is_string()) else {
+                return;
+            };
+            let origin = app
+                .get_webview(&label)
+                .and_then(|view| view.url().ok())
+                .map(|url| url.origin().ascii_serialization())
+                .unwrap_or_default();
+            receive(
+                &app,
+                &label,
+                &token,
+                raw.to_str().as_str(),
+                &origin,
+                &origin,
+            );
+        });
+    })
+    .map_err(|error| format!("Failed to install the content message handler: {error}"))
 }
 
 #[cfg(test)]
@@ -198,12 +246,18 @@ mod tests {
             "[]",
             r#"{"sparkContent":42}"#,
             r#"{"sparkContent":"https://site.test"}"#,
-            r#"{"sparkContent":"spark-internal://keyboard-shortcut/action"}"#,
+            r#"{"sparkContent":"spark-internal://workspace-switcher/select"}"#,
+            r#"{"sparkContent":"spark-internal://settings-popover/action"}"#,
             r#"{"sparkContent":"spark-internal://new-tab/read","other":true}"#,
         ] {
             assert!(message_url(invalid, "same", "same", false).is_none());
         }
         assert!(message_url(&" ".repeat(262_145), "same", "same", false).is_none());
+        // Keyboard shortcuts and pane focus use the same authenticated transport (no navigation).
+        for channel in ["keyboard-shortcut/action", "pane-focus"] {
+            let message = format!(r#"{{"sparkContent":"spark-internal://{channel}?token=x"}}"#);
+            assert!(message_url(&message, "same", "same", false).is_some());
+        }
     }
 
     #[test]

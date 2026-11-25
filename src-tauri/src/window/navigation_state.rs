@@ -393,7 +393,10 @@ pub(super) fn with_page_events(
         if let Ok(serialized) = serde_json::to_string(&*shortcuts) {
             crate::error_log::ignored(webview.eval(format!(
                 "window.__sparkSetKeyboardShortcuts?.(\"{}\", {serialized});",
-                keyboard_token_for_load
+                crate::security::bridge::channel_token(
+                    &keyboard_token_for_load,
+                    crate::security::bridge::KEYBOARD_CHANNEL,
+                )
             )));
         }
     });

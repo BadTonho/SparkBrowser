@@ -629,9 +629,15 @@ pub(super) fn handle_keyboard_navigation(
                 .lock()
                 .ok()
                 .map(|tokens| {
+                    // The page script holds the keyboard channel token, never the bridge token.
+                    let expected = crate::security::bridge::channel_token(
+                        keyboard_bridge_token,
+                        crate::security::bridge::KEYBOARD_CHANNEL,
+                    );
                     is_active
-                        && tokens.get(label_for_nav).map(String::as_str) == request_token
-                        && request_token == Some(keyboard_bridge_token)
+                        && tokens.get(label_for_nav).map(String::as_str)
+                            == Some(keyboard_bridge_token)
+                        && request_token == Some(expected.as_str())
                 })
         })
         .unwrap_or(false);
