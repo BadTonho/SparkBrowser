@@ -10,6 +10,12 @@ Clicar na barra de endereço, ou digitar nela, mostra uma lista de sugestões lo
 - Páginas que começam com o que você digitou e páginas que você visita muito aparecem primeiro; visitas recentes pesam um pouco mais.
 - **Sugestões de pesquisa do mecanismo de busca** (opcionais, veja abaixo) entram por último, até quatro.
 
+## Campo de pesquisa da página de nova aba
+
+O campo no meio da [página de nova aba](new-tab.md) mostra a mesma lista: as mesmas linhas, a mesma ordem, as mesmas teclas e a mesma opção **Sugestões de pesquisa**. A diferença está em quando ela abre: ao clicar no campo, digitar nele ou apertar a seta para baixo. O foco automático de uma nova aba não abre a lista, para a página aparecer limpa. A lista fica por cima dos cartões de sites recentes, sem movê-los.
+
+A página é isolada do restante do aplicativo, então pede os dados ao lado nativo pela ponte autenticada da nova aba (`/suggest` para histórico e favoritos, `/terms` para os termos do mecanismo, recusado em janela privada). A ordenação é o código da barra de endereço: `public/new-tab/suggestions-core.js` é gerado de `src/lib/services/address-suggestions.js` com `npm run build:suggestions`, e um teste falha quando ele fica desatualizado.
+
 ## Como usar
 
 | Tecla / ação | Resultado |

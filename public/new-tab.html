@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="/new-tab/palette.css">
   <link rel="stylesheet" href="/new-tab/page.css">
   <script src="/new-tab/page.js" defer></script>
+  <link rel="stylesheet" href="/new-tab/suggestions.css">
+  <script src="/new-tab/suggestions-core.js" defer></script>
+  <script src="/new-tab/suggestions.js" defer></script>
   <link rel="stylesheet" href="/new-tab/widgets.css">
   <script src="/new-tab/widgets.js" defer></script>
   <link rel="stylesheet" href="/new-tab/media-card.css">
@@ -136,6 +139,7 @@
         <button id="submit" type="submit" aria-label="Search" title="Search">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
         </button>
+        <div id="suggestions" role="listbox" hidden></div>
       </form>
       <div id="recent" aria-label="Recent sites"></div>
       <p id="empty" role="status" hidden></p>

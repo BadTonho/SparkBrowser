@@ -4,6 +4,7 @@
 
 - Novo botão **Baixar vídeo** na barra (desligado por padrão; ligue nas configurações rápidas). Ele lista os vídeos da página carregada, cada um com uma pequena prévia, e salva arquivos de vídeo diretos e streams HLS sem proteção. YouTube, vídeos protegidos (DRM ou criptografados) e transmissões ao vivo não são suportados.
 - Novos botões para abrir e sair do modo split na lista vertical de abas. O botão no topo da lista abre um split com a aba que você está vendo à esquerda e a última aba usada à direita (uma nova guia em branco, se for a única). O botão na linha entre os painéis sai do split.
+- O campo de pesquisa da página de nova aba agora mostra sugestões, como a barra de endereço: os sites recentes ao clicar nele e, ao digitar, favoritos, histórico e sugestões do mecanismo de busca (que seguem a mesma opção **Sugestões de pesquisa** e nunca são usadas em janela privada).
 
 ## Melhorias
 

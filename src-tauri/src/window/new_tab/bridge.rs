@@ -39,7 +39,7 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     }
     if !matches!(
         url.path(),
-        "/read" | "/navigate" | "/visit" | "/widgets" | "/error"
+        "/read" | "/navigate" | "/visit" | "/widgets" | "/error" | "/suggest" | "/terms"
     ) || (url.path() == "/visit" && !values.get("site_key").is_some_and(|key| !key.is_empty()))
     {
         return;
@@ -109,6 +109,11 @@ pub fn handle(app: &AppHandle, id: &str, label: &str, token: &str, url: &Url) {
     }
     if url.path() == "/widgets" {
         widgets::handle(app, id, label, token, &values);
+        return;
+    }
+    if matches!(url.path(), "/suggest" | "/terms") {
+        let terms = url.path() == "/terms";
+        super::suggest::handle(app, id, label, token, document, &values, terms);
         return;
     }
     let Some(request) = values.get("request").and_then(|v| v.parse::<u64>().ok()) else {

@@ -26,6 +26,11 @@
     send('widgets', { operation, data: JSON.stringify(data), request: String(number) });
   };
   window.__sparkRefreshWidgets = () => widgets('read');
+  // Replies carry the page's own request number; the page drops the ones it no longer waits for.
+  window.__sparkSuggestReply = (id, payload) => {
+    if (id !== documentId || location.href !== __NEW_TAB_URL__) return;
+    window.dispatchEvent(new CustomEvent('spark-new-tab-suggestions', { detail: payload }));
+  };
   window.__sparkAudioFrame = (id, payload) => {
     if (id !== documentId || location.href !== __NEW_TAB_URL__ || !audioSubscribed) return;
     if (!Number.isSafeInteger(payload.generation) || !Number.isSafeInteger(payload.sequence)
@@ -46,6 +51,7 @@
     else if (action === 'navigate') send('navigate', { input });
     else if (action === 'visit') send('visit', { input, site_key });
     else if (action === 'widgets') widgets(event.detail.operation, event.detail.data);
+    else if (action === 'suggest' || action === 'terms') send(action, { input, request: String(event.detail.request) });
   });
   let errorsSent = 0;
   const reportError = (message, details, level) => {

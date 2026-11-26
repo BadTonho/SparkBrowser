@@ -2,6 +2,7 @@ pub(crate) mod audio;
 mod bridge;
 mod message;
 mod recent;
+mod suggest;
 pub mod widgets;
 
 use crate::state::browser_state::BrowserState;

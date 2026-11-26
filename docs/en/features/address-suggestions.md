@@ -10,6 +10,12 @@ Clicking the address bar, or typing in it, shows a list of suggestions right bel
 - Pages that start with what you typed and pages you visit often rank higher; recent visits count a little more.
 - **Search suggestions from the search engine** (optional, see below) are added last, up to four.
 
+## New tab search field
+
+The field in the middle of the [new tab page](new-tab.md) shows the same list: the same rows, order, keys and **Search suggestions** setting. What differs is when it opens: on a click in the field, on typing or on the down arrow. The automatic focus of a new tab does not open it, so the page appears clean. The list covers the recent-site cards without moving them.
+
+The page is isolated from the rest of the app, so it asks the native side for data over the authenticated new tab bridge (`/suggest` for history and bookmarks, `/terms` for the engine's terms, refused in a private window). The ranking is the address bar's own code: `public/new-tab/suggestions-core.js` is generated from `src/lib/services/address-suggestions.js` with `npm run build:suggestions`, and a test fails when it is out of date.
+
 ## Using it
 
 | Key / action | Result |

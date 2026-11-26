@@ -53,6 +53,9 @@ pub(super) fn valid(path: &str, values: &HashMap<String, String>) -> bool {
     };
     let fields: &[&str] = match path {
         "/read" if request() => &["request"],
+        // An empty field asks for the recent sites, so only the search terms need text.
+        "/suggest" if request() && values.contains_key("input") => &["request", "input"],
+        "/terms" if request() && required("input") => &["request", "input"],
         "/navigate" if required("input") => &["input"],
         "/visit" if required("input") && required("site_key") => &["input", "site_key"],
         "/widgets"
@@ -134,6 +137,13 @@ mod tests {
         assert!(!valid("/read", &values));
         assert!(!valid("/navigate", &values));
         assert!(!valid("/unknown", &values));
+        let mut suggest = HashMap::from([("request".into(), "1".into())]);
+        assert!(!valid("/suggest", &suggest));
+        suggest.insert("input".into(), String::new());
+        assert!(valid("/suggest", &suggest));
+        assert!(!valid("/terms", &suggest));
+        suggest.insert("input".into(), "rust".into());
+        assert!(valid("/terms", &suggest));
         let error = HashMap::from([("message".into(), "x is not defined".into())]);
         assert!(valid("/error", &error));
         assert!(!valid("/error", &HashMap::new()));
