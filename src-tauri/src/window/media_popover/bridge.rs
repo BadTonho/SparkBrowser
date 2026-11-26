@@ -8,10 +8,9 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     if url.scheme() != "spark-internal" || url.host_str() != Some("media-popover") {
         return;
     }
-    let Some(parameters) = crate::security::bridge::query(
-        url,
-        &["token", "sequence", "value", "reason", "targetTabId"],
-    ) else {
+    let Some(parameters) =
+        crate::security::bridge::query(url, &["token", "sequence", "value", "reason"])
+    else {
         return;
     };
     let query = |name: &str| parameters.get(name).cloned();
@@ -40,7 +39,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     }
     let name = url.path().trim_matches('/');
     let reason = query("reason").unwrap_or_default();
-    if !matches!(name, "volume" | "dismiss" | "select" | "mute")
+    if !matches!(name, "volume" | "dismiss")
         || (name == "volume" && (session.presentation.disabled || value.is_none()))
     {
         return;
@@ -48,34 +47,14 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     if name == "dismiss" && !matches!(reason.as_str(), "escape" | "tab" | "outside" | "trigger") {
         return;
     }
-    let target_tab_id = if matches!(name, "select" | "mute") {
-        let Some(target) = query("targetTabId") else {
-            return;
-        };
-        let Some(item) = session
-            .presentation
-            .items
-            .iter()
-            .find(|item| item.tab_id == target)
-        else {
-            return;
-        };
-        if name == "mute" && !item.mute_available {
-            return;
-        }
-        Some(target)
-    } else {
-        None
-    };
     session.sequence = sequence;
     session.closing = name == "dismiss";
-    let mut event = action(
+    let event = action(
         session,
         name,
         value.filter(|_| !session.presentation.disabled),
         &reason,
     );
-    event.target_tab_id = target_tab_id;
     drop(inner);
     // The shell hides the WebView after delivery, rather than interrupting its
     // own navigation callback, and flushes the last slider value on dismissal.

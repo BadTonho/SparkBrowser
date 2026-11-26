@@ -6,6 +6,7 @@
 
 ## Melhorias
 
+- O pop-up de volume ficou mais simples: mostra só a barra de volume e o percentual, sem o título, os avisos e a lista de abas com mídia.
 - As extensões instaladas pela Chrome Web Store ou por um arquivo `.crx` agora são verificadas como o Chrome faz: o pacote precisa estar assinado pelo desenvolvedor e, na loja, ser a extensão que você pediu. Um pacote alterado ou errado é recusado, e a versão que você já tinha continua instalada. Arquivos CRX2 antigos não são mais aceitos.
 - A seção **Diagnósticos locais** das configurações agora mostra os problemas que o Spark registrou: as últimas entradas do log local de erros (Crítico, Erro, Aviso e Info), da mais nova para a mais antiga, com filtro por nível, botão para copiar e o caminho do arquivo de log. Os contadores internos de desempenho foram para um bloco recolhido, "Desempenho interno".
 - As sugestões da barra de endereço vindas do histórico e dos favoritos não mostram mais o endereço da página abaixo do título.

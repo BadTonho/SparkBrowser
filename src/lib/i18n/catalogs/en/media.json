@@ -26,13 +26,6 @@
   "media.progress": "Playback position",
   "media.pip_native_fallback": "Custom floating controls are unavailable for this player. The native floating window is being used.",
   "media.global_title": "Media controls",
-  "media.playing": "Playing",
-  "media.audible": "Playing audio",
   "media.mute": "Mute tab",
-  "media.unmute": "Unmute tab",
-  "media.no_active_media": "No active media was found in open tabs.",
-  "media.frame_tracking_unavailable": "This platform does not report media in embedded frames.",
-  "media.page": "Page",
-  "media.frame": "Frame {index}",
-  "media.audio": "Audio"
+  "media.unmute": "Unmute tab"
 }

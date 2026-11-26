@@ -26,13 +26,6 @@
   "media.progress": "Posição da reprodução",
   "media.pip_native_fallback": "Os controles próprios estão indisponíveis neste player. A janela flutuante nativa está sendo usada.",
   "media.global_title": "Controles de mídia",
-  "media.playing": "Reproduzindo",
-  "media.audible": "Reproduzindo áudio",
   "media.mute": "Silenciar aba",
-  "media.unmute": "Ativar som da aba",
-  "media.no_active_media": "Nenhuma mídia ativa foi encontrada nas abas abertas.",
-  "media.frame_tracking_unavailable": "Esta plataforma não informa mídia em quadros incorporados.",
-  "media.page": "Página",
-  "media.frame": "Quadro {index}",
-  "media.audio": "Áudio"
+  "media.unmute": "Ativar som da aba"
 }

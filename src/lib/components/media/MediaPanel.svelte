@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
   import { locale, t } from "../../i18n";
-  import { tabs, selectTab } from "../../stores/browserStore";
-  import { workspaces } from "../../stores/workspaceStore";
+  import { tabs } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceSelectionStore";
   import { mediaPopover, closeMedia } from "../../stores/mediaPopoverStore";
-  import { mediaState, mediaError, volumeDrafts, queueVolume, toggleTabMute } from "../../stores/mediaStore";
+  import { mediaState, mediaError, volumeDrafts, queueVolume } from "../../stores/mediaStore";
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import { onOverlayOpening } from "../../services/bridge/overlays";
   import { onMediaPopoverAction, setMediaPopover } from "../../services/bridge/media-popover";
@@ -14,24 +13,8 @@
   const native = isTauriRuntime();
   const active = $derived($tabs.find(tab => tab.is_active));
   const media = $derived($mediaState.tabs.find(tab => tab.tab_id === $mediaPopover?.tabId));
-  const mediaItems = $derived.by(() => $mediaState.tabs.flatMap(tabMedia => {
-    const tab = $tabs.find(item => item.id === tabMedia.tab_id);
-    if (!tab) return [];
-    const workspaceName = $workspaces.find(item => item.id === tab.workspace_id)?.name ?? "";
-    const frames = tabMedia.frames.filter(frame => frame.playing || frame.picture_in_picture);
-    const items = frames.map((frame, index) => ({
-      tabId: tab.id, tabTitle: tab.title, workspaceName,
-      frameLabel: frames.length === 1 ? $t("media.page") : index === 0 ? $t("media.page") : $t("media.frame", { index }),
-      playing: frame.playing, audible: tabMedia.audible, muted: tabMedia.muted, muteAvailable: tabMedia.mute_available,
-    }));
-    if (!items.length && tabMedia.audible) items.push({
-      tabId: tab.id, tabTitle: tab.title, workspaceName, frameLabel: $t("media.audio"),
-      playing: false, audible: true, muted: tabMedia.muted, muteAvailable: tabMedia.mute_available,
-    });
-    return items;
-  }));
   let anchor = $state({ left: 0, top: 0, width: 0, height: 0 });
-  const previewLeft = $derived(Math.max(8, Math.min(anchor.left + anchor.width / 2 - 100, (typeof window === "undefined" ? 1280 : window.innerWidth) - 208)));
+  const previewLeft = $derived(Math.max(8, Math.min(anchor.left + anchor.width / 2 - 154, (typeof window === "undefined" ? 1280 : window.innerWidth) - 316)));
 
   function measure() {
     const rect = $mediaPopover?.anchor.getBoundingClientRect();
@@ -75,9 +58,6 @@
       disabled: !media?.document_key || media.volume_status === "unavailable" || !media.mute_available,
       label: $t("media.volume"), locale: $locale,
       theme: { background: style.getPropertyValue("--bg-downloads-panel").trim() || "#1c1c1c", border: style.getPropertyValue("--border-subtle").trim(), accent: style.getPropertyValue("--accent-primary").trim() },
-      items: mediaItems,
-      frameTrackingSupported: $mediaState.frame_tracking_supported ?? false,
-      labels: { title: $t("media.global_title"), playing: $t("media.playing"), audible: $t("media.audible"), mute: $t("media.mute"), unmute: $t("media.unmute"), noMedia: $t("media.no_active_media"), frameLimit: $t("media.frame_tracking_unavailable") },
     }).catch(error => {
       if ($mediaPopover?.id !== session.id) return;
       mediaError.set(describeError(error));
@@ -92,13 +72,6 @@
     void onMediaPopoverAction(event => {
       const session = $mediaPopover;
       if (!session || event.sessionId !== session.id || event.tabId !== session.tabId || event.documentKey !== session.documentKey) return;
-      if ((event.action === "select" || event.action === "mute") && event.targetTabId) {
-        const target = $tabs.find(tab => tab.id === event.targetTabId);
-        if (!target) return;
-        if (event.action === "select") void closeMedia().then(() => selectTab(target.id));
-        else void toggleTabMute(target.id);
-        return;
-      }
       if (event.value !== null && active?.id === session.tabId && media?.document_key === session.documentKey && media.volume_status !== "unavailable") {
         queueVolume(session.tabId, session.documentKey, event.value);
       }
@@ -112,23 +85,18 @@
 
 {#if !native && $mediaPopover}
   <div class="preview-dismiss" role="presentation" onclick={() => closeMedia()}>
-    <div class="volume-popover" role="group" aria-label={$t("media.global_title")} style:left={`${previewLeft}px`} style:top={`${anchor.top + anchor.height + 6}px`}>
-      <h3>{$t("media.global_title")}</h3>
-      {#if !$mediaState.frame_tracking_supported}<p>{$t("media.frame_tracking_unavailable")}</p>{/if}
-      {#if mediaItems.length}
-        {#each mediaItems as item (`${item.tabId}:${item.frameLabel}`)}
-          <div class="preview-item"><button onclick={event => { event.stopPropagation(); void closeMedia().then(() => selectTab(item.tabId)); }}>{item.tabTitle} — {item.frameLabel}</button>{#if item.muteAvailable}<button onclick={event => { event.stopPropagation(); void toggleTabMute(item.tabId); }}>{item.muted ? $t("media.unmute") : $t("media.mute")}</button>{/if}</div>
-        {/each}
-      {:else}<p>{$t("media.no_active_media")}</p>{/if}
+    <div class="volume-popover" role="group" aria-label={$t("media.volume")} style:left={`${previewLeft}px`} style:top={`${anchor.top + anchor.height + 6}px`}>
+      <div class="volume-track"><input type="range" min="0" max="200" step="1" value={media?.applied_volume ?? 100} aria-label={$t("media.volume")} disabled /></div>
+      <span aria-hidden="true">{media?.applied_volume ?? 100}%</span>
     </div>
   </div>
 {/if}
 
 <style>
   .preview-dismiss { position: fixed; inset: 0; z-index: 2000; }
-  .volume-popover { position: absolute; width: 320px; max-width: calc(100vw - 16px); max-height: min(440px, calc(100vh - 16px)); box-sizing: border-box; display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 10px 12px; overflow: auto; background: var(--bg-downloads-panel, #1c1c1c); border: 1px solid var(--border-subtle); border-radius: 8px; box-shadow: 0 4px 12px #0004; }
-  h3, p { margin: 0; font-size: 12px; }
-  p { color: var(--text-secondary); }
-  .preview-item { display: flex; gap: 6px; border-top: 1px solid var(--border-subtle); padding-top: 5px; }
-  .preview-item button { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: transparent; color: inherit; border: 1px solid var(--border-subtle); border-radius: 5px; padding: 4px 6px; }
+  .volume-popover { position: absolute; width: 308px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 3px 6px #0004); }
+  .volume-track, span { box-sizing: border-box; background: var(--bg-downloads-panel, #1c1c1c); border: 1px solid var(--border-subtle); }
+  .volume-track { display: flex; width: 100%; padding: 2px 6px; border-radius: 8px; }
+  input { width: 100%; height: 24px; margin: 0; }
+  span { position: relative; min-width: 52px; margin-top: -1px; padding: 0 8px 2px; border-top: 0; border-radius: 0 0 8px 8px; color: var(--text-secondary); font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; text-align: center; }
 </style>
