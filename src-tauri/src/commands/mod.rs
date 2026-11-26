@@ -22,6 +22,7 @@ pub mod updates;
 pub mod vault;
 pub mod vault_records;
 pub mod vault_totp;
+pub mod video_download;
 pub mod windows;
 pub mod workspaces;
 

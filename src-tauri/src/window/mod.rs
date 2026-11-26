@@ -44,6 +44,7 @@ pub mod pane_animation;
 mod panel_popover;
 pub mod resources_popover;
 pub mod suggestions_popover;
+pub mod video_download_popover;
 #[cfg(windows)]
 pub mod windows_background;
 

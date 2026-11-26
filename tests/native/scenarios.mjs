@@ -1,3 +1,4 @@
+import { checkVideoDownload } from './video-download.mjs';
 import { checkTabDocking } from './tab-docking.mjs';
 import { checkTitlebarActions } from './titlebar-actions.mjs';
 import { checkToolsPopover } from './tools-popover.mjs';
@@ -118,6 +119,7 @@ export const scenarios = {
   "tab-diagnostics": checkTabDiagnostics,
   shutdown: checkShutdown,
   downloads: checkDownloads,
+  'video-download': checkVideoDownload,
   recovery: checkRecovery,
   'recovery-failure': checkRecoveryFailure,
   'closed-tabs': checkClosedTabs,

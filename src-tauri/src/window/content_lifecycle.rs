@@ -262,6 +262,7 @@ pub(crate) fn sync_webviews_after_selection(
     super::suggestions_popover::sync(app, state)?;
     super::commands_popover::sync(app, state)?;
     super::resources_popover::sync(app, state)?;
+    super::video_download_popover::sync(app, state)?;
     super::quick_settings_popover::sync(app, state)?;
     super::settings_overlay::sync(app, state)?;
     super::privacy_popover::sync(app, state)?;

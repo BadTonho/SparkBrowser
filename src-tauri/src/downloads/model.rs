@@ -47,6 +47,9 @@ pub struct DownloadRecord {
     pub body_completed: bool,
     #[serde(default)]
     pub published: bool,
+    /// The page a video came from, sent as `Referer`. Empty for every other download.
+    #[serde(default)]
+    pub referer: Option<String>,
 }
 impl DownloadRecord {
     pub fn partial(&self) -> PathBuf {
@@ -56,17 +59,23 @@ impl DownloadRecord {
     }
     pub fn refresh_capabilities(&mut self, native_available: bool) {
         let manual = self.task.source == "url";
+        // A stream is joined from segments, so it can only start over.
+        let stream = self.task.source == "hls";
         let idle = !self.task.pending();
-        self.task.cancellable = self.task.unfinished() && (manual || native_available || idle);
+        self.task.cancellable =
+            self.task.unfinished() && (manual || stream || native_available || idle);
         self.task.can_pause = matches!(self.task.status.as_str(), "Queued" | "Downloading")
             && (manual || native_available);
         self.task.can_resume = matches!(self.task.status.as_str(), "Paused" | "Interrupted")
-            && if manual {
+            && if stream {
+                !self.body_completed
+            } else if manual {
                 !self.body_completed && (self.confirmed == 0 || self.etag.is_some())
             } else {
                 native_available
             };
-        self.task.can_restart = manual && idle && self.task.unfinished() && !self.published;
+        self.task.can_restart =
+            (manual || stream) && idle && self.task.unfinished() && !self.published;
         self.task.can_verify = idle
             && ((self.body_completed && !self.published && self.partial().is_file())
                 || (self.published

@@ -92,6 +92,8 @@ Child-WebView operations poll for the expected handle and URL for up to ten seco
 
 After building a production release, run `node tools/testing/release-metrics.mjs` to report the Git revision, toolchain versions, frontend raw/gzip bytes and native executable bytes. These are artifact measurements, not RAM or startup benchmarks. Follow [performance validation](performance.md) for comparisons. `npm run security:check` verifies tracked/staged paths, common secret signatures, ignore rules and whitespace without printing secret contents.
 
+Run `--case video-download` to open the video download panel on a local page, save a direct video and an HLS stream, check that an encrypted stream is refused and compare the saved bytes.
+
 Run `--case media-mute` for native audio activity, background mute and restart defaults.
 
 `--case media-volume` measures artificial audio gain and verifies volume/navigation fallback. It also exercises the volume popover with its percentage below the slider through its own WebDriver WebView handle, checks its 200 × 64 px bounds and 6 px gap below the button, percentage alignment and updates, arrow keys, pointer dragging, dismissal, rapid reopening and both tab layouts, and verifies that neither the page nor either split pane is hidden or reloaded. Auxiliary WebView checks temporarily select the packaged document and restore the shell handle; they add no application IPC grants. The Windows resize helper changes only the verified isolated executable's client area, since WebDriver resizing can affect a single WebView instead of its parent window. JavaScript regressions cover edge clamping, drag preservation, coalescing and sending the final value when closing before the next animation frame.

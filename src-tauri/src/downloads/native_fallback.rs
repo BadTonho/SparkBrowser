@@ -83,6 +83,8 @@ pub fn handler(
                             native: true,
                             selected_target,
                             expected: None,
+                            referer: None,
+                            stream: false,
                         },
                     )?;
                     let path = files::owned_partial(&manager.record(&task.id)?)?;

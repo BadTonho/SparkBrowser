@@ -38,6 +38,10 @@
     <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
   {:else if action === "qr"}
     <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM19 14v2m2 2v3h-3m-4 0v-2" />
+  {:else if action === "video"}
+    <rect x="3" y="3" width="18" height="12" rx="2" />
+    <path d="m10 6.5 4.5 2.5-4.5 2.5Z" />
+    <path d="M12 17v4m-3-2 3 2.5 3-2.5" />
   {:else if action === "resources"}
     <path d="m12 14 4-4" />
     <path d="M3.34 19a10 10 0 1 1 17.32 0" />

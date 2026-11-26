@@ -94,7 +94,7 @@ export type DownloadVisualSource = { kind: "task"; id: string } | { kind: "histo
 export interface DownloadVisual { size_bytes: number | null; thumbnail_png: string | null }
 
 export interface DownloadTask {
-  id: string; revision: number; file_name: string; url: string; source: "url" | "native";
+  id: string; revision: number; file_name: string; url: string; source: "url" | "native" | "hls";
   source_page_url: string | null;
   status: "Queued" | "Downloading" | "Pausing" | "Paused" | "Interrupted" | "RestartRequired" | "Verifying" | "VerificationFailed" | "Finalizing" | "Cancelling" | "Completed" | "Cancelled" | "Failed";
   received: number; total: number | null; error: string | null; cancellable: boolean;

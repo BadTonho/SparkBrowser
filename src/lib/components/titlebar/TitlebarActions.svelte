@@ -20,6 +20,7 @@
   import { titlebarActionOrder, shownTitlebarActions, moveTitlebarAction, type TitlebarAction } from "../../stores/titlebarActionsStore";
   import { createActionDrag, type ActionDragPreview } from "../../services/titlebar-action-drag";
   import { isQrCodeOpen, openQrCode } from "../../stores/qrCodeStore";
+  import { isVideoDownloadOpen, openVideoDownload } from "../../stores/videoDownloadStore";
   import { isResourcesOpen, openResourcesPanel } from "../../stores/resourcesPopoverStore";
 import { invoke } from "../../services/tauri-bridge";
 
@@ -270,6 +271,22 @@ import { invoke } from "../../services/tauri-bridge";
         title={$t("qr_code.title") + " · " + $t("titlebar.reorder_hint")}
         aria-label={$t("qr_code.title")}
         aria-haspopup="dialog" aria-expanded={$isQrCodeOpen}
+      >
+        <TitlebarActionIcon action={id} />
+      </button>
+    {/if}
+    {#if id === "video"}
+      <button
+        data-action="video"
+        aria-describedby="titlebar-reorder-hint"
+        class:dragging={preview?.id === "video"}
+        style:translate={preview?.id === "video" ? `${preview.offset}px 0` : undefined}
+        class="icon-btn"
+        class:active={$isVideoDownloadOpen}
+        use:prepares={"video-download"}
+        onclick={event => openVideoDownload(event.currentTarget)}
+        title={$t("video_download.title") + " · " + $t("titlebar.reorder_hint")}
+        data-testid="open-video-download" aria-label={$t("video_download.title")} aria-haspopup="dialog" aria-expanded={$isVideoDownloadOpen}
       >
         <TitlebarActionIcon action={id} />
       </button>

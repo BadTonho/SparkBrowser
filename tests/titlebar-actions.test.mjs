@@ -16,7 +16,7 @@ function load(path, imports = {}, globals = {}) {
   return exports;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
-const defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'whatsapp', 'resources', 'extensions', 'privacy', 'downloads', 'settings'];
+const defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'video', 'whatsapp', 'resources', 'extensions', 'privacy', 'downloads', 'settings'];
 
 function storeFixture(saved = null, failWrite = false) {
   const storage = new Map(saved == null ? [] : [['spark_titlebar_action_order_v2', saved]]);
@@ -33,7 +33,17 @@ function storeFixture(saved = null, failWrite = false) {
 
 test('order defaults, validates unknown input, deduplicates and restores missing actions', () => {
   for (const input of [null, '{', '{}', 'null', '42']) assert.deepEqual(storeFixture(input).current(), defaults);
-  assert.deepEqual(storeFixture('["privacy","invalid","privacy",9]').current(), ['privacy', ...defaults.filter(id => id !== 'privacy')]);
+  const standard = ['extensions', 'privacy', 'downloads', 'settings'];
+  assert.deepEqual(storeFixture('["privacy","invalid","privacy",9]').current(),
+    [...defaults.filter(id => !standard.includes(id)), 'privacy', 'extensions', 'downloads', 'settings']);
+});
+
+test('a button added by an update never lands after Settings', () => {
+  const saved = ['resources', 'extensions', 'bookmarks', 'privacy', 'downloads', 'settings'];
+  const order = storeFixture(JSON.stringify(saved)).current();
+  assert.equal(order.at(-1), 'settings');
+  assert.ok(order.indexOf('video') < order.indexOf('extensions'));
+  assert.deepEqual(order.filter(id => saved.includes(id)), saved, 'saved positions are kept');
 });
 
 test('visible actions move to either end, persist and reload', () => {

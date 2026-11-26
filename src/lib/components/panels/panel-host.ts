@@ -9,7 +9,7 @@ import { logIgnored } from "../../services/ignored-error";
 import { locale } from "../../i18n";
 
 export interface PanelSession { id: number; anchor: HTMLElement }
-interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings" | "suggestions" | "commands" | "resources"; sessionStore: Readable<PanelSession | null>; independent?: boolean; onTrigger?: () => void; close: (restore?: boolean, immediate?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
+interface HostOptions { id: "tools" | "downloads" | "settings-quick" | "settings" | "suggestions" | "commands" | "resources" | "video-download"; sessionStore: Readable<PanelSession | null>; independent?: boolean; onTrigger?: () => void; close: (restore?: boolean, immediate?: boolean) => Promise<unknown>; set: (visible: boolean, session: number, presentation?: PanelPresentation, focus?: boolean) => Promise<unknown>; listen: (callback: (event: {sessionId: number; sequence: number; action: PanelViewAction}) => void) => Promise<() => void> }
 
 export function observePanelTheme(onChange: () => void): () => void {
   const themeObserver = new MutationObserver(onChange);

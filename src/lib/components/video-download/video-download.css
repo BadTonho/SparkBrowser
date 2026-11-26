@@ -1,0 +1,58 @@
+/* The video download popover. Plain CSS (not scoped) because the real panel stays in the shell and only a copy of
+   its markup is drawn in the native popover, which receives class names and theme variables. It uses the same
+   surface variables as the other popovers, so it follows the chosen theme, palette and window style. */
+.video-download-dismiss { position: fixed; inset: 0; z-index: 700; background: transparent; }
+.video-download-surface { position: absolute; display: flex; flex-direction: column; }
+.video-download-controller { position: fixed; left: -10000px; top: 0; width: 360px; height: 560px; visibility: hidden; pointer-events: none; }
+.video-download-controller .video-download-surface { position: static; width: 360px !important; max-height: 560px !important; }
+
+.video-download-panel {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  max-height: inherit;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  color: var(--text-primary, #f5f5f5);
+  background: var(--modal-surface-bg);
+  backdrop-filter: var(--modal-surface-filter);
+  -webkit-backdrop-filter: var(--modal-surface-filter);
+  border: var(--modal-surface-border);
+  border-radius: 12px;
+  box-shadow: var(--modal-surface-shadow);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.video-download-panel h2 { margin: 0; font-size: 13px; font-weight: 700; }
+.video-download-panel button {
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--border-subtle, #ffffff17);
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.video-download-panel button:hover:not(:disabled) { background: var(--bg-glass-hover, #ffffff10); }
+.video-download-panel button:disabled { opacity: .5; cursor: default; }
+.video-download-panel :focus-visible { outline: 2px solid var(--accent-primary, #e5e5e5); outline-offset: 2px; }
+.video-download-message { margin: 0; text-align: center; color: var(--text-secondary, #a3a3a3); font-size: 11.5px; }
+.video-download-video { flex: none; padding: 8px; border: 1px solid var(--border-subtle, #ffffff17); border-radius: 10px; }
+.video-download-preview { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; }
+.video-download-thumb { flex: none; width: 96px; height: 64px; display: grid; place-items: center; overflow: hidden; border-radius: 6px; background: #000; color: #8a8a8a; font-size: 18px; }
+.video-download-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.video-download-copy .video-download-badge { align-self: flex-start; padding: 0 6px; border: 1px solid var(--accent-primary, #e5e5e5); border-radius: 99px; color: var(--text-primary, #f5f5f5); }
+.video-download-list { margin: 0; padding: 0; list-style: none; }
+.video-download-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border-subtle, #ffffff17); }
+.video-download-copy { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.video-download-copy strong, .video-download-copy span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.video-download-copy strong { font-size: 12.5px; font-weight: 650; }
+.video-download-copy span { color: var(--text-secondary, #a3a3a3); font-size: 11px; }
+.video-download-copy .video-download-problem { white-space: normal; color: #ef9a9a; }
+.video-download-panel .video-download-save { flex: none; }
+.video-download-actions { display: flex; gap: 6px; flex: none; }
+.video-download-actions button { flex: 1; text-align: center; }

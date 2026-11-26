@@ -437,5 +437,6 @@
   "settings.download_location_reset": "Usar a pasta padrão",
   "settings.download_location_error": "Não dá para usar essa pasta. Escolha uma que exista e na qual você possa gravar.",
   "settings.show_downloads_when_done": "Mostrar os downloads quando eles forem concluídos",
-  "settings.show_downloads_when_done_description": "Abre o painel de downloads quando um download termina."
+  "settings.show_downloads_when_done_description": "Abre o painel de downloads quando um download termina.",
+  "settings.toolbar_video": "Baixar vídeo"
 }

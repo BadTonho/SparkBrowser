@@ -2,6 +2,7 @@
 
 ## New features
 
+- New **Download video** toolbar button (off by default; turn it on in the quick settings). It lists the videos of the loaded page, each with a small preview, and saves direct video files and unprotected HLS streams. YouTube, protected (DRM or encrypted) videos and live streams are not supported.
 - New buttons to open and close split view from the vertical tab list. The button at the top of the list opens a split with the tab you are viewing on the left and the most recently used tab on the right (a new blank tab if it is the only one). The button on the line between the panes closes the split.
 
 ## Improvements

@@ -82,6 +82,7 @@ pub fn shell_only(
                         | "set_suggestions_popover"
                         | "set_commands_popover"
                         | "set_resources_popover"
+                        | "set_video_download_popover"
                         | "set_quick_settings_popover"
                         | "set_permission_popover"
                         | "set_history_overlay"

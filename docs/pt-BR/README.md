@@ -64,6 +64,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Recuperação automática de sessão](./features/recovery.md)
 - [Downloads retomáveis e hashes](./features/downloads.md)
 - [Painel flutuante de downloads e progresso na barra](./features/downloads-popover.md)
+- [Baixar vídeo de uma página](./features/video-download.md)
 - [Encerramento protegido](features/shutdown.md)
 - [Várias janelas do navegador](features/windows.md)
 - [Diagnóstico das abas](features/tab-diagnostics.md)

@@ -1,7 +1,7 @@
 import { get, writable } from "svelte/store";
 import { safeStorage } from "../services/storage.js";
 
-export const DEFAULT_TITLEBAR_ACTIONS = ["tools", "bookmarks", "commands", "history", "zen", "qr", "whatsapp", "resources", "extensions", "privacy", "downloads", "settings"] as const;
+export const DEFAULT_TITLEBAR_ACTIONS = ["tools", "bookmarks", "commands", "history", "zen", "qr", "video", "whatsapp", "resources", "extensions", "privacy", "downloads", "settings"] as const;
 export type TitlebarAction = typeof DEFAULT_TITLEBAR_ACTIONS[number];
 const STORAGE_KEY = "spark_titlebar_action_order_v2";
 const SHOWN_KEY = "spark_titlebar_actions_shown";
@@ -37,7 +37,12 @@ export function setTitlebarActionShown(id: TitlebarAction, shown: boolean): void
 export function normalizeActionOrder(value: unknown): TitlebarAction[] {
   const valid = Array.isArray(value) ? value.filter((id): id is TitlebarAction =>
     DEFAULT_TITLEBAR_ACTIONS.includes(id as TitlebarAction)) : [];
-  return [...new Set([...valid, ...DEFAULT_TITLEBAR_ACTIONS])];
+  const order = [...new Set(valid)];
+  const missing = DEFAULT_TITLEBAR_ACTIONS.filter(id => !order.includes(id));
+  // A button the saved order does not know yet goes to the left of the standard ones, never after Settings.
+  const standard = order.findIndex(id => DEFAULT_SHOWN_ACTIONS.includes(id));
+  order.splice(standard < 0 ? order.length : standard, 0, ...missing.filter(id => !DEFAULT_SHOWN_ACTIONS.includes(id)));
+  return [...order, ...missing.filter(id => DEFAULT_SHOWN_ACTIONS.includes(id))];
 }
 
 function loadOrder(): TitlebarAction[] {

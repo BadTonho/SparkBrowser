@@ -3,7 +3,7 @@
   import PanelViewNode from "./PanelViewNode.svelte";
   import { focusDialog } from "../../actions/focusDialog";
   import { syncDownloadFocus } from "../../services/download-panel-focus";
-  let { surface }: { surface: "tools" | "downloads" | "settings-quick" | "suggestions" | "commands" | "resources" } = $props();
+  let { surface }: { surface: "tools" | "downloads" | "settings-quick" | "suggestions" | "commands" | "resources" | "video-download" } = $props();
   const downloads = $derived(surface === "downloads");
   const quickSettings = $derived(surface === "settings-quick");
   // The address bar's suggestions: a list below the address bar that never takes the keyboard.
@@ -12,7 +12,8 @@
   const commands = $derived(surface === "commands");
   // The resources panel: a popover under its button, like the quick settings.
   const resources = $derived(surface === "resources");
-  const setter = $derived(downloads ? "__sparkSetDownloadsPopover" : quickSettings ? "__sparkSetQuickSettingsPopover" : suggestions ? "__sparkSetSuggestionsPopover" : commands ? "__sparkSetCommandsPopover" : resources ? "__sparkSetResourcesPopover" : "__sparkSetToolsPopover");
+  const video = $derived(surface === "video-download");
+  const setter = $derived(video ? "__sparkSetVideoDownloadPopover" : downloads ? "__sparkSetDownloadsPopover" : quickSettings ? "__sparkSetQuickSettingsPopover" : suggestions ? "__sparkSetSuggestionsPopover" : commands ? "__sparkSetCommandsPopover" : resources ? "__sparkSetResourcesPopover" : "__sparkSetToolsPopover");
   import { panelPosition, isPanelTrigger, type PanelPresentation, type PanelViewAction } from "../../services/panel-presentation";
   import "../tools/tools.css";
   import "../downloads/downloads.css";
@@ -20,6 +21,7 @@
   import "../titlebar/suggestions.css";
   import "../commandbar/commandbar.css";
   import "../resources/resources.css";
+  import "../video-download/video-download.css";
   import "./popover-motion.css";
 
   type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number };
@@ -39,8 +41,8 @@
     ? { left: 0, top: 0, width: viewport.width, maxHeight: viewport.height }
     : suggestions
     ? { left: presentation.anchor.left, top: 4, width: presentation.anchor.width, maxHeight: Math.max(0, viewport.height - 8) }
-    : panelPosition(presentation.anchor, viewport.width, viewport.height, downloads ? { width: 480, maxHeight: 560 } : quickSettings ? { width: 300, maxHeight: 560 } : resources ? { width: 340, maxHeight: 560 } : undefined)) : null);
-  function downloadFocus(node: HTMLElement) { return downloads || quickSettings || resources ? focusDialog(node, { onEscape: () => send({ kind: "dismiss", reason: "escape" }) }) : undefined; }
+    : panelPosition(presentation.anchor, viewport.width, viewport.height, downloads ? { width: 480, maxHeight: 560 } : quickSettings ? { width: 300, maxHeight: 560 } : resources ? { width: 340, maxHeight: 560 } : video ? { width: 360, maxHeight: 560 } : undefined)) : null);
+  function downloadFocus(node: HTMLElement) { return downloads || quickSettings || resources || video ? focusDialog(node, { onEscape: () => send({ kind: "dismiss", reason: "escape" }) }) : undefined; }
   function pump() {
     if (!presentation || inFlight !== null) return;
     const action = outbox.shift();
@@ -93,6 +95,7 @@
       pendingOpeningFocus = false;
       if (downloads) syncDownloadFocus(root, focusOpening, hadForm);
       else if (quickSettings && focusOpening) root?.querySelector<HTMLElement>('[data-testid="settings-quick-theme-dark"], [data-testid="settings-quick-theme-light"]')?.focus();
+      else if (video && focusOpening) root?.querySelector<HTMLElement>(".video-download-panel button")?.focus();
       else if (resources && focusOpening) root?.querySelector<HTMLElement>(".resources-panel button")?.focus();
       else if (focusOpening && commands) { const field = root?.querySelector<HTMLInputElement>(".command-input"); field?.focus(); field?.select(); }
       else if (focusOpening && !suggestions) root?.querySelector<HTMLElement>("[role=tab][aria-selected=true]")?.focus();
@@ -144,10 +147,10 @@
 
 <svelte:window onresize={() => { viewport = { width: innerWidth, height: innerHeight }; }} />
 {#if presentation && position}
-  <div class={downloads ? "downloads-dismiss" : quickSettings ? "settings-quick-dismiss" : resources ? "resources-dismiss" : suggestions ? "suggestions-dismiss" : commands ? "commands-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
-    if (event.target === event.currentTarget) send({ kind: "dismiss", reason: (downloads || quickSettings || resources) && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
+  <div class={downloads ? "downloads-dismiss" : quickSettings ? "settings-quick-dismiss" : resources ? "resources-dismiss" : video ? "video-download-dismiss" : suggestions ? "suggestions-dismiss" : commands ? "commands-dismiss" : "tools-dismiss"} role="presentation" onclick={event => {
+    if (event.target === event.currentTarget) send({ kind: "dismiss", reason: (downloads || quickSettings || resources || video) && presentation && isPanelTrigger(presentation.anchor, event.clientX, event.clientY) ? "trigger" : "outside" });
   }}>
-    <div class="{commands ? "" : "popover-enter "}{downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : resources ? "resources-surface" : suggestions ? "suggestions-surface" : commands ? "commands-surface" : "tools-surface"}" bind:this={root} use:downloadFocus style:left={commands ? undefined : `${position.left}px`} style:top={commands ? undefined : `${position.top}px`} style:width={commands ? undefined : `${position.width}px`} style:max-height={commands ? undefined : `${position.maxHeight}px`} style:height={resources ? `${position.maxHeight}px` : undefined}>
+    <div class="{commands ? "" : "popover-enter "}{downloads ? "downloads-surface" : quickSettings ? "settings-quick-surface" : resources ? "resources-surface" : video ? "video-download-surface" : suggestions ? "suggestions-surface" : commands ? "commands-surface" : "tools-surface"}" bind:this={root} use:downloadFocus style:left={commands ? undefined : `${position.left}px`} style:top={commands ? undefined : `${position.top}px`} style:width={commands ? undefined : `${position.width}px`} style:max-height={commands ? undefined : `${position.maxHeight}px`} style:height={resources ? `${position.maxHeight}px` : undefined}>
       <PanelViewNode node={presentation.tree} {pending} ack={presentation.ack} />
     </div>
   </div>

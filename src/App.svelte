@@ -43,6 +43,7 @@
   import AddressSuggestions from "./lib/components/titlebar/AddressSuggestions.svelte";
   import TitlebarMenu from "./lib/components/titlebar/TitlebarMenu.svelte";
   import QrCodePanel from "./lib/components/titlebar/QrCodePanel.svelte";
+  import { isVideoDownloadOpen } from "./lib/stores/videoDownloadStore";
   import Sidebar from "./lib/components/sidebar/Sidebar.svelte";
   import ViewportFrame from "./lib/components/viewport/ViewportFrame.svelte";
   import CommandBar from "./lib/components/commandbar/CommandBar.svelte";
@@ -145,6 +146,7 @@
         SettingsModal: () => import("./lib/components/settings/SettingsModal.svelte"),
         SettingsQuickMenu: () => import("./lib/components/settings/SettingsQuickMenu.svelte"),
         ResourcesPanel: () => import("./lib/components/resources/ResourcesPanel.svelte"),
+        VideoDownloadPanel: () => import("./lib/components/video-download/VideoDownloadPanel.svelte"),
         ToolsPanel: () => import("./lib/components/tools/ToolsPanel.svelte"),
         SitePermissionsPanel: () => import("./lib/components/permissions/SitePermissionsPanel.svelte"),
         BookmarkEditor: () => import("./lib/components/bookmarks/BookmarkEditor.svelte"),
@@ -171,6 +173,7 @@
     if ($isSettingsModalOpen || $settingsTabSession) void loadSurface("SettingsModal");
     if ($isSettingsQuickOpen) void loadSurface("SettingsQuickMenu");
     if ($isResourcesOpen) void loadSurface("ResourcesPanel");
+    if ($isVideoDownloadOpen) void loadSurface("VideoDownloadPanel");
     if ($isToolsOpen) void loadSurface("ToolsPanel");
     if ($isSitePermissionsOpen) void loadSurface("SitePermissionsPanel");
     if ($bookmarkEditorState) void loadSurface("BookmarkEditor");
@@ -479,6 +482,7 @@
   {#if Lazy.SettingsModal}<Lazy.SettingsModal />{/if}
   {#if Lazy.SettingsQuickMenu}<Lazy.SettingsQuickMenu />{/if}
   {#if Lazy.ResourcesPanel}<Lazy.ResourcesPanel />{/if}
+  {#if Lazy.VideoDownloadPanel}<Lazy.VideoDownloadPanel />{/if}
   {#if Lazy.ToolsPanel}<Lazy.ToolsPanel />{/if}
   {#if Lazy.SitePermissionsPanel}<Lazy.SitePermissionsPanel />{/if}
   <PermissionPrompt />

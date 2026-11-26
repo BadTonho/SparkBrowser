@@ -223,7 +223,7 @@ export async function runScenario(name, scenario) {
     // application starts with the ten they use (a saved choice, as if the user had turned them on) and the shell
     // is reloaded once to read it. The choice persists across the restarts inside a scenario.
     if (name !== 'account-containers' && await script('return localStorage.getItem("spark_titlebar_actions_shown")') === null) {
-      await script('localStorage.setItem("spark_titlebar_actions_shown", JSON.stringify(["tools","bookmarks","commands","history","zen","qr","extensions","privacy","downloads","settings"])); setTimeout(() => location.reload(), 0); return true;');
+      await script('localStorage.setItem("spark_titlebar_actions_shown", JSON.stringify(["tools","bookmarks","commands","history","zen","qr","video","extensions","privacy","downloads","settings"])); setTimeout(() => location.reload(), 0); return true;');
       await until(async () => {
         try { return await script('return Boolean(window.__TAURI_INTERNALS__) && Boolean(document.querySelector(".titlebar-actions [data-action=tools]")) && document.querySelectorAll(".h-tab,.tab-row").length > 0'); }
         catch (error) { if (/no such|not found|context|navigat|unloaded|detached/i.test(String(error))) return false; throw error; }

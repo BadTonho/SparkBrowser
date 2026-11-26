@@ -5,6 +5,7 @@ mod tests;
 pub mod transfer;
 
 pub mod files;
+pub mod hls;
 pub mod location;
 pub mod model;
 #[cfg(not(windows))]

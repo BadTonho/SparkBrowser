@@ -64,6 +64,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Automatic session recovery](./features/recovery.md)
 - [Resumable downloads and checksums](./features/downloads.md)
 - [Floating downloads panel and toolbar progress](./features/downloads-popover.md)
+- [Download video from a page](./features/video-download.md)
 - [Protected shutdown](features/shutdown.md)
 - [Several browser windows](features/windows.md)
 - [Tab diagnostics](features/tab-diagnostics.md)

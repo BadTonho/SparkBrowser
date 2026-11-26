@@ -140,6 +140,8 @@ fn start_native_download(app: &AppHandle, start: NativeDownloadStart<'_>) -> Res
             native: true,
             selected_target: target,
             expected: None,
+            referer: None,
+            stream: false,
         },
     )?;
     let path = files::owned_partial(&manager.record(&task.id)?)?;
@@ -349,6 +351,8 @@ pub fn install(
                             native: true,
                             selected_target: None,
                             expected: None,
+                            referer: None,
+                            stream: false,
                         },
                     )?;
                     registered = Some(task.id.clone());

@@ -84,6 +84,7 @@ pub mod site_permissions;
 pub mod state;
 pub mod updates;
 pub mod vault;
+pub mod video_download;
 pub mod webview_runtime;
 pub mod window;
 pub mod zoom;
@@ -119,7 +120,8 @@ use commands::overlays::{
     set_bookmark_context_menu_overlay, set_commands_popover, set_downloads_popover,
     set_history_overlay, set_media_popover, set_overlay_visibility, set_permission_popover,
     set_privacy_popover, set_quick_settings_popover, set_resources_popover, set_settings_overlay,
-    set_suggestions_popover, set_tools_popover, set_workspace_switcher_overlay, set_zoom_popover,
+    set_suggestions_popover, set_tools_popover, set_video_download_popover,
+    set_workspace_switcher_overlay, set_zoom_popover,
 };
 use commands::persistence::{
     clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
@@ -162,6 +164,7 @@ use commands::updates::{
     check_for_updates, download_update, get_update_state, install_update, set_auto_update,
     set_update_channel,
 };
+use commands::video_download::{download_video, scan_page_videos};
 use commands::whatsapp::toggle_whatsapp_popover;
 use commands::workspaces::{
     create_workspace, delete_workspace, get_active_workspace, get_workspace_isolation,
@@ -311,6 +314,7 @@ pub fn run() {
         .manage(window::suggestions_popover::SuggestionsPopover::default())
         .manage(window::commands_popover::CommandsPopover::default())
         .manage(window::resources_popover::ResourcesPopover::default())
+        .manage(window::video_download_popover::VideoDownloadPopover::default())
         .manage(resources::Resources::default())
         .manage(vault::service::VaultService::default())
         .manage(vault::clipboard::VaultClipboard::default())
@@ -393,6 +397,7 @@ pub fn run() {
                 window::suggestions_popover::focus_lost(window.app_handle());
                 window::commands_popover::focus_lost(window.app_handle());
                 window::resources_popover::focus_lost(window.app_handle());
+                window::video_download_popover::focus_lost(window.app_handle());
                 window::quick_settings_popover::focus_lost(window.app_handle());
                 if let Some(state) = window.try_state::<BrowserState>() {
                     state
@@ -908,6 +913,7 @@ pub fn run() {
             set_suggestions_popover,
             set_commands_popover,
             set_resources_popover,
+            set_video_download_popover,
             clear_browser_data,
             estimate_cleanup,
             set_resource_limits,
@@ -937,6 +943,8 @@ pub fn run() {
             get_download_visual,
             cancel_download,
             enqueue_download,
+            scan_page_videos,
+            download_video,
             clear_all_downloads,
             get_installed_extensions,
             load_unpacked_extension,

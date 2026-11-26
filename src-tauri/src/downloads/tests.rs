@@ -31,6 +31,7 @@ fn record(root: &std::path::Path) -> DownloadRecord {
         etag: None,
         body_completed: false,
         published: false,
+        referer: None,
     }
 }
 #[test]
@@ -103,6 +104,15 @@ fn capabilities_require_valid_identity_and_checksum_input() {
     r.etag = Some("\"strong\"".into());
     r.refresh_capabilities(false);
     assert!(r.task.can_resume);
+    r.task.source = "hls".into();
+    r.etag = None;
+    r.task.status = "Downloading".into();
+    r.refresh_capabilities(false);
+    assert!(r.task.cancellable && !r.task.can_pause && !r.task.can_resume);
+    r.task.status = "Interrupted".into();
+    r.refresh_capabilities(false);
+    assert!(r.task.can_resume && r.task.can_restart);
+    r.etag = Some("\"strong\"".into());
     r.task.source = "native".into();
     r.refresh_capabilities(false);
     assert!(!r.task.can_resume);

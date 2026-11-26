@@ -34,6 +34,99 @@
     }
   }
   function candidates() {return [...document.querySelectorAll('video')].slice(0,64).map(el=>({id:videoId(el),label:(el.title||el.getAttribute('aria-label')||document.title||'').slice(0,160),width:el.videoWidth,height:el.videoHeight,eligible:Boolean((document.pictureInPictureEnabled||mirrorByCanvas) && !el.disablePictureInPicture && !el.mediaKeys && el.readyState>=2 && el.videoWidth>0)}));}
+  // Video download panel: addresses the page already uses. Nothing is fetched here.
+  // The engine's resource list stops filling on heavy pages (250 entries by default), but an observer
+  // still hears every request: remember the latest playlists for when the panel asks.
+  const playlists=new Set();
+  const isPlaylist=raw=> {try {return new URL(raw,location.href).pathname.toLowerCase().endsWith('.m3u8');} catch {return false;}};
+  function remember(entries) {
+    for(const entry of entries) if(isPlaylist(entry.name)) {
+      playlists.delete(entry.name);playlists.add(entry.name);
+      if(playlists.size>32)playlists.delete(playlists.values().next().value);
+    }
+  }
+  if(typeof PerformanceObserver==='function') {
+    try {new PerformanceObserver(list=>remember(list.getEntries())).observe({type:'resource',buffered:true});} catch {}
+  }
+  // Many players are web components: their video lives in a shadow tree that the document cannot query.
+  function elements() {
+    const found=[];
+    const walk=root=> {for(const el of root.querySelectorAll('*')) {if(found.length>=50000)return;found.push(el);if(el.shadowRoot)walk(el.shadowRoot);}};
+    walk(document);
+    return found;
+  }
+  // What tells one video from another: where it is, how long it is and a picture of it.
+  function onScreen(el) {
+    const r=el.getBoundingClientRect?.();
+    if(!r)return 0;
+    return Math.round(Math.max(0,Math.min(r.right,innerWidth)-Math.max(r.left,0))*Math.max(0,Math.min(r.bottom,innerHeight)-Math.max(r.top,0)));
+  }
+  // The poster may be stated by the video or by the player component around it.
+  function posterOf(el) {
+    for(let node=el,depth=0;node&&depth<6;depth++,node=node.parentElement??node.getRootNode?.().host) {
+      const raw=node.getAttribute?.('poster');
+      if(!raw)continue;
+      try {const url=new URL(raw,location.href);if(['http:','https:'].includes(url.protocol)&&url.href.length<=4096)return url.href;} catch {}
+    }
+    return '';
+  }
+  // Fails for a video of another origin served without CORS; the poster is the fallback then.
+  function frameOf(el) {
+    if(!(el.readyState>=2&&el.videoWidth>0&&el.videoHeight>0))return '';
+    try {
+      const canvas=document.createElement('canvas');
+      canvas.width=160;canvas.height=Math.max(1,Math.min(284,Math.round(160*el.videoHeight/el.videoWidth)));
+      canvas.getContext('2d').drawImage(el,0,0,canvas.width,canvas.height);
+      const data=canvas.toDataURL('image/jpeg',0.7);
+      return data.length<=65536?data:'';
+    } catch {return '';}
+  }
+  function sources() {
+    const found=new Map();
+    const add=(raw,type,height,group)=> {
+      let url; try {url=new URL(raw,location.href);} catch {return;}
+      if(!['http:','https:'].includes(url.protocol)||url.href.length>4096)return;
+      const path=url.pathname.toLowerCase();
+      if(path.endsWith('.mpd')||/dash\+xml/i.test(type))return;
+      const kind=path.endsWith('.m3u8')||/mpegurl/i.test(type)?'hls':'file';
+      const known=found.get(url.href);
+      if(known) {known.group||=group;return;}
+      if(found.size<96)found.set(url.href,{url:url.href,kind,height,group});
+    };
+    const all=elements();
+    // What is on the screen comes first, so it is never the part left out.
+    const videos=all.filter(el=>el.localName==='video').map(el=>({el,area:onScreen(el)})).sort((a,b)=>b.area-a.area).slice(0,64);
+    const groups=new Map();
+    const describe=(group,el,area,video)=> {
+      if(groups.has(group)||groups.size>=32)return;
+      groups.set(group,{group,area,duration:video&&Number.isFinite(video.duration)?Math.round(video.duration):0,poster:posterOf(video??el),frame:video&&groups.size<12?frameOf(video):''});
+    };
+    for(const {el,area} of videos) {
+      if(el.mediaKeys)continue;
+      const group=videoId(el);
+      describe(group,el,area,el);
+      const listed=[...el.querySelectorAll('source')];
+      if(el.currentSrc)add(el.currentSrc,listed.find(s=>s.src===el.currentSrc)?.type??'',el.videoHeight||0,group);
+      for(const s of listed)if(s.src)add(s.src,s.type??'',0,group);
+    }
+    // A player component often states its playlist on its own element.
+    let players=0;
+    for(const el of all) {
+      const src=el.getAttribute?.('src');
+      if(!src||!isPlaylist(src))continue;
+      const inner=el.localName==='video'?el:el.shadowRoot?.querySelector?.('video')??el.querySelector?.('video');
+      if(inner?.mediaKeys)continue;
+      const group=inner?videoId(inner):`${documentId}-player-${++players}`;
+      describe(group,el,onScreen(inner??el),inner);
+      add(src,'',0,group);
+    }
+    // Players built on Media Source show a blob: address; their playlist is among the requests made.
+    remember(performance.getEntriesByType('resource'));
+    for(const name of playlists)add(name,'',0,'');
+    const rank=source=>groups.get(source.group)?.area??-1;
+    const listed=[...found.values()].sort((a,b)=>rank(b)-rank(a));
+    return {page:location.href,protected:videos.some(({el})=>Boolean(el.mediaKeys)),sources:listed,videos:[...groups.values()].filter(video=>listed.some(source=>source.group===video.group))};
+  }
   function progress() {
     const el=media().find(m=>!m.paused&&!m.ended)??media()[0];
     if(!el||!Number.isFinite(el.duration)||el.duration<=0||!Number.isFinite(el.currentTime))return {};
@@ -172,6 +265,7 @@
   window.addEventListener('pagehide',()=> {floating?.popup.close();floating?.cleanup();for(const [el,route] of routes)restore(el,route);void context?.close();});
   Object.defineProperty(window,'__sparkMedia',{value:async (key,action)=> {
     if (key!==token || (action.document && action.document!==documentId)) return {error:'media.stale'};
+    if(action.kind==='sources')return sources();
     if(action.kind==='pip-exit') {try{if(floating){floating.cleanup();floating=null;}if(document.pictureInPictureElement)await document.exitPictureInPicture();signal();return {ok:true};}catch{return {error:'media.pip_failed'};}}
     if(action.kind==='pip-enter') {
       const candidate=candidates().find(v=>v.id===action.video&&v.eligible);

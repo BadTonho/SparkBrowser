@@ -49,13 +49,18 @@ impl DownloadManager {
                 .worker = false;
             return Err(error);
         }
+        let stream = record.task.source == "hls";
         let app = app.clone();
         let id = id.to_string();
         let slots = self.slots.clone();
         tauri::async_runtime::spawn(async move {
             let permit = tokio::select! {biased;_ = control.changed.notified()=>None,p=slots.acquire_owned()=>p.ok()};
             let result = if let Some(_permit) = permit {
-                crate::downloads::resumable::run(&app, &id, &control, verify).await
+                if stream && !verify {
+                    crate::downloads::hls::run(&app, &id, &control).await
+                } else {
+                    crate::downloads::resumable::run(&app, &id, &control, verify).await
+                }
             } else {
                 Err("downloads.stopped".into())
             };

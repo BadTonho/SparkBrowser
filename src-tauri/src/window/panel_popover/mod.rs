@@ -16,6 +16,7 @@ pub(super) const SETTINGS_LABEL: &str = <Settings as Panel>::LABEL;
 pub(super) const SUGGESTIONS_LABEL: &str = <Suggestions as Panel>::LABEL;
 pub(super) const COMMANDS_LABEL: &str = <Commands as Panel>::LABEL;
 pub(super) const RESOURCES_LABEL: &str = <Resources as Panel>::LABEL;
+pub(super) const VIDEO_DOWNLOAD_LABEL: &str = <VideoDownload as Panel>::LABEL;
 
 pub trait Panel: Send + Sync + 'static {
     const LABEL: &'static str;
@@ -49,6 +50,16 @@ impl Panel for Resources {
     const HOST: &'static str = "resources-popover";
     const SETTER: &'static str = "__sparkSetResourcesPopover";
     const EVENT: &'static str = "resources-popover-action";
+}
+/// The videos of the page that can be saved, opened from a button in the top bar.
+#[derive(Default)]
+pub struct VideoDownload;
+impl Panel for VideoDownload {
+    const LABEL: &'static str = "video-download-popover-webview";
+    const SURFACE: &'static str = "/index.html?surface=video-download";
+    const HOST: &'static str = "video-download-popover";
+    const SETTER: &'static str = "__sparkSetVideoDownloadPopover";
+    const EVENT: &'static str = "video-download-popover-action";
 }
 /// The command bar: a window-wide layer over the page, so the page stays visible (dimmed) behind it.
 #[derive(Default)]
@@ -262,6 +273,7 @@ pub fn prepare(app: &AppHandle, window_id: &str, panel: &str) -> Result<(), Stri
         "suggestions" => warm::<Suggestions>(app, window_id),
         "commands" => warm::<Commands>(app, window_id),
         "resources" => warm::<Resources>(app, window_id),
+        "video-download" => warm::<VideoDownload>(app, window_id),
         "history" => warm_overlay(super::history_overlay::prepare(app, window_id)),
         "zoom" => warm_overlay(super::zoom_popover::prepare(app, window_id)),
         "privacy" => warm_overlay(super::privacy_popover::prepare(app, window_id)),
@@ -551,17 +563,23 @@ pub fn set<P: Panel>(
     } else if P::HOST == "settings-quick-popover"
         || P::HOST == "commands-popover"
         || P::HOST == "resources-popover"
+        || P::HOST == "video-download-popover"
     {
         super::tools_popover::dismiss(app);
         super::downloads_popover::dismiss(app);
         super::history_overlay::dismiss(app);
         super::permission_popover::dismiss(app);
         super::suggestions_popover::dismiss(app);
-        if P::HOST == "commands-popover" || P::HOST == "resources-popover" {
+        if P::HOST != "settings-quick-popover" {
             super::quick_settings_popover::dismiss(app);
         }
     } else {
         super::tools_popover::dismiss(app);
+    }
+    if P::HOST != "video-download-popover" {
+        super::video_download_popover::dismiss(app);
+    } else {
+        super::resources_popover::dismiss(app);
     }
     super::zoom_popover::dismiss(app);
     super::media_popover::dismiss(app);
@@ -587,7 +605,7 @@ pub fn set<P: Panel>(
 mod tests {
     use super::{
         can_finish_animated_close, Commands, Downloads, Inner, Panel, Presentation, QuickSettings,
-        Resources, Session, Suggestions, Tools,
+        Resources, Session, Suggestions, Tools, VideoDownload,
     };
 
     #[test]
@@ -598,6 +616,7 @@ mod tests {
         assert_eq!(Suggestions::HOST, "suggestions-popover");
         assert_eq!(Commands::HOST, "commands-popover");
         assert_eq!(Resources::HOST, "resources-popover");
+        assert_eq!(VideoDownload::HOST, "video-download-popover");
     }
 
     #[test]

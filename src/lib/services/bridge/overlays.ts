@@ -23,10 +23,11 @@ export type OverlayId =
   | "titlebar-menu"
   | "bookmark-editor"
   | "extensions"
-  | "reader-mode";
+  | "reader-mode"
+  | "video-download";
 
 const activeOverlayIds = new Set<OverlayId>();
-const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history", "settings-quick", "settings", "command-bar", "resources"]);
+const nonBlockingOverlayIds = new Set<OverlayId>(["site-permissions", "permission-prompt", "history", "settings-quick", "settings", "command-bar", "resources", "video-download"]);
 let overlaySyncQueue: Promise<void> = Promise.resolve();
 
 const openingListeners = new Set<(id?: OverlayId) => void>();

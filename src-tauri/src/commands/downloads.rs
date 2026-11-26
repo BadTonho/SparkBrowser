@@ -27,6 +27,34 @@ pub async fn get_download_tasks(
 ) -> Result<Vec<DownloadTask>, String> {
     manager.list()
 }
+/// Asks where to save when the setting is on. `None` means the user cancelled the dialog;
+/// `Some(None)` means the default folder.
+pub(crate) async fn choose_target(
+    app: &AppHandle,
+    state: &BrowserState,
+    name: String,
+) -> Result<Option<Option<std::path::PathBuf>>, String> {
+    if !state.policies().ask_download_destination() {
+        return Ok(Some(None));
+    }
+    let dialog_app = app.clone();
+    let start = crate::downloads::files::directory(app).ok();
+    let selected = tauri::async_runtime::spawn_blocking(move || {
+        let mut dialog = dialog_app.dialog().file().set_file_name(name);
+        if let Some(start) = start {
+            dialog = dialog.set_directory(start);
+        }
+        dialog.blocking_save_file()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    let Some(path) = selected else {
+        return Ok(None);
+    };
+    Ok(Some(Some(
+        path.into_path().map_err(|_| "downloads.invalid_target")?,
+    )))
+}
 #[tauri::command]
 pub async fn enqueue_download(
     app: AppHandle,
@@ -37,25 +65,9 @@ pub async fn enqueue_download(
     expected_sha256: Option<String>,
 ) -> Result<Option<DownloadTask>, String> {
     let parsed = crate::downloads::transfer::validate_download_url(&url)?;
-    let target = if state.policies().ask_download_destination() {
-        let dialog_app = app.clone();
-        let name = crate::downloads::transfer::file_name(&parsed);
-        let start = crate::downloads::files::directory(&app).ok();
-        let selected = tauri::async_runtime::spawn_blocking(move || {
-            let mut dialog = dialog_app.dialog().file().set_file_name(name);
-            if let Some(start) = start {
-                dialog = dialog.set_directory(start);
-            }
-            dialog.blocking_save_file()
-        })
-        .await
-        .map_err(|e| e.to_string())?;
-        let Some(path) = selected else {
-            return Ok(None);
-        };
-        Some(path.into_path().map_err(|_| "downloads.invalid_target")?)
-    } else {
-        None
+    let name = crate::downloads::transfer::file_name(&parsed);
+    let Some(target) = choose_target(&app, &state, name).await? else {
+        return Ok(None);
     };
     manager
         .enqueue(

@@ -24,6 +24,18 @@ pub struct Registration {
     pub native: bool,
     pub selected_target: Option<std::path::PathBuf>,
     pub expected: Option<String>,
+    /// The page a video came from.
+    pub referer: Option<String>,
+    /// An HLS stream instead of a single file.
+    pub stream: bool,
+}
+pub struct VideoRequest {
+    pub tab_id: String,
+    pub url: tauri::Url,
+    pub name: String,
+    pub referer: Option<String>,
+    pub stream: bool,
+    pub target: Option<std::path::PathBuf>,
 }
 impl Default for Control {
     fn default() -> Self {
@@ -158,6 +170,8 @@ impl DownloadManager {
             native,
             selected_target,
             expected,
+            referer,
+            stream,
         } = registration;
         if app
             .try_state::<crate::shutdown::ShutdownService>()
@@ -210,7 +224,14 @@ impl DownloadManager {
             revision: 1,
             file_name: file_name.clone(),
             url,
-            source: if native { "native" } else { "url" }.into(),
+            source: if native {
+                "native"
+            } else if stream {
+                "hls"
+            } else {
+                "url"
+            }
+            .into(),
             source_page_url: page,
             status: if native { "Downloading" } else { "Paused" }.into(),
             received: 0,
@@ -236,6 +257,7 @@ impl DownloadManager {
             etag: None,
             body_completed: false,
             published: false,
+            referer,
         };
         record.refresh_capabilities(native);
         Self::persist(app, &record)?;
@@ -362,6 +384,36 @@ impl DownloadManager {
                 native: false,
                 selected_target: target,
                 expected,
+                referer: None,
+                stream: false,
+            },
+        )?;
+        self.start(app, &task.id, false)?;
+        Ok(self.record(&task.id)?.task)
+    }
+    /// A video found in a page, which may not be the active tab by the time it is saved.
+    pub fn enqueue_video(
+        &self,
+        app: &AppHandle,
+        video: VideoRequest,
+    ) -> Result<DownloadTask, String> {
+        self.check_policy(app, video.url.as_str(), Some(&video.tab_id))?;
+        // Named after the page title; `register` adds a number when the name is taken.
+        let target = match video.target {
+            Some(target) => target,
+            None => files::directory(app)?.join(&video.name),
+        };
+        let task = self.register(
+            app,
+            Registration {
+                tab_id: video.tab_id,
+                url: video.url.to_string(),
+                name: video.name,
+                native: false,
+                selected_target: Some(target),
+                expected: None,
+                referer: video.referer,
+                stream: video.stream,
             },
         )?;
         self.start(app, &task.id, false)?;

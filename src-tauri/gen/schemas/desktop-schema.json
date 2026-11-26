@@ -489,6 +489,12 @@
           "markdownDescription": "Enables the download_update command without any pre-configured scope."
         },
         {
+          "description": "Enables the download_video command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-download-video",
+          "markdownDescription": "Enables the download_video command without any pre-configured scope."
+        },
+        {
           "description": "Enables the enqueue_download command without any pre-configured scope.",
           "type": "string",
           "const": "allow-enqueue-download",
@@ -1185,6 +1191,12 @@
           "markdownDescription": "Enables the save_site_search_shortcut command without any pre-configured scope."
         },
         {
+          "description": "Enables the scan_page_videos command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-scan-page-videos",
+          "markdownDescription": "Enables the scan_page_videos command without any pre-configured scope."
+        },
+        {
           "description": "Enables the search_command_items command without any pre-configured scope.",
           "type": "string",
           "const": "allow-search-command-items",
@@ -1519,6 +1531,12 @@
           "type": "string",
           "const": "allow-set-update-channel",
           "markdownDescription": "Enables the set_update_channel command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_video_download_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-video-download-popover",
+          "markdownDescription": "Enables the set_video_download_popover command without any pre-configured scope."
         },
         {
           "description": "Enables the set_workspace_isolation command without any pre-configured scope.",
@@ -2095,6 +2113,12 @@
           "type": "string",
           "const": "deny-download-update",
           "markdownDescription": "Denies the download_update command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the download_video command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-download-video",
+          "markdownDescription": "Denies the download_video command without any pre-configured scope."
         },
         {
           "description": "Denies the enqueue_download command without any pre-configured scope.",
@@ -2793,6 +2817,12 @@
           "markdownDescription": "Denies the save_site_search_shortcut command without any pre-configured scope."
         },
         {
+          "description": "Denies the scan_page_videos command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-scan-page-videos",
+          "markdownDescription": "Denies the scan_page_videos command without any pre-configured scope."
+        },
+        {
           "description": "Denies the search_command_items command without any pre-configured scope.",
           "type": "string",
           "const": "deny-search-command-items",
@@ -3127,6 +3157,12 @@
           "type": "string",
           "const": "deny-set-update-channel",
           "markdownDescription": "Denies the set_update_channel command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_video_download_popover command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-video-download-popover",
+          "markdownDescription": "Denies the set_video_download_popover command without any pre-configured scope."
         },
         {
           "description": "Denies the set_workspace_isolation command without any pre-configured scope.",

@@ -21,7 +21,37 @@ fn stopped(control: &Control) -> Result<(), String> {
         Ok(())
     }
 }
-fn client(shield: bool) -> Result<&'static reqwest::Client, String> {
+/// Many video servers refuse requests without a page and a browser name.
+const VIDEO_USER_AGENT: &str = "Mozilla/5.0 (compatible; Spark)";
+
+/// Sends the page a video came from the way a browser does: another origin only learns its origin.
+fn referer_value(page: &str, target: &tauri::Url) -> Option<String> {
+    let mut page = tauri::Url::parse(page).ok()?;
+    page.set_fragment(None);
+    if page.origin() == target.origin() {
+        return Some(page.to_string());
+    }
+    if page.scheme() == "https" && target.scheme() != "https" {
+        return None;
+    }
+    Some(format!("{}/", page.origin().ascii_serialization()))
+}
+/// Only video downloads carry a page; every other request stays as it was.
+pub(super) fn with_referer(
+    request: reqwest::RequestBuilder,
+    target: &tauri::Url,
+    page: Option<&str>,
+) -> reqwest::RequestBuilder {
+    let Some(page) = page else {
+        return request;
+    };
+    let request = request.header(reqwest::header::USER_AGENT, VIDEO_USER_AGENT);
+    match referer_value(page, target) {
+        Some(value) => request.header(reqwest::header::REFERER, value),
+        None => request,
+    }
+}
+pub(super) fn client(shield: bool) -> Result<&'static reqwest::Client, String> {
     static ON: OnceLock<Result<reqwest::Client, String>> = OnceLock::new();
     static OFF: OnceLock<Result<reqwest::Client, String>> = OnceLock::new();
     (if shield { &ON } else { &OFF })
@@ -106,7 +136,7 @@ async fn checkpoint(
     })?;
     Ok(())
 }
-async fn finalize(
+pub(super) async fn finalize(
     app: &AppHandle,
     id: &str,
     record: &DownloadRecord,
@@ -134,6 +164,23 @@ async fn finalize(
     }
     manager.update_saved(app, id, |t| t.status = "Finalizing".into())?;
     manager.complete(app, id)
+}
+pub(super) fn shield_for(app: &AppHandle, record: &DownloadRecord) -> Result<bool, String> {
+    let state = app.state::<crate::state::browser_state::BrowserState>();
+    Ok(match record.task.source_page_url.as_deref() {
+        Some(source) => {
+            *state
+                .policies()
+                .shield_enabled()
+                .lock()
+                .map_err(|e| e.to_string())?
+                && crate::privacy::adblock_engine::site_is_protected(&state, source)
+                && crate::privacy::adblock_engine::site_is_protected(&state, &record.task.url)
+        }
+        None => {
+            crate::privacy::adblock_engine::download_shield_enabled(&state, None, &record.task.url)
+        }
+    })
 }
 pub async fn run(app: &AppHandle, id: &str, control: &Control, verify: bool) -> Result<(), String> {
     stopped(control)?;
@@ -183,27 +230,16 @@ pub async fn run(app: &AppHandle, id: &str, control: &Control, verify: bool) -> 
         hash = prefix;
     }
     stopped(control)?;
-    let state = app.state::<crate::state::browser_state::BrowserState>();
-    let shield = match record.task.source_page_url.as_deref() {
-        Some(source) => {
-            *state
-                .policies()
-                .shield_enabled()
-                .lock()
-                .map_err(|e| e.to_string())?
-                && crate::privacy::adblock_engine::site_is_protected(&state, source)
-                && crate::privacy::adblock_engine::site_is_protected(&state, &record.task.url)
-        }
-        None => {
-            crate::privacy::adblock_engine::download_shield_enabled(&state, None, &record.task.url)
-        }
-    };
+    let shield = shield_for(app, &record)?;
     if crate::privacy::adblock_engine::should_block_url(&record.task.url, shield) {
         return Err("downloads.blocked".into());
     }
     let mut request = client(shield)?
         .get(&record.task.url)
         .header(reqwest::header::ACCEPT_ENCODING, "identity");
+    if let Ok(target) = tauri::Url::parse(&record.task.url) {
+        request = with_referer(request, &target, record.referer.as_deref());
+    }
     if record.confirmed > 0 {
         request = request
             .header(
@@ -302,6 +338,20 @@ pub async fn run(app: &AppHandle, id: &str, control: &Control, verify: bool) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn a_referer_never_leaks_the_page_path_to_other_origins() {
+        let page = "https://page.example.test/watch?private=1#t";
+        let value = |target: &str| referer_value(page, &tauri::Url::parse(target).unwrap());
+        assert_eq!(
+            value("https://page.example.test/v.mp4").as_deref(),
+            Some("https://page.example.test/watch?private=1")
+        );
+        assert_eq!(
+            value("https://cdn.example.test/v.mp4").as_deref(),
+            Some("https://page.example.test/")
+        );
+        assert_eq!(value("http://cdn.example.test/v.mp4"), None);
+    }
     #[test]
     fn validates_exact_remaining_ranges() {
         assert_eq!(range("bytes 3-9/10", 3), Some(10));

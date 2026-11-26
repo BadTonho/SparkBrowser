@@ -24,7 +24,7 @@ export async function checkTitlebarActions(context) {
     await request('POST', `/session/${sessionId()}/actions`, {actions:inputs});
   }
   // The buttons the harness turns on, in the browser's default order (the default order puts the less used ones after the first four).
-  let defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'extensions', 'privacy', 'downloads', 'settings'];
+  let defaults = ['tools', 'bookmarks', 'commands', 'history', 'zen', 'qr', 'video', 'extensions', 'privacy', 'downloads', 'settings'];
   assert.deepEqual(await order(), defaults);
   await script(`window.toolbarMarkerSeen=false;window.toolbarHoldSeen=false;new MutationObserver(()=>{window.toolbarMarkerSeen ||= !!document.querySelector('.insertion-marker');window.toolbarHoldSeen ||= !!document.querySelector('.dragging')}).observe(document.querySelector('.titlebar-actions'),{subtree:true,attributes:true,childList:true});`);
   const initialRect = await request('GET', `/session/${sessionId()}/window/rect`);
@@ -86,17 +86,17 @@ export async function checkTitlebarActions(context) {
   // Switch through the real settings UI, keeping the hidden bookmark slot intact.
   await context.openSettings(); await click('[data-testid="settings-appearance_layout"]');
   await click('#setting-browser-layout .mini-pill:nth-child(2)'); await context.closeSettings();
-  await until(async () => (await order()).length === 9, 'vertical layout hides bookmark action');
+  await until(async () => (await order()).length === 10, 'vertical layout hides bookmark action');
   const verticalRect = await request('GET', `/session/${sessionId()}/window/rect`);
   await gesture('zen','left');
   // The saved order lists every button; the ones that are off (WhatsApp, Resources) keep their slots and are not on the toolbar.
-  const savedOrder = ['zen', 'bookmarks', 'tools', 'commands', 'history', 'extensions', 'whatsapp', 'resources', 'privacy', 'downloads', 'settings', 'qr'];
+  const savedOrder = ['zen', 'bookmarks', 'tools', 'commands', 'history', 'video', 'extensions', 'whatsapp', 'resources', 'privacy', 'downloads', 'settings', 'qr'];
   const expected = savedOrder.filter(action => !['whatsapp', 'resources'].includes(action));
   assert.deepEqual(JSON.parse(await saved()), savedOrder);
   assert.deepEqual(await request('GET', `/session/${sessionId()}/window/rect`), verticalRect, 'vertical drag region does not move the window');
   await context.openSettings();
   await click('#setting-browser-layout .mini-pill:first-child'); await context.closeSettings();
-  await until(async () => (await order()).length === 10, 'horizontal restores bookmark action');
+  await until(async () => (await order()).length === 11, 'horizontal restores bookmark action');
   assert.deepEqual(await order(), expected);
   await restart(); assert.deepEqual(await order(), expected, 'order survives native app restart');
 
@@ -118,7 +118,7 @@ export async function checkTitlebarActions(context) {
   await until(() => script('return !!document.querySelector("[data-testid=titlebar-menu]")'), 'compact menu opens');
   await escape();
   await resizeWindow(1280, 820);
-  await until(async () => (await order()).length === 10, 'expanding restores actions');
+  await until(async () => (await order()).length === 11, 'expanding restores actions');
   assert.deepEqual(await order(), expected);
   await screenshot('titlebar-reorder-saved');
 }
