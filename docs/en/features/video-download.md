@@ -6,7 +6,7 @@ An optional toolbar button that saves videos from the loaded page. It is off by 
 
 ## Using it
 
-The button opens a popover below it, above the page (which stays visible), that looks for videos in the active tab. It follows the chosen theme, palette and window style, like the other popovers. There is one card per video, with the ones on the screen first. Each card has a small preview (a frame of the video, or its poster picture when the site does not allow reading the frame), the length when the player knows it, and an **On screen** mark. Under it, each option shows its type (video file or HLS stream), the quality when known, the file name and the server; options that can be saved come first, best quality first. Press **Download**; progress, cancel and the saved file are in the [downloads panel](downloads.md). **Ask where to save each download** and the download folder setting apply. The suggested name comes from the page title.
+The button opens a popover below it, above the page (which stays visible), that looks for videos in the active tab. It follows the chosen theme, palette and window style, like the other popovers. There is one card per video, with the ones on the screen first. Each card has a small preview (a frame of the video, or its poster picture when the site does not allow reading the frame), the length when the player knows it, and an **On screen** mark. Under it, each option shows its type (video file or HLS stream), the quality when known, the file name and the server; only options that can be saved are listed, best quality first. A video with nothing to save shows a short note with the reason instead. Press **Download**; progress, cancel and the saved file are in the [downloads panel](downloads.md). **Ask where to save each download** and the download folder setting apply. The suggested name comes from the page title.
 
 If the list is empty, start the video and press **Search again**: many players only request the video after playback starts. Press **Esc**, click outside or click the button again to close it; it also closes when you switch tabs or the page changes address.
 
@@ -22,7 +22,7 @@ A video may have no preview when the site allows neither. Addresses only seen be
 | YouTube and other players that only use DASH or Media Source | No |
 | DRM or any encrypted HLS, including AES-128 | No |
 | Live streams | No |
-| HLS with audio in a separate track, byte ranges or several initialization sections | No; the entry is disabled with the reason |
+| HLS with audio in a separate track, byte ranges or several initialization sections | No; see [open limitations](../roadmap/video-download-limitations.md) for separate audio |
 
 Segments are joined without conversion; no external program is used. A `.ts` file plays in players such as VLC. Only download content you have the right to save.
 

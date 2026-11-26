@@ -90,3 +90,4 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Workspace content isolation](features/workspace-isolation.md)
 - [AppContainer isolation (planned)](security/app-container-isolation.md)
 - [Planned protection against suspicious sites and downloads](roadmap/security-protections.md)
+- [Video download: open limitations](roadmap/video-download-limitations.md)

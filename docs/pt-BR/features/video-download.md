@@ -6,7 +6,7 @@ Um botão opcional da barra que salva vídeos da página carregada. Ele começa 
 
 ## Como usar
 
-O botão abre um pop-up logo abaixo dele, por cima da página (que continua visível), que procura vídeos na aba ativa. Ele segue o tema, a paleta e o estilo de janela escolhidos, como os outros pop-ups. Há um cartão por vídeo, com os que estão na tela primeiro. Cada cartão tem uma pequena prévia (um quadro do vídeo, ou a imagem de capa quando o site não permite ler o quadro), a duração quando o player a conhece e a marca **Na tela**. Abaixo, cada opção mostra o tipo (arquivo de vídeo ou stream HLS), a qualidade quando conhecida, o nome do arquivo e o servidor; as que dá para salvar vêm primeiro, a melhor qualidade primeiro. Clique em **Baixar**; o progresso, o cancelamento e o arquivo salvo ficam no [painel de downloads](downloads.md). Valem as configurações **Perguntar onde salvar cada download** e a pasta de downloads. O nome sugerido vem do título da página.
+O botão abre um pop-up logo abaixo dele, por cima da página (que continua visível), que procura vídeos na aba ativa. Ele segue o tema, a paleta e o estilo de janela escolhidos, como os outros pop-ups. Há um cartão por vídeo, com os que estão na tela primeiro. Cada cartão tem uma pequena prévia (um quadro do vídeo, ou a imagem de capa quando o site não permite ler o quadro), a duração quando o player a conhece e a marca **Na tela**. Abaixo, cada opção mostra o tipo (arquivo de vídeo ou stream HLS), a qualidade quando conhecida, o nome do arquivo e o servidor; só aparecem as opções que dá para salvar, a melhor qualidade primeiro. Um vídeo sem nada para salvar mostra, no lugar, uma nota curta com o motivo. Clique em **Baixar**; o progresso, o cancelamento e o arquivo salvo ficam no [painel de downloads](downloads.md). Valem as configurações **Perguntar onde salvar cada download** e a pasta de downloads. O nome sugerido vem do título da página.
 
 Se a lista estiver vazia, dê play no vídeo e clique em **Procurar de novo**: muitos players só pedem o vídeo depois que a reprodução começa. Pressione **Esc**, clique fora ou clique de novo no botão para fechá-lo; ele também fecha quando você troca de aba ou a página muda de endereço.
 
@@ -22,7 +22,7 @@ Um vídeo pode ficar sem prévia quando o site não permite nenhuma das duas. En
 | YouTube e outros players que só usam DASH ou Media Source | Não |
 | DRM ou qualquer HLS criptografado, inclusive AES-128 | Não |
 | Transmissões ao vivo | Não |
-| HLS com áudio em faixa separada, intervalos de bytes ou várias seções de inicialização | Não; o item fica desabilitado com o motivo |
+| HLS com áudio em faixa separada, intervalos de bytes ou várias seções de inicialização | Não; para o áudio separado, veja as [limitações em aberto](../roadmap/video-download-limitations.md) |
 
 Os segmentos são unidos sem conversão e nenhum programa externo é usado. Um arquivo `.ts` toca em players como o VLC. Baixe apenas conteúdo que você tem o direito de salvar.
 

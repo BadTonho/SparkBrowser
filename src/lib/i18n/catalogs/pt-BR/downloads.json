@@ -53,7 +53,7 @@
   "video_download.failed": "Não foi possível baixar o vídeo. Os detalhes estão no log de erros.",
   "video_download.problem_encrypted": "Este stream é criptografado ou protegido.",
   "video_download.problem_live": "Transmissões ao vivo não podem ser baixadas.",
-  "video_download.problem_audio": "Esta qualidade tem o som em uma faixa separada, o que ainda não é suportado.",
+  "video_download.problem_audio": "Este vídeo tem o som em uma faixa separada, o que ainda não é suportado.",
   "video_download.problem_format": "Este formato de stream não é suportado.",
   "video_download.problem_too_large": "Este stream é grande demais.",
   "video_download.problem_platform": "O download de vídeo não está disponível neste sistema.",

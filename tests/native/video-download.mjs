@@ -65,7 +65,7 @@ export async function checkVideoDownload({ fixture: shared, invoke, until, direc
     assert.equal(order.at(-1), 'settings', JSON.stringify(order));
     const rows = 'return [...document.querySelectorAll("[data-testid=video-source]")].map(row=>({text:row.textContent,disabled:row.querySelector("button").disabled}))';
     await click('[data-testid=open-video-download]');
-    await inside(() => until(() => script('return document.querySelectorAll("[data-testid=video-source]").length===4'), 'native popover lists the videos'));
+    await inside(() => until(() => script('return document.querySelectorAll("[data-testid=video-source]").length===3 && !!document.querySelector("[data-testid=video-unavailable]")'), 'native popover lists the videos'));
     assert.equal(await script('return document.querySelector(".browser-preview-fallback") === null'), true, 'the popover keeps the page visible');
     const button = await script('const r=document.querySelector("[data-testid=open-video-download]").getBoundingClientRect();return {right:r.right,bottom:r.bottom};');
     const box = await inside(() => script('const r=document.querySelector(".video-download-surface").getBoundingClientRect();return {right:r.right,top:r.top,width:r.width};'));
@@ -76,10 +76,10 @@ export async function checkVideoDownload({ fixture: shared, invoke, until, direc
     assert.equal(await inside(() => script('return document.querySelectorAll("[data-testid=video-card] .video-download-thumb img[src^=\\"data:image/png\\"]").length')), 2, 'one preview from a poster and one drawn from the playing video');
     const direct = listed.findIndex(row => row.text.includes('movie.mp4'));
     const stream = listed.findIndex(row => row.text.includes('high.m3u8'));
-    const locked = listed.findIndex(row => row.text.includes('locked.m3u8'));
-    assert.ok(direct >= 0 && stream >= 0 && locked >= 0, JSON.stringify(listed));
+    assert.ok(direct >= 0 && stream >= 0, JSON.stringify(listed));
     assert.ok(listed[stream].text.includes('720p'));
-    assert.equal(listed[locked].disabled, true, 'an encrypted stream cannot be downloaded');
+    assert.ok(listed.every(row => !row.disabled && !row.text.includes('locked.m3u8')), 'an option that cannot be saved is not listed');
+    assert.equal(await inside(() => script('return document.querySelectorAll("[data-testid=video-unavailable]").length')), 1, 'its card says why');
     await inside(() => screenshot('video-download'));
 
     const save = index => inside(() => script('document.querySelectorAll("[data-testid=video-source]")[arguments[0]].querySelector("button").click()', index));

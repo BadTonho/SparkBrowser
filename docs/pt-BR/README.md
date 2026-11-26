@@ -90,3 +90,4 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Isolamento de conteúdo por workspace](features/workspace-isolation.md)
 - [Isolamento AppContainer (planejado)](security/app-container-isolation.md)
 - [Proteção planejada contra sites e downloads suspeitos](roadmap/security-protections.md)
+- [Baixar vídeo: limitações em aberto](roadmap/video-download-limitations.md)

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import ts from 'typescript';
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -124,6 +125,19 @@ test('the button is optional, its popover keeps the page visible and its command
     assert.ok(read('src-tauri/src/commands/manifest.rs').includes(`"${command}"`));
     assert.ok(read('src-tauri/capabilities/default.json').includes(`"allow-${command.replaceAll('_', '-')}"`));
   }
+});
+
+test('a card shows only what can be saved, and the reasons only when nothing is left', () => {
+  const exports = {};
+  runInNewContext(ts.transpileModule(read('src/lib/services/video-download-options.ts'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText, { exports });
+  const source = (video, url, problem = null) => ({ video, url, problem });
+  const list = [source('a', 'file'), source('a', 'silent', 'video.separate_audio'),
+    source('b', 'one', 'video.separate_audio'), source('b', 'two', 'video.separate_audio'), source('b', 'three', 'video.live')];
+  const card = id => JSON.parse(JSON.stringify(exports.videoOptions(list, id)));
+  assert.deepEqual(card('a'), { options: [list[0]], reasons: [] });
+  assert.deepEqual(card('b'), { options: [], reasons: ['video.separate_audio', 'video.live'] });
 });
 
 test('every problem code the backend sends has a message in both languages', () => {

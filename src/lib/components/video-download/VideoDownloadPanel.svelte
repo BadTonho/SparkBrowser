@@ -11,6 +11,7 @@
   import { downloadVideo, scanPageVideos, type VideoScan, type VideoSource } from "../../services/bridge/video-download";
   import { focusDialog } from "../../actions/focusDialog";
   import { logIgnored } from "../../services/ignored-error";
+  import { videoOptions } from "../../services/video-download-options";
   import "./video-download.css";
 
   const problems: Record<string, MessageKey> = {
@@ -149,6 +150,7 @@
         {/if}
         {#if scan?.sources.length}
           {#each scan.videos as video, index (video.id)}
+            {@const card = videoOptions(scan.sources, video.id)}
             <section class="video-download-video" data-testid="video-card">
               <div class="video-download-preview">
                 <div class="video-download-thumb">
@@ -161,22 +163,26 @@
                   {#if !video.thumbnail}<span>{$t("video_download.no_preview")}</span>{/if}
                 </div>
               </div>
-              <ul class="video-download-list">
-                {#each scan.sources.filter(source => source.video === video.id) as source (source.url)}
-                  {@const state = states[source.url]}
-                  <li class="video-download-item" data-testid="video-source">
-                    <div class="video-download-copy">
-                      <strong title={source.url}>{describe(source)}</strong>
-                      <span title={source.url}>{fileName(source.url)} · {source.host}</span>
-                      {#if source.problem}<span class="video-download-problem">{$t(problemKey(source.problem))}</span>
-                      {:else if state && state !== "starting" && state !== "started"}<span class="video-download-problem" role="alert">{$t(state)}</span>{/if}
-                    </div>
-                    <button class="video-download-save" disabled={Boolean(source.problem) || state === "starting" || state === "started"} onclick={() => save(source)}>
-                      {$t(state === "started" ? "video_download.added" : "video_download.download")}
-                    </button>
-                  </li>
-                {/each}
-              </ul>
+              {#if card.options.length}
+                <ul class="video-download-list">
+                  {#each card.options as source (source.url)}
+                    {@const state = states[source.url]}
+                    <li class="video-download-item" data-testid="video-source">
+                      <div class="video-download-copy">
+                        <strong title={source.url}>{describe(source)}</strong>
+                        <span title={source.url}>{fileName(source.url)} · {source.host}</span>
+                        {#if state && state !== "starting" && state !== "started"}<span class="video-download-problem" role="alert">{$t(state)}</span>{/if}
+                      </div>
+                      <button class="video-download-save" disabled={state === "starting" || state === "started"} onclick={() => save(source)}>
+                        {$t(state === "started" ? "video_download.added" : "video_download.download")}
+                      </button>
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
+              {#each [...new Set(card.reasons.map(problemKey))] as reason (reason)}
+                <p class="video-download-note" data-testid="video-unavailable">{$t(reason)}</p>
+              {/each}
             </section>
           {/each}
         {/if}

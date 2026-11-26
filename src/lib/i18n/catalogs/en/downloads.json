@@ -53,7 +53,7 @@
   "video_download.failed": "The video could not be downloaded. Details are in the error log.",
   "video_download.problem_encrypted": "This stream is encrypted or protected.",
   "video_download.problem_live": "Live streams cannot be downloaded.",
-  "video_download.problem_audio": "This quality has its sound in a separate track, which is not supported yet.",
+  "video_download.problem_audio": "This video has its sound in a separate track, which is not supported yet.",
   "video_download.problem_format": "This stream format is not supported.",
   "video_download.problem_too_large": "This stream is too large.",
   "video_download.problem_platform": "Video download is not available on this system.",
