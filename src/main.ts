@@ -1,6 +1,7 @@
 import { mount } from "svelte";
 import "./styles/theme.css";
 import { invoke, isTauriRuntime } from "./lib/services/bridge/runtime";
+import { translationsReady } from "./lib/i18n";
 
 // Script errors in any browser interface (shell, settings, tools, downloads) go to the error log
 // and to the notification in the bottom-right corner.
@@ -50,4 +51,5 @@ const component = new URLSearchParams(location.search).get("surface") === "tools
         : ["settings", "settings-tab"].includes(new URLSearchParams(location.search).get("surface") ?? "")
         ? import("./lib/components/settings/SettingsSurface.svelte")
         : import("./LaunchGate.svelte");
-void component.then(({ default: view }) => mount(view, { target: document.getElementById("app")! }));
+// The window opens in its language: the Portuguese text is a separate file read in parallel.
+void Promise.all([component, translationsReady()]).then(([{ default: view }]) => mount(view, { target: document.getElementById("app")! }));

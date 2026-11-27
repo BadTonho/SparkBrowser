@@ -1,6 +1,6 @@
 import { derived, get, writable } from "svelte/store";
 import { safeStorage } from "../services/storage.js";
-import { english, portuguese, type MessageKey } from "./catalogs";
+import { english, loadPortuguese, type MessageKey } from "./catalogs";
 import { interpolate, resolveLanguage } from "./language.js";
 
 export type LanguagePreference = "system" | "pt-BR" | "en";
@@ -10,7 +10,24 @@ const saved = safeStorage.getItem("spark_language");
 export const languagePreference = writable<LanguagePreference>(saved === "pt-BR" || saved === "en" ? saved : "system");
 const systemLanguages = writable<readonly string[]>(typeof navigator === "undefined" ? ["en"] : navigator.languages);
 export const locale = derived([languagePreference, systemLanguages], ([preference, languages]) => resolveLanguage(preference, languages));
-export const t = derived(locale, language => ((key, values = {}) => interpolate((language === "pt-BR" ? portuguese : english)[key], values)) as Translate);
+const portuguese = writable<Record<MessageKey, string> | null>(null);
+let portugueseLoad: Promise<void> | null = null;
+function loadPortugueseOnce(): Promise<void> {
+  portugueseLoad ??= loadPortuguese()
+    .then(catalog => portuguese.set(catalog))
+    .catch(error => {
+      // English stays on screen; a later switch to Portuguese tries again.
+      portugueseLoad = null;
+      console.error(`The Portuguese interface text could not be loaded: ${(error as Error)?.message ?? String(error)}`);
+    });
+  return portugueseLoad;
+}
+locale.subscribe(language => { if (language === "pt-BR") void loadPortugueseOnce(); });
+/** Resolves once the text of the current language is ready, so a window opens in its language. */
+export function translationsReady(): Promise<void> {
+  return get(locale) === "pt-BR" ? loadPortugueseOnce() : Promise.resolve();
+}
+export const t = derived([locale, portuguese], ([language, catalog]) => ((key, values = {}) => interpolate((language === "pt-BR" && catalog ? catalog : english)[key], values)) as Translate);
 export function tr(key: MessageKey, values?: Record<string, unknown>): string { return get(t)(key, values); }
 
 // Only use for predefined interface labels in settings/shortcut definitions.

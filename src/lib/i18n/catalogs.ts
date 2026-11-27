@@ -1,64 +1,39 @@
 import mediaEn from "./catalogs/en/media.json";
 import newtabEn from "./catalogs/en/newtab.json";
-import newtabPt from "./catalogs/pt-BR/newtab.json";
-import mediaPt from "./catalogs/pt-BR/media.json";
 import searchEn from "./catalogs/en/search.json";
-import searchPt from "./catalogs/pt-BR/search.json";
 import zoomEn from "./catalogs/en/zoom.json";
-import zoomPt from "./catalogs/pt-BR/zoom.json";
 import diagnosticsEn from "./catalogs/en/diagnostics.json";
-import diagnosticsPt from "./catalogs/pt-BR/diagnostics.json";
 import shutdownEn from "./catalogs/en/shutdown.json";
-import shutdownPt from "./catalogs/pt-BR/shutdown.json";
 import recoveryEn from "./catalogs/en/recovery.json";
-import recoveryPt from "./catalogs/pt-BR/recovery.json";
 import closedEn from "./catalogs/en/closed.json";
-import closedPt from "./catalogs/pt-BR/closed.json";
 import backupEn from "./catalogs/en/backup.json";
-import backupPt from "./catalogs/pt-BR/backup.json";
 import commonEn from "./catalogs/en/common.json";
-import commonPt from "./catalogs/pt-BR/common.json";
 import bookmarksEn from "./catalogs/en/bookmarks.json";
-import bookmarksPt from "./catalogs/pt-BR/bookmarks.json";
 import commandbarEn from "./catalogs/en/commandbar.json";
-import commandbarPt from "./catalogs/pt-BR/commandbar.json";
 import downloadsEn from "./catalogs/en/downloads.json";
-import downloadsPt from "./catalogs/pt-BR/downloads.json";
 import historyEn from "./catalogs/en/history.json";
-import historyPt from "./catalogs/pt-BR/history.json";
 import permissionsEn from "./catalogs/en/permissions.json";
-import permissionsPt from "./catalogs/pt-BR/permissions.json";
 import privacyEn from "./catalogs/en/privacy.json";
-import privacyPt from "./catalogs/pt-BR/privacy.json";
 import settingsEn from "./catalogs/en/settings.json";
-import settingsPt from "./catalogs/pt-BR/settings.json";
 import sidebarEn from "./catalogs/en/sidebar.json";
-import sidebarPt from "./catalogs/pt-BR/sidebar.json";
 import statusEn from "./catalogs/en/status.json";
-import statusPt from "./catalogs/pt-BR/status.json";
 import tabsEn from "./catalogs/en/tabs.json";
-import tabsPt from "./catalogs/pt-BR/tabs.json";
 import titlebarEn from "./catalogs/en/titlebar.json";
-import titlebarPt from "./catalogs/pt-BR/titlebar.json";
 import toolsEn from "./catalogs/en/tools.json";
-import toolsPt from "./catalogs/pt-BR/tools.json";
 import viewportEn from "./catalogs/en/viewport.json";
-import viewportPt from "./catalogs/pt-BR/viewport.json";
 import workspacesEn from "./catalogs/en/workspaces.json";
-import workspacesPt from "./catalogs/pt-BR/workspaces.json";
 import extensionsEn from "./catalogs/en/extensions.json";
-import extensionsPt from "./catalogs/pt-BR/extensions.json";
 import readerEn from "./catalogs/en/reader.json";
-import readerPt from "./catalogs/pt-BR/reader.json";
 import passwordsEn from "./catalogs/en/passwords.json";
-import passwordsPt from "./catalogs/pt-BR/passwords.json";
 import autofillEn from "./catalogs/en/autofill.json";
-import autofillPt from "./catalogs/pt-BR/autofill.json";
 import profilesEn from "./catalogs/en/profiles.json";
-import profilesPt from "./catalogs/pt-BR/profiles.json";
 import lockEn from "./catalogs/en/lock.json";
-import lockPt from "./catalogs/pt-BR/lock.json";
 
 export const english = { ...newtabEn, ...mediaEn, ...searchEn, ...zoomEn, ...diagnosticsEn, ...shutdownEn, ...recoveryEn, ...closedEn, ...backupEn, ...commonEn, ...bookmarksEn, ...commandbarEn, ...downloadsEn, ...historyEn, ...permissionsEn, ...privacyEn, ...settingsEn, ...sidebarEn, ...statusEn, ...tabsEn, ...titlebarEn, ...toolsEn, ...viewportEn, ...workspacesEn, ...extensionsEn, ...readerEn, ...passwordsEn, ...autofillEn, ...profilesEn, ...lockEn };
 export type MessageKey = keyof typeof english;
-export const portuguese: Record<MessageKey, string> = { ...newtabPt, ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt, ...extensionsPt, ...readerPt, ...passwordsPt, ...autofillPt, ...profilesPt, ...lockPt };
+
+/** Portuguese is read only when it is the interface language: every interface window loads this
+ * module, and most of them would never use the other half of the text. English stays here as the
+ * fallback that is always ready. */
+export const loadPortuguese = (): Promise<Record<MessageKey, string>> =>
+  import("./catalogs-pt").then(module => module.portuguese);

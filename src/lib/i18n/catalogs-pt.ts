@@ -1,0 +1,34 @@
+// The Portuguese interface text, loaded on demand by `loadPortuguese` in `catalogs.ts`.
+import type { MessageKey } from "./catalogs";
+import newtabPt from "./catalogs/pt-BR/newtab.json";
+import mediaPt from "./catalogs/pt-BR/media.json";
+import searchPt from "./catalogs/pt-BR/search.json";
+import zoomPt from "./catalogs/pt-BR/zoom.json";
+import diagnosticsPt from "./catalogs/pt-BR/diagnostics.json";
+import shutdownPt from "./catalogs/pt-BR/shutdown.json";
+import recoveryPt from "./catalogs/pt-BR/recovery.json";
+import closedPt from "./catalogs/pt-BR/closed.json";
+import backupPt from "./catalogs/pt-BR/backup.json";
+import commonPt from "./catalogs/pt-BR/common.json";
+import bookmarksPt from "./catalogs/pt-BR/bookmarks.json";
+import commandbarPt from "./catalogs/pt-BR/commandbar.json";
+import downloadsPt from "./catalogs/pt-BR/downloads.json";
+import historyPt from "./catalogs/pt-BR/history.json";
+import permissionsPt from "./catalogs/pt-BR/permissions.json";
+import privacyPt from "./catalogs/pt-BR/privacy.json";
+import settingsPt from "./catalogs/pt-BR/settings.json";
+import sidebarPt from "./catalogs/pt-BR/sidebar.json";
+import statusPt from "./catalogs/pt-BR/status.json";
+import tabsPt from "./catalogs/pt-BR/tabs.json";
+import titlebarPt from "./catalogs/pt-BR/titlebar.json";
+import toolsPt from "./catalogs/pt-BR/tools.json";
+import viewportPt from "./catalogs/pt-BR/viewport.json";
+import workspacesPt from "./catalogs/pt-BR/workspaces.json";
+import extensionsPt from "./catalogs/pt-BR/extensions.json";
+import readerPt from "./catalogs/pt-BR/reader.json";
+import passwordsPt from "./catalogs/pt-BR/passwords.json";
+import autofillPt from "./catalogs/pt-BR/autofill.json";
+import profilesPt from "./catalogs/pt-BR/profiles.json";
+import lockPt from "./catalogs/pt-BR/lock.json";
+
+export const portuguese: Record<MessageKey, string> = { ...newtabPt, ...mediaPt, ...searchPt, ...zoomPt, ...diagnosticsPt, ...shutdownPt, ...recoveryPt, ...closedPt, ...backupPt, ...commonPt, ...bookmarksPt, ...commandbarPt, ...downloadsPt, ...historyPt, ...permissionsPt, ...privacyPt, ...settingsPt, ...sidebarPt, ...statusPt, ...tabsPt, ...titlebarPt, ...toolsPt, ...viewportPt, ...workspacesPt, ...extensionsPt, ...readerPt, ...passwordsPt, ...autofillPt, ...profilesPt, ...lockPt };

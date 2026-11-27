@@ -77,7 +77,8 @@ test('every message the vault screens use exists in both catalogs', () => {
   for (const file of files) {
     for (const [, key] of read(file).matchAll(/["'](passwords\.[a-z_]+)["']/g)) assert.ok(key in en, `${key} in ${file}`);
   }
-  assert.match(read('src/lib/i18n/catalogs.ts'), /passwordsEn[\s\S]*passwordsPt/);
+  assert.match(read('src/lib/i18n/catalogs.ts'), /passwordsEn/);
+  assert.match(read('src/lib/i18n/catalogs-pt.ts'), /passwordsPt/);
 });
 
 test('Settings has a Passwords category with search entries and the not-audited warning', () => {
