@@ -20,7 +20,7 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(database_path(&app_data_dir))
 }
 
-fn database_path(data_dir: &std::path::Path) -> PathBuf {
+pub fn database_path(data_dir: &std::path::Path) -> PathBuf {
     data_dir.join("spark_browser.db")
 }
 

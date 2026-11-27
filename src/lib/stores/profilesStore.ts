@@ -97,4 +97,6 @@ export async function loadStartupPrefs(): Promise<void> {
 export async function changeAskAtStartup(enabled: boolean): Promise<void> {
   const done = await run(async () => { await setAskProfileAtStartup(enabled); return true; });
   askProfileAtStartup.set(done ? enabled : get(askProfileAtStartup));
+  // Which profile opens at start-up is shown on the list, and it depends on this choice.
+  if (done) await reload();
 }

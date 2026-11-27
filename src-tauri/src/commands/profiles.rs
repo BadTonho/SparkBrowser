@@ -2,7 +2,7 @@
 //! refuse them (a private window is not a profile).
 use crate::error_log::{self, Level};
 use crate::profile::store::{self, ProfileInfo, MAX_PROFILES};
-use crate::profile::{launch, launcher, ProfileRole};
+use crate::profile::{launch, launcher, status, ProfileRole};
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 use zeroize::Zeroizing;
@@ -12,6 +12,10 @@ pub struct ProfileList {
     pub current: String,
     pub items: Vec<ProfileInfo>,
     pub max: usize,
+    /// Ids of the profiles that ask for an app lock when they open.
+    pub locked: Vec<String>,
+    /// The profile Spark opens when it starts, or `None` when it asks which one to open.
+    pub startup: Option<String>,
 }
 
 fn allowed(app: &AppHandle) -> Result<(), String> {
@@ -62,10 +66,20 @@ pub async fn list_profiles(
     allowed(&app)?;
     let role = role.inner().clone();
     blocking("listing the profiles", move || {
+        let items = store::list(role.local_root());
+        let locked = items
+            .iter()
+            .filter(|profile| {
+                status::has_app_lock(&profile.id, &role.data_dir_of(&profile.id)) == Some(true)
+            })
+            .map(|profile| profile.id.clone())
+            .collect();
         Ok(ProfileList {
             current: role.id().to_string(),
-            items: store::list(role.local_root()),
+            startup: status::startup_profile(role.local_root(), &items),
+            items,
             max: MAX_PROFILES,
+            locked,
         })
     })
     .await

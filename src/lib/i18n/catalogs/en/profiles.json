@@ -11,7 +11,7 @@
   "profiles.cancel": "Cancel",
   "profiles.name_label": "Profile name",
   "profiles.new_label": "New profile",
-  "profiles.new_description": "Up to {max} profiles. A new profile starts empty.",
+  "profiles.new_description": "{count} of {max} profiles. A new profile starts empty.",
   "profiles.new_placeholder": "Name of the new profile",
   "profiles.create": "Create profile",
   "profiles.creating": "Creating…",
@@ -49,5 +49,14 @@
   "profiles.picker_close": "Close",
   "profiles.error_open_failed": "The profile could not be started. The error log has the details.",
   "profiles.startup_label": "Ask which profile to open when Spark starts",
-  "profiles.startup_description": "Show a window to choose the profile every time Spark starts. When off, Spark opens the profile you chose last."
+  "profiles.startup_description": "Show a window to choose the profile every time Spark starts. When off, Spark opens the profile you chose last.",
+  "profiles.group_list": "Your profiles",
+  "profiles.group_startup": "When Spark starts",
+  "profiles.group_security": "Security of the profile {name}",
+  "profiles.group_security_plain": "Security of this profile",
+  "profiles.badge_default": "Main",
+  "profiles.badge_startup": "Opens at start-up",
+  "profiles.badge_locked": "App lock",
+  "profiles.default_meta": "The original Spark profile. It installs updates and cannot be renamed or deleted.",
+  "profiles.created_on": "Created on {date}"
 }

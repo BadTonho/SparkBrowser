@@ -8,7 +8,13 @@ Abra **Configurações → Perfis** para gerenciá-los.
 
 ## O que você pode fazer
 
-- **Ver seus perfis.** A lista mostra todos os perfis e marca o que esta janela usa (**Em uso**). O perfil que o Spark sempre usou se chama **Padrão**.
+- **Ver seus perfis.** A página tem três categorias: **Seus perfis**, **Ao iniciar o Spark** e **Segurança do perfil …** (o bloqueio do app do perfil que esta janela usa). O perfil que o Spark sempre usou se chama **Padrão**. Cada perfil da lista mostra etiquetas que dizem o que ele é:
+  - **Em uso**: o perfil desta janela. A linha dele fica destacada e não tem o botão **Abrir**.
+  - **Principal**: o perfil Padrão. Abaixo do nome, o Spark explica que ele instala as atualizações e não pode ser renomeado nem apagado.
+  - **Abre ao iniciar**: o perfil que o Spark abre quando inicia. Nenhum perfil tem essa etiqueta enquanto o Spark pergunta qual abrir.
+  - **Com bloqueio**: o perfil pede um segredo quando abre.
+
+  Os outros perfis mostram a data em que foram criados. **Novo perfil** diz quantos dos 10 perfis você já tem.
 - **Criar** um perfil selecionando **Criar perfil** e digitando um nome na janela. Selecione o avatar para escolher ou trocar uma foto PNG, JPEG ou WebP. Quando não há foto, o avatar mostra a inicial do nome. Digite uma senha de 8 a 256 caracteres para ativar o [bloqueio do app](./app-lock.md) desde a primeira abertura. Use o ícone de olho dentro do campo para mostrar ou ocultar a senha. Deixe a senha em branco para abrir o perfil sem senha. Um perfil novo começa vazio. Os nomes têm de 1 a 40 caracteres, sem quebras de linha, e não podem se repetir (maiúsculas e minúsculas contam como iguais). Você pode ter até 10 perfis.
 - **Abrir** um perfil na própria janela. Cada perfil roda como um processo próprio do Spark, então você pode ter vários abertos ao mesmo tempo. Abrir um que já está aberto traz uma nova janela dele em vez de iniciá-lo duas vezes.
 - **Renomear** um perfil. O perfil Padrão não pode ser renomeado.
@@ -42,5 +48,6 @@ O perfil Padrão continua onde o Spark sempre guardou os dados. Cada outro perfi
 
 - Um perfil diferente do Padrão inicia com `--profile <id>`. Antes de existir qualquer janela, o processo redireciona todos os diretórios do aplicativo (config, dados, dados locais, cache, logs) para a pasta do perfil, o mesmo mecanismo das janelas privadas, então os dados do WebView2 ou do WebKit também ficam isolados. O id tem 12 caracteres hexadecimais minúsculos gerados pelo Spark e é validado antes de chegar a qualquer caminho.
 - A pasta de dados de cada perfil tem o próprio `profile.lock`. Abrir um perfil pede ao processo em execução (pelo vínculo de instância) uma nova janela e só inicia um novo processo quando não há nenhum rodando. Apagar usa o mesmo bloqueio, e é assim que um perfil em execução é recusado.
+- `list_profiles` também devolve `locked` (ids dos perfis com bloqueio do app) e `startup` (o perfil que um início sem `--profile` abre, vindo de `launcher::decide`, ou `null` quando a janela de escolha pergunta). `profile/status.rs` lê o bloqueio do banco de dados de cada perfil aberto **só para leitura**, então as configurações nunca criam nem migram o banco de outro perfil, mesmo com esse perfil rodando. Um perfil que nunca rodou não tem banco de dados nem bloqueio.
 - As falhas são gravadas no [log de erros](error-log.md) com o que falhou e onde (área `profiles`).
 - O que era global precisou virar por perfil: a chave do Windows Hello do cofre (nomeada com o perfil; o perfil Padrão mantém o nome que sempre teve) e o atualizador (só o Padrão). As credenciais de backup já eram por perfil, porque a chave delas vem do caminho do banco de dados.

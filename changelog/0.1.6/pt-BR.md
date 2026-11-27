@@ -24,6 +24,7 @@
 - A janela de configurações abre com muito menos para carregar: cada seção agora é lida na primeira vez que você a abre, em vez de todas de uma vez.
 - **Configurações → Aparência e disposição** agora é dividida em categorias (Idioma e janelas, Tema e cores, Fundo da janela, Disposição, Barra e conteúdo), para cada opção ser mais fácil de achar.
 - **Configurações → Privacidade e segurança** agora é dividida em categorias (Privacidade de rede, Histórico local, Navegação segura, Escudo de privacidade, Rastreamento), cada opção é um cartão com os mesmos interruptores do resto das configurações, e os sites excluídos são adicionados dentro do cartão da opção e mostrados como etiquetas removíveis.
+- **Configurações → Perfis** ficou mais fácil de entender: cada perfil tem etiquetas (**Em uso**, **Principal**, **Abre ao iniciar**, **Com bloqueio**) e a data de criação, o perfil em uso fica destacado e não mostra mais **Abrir**, e a página foi dividida em categorias (Seus perfis, Ao iniciar o Spark e a segurança do perfil em uso).
 
 ## Correções
 

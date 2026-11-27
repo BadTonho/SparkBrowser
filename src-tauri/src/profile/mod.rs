@@ -10,6 +10,7 @@
 mod avatar;
 pub mod launch;
 pub mod launcher;
+pub mod status;
 pub mod store;
 
 use std::path::{Path, PathBuf};

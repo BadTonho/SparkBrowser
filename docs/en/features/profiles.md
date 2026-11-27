@@ -8,7 +8,13 @@ Open **Settings → Profiles** to manage them.
 
 ## What you can do
 
-- **See your profiles.** The list shows every profile and marks the one this window uses (**In use**). The profile Spark has always used is called **Default**.
+- **See your profiles.** The page has three categories: **Your profiles**, **When Spark starts** and **Security of the profile …** (the app lock of the profile this window uses). The profile Spark has always used is called **Default**. Each profile in the list shows labels that say what it is:
+  - **In use**: the profile of this window. Its row is highlighted and has no **Open** button.
+  - **Main**: the Default profile. Below its name, Spark explains that it installs updates and cannot be renamed or deleted.
+  - **Opens at start-up**: the profile Spark opens when it starts. No profile has it while Spark asks which one to open.
+  - **App lock**: the profile asks for a secret when it opens.
+
+  The other profiles show the date they were created. **New profile** says how many of the 10 profiles you already have.
 - **Create** a profile by selecting **Create profile** and entering a name in the dialog. Select the avatar to choose or replace a PNG, JPEG or WebP photo. The avatar shows the name's initial when there is no photo. Enter a password of 8 to 256 characters to enable the [app lock](./app-lock.md) from the first time you open the profile. Use the eye icon inside the field to show or hide the password. Leave the password blank to open the profile without a password. A new profile starts empty. Names have 1 to 40 characters, no line breaks, and cannot repeat (upper and lower case count as the same). You can have up to 10 profiles.
 - **Open** a profile in its own window. Each profile runs as its own Spark process, so you can have several open at once. Opening one that is already open brings a new window of it instead of starting it twice.
 - **Rename** a profile. The Default profile cannot be renamed.
@@ -42,5 +48,6 @@ The Default profile stays where Spark has always stored its data. Every other pr
 
 - A profile other than the Default one starts with `--profile <id>`. Before any window exists, the process redirects every application directory (config, data, local data, cache, logs) into the profile folder, the same mechanism private windows use, so the WebView2 or WebKit data is isolated too. The id is 12 lowercase hex characters made by Spark and validated before it reaches any path.
 - The data folder of each profile holds its own `profile.lock`. Opening a profile asks the running process (through the instance link) for a new window and only starts a new process when none is running. Deleting takes the same lock, which is how a running profile is refused.
+- `list_profiles` also returns `locked` (ids of the profiles with an app lock) and `startup` (the profile a start without `--profile` opens, from `launcher::decide`, or `null` when the picker asks). `profile/status.rs` reads the lock from each profile's database opened **read-only**, so Settings never creates or migrates the database of another profile, even while that profile runs. A profile that never ran has no database and no lock.
 - Failures are written to the [error log](error-log.md) with what failed and where (`profiles` area).
 - Things that were global had to become per profile: the Windows Hello key of the vault (named after the profile; the Default profile keeps the name it always had) and the updater (Default only). Backup credentials were already per profile, because their key comes from the database path.

@@ -99,3 +99,21 @@ test('a profile other than the Default one explains on the Updates page why it d
   assert.match(page, /const otherProfile = \$derived\(!!\$profiles && \$profiles\.current !== "default"\)/);
   assert.match(page, /\{#if otherProfile\}<p role="note" data-testid="updates-other-profile">\{\$t\("profiles\.updates_note"\)\}<\/p>\{\/if\}/);
 });
+
+test('each profile says what it is: in use, main, opens at start-up, app lock and creation date', () => {
+  const page = read('src/lib/components/settings/ProfilesSettings.svelte');
+  for (const badge of ['profile-current', 'profile-default', 'profile-startup', 'profile-locked', 'profile-meta']) {
+    assert.ok(page.includes(`data-testid="${badge}"`), badge);
+  }
+  assert.match(page, /\{#if !isCurrent\}\s*<button [^\n]*data-testid="profile-open"/, 'the profile in use has no Open button');
+  for (const heading of ['profiles-list-heading', 'profiles-startup-heading', 'profiles-security-heading']) {
+    assert.ok(page.includes(`id="${heading}"`), heading);
+  }
+  const command = read('src-tauri/src/commands/profiles.rs');
+  assert.match(command, /pub locked: Vec<String>/);
+  assert.match(command, /pub startup: Option<String>/);
+  // Other profiles' databases are only read, never created or migrated, from Settings.
+  const status = read('src-tauri/src/profile/status.rs');
+  assert.match(status, /SQLITE_OPEN_READ_ONLY/);
+  assert.doesNotMatch(status, /initialize_schema\(|SQLITE_OPEN_CREATE/);
+});

@@ -11,7 +11,7 @@
   "profiles.cancel": "Cancelar",
   "profiles.name_label": "Nome do perfil",
   "profiles.new_label": "Novo perfil",
-  "profiles.new_description": "Até {max} perfis. Um perfil novo começa vazio.",
+  "profiles.new_description": "{count} de {max} perfis. Um perfil novo começa vazio.",
   "profiles.new_placeholder": "Nome do novo perfil",
   "profiles.create": "Criar perfil",
   "profiles.creating": "Criando…",
@@ -49,5 +49,14 @@
   "profiles.picker_close": "Fechar",
   "profiles.error_open_failed": "Não foi possível iniciar o perfil. O log de erros tem os detalhes.",
   "profiles.startup_label": "Perguntar qual perfil abrir ao iniciar o Spark",
-  "profiles.startup_description": "Mostra uma janela para escolher o perfil toda vez que o Spark inicia. Desligado, o Spark abre o último perfil que você escolheu."
+  "profiles.startup_description": "Mostra uma janela para escolher o perfil toda vez que o Spark inicia. Desligado, o Spark abre o último perfil que você escolheu.",
+  "profiles.group_list": "Seus perfis",
+  "profiles.group_startup": "Ao iniciar o Spark",
+  "profiles.group_security": "Segurança do perfil {name}",
+  "profiles.group_security_plain": "Segurança deste perfil",
+  "profiles.badge_default": "Principal",
+  "profiles.badge_startup": "Abre ao iniciar",
+  "profiles.badge_locked": "Com bloqueio",
+  "profiles.default_meta": "O perfil original do Spark. Ele instala as atualizações e não pode ser renomeado nem apagado.",
+  "profiles.created_on": "Criado em {date}"
 }
