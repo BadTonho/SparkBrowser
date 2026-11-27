@@ -261,5 +261,11 @@
   "backup.sync_last_from": "Último arquivo na nuvem: {time}, enviado por {device}.",
   "backup.sync_this_device": "este computador",
   "backup.sync_failure_notice": "A sincronização automática falhou {count} vezes seguidas. Abra Dados e backup para ver o motivo.",
-  "backup.sync_failure_open": "Abrir"
+  "backup.sync_failure_open": "Abrir",
+  "backup.sync_pull_on_start_label": "Baixar ao abrir o Spark",
+  "backup.sync_pull_on_start_desc": "Se o arquivo da nuvem for mais novo, ele é aplicado quando o Spark abre. Se este computador também mudou, você revisa antes de aplicar qualquer coisa.",
+  "backup.sync_start_applied": "Atualizado com as mudanças de {device}.",
+  "backup.sync_start_cloud": "a nuvem",
+  "backup.sync_start_review": "Este computador e a nuvem mudaram. Revise antes de aplicar o arquivo da nuvem.",
+  "backup.sync_start_review_open": "Revisar"
 }

@@ -1581,6 +1581,12 @@
           "markdownDescription": "Enables the switch_workspace command without any pre-configured scope."
         },
         {
+          "description": "Enables the sync_backup_on_start command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sync-backup-on-start",
+          "markdownDescription": "Enables the sync_backup_on_start command without any pre-configured scope."
+        },
+        {
           "description": "Enables the sync_viewport_bounds command without any pre-configured scope.",
           "type": "string",
           "const": "allow-sync-viewport-bounds",
@@ -3211,6 +3217,12 @@
           "type": "string",
           "const": "deny-switch-workspace",
           "markdownDescription": "Denies the switch_workspace command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sync_backup_on_start command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sync-backup-on-start",
+          "markdownDescription": "Denies the sync_backup_on_start command without any pre-configured scope."
         },
         {
           "description": "Denies the sync_viewport_bounds command without any pre-configured scope.",

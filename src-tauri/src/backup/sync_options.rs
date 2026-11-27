@@ -24,6 +24,8 @@ pub struct SyncOptions {
     pub interval: SyncInterval,
     /// Unix seconds until which the automatic sync does nothing; `None` when it is not paused.
     pub paused_until: Option<i64>,
+    /// When Spark opens, download the file in the cloud and apply it if it is newer.
+    pub pull_on_start: bool,
 }
 
 pub fn load(conn: &Connection) -> SyncOptions {
@@ -89,6 +91,7 @@ mod tests {
         let options = SyncOptions {
             interval: SyncInterval::FifteenMinutes,
             paused_until: Some(1_900_000_000),
+            pull_on_start: true,
         };
         save(&conn, &options).unwrap();
         assert_eq!(load(&conn), options);

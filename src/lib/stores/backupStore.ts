@@ -26,6 +26,7 @@ import {
   saveBackupEncryption,
   saveBackupSyncConfig,
   saveBackupSyncOptions,
+  syncBackupOnStart,
   saveLocalBackupSchedule,
   unlockBackupFile,
 } from "../services/bridge/backup";
@@ -87,7 +88,7 @@ export const backupSyncState = writable<SyncStateSnapshot>({
   connected_account: null,
   last_synced_at: null,
   last_error: null,
-  options: { interval: "auto", paused_until: null },
+  options: { interval: "auto", paused_until: null, pull_on_start: false },
   this_device: "",
   last_device: null,
 });
@@ -134,6 +135,16 @@ export async function saveSyncOptions(patch: Partial<SyncOptions>): Promise<void
   }
 }
 
+/** Opens Settings on Data & Backup (loaded on demand: the settings store imports this one). */
+function openDataBackup(): void {
+  void import("./settingsStore")
+    .then(({ openSettingsModal, setActiveSettingsCategory }) => {
+      setActiveSettingsCategory("data_backup");
+      return openSettingsModal();
+    })
+    .catch(logIgnored);
+}
+
 function noteAutoSyncFailure(): void {
   autoSyncFailures += 1;
   if (autoSyncFailures !== FAILURE_NOTICE_AFTER) return;
@@ -142,14 +153,7 @@ function noteAutoSyncFailure(): void {
     type: "error",
     message: tr("backup.sync_failure_notice", { count: FAILURE_NOTICE_AFTER }),
     actionLabel: tr("backup.sync_failure_open"),
-    onAction: () => {
-      void import("./settingsStore")
-        .then(({ openSettingsModal, setActiveSettingsCategory }) => {
-          setActiveSettingsCategory("data_backup");
-          return openSettingsModal();
-        })
-        .catch(logIgnored);
-    },
+    onAction: openDataBackup,
     timeoutMs: 10_000,
   });
 }
@@ -337,6 +341,36 @@ async function applyPending(): Promise<void> {
 }
 
 export const retryBackupPreferences = () => action(applyPending);
+
+/**
+ * When Spark opens with "Download when Spark opens" on: applies the file in the cloud when only the cloud
+ * changed, or prepares the review when this computer changed too. Runs before the first automatic send.
+ */
+async function runSyncOnStart(): Promise<void> {
+  if (!isTauriRuntime() || get(backupBusy) || get(syncPausedNow)) return;
+  if (get(backupSyncState).config.mode === "google_drive_web" && gdriveLoginRequiredPause) return;
+  const tr = get(t);
+  try {
+    await noteWriter.flushAll();
+    const res = await trackSync(() => syncBackupOnStart(capturePreferences()));
+    backupSyncState.set(res.state);
+    if (res.kind === "applied") {
+      hasPendingChangesForCloud = false;
+      await applyImportedResult(res.result);
+      showToast({ type: "success", message: tr("backup.sync_start_applied", { device: res.state.last_device ?? tr("backup.sync_start_cloud") }) });
+    } else if (res.kind === "review") {
+      if (source && source !== res.source_token) await discardBackupImport(source);
+      source = res.source_token;
+      backupResult.set(null);
+      resetRestoreOptions();
+      await createPreview();
+      showToast({ type: "info", message: tr("backup.sync_start_review"), actionLabel: tr("backup.sync_start_review_open"), onAction: openDataBackup, timeoutMs: 15_000 });
+    }
+  } catch (error) {
+    if (String(error).includes("backup.sync_gdrive_login_required")) setDrivePause(true);
+    backupSyncState.update((s) => ({ ...s, last_error: describeError(error) }));
+  }
+}
 
 async function applyImportedResult(result: BackupImportResult): Promise<void> {
   backupResult.set(result);
@@ -698,9 +732,19 @@ function startBackupStatus(scope: import("../services/lifecycle.js").LifecycleSc
     .then(scope.guard((state) => {
       backupSyncState.set(state);
       autoSyncReady = true;
-      if (state.config.mode !== "disabled" && state.config.auto_save && !state.last_synced_at) {
-        hasPendingChangesForCloud = true;
-        startupTimer = setTimeout(() => { if (scope.active()) void runBackgroundAutoSync(); }, 1500);
+      const firstSend = () => {
+        if (state.config.mode !== "disabled" && state.config.auto_save && !state.last_synced_at) {
+          hasPendingChangesForCloud = true;
+          startupTimer = setTimeout(() => { if (scope.active()) void runBackgroundAutoSync(); }, 1500);
+        }
+      };
+      // The cloud is read before anything is sent, so a newer file from another computer is not overwritten.
+      if (state.config.mode !== "disabled" && state.options.pull_on_start) {
+        startupTimer = setTimeout(() => {
+          if (scope.active()) void runSyncOnStart().finally(() => { if (scope.active()) firstSend(); });
+        }, 1500);
+      } else {
+        firstSend();
       }
     }))
     .catch(scope.guard((error) => backupError.set(describeError(error))));

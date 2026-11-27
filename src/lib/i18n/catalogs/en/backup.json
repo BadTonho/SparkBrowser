@@ -261,5 +261,11 @@
   "backup.sync_last_from": "Last file in the cloud: {time}, sent by {device}.",
   "backup.sync_this_device": "this computer",
   "backup.sync_failure_notice": "Automatic sync failed {count} times in a row. Open Data & Backup to see why.",
-  "backup.sync_failure_open": "Open"
+  "backup.sync_failure_open": "Open",
+  "backup.sync_pull_on_start_label": "Download when Spark opens",
+  "backup.sync_pull_on_start_desc": "If the file in the cloud is newer, it is applied when Spark opens. If this computer changed too, you review before anything is applied.",
+  "backup.sync_start_applied": "Updated with the changes from {device}.",
+  "backup.sync_start_cloud": "the cloud",
+  "backup.sync_start_review": "This computer and the cloud both changed. Review before applying the file from the cloud.",
+  "backup.sync_start_review_open": "Review"
 }

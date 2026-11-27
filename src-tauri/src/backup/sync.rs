@@ -81,6 +81,27 @@ pub enum SyncPullResponse {
     },
 }
 
+/// What the check made when Spark opened.
+#[derive(Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum SyncStartResponse {
+    /// The option is off, sync is off or paused: nothing was downloaded.
+    Skipped { state: SyncStateSnapshot },
+    /// The file in the cloud is the one this computer last sent or applied.
+    UpToDate { state: SyncStateSnapshot },
+    /// Only the cloud changed: its file was applied.
+    Applied {
+        result: Box<BackupImportResult>,
+        state: SyncStateSnapshot,
+    },
+    /// This computer and the cloud both changed: the person reviews before anything is applied.
+    Review {
+        source_token: String,
+        preview: Box<BackupPreview>,
+        state: SyncStateSnapshot,
+    },
+}
+
 #[derive(Default)]
 pub struct SyncRuntime {
     pub credentials: std::sync::Arc<super::credentials::Credentials>,
@@ -729,12 +750,9 @@ pub async fn push_sync(
     })
 }
 
-pub async fn pull_sync(
-    app: &AppHandle,
-    current_preferences: BackupPreferences,
-    direct_apply: bool,
-    apply_preferences_override: Option<bool>,
-) -> Result<SyncPullResponse, String> {
+/// Downloads the file of the configured target, remembers which computer wrote it, and says whether
+/// the target applies preferences on a direct pull.
+async fn read_remote(app: &AppHandle) -> Result<(BackupDocument, bool), String> {
     let backup_service = app.state::<service::BackupService>();
     let (config, secret) = {
         let state = app.state::<BrowserState>();
@@ -830,6 +848,141 @@ pub async fn pull_sync(
             return Err(err);
         }
     };
+    Ok((doc, config_apply_prefs))
+}
+
+/// Runs `work` with the profile database.
+fn with_db<T>(
+    app: &AppHandle,
+    work: impl FnOnce(&Connection) -> Result<T, String>,
+) -> Result<T, String> {
+    let state = app.state::<BrowserState>();
+    let db = state
+        .infrastructure()
+        .db()
+        .lock()
+        .map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+    work(conn)
+}
+
+/// Imports a downloaded document as a direct pull does, then records the merged state as synced.
+async fn apply_remote(
+    app: &AppHandle,
+    source_token: String,
+    apply_prefs: bool,
+    current_preferences: BackupPreferences,
+) -> Result<(BackupImportResult, SyncStateSnapshot), String> {
+    let backup_service = app.state::<service::BackupService>();
+    let preview =
+        service::preview(app, None, Some(source_token), current_preferences.clone()).await?;
+    let result =
+        service::import(app, preview.token, apply_prefs, current_preferences.clone()).await?;
+    let synced_doc = service::capture(app, current_preferences).await?;
+    let current_fp = fingerprint_hex(&synced_doc)?;
+    let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
+    let snap = with_db(app, |conn| {
+        clear_error_and_record_sync(conn, &backup_service.sync, &current_fp, now)?;
+        snapshot(conn, &backup_service.sync)
+    })?;
+    Ok((result, snap))
+}
+
+/// What to do with the file in the cloud when Spark opens, from three fingerprints: the file's, this
+/// computer's data now, and the one recorded at the last send or apply.
+#[derive(Debug, PartialEq, Eq)]
+pub enum StartDecision {
+    UpToDate,
+    Apply,
+    Review,
+}
+
+pub fn decide_on_start(remote: &str, local: &str, last_synced: Option<&str>) -> StartDecision {
+    if last_synced == Some(remote) || remote == local {
+        StartDecision::UpToDate
+    } else if last_synced == Some(local) {
+        StartDecision::Apply
+    } else {
+        StartDecision::Review
+    }
+}
+
+/// When Spark opens: downloads the file in the cloud and applies it when only the cloud changed, or
+/// prepares a review when this computer changed too. Does nothing when the option is off.
+pub async fn sync_on_start(
+    app: &AppHandle,
+    current_preferences: BackupPreferences,
+) -> Result<SyncStartResponse, String> {
+    let backup_service = app.state::<service::BackupService>();
+    let (enabled, last_fp) = with_db(app, |conn| {
+        let options = super::sync_options::load(conn);
+        let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
+        let paused = options.paused_until.is_some_and(|until| until > now);
+        let on =
+            options.pull_on_start && !paused && load_config(conn)? != SyncTargetConfig::Disabled;
+        Ok((
+            on,
+            preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?,
+        ))
+    })?;
+    if !enabled {
+        let state = with_db(app, |conn| snapshot(conn, &backup_service.sync))?;
+        return Ok(SyncStartResponse::Skipped { state });
+    }
+    let (remote, apply_prefs) = match read_remote(app).await {
+        Ok(found) => found,
+        // Nothing in the cloud yet is not a failure: the first send creates it.
+        Err(error) if error == "backup.sync_file_not_found" => {
+            let state = with_db(app, |conn| {
+                if let Ok(mut guard) = backup_service.sync.last_error.lock() {
+                    *guard = None;
+                }
+                snapshot(conn, &backup_service.sync)
+            })?;
+            return Ok(SyncStartResponse::Skipped { state });
+        }
+        Err(error) => return Err(error),
+    };
+    let remote_fp = fingerprint_hex(&remote)?;
+    let local = service::capture(app, current_preferences.clone()).await?;
+    let local_fp = fingerprint_hex(&local)?;
+    match decide_on_start(&remote_fp, &local_fp, last_fp.as_deref()) {
+        StartDecision::UpToDate => {
+            let state = with_db(app, |conn| snapshot(conn, &backup_service.sync))?;
+            Ok(SyncStartResponse::UpToDate { state })
+        }
+        StartDecision::Apply => {
+            let token = backup_service.select(remote)?;
+            let (result, state) =
+                apply_remote(app, token, apply_prefs, current_preferences).await?;
+            Ok(SyncStartResponse::Applied {
+                result: Box::new(result),
+                state,
+            })
+        }
+        StartDecision::Review => {
+            let source_token = backup_service.select(remote)?;
+            let preview =
+                service::preview(app, None, Some(source_token.clone()), current_preferences)
+                    .await?;
+            let state = with_db(app, |conn| snapshot(conn, &backup_service.sync))?;
+            Ok(SyncStartResponse::Review {
+                source_token,
+                preview: Box::new(preview),
+                state,
+            })
+        }
+    }
+}
+
+pub async fn pull_sync(
+    app: &AppHandle,
+    current_preferences: BackupPreferences,
+    direct_apply: bool,
+    apply_preferences_override: Option<bool>,
+) -> Result<SyncPullResponse, String> {
+    let backup_service = app.state::<service::BackupService>();
+    let (doc, config_apply_prefs) = read_remote(app).await?;
 
     let source_token = backup_service.select(doc)?;
     let preview = service::preview(
@@ -875,4 +1028,21 @@ pub async fn pull_sync(
         result: Box::new(result),
         state: snap,
     })
+}
+
+#[cfg(test)]
+mod start_tests {
+    use super::{decide_on_start, StartDecision};
+
+    #[test]
+    fn opening_applies_only_what_changed_in_the_cloud_alone() {
+        // Nothing new in the cloud, or the cloud already holds this computer's data.
+        assert_eq!(decide_on_start("a", "b", Some("a")), StartDecision::UpToDate);
+        assert_eq!(decide_on_start("a", "a", Some("x")), StartDecision::UpToDate);
+        // Another computer sent, and this one did not change since the last sync.
+        assert_eq!(decide_on_start("b", "a", Some("a")), StartDecision::Apply);
+        // Both changed, or nothing was ever synced here: the person reviews first.
+        assert_eq!(decide_on_start("b", "c", Some("a")), StartDecision::Review);
+        assert_eq!(decide_on_start("b", "c", None), StartDecision::Review);
+    }
 }

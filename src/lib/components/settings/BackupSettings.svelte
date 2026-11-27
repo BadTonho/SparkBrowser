@@ -192,6 +192,11 @@
   </label>
 {/snippet}
 
+<!-- Saved on its own (sync options), so it applies at once in every mode, WebDAV included. -->
+{#snippet pullOnStartRow()}
+  {@render switchRow($t("backup.sync_pull_on_start_label"), $t("backup.sync_pull_on_start_desc"), "backup-sync-pull-on-start", $backupSyncState.options.pull_on_start, (on) => void saveSyncOptions({ pull_on_start: on }))}
+{/snippet}
+
 <section class="setting-group backup-settings" aria-labelledby="backup-heading">
   <h2 class="group-title" id="backup-heading">{$t("backup.heading")}</h2>
   {#if !desktop}<p role="status">{$t("common.desktop_required")}</p>
@@ -314,6 +319,7 @@
           <h4 class="sync-section-title" id="sync-auto-title">{$t("backup.sync_section_auto")}</h4>
           <div class="sync-rows">
             {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_gdrive"), "backup-sync-auto-save", autoSave, (on) => { autoSave = on; handleGDriveOptionsChange(); })}
+            {@render pullOnStartRow()}
             {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => { directApplyPrefs = on; handleGDriveOptionsChange(); })}
           </div>
         </section>
@@ -339,6 +345,7 @@
           <h4 class="sync-section-title" id="sync-auto-title">{$t("backup.sync_section_auto")}</h4>
           <div class="sync-rows">
             {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_folder"), "backup-sync-auto-save", autoSave, (on) => { autoSave = on; handleFolderOptionsChange(); })}
+            {@render pullOnStartRow()}
             {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => { directApplyPrefs = on; handleFolderOptionsChange(); })}
           </div>
         </section>
@@ -388,6 +395,7 @@
           <h4 class="sync-section-title" id="sync-auto-title">{$t("backup.sync_section_auto")}</h4>
           <div class="sync-rows">
             {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_webdav"), "backup-sync-auto-save", autoSave, (on) => (autoSave = on))}
+            {@render pullOnStartRow()}
             {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => (directApplyPrefs = on))}
           </div>
           <div class="actions">

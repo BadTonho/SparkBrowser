@@ -66,6 +66,8 @@ export interface SyncOptions {
   interval: SyncInterval;
   /** Unix seconds until which the automatic sync does nothing. */
   paused_until: number | null;
+  /** When Spark opens, download the file in the cloud and apply it if it is newer. */
+  pull_on_start: boolean;
 }
 
 export interface SyncPushResult {
@@ -74,6 +76,12 @@ export interface SyncPushResult {
   last_synced_at: number | null;
   state: SyncStateSnapshot;
 }
+
+/** What the check made when Spark opened. */
+export type SyncStartResponse =
+  | { kind: "skipped" | "up_to_date"; state: SyncStateSnapshot }
+  | { kind: "applied"; result: BackupImportResult; state: SyncStateSnapshot }
+  | { kind: "review"; source_token: string; preview: BackupPreview; state: SyncStateSnapshot };
 
 export type SyncPullResponse =
   | { kind: "preview"; source_token: string; preview: BackupPreview; state: SyncStateSnapshot }

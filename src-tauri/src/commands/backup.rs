@@ -266,6 +266,15 @@ pub async fn set_backup_sync_options(
     .await
 }
 
+/// When Spark opens: applies the file in the cloud if only the cloud changed, or prepares a review.
+#[tauri::command]
+pub async fn sync_backup_on_start(
+    app: AppHandle,
+    current_preferences: BackupPreferences,
+) -> Result<backup::sync::SyncStartResponse, String> {
+    backup::sync::sync_on_start(&app, current_preferences).await
+}
+
 #[tauri::command]
 pub async fn push_backup_sync(
     app: AppHandle,
