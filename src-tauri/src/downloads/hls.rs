@@ -25,7 +25,10 @@ pub(crate) async fn get(
     limit: usize,
 ) -> Result<(Url, Vec<u8>), String> {
     super::transfer::validate_download_url(url.as_str())?;
-    if crate::privacy::adblock_engine::should_block_url(url.as_str(), shield) {
+    // A playlist from a public page cannot send Spark into the local network.
+    if !super::local_network::allowed(url, referer)
+        || crate::privacy::adblock_engine::should_block_url(url.as_str(), shield)
+    {
         return Err("downloads.blocked".into());
     }
     let request = resumable::client(shield)?
@@ -212,7 +215,7 @@ mod tests {
             ("200 OK", "first-"),
             ("200 OK", "second"),
         ]);
-        let referer = Some("http://page.example.test/watch?private=1");
+        let referer = Some("http://localhost:9/watch?private=1");
         let media = fetch_media(&url, true, referer).await.unwrap();
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("joined.ts");
@@ -227,7 +230,7 @@ mod tests {
         assert_eq!((count, seen), (12, vec![6, 12]));
         for request in requests.join().unwrap() {
             // Another origin only learns the page's origin.
-            assert!(request.contains("referer: http://page.example.test/\r\n"));
+            assert!(request.contains("referer: http://localhost:9/\r\n"));
             assert!(request.contains("user-agent: mozilla/5.0"));
         }
     }

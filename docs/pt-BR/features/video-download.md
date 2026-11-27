@@ -37,7 +37,7 @@ Os segmentos são unidos sem conversão e nenhum programa externo é usado. Um a
 
 ## Privacidade e segurança
 
-Enquanto uma página está aberta, o Spark mantém na memória dela os endereços das últimas 32 playlists `.m3u8` pedidas; nada é salvo nem enviado. A página só é examinada quando você abre o painel: o Spark pede os endereços que ela já usa (elementos de vídeo, inclusive dentro de componentes web abertos, e pedidos `.m3u8`) e lê no máximo 8 playlists para listar as qualidades. Todo endereço, redirecionamento e segmento precisa ser HTTP(S) sem credenciais embutidas e passa pelo escudo de privacidade. Os dois comandos só estão disponíveis para a interface local.
+Enquanto uma página está aberta, o Spark mantém na memória dela os endereços das últimas 32 playlists `.m3u8` pedidas; nada é salvo nem enviado. A página só é examinada quando você abre o painel: o Spark pede os endereços que ela já usa (elementos de vídeo, inclusive dentro de componentes web abertos, e pedidos `.m3u8`) e lê no máximo 8 playlists para listar as qualidades. Todo endereço, redirecionamento e segmento precisa ser HTTP(S) sem credenciais embutidas e passa pelo escudo de privacidade. Uma página que não está neste computador nem na rede local não pode apontar o Spark para um endereço que está (`localhost`, `127.0.0.1`, `192.168.x.x`, `10.x.x.x` e parecidos, inclusive por um redirecionamento ou dentro de uma playlist): essas fontes e pôsteres ficam de fora, e um download assim é recusado. Uma página na rede local, como um site em desenvolvimento, continua podendo usar endereços locais. Os dois comandos só estão disponíveis para a interface local.
 
 ## Código
 

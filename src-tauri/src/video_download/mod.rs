@@ -3,7 +3,7 @@
 pub mod playlist;
 mod preview;
 
-use crate::downloads::{hls, transfer::validate_download_url};
+use crate::downloads::{hls, local_network, transfer::validate_download_url};
 use playlist::Playlist;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -243,6 +243,9 @@ async fn read_streams(
                 continue;
             };
             url.set_fragment(None);
+            if !local_network::allowed(&url, Some(&frame.page)) {
+                continue;
+            }
             let key = url.to_string();
             if !pending.insert(key.clone()) {
                 continue;
@@ -296,10 +299,16 @@ async fn resolve(
     let mut from_master = Vec::new();
     for frame in frames {
         scan.protected |= frame.protected;
-        for video in frame.videos {
-            if videos.len() < MAX_VIDEOS {
-                videos.insert(video.group.clone(), video);
+        for mut video in frame.videos {
+            if videos.len() >= MAX_VIDEOS {
+                break;
             }
+            let poster_allowed = Url::parse(&video.poster)
+                .is_ok_and(|poster| local_network::allowed(&poster, Some(&frame.page)));
+            if !poster_allowed {
+                video.poster.clear();
+            }
+            videos.insert(video.group.clone(), video);
         }
         let referer = validate_download_url(&frame.page)
             .ok()
@@ -309,6 +318,9 @@ async fn resolve(
                 continue;
             };
             url.set_fragment(None);
+            if !local_network::allowed(&url, Some(&frame.page)) {
+                continue;
+            }
             if scan.sources.len() >= MAX_SOURCES || !seen.insert(url.to_string()) {
                 continue;
             }
@@ -551,6 +563,9 @@ mod tests {
                     found("https://example.test/a.mp4"),
                     found("file:///c:/a.mp4"),
                     found("https://user:secret@example.test/b.mp4"),
+                    // A page that is not local cannot point into the local network.
+                    found("http://192.168.0.1/c.mp4"),
+                    found("http://localhost:8080/d.mp4"),
                 ],
             }],
             |_| true,
@@ -580,7 +595,8 @@ mod tests {
         };
         let frames = vec![FrameSources {
             videos: Vec::new(),
-            page: String::new(),
+            // The servers are on this computer, so the page is too.
+            page: "http://localhost/".into(),
             protected: false,
             sources: vec![stream("a"), stream("b"), stream("a")],
         }];

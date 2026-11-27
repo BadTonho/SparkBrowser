@@ -67,6 +67,9 @@ pub(super) fn client(shield: bool) -> Result<&'static reqwest::Client, String> {
                             a.url().as_str(),
                             shield,
                         )
+                        || a.previous().first().is_some_and(|first| {
+                            !super::local_network::redirect_allowed(first, a.url())
+                        })
                     {
                         a.error("downloads.blocked")
                     } else {

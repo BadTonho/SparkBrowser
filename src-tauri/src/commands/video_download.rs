@@ -1,5 +1,5 @@
 use crate::downloads::{
-    hls,
+    hls, local_network,
     manager::{DownloadManager, DownloadTask, VideoRequest},
     transfer::validate_download_url,
 };
@@ -27,6 +27,10 @@ pub async fn download_video(
     let referer = referer
         .map(|page| validate_download_url(&page).map(|page| page.to_string()))
         .transpose()?;
+    // Same rule as the search: a page that is not local cannot point into the local network.
+    if !local_network::allowed(&url, Some(referer.as_deref().unwrap_or_default())) {
+        return Err("downloads.blocked".into());
+    }
     let title = state
         .snapshot_tabs()
         .into_iter()

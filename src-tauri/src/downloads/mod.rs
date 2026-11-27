@@ -6,6 +6,7 @@ pub mod transfer;
 
 pub mod files;
 pub mod hls;
+pub mod local_network;
 pub mod location;
 pub mod model;
 #[cfg(not(windows))]

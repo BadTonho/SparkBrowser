@@ -37,7 +37,7 @@ Segments are joined without conversion; no external program is used. A `.ts` fil
 
 ## Privacy and security
 
-While a page is open, Spark keeps in that page's memory the addresses of the last 32 `.m3u8` playlists it requested; nothing is saved or sent. The page is only examined when you open the panel: Spark asks it for the addresses it already uses (video elements, including those inside open web components, and `.m3u8` requests) and reads at most 8 playlists to list qualities. Every address, redirect and segment must be HTTP(S) without embedded credentials and passes the privacy shield. The two commands are available to the local interface only.
+While a page is open, Spark keeps in that page's memory the addresses of the last 32 `.m3u8` playlists it requested; nothing is saved or sent. The page is only examined when you open the panel: Spark asks it for the addresses it already uses (video elements, including those inside open web components, and `.m3u8` requests) and reads at most 8 playlists to list qualities. Every address, redirect and segment must be HTTP(S) without embedded credentials and passes the privacy shield. A page that is not on this computer or the local network cannot point Spark to an address that is (`localhost`, `127.0.0.1`, `192.168.x.x`, `10.x.x.x` and similar, including through a redirect or inside a playlist): those sources and posters are left out, and such a download is refused. A page on the local network, such as a site under development, can still use local addresses. The two commands are available to the local interface only.
 
 ## Code
 
