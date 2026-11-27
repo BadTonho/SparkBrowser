@@ -29,7 +29,7 @@ struct Local {
 
 fn local(conn: &Connection, query: &str) -> Result<Local, String> {
     let query = query.trim();
-    let history = history_repo::search_history(conn, HISTORY_ROWS, query, None)?;
+    let history = history_repo::suggest_history(conn, HISTORY_ROWS, query)?;
     let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
     // With nothing typed the list is only the recent sites.
     let bookmarks: Vec<Bookmark> = if words.is_empty() {

@@ -48,4 +48,4 @@ A lista é um popover sobre a página, logo abaixo da barra de endereço e com a
 ## Observações
 
 - Com a opção desligada, tudo vem do histórico e dos favoritos locais e nada é enviado para fora. Veja as [configurações de Privacidade e segurança](privacy-security-settings.md) para a retenção do histórico.
-- O histórico é pesquisado com a mesma consulta do painel de Histórico, nas 60 visitas mais recentes que combinam.
+- O histórico é pesquisado com a mesma busca do painel de Histórico, mas agrupado por endereço: as 2.000 visitas mais recentes que combinam viram uma linha por endereço (a visita mais recente e quantas daquelas visitas ele teve), e os 60 endereços mais recentes são ordenados. Um site que você visita muito não enche mais a lista, e o número de visitas entra na ordem.

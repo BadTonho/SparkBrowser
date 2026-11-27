@@ -3,7 +3,7 @@
  * then terms the search engine proposes. Pure functions, so the ranking is easy to test.
  */
 
-/** @typedef {{ id: number, title: string, url: string, visited_at: number }} HistoryRow */
+/** @typedef {{ id: number, title: string, url: string, visited_at: number, visits?: number }} HistoryRow */
 /** @typedef {{ title: string, url: string }} BookmarkRow */
 /**
  * @typedef {object} Suggestion
@@ -93,12 +93,14 @@ export function groupHistory(rows) {
   for (const row of rows ?? []) {
     const key = normalizeAddress(row.url);
     if (!key) continue;
+    // A grouped row already carries how often its address was visited.
+    const visits = typeof row.visits === "number" && row.visits > 0 ? row.visits : 1;
     const known = byAddress.get(key);
     if (known) {
-      known.visits += 1;
+      known.visits += visits;
       if (row.visited_at > known.row.visited_at) known.row = row;
     } else {
-      byAddress.set(key, { row, visits: 1 });
+      byAddress.set(key, { row, visits });
     }
   }
   return [...byAddress.values()];

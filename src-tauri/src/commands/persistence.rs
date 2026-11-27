@@ -11,15 +11,17 @@ pub async fn get_history(
     limit: Option<usize>,
     query: Option<String>,
     before: Option<HistoryCursor>,
+    grouped: Option<bool>,
 ) -> Result<Vec<HistoryEntry>, String> {
     flush_navigation(app.clone()).await?;
     executor::run(app, move |conn| {
-        history_repo::search_history(
-            conn,
-            limit.unwrap_or(50).clamp(1, 200),
-            &query.unwrap_or_default(),
-            before.as_ref(),
-        )
+        let limit = limit.unwrap_or(50).clamp(1, 200);
+        let query = query.unwrap_or_default();
+        // Suggestion lists want one row per address with its visit count; it has no pages.
+        if grouped.unwrap_or(false) {
+            return history_repo::suggest_history(conn, limit, &query);
+        }
+        history_repo::search_history(conn, limit, &query, before.as_ref())
     })
     .await
 }

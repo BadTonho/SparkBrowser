@@ -48,4 +48,4 @@ The list is a popover over the page, right below the address bar and as wide as 
 ## Notes
 
 - With the option off, everything comes from the local history and bookmarks and nothing is sent anywhere. See [Privacy & Security settings](privacy-security-settings.md) for the history retention.
-- The history is searched with the same query as the History panel, over the latest 60 matching visits.
+- The history is searched with the same matching as the History panel, but grouped by address: the latest 2,000 matching visits are collapsed into one row per address (its latest visit and how many of those visits it had), and the 60 most recent addresses are ranked. A site you visit often no longer fills the list, and its visit count reaches the ranking.

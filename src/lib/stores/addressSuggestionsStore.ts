@@ -1,5 +1,5 @@
 import { get, writable } from "svelte/store";
-import { fetchHistory } from "../services/bridge/persistence";
+import { fetchHistorySuggestions } from "../services/bridge/persistence";
 import { buildSuggestions, looksLikeAddress, supportsWebSuggestions, type Suggestion } from "../services/address-suggestions.js";
 import { fetchSearchSuggestions } from "../services/bridge/search-suggestions";
 import { bookmarks } from "./persistenceStore";
@@ -52,9 +52,9 @@ const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, m
 const termsFor = new Map<string, string[]>();
 
 async function compute(query: string, run: number): Promise<void> {
-  let history: Awaited<ReturnType<typeof fetchHistory>> = [];
+  let history: Awaited<ReturnType<typeof fetchHistorySuggestions>> = [];
   try {
-    history = await fetchHistory(HISTORY_ROWS, query.trim());
+    history = await fetchHistorySuggestions(HISTORY_ROWS, query.trim());
   } catch {
     history = [];
   }

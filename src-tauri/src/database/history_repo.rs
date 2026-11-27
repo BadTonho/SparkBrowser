@@ -61,7 +61,14 @@ pub struct HistoryEntry {
     pub title: String,
     pub url: String,
     pub visited_at: i64,
+    /// How many recent visits this address had; only set by [`suggest_history`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub visits: Option<u32>,
 }
+
+/// How many of the latest matching visits [`suggest_history`] groups. It bounds the work for a
+/// common word, which matches almost every visit, and is far more than the sites a list shows.
+const SUGGESTION_WINDOW: i64 = 2_000;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct HistoryCursor {
@@ -115,20 +122,71 @@ pub fn get_recent_history(conn: &Connection, limit: usize) -> Result<Vec<History
     search_history(conn, limit, "", None)
 }
 
-pub fn search_history(
-    conn: &Connection,
-    limit: usize,
-    query: &str,
-    before: Option<&HistoryCursor>,
-) -> Result<Vec<HistoryEntry>, String> {
-    let pattern = format!(
+/// `query` as a `LIKE` pattern that matches it literally anywhere, with `!` as the escape.
+fn like_pattern(query: &str) -> String {
+    format!(
         "%{}%",
         query
             .trim()
             .replace('!', "!!")
             .replace('%', "!%")
             .replace('_', "!_")
-    );
+    )
+}
+
+/// The addresses of the latest visits that match `query`, one row per address (its latest visit)
+/// with how many of those visits it had, most recent first. Suggestion lists use it: one site
+/// visited many times no longer fills the list, and the visit count reaches the ranking.
+pub fn suggest_history(
+    conn: &Connection,
+    limit: usize,
+    query: &str,
+) -> Result<Vec<HistoryEntry>, String> {
+    // With a single max() aggregate, SQLite takes the other columns from the row that has it.
+    let mut stmt = conn
+        .prepare_cached(
+            "SELECT id, title, url, MAX(visited_at) AS last, COUNT(*)
+             FROM (
+                 SELECT id, title, url, visited_at
+                 FROM history
+                 WHERE (?2 = '%%' OR title LIKE ?2 ESCAPE '!' OR url LIKE ?2 ESCAPE '!')
+                 ORDER BY visited_at DESC, id DESC
+                 LIMIT ?3
+             )
+             GROUP BY url
+             ORDER BY last DESC, id DESC
+             LIMIT ?1",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(
+            params![
+                limit.clamp(1, 200) as i64,
+                like_pattern(query),
+                SUGGESTION_WINDOW
+            ],
+            |row| {
+                Ok(HistoryEntry {
+                    id: row.get(0)?,
+                    title: row.get(1)?,
+                    url: row.get(2)?,
+                    visited_at: row.get(3)?,
+                    visits: Some(row.get(4)?),
+                })
+            },
+        )
+        .map_err(|e| e.to_string())?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
+}
+
+pub fn search_history(
+    conn: &Connection,
+    limit: usize,
+    query: &str,
+    before: Option<&HistoryCursor>,
+) -> Result<Vec<HistoryEntry>, String> {
+    let pattern = like_pattern(query);
     let mut stmt = conn
         .prepare_cached(
             "SELECT id, title, url, visited_at
@@ -154,6 +212,7 @@ pub fn search_history(
                     title: row.get(1)?,
                     url: row.get(2)?,
                     visited_at: row.get(3)?,
+                    visits: None,
                 })
             },
         )
@@ -211,6 +270,50 @@ pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn suggestions_list_each_address_once_with_its_latest_visit_and_count() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE history(id INTEGER PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,visited_at INTEGER NOT NULL);
+             INSERT INTO history(title,url,visited_at) VALUES
+               ('Old title','https://a.test/',1),('Mail','https://mail.test/',2),
+               ('New title','https://a.test/',3),('Other','https://b.test/',4),
+               ('Newest','https://a.test/',5),('100% off','https://shop.test/',6);",
+        )
+        .unwrap();
+        let all = suggest_history(&conn, 10, "").unwrap();
+        let rows: Vec<_> = all
+            .iter()
+            .map(|e| (e.url.as_str(), e.title.as_str(), e.visits))
+            .collect();
+        assert_eq!(
+            rows,
+            [
+                ("https://shop.test/", "100% off", Some(1)),
+                ("https://a.test/", "Newest", Some(3)),
+                ("https://b.test/", "Other", Some(1)),
+                ("https://mail.test/", "Mail", Some(1)),
+            ]
+        );
+        assert_eq!(suggest_history(&conn, 1, "").unwrap().len(), 1);
+        let found = suggest_history(&conn, 10, "title").unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            (found[0].title.as_str(), found[0].visits),
+            ("New title", Some(2))
+        );
+        // `%` is matched literally, not as a wildcard.
+        assert_eq!(
+            suggest_history(&conn, 10, "0% o").unwrap()[0].url,
+            "https://shop.test/"
+        );
+        assert!(suggest_history(&conn, 10, "%x").unwrap().is_empty());
+        // The visit count stays out of the plain history list.
+        assert!(
+            serde_json::to_string(&search_history(&conn, 1, "", None).unwrap())
+                .is_ok_and(|json| !json.contains("visits"))
+        );
+    }
     #[test]
     fn the_estimate_counts_only_what_a_cleaning_would_remove() {
         let conn = Connection::open_in_memory().unwrap();

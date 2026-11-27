@@ -62,6 +62,8 @@ export interface HistoryEntry {
   title: string;
   url: string;
   visited_at: number;
+  /** How many recent visits the address had; only in grouped suggestion results. */
+  visits?: number;
 }
 
 export interface BookmarkItem {

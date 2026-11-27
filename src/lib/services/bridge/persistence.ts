@@ -9,6 +9,12 @@ export async function fetchHistory(limit = 50, query = "", before?: { visited_at
   return await invoke<HistoryEntry[]>("get_history", { limit, query, before: before ?? null });
 }
 
+/** One row per address, with its visit count, for suggestion lists. */
+export async function fetchHistorySuggestions(limit: number, query: string): Promise<HistoryEntry[]> {
+  if(!isTauriRuntime()) return [];
+  return await invoke<HistoryEntry[]>("get_history", { limit, query, before: null, grouped: true });
+}
+
 /** Clears the history; with `olderThanDays`, only the visits older than that many days. */
 export async function clearAllHistory(olderThanDays: number | null = null): Promise<void> {
   if(!isTauriRuntime()) return;

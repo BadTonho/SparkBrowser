@@ -71,12 +71,13 @@ var SparkSuggestions = (() => {
     for (const row of rows ?? []) {
       const key = normalizeAddress(row.url);
       if (!key) continue;
+      const visits = typeof row.visits === "number" && row.visits > 0 ? row.visits : 1;
       const known = byAddress.get(key);
       if (known) {
-        known.visits += 1;
+        known.visits += visits;
         if (row.visited_at > known.row.visited_at) known.row = row;
       } else {
-        byAddress.set(key, { row, visits: 1 });
+        byAddress.set(key, { row, visits });
       }
     }
     return [...byAddress.values()];

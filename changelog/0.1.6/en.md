@@ -19,6 +19,7 @@
 - The error log now says how many times an identical entry was repeated and skipped, shown on the next entry written for it.
 - Redesigned the About & Updates settings section with a status summary card, clearer update progress and notices, and side-by-side cards for the browser repository and WebView2 runtime.
 - Pages load with less work from the privacy shield: the style sheet that hides ads with the generic rules of the filter lists is now prepared once when the lists load, instead of being rebuilt for every page.
+- History suggestions in the address bar and on the new tab page show more different sites: a site you visit often no longer takes several of the rows the list reads, and how often you visit it now counts in full when the list is ordered.
 
 ## Fixes
 

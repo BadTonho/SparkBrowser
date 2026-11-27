@@ -22,6 +22,16 @@ test('the same page is not listed twice, whatever its scheme, www or trailing sl
   assert.equal(grouped.find(item => normalizeAddress(item.row.url) === 'example.com').visits, 2);
 });
 
+test('grouped rows bring their visit count, which decides the ranking', () => {
+  const grouped = groupHistory([{ ...row(1, 'A', 'https://example.com/'), visits: 7 }, { ...row(2, 'A', 'http://www.example.com'), visits: 2 }, row(3, 'B', 'https://other.org')]);
+  assert.equal(grouped.find(item => normalizeAddress(item.row.url) === 'example.com').visits, 9);
+  assert.equal(grouped.find(item => normalizeAddress(item.row.url) === 'other.org').visits, 1);
+  const often = { ...row(1, 'Rare page', 'https://rare.test/', 3), visits: 15 };
+  const once = row(2, 'Rare fresh', 'https://fresh.test/', 3);
+  const list = buildSuggestions({ query: 'rare', history: [once, often], bookmarks: [], now: NOW });
+  assert.equal(list.find(item => item.kind === 'history').target, 'https://rare.test/');
+});
+
 test('an empty address bar offers the most recent sites, one per address', () => {
   const list = buildSuggestions({ query: '', history: [row(1, 'News', 'https://news.test/'), row(2, 'News again', 'https://news.test'), row(3, 'Docs', 'https://docs.test')], bookmarks: [], now: NOW });
   assert.deepEqual(list.map(item => item.kind), ['history', 'history']);
