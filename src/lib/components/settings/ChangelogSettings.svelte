@@ -2,9 +2,21 @@
   import { t, locale } from "../../i18n";
   import { updateState } from "../../stores/updatesStore";
   import { changelogEntries } from "../../services/changelog";
-  import { changelogFiles } from "../../services/changelog-files";
+  import { loadChangelogFiles } from "../../services/changelog-files";
+  import { logIgnored } from "../../services/ignored-error";
 
-  const entries = $derived(changelogEntries(changelogFiles, $locale === "pt-BR" ? "pt-BR" : "en"));
+  const language = $derived($locale === "pt-BR" ? "pt-BR" : "en");
+  // The notes are read when this section opens, so "no notes" is only shown once they are in.
+  let files = $state<Record<string, string> | null>(null);
+  $effect(() => {
+    const wanted = language;
+    let current = true;
+    loadChangelogFiles(wanted)
+      .then(found => { if (current) files = found; })
+      .catch(error => { if (current) files = {}; logIgnored(error); });
+    return () => { current = false; };
+  });
+  const entries = $derived(files ? changelogEntries(files, language) : []);
   // A development build runs from a version that may not be listed yet, so match loosely.
   const running = $derived(String($updateState.current_version ?? "").split("-")[0]);
 </script>
@@ -12,7 +24,9 @@
 <section class="setting-group" aria-labelledby="changelog-heading">
   <h2 id="changelog-heading" class="group-title">{$t("settings.changelog_5f3a")}</h2>
   <p class="intro">{$t("settings.changelog_intro_8c1d")}</p>
-  {#if entries.length === 0}
+  {#if files === null}
+    <!-- Reading the notes takes a moment; nothing is shown until then. -->
+  {:else if entries.length === 0}
     <p role="status">{$t("settings.changelog_empty_2e7b")}</p>
   {:else}
     <div class="releases">

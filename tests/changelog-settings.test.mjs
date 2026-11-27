@@ -72,7 +72,10 @@ test('the settings window lists the changelog as a category, a search result and
   const component = read('src/lib/components/settings/ChangelogSettings.svelte');
   assert.ok(!component.includes('{@html'), 'release notes are rendered as text, never as HTML');
   assert.match(component, /id="changelog-heading"/);
-  assert.match(read('src/lib/services/changelog-files.ts'), /import\.meta\.glob\("\/changelog\/\*\/\*\.md", \{ query: "\?raw"/);
+  const files = read('src/lib/services/changelog-files.ts');
+  assert.match(files, /import\.meta\.glob<string>\("\/changelog\/\*\/\*\.md", \{ query: "\?raw"/);
+  // Each release's notes are read when the section opens, not bundled into the settings window.
+  assert.ok(!/eager:\s*true/.test(files), 'the release notes are loaded on demand');
   for (const language of ['en', 'pt-BR']) {
     const catalogText = JSON.parse(read(`src/lib/i18n/catalogs/${language}/settings.json`));
     for (const key of ['settings.changelog_5f3a', 'settings.changelog_intro_8c1d', 'settings.changelog_empty_2e7b', 'settings.changelog_running_a94c', 'settings.changelog_search_d41e']) assert.ok(catalogText[key], `${language} ${key}`);
