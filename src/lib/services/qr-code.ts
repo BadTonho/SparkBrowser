@@ -1,7 +1,8 @@
-import QRCode from "qrcode";
-
-export function makeQrPng(url: string): Promise<string> {
-  return QRCode.toDataURL(url, { errorCorrectionLevel: "M", margin: 2, width: 288, type: "image/png" });
+// The QR code library is read the first time a code is made, so it stays out of the main window's
+// start-up code: the panel is opened rarely.
+export async function makeQrPng(url: string): Promise<string> {
+  const { default: QRCode } = await import("qrcode");
+  return await QRCode.toDataURL(url, { errorCorrectionLevel: "M", margin: 2, width: 288, type: "image/png" });
 }
 
 export async function copyPngImage(dataUrl: string): Promise<void> {
