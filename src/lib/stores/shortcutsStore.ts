@@ -52,7 +52,7 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
     { id: "edit-url", label: "Edit Current URL in Address Bar", description: "Focus the current URL in the address bar", defaults: [combo("L", { ctrl: true })] },
   { id: "focus-address", label: "Focus Address and Search Bar", description: "Focus and select the current address or search text", defaults: [combo("E", { ctrl: true })] },
   { id: "sidebar", label: "Toggle Sidebar (Vertical Layout)", description: "Show or hide the sidebar", defaults: [combo("B", { ctrl: true })] },
-  { id: "split-view", label: "Open or close split view", description: "Split the window between two tabs, or go back to one", defaults: [combo("S", { ctrl: true, shift: true })] },
+  { id: "split-view", label: "Open or close split view", description: "Split the window between two tabs, or go back to one", defaults: [combo("S", { alt: true })] },
   { id: "zen", label: "Toggle Fullscreen Zen / Focus Mode", description: "Toggle Zen mode", defaults: [combo("Z", { ctrl: true, shift: true })] },
   { id: "history", label: "Open SQLite Browsing History", description: "Open browsing history", defaults: [combo("H", { ctrl: true })] },
   { id: "downloads", label: "Open Download Manager", description: "Open downloads", defaults: [combo("J", { ctrl: true })] },

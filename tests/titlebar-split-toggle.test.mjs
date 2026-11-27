@@ -29,7 +29,7 @@ test('the toggle opens or closes the split and shows its shortcut', () => {
 });
 
 test('the split-view shortcut is defined, handled and accepted by the native side and backups', () => {
-  assert.match(read('src/lib/stores/shortcutsStore.ts'), /\{ id: "split-view", label: "Open or close split view"[^\n]*defaults: \[combo\("S", \{ ctrl: true, shift: true \}\)\] \}/);
+  assert.match(read('src/lib/stores/shortcutsStore.ts'), /\{ id: "split-view", label: "Open or close split view"[^\n]*defaults: \[combo\("S", \{ alt: true \}\)\] \}/);
   assert.match(read('src/App.svelte'), /case "split-view": void \(get\(splitLayout\) \? exitSplitView\(\) : enterSplitView\(\)\); break;/);
   // Pressed inside a page, the shortcut reaches the shell only for actions the bridge accepts.
   assert.match(read('src-tauri/src/window/keyboard_bridge.rs'), /\| "split-view"/);
