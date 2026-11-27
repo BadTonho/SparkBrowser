@@ -300,6 +300,16 @@ pub async fn remove_browser_extension(app: &AppHandle, extension_id: String) -> 
     .await
 }
 
+/// An extension that does not reach a new tab is logged with what failed; the tab still opens.
+fn report_sync_failure(what: &str, error: &str) {
+    crate::error_log::report(
+        crate::error_log::Level::Warning,
+        "extensions",
+        &format!("Extension sync to a new tab failed: {what}"),
+        error,
+    );
+}
+
 /// Synchronizes all enabled extensions onto a newly spawned Webview profile.
 pub fn sync_new_webview(app: &AppHandle, view: &Webview) -> Result<(), String> {
     let state = app.state::<crate::state::browser_state::BrowserState>();
@@ -322,24 +332,39 @@ pub fn sync_new_webview(app: &AppHandle, view: &Webview) -> Result<(), String> {
     }
 
     view.with_webview(move |platform| {
-        let result = (|| -> windows_core::Result<()> {
-            let core = unsafe { platform.controller().CoreWebView2()? };
-            let profile7 = get_profile7(&core)
-                .map_err(|_| windows_core::Error::from_hresult(windows_core::HRESULT(-1)))?;
-
-            for path in enabled_paths {
-                let wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
-                let handler =
-                    ProfileAddBrowserExtensionCompletedHandler::create(Box::new(|_, _| Ok(())));
-                unsafe {
-                    crate::error_log::ignored(
-                        profile7.AddBrowserExtension(PCWSTR(wide.as_ptr()), &handler),
-                    );
-                }
+        let profile7 = match unsafe { platform.controller().CoreWebView2() }
+            .map_err(|e| e.to_string())
+            .and_then(|core| get_profile7(&core))
+        {
+            Ok(profile7) => profile7,
+            Err(error) => {
+                report_sync_failure("the WebView2 profile is unavailable", &error);
+                return;
             }
-            Ok(())
-        })();
-        let _ = result;
+        };
+
+        for path in enabled_paths {
+            let wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
+            let completed_path = path.clone();
+            let handler =
+                ProfileAddBrowserExtensionCompletedHandler::create(Box::new(move |status, _| {
+                    if let Err(error) = status {
+                        report_sync_failure(
+                            &format!("{completed_path} could not be loaded"),
+                            &error.to_string(),
+                        );
+                    }
+                    Ok(())
+                }));
+            if let Err(error) =
+                unsafe { profile7.AddBrowserExtension(PCWSTR(wide.as_ptr()), &handler) }
+            {
+                report_sync_failure(
+                    &format!("{path} could not be requested"),
+                    &error.to_string(),
+                );
+            }
+        }
     })
     .map_err(|e| e.to_string())?;
 
