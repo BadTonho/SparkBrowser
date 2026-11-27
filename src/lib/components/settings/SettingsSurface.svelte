@@ -9,6 +9,16 @@
   import "./settings.css";
   import "../panels/popover-motion.css";
   import "./SettingsModal.svelte";
+  import { preloadAllSections } from "./settings-sections";
+  import { logIgnored } from "../../services/ignored-error";
+
+  // The sections are read on demand in the controller, but this window draws all of them and needs
+  // their styles: without this, a section's own styles (such as its switches) would be missing here.
+  void preloadAllSections().then(results => {
+    for (const result of results) {
+      if (result.status === "rejected") logIgnored(result.reason);
+    }
+  });
 
   type Payload = PanelPresentation & { visible: boolean; token: string; sessionId: number; animate?: boolean; document?: string; focus?: boolean };
   const tabMode = new URLSearchParams(location.search).get("surface") === "settings-tab";

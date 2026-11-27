@@ -22,6 +22,7 @@
 - History suggestions in the address bar and on the new tab page show more different sites: a site you visit often no longer takes several of the rows the list reads, and how often you visit it now counts in full when the list is ordered.
 - Spark uses less power while idle: the audio background analyzer no longer wakes up five times a second when it is off or no new tab is open.
 - The settings window opens with much less to load: each section is now read the first time you open it, instead of all of them at once.
+- **Settings → Appearance & Layout** is now split into categories (Language and windows, Theme and colors, Window background, Layout, Toolbar and content), so each option is easier to find.
 
 ## Fixes
 
@@ -41,3 +42,4 @@
 - Reader view now shows the article's images. Before, they appeared broken because the browser interface does not load images from the web; they now come from the copy the page already loaded, and images the page had not loaded are left out instead of showing as broken.
 - When an installed extension cannot be loaded into a new tab on Windows, the reason is now written to the error log, with the extension that failed. Before, the failure left no trace.
 - A problem inside Spark (an internal crash in one part of the browser) no longer makes other features stop working silently, or crash again each time they are used, until Spark restarts. The affected part recovers, keeps working, and the recovery is written to the error log with the place where it happened.
+- The on/off options of **Toolbar and content** in the settings show their switches again, in cards like the other options. Before, they appeared as plain check boxes under the text.

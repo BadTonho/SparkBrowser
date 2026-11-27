@@ -2,6 +2,8 @@
 
 Abra **Configurações → Aparência e disposição → Barra e conteúdo** para ajustar a barra de endereços e a moldura principal da WebView. As alterações são aplicadas na hora e salvas localmente para a próxima inicialização.
 
+A seção Aparência e disposição é dividida em cinco categorias com título: **Idioma e janelas** (idioma da interface, como as configurações abrem, exibição do WhatsApp, sombra da janela de vídeo flutuante), **Tema e cores**, **Fundo da janela** (Sólido, Vidro ou Gelo, com opacidade e desfoque, e o desfoque atrás das sobreposições), **Disposição** (layout das guias, seletor de workspaces, barra de favoritos, modo Zen) e **Barra e conteúdo**. Cada opção é um cartão com o controle à direita; as opções de ligar e desligar usam o mesmo interruptor do resto das configurações.
+
 - **Usar barra de endereços larga** remove o limite de 980 px para que a barra use o espaço livre entre os controles. Ela ainda se ajusta para caber em janelas estreitas e na visualização dividida.
 - **Sempre mostrar URLs completos** mantém `https://` e `www.` visíveis quando a barra está ociosa. Desativada, oculta esses prefixos em endereços HTTP e HTTPS; ao focar o campo, o endereço completo fica disponível para edição. A navegação continua usando a URL original.
 - **Usar modo compacto** restaura o tamanho menor atual: barra com 40 px de altura e campo de endereços com 28 px. O modo normal é o padrão e usa 44 px e 32 px, com controles proporcionalmente maiores. O menu responsivo de ações em telas estreitas e na visualização dividida continua independente.

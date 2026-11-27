@@ -22,6 +22,7 @@
 - As sugestões do histórico na barra de endereço e na página de nova aba mostram mais sites diferentes: um site que você visita muito não ocupa mais várias das linhas que a lista lê, e quantas vezes você o visita agora conta por inteiro na ordem da lista.
 - O Spark gasta menos energia parado: o analisador do fundo de áudio não acorda mais cinco vezes por segundo quando está desligado ou quando nenhuma nova aba está aberta.
 - A janela de configurações abre com muito menos para carregar: cada seção agora é lida na primeira vez que você a abre, em vez de todas de uma vez.
+- **Configurações → Aparência e disposição** agora é dividida em categorias (Idioma e janelas, Tema e cores, Fundo da janela, Disposição, Barra e conteúdo), para cada opção ser mais fácil de achar.
 
 ## Correções
 
@@ -41,3 +42,4 @@
 - O modo leitura agora mostra as imagens do artigo. Antes elas apareciam quebradas, porque a interface do navegador não carrega imagens da web; agora vêm da cópia que a página já carregou, e as imagens que a página não tinha carregado ficam de fora em vez de aparecerem quebradas.
 - Quando uma extensão instalada não consegue ser carregada numa nova aba no Windows, o motivo agora é registrado no log de erros, junto com a extensão que falhou. Antes, a falha não deixava rastro.
 - Um problema interno do Spark (uma falha em uma parte do navegador) não faz mais outras funções pararem de funcionar em silêncio, ou falharem de novo a cada uso, até reiniciar o Spark. A parte afetada se recupera, continua funcionando, e a recuperação é registrada no log de erros com o lugar onde aconteceu.
+- As opções de ligar e desligar de **Barra e conteúdo** nas configurações voltaram a mostrar seus interruptores, em cartões como as outras opções. Antes, apareciam como caixas de seleção simples embaixo do texto.

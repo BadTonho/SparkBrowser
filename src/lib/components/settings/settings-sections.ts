@@ -24,6 +24,14 @@ const loaders: Record<SettingsCategory, () => Promise<{ default: Section }>> = {
 
 const loading = new Map<SettingsCategory, Promise<Section>>();
 
+/**
+ * Reads every section. The settings window that the user sees only draws what the hidden controller
+ * sends, so it needs the style sheets of all sections, and reading a section loads its styles.
+ */
+export function preloadAllSections(): Promise<PromiseSettledResult<unknown>[]> {
+  return Promise.allSettled((Object.keys(loaders) as SettingsCategory[]).map(category => loadSection(category)));
+}
+
 /** The section of `category`, read once and kept. A failed read is tried again next time. */
 export function loadSection(category: SettingsCategory): Promise<Section> {
   let pending = loading.get(category);
