@@ -36,7 +36,8 @@ pub(super) fn close_and_clean(app: &AppHandle, label: &str) -> Result<(), String
     super::new_tab::revoke(app, label);
     app.state::<super::settings_tab::SettingsTabSessions>()
         .revoke(label);
-    app.state::<super::history_overlay::tab::HistoryTabSessions>().revoke(label);
+    app.state::<super::history_overlay::tab::HistoryTabSessions>()
+        .revoke(label);
     state.surfaces().content_profiles().forget(label)?;
     state
         .security()

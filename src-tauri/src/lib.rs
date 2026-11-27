@@ -128,14 +128,14 @@ use commands::navigation::{
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_commands_popover, set_downloads_popover,
-    set_history_overlay, set_history_tab, set_media_popover, set_overlay_visibility, set_permission_popover,
-    set_privacy_popover, set_quick_settings_popover, set_resources_popover, set_settings_overlay,
-    set_suggestions_popover, set_tools_popover, set_video_download_popover,
+    set_history_overlay, set_history_tab, set_media_popover, set_overlay_visibility,
+    set_permission_popover, set_privacy_popover, set_quick_settings_popover, set_resources_popover,
+    set_settings_overlay, set_suggestions_popover, set_tools_popover, set_video_download_popover,
     set_workspace_switcher_overlay, set_zoom_popover,
 };
 use commands::persistence::{
-    clear_browsing_history, delete_history_entries, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
-    get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
+    clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, delete_history_entries,
+    get_bookmark_data, get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
 use commands::privacy::{
     get_gpc, get_privacy_stats, get_shield_exceptions, get_tracking_cleaning, set_auto_skip_ads,

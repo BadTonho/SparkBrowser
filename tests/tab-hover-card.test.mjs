@@ -55,7 +55,8 @@ test('text is written as text and a late paint cannot replace a newer one', () =
 });
 
 test('long tab titles are shortened to one line', async () => {
-  const source = readFileSync('src/lib/actions/tabHoverCard.ts', 'utf8');
+  // A Windows checkout has CRLF line endings; the pattern below expects LF.
+  const source = readFileSync('src/lib/actions/tabHoverCard.ts', 'utf8').replace(/\r\n/g, '\n');
   const body = source.match(/export function shortTitle[\s\S]*?\n}\n/)[0]
     .replace('(title: string, max = MAX_TITLE): string', '(title, max = 60)');
   const shortTitle = new Function(`${body.replace('export ', '')}; return shortTitle;`)();
