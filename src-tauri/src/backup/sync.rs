@@ -41,6 +41,9 @@ pub enum SyncTargetConfig {
         auto_save: bool,
         #[serde(default)]
         apply_preferences_on_direct_pull: bool,
+        /// Set when the target was made by signing in to Nextcloud: the server it belongs to.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        nextcloud_server: Option<String>,
     },
 }
 
@@ -334,11 +337,20 @@ pub fn save_config(
             endpoint_url,
             username,
             remember_secret,
+            nextcloud_server,
             ..
         } => {
             let _ = resolve_webdav_file_url(endpoint_url)?;
             if username.chars().count() > 256 {
                 return Err("backup.sync_invalid_config".into());
+            }
+            if let Some(server) = nextcloud_server {
+                let server = super::nextcloud::normalize_server(server)
+                    .map_err(|_| "backup.sync_invalid_config".to_string())?;
+                let endpoint = validate_webdav_url(endpoint_url)?;
+                if server.host_str() != endpoint.host_str() {
+                    return Err("backup.sync_invalid_config".into());
+                }
             }
             let same_target = matches!(load_config(conn)?, SyncTargetConfig::DirectWebdav { endpoint_url: old_url, username: old_user, .. } if old_url == *endpoint_url && old_user == *username);
             let effective_secret = match secret {

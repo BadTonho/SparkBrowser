@@ -38,3 +38,8 @@ export const createLocalBackup = (preferences: BackupPreferences, reason: LocalB
   invoke<LocalBackupOutcome>("create_local_backup", { preferences, reason, onlyIfChanged });
 export const deleteLocalBackup = (id: string) => invoke<LocalBackupState>("delete_local_backup", { id });
 export const restoreLocalBackup = (id: string) => invoke<string>("restore_local_backup", { id });
+export const startNextcloudLogin = (server: string) =>
+  invoke<{ flowId: number; loginUrl: string }>("nextcloud_login_start", { server });
+export const pollNextcloudLogin = (flowId: number, autoSave: boolean, applyPreferencesOnDirectPull: boolean) =>
+  invoke<SyncStateSnapshot | null>("nextcloud_login_poll", { flowId, autoSave, applyPreferencesOnDirectPull });
+export const cancelNextcloudLogin = () => invoke<void>("nextcloud_login_cancel");

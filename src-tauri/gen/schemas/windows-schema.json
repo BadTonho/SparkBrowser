@@ -969,6 +969,24 @@
           "markdownDescription": "Enables the navigate_to command without any pre-configured scope."
         },
         {
+          "description": "Enables the nextcloud_login_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-nextcloud-login-cancel",
+          "markdownDescription": "Enables the nextcloud_login_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the nextcloud_login_poll command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-nextcloud-login-poll",
+          "markdownDescription": "Enables the nextcloud_login_poll command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the nextcloud_login_start command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-nextcloud-login-start",
+          "markdownDescription": "Enables the nextcloud_login_start command without any pre-configured scope."
+        },
+        {
           "description": "Enables the open_browser_window command without any pre-configured scope.",
           "type": "string",
           "const": "allow-open-browser-window",
@@ -2629,6 +2647,24 @@
           "type": "string",
           "const": "deny-navigate-to",
           "markdownDescription": "Denies the navigate_to command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the nextcloud_login_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-nextcloud-login-cancel",
+          "markdownDescription": "Denies the nextcloud_login_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the nextcloud_login_poll command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-nextcloud-login-poll",
+          "markdownDescription": "Denies the nextcloud_login_poll command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the nextcloud_login_start command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-nextcloud-login-start",
+          "markdownDescription": "Denies the nextcloud_login_start command without any pre-configured scope."
         },
         {
           "description": "Denies the open_browser_window command without any pre-configured scope.",

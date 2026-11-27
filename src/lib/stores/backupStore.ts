@@ -138,7 +138,7 @@ export async function saveSyncOptions(patch: Partial<SyncOptions>): Promise<void
 }
 
 /** Opens Settings on Data & Backup (loaded on demand: the settings store imports this one). */
-function openDataBackup(): void {
+export function openDataBackup(): void {
   void import("./settingsStore")
     .then(({ openSettingsModal, setActiveSettingsCategory }) => {
       setActiveSettingsCategory("data_backup");
@@ -424,19 +424,24 @@ export const saveBackupSyncSettings = (
   secret: string | null = null
 ) =>
   action(async () => {
-    const snap = await saveBackupSyncConfig(config, secret);
-    backupSyncState.set(snap);
-    backupSyncNotice.set("config_saved");
-    if (config.mode !== "disabled" && config.auto_save) {
-      hasPendingChangesForCloud = true;
-      if (config.mode === "folder") {
-        scheduleAutoSync();
-      } else if (config.mode === "google_drive_web" || config.mode === "direct_webdav") {
-        setDrivePause(false);
-        setTimeout(() => void runBackgroundAutoSync(), 150);
-      }
-    }
+    adoptSyncState(await saveBackupSyncConfig(config, secret));
   });
+
+/** Shows a sync target saved elsewhere (Nextcloud sign-in) and sends to it when it syncs on its own. */
+export function adoptSyncState(snap: SyncStateSnapshot): void {
+  const config = snap.config;
+  backupSyncState.set(snap);
+  backupSyncNotice.set("config_saved");
+  if (config.mode !== "disabled" && config.auto_save) {
+    hasPendingChangesForCloud = true;
+    if (config.mode === "folder") {
+      scheduleAutoSync();
+    } else if (config.mode === "google_drive_web" || config.mode === "direct_webdav") {
+      setDrivePause(false);
+      setTimeout(() => void runBackgroundAutoSync(), 150);
+    }
+  }
+}
 
 function finishGoogleAccountSelection(items: TabItem[]): void {
   if (!awaitingGoogleAccountSelection) return;

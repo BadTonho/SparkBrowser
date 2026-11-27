@@ -11,6 +11,7 @@ fn webdav(remember_secret: bool) -> SyncTargetConfig {
         remember_secret,
         auto_save: false,
         apply_preferences_on_direct_pull: false,
+        nextcloud_server: None,
     }
 }
 

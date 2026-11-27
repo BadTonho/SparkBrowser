@@ -22,5 +22,5 @@ test('the backend decides from fingerprints and the command is registered end to
   assert.match(read('src-tauri/src/lib.rs'), /sync_backup_on_start,\n/);
   assert.match(read('src/lib/services/bridge/backup.ts'), /"sync_backup_on_start"/);
   const page = read('src/lib/components/settings/BackupSettings.svelte');
-  assert.equal(page.match(/\{@render pullOnStartRow\(\)\}/g).length, 3, 'the switch is offered in every mode');
+  assert.equal(page.match(/\{@render pullOnStartRow\(\)\}/g).length, 4, 'the switch is offered in every mode (Drive, folder, Nextcloud, WebDAV)');
 });

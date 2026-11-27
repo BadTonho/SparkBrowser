@@ -595,6 +595,7 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
             remember_secret: false,
             auto_save: true,
             apply_preferences_on_direct_pull: false,
+            nextcloud_server: None,
         },
         Some("session-only-secret".into()),
     )
@@ -622,6 +623,7 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
             remember_secret: true,
             auto_save: true,
             apply_preferences_on_direct_pull: false,
+            nextcloud_server: None,
         },
         None,
     )
@@ -710,6 +712,7 @@ fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_htt
             remember_secret: false,
             auto_save: true,
             apply_preferences_on_direct_pull: true,
+            nextcloud_server: None,
         },
         Some("secret-token".into()),
     )

@@ -43,6 +43,7 @@ Settings → Data & Backup also includes **Isolated Automatic Sync**, allowing u
    - The user configures an `https://` WebDAV URL (loopback `http://127.0.0.1` / `localhost` is permitted only for local testing), username and app password/token.
    - Users can choose whether to **remember the password on this computer** (Windows Credential Manager or the Linux Secret Service through `secret-tool`) or keep it **only in memory for the current session**.
    - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads (`PUT`) to the WebDAV target **only when changes occurred**, in addition to syncing on browser shutdown and via **Send to the cloud** (under **Sync now**).
+   - **Nextcloud** is this mode with a sign-in: the person types only the server address and allows Spark on the server's own login page, and Spark saves the account's `Spark` folder with an app password made for it. See [Sync with Nextcloud](nextcloud-sync.md). An S3-compatible mode is [planned](../roadmap/s3-sync.md).
 4. **Two receive modes (`pull_backup_sync`):**
    - **Review before applying:** downloads/reads the backup and opens the standard review table before importing.
    - **Apply directly:** validates and merges the backup immediately in a single step, optionally applying backup preferences when enabled.

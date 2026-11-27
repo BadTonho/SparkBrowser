@@ -10,6 +10,7 @@ pub mod local;
 pub mod merge;
 pub mod migrate;
 pub mod model;
+pub mod nextcloud;
 pub mod service;
 pub mod sync;
 pub mod sync_filter;

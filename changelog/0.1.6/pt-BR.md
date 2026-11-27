@@ -7,6 +7,7 @@
 - Novos botões para abrir e sair do modo split na lista vertical de abas. O botão no topo da lista abre um split com a aba que você está vendo à esquerda e a última aba usada à direita (uma nova guia em branco, se for a única). O botão na linha entre os painéis sai do split. Com abas horizontais, um botão no canto esquerdo da linha do endereço abre e fecha o split, e **Alt+S** faz o mesmo nos dois layouts.
 - O campo de pesquisa da página de nova aba agora mostra sugestões, como a barra de endereço: os sites recentes ao clicar nele e, ao digitar, favoritos, histórico e sugestões do mecanismo de busca (que seguem a mesma opção **Sugestões de pesquisa** e nunca são usadas em janela privada).
 - Deixar o mouse sobre uma guia agora abre um cartão com a prévia da página, a memória que a guia usa (ou economiza, quando está em repouso) e o nome dela resumido em uma linha, nas guias horizontais e verticais. Ele substitui a antiga dica de texto. Guias em segundo plano ou em repouso mostram como a página estava da última vez que apareceu na tela; as imagens ficam só na memória e nunca são salvas no disco.
+- Novo modo de sincronização **Nextcloud**: digite o endereço do seu servidor, clique em **Entrar no Nextcloud** e permita o Spark na página de login do servidor. O Spark recebe uma senha de app própria (a sua senha do Nextcloud nunca é digitada no Spark), cria uma pasta **Spark** nos seus arquivos e sincroniza nela como no WebDAV, com envio automático, versões anteriores e **Baixar ao abrir o Spark**.
 
 ## Melhorias
 

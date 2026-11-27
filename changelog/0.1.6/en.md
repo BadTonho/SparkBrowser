@@ -7,6 +7,7 @@
 - New buttons to open and close split view from the vertical tab list. The button at the top of the list opens a split with the tab you are viewing on the left and the most recently used tab on the right (a new blank tab if it is the only one). The button on the line between the panes closes the split. With horizontal tabs, a button in the left corner of the address row opens and closes the split, and **Alt+S** does the same in either layout.
 - The search field of the new tab page now shows suggestions, like the address bar: your recent sites when you click it and, as you type, bookmarks, history and search engine suggestions (these follow the same **Search suggestions** setting and are never used in a private window).
 - Resting the mouse on a tab now opens a card with a preview of the page, the memory the tab uses (or saves, when it is asleep) and its name shortened to one line, in both the horizontal and vertical tab layouts. It replaces the old text tip. Tabs in the background or asleep show how the page looked the last time it was on screen; pictures are kept only in memory and never saved to disk.
+- New **Nextcloud** sync mode: type your server address, select **Sign in to Nextcloud** and allow Spark on your server's login page. Spark gets its own app password (your Nextcloud password is never typed into Spark), creates a **Spark** folder in your files and syncs there like WebDAV, with automatic sends, earlier versions and **Download when Spark opens**.
 
 ## Improvements
 

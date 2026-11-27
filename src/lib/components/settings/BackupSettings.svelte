@@ -42,6 +42,7 @@
   import { summarizeSyncRing } from "../../services/backup/sync-ring";
   import { pauseUntil } from "../../services/backup/sync-schedule";
   import type { RestoreGroup, SyncInterval } from "../../types/backup";
+  import { cancelNextcloudSignIn, nextcloudLogin, signInToNextcloud } from "../../stores/nextcloudLoginStore";
 
   const INTERVALS: SyncInterval[] = ["auto", "five_minutes", "fifteen_minutes", "on_exit"];
   const SYNC_GROUPS: RestoreGroup[] = ["workspaces", "bookmarks", "sessions", "notes", "site_search", "settings", "shortcuts"];
@@ -92,7 +93,19 @@
     });
   });
 
-  let selectedMode = $state<"disabled" | "google_drive_web" | "folder" | "direct_webdav">("disabled");
+  type SyncModeChoice = "disabled" | "google_drive_web" | "folder" | "direct_webdav" | "nextcloud";
+  let selectedMode = $state<SyncModeChoice>("disabled");
+  let nextcloudServer = $state("");
+  /** The Nextcloud account in use: a WebDAV target made by signing in to Nextcloud. */
+  const nextcloudAccount = $derived.by(() => {
+    const config = $backupSyncState.config;
+    if (config.mode !== "direct_webdav" || !config.nextcloud_server) return null;
+    let host = config.nextcloud_server;
+    try { host = new URL(config.nextcloud_server).host; } catch { /* shown as saved */ }
+    return { config, host };
+  });
+  /** The card title: a Nextcloud account is a WebDAV target, but is named after Nextcloud. */
+  const syncTitleKey = $derived(nextcloudAccount ? "backup.sync_title_nextcloud" : `backup.sync_title_${$backupSyncState.config.mode}`);
   let folderPath = $state("");
   let webdavUrl = $state("");
   let webdavUsername = $state("");
@@ -111,6 +124,11 @@
       folderPath = cfg.directory_path;
       autoSave = cfg.auto_save;
       directApplyPrefs = cfg.apply_preferences_on_direct_pull;
+    } else if (cfg.mode === "direct_webdav" && cfg.nextcloud_server) {
+      selectedMode = "nextcloud";
+      nextcloudServer = cfg.nextcloud_server;
+      autoSave = cfg.auto_save;
+      directApplyPrefs = cfg.apply_preferences_on_direct_pull;
     } else if (cfg.mode === "direct_webdav") {
       webdavUrl = cfg.endpoint_url;
       webdavUsername = cfg.username;
@@ -121,12 +139,9 @@
   });
 
   function handleModeChange(event: Event): void {
-    const next = (event.currentTarget as HTMLSelectElement).value as
-      | "disabled"
-      | "google_drive_web"
-      | "folder"
-      | "direct_webdav";
+    const next = (event.currentTarget as HTMLSelectElement).value as SyncModeChoice;
     selectedMode = next;
+    if (next !== "nextcloud") cancelNextcloudSignIn();
     syncActionError = null;
     if (next === "disabled") {
       void saveBackupSyncSettings({ mode: "disabled" }, null);
@@ -162,6 +177,15 @@
         auto_save: autoSave,
         apply_preferences_on_direct_pull: directApplyPrefs,
       },
+      null
+    );
+  }
+
+  /** Options of a Nextcloud account apply at once; the app password Spark keeps is reused. */
+  function handleNextcloudOptionsChange(): void {
+    if (!nextcloudAccount) return;
+    void saveBackupSyncSettings(
+      { ...nextcloudAccount.config, auto_save: autoSave, apply_preferences_on_direct_pull: directApplyPrefs },
       null
     );
   }
@@ -231,7 +255,7 @@
           <span class="sync-icon" aria-hidden="true">
             {#if $backupSyncState.config.mode === "google_drive_web"}<GoogleDriveIcon size={30} />{:else}<AppIcon name="refresh" size={24} />{/if}
           </span>
-          <strong class="sync-title" data-testid="backup-sync-title">{$t(`backup.sync_title_${$backupSyncState.config.mode}` as MessageKey)}</strong>
+          <strong class="sync-title" data-testid="backup-sync-title">{$t(syncTitleKey as MessageKey)}</strong>
           <span class="sync-chips">
           {#if $backupSyncState.config.mode === "google_drive_web"}
             <span class="sync-state-chip connection" class:connected={Boolean($backupSyncState.connected_account)} role="status">
@@ -276,6 +300,7 @@
           >
             <option value="disabled">{$t("backup.sync_mode_disabled")}</option>
             <option value="google_drive_web">{$t("backup.sync_mode_gdrive")}</option>
+            <option value="nextcloud">{$t("backup.sync_mode_nextcloud")}</option>
             <option value="direct_webdav">{$t("backup.sync_mode_webdav")}</option>
             <option value="folder">{$t("backup.sync_mode_folder")}</option>
           </select>
@@ -359,6 +384,58 @@
             {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_folder"), "backup-sync-auto-save", autoSave, (on) => { autoSave = on; handleFolderOptionsChange(); })}
             {@render pullOnStartRow()}
             {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => { directApplyPrefs = on; handleFolderOptionsChange(); })}
+          </div>
+        </section>
+      {:else if selectedMode === "nextcloud"}
+        <section class="sync-section" aria-labelledby="sync-nextcloud-title">
+          <h4 class="sync-section-title" id="sync-nextcloud-title">{$t("backup.sync_section_account")}</h4>
+          {#if nextcloudAccount}
+            <p class="sync-path" data-testid="backup-sync-nextcloud-account">
+              {$t("backup.nextcloud_connected", { user: nextcloudAccount.config.username, server: nextcloudAccount.host })}
+            </p>
+          {/if}
+          <label class="sync-field">
+            <span>{$t("backup.nextcloud_server")}</span>
+            <input
+              type="url"
+              data-testid="backup-sync-nextcloud-server"
+              bind:value={nextcloudServer}
+              placeholder={$t("backup.nextcloud_server_placeholder")}
+              disabled={$backupBusy || $nextcloudLogin.status === "waiting"}
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </label>
+          {#if $nextcloudLogin.status === "waiting"}
+            <p class="sync-hint" role="status" data-testid="backup-sync-nextcloud-waiting">{$t("backup.nextcloud_waiting")}</p>
+          {:else if $nextcloudLogin.status === "error"}
+            <ErrorMessage error={$nextcloudLogin.error} />
+          {/if}
+          <div class="actions">
+            {#if $nextcloudLogin.status === "waiting"}
+              <button class="pill-action" data-testid="backup-sync-nextcloud-cancel" onclick={cancelNextcloudSignIn}>
+                {$t("backup.nextcloud_cancel")}
+              </button>
+            {:else}
+              <button
+                class="pill-action primary-pill"
+                data-testid="backup-sync-nextcloud-sign-in"
+                disabled={$backupBusy || !nextcloudServer.trim()}
+                onclick={() => void signInToNextcloud(nextcloudServer, autoSave, directApplyPrefs)}
+              >
+                {$t(nextcloudAccount ? "backup.nextcloud_sign_in_again" : "backup.nextcloud_sign_in")}
+              </button>
+            {/if}
+          </div>
+          <p class="sync-hint">{$t("backup.nextcloud_hint")}</p>
+        </section>
+
+        <section class="sync-section" aria-labelledby="sync-auto-title">
+          <h4 class="sync-section-title" id="sync-auto-title">{$t("backup.sync_section_auto")}</h4>
+          <div class="sync-rows">
+            {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_webdav"), "backup-sync-auto-save", autoSave, (on) => { autoSave = on; handleNextcloudOptionsChange(); })}
+            {#if nextcloudAccount}{@render pullOnStartRow()}{/if}
+            {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => { directApplyPrefs = on; handleNextcloudOptionsChange(); })}
           </div>
         </section>
       {:else if selectedMode === "direct_webdav"}

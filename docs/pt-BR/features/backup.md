@@ -43,6 +43,7 @@ Configurações → Dados e backup também inclui a **Sincronização automátic
    - O usuário informa uma URL WebDAV `https://` (`http://127.0.0.1` / `localhost` é aceito apenas para testes locais), usuário e senha de aplicativo ou token.
    - O usuário pode escolher entre **lembrar a senha neste computador** (Gerenciador de Credenciais do Windows ou Secret Service do Linux por meio de `secret-tool`) ou mantê-la **apenas na memória durante a sessão atual**.
    - Com o salvamento automático ativo, um ciclo de 1 minuto verifica o fingerprint SHA-256 em streaming dos dados e preferências atuais e envia (`PUT`) para o servidor WebDAV **apenas quando houver alterações**, além de sincronizar ao fechar o navegador e por **Enviar para a nuvem** (em **Sincronizar agora**).
+   - **Nextcloud** é este modo com login: a pessoa digita só o endereço do servidor e permite o Spark na própria página de login do servidor, e o Spark salva a pasta `Spark` da conta com uma senha de app feita para ele. Veja [Sincronizar com o Nextcloud](nextcloud-sync.md). Um modo compatível com S3 está [planejado](../roadmap/s3-sync.md).
 4. **Duas opções de recebimento (`pull_backup_sync`):**
    - **Revisar antes de aplicar:** lê/baixa o backup e abre a tabela padrão de revisão antes de confirmar a importação.
    - **Aplicar direto:** valida e mescla o backup imediatamente em um único passo, podendo aplicar também as preferências quando marcado.

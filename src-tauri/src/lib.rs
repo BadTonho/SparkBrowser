@@ -17,6 +17,7 @@ use commands::backup::{
     set_backup_sync_config, set_backup_sync_options, set_local_backup_schedule,
     sync_backup_on_start, unlock_backup_file,
 };
+use commands::backup_nextcloud::{nextcloud_login_cancel, nextcloud_login_poll, nextcloud_login_start};
 use commands::bookmark_export::export_bookmarks;
 use commands::browser_data::{clear_browser_data, estimate_cleanup};
 use commands::capture_probe::full_page_capture_probe;
@@ -309,6 +310,7 @@ pub fn run() {
         .manage(window::new_tab::widgets::Widgets::default())
         .manage(window::tab_drag_preview::DragPreview::default())
         .manage(window::tab_hover_card::HoverCard::default())
+        .manage(backup::nextcloud::NextcloudLogin::default())
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
         .manage(media::visualizer::Visualizer::default())
@@ -775,6 +777,9 @@ pub fn run() {
             get_backup_sync_state,
             choose_backup_sync_folder,
             set_backup_sync_config,
+            nextcloud_login_start,
+            nextcloud_login_poll,
+            nextcloud_login_cancel,
             set_backup_sync_options,
             sync_backup_on_start,
             list_backup_sync_versions,

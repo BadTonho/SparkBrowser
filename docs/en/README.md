@@ -92,3 +92,5 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [AppContainer isolation (planned)](security/app-container-isolation.md)
 - [Planned protection against suspicious sites and downloads](roadmap/security-protections.md)
 - [Video download: open limitations](roadmap/video-download-limitations.md)
+- [Sync with Nextcloud](features/nextcloud-sync.md)
+- [Sync with S3-compatible storage (planned)](roadmap/s3-sync.md)

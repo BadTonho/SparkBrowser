@@ -276,5 +276,20 @@
   "backup.sync_versions_show": "Show versions",
   "backup.sync_versions_empty": "No earlier versions yet. They appear after the file in the cloud is replaced.",
   "backup.error_sync_versions_failed": "The earlier versions of the file in the cloud could not be read or kept.",
-  "backup.error_sync_version_not_found": "That version of the file is no longer in the cloud."
+  "backup.error_sync_version_not_found": "That version of the file is no longer in the cloud.",
+  "backup.sync_mode_nextcloud": "Nextcloud",
+  "backup.sync_title_nextcloud": "Nextcloud",
+  "backup.nextcloud_server": "Nextcloud server address",
+  "backup.nextcloud_server_placeholder": "cloud.example.com",
+  "backup.nextcloud_sign_in": "Sign in to Nextcloud",
+  "backup.nextcloud_sign_in_again": "Sign in again",
+  "backup.nextcloud_cancel": "Cancel sign-in",
+  "backup.nextcloud_waiting": "Finish signing in on the Nextcloud tab that opened and allow Spark. Closing that tab cancels the sign-in.",
+  "backup.nextcloud_connected": "Connected as {user} on {server}. The file is kept in the Spark folder of your files.",
+  "backup.nextcloud_hint": "Spark gets its own app password from your server: your Nextcloud password is never typed into Spark. You can remove Spark at any time in Nextcloud, under Settings → Security → Devices & sessions.",
+  "backup.error_nextcloud_invalid_server": "Type the address of your Nextcloud server, such as cloud.example.com. It must use https://.",
+  "backup.error_nextcloud_not_found": "No Nextcloud server answered at this address. Check the address and try again.",
+  "backup.error_nextcloud_unexpected_server": "The server answered in an unexpected way, so the sign-in was stopped. Check the address and try again.",
+  "backup.error_nextcloud_login_cancelled": "The Nextcloud sign-in was cancelled.",
+  "backup.error_nextcloud_login_expired": "The Nextcloud sign-in took too long and expired. Start it again."
 }
