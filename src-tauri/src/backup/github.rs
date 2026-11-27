@@ -114,22 +114,21 @@ pub fn plan_tree(
     for entry in existing {
         if entry.path == SYNC_FILE_NAME {
             current = Some(entry);
-        } else if let Some(time) = entry
+            continue;
+        }
+        // Anything but a version Spark wrote means the branch is not Spark's alone.
+        let time = entry
             .path
             .strip_prefix(VERSIONS_PREFIX)
-            .and_then(sync_versions::parse_version)
-        {
-            versions.push((time, entry.path.clone(), entry.sha.clone()));
-        } else {
-            return None;
-        }
+            .and_then(sync_versions::parse_version)?;
+        versions.push((time, entry.path.clone(), entry.sha.clone()));
     }
     if let Some(current) = current.filter(|current| keep_version && current.sha != new_sha) {
         let name = format!("{VERSIONS_PREFIX}{}", sync_versions::version_name(now));
         versions.retain(|(_, path, _)| *path != name);
         versions.push((now, name, current.sha.clone()));
     }
-    versions.sort_by(|a, b| b.0.cmp(&a.0));
+    versions.sort_by_key(|version| std::cmp::Reverse(version.0));
     versions.truncate(sync_versions::KEEP);
     let mut tree = vec![(SYNC_FILE_NAME.to_string(), new_sha.to_string())];
     tree.extend(versions.into_iter().map(|(_, path, sha)| (path, sha)));
@@ -149,7 +148,7 @@ pub fn versions_of(entries: &[Entry]) -> Vec<sync_versions::SyncVersion> {
             })
         })
         .collect();
-    versions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    versions.sort_by_key(|version| std::cmp::Reverse(version.created_at));
     versions
 }
 
