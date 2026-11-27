@@ -96,18 +96,27 @@ pub fn build_content_shield_script_with_exceptions(
 }
 
 pub fn site_is_protected(state: &crate::state::browser_state::BrowserState, raw: &str) -> bool {
-    let Ok(url) = Url::parse(raw) else {
-        return true;
-    };
-    if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none() {
-        return true;
-    }
+    let url = Url::parse(raw).ok();
     state
         .policies()
         .shield_settings()
         .lock()
-        .map(|settings| settings.applies_to(&url))
+        .map(|settings| url_is_protected(&settings, url.as_ref()))
         .unwrap_or(true)
+}
+
+/// [`site_is_protected`] for an address that is already parsed (`None` when it could not be), with
+/// the shield settings already locked: the request filter asks this hundreds of times per page.
+pub fn url_is_protected(
+    settings: &crate::privacy::tracking_parameters::TrackingSettings,
+    url: Option<&Url>,
+) -> bool {
+    match url {
+        Some(url) if matches!(url.scheme(), "http" | "https") && url.host_str().is_some() => {
+            settings.applies_to(url)
+        }
+        _ => true,
+    }
 }
 
 /// Apply a site exception when the originating tab still exists. When it does
@@ -156,6 +165,20 @@ pub fn build_replacement_shield_script_with_exceptions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn a_parsed_address_is_protected_unless_its_site_is_an_exception() {
+        let settings = crate::privacy::tracking_parameters::TrackingSettings {
+            enabled: true,
+            exceptions: vec!["quiet.example".into()],
+        };
+        let check = |raw: &str| url_is_protected(&settings, Url::parse(raw).ok().as_ref());
+        assert!(check("https://shop.example/a"));
+        assert!(!check("https://quiet.example/a"));
+        assert!(!check("https://www.quiet.example/a"));
+        // What is not a web address, or could not be parsed, stays protected.
+        assert!(check("about:blank"));
+        assert!(check("not a url"));
+    }
     #[test]
     fn matches_only_exact_hosts_or_subdomains() {
         assert!(should_block_url(

@@ -111,15 +111,34 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
                     } else {
                         url.as_str()
                     };
+                    // Each address is parsed once: this runs for every request of every page.
+                    let target = url::Url::parse(&url).ok();
+                    let owner = if source == url.as_str() {
+                        target.clone()
+                    } else {
+                        url::Url::parse(source).ok()
+                    };
                     let shield = state
                         .policies()
                         .shield_enabled()
                         .lock()
                         .map(|enabled| *enabled)
                         .unwrap_or(false);
+                    let protected = || {
+                        state
+                            .policies()
+                            .shield_settings()
+                            .lock()
+                            .map_or(true, |settings| {
+                                super::adblock_engine::url_is_protected(&settings, owner.as_ref())
+                                    && super::adblock_engine::url_is_protected(
+                                        &settings,
+                                        target.as_ref(),
+                                    )
+                            })
+                    };
                     if shield
-                        && super::adblock_engine::site_is_protected(&state, source)
-                        && super::adblock_engine::site_is_protected(&state, &url)
+                        && protected()
                         && app
                             .state::<Arc<super::filter_lists::FilterLists>>()
                             .blocks(&url, source, kind, &method)
@@ -133,10 +152,8 @@ pub fn install(app: &AppHandle, view: &Webview) -> Result<(), String> {
                         args.SetResponse(&response)?;
                         state.policies().record_blocked_request();
                     } else if let Ok(settings) = state.policies().gpc_settings().lock() {
-                        if let (Ok(target), Ok(owner)) =
-                            (url::Url::parse(&url), url::Url::parse(source))
-                        {
-                            if settings.applies_to(&target) && settings.applies_to(&owner) {
+                        if let (Some(target), Some(owner)) = (&target, &owner) {
+                            if settings.applies_to(target) && settings.applies_to(owner) {
                                 request
                                     .Headers()?
                                     .SetHeader(&HSTRING::from("Sec-GPC"), &HSTRING::from("1"))?;
