@@ -25,6 +25,9 @@
     wipeBrowsingHistory,
   } from "../../stores/persistenceStore";
   import { addTab } from "../../stores/browserStore";
+  import { ensureSiteIcon, siteIcons, siteKey } from "../../stores/siteIconStore";
+  import { deleteHistoryEntries } from "../../services/bridge/persistence";
+  import { historyRows } from "./history-rows";
 
   let filterQuery = $state("");
   const native = isTauriRuntime();
@@ -45,6 +48,14 @@
   function formatTime(epochSecs: number): string {
     if (!epochSecs) return "";
     return $formatDate(epochSecs * 1000, { hour: "2-digit", minute: "2-digit" });
+  }
+
+  /** "Today - Friday, November 27, 2026", "Yesterday - …", or the date alone. */
+  function dayLabel(epochSecs: number, relative: "today" | "yesterday" | null): string {
+    const date = $formatDate(epochSecs * 1000, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    if (relative === "today") return $t("history.day_today", { date });
+    if (relative === "yesterday") return $t("history.day_yesterday", { date });
+    return date;
   }
 
   function nativeTheme(): HistoryOverlayPresentation["theme"] {
@@ -82,6 +93,13 @@
       nativeSessionId += 1;
       lastNativePresentation = "";
     }
+    const rows = historyRows($historyEntries, Date.now(), siteKey);
+    const icons: Record<string, string> = {};
+    for (const row of rows) {
+      ensureSiteIcon(row.url);
+      const icon = row.site ? $siteIcons[row.site] : undefined;
+      if (row.site && icon?.startsWith("data:image/") && icon.length <= 64 * 1024) icons[row.site] = icon;
+    }
     const payload: HistoryOverlayPresentation = {
       tabId: tab.id,
       url: tab.url || $currentUrl,
@@ -93,10 +111,19 @@
         search: $t("history.search_visited_pages_9bc1"),
         empty: $t("history.no_history_entries_found_c307"),
         loadMore: $t("history.load_more_ac89"),
+        selected: $t("history.selected_count"),
+        open: $t("history.open_selected"),
+        delete: $t("history.delete_selected"),
+        cancelSelection: $t("history.cancel_selection"),
+        moreFromSite: $t("history.more_from_site"),
+        deleteEntry: $t("history.delete_entry"),
+        menu: $t("history.entry_actions"),
+        select: $t("history.select_entry"),
       },
       theme: nativeTheme(),
       query: filterQuery,
-      entries: $historyEntries.map((item) => ({ id: item.id, title: item.title, url: item.url, time: formatTime(item.visited_at) })),
+      entries: rows.map(({ visitedAt, relative, dayKey: _day, ...row }) => ({ ...row, time: formatTime(visitedAt), day: dayLabel(visitedAt, relative) })),
+      icons,
       busy: $historyBusy,
       error: $historyError,
       hasMore: $historyHasMore,
@@ -121,12 +148,22 @@
       case "open":
         if (action.entryUrl) await openHistoryUrl(action.entryUrl);
         break;
+      case "open-many":
+        await closeHistoryDrawer();
+        for (const url of action.entryUrls) await addTab(url);
+        break;
+      case "more-from-site":
+        if (action.entryHost) filterQuery = action.entryHost;
+        break;
+      case "delete":
+        await deleteEntries(action.entryIds);
+        break;
     }
   }
 
   $effect(() => {
     void $isHistoryDrawerOpen; void $historyEntries; void $historyBusy; void $historyError; void $historyHasMore;
-    void filterQuery; void $currentUrl; void $tabs; void $activeWorkspaceId; void $locale; void $t;
+    void filterQuery; void $currentUrl; void $tabs; void $activeWorkspaceId; void $locale; void $t; void $siteIcons;
     untrack(() => { void pushNativeOverlay(); });
   });
 
@@ -146,6 +183,18 @@
       if (nativeSessionKey) void setHistoryOverlay(false, nativeSessionId);
     };
   });
+
+  /** Deletes visits and removes them from the list in place, so the pages already loaded stay. */
+  async function deleteEntries(ids: number[]) {
+    if (!ids.length) return;
+    try {
+      await deleteHistoryEntries(ids);
+      const gone = new Set(ids);
+      historyEntries.update((items) => items.filter((item) => !gone.has(item.id)));
+    } catch (error) {
+      historyError.set(describeError(error));
+    }
+  }
 
   async function openHistoryUrl(url: string) {
     await closeHistoryDrawer();

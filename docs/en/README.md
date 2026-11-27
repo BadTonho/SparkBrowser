@@ -61,6 +61,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Backup integrity and versions](./features/backup-integrity.md)
 - [Bookmark export for other browsers](./features/bookmark-export.md)
 - [Recently closed tabs](./features/closed-tabs.md)
+- [History panel](./features/history-panel.md)
 - [Automatic session recovery](./features/recovery.md)
 - [Resumable downloads and checksums](./features/downloads.md)
 - [Floating downloads panel and toolbar progress](./features/downloads-popover.md)

@@ -16,7 +16,26 @@ pub struct Entry {
     title: String,
     url: String,
     time: String,
+    /// The site shown after the title (`youtube.com`).
+    #[serde(default)]
+    host: String,
+    /// The heading of the day the visit belongs to ("Today - Friday, November 27, 2026").
+    #[serde(default)]
+    day: String,
+    /// A pause of more than half an hour since the previous (newer) visit of the same day.
+    #[serde(default)]
+    gap: bool,
+    /// Key of the site's icon in `Presentation::icons`.
+    #[serde(default)]
+    site: Option<String>,
 }
+
+/// Most visits the panel shows at once ("Load more" adds pages of 60).
+const MAX_ENTRIES: usize = 1200;
+const MAX_ICONS: usize = 400;
+const MAX_ICON_BYTES: usize = 64 * 1024;
+/// Most visits one action can open or delete.
+pub(super) const MAX_SELECTED: usize = MAX_ENTRIES;
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -27,6 +46,23 @@ pub struct Labels {
     search: String,
     empty: String,
     load_more: String,
+    /// "{count} selected".
+    #[serde(default)]
+    selected: String,
+    #[serde(default)]
+    open: String,
+    #[serde(default)]
+    delete: String,
+    #[serde(default)]
+    cancel_selection: String,
+    #[serde(default)]
+    more_from_site: String,
+    #[serde(default)]
+    delete_entry: String,
+    #[serde(default)]
+    menu: String,
+    #[serde(default)]
+    select: String,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -54,9 +90,26 @@ pub struct Presentation {
     theme: Theme,
     query: String,
     entries: Vec<Entry>,
+    /// Site icons as `data:image/` addresses, by site key, shared by the visits of each site.
+    #[serde(default)]
+    icons: std::collections::BTreeMap<String, String>,
     busy: bool,
     error: String,
     has_more: bool,
+}
+
+impl Presentation {
+    fn is_valid(&self) -> bool {
+        !self.tab_id.is_empty()
+            && !self.url.is_empty()
+            && self.entries.len() <= MAX_ENTRIES
+            && matches!(self.locale.as_str(), "pt-BR" | "en")
+            && self.icons.len() <= MAX_ICONS
+            && self
+                .icons
+                .values()
+                .all(|icon| icon.len() <= MAX_ICON_BYTES && icon.starts_with("data:image/"))
+    }
 }
 
 struct Session {
@@ -85,6 +138,9 @@ struct ActionPayload {
     query: String,
     #[serde(default)]
     entry_id: Option<i64>,
+    /// The selection, for "open-many" and "delete".
+    #[serde(default)]
+    entry_ids: Vec<i64>,
 }
 
 #[derive(Clone, Serialize)]
@@ -97,6 +153,10 @@ struct ActionEvent {
     query: String,
     entry_id: Option<i64>,
     entry_url: Option<String>,
+    entry_ids: Vec<i64>,
+    entry_urls: Vec<String>,
+    /// The site of the entry, for "more-from-site".
+    entry_host: Option<String>,
 }
 
 fn valid_context(state: &BrowserState, session: &Session) -> bool {
@@ -279,11 +339,7 @@ pub fn set(
         return Ok(());
     }
     let presentation = presentation.ok_or("Missing history overlay presentation")?;
-    if presentation.tab_id.is_empty()
-        || presentation.url.is_empty()
-        || presentation.entries.len() > 60
-        || !matches!(presentation.locale.as_str(), "pt-BR" | "en")
-    {
+    if !presentation.is_valid() {
         return Err("Invalid history overlay presentation".into());
     }
     let state = app.state::<BrowserState>();

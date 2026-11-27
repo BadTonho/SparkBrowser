@@ -4,5 +4,16 @@
   "history.clear_all_ddce": "Limpar tudo",
   "history.search_visited_pages_9bc1": "Pesquisar páginas visitadas…",
   "history.no_history_entries_found_c307": "Nenhum registro de histórico encontrado.",
-  "history.load_more_ac89": "Carregar mais"
+  "history.load_more_ac89": "Carregar mais",
+  "history.day_today": "Hoje - {date}",
+  "history.day_yesterday": "Ontem - {date}",
+  "history.selected_count": "{count} selecionado(s)",
+  "history.open_selected": "Abrir",
+  "history.delete_selected": "Excluir",
+  "history.cancel_selection": "Limpar seleção",
+  "history.more_from_site": "Mais deste site",
+  "history.delete_entry": "Excluir do histórico",
+  "history.entry_actions": "Mais ações",
+  "history.select_entry": "Selecionar",
+  "history.error_too_many": "Muitas visitas foram selecionadas de uma vez. Exclua em grupos menores."
 }

@@ -1,21 +1,38 @@
 use super::{valid_context, ActionEvent, ActionPayload, HistoryOverlay};
 use tauri::{AppHandle, Manager, Url};
 
+/// Builds the event for the shell. Visits are only taken from the ones the panel shows, so the page
+/// can never ask to open or delete anything else.
 fn action_event(session: &super::Session, payload: ActionPayload) -> Option<ActionEvent> {
+    let entries = &session.presentation.entries;
+    let find = |id: i64| entries.iter().find(|entry| entry.id == id);
     let entry_url = if payload.action == "open" {
-        let id = payload.entry_id?;
-        Some(
-            session
-                .presentation
-                .entries
-                .iter()
-                .find(|entry| entry.id == id)?
-                .url
-                .clone(),
-        )
+        Some(find(payload.entry_id?)?.url.clone())
     } else {
         None
     };
+    let entry_host = if payload.action == "more-from-site" {
+        Some(find(payload.entry_id?)?.host.clone()).filter(|host| !host.is_empty())
+    } else {
+        None
+    };
+    if payload.action == "more-from-site" && entry_host.is_none() {
+        return None;
+    }
+    let mut entry_ids = Vec::new();
+    let mut entry_urls = Vec::new();
+    if matches!(payload.action.as_str(), "open-many" | "delete") {
+        if payload.entry_ids.is_empty() || payload.entry_ids.len() > super::MAX_SELECTED {
+            return None;
+        }
+        for id in &payload.entry_ids {
+            let entry = find(*id)?;
+            if !entry_ids.contains(id) {
+                entry_ids.push(*id);
+                entry_urls.push(entry.url.clone());
+            }
+        }
+    }
     Some(ActionEvent {
         session_id: session.id,
         tab_id: session.presentation.tab_id.clone(),
@@ -24,6 +41,9 @@ fn action_event(session: &super::Session, payload: ActionPayload) -> Option<Acti
         query: payload.query,
         entry_id: payload.entry_id,
         entry_url,
+        entry_ids,
+        entry_urls,
+        entry_host,
     })
 }
 
@@ -52,7 +72,14 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     };
     if !matches!(
         payload.action.as_str(),
-        "close" | "search" | "clear" | "load-more" | "open"
+        "close"
+            | "search"
+            | "clear"
+            | "load-more"
+            | "open"
+            | "open-many"
+            | "delete"
+            | "more-from-site"
     ) {
         return;
     }
@@ -83,7 +110,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
         return;
     };
     session.sequence = sequence;
-    session.closing = event.action == "close" || event.action == "open";
+    session.closing = matches!(event.action.as_str(), "close" | "open" | "open-many");
     drop(inner);
     crate::error_log::ignored(crate::window::overlay_host::emit_to_host(
         app,
@@ -110,6 +137,14 @@ mod tests {
                 search: "Search".into(),
                 empty: "Empty".into(),
                 load_more: "More".into(),
+                selected: "{count} selected".into(),
+                open: "Open".into(),
+                delete: "Delete".into(),
+                cancel_selection: "Cancel".into(),
+                more_from_site: "More from this site".into(),
+                delete_entry: "Delete from history".into(),
+                menu: "Actions".into(),
+                select: "Select".into(),
             },
             theme: super::super::Theme {
                 surface: "#fff".into(),
@@ -129,7 +164,12 @@ mod tests {
                 title: "Example".into(),
                 url: "https://entry.test".into(),
                 time: "12:00".into(),
+                host: "entry.test".into(),
+                day: "Today".into(),
+                gap: false,
+                site: None,
             }],
+            icons: Default::default(),
             busy: false,
             error: String::new(),
             has_more: false,
@@ -142,24 +182,24 @@ mod tests {
             sequence: 0,
             closing: false,
         };
-        let valid = action_event(
-            &session,
-            ActionPayload {
-                action: "open".into(),
-                query: String::new(),
-                entry_id: Some(1),
-            },
-        )
-        .unwrap();
+        let payload = |action: &str, entry_id: Option<i64>, entry_ids: Vec<i64>| ActionPayload {
+            action: action.into(),
+            query: String::new(),
+            entry_id,
+            entry_ids,
+        };
+        let valid = action_event(&session, payload("open", Some(1), vec![])).unwrap();
         assert_eq!(valid.entry_url.as_deref(), Some("https://entry.test"));
-        assert!(action_event(
-            &session,
-            ActionPayload {
-                action: "open".into(),
-                query: String::new(),
-                entry_id: Some(2)
-            }
-        )
-        .is_none());
+        assert!(action_event(&session, payload("open", Some(2), vec![])).is_none());
+        // A selection may only hold shown visits; repeats are dropped.
+        let delete = action_event(&session, payload("delete", None, vec![1, 1])).unwrap();
+        assert_eq!(delete.entry_ids, [1]);
+        let many = action_event(&session, payload("open-many", None, vec![1])).unwrap();
+        assert_eq!(many.entry_urls, ["https://entry.test"]);
+        assert!(action_event(&session, payload("delete", None, vec![1, 2])).is_none());
+        assert!(action_event(&session, payload("delete", None, vec![])).is_none());
+        let site = action_event(&session, payload("more-from-site", Some(1), vec![])).unwrap();
+        assert_eq!(site.entry_host.as_deref(), Some("entry.test"));
+        assert!(action_event(&session, payload("more-from-site", Some(2), vec![])).is_none());
     }
 }

@@ -5,13 +5,20 @@ export interface HistoryOverlayPresentation {
   tabId: string;
   url: string;
   locale: "pt-BR" | "en";
-  labels: { title: string; clear: string; close: string; search: string; empty: string; loadMore: string };
+  labels: {
+    title: string; clear: string; close: string; search: string; empty: string; loadMore: string;
+    /** "{count} selected". */
+    selected: string; open: string; delete: string; cancelSelection: string; moreFromSite: string; deleteEntry: string; menu: string; select: string;
+  };
   theme: {
     surface: string; border: string; text: string; muted: string; accent: string; hover: string; field: string;
     surfaceBorder?: string; surfaceFilter?: string; surfaceShadow?: string;
   };
   query: string;
-  entries: Array<{ id: number; title: string; url: string; time: string }>;
+  /** `day` is the heading of the visit's day; `gap` marks a pause of more than half an hour since the newer visit. */
+  entries: Array<{ id: number; title: string; url: string; time: string; host: string; day: string; gap: boolean; site: string | null }>;
+  /** Site icons (`data:image/` addresses) by site key. */
+  icons: Record<string, string>;
   busy: boolean;
   error: string;
   hasMore: boolean;
@@ -21,10 +28,13 @@ export interface HistoryOverlayAction {
   sessionId: number;
   tabId: string;
   url: string;
-  action: "close" | "search" | "clear" | "load-more" | "open";
+  action: "close" | "search" | "clear" | "load-more" | "open" | "open-many" | "delete" | "more-from-site";
   query: string;
   entryId: number | null;
   entryUrl: string | null;
+  entryIds: number[];
+  entryUrls: string[];
+  entryHost: string | null;
 }
 
 let queue: Promise<void> = Promise.resolve();

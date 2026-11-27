@@ -260,6 +260,26 @@ pub fn clear_history_older_than(conn: &Connection, cutoff: i64) -> Result<(), St
     crate::database::closed_tabs_repo::clear_before(conn, cutoff)
 }
 
+/// Most visits one request can delete (a selection in the history panel).
+pub const MAX_DELETE: usize = 2000;
+
+/// Deletes the given visits. Caller owns the transaction. Returns how many rows went.
+pub fn delete_entries(conn: &Connection, ids: &[i64]) -> Result<usize, String> {
+    if ids.len() > MAX_DELETE {
+        return Err("history.too_many_entries".into());
+    }
+    let mut stmt = conn
+        .prepare_cached("DELETE FROM history WHERE id = ?1")
+        .map_err(|e| e.to_string())?;
+    let mut removed = 0;
+    for id in ids {
+        removed += stmt
+            .execute([id])
+            .map_err(|e| format!("Failed to delete history entry {id}: {e}"))?;
+    }
+    Ok(removed)
+}
+
 /// Caller owns the transaction so all local browsing history clears together.
 pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
     clear_all_history(conn)?;
@@ -270,6 +290,26 @@ pub fn clear_history_data(conn: &Connection) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deleting_entries_removes_only_the_chosen_visits() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE history (id INTEGER PRIMARY KEY, title TEXT, url TEXT, visited_at INTEGER);
+             INSERT INTO history VALUES (1, 'a', 'https://a.test', 10), (2, 'b', 'https://b.test', 20), (3, 'c', 'https://c.test', 30);",
+        )
+        .unwrap();
+        assert_eq!(delete_entries(&conn, &[1, 3, 99]).unwrap(), 2);
+        let left: Vec<i64> = conn
+            .prepare("SELECT id FROM history")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(left, [2]);
+        assert!(delete_entries(&conn, &vec![1; MAX_DELETE + 1]).is_err());
+    }
     #[test]
     fn suggestions_list_each_address_once_with_its_latest_visit_and_count() {
         let conn = Connection::open_in_memory().unwrap();

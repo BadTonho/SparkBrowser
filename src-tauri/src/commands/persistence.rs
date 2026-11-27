@@ -55,6 +55,34 @@ pub async fn clear_browsing_history(
     crate::window::new_tab::invalidate(&app);
     Ok(())
 }
+/// Deletes the chosen visits from the history (the history panel's selection or one row's menu).
+#[tauri::command]
+pub async fn delete_history_entries(app: AppHandle, ids: Vec<i64>) -> Result<usize, String> {
+    if ids.len() > history_repo::MAX_DELETE {
+        return Err("history.too_many_entries".into());
+    }
+    flush_navigation(app.clone()).await?;
+    let state = app.state::<crate::state::browser_state::BrowserState>();
+    let _operation = state.session().operation().await;
+    let delete_app = app.clone();
+    let removed = executor::run(app.clone(), move |conn| {
+        let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        let removed = history_repo::delete_entries(&tx, &ids)?;
+        tx.commit().map_err(|e| e.to_string())?;
+        delete_app
+            .state::<crate::window::new_tab::NewTabService>()
+            .history_epoch
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Ok(removed)
+    })
+    .await
+    .inspect_err(|error| {
+        crate::error_log::warn(&format!("history: deleting entries failed: {error}"));
+    })?;
+    crate::window::new_tab::invalidate(&app);
+    Ok(removed)
+}
+
 #[tauri::command]
 pub async fn get_bookmark_data(app: AppHandle) -> Result<BookmarkData, String> {
     executor::run(app, bookmarks_repo::get_bookmark_data).await

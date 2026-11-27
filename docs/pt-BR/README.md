@@ -61,6 +61,7 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Integridade e versões do backup](./features/backup-integrity.md)
 - [Exportar favoritos para outros navegadores](./features/bookmark-export.md)
 - [Abas fechadas recentemente](./features/closed-tabs.md)
+- [Painel de histórico](./features/history-panel.md)
 - [Recuperação automática de sessão](./features/recovery.md)
 - [Downloads retomáveis e hashes](./features/downloads.md)
 - [Painel flutuante de downloads e progresso na barra](./features/downloads-popover.md)

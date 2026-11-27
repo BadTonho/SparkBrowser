@@ -15,6 +15,12 @@ export async function fetchHistorySuggestions(limit: number, query: string): Pro
   return await invoke<HistoryEntry[]>("get_history", { limit, query, before: null, grouped: true });
 }
 
+/** Deletes the chosen visits; returns how many were removed. */
+export async function deleteHistoryEntries(ids: number[]): Promise<number> {
+  if (!isTauriRuntime()) return 0;
+  return await invoke<number>("delete_history_entries", { ids });
+}
+
 /** Clears the history; with `olderThanDays`, only the visits older than that many days. */
 export async function clearAllHistory(olderThanDays: number | null = null): Promise<void> {
   if(!isTauriRuntime()) return;

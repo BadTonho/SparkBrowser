@@ -134,7 +134,7 @@ use commands::overlays::{
     set_workspace_switcher_overlay, set_zoom_popover,
 };
 use commands::persistence::{
-    clear_browsing_history, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
+    clear_browsing_history, delete_history_entries, create_bookmark_folder, delete_bookmark_folder, get_bookmark_data,
     get_history, remove_bookmark, rename_bookmark_folder, save_bookmark,
 };
 use commands::privacy::{
@@ -923,6 +923,7 @@ pub fn run() {
             set_keyboard_shortcuts,
             get_history,
             clear_browsing_history,
+            delete_history_entries,
             get_privacy_settings,
             set_history_retention,
             set_popup_setting,

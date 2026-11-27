@@ -4,10 +4,31 @@
   <title>Histórico</title><link rel="stylesheet" href="./overlays/history-overlay.css" /></head>
 <body>
   <section id="history-panel" role="dialog" aria-modal="true" tabindex="-1" hidden>
-    <header><h2 id="title"></h2><div class="header-actions"><button id="clear" class="clear-btn" type="button"></button><button id="close" class="close-btn" type="button" aria-label="Fechar">×</button></div></header>
-    <div class="search"><input id="query" type="search" spellcheck="false" /></div>
+    <header>
+      <div id="main-bar" class="bar">
+        <h2 id="title"></h2>
+        <label class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+          <input id="query" type="search" spellcheck="false" />
+        </label>
+        <button id="clear" class="clear-btn" type="button"></button>
+        <button id="close" class="icon-btn" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div id="selection-bar" class="bar selection" hidden>
+        <button id="cancel-selection" class="icon-btn" type="button">×</button>
+        <span id="selected-count" role="status"></span>
+        <span class="spacer"></span>
+        <button id="open-selected" class="pill" type="button"></button>
+        <button id="delete-selected" class="pill" type="button"></button>
+      </div>
+    </header>
     <p id="error" role="alert" hidden></p>
     <div id="entries" aria-busy="false"></div>
   </section>
+  <!-- Outside the panel: its backdrop filter would make the panel, not the window, the origin of a fixed menu. -->
+  <div id="menu" role="menu" hidden>
+    <button type="button" role="menuitem" data-action="more-from-site"></button>
+    <button type="button" role="menuitem" data-action="delete"></button>
+  </div>
   <script src="./overlays/history-overlay.js" defer></script>
 </body></html>

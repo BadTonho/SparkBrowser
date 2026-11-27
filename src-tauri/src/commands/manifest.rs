@@ -231,6 +231,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_keyboard_shortcuts",
     "get_history",
     "clear_browsing_history",
+    "delete_history_entries",
     "get_privacy_settings",
     "set_history_retention",
     "set_popup_setting",

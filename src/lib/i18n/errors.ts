@@ -79,6 +79,7 @@ const messages: Record<string, MessageKey> = {
   "backup.sync_invalid_url": "backup.error_sync_invalid_url",
   "backup.sync_https_required": "backup.error_sync_https_required",
   "backup.sync_auth_failed": "backup.error_sync_auth_failed",
+  "history.too_many_entries": "history.error_too_many",
   "backup.nextcloud_invalid_server": "backup.error_nextcloud_invalid_server",
   "backup.nextcloud_not_found": "backup.error_nextcloud_not_found",
   "backup.nextcloud_unexpected_server": "backup.error_nextcloud_unexpected_server",

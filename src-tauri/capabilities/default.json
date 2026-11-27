@@ -178,6 +178,7 @@
     "allow-set-keyboard-shortcuts",
     "allow-get-history",
     "allow-clear-browsing-history",
+    "allow-delete-history-entries",
     "allow-get-privacy-settings",
     "allow-set-history-retention",
     "allow-set-popup-setting",
