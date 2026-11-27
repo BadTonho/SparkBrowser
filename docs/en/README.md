@@ -73,6 +73,7 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Notes and sessions in the Command Bar](features/command-search.md)
 - [Keyboard shortcuts across tabs](features/keyboard-shortcuts.md)
 - [Tab media controls](features/tab-media.md)
+- [Tab hover card: preview and memory](features/tab-hover-card.md)
 - [Protection pop-up and Auto skip ads](features/auto-skip-ads.md)
 - [Correctness fixes and verification — November 2, 2026](reviews/2026-11-02/correctness-fixes.md)
 - [Reorder quick actions](./features/titlebar-actions.md)

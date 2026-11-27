@@ -167,6 +167,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "dock_tab_to_split",
     "move_tab_in_split",
     "set_tab_drag_preview",
+    "set_tab_hover_card",
+    "refresh_tab_previews",
     "commit_split_ratio",
     "get_site_permissions",
     "set_site_permission",

@@ -1047,6 +1047,12 @@
           "markdownDescription": "Enables the refresh_tab_media command without any pre-configured scope."
         },
         {
+          "description": "Enables the refresh_tab_previews command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-refresh-tab-previews",
+          "markdownDescription": "Enables the refresh_tab_previews command without any pre-configured scope."
+        },
+        {
           "description": "Enables the reload_page command without any pre-configured scope.",
           "type": "string",
           "const": "allow-reload-page",
@@ -1507,6 +1513,12 @@
           "type": "string",
           "const": "allow-set-tab-groups",
           "markdownDescription": "Enables the set_tab_groups command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_tab_hover_card command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tab-hover-card",
+          "markdownDescription": "Enables the set_tab_hover_card command without any pre-configured scope."
         },
         {
           "description": "Enables the set_tab_memory_levels command without any pre-configured scope.",
@@ -2697,6 +2709,12 @@
           "markdownDescription": "Denies the refresh_tab_media command without any pre-configured scope."
         },
         {
+          "description": "Denies the refresh_tab_previews command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-refresh-tab-previews",
+          "markdownDescription": "Denies the refresh_tab_previews command without any pre-configured scope."
+        },
+        {
           "description": "Denies the reload_page command without any pre-configured scope.",
           "type": "string",
           "const": "deny-reload-page",
@@ -3157,6 +3175,12 @@
           "type": "string",
           "const": "deny-set-tab-groups",
           "markdownDescription": "Denies the set_tab_groups command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tab_hover_card command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tab-hover-card",
+          "markdownDescription": "Denies the set_tab_hover_card command without any pre-configured scope."
         },
         {
           "description": "Denies the set_tab_memory_levels command without any pre-configured scope.",

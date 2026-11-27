@@ -12,16 +12,16 @@
   import { tabs } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceSelectionStore";
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
+  import { tabHoverCard, refreshVisiblePreviews } from "../../actions/tabHoverCard";
   let { tab, selected = false }: { tab: TabItem; selected?: boolean } = $props();
   let element: HTMLDivElement | undefined = $state();
   $effect(() => { if (selected) element?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
-  function getTabHost(rawUrl: string): string {
-    try {
-      return new URL(rawUrl).hostname.replace(/^www\./, "");
-    } catch {
-      return rawUrl;
-    }
-  }
+  // Once the page of the selected tab has had time to draw, picture it for its hover card.
+  $effect(() => {
+    if (!selected) return;
+    const timer = setTimeout(() => refreshVisiblePreviews(true), 1500);
+    return () => clearTimeout(timer);
+  });
 
   function getTabGlyph(rawUrl: string, isHibernated: boolean): string {
     if (isHibernated) return "sleep";
@@ -58,14 +58,9 @@
     }
   }
 
-  function getTabTooltip(tabItem: TabItem, memoryBytes?: number): string {
-    const host = getTabHost(tabItem.url);
-    if (tabItem.is_hibernated) {
-      const savings = formatTabSavings(tabItem.id);
-      return `${tabItem.title} — ${host}\n${$t("tabs.sleeping_savings", { savings })}`;
-    }
-    const memStr = formatTabMemory(memoryBytes, $t("tabs.memory_unavailable"));
-    return `${tabItem.title} — ${host}\n${$t("tabs.memory_usage", { usage: memStr })}`;
+  function getTabMemoryLabel(tabItem: TabItem, memoryBytes?: number): string {
+    if (tabItem.is_hibernated) return $t("tabs.sleeping_savings", { savings: formatTabSavings(tabItem.id) });
+    return $t("tabs.memory_usage", { usage: formatTabMemory(memoryBytes, $t("tabs.memory_unavailable")) });
   }
 
 </script>
@@ -86,7 +81,7 @@
         tabindex="0"
         aria-pressed={$selectedTabIds.includes(tab.id)}
         onpointerenter={() => refreshTabsMemory()}
-        title={getTabTooltip(tab, $tabsMemory[tab.id])}
+        use:tabHoverCard={{ tabId: tab.id, title: tab.title, memory: getTabMemoryLabel(tab, $tabsMemory[tab.id]), noPreview: $t("tabs.hover_no_preview"), placement: "below" }}
       >
         <TabMuteButton tabId={tab.id} />
         <span class="tab-glyph"><TabFavicon url={tab.url} glyph={getTabGlyph(tab.url, tab.is_hibernated)} dimmed={tab.is_hibernated} /></span>

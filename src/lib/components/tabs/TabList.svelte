@@ -27,6 +27,7 @@
   import { activeWorkspaceId } from "../../stores/workspaceStore";
   import { keyboardShortcuts, shortcutLabel } from "../../stores/shortcutsStore";
   import { tabsMemory, refreshTabsMemory, formatTabMemory, formatTabSavings } from "../../stores/tabMemoryStore";
+  import { tabHoverCard, refreshVisiblePreviews } from "../../actions/tabHoverCard";
   import { clearTabSelection, handleTabSelectionInput, selectedTabIds } from "../../stores/tabSelectionStore";
   import { splitLayout } from "../../stores/splitViewStore";
   import { splitDragPreview } from "../../stores/tabDragStore";
@@ -169,12 +170,10 @@
     removeTab(tabId);
   }
 
-  function getTabTooltip(tabItem: any, memoryBytes?: number): string {
-    const memLabel = tabItem.is_hibernated
+  function getTabMemoryLabel(tabItem: any, memoryBytes?: number): string {
+    return tabItem.is_hibernated
       ? $t("tabs.sleeping_savings", { savings: formatTabSavings(tabItem.id) })
       : $t("tabs.memory_usage", { usage: formatTabMemory(memoryBytes, $t("tabs.memory_unavailable")) });
-    const reorderHint = `${$t("tabs.drag_to_reorder_f64b")} ${$keyboardShortcuts && shortcutLabel('move-tab-up')} / ${$keyboardShortcuts && shortcutLabel('move-tab-down')})`;
-    return `${tabItem.title} ${reorderHint}\n${memLabel}`;
   }
 
   function handleHibernateClick(event: MouseEvent, tabId: string) {
@@ -198,6 +197,13 @@
     if (handleTabSelectionInput(event, tabId, workspaceTabs.map((tab) => tab.id))) return;
     startTabDrag(event, tabId);
   }
+
+  // Once the page of the selected tab has had time to draw, picture it for its hover card.
+  $effect(() => {
+    if (!activeTabId) return;
+    const timer = setTimeout(() => refreshVisiblePreviews(true), 1500);
+    return () => clearTimeout(timer);
+  });
 
   $effect(() => {
     const id = activeTabId;
@@ -275,7 +281,7 @@
         tabindex="0"
         aria-pressed={$selectedTabIds.includes(tab.id)}
         onpointerenter={() => refreshTabsMemory()}
-        title={getTabTooltip(tab, $tabsMemory[tab.id])}
+        use:tabHoverCard={{ tabId: tab.id, title: tab.title, memory: getTabMemoryLabel(tab, $tabsMemory[tab.id]), noPreview: $t("tabs.hover_no_preview"), placement: "right" }}
         transition:slide={{ duration: 220, easing: cubicOut }}
       >
         <div class="drag-grip" title={$t("tabs.drag_to_reorder_ef86")}>

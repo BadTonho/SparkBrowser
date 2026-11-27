@@ -8,7 +8,7 @@
 
 ## 2. 💤 Hibernação Inteligente de Abas e Inspeção de Memória (Economia de RAM)
 - Gerenciada nativamente em Rust.
-- Ao passar o mouse sobre qualquer guia, o uso de memória física (RAM) em tempo real é exibido logo abaixo do nome da guia e do domínio na dica de contexto. Abas hibernadas indicam 0 MB para evidenciar a economia de memória.
+- Ao passar o mouse sobre qualquer guia, abre o seu [cartão de prévia](tab-hover-card.md): o nome resumido da guia, uma imagem da página e o uso de memória física (RAM) em tempo real. Abas hibernadas mostram a memória que estão economizando.
 - Suspende automaticamente abas em segundo plano após 5, 10 ou 30 minutos, ou usa o modo adaptativo **Auto**. No Auto, abas comuns hibernam após 10 minutos; abas ativadas pelo menos 10 vezes nos últimos 7 dias hibernam após 5 horas sem uso.
 - **Off** desativa a hibernação automática, mantendo a hibernação manual disponível. Os horários locais de ativação são mantidos no SQLite para a janela adaptativa de 7 dias, sem armazenar URLs.
 

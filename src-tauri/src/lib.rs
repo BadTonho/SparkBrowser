@@ -176,6 +176,7 @@ use database::connection::init_database;
 use state::browser_state::BrowserState;
 use tauri::{Manager, WindowEvent};
 use window::tab_drag_preview::set_tab_drag_preview;
+use window::tab_hover_card::{refresh_tab_previews, set_tab_hover_card};
 use window::vibrancy::apply_native_vibrancy;
 use window::webview_manager::BOOKMARK_CONTEXT_MENU_WEBVIEW_LABEL;
 
@@ -307,6 +308,7 @@ pub fn run() {
         .manage(window::settings_tab::SettingsTabSessions::default())
         .manage(window::new_tab::widgets::Widgets::default())
         .manage(window::tab_drag_preview::DragPreview::default())
+        .manage(window::tab_hover_card::HoverCard::default())
         .manage(zoom::ZoomService::default())
         .manage(media::MediaService::default())
         .manage(media::visualizer::Visualizer::default())
@@ -863,6 +865,8 @@ pub fn run() {
             dock_tab_to_split,
             move_tab_in_split,
             set_tab_drag_preview,
+            set_tab_hover_card,
+            refresh_tab_previews,
             commit_split_ratio,
             get_site_permissions,
             set_site_permission,

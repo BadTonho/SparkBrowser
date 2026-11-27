@@ -29,6 +29,7 @@
   "tabs.memory_hibernated": "Hibernada",
   "tabs.memory_unavailable": "Indisponível",
   "tabs.sleeping_savings": "Em repouso · Economizando {savings} de RAM",
+  "tabs.hover_no_preview": "Sem prévia ainda. Abra esta guia uma vez para vê-la aqui.",
   "tabs.sleeping_badge": "Em repouso",
   "tabs.new_ephemeral": "Nova Aba Efêmera",
   "tabs.ephemeral_badge": "Efêmera",

@@ -119,6 +119,8 @@
     "allow-dock-tab-to-split",
     "allow-move-tab-in-split",
     "allow-set-tab-drag-preview",
+    "allow-set-tab-hover-card",
+    "allow-refresh-tab-previews",
     "allow-commit-split-ratio",
     "allow-get-site-permissions",
     "allow-set-site-permission",

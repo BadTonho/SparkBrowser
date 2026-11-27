@@ -21,6 +21,7 @@ pub mod reader;
 pub mod shield_policy;
 mod split_focus;
 pub mod tab_drag_preview;
+pub mod tab_hover_card;
 pub mod tab_memory;
 pub(crate) mod url_input;
 pub mod vibrancy;

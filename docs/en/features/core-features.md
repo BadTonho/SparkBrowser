@@ -8,7 +8,7 @@
 
 ## 2. 💤 Smart Tab Hibernation & Memory Inspection (RAM Saver)
 - Managed natively in Rust.
-- Hovering over any tab displays its real-time physical memory (RAM) usage directly below the page title and host in the tooltip. Hibernated tabs report 0 MB to highlight memory savings.
+- Hovering over any tab opens its [hover card](tab-hover-card.md): the shortened tab name, a picture of the page and its real-time physical memory (RAM) usage. Hibernated tabs show the memory they are saving instead.
 - Automatically suspends background tabs after 5, 10, or 30 minutes, or with adaptive **Auto** mode. Auto hibernates regular tabs after 10 minutes and tabs activated at least 10 times in the last 7 days after 5 hours of inactivity.
 - **Off** disables automatic hibernation while keeping manual hibernation available. Local activation timestamps are kept in SQLite for the 7-day adaptive window without storing page URLs.
 

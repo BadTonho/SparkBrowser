@@ -89,6 +89,7 @@ pub fn shell_only(
                         | "set_media_popover"
                         | "set_zoom_popover"
                         | "set_tab_drag_preview"
+                        | "set_tab_hover_card"
                         | "move_tab_in_split"
                         | "sync_viewport_bounds"
                         | "get_diagnostics"
