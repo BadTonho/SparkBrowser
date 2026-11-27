@@ -41,12 +41,10 @@ impl DownloadManager {
             t.error = None;
             t.verification_received = 0;
         }) {
-            self.tasks
-                .lock()
-                .map_err(|e| e.to_string())?
-                .get_mut(id)
-                .unwrap()
-                .worker = false;
+            // The task may have been removed meanwhile; then there is no worker flag to clear.
+            if let Some(live) = crate::error_log::lock(&self.tasks).get_mut(id) {
+                live.worker = false;
+            }
             return Err(error);
         }
         let stream = record.task.source == "hls";

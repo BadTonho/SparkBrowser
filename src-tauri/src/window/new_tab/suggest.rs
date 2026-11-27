@@ -87,6 +87,10 @@ pub(super) fn handle(
     terms: bool,
 ) {
     let Some(request) = values.get("request").and_then(|v| v.parse::<u64>().ok()) else {
+        crate::error_log::warn(&format!(
+            "New tab suggestions: a request without a valid number was ignored ({:?})",
+            values.get("request")
+        ));
         return;
     };
     let query = values.get("input").cloned().unwrap_or_default();
