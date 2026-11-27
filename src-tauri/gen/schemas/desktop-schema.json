@@ -1251,6 +1251,12 @@
           "markdownDescription": "Enables the set_backup_sync_config command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_backup_sync_options command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-backup-sync-options",
+          "markdownDescription": "Enables the set_backup_sync_options command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_bookmark_context_menu_overlay command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-bookmark-context-menu-overlay",
@@ -2875,6 +2881,12 @@
           "type": "string",
           "const": "deny-set-backup-sync-config",
           "markdownDescription": "Denies the set_backup_sync_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_backup_sync_options command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-backup-sync-options",
+          "markdownDescription": "Denies the set_backup_sync_options command without any pre-configured scope."
         },
         {
           "description": "Denies the set_bookmark_context_menu_overlay command without any pre-configured scope.",

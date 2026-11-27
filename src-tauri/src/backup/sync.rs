@@ -51,6 +51,12 @@ pub struct SyncStateSnapshot {
     pub connected_account: Option<String>,
     pub last_synced_at: Option<i64>,
     pub last_error: Option<String>,
+    /// How often the automatic sync runs and whether it is paused.
+    pub options: super::sync_options::SyncOptions,
+    /// The name of this computer, as written into the files it sends.
+    pub this_device: String,
+    /// The computer that wrote the file in the cloud, as last seen by a send or a download.
+    pub last_device: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -267,6 +273,9 @@ pub fn snapshot(conn: &Connection, runtime: &SyncRuntime) -> Result<SyncStateSna
         connected_account,
         last_synced_at,
         last_error,
+        options: super::sync_options::load(conn),
+        this_device: super::device::name(),
+        last_device: super::sync_options::last_device(conn),
     })
 }
 
@@ -287,6 +296,7 @@ pub fn save_config(
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_GDRIVE_EMAIL_KEY)?;
             preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_GDRIVE_AUTHUSER_KEY)?;
+            preferences_repo::remove(conn, preferences_repo::BACKUP_SYNC_LAST_DEVICE_KEY)?;
         }
         SyncTargetConfig::GoogleDriveWeb { .. } => {
             *runtime.session_secret.lock().map_err(|e| e.to_string())? = None;
@@ -436,6 +446,7 @@ pub fn push_document_to_target(
 
     let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
     clear_error_and_record_sync(conn, runtime, &current_fp, now)?;
+    super::sync_options::record_device(conn, document.device.as_deref())?;
     let state = snapshot(conn, runtime)?;
     Ok(SyncPushResult {
         synced: true,
@@ -708,6 +719,7 @@ pub async fn push_sync(
     }
     let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
     clear_error_and_record_sync(conn, &service.sync, &current_fp, now)?;
+    super::sync_options::record_device(conn, document.device.as_deref())?;
     let snap = snapshot(conn, &service.sync)?;
     Ok(SyncPushResult {
         synced: true,
@@ -803,6 +815,14 @@ pub async fn pull_sync(
             if let Ok(mut guard) = backup_service.sync.last_error.lock() {
                 *guard = None;
             }
+            let state = app.state::<BrowserState>();
+            let db = state
+                .infrastructure()
+                .db()
+                .lock()
+                .map_err(|e| e.to_string())?;
+            let conn = db.as_ref().ok_or("backup.database_unavailable")?;
+            super::sync_options::record_device(conn, doc.device.as_deref())?;
             doc
         }
         Err(err) => {

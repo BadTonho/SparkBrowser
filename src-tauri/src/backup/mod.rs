@@ -2,6 +2,7 @@ mod credentials;
 pub use credentials::migrate_legacy_secrets;
 pub mod bookmark_export;
 pub mod crypto;
+pub mod device;
 pub mod encryption;
 pub mod files;
 pub mod gdrive_webview;
@@ -11,6 +12,7 @@ pub mod migrate;
 pub mod model;
 pub mod service;
 pub mod sync;
+pub mod sync_options;
 pub mod validation;
 
 #[cfg(test)]

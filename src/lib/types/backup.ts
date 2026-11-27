@@ -53,6 +53,19 @@ export interface SyncStateSnapshot {
   connected_account?: string | null;
   last_synced_at: number | null;
   last_error: string | null;
+  /** How often the automatic sync runs and whether it is paused. */
+  options: SyncOptions;
+  /** The name of this computer. */
+  this_device: string;
+  /** The computer that wrote the file in the cloud, as last seen by a send or a download. */
+  last_device: string | null;
+}
+
+export type SyncInterval = "auto" | "five_minutes" | "fifteen_minutes" | "on_exit";
+export interface SyncOptions {
+  interval: SyncInterval;
+  /** Unix seconds until which the automatic sync does nothing. */
+  paused_until: number | null;
 }
 
 export interface SyncPushResult {

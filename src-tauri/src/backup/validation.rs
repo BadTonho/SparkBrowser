@@ -131,6 +131,11 @@ pub fn document(doc: &BackupDocument) -> Result<(), String> {
     if !is_backup_format(&doc.format) || !(1..=CURRENT_VERSION).contains(&doc.version) {
         return Err("backup.unsupported_version".into());
     }
+    if let Some(device) = &doc.device {
+        if doc.version < 7 || !super::device::valid(device) {
+            return Err("backup.invalid_document".into());
+        }
+    }
     preferences(&doc.preferences)?;
     let d = &doc.data;
     if d.workspaces.len()

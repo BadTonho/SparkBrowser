@@ -236,6 +236,7 @@
     "allow-get-backup-sync-state",
     "allow-choose-backup-sync-folder",
     "allow-set-backup-sync-config",
+    "allow-set-backup-sync-options",
     "allow-push-backup-sync",
     "allow-pull-backup-sync",
     "allow-unlock-backup-file",

@@ -15,8 +15,8 @@ pub const LEGACY_FORMAT: &str = "veloce-backup";
 pub fn is_backup_format(tag: &str) -> bool {
     tag == FORMAT || tag == LEGACY_FORMAT
 }
-/// Format 6 adds the settings display preference; versions 1–5 stay readable.
-pub const CURRENT_VERSION: u32 = 6;
+/// Format 7 adds the name of the computer that wrote the file; versions 1–6 stay readable.
+pub const CURRENT_VERSION: u32 = 7;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -115,6 +115,10 @@ pub struct BackupDocument {
     pub format: String,
     pub version: u32,
     pub created_at: i64,
+    /// The computer that wrote the file (format 7). Not part of the fingerprint: the same data
+    /// sent from two computers is the same backup.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device: Option<String>,
     pub data: BackupData,
     pub preferences: BackupPreferences,
 }

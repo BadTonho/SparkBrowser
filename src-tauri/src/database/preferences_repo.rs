@@ -16,6 +16,8 @@ pub const BACKUP_SYNC_LAST_AT_KEY: &str = "backup_sync_last_at_v1";
 pub const BACKUP_SYNC_FINGERPRINT_KEY: &str = "backup_sync_fingerprint_v1";
 pub const BACKUP_SYNC_GDRIVE_EMAIL_KEY: &str = "backup_sync_gdrive_email_v1";
 pub const BACKUP_SYNC_GDRIVE_AUTHUSER_KEY: &str = "backup_sync_gdrive_authuser_v1";
+pub const BACKUP_SYNC_OPTIONS_KEY: &str = "backup_sync_options_v1";
+pub const BACKUP_SYNC_LAST_DEVICE_KEY: &str = "backup_sync_last_device_v1";
 // The `backup_sync` prefix keeps these out of private-profile copies.
 pub const BACKUP_ENCRYPTION_KEY: &str = "backup_sync_encryption_v1";
 pub const BACKUP_LOCAL_SCHEDULE_KEY: &str = "backup_sync_local_schedule_v1";

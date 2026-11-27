@@ -17,6 +17,8 @@ export interface SyncRingInput {
   problem: string | null;
   /** Google Drive waits for an account to be chosen or linked; its problem is guidance, not an error. */
   waitingForAccount: boolean;
+  /** The person paused the automatic sync for a while. */
+  pausedByUser?: boolean;
 }
 
 /** What the ring shows. A running sync wins over an older problem, which wins over the rest. */
@@ -25,6 +27,6 @@ export function summarizeSyncRing(input: SyncRingInput): SyncRing {
   if (input.running > 0) return "syncing";
   if (input.problem && !input.waitingForAccount) return "error";
   if (input.finished) return "done";
-  if (input.waitingForAccount || !input.autoSave) return "paused";
+  if (input.waitingForAccount || input.pausedByUser || !input.autoSave) return "paused";
   return "idle";
 }

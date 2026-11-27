@@ -77,6 +77,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "get_backup_sync_state",
     "choose_backup_sync_folder",
     "set_backup_sync_config",
+    "set_backup_sync_options",
     "push_backup_sync",
     "pull_backup_sync",
     "unlock_backup_file",

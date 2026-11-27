@@ -121,6 +121,7 @@ pub async fn capture(app: &AppHandle, prefs: BackupPreferences) -> Result<Backup
         format: FORMAT.into(),
         version: CURRENT_VERSION,
         created_at: crate::state::tab_model::TabInfo::current_epoch_secs() as i64,
+        device: Some(super::device::name()),
         data: backup_repo::collect(conn)?,
         preferences: current_preferences(conn, prefs)?,
     })

@@ -10,6 +10,8 @@
     backupSyncNotice,
     backupSyncRunning,
     driveWaitingForAccount,
+    saveSyncOptions,
+    syncPausedNow,
     backupSyncState,
     openGoogleLoginTab,
     pendingBackupPreferences,
@@ -34,6 +36,10 @@
   import { errorDetails } from "../../services/user-errors.js";
   import { gdriveFix } from "../../services/backup/gdrive-fix.js";
   import { summarizeSyncRing } from "../../services/backup/sync-ring";
+  import { pauseUntil } from "../../services/backup/sync-schedule";
+  import type { SyncInterval } from "../../types/backup";
+
+  const INTERVALS: SyncInterval[] = ["auto", "five_minutes", "fifteen_minutes", "on_exit"];
 
   const desktop = isTauriRuntime();
   let syncExpanded = $state(false);
@@ -70,6 +76,7 @@
       finished: $backupSyncFinished,
       problem: syncProblem || null,
       waitingForAccount: linkNeeded || $driveWaitingForAccount,
+      pausedByUser: $syncPausedNow,
     });
   });
 
@@ -397,8 +404,44 @@
       {/if}
 
       {#if $backupSyncState.config.mode !== "disabled"}
+        <section class="sync-section" aria-labelledby="sync-schedule-title">
+          <h4 class="sync-section-title" id="sync-schedule-title">{$t("backup.sync_section_schedule")}</h4>
+          <div class="sync-rows">
+            <label class="sync-row">
+              <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_interval_label")}</span><span class="sync-row-desc">{$t("backup.sync_interval_desc")}</span></span>
+              <select class="sync-row-select" data-testid="backup-sync-interval" value={$backupSyncState.options.interval} disabled={$backupBusy}
+                onchange={(event) => void saveSyncOptions({ interval: event.currentTarget.value as SyncInterval })}>
+                {#each INTERVALS as interval}
+                  <option value={interval}>{$t(interval === "auto" ? ($backupSyncState.config.mode === "folder" ? "backup.sync_interval_auto_folder" : "backup.sync_interval_auto_remote") : (`backup.sync_interval_${interval}` as MessageKey))}</option>
+                {/each}
+              </select>
+            </label>
+            <div class="sync-row" data-testid="backup-sync-pause">
+              {#if $syncPausedNow && $backupSyncState.options.paused_until}
+                <span class="sync-row-text">
+                  <span class="sync-row-label">{$t("backup.sync_paused_until", { time: $formatDate($backupSyncState.options.paused_until * 1000, { dateStyle: "short", timeStyle: "short" }) })}</span>
+                  <span class="sync-row-desc">{$t("backup.sync_paused_desc")}</span>
+                </span>
+                <button class="pill-action primary-pill" data-testid="backup-sync-resume" disabled={$backupBusy} onclick={() => void saveSyncOptions({ paused_until: null })}>{$t("backup.sync_resume")}</button>
+              {:else}
+                <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_pause_label")}</span><span class="sync-row-desc">{$t("backup.sync_pause_desc")}</span></span>
+                <span class="sync-row-buttons">
+                  <button class="pill-action" data-testid="backup-sync-pause-hour" disabled={$backupBusy} onclick={() => void saveSyncOptions({ paused_until: pauseUntil("hour", new Date()) })}>{$t("backup.sync_pause_hour")}</button>
+                  <button class="pill-action" data-testid="backup-sync-pause-tomorrow" disabled={$backupBusy} onclick={() => void saveSyncOptions({ paused_until: pauseUntil("tomorrow", new Date()) })}>{$t("backup.sync_pause_tomorrow")}</button>
+                </span>
+              {/if}
+            </div>
+          </div>
+        </section>
+
         <section class="sync-section" aria-labelledby="sync-now-title">
           <h4 class="sync-section-title" id="sync-now-title">{$t("backup.sync_section_now")}</h4>
+          {#if $backupSyncState.last_synced_at && $backupSyncState.last_device}
+            <p class="sync-hint" data-testid="backup-sync-last-device">{$t("backup.sync_last_from", {
+              time: $formatDate($backupSyncState.last_synced_at * 1000, { dateStyle: "short", timeStyle: "short" }),
+              device: $backupSyncState.last_device === $backupSyncState.this_device ? $t("backup.sync_this_device") : $backupSyncState.last_device,
+            })}</p>
+          {/if}
           <div class="sync-rows">
             <div class="sync-row">
               <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_push_now")}</span><span class="sync-row-desc">{$t("backup.sync_push_desc")}</span></span>
@@ -536,6 +579,8 @@
   .sync-row-label { color: var(--text-primary); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
   .sync-row-desc { color: var(--text-secondary); font-size: 11.5px; line-height: 1.5; }
   .sync-row > button { flex: 0 0 auto; min-width: 96px; }
+  .sync-row-buttons { display: flex; flex: 0 0 auto; gap: 6px; }
+  .sync-row-select { flex: 0 0 auto; max-width: 52%; padding: 6px 9px; border: 1px solid var(--border-subtle); border-radius: 7px; background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 12px; }
   .sync-mode-field small { color: var(--text-secondary); font-size: 11.5px; font-weight: 400; line-height: 1.5; }
   .sync-state-chip { display: inline-flex; max-width: 100%; align-items: center; justify-content: center; padding: 5px 11px; border: 1px solid var(--border-subtle); border-radius: 999px; background: rgba(255,255,255,.04); color: var(--text-secondary); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
   .sync-state-chip.connection.connected, .sync-state-chip.synced { border-color: rgba(34, 197, 94, .35); background: rgba(34, 197, 94, .1); color: #86efac; }

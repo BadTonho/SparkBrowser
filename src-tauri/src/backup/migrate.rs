@@ -6,7 +6,7 @@
 use super::model::*;
 
 pub fn upgrade(document: &mut BackupDocument) {
-    // 1→2 (site zoom), 2→3 (floating window shadow), 4→5 (checksum) and 5→6 (settings display) only add optional fields or
+    // 1→2 (site zoom), 2→3 (floating window shadow), 4→5 (checksum), 5→6 (settings display) and 6→7 (device name) only add optional fields or
     // file-level metadata, which deserialization defaults already cover. Add a `match` here when a
     // step needs code again.
     for from in document.version..CURRENT_VERSION {

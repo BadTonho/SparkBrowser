@@ -13,8 +13,8 @@ use commands::backup::{
     create_local_backup, delete_local_backup, discard_backup_import, export_backup,
     finish_backup_preferences, get_backup_pending_preferences, get_backup_sync_state,
     get_local_backup_state, preview_backup_import, pull_backup_sync, push_backup_sync,
-    restore_local_backup, set_backup_encryption, set_backup_sync_config, set_local_backup_schedule,
-    unlock_backup_file,
+    restore_local_backup, set_backup_encryption, set_backup_sync_config, set_backup_sync_options,
+    set_local_backup_schedule, unlock_backup_file,
 };
 use commands::bookmark_export::export_bookmarks;
 use commands::browser_data::{clear_browser_data, estimate_cleanup};
@@ -772,6 +772,7 @@ pub fn run() {
             get_backup_sync_state,
             choose_backup_sync_folder,
             set_backup_sync_config,
+            set_backup_sync_options,
             push_backup_sync,
             pull_backup_sync,
             unlock_backup_file,

@@ -251,6 +251,21 @@ pub async fn set_backup_sync_config(
     .await
 }
 
+/// Saves how often the automatic sync runs and whether it is paused, for every sync target.
+#[tauri::command]
+pub async fn set_backup_sync_options(
+    app: AppHandle,
+    options: backup::sync_options::SyncOptions,
+) -> Result<backup::sync::SyncStateSnapshot, String> {
+    let worker_app = app.clone();
+    crate::database::executor::run(app, move |conn| {
+        let service = worker_app.state::<backup::service::BackupService>();
+        backup::sync_options::save(conn, &options)?;
+        backup::sync::snapshot(conn, &service.sync)
+    })
+    .await
+}
+
 #[tauri::command]
 pub async fn push_backup_sync(
     app: AppHandle,

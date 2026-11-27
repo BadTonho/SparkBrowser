@@ -25,6 +25,7 @@ import {
   restoreLocalBackup,
   saveBackupEncryption,
   saveBackupSyncConfig,
+  saveBackupSyncOptions,
   saveLocalBackupSchedule,
   unlockBackupFile,
 } from "../services/bridge/backup";
@@ -49,7 +50,10 @@ import {
   workspaceIsolation,
   workspaceSwitcherDisplay,
 } from "./settingsStore";
-import { languagePreference } from "../i18n";
+import { languagePreference, t } from "../i18n";
+import { showToast } from "./notificationStore";
+import { followsEachChange, syncPaused, tickShouldSync } from "../services/backup/sync-schedule";
+import type { SyncOptions } from "../types/backup";
 import { keyboardShortcuts } from "./shortcutsStore";
 import { pipWindowShadow } from "./pipAppearanceStore";
 import type {
@@ -83,6 +87,9 @@ export const backupSyncState = writable<SyncStateSnapshot>({
   connected_account: null,
   last_synced_at: null,
   last_error: null,
+  options: { interval: "auto", paused_until: null },
+  this_device: "",
+  last_device: null,
 });
 export const backupSyncNotice = writable<"pushed" | "unchanged" | "config_saved" | "">("");
 /** Syncs in progress right now, manual or automatic. */
@@ -92,6 +99,60 @@ export const backupSyncFinished = writable(false);
 /** Google Drive stopped sending on its own until an account is chosen or linked again. */
 export const driveWaitingForAccount = writable(false);
 const SYNC_FINISHED_MS = 2_000;
+/** The automatic sync is paused right now; flips back by itself when the pause ends. */
+export const syncPausedNow = writable(false);
+let pauseEndTimer: ReturnType<typeof setTimeout> | undefined;
+/** Background sends in a row that failed; a notice shows once when it reaches the limit. */
+const FAILURE_NOTICE_AFTER = 3;
+let autoSyncFailures = 0;
+let lastAutoSyncAt = 0;
+
+function refreshSyncPause(): void {
+  if (pauseEndTimer) clearTimeout(pauseEndTimer);
+  pauseEndTimer = undefined;
+  const options = get(backupSyncState).options;
+  const paused = syncPaused(options, Date.now());
+  syncPausedNow.set(paused);
+  if (paused && options.paused_until !== null) {
+    // Long pauses are re-checked every hour; setTimeout cannot wait for weeks.
+    const wait = Math.min(options.paused_until * 1000 - Date.now() + 500, 3_600_000);
+    pauseEndTimer = setTimeout(() => {
+      refreshSyncPause();
+      if (!get(syncPausedNow) && hasPendingChangesForCloud) void runBackgroundAutoSync();
+    }, wait);
+  }
+}
+backupSyncState.subscribe(() => refreshSyncPause());
+
+/** Saves the frequency or the pause of the automatic sync. */
+export async function saveSyncOptions(patch: Partial<SyncOptions>): Promise<void> {
+  if (!isTauriRuntime()) return;
+  try {
+    backupSyncState.set(await saveBackupSyncOptions({ ...get(backupSyncState).options, ...patch }));
+  } catch (error) {
+    backupError.set(describeError(error));
+  }
+}
+
+function noteAutoSyncFailure(): void {
+  autoSyncFailures += 1;
+  if (autoSyncFailures !== FAILURE_NOTICE_AFTER) return;
+  const tr = get(t);
+  showToast({
+    type: "error",
+    message: tr("backup.sync_failure_notice", { count: FAILURE_NOTICE_AFTER }),
+    actionLabel: tr("backup.sync_failure_open"),
+    onAction: () => {
+      void import("./settingsStore")
+        .then(({ openSettingsModal, setActiveSettingsCategory }) => {
+          setActiveSettingsCategory("data_backup");
+          return openSettingsModal();
+        })
+        .catch(logIgnored);
+    },
+    timeoutMs: 10_000,
+  });
+}
 let syncFinishedTimer: ReturnType<typeof setTimeout> | undefined;
 /** Set while an encrypted file waits for its password; `wrong` after a failed attempt. */
 export const backupLocked = writable<{ wrong: boolean } | null>(null);
@@ -538,6 +599,8 @@ async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<v
   const current = get(backupSyncState).config;
   if (current.mode === "disabled" || !current.auto_save) return;
   if (current.mode === "google_drive_web" && gdriveLoginRequiredPause) return;
+  if (get(syncPausedNow)) return;
+  lastAutoSyncAt = Date.now();
   try {
     const res = await trackSync(async () => {
       await noteWriter.flushAll();
@@ -547,6 +610,7 @@ async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<v
     });
     hasPendingChangesForCloud = false;
     setDrivePause(false);
+    autoSyncFailures = 0;
     if (reloadDriveTabOnSuccess && res.synced) {
       const activeTab = get(tabs).find((t) => t.is_active);
       if (activeTab && activeTab.url.includes("drive.google.com")) {
@@ -557,6 +621,8 @@ async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<v
     const raw = String(error);
     if (raw.includes("backup.sync_gdrive_login_required")) {
       setDrivePause(true);
+    } else {
+      noteAutoSyncFailure();
     }
     backupSyncState.update((s) => ({ ...s, last_error: describeError(error) }));
   }
@@ -587,8 +653,8 @@ function notifyPersistentDataChanged(): void {
   if (!autoSyncReady) return;
   localChanges += 1;
   hasPendingChangesForCloud = true;
-  const cfg = get(backupSyncState).config;
-  if (cfg.mode !== "disabled" && cfg.auto_save) {
+  const { config: cfg, options } = get(backupSyncState);
+  if (cfg.mode !== "disabled" && cfg.auto_save && followsEachChange(options.interval) && !get(syncPausedNow)) {
     scheduleAutoSync();
   }
 }
@@ -609,7 +675,7 @@ export async function flushBackupSyncBeforeShutdown(): Promise<void> {
     folderAutoSaveTimer = undefined;
   }
   const cfg = get(backupSyncState).config;
-  if (cfg.mode === "disabled" || !cfg.auto_save) return;
+  if (cfg.mode === "disabled" || !cfg.auto_save || get(syncPausedNow)) return;
   // Nothing changed since the last successful sync (the automatic sync already ran): closing must not
   // wait for a network round trip that has nothing to upload.
   if (!hasPendingChangesForCloud) return;
@@ -683,12 +749,10 @@ function startBackupStatus(scope: import("../services/lifecycle.js").LifecycleSc
 
   if (cloudMinuteInterval) clearInterval(cloudMinuteInterval);
   cloudMinuteInterval = setInterval(() => {
-    const cfg = get(backupSyncState).config;
-    if (
-      (cfg.mode === "direct_webdav" || cfg.mode === "google_drive_web") &&
-      cfg.auto_save &&
-      hasPendingChangesForCloud
-    ) {
+    const { config: cfg, options } = get(backupSyncState);
+    if (cfg.mode === "disabled" || !cfg.auto_save) return;
+    const now = Date.now();
+    if (tickShouldSync({ mode: cfg.mode, options, pending: hasPendingChangesForCloud, sinceLastMs: now - lastAutoSyncAt, nowMs: now })) {
       void runBackgroundAutoSync();
     }
   }, 60_000);

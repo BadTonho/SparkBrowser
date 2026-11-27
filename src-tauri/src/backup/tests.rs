@@ -82,6 +82,7 @@ pub(super) fn setup() -> (Connection, BackupDocument) {
         format: FORMAT.into(),
         version: 1,
         created_at: 1,
+        device: None,
         data,
         preferences: preferences(),
     };

@@ -1,5 +1,5 @@
 import { invoke } from "./runtime";
-import type { BackupImportResult, BookmarkExportFormat, BookmarkExportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, LocalBackupOutcome, LocalBackupReason, LocalBackupSchedule, LocalBackupState, RestoreOptions, SyncPullResponse, SyncPushResult, SyncStateSnapshot, SyncTargetConfig } from "../../types/backup";
+import type { BackupImportResult, BookmarkExportFormat, BookmarkExportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, LocalBackupOutcome, LocalBackupReason, LocalBackupSchedule, LocalBackupState, RestoreOptions, SyncPullResponse, SyncPushResult, SyncOptions, SyncStateSnapshot, SyncTargetConfig } from "../../types/backup";
 export const exportBackup = (preferences: BackupPreferences) => invoke<boolean>("export_backup", { preferences });
 export const exportBookmarks = (format: BookmarkExportFormat) => invoke<BookmarkExportResult | null>("export_bookmarks", { format });
 export const chooseBackupFile = () => invoke<string | null>("choose_backup_file");
@@ -15,6 +15,8 @@ export const chooseBackupSyncFolder = (autoSave: boolean, applyPreferencesOnDire
   invoke<SyncStateSnapshot | null>("choose_backup_sync_folder", { autoSave, applyPreferencesOnDirectPull });
 export const saveBackupSyncConfig = (config: SyncTargetConfig, secret: string | null, googleTabId: string | null = null) =>
   invoke<SyncStateSnapshot>("set_backup_sync_config", { config, secret, googleTabId });
+export const saveBackupSyncOptions = (options: SyncOptions) =>
+  invoke<SyncStateSnapshot>("set_backup_sync_options", { options });
 export const pushBackupSync = (preferences: BackupPreferences, onlyIfChanged: boolean) =>
   invoke<SyncPushResult>("push_backup_sync", { preferences, onlyIfChanged });
 export const pullBackupSync = (currentPreferences: BackupPreferences, directApply: boolean, applyPreferencesOverride: boolean | null = null) =>
