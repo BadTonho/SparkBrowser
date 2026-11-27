@@ -32,6 +32,7 @@ Segments are joined without conversion; no external program is used. A `.ts` fil
 - Streams cannot be paused. An interrupted or paused stream (for example after closing Spark) starts over when resumed. The total size is unknown until it finishes.
 - A stream is limited to 10,000 segments, and its playlists to 2 MB.
 - Playlists requested inside Web Workers, and videos inside closed web components, are not found. Only 8 playlists per search are read.
+- A search waits at most 10 seconds for the frames of the page, 20 seconds for the playlists (read at the same time; one that does not answer is shown as a server that did not answer) and 6 seconds for the poster pictures (at most 12, requested at the same time). A video without a picture in time shows no preview.
 - On Linux, only the top frame of the page is examined, so players inside embedded frames are not found.
 
 ## Privacy and security

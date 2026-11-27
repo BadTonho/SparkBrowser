@@ -2,7 +2,7 @@
 
 ## New features
 
-- New **Download video** toolbar button (off by default; turn it on in the quick settings). It lists the videos of the loaded page, each with a small preview, and saves direct video files and unprotected HLS streams. YouTube, protected (DRM or encrypted) videos and live streams are not supported.
+- New **Download video** toolbar button (off by default; turn it on in the quick settings). It lists the videos of the loaded page, each with a small preview, and saves direct video files and unprotected HLS streams. YouTube, protected (DRM or encrypted) videos and live streams are not supported. The search has a time limit, so a page with slow streams or broken posters cannot keep the panel waiting.
 - New buttons to open and close split view from the vertical tab list. The button at the top of the list opens a split with the tab you are viewing on the left and the most recently used tab on the right (a new blank tab if it is the only one). The button on the line between the panes closes the split.
 - The search field of the new tab page now shows suggestions, like the address bar: your recent sites when you click it and, as you type, bookmarks, history and search engine suggestions (these follow the same **Search suggestions** setting and are never used in a private window).
 

@@ -14,8 +14,16 @@ use tauri::{AppHandle, Manager, Url};
 
 const MAX_PLAYLISTS: usize = 8;
 const MAX_SOURCES: usize = 64;
-/// The popover accepts a limited amount of picture data.
+/// The page reports one entry per video element; more than this is not a page anyone saves from.
+const MAX_VIDEOS: usize = 256;
+/// The popover accepts a limited amount of picture data. Also the most posters requested.
 const MAX_THUMBNAILS: usize = 12;
+/// How long the frames of the page get, together, to list their sources.
+const FRAMES_DEADLINE: Duration = Duration::from_secs(10);
+/// How long the streams get, together, to be read. They are read at the same time.
+const STREAMS_DEADLINE: Duration = Duration::from_secs(20);
+/// How long the posters get, together. They are requested at the same time.
+const POSTERS_DEADLINE: Duration = Duration::from_secs(6);
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Found {
@@ -111,10 +119,25 @@ async fn page_sources(app: &AppHandle, tab_id: &str) -> Result<Vec<FrameSources>
     let service = app.state::<MediaService>();
     let _operation = service.operations.lock().await;
     let (token, contexts) = protocol::contexts(app, tab_id).await?;
+    // The media controls wait for this lock, so slow frames cannot hold it for long.
+    let deadline = tokio::time::Instant::now() + FRAMES_DEADLINE;
+    let total = contexts.len();
     let mut frames = Vec::new();
-    for context in contexts {
+    for (index, context) in contexts.into_iter().enumerate() {
         let operation = serde_json::json!({"kind": "sources"});
-        match protocol::evaluate(app, tab_id, &token, &context, operation, false).await {
+        let reply = tokio::time::timeout_at(
+            deadline,
+            protocol::evaluate(app, tab_id, &token, &context, operation, false),
+        )
+        .await;
+        let Ok(reply) = reply else {
+            crate::error_log::warn(&format!(
+                "Video download: the page's frames took too long to answer; {} of {total} were not read",
+                total - index
+            ));
+            break;
+        };
+        match reply {
             Ok(value) => match serde_json::from_value(value) {
                 Ok(frame) => frames.push(frame),
                 Err(error) => crate::error_log::warn(&format!(
@@ -180,23 +203,103 @@ fn assign_videos(sources: &mut [VideoSource], videos: &HashMap<String, FoundVide
     }
 }
 
+/// A stream read, with the problem of its first complete variant when it is a master playlist.
+type StreamRead = Result<(Playlist, Option<String>), String>;
+
+/// Reads a stream. Encryption and live state are only declared inside a variant, so for a master
+/// playlist one variant with its own sound is read too.
+async fn read_stream(url: Url, shielded: bool, referer: Option<String>) -> StreamRead {
+    let playlist = hls::fetch_playlist(&url, shielded, referer.as_deref()).await?;
+    let problem = match &playlist {
+        Playlist::Master(variants) => match variants.iter().find(|v| !v.separate_audio) {
+            Some(variant) => hls::fetch_media(&variant.url, shielded, referer.as_deref())
+                .await
+                .err(),
+            None => None,
+        },
+        Playlist::Media(_) => None,
+    };
+    Ok((playlist, problem))
+}
+
+/// Reads the first `MAX_PLAYLISTS` streams of the page at the same time, keyed by address. A
+/// stream not read before `STREAMS_DEADLINE` is reported as a server that did not answer.
+async fn read_streams(
+    frames: &[FrameSources],
+    shield: &impl Fn(&str) -> bool,
+    limit: Duration,
+) -> HashMap<String, StreamRead> {
+    let mut reads = tokio::task::JoinSet::new();
+    let mut pending = HashSet::new();
+    for frame in frames {
+        let referer = validate_download_url(&frame.page)
+            .ok()
+            .map(|url| url.to_string());
+        for found in frame.sources.iter().filter(|found| found.kind == "hls") {
+            if pending.len() >= MAX_PLAYLISTS {
+                break;
+            }
+            let Ok(mut url) = validate_download_url(&found.url) else {
+                continue;
+            };
+            url.set_fragment(None);
+            let key = url.to_string();
+            if !pending.insert(key.clone()) {
+                continue;
+            }
+            let shielded = shield(url.as_str());
+            let referer = referer.clone();
+            reads.spawn(async move { (key, read_stream(url, shielded, referer).await) });
+        }
+    }
+    let deadline = tokio::time::Instant::now() + limit;
+    let mut read = HashMap::new();
+    loop {
+        match tokio::time::timeout_at(deadline, reads.join_next()).await {
+            Ok(Some(Ok((key, result)))) => {
+                read.insert(key, result);
+            }
+            Ok(Some(Err(error))) => crate::error_log::warn(&format!(
+                "Video download: reading a stream stopped unexpectedly: {error}"
+            )),
+            Ok(None) => break,
+            Err(_) => {
+                crate::error_log::warn(&format!(
+                    "Video download: {} stream(s) did not answer in {:.1} seconds",
+                    reads.len(),
+                    limit.as_secs_f32()
+                ));
+                reads.abort_all();
+                break;
+            }
+        }
+    }
+    for key in pending {
+        read.entry(key)
+            .or_insert_with(|| Err("downloads.network_error".into()));
+    }
+    read
+}
+
 /// Turns what the frames reported into the list the panel shows. Streams are read to list their
 /// qualities; the variants of a listed master playlist are not repeated on their own.
 async fn resolve(
     frames: Vec<FrameSources>,
     shield: impl Fn(&str) -> bool,
 ) -> (VideoScan, HashMap<String, FoundVideo>) {
+    let mut streams = read_streams(&frames, &shield, STREAMS_DEADLINE).await;
     let mut scan = VideoScan::default();
     let mut videos = HashMap::new();
     let mut seen = HashSet::new();
     let mut variant_urls = HashSet::new();
     // Entries listed through their master playlist, which knows whether the sound is separate.
     let mut from_master = Vec::new();
-    let mut playlists = 0;
     for frame in frames {
         scan.protected |= frame.protected;
         for video in frame.videos {
-            videos.insert(video.group.clone(), video);
+            if videos.len() < MAX_VIDEOS {
+                videos.insert(video.group.clone(), video);
+            }
         }
         let referer = validate_download_url(&frame.page)
             .ok()
@@ -216,24 +319,12 @@ async fn resolve(
                 from_master.push(false);
                 continue;
             }
-            if playlists >= MAX_PLAYLISTS {
+            // Only the first `MAX_PLAYLISTS` streams were read.
+            let Some(fetched) = streams.remove(url.as_str()) else {
                 continue;
-            }
-            playlists += 1;
-            let shielded = shield(url.as_str());
-            let fetched = hls::fetch_playlist(&url, shielded, referer.as_deref()).await;
+            };
             match fetched {
-                Ok(Playlist::Master(variants)) => {
-                    // Encryption and live state are only declared inside a variant.
-                    let probe = variants.iter().find(|v| !v.separate_audio);
-                    let problem = match probe {
-                        Some(variant) => {
-                            hls::fetch_media(&variant.url, shielded, referer.as_deref())
-                                .await
-                                .err()
-                        }
-                        None => None,
-                    };
+                Ok((Playlist::Master(variants), problem)) => {
                     for variant in variants {
                         variant_urls.insert(variant.url.to_string());
                         let mut entry = source(&variant.url, "hls", &referer, variant.height);
@@ -310,35 +401,56 @@ async fn add_thumbnails(
     scan: &mut VideoScan,
     videos: &HashMap<String, FoundVideo>,
 ) {
-    let mut made = 0;
-    for video in &mut scan.videos {
+    // Every attempt counts, not only the pictures made, so a page full of broken posters cannot
+    // keep the panel waiting.
+    let mut attempts = 0;
+    let mut posters = tokio::task::JoinSet::new();
+    for (index, video) in scan.videos.iter_mut().enumerate() {
+        if attempts >= MAX_THUMBNAILS {
+            break;
+        }
         let Some(found) = videos.get(&video.id) else {
             continue;
         };
-        if made >= MAX_THUMBNAILS {
-            break;
-        }
-        video.thumbnail = preview::from_frame(&found.frame);
-        if video.thumbnail.is_none() {
-            if let Ok(url) = validate_download_url(&found.poster) {
-                let request = hls::get(
-                    &url,
-                    shield(app, tab_id, url.as_str()),
-                    None,
-                    preview::MAX_POSTER_BYTES,
-                );
-                match tokio::time::timeout(Duration::from_secs(5), request).await {
-                    Ok(Ok((_, bytes))) => video.thumbnail = preview::from_poster(&bytes),
-                    Ok(Err(error)) => crate::error_log::warn(&format!(
-                        "Video download: a poster picture could not be read: {error}"
-                    )),
-                    Err(_) => crate::error_log::warn(
-                        "Video download: a poster picture did not arrive in time",
-                    ),
-                }
+        if !found.frame.is_empty() {
+            attempts += 1;
+            video.thumbnail = preview::from_frame(&found.frame);
+            if video.thumbnail.is_some() {
+                continue;
             }
         }
-        made += usize::from(video.thumbnail.is_some());
+        let Ok(url) = validate_download_url(&found.poster) else {
+            continue;
+        };
+        attempts += 1;
+        let shielded = shield(app, tab_id, url.as_str());
+        posters.spawn(async move {
+            let picture = hls::get(&url, shielded, None, preview::MAX_POSTER_BYTES).await;
+            (index, picture)
+        });
+    }
+    let deadline = tokio::time::Instant::now() + POSTERS_DEADLINE;
+    loop {
+        match tokio::time::timeout_at(deadline, posters.join_next()).await {
+            Ok(Some(Ok((index, Ok((_, bytes)))))) => {
+                scan.videos[index].thumbnail = preview::from_poster(&bytes);
+            }
+            Ok(Some(Ok((_, Err(error))))) => crate::error_log::warn(&format!(
+                "Video download: a poster picture could not be read: {error}"
+            )),
+            Ok(Some(Err(error))) => crate::error_log::warn(&format!(
+                "Video download: reading a poster picture stopped unexpectedly: {error}"
+            )),
+            Ok(None) => break,
+            Err(_) => {
+                crate::error_log::warn(&format!(
+                    "Video download: {} poster picture(s) did not arrive in time",
+                    posters.len()
+                ));
+                posters.abort_all();
+                break;
+            }
+        }
     }
 }
 
@@ -448,6 +560,40 @@ mod tests {
         assert_eq!(scan.sources.len(), 1);
         assert_eq!(scan.sources[0].url, "https://example.test/a.mp4");
         assert_eq!(scan.sources[0].referer, None);
+    }
+
+    #[tokio::test]
+    async fn streams_are_read_together_and_a_silent_server_ends_at_the_deadline() {
+        // Accepts connections and never answers.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let held = std::thread::spawn(move || {
+            (0..2)
+                .map(|_| listener.accept().unwrap().0)
+                .collect::<Vec<_>>()
+        });
+        let stream = |name: &str| Found {
+            url: format!("http://{address}/{name}.m3u8"),
+            kind: "hls".into(),
+            height: 0,
+            group: String::new(),
+        };
+        let frames = vec![FrameSources {
+            videos: Vec::new(),
+            page: String::new(),
+            protected: false,
+            sources: vec![stream("a"), stream("b"), stream("a")],
+        }];
+        let started = std::time::Instant::now();
+        let read = read_streams(&frames, &|_| false, Duration::from_millis(400)).await;
+        // Read one after the other, two silent servers would take twice the deadline.
+        assert!(started.elapsed() < Duration::from_millis(750));
+        assert_eq!(read.len(), 2);
+        assert!(read
+            .values()
+            .all(|result| result.as_ref().err().map(String::as_str)
+                == Some("downloads.network_error")));
+        drop(held.join().unwrap());
     }
 
     #[test]

@@ -32,6 +32,7 @@ Os segmentos são unidos sem conversão e nenhum programa externo é usado. Um a
 - Streams não podem ser pausados. Um stream interrompido ou pausado (por exemplo, depois de fechar o Spark) recomeça do início ao ser retomado. O tamanho total é desconhecido até o fim.
 - Um stream é limitado a 10.000 segmentos, e suas playlists a 2 MB.
 - Playlists pedidas dentro de Web Workers, e vídeos dentro de componentes web fechados, não são encontrados. Só 8 playlists são lidas por busca.
+- Uma busca espera no máximo 10 segundos pelos frames da página, 20 segundos pelas playlists (lidas ao mesmo tempo; uma que não responde aparece como servidor que não respondeu) e 6 segundos pelas imagens de pôster (no máximo 12, pedidas ao mesmo tempo). Um vídeo sem imagem a tempo fica sem prévia.
 - No Linux, apenas o quadro principal da página é examinado, então players em quadros incorporados não são encontrados.
 
 ## Privacidade e segurança
