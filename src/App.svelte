@@ -52,6 +52,7 @@
   import TabSelectionActions from "./lib/components/tabs/TabSelectionActions.svelte";
   import { refreshExtensions, isExtensionsModalOpen, activeExtensionPopup } from "./lib/stores/extensionsStore";
   import { isHistoryDrawerOpen, bookmarkEditorState } from "./lib/stores/persistenceStore";
+  import { HISTORY_URL } from "./lib/stores/historyDisplayStore";
   import { isDownloadsDrawerOpen } from "./lib/stores/downloadsStore";
   import { isSettingsModalOpen, settingsTabSession, syncSettingsTabSession } from "./lib/stores/settingsStore";
   import { onSettingsTabLoaded } from "./lib/services/bridge/settings-overlay";
@@ -170,7 +171,7 @@
     }
   }
   $effect(() => {
-    if ($isHistoryDrawerOpen) void loadSurface("HistoryDrawer");
+    if ($isHistoryDrawerOpen || $tabs.some((tab) => tab.is_active && tab.url === HISTORY_URL)) void loadSurface("HistoryDrawer");
     if ($isDownloadsDrawerOpen) void loadSurface("DownloadsDrawer");
     if ($isSettingsModalOpen || $settingsTabSession) void loadSurface("SettingsModal");
     if ($isSettingsQuickOpen) void loadSurface("SettingsQuickMenu");

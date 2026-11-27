@@ -278,6 +278,26 @@ pub async fn set_history_overlay(
     )
 }
 
+/// Sends the rows of the history page to its tab (Settings → History display → Tab).
+#[tauri::command]
+pub async fn set_history_tab(
+    app: AppHandle,
+    webview: tauri::Webview,
+    state: State<'_, BrowserState>,
+    tab_id: String,
+    session_id: u64,
+    presentation: crate::window::history_overlay::Presentation,
+) -> Result<(), String> {
+    let _operation = state.session().operation().await;
+    crate::window::history_overlay::tab::present(
+        &app,
+        &crate::commands::access::caller_window(&webview),
+        &tab_id,
+        session_id,
+        presentation,
+    )
+}
+
 #[tauri::command]
 pub async fn set_media_popover(
     app: AppHandle,

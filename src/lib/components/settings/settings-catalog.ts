@@ -32,6 +32,7 @@ export type SearchEntry = {
 
 export const searchableSettings: SearchEntry[] = [
   { id: "settings-display", title: "Settings display", description: "Choose whether settings open in a pop-up or a browser tab.", category: "appearance_layout", targetId: "setting-settings-display", keywords: "settings display popup tab configurações exibição guia" },
+  { id: "history-display", title: "History display", description: "Choose whether History opens in a pop-up or in a browser tab.", category: "appearance_layout", targetId: "setting-history-display", keywords: "history display popup tab histórico exibição guia" },
   {id:"pip-window-shadow",title:"Floating window shadow",description:"Show a shadow around the floating video window.",category:"appearance_layout",targetId:"setting-pip-window-shadow",keywords:"pip picture in picture floating video window shadow sombra janela video flutuante"},
   {id:"whatsapp-display-mode",title:"WhatsApp Display",description:"Choose a compact popover or a side panel that resizes the page.",category:"appearance_layout",targetId:"setting-whatsapp-display-mode",keywords:"whatsapp popover compact side panel layout janela painel lateral compacto"},
   { id: "theme-mode", title: "Theme Mode", description: "Choose between dark and light appearance.", category: "appearance_layout", targetId: "setting-theme-mode", keywords: "theme dark light modo tema escuro claro appearance aparencia" },

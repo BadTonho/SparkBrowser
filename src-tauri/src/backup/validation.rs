@@ -21,6 +21,8 @@ pub fn tab_url(raw: &str) -> Result<String, String> {
         Ok(crate::window::settings_tab::URL.into())
     } else if crate::window::wallpaper_tab::is_wallpaper_url(raw) {
         Ok(crate::window::wallpaper_tab::URL.into())
+    } else if crate::window::history_overlay::tab::is_history_url(raw) {
+        Ok(crate::window::history_overlay::tab::URL.into())
     } else {
         page_url(raw)
     }

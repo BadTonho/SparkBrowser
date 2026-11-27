@@ -7,6 +7,7 @@ use tauri::{AppHandle, Manager};
 pub fn is_own_document(app: &AppHandle, url: &tauri::Url) -> bool {
     crate::window::settings_tab::is_document(app, url)
         || crate::window::wallpaper_tab::is_document(app, url)
+        || crate::window::history_overlay::tab::is_document(app, url)
         || crate::window::new_tab::is_document(app, url)
 }
 

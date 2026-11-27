@@ -3,8 +3,12 @@ use tauri::{AppHandle, Manager, Url};
 
 /// Builds the event for the shell. Visits are only taken from the ones the panel shows, so the page
 /// can never ask to open or delete anything else.
-fn action_event(session: &super::Session, payload: ActionPayload) -> Option<ActionEvent> {
-    let entries = &session.presentation.entries;
+pub(super) fn action_event(
+    session_id: u64,
+    presentation: &super::Presentation,
+    payload: ActionPayload,
+) -> Option<ActionEvent> {
+    let entries = &presentation.entries;
     let find = |id: i64| entries.iter().find(|entry| entry.id == id);
     let entry_url = if payload.action == "open" {
         Some(find(payload.entry_id?)?.url.clone())
@@ -34,9 +38,9 @@ fn action_event(session: &super::Session, payload: ActionPayload) -> Option<Acti
         }
     }
     Some(ActionEvent {
-        session_id: session.id,
-        tab_id: session.presentation.tab_id.clone(),
-        url: session.presentation.url.clone(),
+        session_id,
+        tab_id: presentation.tab_id.clone(),
+        url: presentation.url.clone(),
         action: payload.action,
         query: payload.query,
         entry_id: payload.entry_id,
@@ -45,6 +49,21 @@ fn action_event(session: &super::Session, payload: ActionPayload) -> Option<Acti
         entry_urls,
         entry_host,
     })
+}
+
+/// The actions the history page may send, with a bounded search.
+pub(super) fn allowed(payload: &ActionPayload) -> bool {
+    matches!(
+        payload.action.as_str(),
+        "close"
+            | "search"
+            | "clear"
+            | "load-more"
+            | "open"
+            | "open-many"
+            | "delete"
+            | "more-from-site"
+    ) && (payload.action != "search" || payload.query.len() <= 2048)
 }
 
 pub(super) fn navigation(app: &AppHandle, url: &Url) {
@@ -70,20 +89,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     else {
         return;
     };
-    if !matches!(
-        payload.action.as_str(),
-        "close"
-            | "search"
-            | "clear"
-            | "load-more"
-            | "open"
-            | "open-many"
-            | "delete"
-            | "more-from-site"
-    ) {
-        return;
-    }
-    if payload.action == "search" && payload.query.len() > 2048 {
+    if !allowed(&payload) {
         return;
     }
     let service = app.state::<HistoryOverlay>();
@@ -106,7 +112,7 @@ pub(super) fn navigation(app: &AppHandle, url: &Url) {
     {
         return;
     }
-    let Some(event) = action_event(session, payload) else {
+    let Some(event) = action_event(session.id, &session.presentation, payload) else {
         return;
     };
     session.sequence = sequence;
@@ -188,18 +194,20 @@ mod tests {
             entry_id,
             entry_ids,
         };
-        let valid = action_event(&session, payload("open", Some(1), vec![])).unwrap();
+        let action_event =
+            |payload: ActionPayload| action_event(session.id, &session.presentation, payload);
+        let valid = action_event(payload("open", Some(1), vec![])).unwrap();
         assert_eq!(valid.entry_url.as_deref(), Some("https://entry.test"));
-        assert!(action_event(&session, payload("open", Some(2), vec![])).is_none());
+        assert!(action_event(payload("open", Some(2), vec![])).is_none());
         // A selection may only hold shown visits; repeats are dropped.
-        let delete = action_event(&session, payload("delete", None, vec![1, 1])).unwrap();
+        let delete = action_event(payload("delete", None, vec![1, 1])).unwrap();
         assert_eq!(delete.entry_ids, [1]);
-        let many = action_event(&session, payload("open-many", None, vec![1])).unwrap();
+        let many = action_event(payload("open-many", None, vec![1])).unwrap();
         assert_eq!(many.entry_urls, ["https://entry.test"]);
-        assert!(action_event(&session, payload("delete", None, vec![1, 2])).is_none());
-        assert!(action_event(&session, payload("delete", None, vec![])).is_none());
-        let site = action_event(&session, payload("more-from-site", Some(1), vec![])).unwrap();
+        assert!(action_event(payload("delete", None, vec![1, 2])).is_none());
+        assert!(action_event(payload("delete", None, vec![])).is_none());
+        let site = action_event(payload("more-from-site", Some(1), vec![])).unwrap();
         assert_eq!(site.entry_host.as_deref(), Some("entry.test"));
-        assert!(action_event(&session, payload("more-from-site", Some(2), vec![])).is_none());
+        assert!(action_event(payload("more-from-site", Some(2), vec![])).is_none());
     }
 }

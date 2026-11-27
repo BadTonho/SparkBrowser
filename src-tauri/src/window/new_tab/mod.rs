@@ -20,6 +20,7 @@ pub fn valid_tab_url(raw: &str) -> bool {
     is_new_tab(raw)
         || super::settings_tab::is_settings_url(raw)
         || super::wallpaper_tab::is_wallpaper_url(raw)
+        || super::history_overlay::tab::is_history_url(raw)
         || Url::parse(raw)
             .is_ok_and(|url| matches!(url.scheme(), "http" | "https") && url.host_str().is_some())
 }
@@ -87,6 +88,8 @@ pub fn logical_url(app: &AppHandle, url: &Url) -> Option<String> {
         Some(super::settings_tab::URL.into())
     } else if super::wallpaper_tab::is_document(app, url) {
         Some(super::wallpaper_tab::URL.into())
+    } else if super::history_overlay::tab::is_document(app, url) {
+        Some(super::history_overlay::tab::URL.into())
     } else if matches!(url.scheme(), "http" | "https") && url.host_str() != Some("tauri.localhost")
     {
         Some(url.to_string())
@@ -101,6 +104,8 @@ pub fn physical_url(app: &AppHandle, raw: &str) -> Result<Url, String> {
         super::settings_tab::document_url(app)
     } else if super::wallpaper_tab::is_wallpaper_url(raw) {
         super::wallpaper_tab::document_url(app)
+    } else if super::history_overlay::tab::is_history_url(raw) {
+        super::history_overlay::tab::document_url(app)
     } else {
         Url::parse(raw).map_err(|e| e.to_string())
     }
@@ -122,6 +127,15 @@ pub fn settings_title(app: &AppHandle) -> String {
         .map(|p| p.language == "pt-BR")
         .unwrap_or(false);
     if pt { "Configurações" } else { "Settings" }.into()
+}
+pub fn history_title(app: &AppHandle) -> String {
+    let pt = app
+        .state::<NewTabService>()
+        .preferences
+        .lock()
+        .map(|p| p.language == "pt-BR")
+        .unwrap_or(false);
+    if pt { "Histórico" } else { "History" }.into()
 }
 pub fn wallpaper_title(app: &AppHandle) -> String {
     let pt = app

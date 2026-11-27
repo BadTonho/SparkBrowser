@@ -24,6 +24,7 @@ import { selectedTabIds } from "./tabSelectionStore";
 import { tabGroups, GROUP_COLORS, GROUP_COLOR_HEX } from "./tabGroupsStore";
 import { tabs } from "./browserStore";
 import { closedTabs } from "./closedTabsStore";
+import { historyOpensInTab, openHistoryTab } from "./historyDisplayStore";
 
 export type BookmarkEditorState =
   | {
@@ -380,6 +381,8 @@ export async function wipeBrowsingHistory(olderThanDays: number | null = null): 
 }
 
 export async function openHistoryDrawer(): Promise<void> {
+  // Settings → History display → Tab: History is a page of its own instead of the floating panel.
+  if (historyOpensInTab()) { await openHistoryTab(); return; }
   isHistoryDrawerOpen.set(true);
   await setOverlayVisibility(true, "history");
   await loadHistory("");

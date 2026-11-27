@@ -62,3 +62,26 @@ h2 { margin:0;font-size:14px;font-weight:700;white-space:nowrap; }
 #menu[hidden] { display:none; }
 #menu button { display:block;width:100%;padding:9px 16px;text-align:left;font-size:13px; }
 #menu button:hover,#menu button:focus-visible { background:var(--hover,#ffffff14);outline:none; }
+
+/* The history tab (spark://history): the same page, filling the tab, centered, without the floating frame. */
+html[data-surface="tab"] body { background:var(--surface,#161616); }
+html[data-surface="tab"] #history-panel { position:static;margin:0 auto;width:min(1000px,100%);height:100vh;border:0;border-radius:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none; }
+html[data-surface="tab"] #close { display:none; }
+html[data-surface="tab"] header { border-bottom:0;padding-top:12px; }
+html[data-surface="tab"] h2 { font-size:18px; }
+html[data-surface="tab"] #entries { padding:8px 20px 24px; }
+
+/* In the tab the whole page scrolls, so the scroll bar sits at the right edge of the tab instead of
+   beside the list; the header (title, search, selection bar) stays at the top. */
+html[data-surface="tab"] { overflow-x:hidden;overflow-y:auto; }
+html[data-surface="tab"] body { height:auto;min-height:100%;overflow:visible; }
+html[data-surface="tab"] #history-panel { display:block;height:auto;min-height:100vh;overflow:visible; }
+html[data-surface="tab"] header { position:sticky;top:0;z-index:5;background:var(--surface,#161616); }
+html[data-surface="tab"] #entries { overflow:visible; }
+
+/* A thin rounded scroll bar in the theme's colors, without arrow buttons. */
+::-webkit-scrollbar { width:12px;height:12px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { border:3px solid transparent;border-radius:999px;background:color-mix(in srgb,var(--muted,#888) 40%,transparent);background-clip:content-box; }
+::-webkit-scrollbar-thumb:hover { background:color-mix(in srgb,var(--muted,#888) 70%,transparent);background-clip:content-box; }
+::-webkit-scrollbar-button,::-webkit-scrollbar-corner { display:none;background:transparent; }

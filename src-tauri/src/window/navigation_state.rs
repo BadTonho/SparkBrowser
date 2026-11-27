@@ -280,10 +280,14 @@ pub(super) fn with_page_events(
             app_for_page_load
                 .state::<super::settings_tab::SettingsTabSessions>()
                 .revoke(&label_for_load);
+            app_for_page_load
+                .state::<super::history_overlay::tab::HistoryTabSessions>()
+                .revoke(&label_for_load);
         }
         if super::new_tab::is_document(&app_for_page_load, payload.url())
             || super::settings_tab::is_document(&app_for_page_load, payload.url())
             || super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
+            || super::history_overlay::tab::is_document(&app_for_page_load, payload.url())
         {
             crate::error_log::ignored(webview.set_zoom(1.0));
         }
@@ -311,6 +315,8 @@ pub(super) fn with_page_events(
                         tab.title = super::new_tab::settings_title(&app_for_page_load);
                     } else if super::wallpaper_tab::is_wallpaper_url(&tab.url) {
                         tab.title = super::new_tab::wallpaper_title(&app_for_page_load);
+                    } else if super::history_overlay::tab::is_history_url(&tab.url) {
+                        tab.title = super::new_tab::history_title(&app_for_page_load);
                     }
                 }
             },
@@ -319,6 +325,7 @@ pub(super) fn with_page_events(
             && !super::new_tab::is_document(&app_for_page_load, payload.url())
             && !super::settings_tab::is_document(&app_for_page_load, payload.url())
             && !super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
+            && !super::history_overlay::tab::is_document(&app_for_page_load, payload.url())
         {
             crate::error_log::ignored(crate::zoom::apply(
                 &app_for_page_load,
@@ -334,6 +341,14 @@ pub(super) fn with_page_events(
                 &app_for_page_load,
                 &tab_for_load,
                 "settings-tab-loaded",
+                tab_for_load.clone(),
+            ));
+        }
+        if super::history_overlay::tab::is_document(&app_for_page_load, payload.url()) {
+            crate::error_log::ignored(crate::security::emit_shell_for_tab(
+                &app_for_page_load,
+                &tab_for_load,
+                "history-tab-loaded",
                 tab_for_load.clone(),
             ));
         }
@@ -357,6 +372,7 @@ pub(super) fn with_page_events(
         if super::new_tab::is_document(&app_for_page_load, payload.url())
             || super::settings_tab::is_document(&app_for_page_load, payload.url())
             || super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
+            || super::history_overlay::tab::is_document(&app_for_page_load, payload.url())
         {
             if let Some(writer) = app_for_page_load
                 .try_state::<crate::database::navigation_writer::NavigationWriter>(
@@ -373,6 +389,7 @@ pub(super) fn with_page_events(
             && !super::new_tab::is_document(&app_for_page_load, payload.url())
             && !super::settings_tab::is_document(&app_for_page_load, payload.url())
             && !super::wallpaper_tab::is_document(&app_for_page_load, payload.url())
+            && !super::history_overlay::tab::is_document(&app_for_page_load, payload.url())
             && !is_ephemeral
         {
             if let Some(writer) = app_for_page_load

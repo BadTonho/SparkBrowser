@@ -8,6 +8,8 @@
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import { showToast } from "../../stores/notificationStore";
   import { tr } from "../../i18n";
+  import { historyDisplayMode, setHistoryDisplayMode, type HistoryDisplayMode } from "../../stores/historyDisplayStore";
+  import { closeHistoryDrawer, isHistoryDrawerOpen } from "../../stores/persistenceStore";
 import {
   isZenMode,
   toggleZenMode,
@@ -62,6 +64,11 @@ async function changeSettingsDisplay(mode: "popup" | "tab") {
   catch (error) { settingsDisplayError = describeError(error); showToast({ type: "error", message: tr("settings.display_mode_error") }); }
   finally { settingsDisplayBusy = false; }
 }
+/** Where History opens. Switching to the tab closes the floating panel, so both are never open. */
+function changeHistoryDisplay(mode: HistoryDisplayMode) {
+  setHistoryDisplayMode(mode);
+  if (mode === "tab" && $isHistoryDrawerOpen) void closeHistoryDrawer();
+}
 </script>
 
 <section class="setting-group" aria-labelledby="appearance-heading">
@@ -78,6 +85,13 @@ async function changeSettingsDisplay(mode: "popup" | "tab") {
       </div>
     </div>
     {#if settingsDisplayError}<ErrorMessage error={settingsDisplayError} />{/if}
+    <div class="setting-row" id="setting-history-display" tabindex="-1">
+      <div class="row-text"><span class="row-label">{$t("settings.history_display_mode")}</span><span class="row-desc">{$t("settings.history_display_mode_description")}</span></div>
+      <div class="timer-pills">
+        <button data-testid="history-display-popup" class="mini-pill" class:selected={$historyDisplayMode === "popup"} aria-pressed={$historyDisplayMode === "popup"} onclick={() => changeHistoryDisplay("popup")}>{$t("settings.display_popup")}</button>
+        <button data-testid="history-display-tab" class="mini-pill" class:selected={$historyDisplayMode === "tab"} aria-pressed={$historyDisplayMode === "tab"} disabled={!isTauriRuntime()} onclick={() => changeHistoryDisplay("tab")}>{$t("settings.display_tab")}</button>
+      </div>
+    </div>
     {#if supportsWhatsApp}
       <div class="setting-row" id="setting-whatsapp-display-mode" tabindex="-1">
         <div class="row-text">

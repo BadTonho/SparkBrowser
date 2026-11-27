@@ -1,4 +1,7 @@
 (() => {
+  // The same page is the floating panel and, with `?surface=tab`, the history tab (spark://history).
+  const tabSurface = new URLSearchParams(location.search).get('surface') === 'tab';
+  document.documentElement.dataset.surface = tabSurface ? 'tab' : 'panel';
   const panel = document.getElementById('history-panel');
   const $ = id => document.getElementById(id);
   const menu = $('menu');
@@ -9,12 +12,15 @@
 
   function send(action, value = {}) {
     if (!state || closing) return;
-    if (action === 'close' || action === 'open' || action === 'open-many') closing = true;
-    const url = new URL('spark-internal://history-overlay/action');
+    // The tab stays open after opening pages; the panel closes.
+    if (!tabSurface && (action === 'close' || action === 'open' || action === 'open-many')) closing = true;
+    const url = new URL(tabSurface ? 'spark-internal://history-tab/action' : 'spark-internal://history-overlay/action');
     url.searchParams.set('token', state.token);
+    if (tabSurface) url.searchParams.set('document', state.document || '');
     url.searchParams.set('sequence', String(++sequence));
     url.searchParams.set('payload', JSON.stringify({ action, ...value }));
-    location.href = url.toString();
+    const transport = window.__sparkPostContent;
+    if (tabSurface && typeof transport === 'function') transport(url.toString()); else location.href = url.toString();
   }
 
   function closeMenu(focusButton = false) {
@@ -189,6 +195,8 @@
     if (action === 'more-from-site') send('more-from-site', { entryId: entry.id });
     if (action === 'delete') { selected.delete(entry.id); send('delete', { entryIds: [entry.id] }); paintSelection(); }
   });
+  // A fixed menu would stay behind while the list or the page scrolls: scrolling closes it.
+  document.addEventListener('scroll', () => closeMenu(), true);
   $('query').addEventListener('input', () => {
     clearTimeout(inputTimer);
     const query = $('query').value;
@@ -196,7 +204,7 @@
   });
   document.addEventListener('pointerdown', event => {
     if (!menu.hidden && !menu.contains(event.target) && !event.target.closest?.('.kebab')) closeMenu();
-    if (state && !panel.contains(event.target) && !menu.contains(event.target)) send('close');
+    if (!tabSurface && state && !panel.contains(event.target) && !menu.contains(event.target)) send('close');
   }, true);
   window.addEventListener('keydown', event => {
     if (!state) return;
@@ -205,7 +213,7 @@
       // Escape closes the menu first, then the selection, then the panel.
       if (!menu.hidden) closeMenu(true);
       else if (selected.size) clearSelection();
-      else send('close');
+      else if (!tabSurface) send('close');
       return;
     }
     if (!menu.hidden && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
@@ -216,7 +224,7 @@
       return;
     }
     if (event.key === 'Tab' && !menu.hidden) { event.preventDefault(); closeMenu(true); return; }
-    if (event.key === 'Tab') {
+    if (event.key === 'Tab' && !tabSurface) {
       const controls = [...panel.querySelectorAll('button:not([disabled]):not([hidden]),input:not([disabled]):not([hidden])')].filter(node => node.getClientRects().length);
       if (!controls.length) { event.preventDefault(); panel.focus(); return; }
       const first = controls[0], last = controls.at(-1);

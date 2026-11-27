@@ -46,3 +46,12 @@ export function setHistoryOverlay(visible: boolean, sessionId: number, presentat
 
 export const onHistoryOverlayAction = (callback: (action: HistoryOverlayAction) => void): Promise<UnlistenFn> =>
   isTauriRuntime() ? listen<HistoryOverlayAction>("history-overlay-action", event => callback(event.payload)) : Promise.resolve(() => {});
+
+/** Sends the rows to the history tab (Settings → History display → Tab). */
+export const setHistoryTab = (tabId: string, sessionId: number, presentation: HistoryOverlayPresentation): Promise<void> =>
+  isTauriRuntime() ? invoke<void>("set_history_tab", { tabId, sessionId, presentation }) : Promise.resolve();
+export const onHistoryTabAction = (callback: (action: HistoryOverlayAction) => void): Promise<UnlistenFn> =>
+  isTauriRuntime() ? listen<HistoryOverlayAction>("history-tab-action", event => callback(event.payload)) : Promise.resolve(() => {});
+/** The history page finished loading in a tab (its id): it is ready for its rows. */
+export const onHistoryTabLoaded = (callback: (tabId: string) => void): Promise<UnlistenFn> =>
+  isTauriRuntime() ? listen<string>("history-tab-loaded", event => callback(event.payload)) : Promise.resolve(() => {});

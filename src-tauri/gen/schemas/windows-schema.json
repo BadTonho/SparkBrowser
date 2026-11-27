@@ -1431,6 +1431,12 @@
           "markdownDescription": "Enables the set_history_retention command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_history_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-history-tab",
+          "markdownDescription": "Enables the set_history_tab command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_https_only command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-https-only",
@@ -3169,6 +3175,12 @@
           "type": "string",
           "const": "deny-set-history-retention",
           "markdownDescription": "Denies the set_history_retention command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_history_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-history-tab",
+          "markdownDescription": "Denies the set_history_tab command without any pre-configured scope."
         },
         {
           "description": "Denies the set_https_only command without any pre-configured scope.",

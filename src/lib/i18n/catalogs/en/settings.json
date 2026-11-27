@@ -447,5 +447,7 @@
   "settings.download_location_error": "That folder cannot be used. Choose one that exists and that you can write to.",
   "settings.show_downloads_when_done": "Show downloads when they finish",
   "settings.show_downloads_when_done_description": "Open the downloads panel when a download completes.",
-  "settings.toolbar_video": "Download video"
+  "settings.toolbar_video": "Download video",
+  "settings.history_display_mode": "History display",
+  "settings.history_display_mode_description": "Choose whether History opens in a pop-up or in a browser tab."
 }

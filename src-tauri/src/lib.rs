@@ -128,7 +128,7 @@ use commands::navigation::{
 use commands::notes::{delete_page_note, get_page_note, save_page_note, search_page_notes};
 use commands::overlays::{
     set_bookmark_context_menu_overlay, set_commands_popover, set_downloads_popover,
-    set_history_overlay, set_media_popover, set_overlay_visibility, set_permission_popover,
+    set_history_overlay, set_history_tab, set_media_popover, set_overlay_visibility, set_permission_popover,
     set_privacy_popover, set_quick_settings_popover, set_resources_popover, set_settings_overlay,
     set_suggestions_popover, set_tools_popover, set_video_download_popover,
     set_workspace_switcher_overlay, set_zoom_popover,
@@ -314,6 +314,7 @@ pub fn run() {
         .manage(webview_runtime::RuntimeService::default())
         .manage(window::new_tab::NewTabService::default())
         .manage(window::settings_tab::SettingsTabSessions::default())
+        .manage(window::history_overlay::tab::HistoryTabSessions::default())
         .manage(window::new_tab::widgets::Widgets::default())
         .manage(window::tab_drag_preview::DragPreview::default())
         .manage(window::tab_hover_card::HoverCard::default())
@@ -957,6 +958,7 @@ pub fn run() {
             set_privacy_popover,
             set_permission_popover,
             set_history_overlay,
+            set_history_tab,
             get_workspaces,
             get_active_workspace,
             switch_workspace,

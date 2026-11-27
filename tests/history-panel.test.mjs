@@ -60,3 +60,28 @@ test('the panel draws one card per day with a selection bar and a menu per visit
     for (const key of ['day_today', 'day_yesterday', 'selected_count', 'open_selected', 'delete_selected', 'more_from_site', 'delete_entry']) assert.ok(catalog[`history.${key}`], `${key} in ${lang}`);
   }
 });
+
+test('History can open in its own tab, chosen below the settings display', () => {
+  const appearance = read('src/lib/components/settings/AppearanceSettings.svelte');
+  const settingsRow = appearance.indexOf('id="setting-settings-display"');
+  const historyRow = appearance.indexOf('id="setting-history-display"');
+  assert.ok(settingsRow > 0 && historyRow > settingsRow, 'the option sits below the settings display');
+  assert.match(read('src/lib/stores/persistenceStore.ts'), /if \(historyOpensInTab\(\)\) \{ await openHistoryTab\(\); return; \}/);
+  assert.match(read('src/lib/stores/historyDisplayStore.ts'), /export const HISTORY_URL = "spark:\/\/history";/);
+  for (const command of ['set_history_tab']) {
+    assert.match(read('src-tauri/src/commands/manifest.rs'), new RegExp(`"${command}"`));
+    assert.match(read('src-tauri/capabilities/default.json'), /"allow-set-history-tab"/);
+  }
+  // The internal address is known everywhere the other internal pages are.
+  for (const file of ['src-tauri/src/window/new_tab/mod.rs', 'src-tauri/src/window/url_input.rs', 'src-tauri/src/backup/validation.rs',
+    'src-tauri/src/window/content_factory.rs', 'src-tauri/src/window/navigation_state.rs', 'src-tauri/src/privacy/forced_dark.rs', 'src-tauri/src/autofill/mod.rs']) {
+    assert.match(read(file), /history_overlay::tab::is_history_(url|document)|history_overlay::tab::is_document/, file);
+  }
+  const page = read('public/overlays/history-overlay.js');
+  assert.match(page, /spark-internal:\/\/history-tab\/action/);
+  assert.match(page, /if \(!tabSurface && state && !panel\.contains/, 'clicking around the tab never closes it');
+  for (const lang of ['en', 'pt-BR']) {
+    const catalog = JSON.parse(read(`src/lib/i18n/catalogs/${lang}/settings.json`));
+    assert.ok(catalog['settings.history_display_mode'] && catalog['settings.history_display_mode_description'], lang);
+  }
+});

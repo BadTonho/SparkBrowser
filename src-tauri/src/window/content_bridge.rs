@@ -9,6 +9,7 @@ fn tracks_form_edits(url: &str) -> bool {
     !super::new_tab::is_new_tab(url)
         && !super::settings_tab::is_settings_url(url)
         && !super::wallpaper_tab::is_wallpaper_url(url)
+        && !super::history_overlay::tab::is_history_url(url)
 }
 
 pub(super) fn handle(
@@ -20,6 +21,10 @@ pub(super) fn handle(
 ) -> bool {
     if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("settings-tab") {
         super::settings_tab::handle(app, tab_id, label, token, nav_url);
+        return false;
+    }
+    if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("history-tab") {
+        super::history_overlay::tab::handle(app, tab_id, label, token, nav_url);
         return false;
     }
     if nav_url.scheme() == "spark-internal" && nav_url.host_str() == Some("new-tab") {
@@ -111,7 +116,18 @@ pub(super) fn handle(
 }
 
 #[cfg(any(windows, target_os = "linux", test))]
-fn message_url(json: &str, source: &str, current: &str, settings_document: bool) -> Option<Url> {
+/// The browser's own page a content message comes from: its channel is only accepted from it.
+#[cfg(any(windows, target_os = "linux", test))]
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum OwnDocument {
+    Web,
+    Settings,
+    History,
+}
+
+#[cfg(any(windows, target_os = "linux", test))]
+fn message_url(json: &str, source: &str, current: &str, document: OwnDocument) -> Option<Url> {
+    let settings_document = document == OwnDocument::Settings;
     if source != current
         || json.len()
             > if settings_document {
@@ -131,7 +147,8 @@ fn message_url(json: &str, source: &str, current: &str, settings_document: bool)
         && (matches!(
             url.host_str(),
             Some("new-tab" | "page-activity" | "autofill" | "keyboard-shortcut" | "pane-focus")
-        ) || (settings_document && url.host_str() == Some("settings-tab")))
+        ) || (settings_document && url.host_str() == Some("settings-tab"))
+            || (document == OwnDocument::History && url.host_str() == Some("history-tab")))
         && (url.host_str() == Some("settings-tab") || json.len() <= 262_144))
         .then_some(url)
 }
@@ -148,13 +165,15 @@ pub(crate) fn receive(
     if !super::navigation_state::is_current_generation(app, label, token) {
         return;
     }
-    let settings_document = app
-        .get_webview(label)
-        .and_then(|view| view.url().ok())
-        .is_some_and(|url| super::settings_tab::is_document(app, &url));
+    let page = app.get_webview(label).and_then(|view| view.url().ok());
+    let document = match page {
+        Some(url) if super::settings_tab::is_document(app, &url) => OwnDocument::Settings,
+        Some(url) if super::history_overlay::tab::is_document(app, &url) => OwnDocument::History,
+        _ => OwnDocument::Web,
+    };
     if let (Some(id), Some(url)) = (
         label.strip_prefix("content-webview-"),
-        message_url(json, origin, current_origin, settings_document),
+        message_url(json, origin, current_origin, document),
     ) {
         handle(app, id, label, token, &url);
     }
@@ -211,34 +230,40 @@ mod tests {
     #[test]
     fn messages_are_bounded_and_bound_to_the_current_document_and_allowed_channels() {
         let valid = r#"{"sparkContent":"spark-internal://page-activity/state?token=fixture"}"#;
-        assert!(message_url(valid, "https://site.test/a", "https://site.test/a", false).is_some());
+        assert!(message_url(
+            valid,
+            "https://site.test/a",
+            "https://site.test/a",
+            OwnDocument::Web
+        )
+        .is_some());
         let settings = r#"{"sparkContent":"spark-internal://settings-tab/action?token=fixture"}"#;
         assert!(message_url(
             settings,
             "http://tauri.localhost",
             "http://tauri.localhost",
-            true
+            OwnDocument::Settings
         )
         .is_some());
         assert!(message_url(
             settings,
             "http://tauri.localhost",
             "http://tauri.localhost",
-            false
+            OwnDocument::Web
         )
         .is_none());
         assert!(message_url(
             settings,
             "https://evil.test",
             "http://tauri.localhost",
-            true
+            OwnDocument::Settings
         )
         .is_none());
         assert!(message_url(
             valid,
             "https://site.test/old",
             "https://site.test/current",
-            false
+            OwnDocument::Web
         )
         .is_none());
         for invalid in [
@@ -250,13 +275,18 @@ mod tests {
             r#"{"sparkContent":"spark-internal://settings-popover/action"}"#,
             r#"{"sparkContent":"spark-internal://new-tab/read","other":true}"#,
         ] {
-            assert!(message_url(invalid, "same", "same", false).is_none());
+            assert!(message_url(invalid, "same", "same", OwnDocument::Web).is_none());
         }
-        assert!(message_url(&" ".repeat(262_145), "same", "same", false).is_none());
+        assert!(message_url(&" ".repeat(262_145), "same", "same", OwnDocument::Web).is_none());
+        // The history tab's channel is only accepted from the history page.
+        let history = r#"{"sparkContent":"spark-internal://history-tab/action?token=fixture"}"#;
+        assert!(message_url(history, "same", "same", OwnDocument::History).is_some());
+        assert!(message_url(history, "same", "same", OwnDocument::Web).is_none());
+        assert!(message_url(history, "same", "same", OwnDocument::Settings).is_none());
         // Keyboard shortcuts and pane focus use the same authenticated transport (no navigation).
         for channel in ["keyboard-shortcut/action", "pane-focus"] {
             let message = format!(r#"{{"sparkContent":"spark-internal://{channel}?token=x"}}"#);
-            assert!(message_url(&message, "same", "same", false).is_some());
+            assert!(message_url(&message, "same", "same", OwnDocument::Web).is_some());
         }
     }
 

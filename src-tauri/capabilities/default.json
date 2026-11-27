@@ -198,6 +198,7 @@
     "allow-set-privacy-popover",
     "allow-set-permission-popover",
     "allow-set-history-overlay",
+    "allow-set-history-tab",
     "allow-get-workspaces",
     "allow-get-active-workspace",
     "allow-switch-workspace",

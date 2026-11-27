@@ -447,5 +447,7 @@
   "settings.download_location_error": "Não dá para usar essa pasta. Escolha uma que exista e na qual você possa gravar.",
   "settings.show_downloads_when_done": "Mostrar os downloads quando eles forem concluídos",
   "settings.show_downloads_when_done_description": "Abre o painel de downloads quando um download termina.",
-  "settings.toolbar_video": "Baixar vídeo"
+  "settings.toolbar_video": "Baixar vídeo",
+  "settings.history_display_mode": "Exibição do histórico",
+  "settings.history_display_mode_description": "Escolha se o histórico abre em um pop-up ou em uma guia do navegador."
 }

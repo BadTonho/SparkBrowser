@@ -11,7 +11,8 @@
   import { currentUrl, tabs } from "../../stores/browserStore";
   import { activeWorkspaceId } from "../../stores/workspaceSelectionStore";
   import { isTauriRuntime } from "../../services/bridge/runtime";
-  import { onHistoryOverlayAction, setHistoryOverlay, type HistoryOverlayPresentation } from "../../services/bridge/history-overlay";
+  import { onHistoryOverlayAction, onHistoryTabAction, onHistoryTabLoaded, setHistoryOverlay, setHistoryTab, type HistoryOverlayAction, type HistoryOverlayPresentation } from "../../services/bridge/history-overlay";
+  import { HISTORY_URL } from "../../stores/historyDisplayStore";
   import { describeError } from "../../services/user-errors.js";
   import { observePanelTheme, readGlassFrame } from "../panels/panel-host";
   import {
@@ -36,10 +37,27 @@
   let lastNativePresentation = "";
 
   const activeTab = $derived($tabs.find((tab) => tab.is_active));
+  /** The history tab being viewed (Settings → History display → Tab); it shows the same rows as the panel. */
+  const historyTab = $derived(native ? $tabs.find((tab) => tab.is_active && tab.url === HISTORY_URL) : undefined);
+  let tabSessionId = Date.now() * 1000;
+  let tabSessionTab = "";
+  let lastTabPresentation = "";
 
   let filteredHistory = $derived($historyEntries);
+  // Each time a history tab comes into view, its list is read again from the start.
   $effect(() => {
-    if (!$isHistoryDrawerOpen) return;
+    const id = historyTab?.id;
+    if (!id) return;
+    untrack(() => {
+      if (id === tabSessionTab) return;
+      tabSessionTab = id;
+      tabSessionId += 1;
+      lastTabPresentation = "";
+      void loadHistory(filterQuery);
+    });
+  });
+  $effect(() => {
+    if (!$isHistoryDrawerOpen && !historyTab) return;
     const query = filterQuery;
     const timer = setTimeout(() => void loadHistory(query), 180);
     return () => clearTimeout(timer);
@@ -93,6 +111,18 @@
       nativeSessionId += 1;
       lastNativePresentation = "";
     }
+    const payload = presentation(tab.id, tab.url || $currentUrl);
+    const serialized = JSON.stringify(payload);
+    if (serialized === lastNativePresentation) return;
+    lastNativePresentation = serialized;
+    await setHistoryOverlay(true, nativeSessionId, payload).catch((error) => {
+      lastNativePresentation = "";
+      historyError.set(describeError(error));
+    });
+  }
+
+  /** The rows and texts of the history page, for the panel or the tab. */
+  function presentation(tabId: string, url: string): HistoryOverlayPresentation {
     const rows = historyRows($historyEntries, Date.now(), siteKey);
     const icons: Record<string, string> = {};
     for (const row of rows) {
@@ -100,9 +130,9 @@
       const icon = row.site ? $siteIcons[row.site] : undefined;
       if (row.site && icon?.startsWith("data:image/") && icon.length <= 64 * 1024) icons[row.site] = icon;
     }
-    const payload: HistoryOverlayPresentation = {
-      tabId: tab.id,
-      url: tab.url || $currentUrl,
+    return {
+      tabId,
+      url,
       locale: $locale as Locale,
       labels: {
         title: $t("history.browsing_history_sqlite_59d8"),
@@ -128,13 +158,44 @@
       error: $historyError,
       hasMore: $historyHasMore,
     };
+  }
+
+  /** Sends the rows to the history tab being viewed. */
+  async function pushHistoryTab(force = false) {
+    const tab = historyTab;
+    if (!tab) return;
+    const payload = presentation(tab.id, HISTORY_URL);
     const serialized = JSON.stringify(payload);
-    if (serialized === lastNativePresentation) return;
-    lastNativePresentation = serialized;
-    await setHistoryOverlay(true, nativeSessionId, payload).catch((error) => {
-      lastNativePresentation = "";
-      historyError.set(describeError(error));
+    if (!force && serialized === lastTabPresentation) return;
+    lastTabPresentation = serialized;
+    await setHistoryTab(tab.id, tabSessionId, payload).catch((error) => {
+      lastTabPresentation = "";
+      // A page still loading is not a failure: "history-tab-loaded" sends the rows again.
+      if (!String(error).includes("history_tab.not_ready")) historyError.set(describeError(error));
     });
+  }
+
+  /** Actions of the history tab: like the panel's, but the tab stays open. */
+  async function handleTabAction(action: HistoryOverlayAction) {
+    const tab = historyTab;
+    if (!tab || action.tabId !== tab.id || action.sessionId !== tabSessionId) return;
+    switch (action.action) {
+      case "search": filterQuery = action.query; break;
+      case "clear": await wipeBrowsingHistory(); break;
+      case "load-more": await loadHistory(filterQuery, true); break;
+      case "open":
+        if (action.entryUrl) await addTab(action.entryUrl);
+        break;
+      case "open-many":
+        for (const url of action.entryUrls) await addTab(url);
+        break;
+      case "more-from-site":
+        if (action.entryHost) filterQuery = action.entryHost;
+        break;
+      case "delete":
+        await deleteEntries(action.entryIds);
+        break;
+    }
   }
 
   async function handleNativeAction(action: import("../../services/bridge/history-overlay").HistoryOverlayAction) {
@@ -166,20 +227,29 @@
     void filterQuery; void $currentUrl; void $tabs; void $activeWorkspaceId; void $locale; void $t; void $siteIcons;
     untrack(() => { void pushNativeOverlay(); });
   });
+  $effect(() => {
+    void historyTab; void $historyEntries; void $historyBusy; void $historyError; void $historyHasMore;
+    void filterQuery; void $locale; void $t; void $siteIcons;
+    untrack(() => { void pushHistoryTab(); });
+  });
 
   onMount(() => {
     let disposed = false;
     let stop: (() => void) | undefined;
     const stopTheme = native ? observePanelTheme(() => {
       if (nativeSessionKey) void pushNativeOverlay().catch(logIgnored);
+      if (historyTab) void pushHistoryTab(true).catch(logIgnored);
     }) : undefined;
-    void onHistoryOverlayAction(handleNativeAction).then((unlisten) => {
-      if (disposed) unlisten(); else stop = unlisten;
-    });
+    const stops: Array<() => void> = [];
+    const keep = (unlisten: () => void) => { if (disposed) unlisten(); else stops.push(unlisten); };
+    void onHistoryOverlayAction(handleNativeAction).then(keep);
+    void onHistoryTabAction((action) => void handleTabAction(action)).then(keep);
+    void onHistoryTabLoaded((tabId) => { if (historyTab?.id === tabId) void pushHistoryTab(true); }).then(keep);
     return () => {
       disposed = true;
       stopTheme?.();
       stop?.();
+      for (const unlisten of stops.splice(0)) unlisten();
       if (nativeSessionKey) void setHistoryOverlay(false, nativeSessionId);
     };
   });

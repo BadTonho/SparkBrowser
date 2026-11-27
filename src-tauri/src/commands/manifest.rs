@@ -251,6 +251,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_privacy_popover",
     "set_permission_popover",
     "set_history_overlay",
+    "set_history_tab",
     "get_workspaces",
     "get_active_workspace",
     "switch_workspace",

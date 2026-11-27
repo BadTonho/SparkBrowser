@@ -1,4 +1,5 @@
 mod bridge;
+pub mod tab;
 
 use super::webview_manager::create_internal_bridge_token;
 use crate::state::browser_state::BrowserState;
