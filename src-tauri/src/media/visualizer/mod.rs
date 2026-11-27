@@ -31,6 +31,17 @@ struct State {
 #[derive(Default)]
 pub struct Visualizer {
     state: Mutex<State>,
+    /// The analyzer thread, woken when it may have work again.
+    worker: std::sync::OnceLock<std::thread::Thread>,
+}
+/// With the analyzer off or no new tab listening, the thread waits for [`wake`] instead of
+/// checking five times a second for the whole session. This is only a safety net.
+const IDLE_WAKE: Duration = Duration::from_secs(30);
+/// Tells the analyzer thread to look again now: a new tab started listening or the settings changed.
+fn wake(app: &AppHandle) {
+    if let Some(worker) = app.state::<Visualizer>().worker.get() {
+        worker.unpark();
+    }
 }
 #[derive(Serialize)]
 struct Frame {
@@ -56,6 +67,7 @@ pub fn configure(app: &AppHandle, preferences: &AudioBackground) {
             s.generation += 1;
         }
     };
+    wake(app);
 }
 pub(crate) fn subscribe(app: &AppHandle, consumer: Consumer) {
     if private(app) || !consumer.visible(app) {
@@ -64,6 +76,7 @@ pub(crate) fn subscribe(app: &AppHandle, consumer: Consumer) {
     if let Ok(mut s) = app.state::<Visualizer>().state.lock() {
         s.consumers.insert(consumer.label.clone(), consumer);
     }
+    wake(app);
 }
 pub fn unsubscribe(app: &AppHandle, label: &str) {
     if let Ok(mut s) = app.state::<Visualizer>().state.lock() {
@@ -74,8 +87,16 @@ pub fn start(app: &AppHandle) {
     if private(app) {
         return;
     }
-    let app = app.clone();
-    std::thread::spawn(move || run(app));
+    let thread_app = app.clone();
+    let worker = std::thread::spawn(move || run(thread_app));
+    if app
+        .state::<Visualizer>()
+        .worker
+        .set(worker.thread().clone())
+        .is_err()
+    {
+        crate::error_log::warn("Audio visualizer: a second analyzer thread was started");
+    }
 }
 fn audible(app: &AppHandle) -> bool {
     app.state::<super::MediaService>()
@@ -130,6 +151,8 @@ fn run(app: AppHandle) {
                 }
             }
         }
+        // Nobody can show the spectrum: wait to be woken instead of checking again shortly.
+        let unwatched = !enabled || snapshot.len() == stale.len();
         let consumers: Vec<_> = snapshot
             .into_iter()
             .filter(|c| !stale.iter().any(|(label, _)| label == &c.label) && c.visible(&app))
@@ -189,7 +212,11 @@ fn run(app: AppHandle) {
         } else {
             Some((generation, consumers.len()))
         };
-        std::thread::sleep(Duration::from_millis(if active { 50 } else { 200 }));
+        if unwatched {
+            std::thread::park_timeout(IDLE_WAKE);
+        } else {
+            std::thread::sleep(Duration::from_millis(if active { 50 } else { 200 }));
+        }
     }
 }
 #[cfg(not(any(windows, target_os = "linux")))]
