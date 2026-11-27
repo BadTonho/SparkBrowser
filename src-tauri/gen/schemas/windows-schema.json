@@ -345,6 +345,18 @@
           "markdownDescription": "Enables the confirm_shutdown command without any pre-configured scope."
         },
         {
+          "description": "Enables the connect_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-connect-github-backup",
+          "markdownDescription": "Enables the connect_github_backup command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the connect_github_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-connect-github-sync",
+          "markdownDescription": "Enables the connect_github_sync command without any pre-configured scope."
+        },
+        {
           "description": "Enables the control_download command without any pre-configured scope.",
           "type": "string",
           "const": "allow-control-download",
@@ -475,6 +487,12 @@
           "type": "string",
           "const": "allow-discard-backup-import",
           "markdownDescription": "Enables the discard_backup_import command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the disconnect_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-disconnect-github-backup",
+          "markdownDescription": "Enables the disconnect_github_backup command without any pre-configured scope."
         },
         {
           "description": "Enables the dock_tab_to_split command without any pre-configured scope.",
@@ -661,6 +679,12 @@
           "type": "string",
           "const": "allow-get-feeds",
           "markdownDescription": "Enables the get_feeds command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_github_backup_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-github-backup-state",
+          "markdownDescription": "Enables the get_github_backup_state command without any pre-configured scope."
         },
         {
           "description": "Enables the get_gpc command without any pre-configured scope.",
@@ -933,6 +957,12 @@
           "markdownDescription": "Enables the list_backup_sync_versions command without any pre-configured scope."
         },
         {
+          "description": "Enables the list_github_backup_versions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-list-github-backup-versions",
+          "markdownDescription": "Enables the list_github_backup_versions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the list_profiles command without any pre-configured scope.",
           "type": "string",
           "const": "allow-list-profiles",
@@ -1051,6 +1081,12 @@
           "type": "string",
           "const": "allow-push-backup-sync",
           "markdownDescription": "Enables the push_backup_sync command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the push_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-push-github-backup",
+          "markdownDescription": "Enables the push_github_backup command without any pre-configured scope."
         },
         {
           "description": "Enables the refresh_feed command without any pre-configured scope.",
@@ -1189,6 +1225,18 @@
           "type": "string",
           "const": "allow-review-backup-sync-version",
           "markdownDescription": "Enables the review_backup_sync_version command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the review_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-review-github-backup",
+          "markdownDescription": "Enables the review_github_backup command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the review_github_backup_version command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-review-github-backup-version",
+          "markdownDescription": "Enables the review_github_backup_version command without any pre-configured scope."
         },
         {
           "description": "Enables the save_bookmark command without any pre-configured scope.",
@@ -1339,6 +1387,12 @@
           "type": "string",
           "const": "allow-set-forced-dark-mode",
           "markdownDescription": "Enables the set_forced_dark_mode command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_github_backup_auto command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-github-backup-auto",
+          "markdownDescription": "Enables the set_github_backup_auto command without any pre-configured scope."
         },
         {
           "description": "Enables the set_gpc command without any pre-configured scope.",
@@ -2025,6 +2079,18 @@
           "markdownDescription": "Denies the confirm_shutdown command without any pre-configured scope."
         },
         {
+          "description": "Denies the connect_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-connect-github-backup",
+          "markdownDescription": "Denies the connect_github_backup command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the connect_github_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-connect-github-sync",
+          "markdownDescription": "Denies the connect_github_sync command without any pre-configured scope."
+        },
+        {
           "description": "Denies the control_download command without any pre-configured scope.",
           "type": "string",
           "const": "deny-control-download",
@@ -2155,6 +2221,12 @@
           "type": "string",
           "const": "deny-discard-backup-import",
           "markdownDescription": "Denies the discard_backup_import command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the disconnect_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-disconnect-github-backup",
+          "markdownDescription": "Denies the disconnect_github_backup command without any pre-configured scope."
         },
         {
           "description": "Denies the dock_tab_to_split command without any pre-configured scope.",
@@ -2341,6 +2413,12 @@
           "type": "string",
           "const": "deny-get-feeds",
           "markdownDescription": "Denies the get_feeds command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_github_backup_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-github-backup-state",
+          "markdownDescription": "Denies the get_github_backup_state command without any pre-configured scope."
         },
         {
           "description": "Denies the get_gpc command without any pre-configured scope.",
@@ -2613,6 +2691,12 @@
           "markdownDescription": "Denies the list_backup_sync_versions command without any pre-configured scope."
         },
         {
+          "description": "Denies the list_github_backup_versions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-list-github-backup-versions",
+          "markdownDescription": "Denies the list_github_backup_versions command without any pre-configured scope."
+        },
+        {
           "description": "Denies the list_profiles command without any pre-configured scope.",
           "type": "string",
           "const": "deny-list-profiles",
@@ -2731,6 +2815,12 @@
           "type": "string",
           "const": "deny-push-backup-sync",
           "markdownDescription": "Denies the push_backup_sync command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the push_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-push-github-backup",
+          "markdownDescription": "Denies the push_github_backup command without any pre-configured scope."
         },
         {
           "description": "Denies the refresh_feed command without any pre-configured scope.",
@@ -2869,6 +2959,18 @@
           "type": "string",
           "const": "deny-review-backup-sync-version",
           "markdownDescription": "Denies the review_backup_sync_version command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the review_github_backup command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-review-github-backup",
+          "markdownDescription": "Denies the review_github_backup command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the review_github_backup_version command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-review-github-backup-version",
+          "markdownDescription": "Denies the review_github_backup_version command without any pre-configured scope."
         },
         {
           "description": "Denies the save_bookmark command without any pre-configured scope.",
@@ -3019,6 +3121,12 @@
           "type": "string",
           "const": "deny-set-forced-dark-mode",
           "markdownDescription": "Denies the set_forced_dark_mode command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_github_backup_auto command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-github-backup-auto",
+          "markdownDescription": "Denies the set_github_backup_auto command without any pre-configured scope."
         },
         {
           "description": "Denies the set_gpc command without any pre-configured scope.",

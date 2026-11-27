@@ -93,4 +93,5 @@ Mandatory repository guidelines covering security (zero-leak policy), folder org
 - [Planned protection against suspicious sites and downloads](roadmap/security-protections.md)
 - [Video download: open limitations](roadmap/video-download-limitations.md)
 - [Sync with Nextcloud](features/nextcloud-sync.md)
+- [GitHub backup (private repository)](features/github-sync.md)
 - [Sync with S3-compatible storage (planned)](roadmap/s3-sync.md)

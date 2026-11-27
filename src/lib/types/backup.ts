@@ -128,3 +128,8 @@ export interface LocalBackupState {
   total_bytes: number;
 }
 export interface LocalBackupOutcome { created: boolean; snapshot_id: string | null; state: LocalBackupState; }
+
+/** GitHub backups: a second destination, independent from the sync target in use. */
+export interface GitHubTarget { repository: string; branch: string; auto_save: boolean }
+export interface GitHubBackupState { target: GitHubTarget | null; has_token: boolean; last_synced_at: number | null; last_error: string | null }
+export interface GitHubPushResult { synced: boolean; skipped_unchanged: boolean; state: GitHubBackupState }

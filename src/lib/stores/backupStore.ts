@@ -70,6 +70,7 @@ import type {
   LocalBackupState,
   RestoreGroup,
   RestoreOptions,
+  SyncPullResponse,
   SyncStateSnapshot,
   SyncTargetConfig,
 } from "../types/backup";
@@ -517,21 +518,37 @@ export const reviewSyncVersion = (id: string) =>
   }));
 
 export const syncPullPreview = () =>
-  action(() => trackSync(async () => {
-    if (source) await discardBackupImport(source);
-    backupResult.set(null);
-    backupPreview.set(null);
-    source = null;
-    resetRestoreOptions();
-    await noteWriter.flushAll();
-    const res = await pullBackupSync(capturePreferences(), false, null);
-    backupSyncState.set(res.state);
-    if (res.kind === "preview") {
-      source = res.source_token;
-      // The pull previews with backend defaults; re-plan with the UI selection (preferences off by default).
-      await createPreview();
-    }
-  }));
+  action(() => trackSync(() => openReview(() => pullBackupSync(capturePreferences(), false, null))));
+
+/**
+ * Opens a backup read from somewhere else (such as GitHub) in the review panel, like a sync pull:
+ * nothing changes until it is confirmed there. Failures are thrown to the caller.
+ */
+export async function reviewFrom(read: () => Promise<SyncPullResponse>): Promise<void> {
+  if (get(backupBusy) || !isTauriRuntime()) return;
+  backupBusy.set(true);
+  try {
+    await openReview(read);
+  } finally {
+    backupBusy.set(false);
+  }
+}
+
+async function openReview(read: () => Promise<SyncPullResponse>): Promise<void> {
+  if (source) await discardBackupImport(source);
+  backupResult.set(null);
+  backupPreview.set(null);
+  source = null;
+  resetRestoreOptions();
+  await noteWriter.flushAll();
+  const res = await read();
+  backupSyncState.set(res.state);
+  if (res.kind === "preview") {
+    source = res.source_token;
+    // The pull previews with backend defaults; re-plan with the UI selection (preferences off by default).
+    await createPreview();
+  }
+}
 
 export const syncPullDirect = (applyPreferencesOverride: boolean | null = null) =>
   action(() => trackSync(async () => {

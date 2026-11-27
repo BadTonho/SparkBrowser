@@ -93,4 +93,5 @@ Diretrizes obrigatórias do repositório cobrindo segurança (política de vazam
 - [Proteção planejada contra sites e downloads suspeitos](roadmap/security-protections.md)
 - [Baixar vídeo: limitações em aberto](roadmap/video-download-limitations.md)
 - [Sincronizar com o Nextcloud](features/nextcloud-sync.md)
+- [Backup no GitHub (repositório privado)](features/github-sync.md)
 - [Sincronizar com armazenamento compatível com S3 (planejado)](roadmap/s3-sync.md)

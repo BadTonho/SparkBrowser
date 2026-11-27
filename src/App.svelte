@@ -21,6 +21,7 @@
   import { initializeWallpaperEditorEvents } from "./lib/stores/wallpaperEditorStore";
   import BackupNotice from "./lib/components/status/BackupNotice.svelte";
   import { initializeBackupStatus } from "./lib/stores/backupStore";
+  import { initializeGithubBackup } from "./lib/stores/githubBackupStore";
   import { initializePrivateWindow } from "./lib/stores/privateWindowStore";
   import { initializeBrowserSession } from "./lib/stores/browser/lifecycle";
   import { onMount } from "svelte";
@@ -198,6 +199,7 @@
     const stopRuntime = initializeRuntime();
     void initializeRecovery();
     const stopBackup = initializeBackupStatus();
+    const stopGithubBackup = initializeGithubBackup();
     const stopPrivateWindow = initializePrivateWindow();
     const stopClosedTabs = initializeClosedTabEvents();
     const stopWallpaperEditor = initializeWallpaperEditorEvents();
@@ -352,6 +354,7 @@
       stopClosedTabs();
       stopWallpaperEditor();
       stopBackup();
+      stopGithubBackup();
       stopPrivateWindow();
       stopDownloadEvents();
       clearInterval(hibernationInterval);

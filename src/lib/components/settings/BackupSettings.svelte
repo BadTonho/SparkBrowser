@@ -17,6 +17,7 @@
     syncVersions,
     syncPausedNow,
     backupSyncState,
+    localBackupState,
     openGoogleLoginTab,
     pendingBackupPreferences,
     pickBackupSyncFolder,
@@ -31,6 +32,21 @@
   } from "../../stores/backupStore";
   import AppIcon from "../icons/AppIcon.svelte";
   import GoogleDriveIcon from "../icons/GoogleDriveIcon.svelte";
+  import GitHubIcon from "../icons/GitHubIcon.svelte";
+  import {
+    connectGithub,
+    disconnectGithub,
+    githubBackupState,
+    githubError,
+    githubFinished,
+    githubRunning,
+    githubVersions,
+    loadGithubVersions,
+    reviewGithub,
+    reviewGithubVersion,
+    sendGithubNow,
+    setGithubAuto,
+  } from "../../stores/githubBackupStore";
   import BackupCard from "./backup/BackupCard.svelte";
   import BackupLocalPanel from "./BackupLocalPanel.svelte";
   import BookmarkExportCard from "./BookmarkExportCard.svelte";
@@ -207,6 +223,46 @@
     });
   }
 
+  // GitHub: a second card, an hourly backup next to the sync target in use.
+  let githubExpanded = $state(false);
+  let githubPanel = $state<HTMLDetailsElement | null>(null);
+  let githubRepository = $state("");
+  let githubBranch = $state("spark-sync");
+  let githubToken = $state("");
+  const githubConnected = $derived(Boolean($githubBackupState.target) && $githubBackupState.has_token);
+  const githubProblem = $derived($githubError || $githubBackupState.last_error);
+  const githubRing = $derived(summarizeSyncRing({
+    mode: githubConnected ? "github" : "disabled",
+    autoSave: $githubBackupState.target?.auto_save ?? false,
+    running: $githubRunning ? 1 : 0,
+    finished: $githubFinished,
+    problem: githubProblem || null,
+    waitingForAccount: false,
+    pausedByUser: $syncPausedNow,
+  }));
+  $effect(() => {
+    const target = $githubBackupState.target;
+    if (target) { githubRepository = target.repository; githubBranch = target.branch; }
+  });
+
+  function closeGithubOnEscape(event: KeyboardEvent): void {
+    if (event.key !== "Escape" || !githubExpanded) return;
+    event.stopPropagation();
+    githubExpanded = false;
+    githubPanel?.querySelector<HTMLElement>("summary")?.focus();
+  }
+
+  function handleConnectGithub(): void {
+    void connectGithub(githubRepository, githubBranch, githubToken.trim() || null, $githubBackupState.target?.auto_save ?? true).then(() => {
+      if (!$githubError) githubToken = "";
+    });
+  }
+
+  /** Opens a backup from GitHub in the review panel, then closes the card so the panel is in view. */
+  function reviewFromGithub(action: () => Promise<void>): void {
+    void action().then(() => { if (!$githubError) githubExpanded = false; });
+  }
+
   async function runSyncAction(action: () => Promise<void>): Promise<void> {
     syncActionError = null;
     syncActionBusy = true;
@@ -239,6 +295,7 @@
   {:else}
     <div class="setting-subgroup sync-group" role="group" aria-labelledby="backup-sync-group-heading">
       <h3 class="subgroup-title" id="backup-sync-group-heading">{$t("backup.group_sync")}</h3>
+      <div class="sync-cards">
       <!-- The slot keeps the closed card's place; the panel floats over it when open. -->
       <div class="sync-slot" class:ring-syncing={!syncExpanded && ring === "syncing"} class:ring-done={!syncExpanded && ring === "done"}
         class:ring-paused={!syncExpanded && ring === "paused"} class:ring-error={!syncExpanded && ring === "error"} data-ring={ring} data-testid="backup-sync-ring">
@@ -605,6 +662,135 @@
         {/if}
       </details>
       </div>
+
+      <!-- GitHub: an hourly backup next to the sync target in use, with its own state. -->
+      <div class="sync-slot secondary" class:ring-syncing={!githubExpanded && githubRing === "syncing"} class:ring-done={!githubExpanded && githubRing === "done"}
+        class:ring-paused={!githubExpanded && githubRing === "paused"} class:ring-error={!githubExpanded && githubRing === "error"} data-ring={githubRing} data-testid="backup-github-ring">
+      {#if githubExpanded}
+        <button type="button" class="sync-scrim" tabindex="-1" aria-label={$t("backup.sync_close")} data-testid="backup-github-scrim" onclick={() => (githubExpanded = false)}></button>
+      {/if}
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <details class="sync-panel" bind:this={githubPanel} bind:open={githubExpanded} onkeydown={closeGithubOnEscape} data-testid="backup-github-panel">
+        <summary class="sync-compact-row" data-testid="backup-github-toggle" title={$t("backup.github_settings")}>
+          <span class="sync-icon github" aria-hidden="true"><GitHubIcon size={30} /></span>
+          <strong class="sync-title">{$t("backup.github_title")}</strong>
+          <span class="sync-chips">
+            <span class="sync-state-chip connection" class:connected={githubConnected} role="status" data-testid="backup-github-connection">
+              {$t(githubConnected ? "backup.sync_connection_connected" : "backup.sync_connection_disconnected")}
+            </span>
+            {#if $githubRunning}
+              <span class="sync-state-chip busy" role="status">{$t("backup.sync_status_busy")}</span>
+            {:else if githubProblem}
+              <span class="sync-state-chip error" role="alert" title={githubProblem}>{$t("backup.sync_status_error")}</span>
+            {:else if $githubBackupState.last_synced_at}
+              <span class="sync-state-chip synced" role="status" data-testid="backup-github-last-time">
+                {$t("backup.sync_last_synced", { time: $formatDate($githubBackupState.last_synced_at * 1000, { dateStyle: "short", timeStyle: "medium" }) })}
+              </span>
+            {:else if githubConnected}
+              <span class="sync-state-chip neutral" role="status">{$t("backup.sync_status_not_synced")}</span>
+            {/if}
+          </span>
+        </summary>
+
+        <div class="sync-settings">
+          <p class="sync-hint">{$t("backup.github_card_desc")}</p>
+          {#if !$localBackupState.encryption_enabled}
+            <p class="sync-hint" role="alert" data-testid="backup-github-encryption">{$t("backup.github_encryption_needed")}</p>
+          {/if}
+          <section class="sync-section" aria-labelledby="github-repository-title">
+            <h4 class="sync-section-title" id="github-repository-title">{$t("backup.sync_section_repository")}</h4>
+            {#if $githubBackupState.target}
+              <p class="sync-path" data-testid="backup-github-target">
+                {$t("backup.github_connected", { repository: $githubBackupState.target.repository, branch: $githubBackupState.target.branch })}
+              </p>
+            {/if}
+            <label class="sync-field">
+              <span>{$t("backup.github_repository")}</span>
+              <input type="text" data-testid="backup-github-repository" bind:value={githubRepository}
+                placeholder={$t("backup.github_repository_placeholder")} disabled={$backupBusy || $githubRunning} autocomplete="off" spellcheck="false" />
+            </label>
+            <label class="sync-field">
+              <span>{$t("backup.github_branch")}</span>
+              <input type="text" data-testid="backup-github-branch" bind:value={githubBranch}
+                placeholder="spark-sync" disabled={$backupBusy || $githubRunning} autocomplete="off" spellcheck="false" />
+              <small>{$t("backup.github_branch_desc")}</small>
+            </label>
+            <label class="sync-field">
+              <span>{$t("backup.github_token")}</span>
+              <input type="password" data-testid="backup-github-token" bind:value={githubToken}
+                placeholder={$githubBackupState.has_token ? $t("backup.sync_webdav_secret_saved") : "github_pat_…"}
+                disabled={$backupBusy || $githubRunning} autocomplete="off" />
+              <small>{$t("backup.github_token_desc")}</small>
+            </label>
+            <div class="actions">
+              <button class="pill-action primary-pill" data-testid="backup-github-connect"
+                disabled={$backupBusy || $githubRunning || !githubRepository.trim() || !$localBackupState.encryption_enabled}
+                onclick={handleConnectGithub}>
+                {$t($githubBackupState.target ? "backup.github_save" : "backup.github_connect")}
+              </button>
+              {#if $githubBackupState.target}
+                <button class="pill-action" data-testid="backup-github-disconnect" disabled={$backupBusy || $githubRunning} onclick={() => void disconnectGithub()}>
+                  {$t("backup.github_disconnect")}
+                </button>
+              {/if}
+            </div>
+            <p class="sync-hint">{$t("backup.github_hint")}</p>
+          </section>
+
+          {#if githubConnected}
+            <section class="sync-section" aria-labelledby="github-auto-title">
+              <h4 class="sync-section-title" id="github-auto-title">{$t("backup.sync_section_auto")}</h4>
+              <div class="sync-rows">
+                {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_github"), "backup-github-auto", $githubBackupState.target?.auto_save ?? false, (on) => void setGithubAuto(on))}
+              </div>
+            </section>
+
+            <section class="sync-section" aria-labelledby="github-now-title">
+              <h4 class="sync-section-title" id="github-now-title">{$t("backup.sync_section_now")}</h4>
+              <div class="sync-rows">
+                <div class="sync-row">
+                  <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_push_now")}</span><span class="sync-row-desc">{$t("backup.github_push_desc")}</span></span>
+                  <button class="pill-action primary-pill" data-testid="backup-github-push" disabled={$backupBusy || $githubRunning} onclick={() => void sendGithubNow()}>{$t("backup.sync_push_button")}</button>
+                </div>
+                <div class="sync-row">
+                  <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_pull_preview")}</span><span class="sync-row-desc">{$t("backup.github_review_desc")}</span></span>
+                  <button class="pill-action" data-testid="backup-github-review" disabled={$backupBusy || $githubRunning} onclick={() => reviewFromGithub(reviewGithub)}>{$t("backup.sync_pull_preview_button")}</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="sync-section" aria-labelledby="github-versions-title">
+              <h4 class="sync-section-title" id="github-versions-title">{$t("backup.sync_section_versions")}</h4>
+              <p class="sync-hint">{$t("backup.sync_versions_hint_copies")}</p>
+              {#if $githubVersions === null}
+                <div class="actions">
+                  <button class="pill-action" data-testid="backup-github-versions-load" disabled={$backupBusy || $githubRunning} onclick={() => void loadGithubVersions()}>{$t("backup.sync_versions_show")}</button>
+                </div>
+              {:else if $githubVersions.length === 0}
+                <p class="sync-hint">{$t("backup.sync_versions_empty")}</p>
+              {:else}
+                <div class="sync-rows" data-testid="backup-github-versions">
+                  {#each $githubVersions as version (version.id)}
+                    <div class="sync-row">
+                      <span class="sync-row-text">
+                        <span class="sync-row-label">{$formatDate(version.created_at * 1000, { dateStyle: "medium", timeStyle: "short" })}</span>
+                        {#if version.size !== null}<span class="sync-row-desc">{formatBytes(version.size, $formatNumber)}</span>{/if}
+                      </span>
+                      <button class="pill-action" disabled={$backupBusy || $githubRunning}
+                        onclick={() => reviewFromGithub(() => reviewGithubVersion(version.id))}>{$t("backup.sync_pull_preview_button")}</button>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </section>
+          {/if}
+        </div>
+        {#if githubProblem}
+          <div class="sync-error" data-testid="backup-github-error"><ErrorMessage error={githubProblem} /></div>
+        {/if}
+      </details>
+      </div>
+      </div>
     </div>
 
     <div class="setting-subgroup" role="group" aria-labelledby="backup-local-heading">
@@ -661,6 +847,12 @@
   /* The category is the size reference of the open panel, so it can never grow past the section. */
   .sync-group { container-type: inline-size; }
   .sync-slot { --sync-closed-height: 200px; position: relative; width: min(100%, 300px); height: var(--sync-closed-height); }
+  /* The sync card and the GitHub card side by side; they stack when the category is narrow. */
+  .sync-cards { display: flex; flex-wrap: wrap; gap: 12px; }
+  /* Side by side, the GitHub card opens toward the left over the sync card, so it stays inside the category. */
+  @container (min-width: 612px) { .sync-slot.secondary .sync-panel[open] { left: auto; right: 0; } }
+  /* The GitHub mark follows the text color (black in the light theme, white in the dark one). */
+  .sync-icon.github { color: var(--text-primary); }
   .sync-panel { position: absolute; top: 0; left: 0; width: 100%; display: block; box-sizing: border-box; height: var(--sync-closed-height); padding: 16px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255,255,255,.025)); interpolate-size: allow-keywords; transition: width 0.28s ease, height 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease; }
   /* Open: grows to the right and down from where the card is, within the width of the category. */
   .sync-panel[open] { width: min(580px, 100cqw); z-index: 30; height: auto; max-height: min(640px, 80vh); overflow-y: auto; background: var(--bg-permission-popover, #1c1c1c); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55); }

@@ -6,7 +6,8 @@
 export type SyncRing = "idle" | "syncing" | "error" | "done" | "paused";
 
 export interface SyncRingInput {
-  mode: "disabled" | "google_drive_web" | "folder" | "direct_webdav";
+  /** "github" is the GitHub backup card, drawn with the same ring. */
+  mode: "disabled" | "google_drive_web" | "folder" | "direct_webdav" | "github";
   /** "Send automatically" is on. */
   autoSave: boolean;
   /** Syncs in progress, manual or automatic. */

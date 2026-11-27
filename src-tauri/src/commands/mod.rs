@@ -34,6 +34,7 @@ pub mod panels;
 pub mod site_icons;
 
 pub mod backup;
+pub mod backup_github;
 pub mod backup_nextcloud;
 pub mod bookmark_export;
 pub mod capture_probe;

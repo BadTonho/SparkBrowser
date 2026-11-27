@@ -6,6 +6,8 @@ pub mod device;
 pub mod encryption;
 pub mod files;
 pub mod gdrive_webview;
+pub mod github;
+pub mod github_backup;
 pub mod local;
 pub mod merge;
 pub mod migrate;
