@@ -6,10 +6,8 @@ mod suggest;
 pub mod widgets;
 
 use crate::state::browser_state::BrowserState;
-use std::sync::{
-    atomic::{AtomicU64, Ordering},
-    Mutex,
-};
+use crate::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 use tauri::{AppHandle, Manager, Url};
 
 pub const URL: &str = "spark://newtab";

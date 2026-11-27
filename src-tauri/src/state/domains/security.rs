@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use crate::sync::Mutex;
 
 /// Domain-owned state. Storage cannot be accessed through BrowserState fields.
 pub(crate) struct Security {

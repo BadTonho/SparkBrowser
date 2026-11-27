@@ -1,5 +1,5 @@
 //! Coordinates a page's native fullscreen request with the host window.
-use std::sync::Mutex;
+use crate::sync::Mutex;
 use tauri::{AppHandle, Manager, Webview};
 
 /// One entry per window showing a fullscreen page: (page label, window id, was fullscreen before).

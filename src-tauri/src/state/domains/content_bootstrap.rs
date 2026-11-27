@@ -1,4 +1,5 @@
-use std::{collections::HashMap, sync::Mutex};
+use crate::sync::Mutex;
+use std::collections::HashMap;
 
 struct Document {
     generation: String,

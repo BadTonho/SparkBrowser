@@ -16,6 +16,7 @@ mod save;
 use crate::database::{executor, preferences_repo};
 use crate::error_log::{self, Level};
 use crate::state::browser_state::BrowserState;
+use crate::sync::Mutex;
 use crate::vault::{
     hello, ops,
     records::{self, Record},
@@ -24,7 +25,6 @@ use crate::vault::{
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
 use std::time::Instant;
 use tauri::{AppHandle, Manager, Url};
 

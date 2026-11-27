@@ -118,8 +118,8 @@ pub fn entries(conn: &Connection, id: i64) -> Result<Vec<Entry>, String> {
 }
 
 const REFRESH_CONCURRENCY: usize = 4;
-static REFRESHING: std::sync::Mutex<std::collections::BTreeSet<i64>> =
-    std::sync::Mutex::new(std::collections::BTreeSet::new());
+static REFRESHING: crate::sync::Mutex<std::collections::BTreeSet<i64>> =
+    crate::sync::Mutex::new(std::collections::BTreeSet::new());
 struct RefreshPermit(i64);
 impl RefreshPermit {
     fn acquire(id: i64) -> Result<Self, String> {

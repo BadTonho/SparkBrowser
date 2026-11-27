@@ -4,8 +4,8 @@
 //! messages are accepted only for the document and session that received the
 //! presentation and cannot choose arbitrary commands.
 use super::panel_popover::bridge::UiAction;
+use crate::sync::Mutex;
 use std::collections::HashMap;
-use std::sync::Mutex;
 use tauri::{AppHandle, Manager, Url};
 
 pub const URL: &str = "spark://settings";

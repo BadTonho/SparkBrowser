@@ -2,12 +2,9 @@
 //! Windows). Commands are evaluated in that frame and answered through an authenticated script
 //! message handler; the same handler carries the controller's state signals.
 use super::{current, signal_message, signals};
+use crate::sync::Mutex;
 use serde_json::{json, Value};
-use std::{
-    collections::HashMap,
-    sync::{Mutex, OnceLock},
-    time::Duration,
-};
+use std::{collections::HashMap, sync::OnceLock, time::Duration};
 use tauri::{AppHandle, Manager};
 
 /// The only execution context on this platform: the top-level document.

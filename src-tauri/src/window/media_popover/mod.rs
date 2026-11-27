@@ -1,9 +1,9 @@
 mod bridge;
 
 use super::webview_manager::create_internal_bridge_token;
+use crate::sync::Mutex;
 use crate::{media::MediaService, state::browser_state::BrowserState};
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 #[cfg_attr(target_os = "linux", allow(unused_imports))]
 use tauri::{AppHandle, LogicalPosition, Manager, Rect, WebviewUrl};
 

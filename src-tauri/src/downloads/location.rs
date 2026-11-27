@@ -3,9 +3,9 @@
 //! never breaks a download: Spark falls back to the system folder and says so in the error log.
 use crate::database::preferences_repo;
 use crate::error_log::{self, Level};
+use crate::sync::Mutex;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 
 pub const KEY: &str = "download_directory";
 

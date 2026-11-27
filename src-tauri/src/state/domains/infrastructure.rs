@@ -1,5 +1,6 @@
+use crate::sync::Mutex;
 use rusqlite::Connection;
-use std::sync::{atomic::AtomicBool, Mutex};
+use std::sync::atomic::AtomicBool;
 
 /// Domain-owned state. Storage cannot be accessed through BrowserState fields.
 pub(crate) struct Infrastructure {

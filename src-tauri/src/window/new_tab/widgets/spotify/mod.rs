@@ -5,10 +5,11 @@ mod platform;
 mod tests;
 use super::{broadcast, now, oauth, BrowserState, Settings, Widgets};
 use crate::database::new_tab_repo;
+use crate::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
+    Arc,
 };
 use tauri::{AppHandle, Manager};
 

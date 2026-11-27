@@ -1,5 +1,5 @@
+use crate::sync::{Mutex, MutexGuard};
 use std::ops::Deref;
-use std::sync::{Mutex, MutexGuard};
 
 /// Borrowed query port: callers cannot recover or mutate the underlying mutex.
 pub(crate) struct ReadPort<'a, T>(&'a Mutex<T>);

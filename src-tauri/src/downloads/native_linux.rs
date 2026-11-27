@@ -1,10 +1,10 @@
 //! Progress and cancellation for downloads started by WebKitGTK. The engine cannot pause or resume
 //! a transfer, so those stay unavailable; the downloads list shows what is received and can stop it.
 use super::manager::DownloadManager;
+use crate::sync::Mutex;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
-    sync::Mutex,
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, Manager};

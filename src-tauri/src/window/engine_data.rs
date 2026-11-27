@@ -97,8 +97,9 @@ pub(super) fn pages(app: &AppHandle) -> Vec<tauri::Webview> {
 
 #[cfg(windows)]
 pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
+    use crate::sync::Mutex;
     use std::collections::HashSet;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
     use webview2_com::{
         ClearBrowsingDataCompletedHandler, CoTaskMemPWSTR,
         Microsoft::Web::WebView2::Win32::{
@@ -204,8 +205,9 @@ pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
 
 #[cfg(target_os = "linux")]
 pub async fn clear(app: &AppHandle, wanted: Wanted) -> Result<Outcome, String> {
+    use crate::sync::Mutex;
     use std::collections::HashSet;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
     use webkit2gtk::{
         WebViewExt, WebsiteDataManagerExt, WebsiteDataManagerExtManual, WebsiteDataTypes,
     };

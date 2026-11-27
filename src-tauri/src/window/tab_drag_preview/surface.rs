@@ -2,7 +2,7 @@ use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Rect, WebviewUrl, 
 
 const LABEL: &str = "tab-drag-preview";
 
-static OWNER: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+static OWNER: crate::sync::Mutex<String> = crate::sync::Mutex::new(String::new());
 
 fn owner_of(_app: &AppHandle) -> String {
     OWNER.lock().map(|owner| owner.clone()).unwrap_or_default()

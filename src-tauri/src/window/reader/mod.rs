@@ -155,7 +155,8 @@ pub async fn extract_article(
 
     #[cfg(windows)]
     {
-        use std::sync::{Arc, Mutex};
+        use crate::sync::Mutex;
+        use std::sync::Arc;
         use webview2_com::ExecuteScriptCompletedHandler;
         use windows_core::PCWSTR;
 

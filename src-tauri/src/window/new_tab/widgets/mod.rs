@@ -8,6 +8,7 @@ mod platform;
 mod spotify;
 mod weather;
 mod youtube;
+use crate::sync::Mutex;
 use crate::{
     database::{
         executor,
@@ -19,7 +20,7 @@ pub use actions::handle;
 use serde::Serialize;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
+    Arc,
 };
 use tauri::{AppHandle, Manager};
 

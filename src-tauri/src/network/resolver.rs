@@ -4,12 +4,12 @@
 //! certificate check), so asking for the provider never uses the system DNS. A failed lookup is an
 //! error: there is no fallback to the system resolver.
 use super::Provider;
+use crate::sync::Mutex;
 use std::{
     collections::HashMap,
     future::Future,
     net::{IpAddr, SocketAddr},
     pin::Pin,
-    sync::Mutex,
     time::{Duration, Instant},
 };
 

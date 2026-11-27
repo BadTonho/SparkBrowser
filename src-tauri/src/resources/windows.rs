@@ -1,11 +1,12 @@
 //! Windows: a job object with a hard processor cap for the web engine's processes, and the developer protocol
 //! for the pages' network speed and measurement.
 use super::{Limits, RECEIVED};
+use crate::sync::Mutex;
 use std::collections::{HashMap, HashSet};
 use std::ffi::c_void;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Mutex, OnceLock,
+    OnceLock,
 };
 use tauri::{AppHandle, Manager, Webview};
 use webview2_com::{

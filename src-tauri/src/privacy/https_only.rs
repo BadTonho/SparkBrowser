@@ -3,12 +3,10 @@
 //! When the upgraded navigation fails, the interface asks the user whether to continue with the
 //! original `http://` address. The answer is a one-use exception bound to one tab and one exact
 //! URL: any other navigation, even to the same address later, is upgraded again.
+use crate::sync::Mutex;
 use std::{
     collections::HashMap,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Mutex,
-    },
+    sync::atomic::{AtomicBool, Ordering},
     time::{Duration, Instant},
 };
 use tauri::Url;

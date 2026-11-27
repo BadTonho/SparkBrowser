@@ -1,7 +1,8 @@
 #[cfg(windows)]
 mod frames;
+use crate::sync::Mutex;
 use serde::{Deserialize, Serialize};
-use std::sync::{atomic::AtomicU64, Mutex};
+use std::sync::atomic::AtomicU64;
 #[cfg(target_os = "linux")]
 pub mod linux;
 #[cfg(windows)]

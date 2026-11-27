@@ -1,10 +1,10 @@
 pub mod model;
+use crate::sync::Mutex;
 use crate::{
     database::navigation_writer::NavigationWriter, downloads::manager::DownloadManager,
     state::browser_state::BrowserState,
 };
 use model::{ShutdownPurpose, ShutdownReview, ShutdownRisk, ShutdownState};
-use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
 
 pub struct ShutdownService(Mutex<ShutdownState>);

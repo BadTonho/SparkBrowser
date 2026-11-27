@@ -9,14 +9,12 @@ pub use auth::{
 use session::resolve_gdrive_session_context;
 
 use super::{files, model::BackupDocument, service::BackupService};
+use crate::sync::Mutex;
 use crate::{database::preferences_repo, state::browser_state::BrowserState};
 use base64::Engine;
 use std::{
     collections::HashMap,
-    sync::{
-        atomic::{AtomicU64, Ordering},
-        Mutex,
-    },
+    sync::atomic::{AtomicU64, Ordering},
     time::Duration,
 };
 use tauri::{AppHandle, Manager, Url};

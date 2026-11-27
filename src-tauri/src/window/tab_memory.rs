@@ -72,7 +72,7 @@ pub fn get_process_working_set_bytes(pid: u32) -> Option<u64> {
 #[cfg(windows)]
 fn complete_once(
     completion: &std::sync::Arc<
-        std::sync::Mutex<Option<tokio::sync::oneshot::Sender<Option<u64>>>>,
+        crate::sync::Mutex<Option<tokio::sync::oneshot::Sender<Option<u64>>>>,
     >,
     value: Option<u64>,
 ) {
@@ -135,7 +135,7 @@ pub async fn measure_webview_memory(
     resident_sources: Vec<String>,
 ) -> Option<u64> {
     let (tx, rx) = tokio::sync::oneshot::channel();
-    let completion = std::sync::Arc::new(std::sync::Mutex::new(Some(tx)));
+    let completion = std::sync::Arc::new(crate::sync::Mutex::new(Some(tx)));
     let callback_completion = completion.clone();
     let result = view.with_webview(move |platform| unsafe {
         let core = match platform.controller().CoreWebView2() {

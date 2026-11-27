@@ -2,7 +2,8 @@
 //! wrong guesses. The key is never written anywhere; closing the browser locks the vault.
 use super::crypto::Key;
 use super::model::DEFAULT_AUTO_LOCK_MINUTES;
-use std::sync::{Arc, Mutex, MutexGuard};
+use crate::sync::{Mutex, MutexGuard};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 struct Inner {
@@ -35,9 +36,7 @@ fn minutes(value: u32) -> Duration {
 impl VaultService {
     fn inner(&self) -> MutexGuard<'_, Inner> {
         // A panic elsewhere must not leave the vault stuck open or unusable.
-        self.0
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.0.guard()
     }
 
     /// Locks the vault if it has been idle for longer than the configured time.

@@ -6,11 +6,12 @@
 //! and a page that appears for the first time keep moving at once, because delaying those would
 //! make the page lag behind the pointer or the window edge.
 use crate::state::browser_state::ViewportBounds;
+use crate::sync::Mutex;
 use std::{
     collections::HashMap,
     sync::{
         atomic::{AtomicU64, Ordering},
-        Mutex, OnceLock,
+        OnceLock,
     },
     time::{Duration, Instant},
 };

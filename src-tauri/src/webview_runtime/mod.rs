@@ -3,8 +3,8 @@ mod testing;
 #[cfg(windows)]
 mod windows;
 
+use crate::sync::Mutex;
 use serde::Serialize;
-use std::sync::Mutex;
 use tauri::AppHandle;
 
 #[derive(Clone, Debug, Default, Serialize, PartialEq)]

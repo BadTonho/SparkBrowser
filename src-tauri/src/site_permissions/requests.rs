@@ -3,10 +3,11 @@ use super::{
     PermissionRequest, PermissionRequests, PermissionState,
 };
 use crate::state::browser_state::BrowserState;
+use crate::sync::Mutex;
 use std::{
     cell::RefCell,
     collections::HashMap,
-    sync::{atomic::Ordering, Arc, Mutex},
+    sync::{atomic::Ordering, Arc},
     time::Duration,
 };
 use tauri::{AppHandle, Manager};

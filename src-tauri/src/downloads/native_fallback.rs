@@ -3,7 +3,8 @@ use super::{
     manager::{DownloadManager, Registration},
 };
 use crate::state::browser_state::BrowserState;
-use std::{path::PathBuf, sync::Mutex};
+use crate::sync::Mutex;
+use std::path::PathBuf;
 use tauri::{webview::DownloadEvent, AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
 struct Pending {

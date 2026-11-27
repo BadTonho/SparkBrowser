@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use crate::sync::Mutex;
+use std::sync::Arc;
 use tauri::{AppHandle, Manager, Webview};
 use webview2_com::{
     BrowserExtensionEnableCompletedHandler, BrowserExtensionRemoveCompletedHandler, CoTaskMemPWSTR,

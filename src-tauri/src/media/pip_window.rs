@@ -1,9 +1,9 @@
 //! A single, document-bound floating player. Its external WebView has no IPC grants.
 use super::{current, MediaService, TabMediaState};
 use crate::state::tab_model::webview_label_for_tab;
+use crate::sync::Mutex;
 use crate::window::webview_manager::create_internal_bridge_token;
 use serde_json::json;
-use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{
     webview::{NewWindowFeatures, NewWindowResponse},

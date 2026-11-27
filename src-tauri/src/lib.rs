@@ -82,6 +82,7 @@ pub mod session_start;
 pub mod shutdown;
 pub mod site_permissions;
 pub mod state;
+pub mod sync;
 pub mod updates;
 pub mod vault;
 pub mod video_download;

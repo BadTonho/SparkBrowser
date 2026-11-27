@@ -311,30 +311,12 @@ pub fn warn(summary: &str) {
     report(Level::Warning, "native", summary, "");
 }
 
-/// Locks `mutex`, recovering it when a panic poisoned it. Use instead of `.lock().unwrap()`: the
-/// panic is already in the log, so the state it left is kept, the poison flag is cleared and the
-/// recovery is logged as a `Warning` with its place in the code, instead of every later call
-/// panicking too.
+/// Locks `mutex` and returns the guard directly. A `crate::sync::Mutex` never stays poisoned: a
+/// lock left by a panic is recovered with its state and logged as a `Warning` with its place in
+/// the code (see `crate::sync`).
 #[track_caller]
-pub fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    match mutex.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => {
-            let place = Location::caller();
-            report(
-                Level::Warning,
-                "native",
-                &format!(
-                    "Recovered a lock left poisoned by a panic, at {}:{}",
-                    place.file(),
-                    place.line()
-                ),
-                "",
-            );
-            mutex.clear_poison();
-            poisoned.into_inner()
-        }
-    }
+pub fn lock<T: ?Sized>(mutex: &crate::sync::Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    mutex.guard()
 }
 
 /// Use instead of `let _ = result;`: the failure is still ignored, but it is written to the log as
@@ -645,21 +627,19 @@ mod tests {
     }
 
     #[test]
-    fn a_lock_poisoned_by_a_panic_is_recovered_with_its_state_and_cleared() {
-        let mutex = std::sync::Arc::new(Mutex::new(1));
+    fn a_lock_poisoned_by_a_panic_is_recovered_with_its_state() {
+        let mutex = std::sync::Arc::new(crate::sync::Mutex::new(1));
         let poisoner = mutex.clone();
         let outcome = std::thread::spawn(move || {
-            let mut guard = poisoner.lock().unwrap();
-            *guard = 2;
+            *lock(&poisoner) = 2;
+            let _guard = lock(&poisoner);
             panic!("poison the lock");
         })
         .join();
         assert!(outcome.is_err());
-        assert!(mutex.is_poisoned());
         assert_eq!(*lock(&mutex), 2, "the state left by the panic is kept");
-        assert!(!mutex.is_poisoned(), "later callers lock normally again");
         *lock(&mutex) = 3;
-        assert_eq!(*mutex.lock().unwrap(), 3);
+        assert_eq!(*lock(&mutex), 3);
     }
 
     #[test]

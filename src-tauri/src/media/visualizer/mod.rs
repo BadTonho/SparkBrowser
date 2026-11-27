@@ -8,13 +8,13 @@ mod pulse;
 mod spectrum;
 #[cfg(windows)]
 mod windows;
+use crate::sync::Mutex;
 use crate::{database::new_tab_repo::AudioBackground, window::new_tab::audio::Consumer};
 #[cfg(target_os = "linux")]
 use linux as platform;
 use serde::Serialize;
 use std::{
     collections::HashMap,
-    sync::Mutex,
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, Manager};

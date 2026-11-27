@@ -2,10 +2,10 @@
 pub mod linux;
 #[cfg(windows)]
 pub mod windows;
+use crate::sync::Mutex;
 use crate::{database::site_zoom_repo as repo, state::browser_state::BrowserState};
 pub use repo::SiteZoom;
 use serde::Serialize;
-use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
 #[derive(Clone, Default, Serialize)]
 pub struct ZoomSnapshot {

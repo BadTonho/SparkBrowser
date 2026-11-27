@@ -2,11 +2,9 @@ use super::{
     http::now,
     model::{UpdateChannel, UpdateState},
 };
+use crate::sync::Mutex;
 use crate::{database::updates_repo, state::browser_state::BrowserState};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Mutex,
-};
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager};
 
 pub struct Inner {

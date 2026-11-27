@@ -1,10 +1,8 @@
 //! Fixed media operations in document execution contexts. COM never leaves the UI thread.
 use super::current;
+use crate::sync::Mutex;
 use serde_json::{json, Value};
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 use tauri::{AppHandle, Manager};
 use webview2_com::{
     CallDevToolsProtocolMethodCompletedHandler, Microsoft::Web::WebView2::Win32::*,

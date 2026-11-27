@@ -3,8 +3,8 @@
 //! survives restarts. It is hidden rather than destroyed, so the connection stays alive.
 use crate::commands::whatsapp::{Anchor, DisplayMode};
 use crate::state::browser_state::ViewportBounds;
+use crate::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
-use std::sync::Mutex;
 use tauri::{
     webview::NewWindowResponse, AppHandle, LogicalPosition, LogicalSize, Manager, Rect, Url,
     WebviewUrl,

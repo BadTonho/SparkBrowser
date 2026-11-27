@@ -1,7 +1,8 @@
 use tauri::AppHandle;
 
+use crate::sync::Mutex;
 #[cfg(windows)]
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 #[cfg(windows)]
 use tauri::Manager;
 #[cfg(windows)]

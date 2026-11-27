@@ -9,12 +9,13 @@
 //! Covered: pages, frames, scripts, images, WebSockets and downloads that go through the engine's
 //! network stack. Not covered: WebRTC media (UDP), the browser's own requests made from Rust
 //! (updates, favicons, search suggestions) and anything outside the browser.
+use crate::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
     net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener},
     path::Path,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
 mod proxy;

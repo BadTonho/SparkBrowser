@@ -22,8 +22,9 @@ pub(crate) use linux as native_audio;
 pub(crate) use windows as native_audio;
 
 use crate::state::{browser_state::BrowserState, tab_model::webview_label_for_tab};
+use crate::sync::Mutex;
 use serde::Serialize;
-use std::{collections::HashMap, sync::Mutex, time::Instant};
+use std::{collections::HashMap, time::Instant};
 use tauri::{AppHandle, Manager};
 
 #[derive(Clone, PartialEq, Serialize)]

@@ -37,7 +37,7 @@ pub async fn apply_content_policy(app: &AppHandle, enabled: bool) -> Result<(), 
             .get(&label)
             .cloned();
         let (send, receive) = tokio::sync::oneshot::channel();
-        let send = std::sync::Arc::new(std::sync::Mutex::new(Some(send)));
+        let send = std::sync::Arc::new(crate::sync::Mutex::new(Some(send)));
         let initial_send = send.clone();
         let initial_script =
             crate::privacy::adblock_engine::build_replacement_shield_script_with_exceptions(

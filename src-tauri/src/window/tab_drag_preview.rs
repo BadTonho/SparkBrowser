@@ -3,8 +3,8 @@ use crate::state::{
     split_docking::{self, DockContext, DockSide},
     tab_model::webview_label_for_tab,
 };
+use crate::sync::Mutex;
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
 
 mod geometry;

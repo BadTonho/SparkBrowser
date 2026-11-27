@@ -8,7 +8,7 @@
 //! On Windows the copy is also kept out of the clipboard history and cloud clipboard, and a copy
 //! still on the clipboard when the browser exits is cleared (there it outlives the process).
 use crate::error_log::{self, Level};
-use std::sync::{Mutex, MutexGuard};
+use crate::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use zeroize::Zeroizing;
@@ -40,9 +40,7 @@ pub struct VaultClipboard(Mutex<State>);
 
 impl VaultClipboard {
     fn state(&self) -> MutexGuard<'_, State> {
-        self.0
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.0.guard()
     }
 
     fn remember(&self, mark: platform::Mark) -> u64 {

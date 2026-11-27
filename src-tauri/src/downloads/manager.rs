@@ -2,12 +2,13 @@ mod actions;
 mod worker;
 pub use super::model::DownloadTask;
 use super::{files, model::DownloadRecord};
+use crate::sync::Mutex;
 use crate::{database::download_jobs_repo as repo, state::browser_state::BrowserState};
 use std::{
     collections::HashMap,
     sync::{
         atomic::{AtomicU8, Ordering},
-        Arc, Mutex,
+        Arc,
     },
     time::{Duration, Instant},
 };

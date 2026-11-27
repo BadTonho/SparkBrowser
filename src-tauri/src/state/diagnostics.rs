@@ -1,7 +1,7 @@
+use crate::sync::Mutex;
 use serde::Serialize;
 use std::{
     collections::{BTreeMap, VecDeque},
-    sync::Mutex,
     time::{Duration, Instant},
 };
 

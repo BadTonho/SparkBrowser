@@ -565,9 +565,10 @@ fn folder_sync_encrypts_when_enabled_and_pull_uses_the_stored_password() {
 
 #[test]
 fn direct_webdav_validates_urls_respects_remember_secret_and_roundtrips_over_http() {
+    use crate::sync::Mutex;
     use std::io::{Read, Write};
     use std::net::TcpListener;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
 
     let (conn, doc) = setup();
     crate::database::preferences_repo::initialize_preferences_table(&conn).unwrap();

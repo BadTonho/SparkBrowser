@@ -1,11 +1,7 @@
 //! Process-scoped WASAPI loopback. Never opens a microphone or a global output monitor.
 use super::spectrum::{self, BANDS, RATE, SIZE};
-use std::{
-    collections::VecDeque,
-    mem::ManuallyDrop,
-    sync::{mpsc, Mutex},
-    time::Duration,
-};
+use crate::sync::Mutex;
+use std::{collections::VecDeque, mem::ManuallyDrop, sync::mpsc, time::Duration};
 use windows::Win32::{
     Media::Audio::*,
     System::{Com::StructuredStorage::*, Com::*, Variant::VT_BLOB},

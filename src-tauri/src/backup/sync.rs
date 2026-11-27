@@ -3,13 +3,13 @@ use super::{
     model::{BackupDocument, BackupImportResult, BackupPreferences, BackupPreview},
     service,
 };
+use crate::sync::Mutex;
 use crate::{database::preferences_repo, state::browser_state::BrowserState};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::{
     io::Read,
     path::{Path, PathBuf},
-    sync::Mutex,
     time::Duration,
 };
 use tauri::{AppHandle, Manager};

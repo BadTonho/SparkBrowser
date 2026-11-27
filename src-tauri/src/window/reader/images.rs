@@ -62,7 +62,8 @@ async fn devtools(
     method: &'static str,
     params: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    use std::sync::{Arc, Mutex};
+    use crate::sync::Mutex;
+    use std::sync::Arc;
     use webview2_com::CallDevToolsProtocolMethodCompletedHandler;
     use windows_core::PCWSTR;
 

@@ -1,4 +1,5 @@
 //! Network-rule snapshots and last-known-good updates. No browsing data is sent.
+use crate::sync::RwLock;
 use adblock::{
     engine::Engine,
     lists::{FilterSet, ParseOptions, RuleTypes},
@@ -8,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     io::{Read, Write},
     path::{Path, PathBuf},
-    sync::{Arc, RwLock},
+    sync::Arc,
     time::Duration,
 };
 

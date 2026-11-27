@@ -4,7 +4,8 @@ use super::super::{
     workspace_model::{WorkspaceItem, DEFAULT_WORKSPACE_ID},
 };
 use crate::state::tab_model::MAIN_WINDOW_ID;
-use std::sync::{Arc, Mutex};
+use crate::sync::Mutex;
+use std::sync::Arc;
 
 /// What one browser window has selected. Tabs and workspaces are shared; each window chooses its own.
 pub(crate) struct WindowState {
@@ -39,7 +40,7 @@ pub(crate) struct Session {
     split_preview: Mutex<Option<(String, f64)>>,
     resident_limit: std::sync::atomic::AtomicUsize,
     resident_limit_enforced: std::sync::atomic::AtomicBool,
-    hibernation_exemptions: std::sync::Mutex<Vec<String>>,
+    hibernation_exemptions: crate::sync::Mutex<Vec<String>>,
     snapshot_revision: Mutex<u64>,
     tab_operations: tauri::async_runtime::Mutex<()>,
     workspaces: Mutex<Vec<WorkspaceItem>>,
@@ -88,7 +89,7 @@ impl Session {
     pub(crate) fn hibernation_exemptions(&self) -> super::read_port::ReadPort<'_, Vec<String>> {
         super::read_port::ReadPort::new(&self.hibernation_exemptions)
     }
-    pub(in crate::state) fn edit_hibernation_exemptions(&self) -> &std::sync::Mutex<Vec<String>> {
+    pub(in crate::state) fn edit_hibernation_exemptions(&self) -> &crate::sync::Mutex<Vec<String>> {
         &self.hibernation_exemptions
     }
     pub(in crate::state) fn edit_snapshot_revision(&self) -> &Mutex<u64> {
@@ -191,7 +192,7 @@ impl Default for Session {
             split_preview: Mutex::new(None),
             resident_limit: std::sync::atomic::AtomicUsize::new(8),
             resident_limit_enforced: std::sync::atomic::AtomicBool::new(true),
-            hibernation_exemptions: std::sync::Mutex::new(Vec::new()),
+            hibernation_exemptions: crate::sync::Mutex::new(Vec::new()),
             snapshot_revision: Mutex::new(0),
             tab_operations: tauri::async_runtime::Mutex::new(()),
             workspaces: Mutex::new(WorkspaceItem::default_workspaces()),

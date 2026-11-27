@@ -4,8 +4,8 @@ mod idle;
 
 use super::webview_manager::create_internal_bridge_token;
 use crate::state::browser_state::BrowserState;
+use crate::sync::Mutex;
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 #[cfg_attr(target_os = "linux", allow(unused_imports))]
 use tauri::{AppHandle, LogicalPosition, Manager, Rect, WebviewUrl};
 
@@ -202,7 +202,7 @@ static CREATING: Mutex<()> = Mutex::new(());
 
 /// The same guard for the single-purpose overlays (history, zoom, privacy, media), which are created
 /// from the same two places: the click and the preparation ahead of it.
-pub(super) fn creation_guard() -> Result<std::sync::MutexGuard<'static, ()>, String> {
+pub(super) fn creation_guard() -> Result<crate::sync::MutexGuard<'static, ()>, String> {
     CREATING.lock().map_err(|e| e.to_string())
 }
 

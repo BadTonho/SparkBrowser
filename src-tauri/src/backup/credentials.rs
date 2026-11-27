@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 #[derive(Default)]
 pub struct Credentials {
     #[cfg(test)]
-    values: std::sync::Mutex<std::collections::HashMap<String, String>>,
+    values: crate::sync::Mutex<std::collections::HashMap<String, String>>,
     #[cfg(test)]
     pub unavailable: std::sync::atomic::AtomicBool,
 }

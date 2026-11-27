@@ -1,8 +1,9 @@
 use crate::state::browser_state::BrowserState;
+use crate::sync::Mutex;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     mpsc::{self, Sender, SyncSender},
-    Arc, Mutex,
+    Arc,
 };
 use tauri::{AppHandle, Manager};
 

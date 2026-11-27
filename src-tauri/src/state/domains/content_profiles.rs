@@ -1,4 +1,5 @@
-use std::{collections::HashMap, path::PathBuf, sync::Mutex};
+use crate::sync::Mutex;
+use std::{collections::HashMap, path::PathBuf};
 
 /// Actual profile associated with each resident document, independent of workspace metadata.
 #[derive(Default)]

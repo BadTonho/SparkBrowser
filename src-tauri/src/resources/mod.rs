@@ -10,11 +10,9 @@
 //!   browser's own downloads are limited.
 //!
 //! The numbers shown in the panel come from [`usage`]. They are measured only while the panel is open.
+use crate::sync::Mutex;
 use serde::{Deserialize, Serialize};
-use std::sync::{
-    atomic::{AtomicBool, AtomicU64, Ordering},
-    Mutex,
-};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Instant;
 use tauri::AppHandle;
 

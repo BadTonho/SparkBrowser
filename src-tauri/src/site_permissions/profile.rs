@@ -1,7 +1,8 @@
 use super::{
     PermissionKind, PermissionRequests, PermissionSnapshot, PermissionState, SitePermission,
 };
-use std::sync::{Arc, Mutex};
+use crate::sync::Mutex;
+use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 use webview2_com::{
     CoTaskMemPWSTR, GetNonDefaultPermissionSettingsCompletedHandler,

@@ -1,10 +1,11 @@
 use super::{merge, model::*, validation};
+use crate::sync::Mutex;
 use crate::{
     database::{backup_repo, navigation_writer::NavigationWriter},
     state::browser_state::BrowserState,
 };
 use sha2::{Digest, Sha256};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
 pub struct PendingPreview {
