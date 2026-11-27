@@ -1,6 +1,6 @@
 # Selective restore and replace mode
 
-Every restore (a chosen file, a history entry or **Fetch & review preview**) opens the review panel before anything is written. The panel shows when the backup was created and its file format version, then lets you decide what is restored and how.
+Every restore (a chosen file, a history entry or **Review before applying** in the sync panel) opens the review panel before anything is written. The panel shows when the backup was created and its file format version, then lets you decide what is restored and how.
 
 ## What to restore
 

@@ -1,6 +1,6 @@
 # Restauração seletiva e modo substituir
 
-Toda restauração (arquivo escolhido, item do histórico ou **Buscar e revisar prévia**) abre o painel de revisão antes de gravar qualquer coisa. O painel mostra quando o backup foi criado e a versão do formato do arquivo, e permite decidir o que será restaurado e como.
+Toda restauração (arquivo escolhido, item do histórico ou **Revisar antes de aplicar** no painel de sincronização) abre o painel de revisão antes de gravar qualquer coisa. O painel mostra quando o backup foi criado e a versão do formato do arquivo, e permite decidir o que será restaurado e como.
 
 ## O que restaurar
 

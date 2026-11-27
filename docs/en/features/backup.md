@@ -20,31 +20,39 @@ A preview is bound to the current data and preferences. If they change before co
 
 Rust tests cover file roundtrip, invalid versions/references/size, atomic replacement, conflict rules, occurrence counts, ID/split mapping, transaction rollback and preference retry isolation. `npm run test:native -- --case backup` exercises actual commands, stale previews, hibernation, repeated import and persistence after restart. Native file selection uses the [Tauri dialog plugin](https://v2.tauri.app/plugin/dialog/) from Rust without granting its JavaScript file/dialog commands.
 
+## How the page is organized
+
+**Settings → Data & Backup** has three categories, each with a title, in this order:
+
+- **Sync**: a standing card with the Drive icon, the name of the sync mode in use (Google Drive, Folder, WebDAV, or "Sync is off") and its state. Select it to open the sync settings, which are split into parts with a title: **Account** (Google Drive), **Folder** or **Connection** (WebDAV); **Automatic**, with switches like the rest of Settings, each with a line explaining it; and **Sync now**, where **Send**, **Review** and **Apply** each say what they do. It comes first because it is what most people check.
+- **Automatic backups**: the status of the backups on this computer, the schedule, encryption and the history (see [Automatic backups, history and encryption](backup-automation.md)).
+- **Backup files**: **Full backup** (export a backup file or choose one to restore) and **Favorites** (export to HTML or CSV for another browser). The password prompt for an encrypted file, the import preview, errors and results appear right below these cards.
+
 ## Isolated automatic sync (Google Drive Cloud, Folder & Direct WebDAV)
 
 Settings → Data & Backup also includes **Isolated Automatic Sync**, allowing users to keep `browser.spark-backup.json` synchronized using their own storage with zero Spark servers or developer cloud console accounts:
 
 1. **Google Drive in the cloud mode (uses browser Gmail login):**
    - Uses the browser's signed-in Google/Gmail session cookies (`drive.google.com`) to automatically create/locate the dedicated **`Spark Backup`** folder in `My Drive` and upload/download `browser.spark-backup.json` inside it, without requiring a local folder on the PC or a Google Cloud Console developer project. When pulling, if the file is not yet inside `Spark Backup`, it also checks the `My Drive` root for backwards compatibility.
-   - Displays the currently connected Google account email (`connected_account`) and provides a **Choose / Switch Google account (Gmail)** button that opens Google's `AccountChooser` (`accounts.google.com/AccountChooser`) and automatically syncs as soon as the chosen account's Google Drive tab loads.
-   - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads to Google Drive **only when changes occurred**, in addition to syncing on browser shutdown and via **Sync now (Save)**.
+   - Displays the currently connected Google account email (`connected_account`) and provides a **Choose or switch account** button that opens Google's `AccountChooser` (`accounts.google.com/AccountChooser`) and automatically syncs as soon as the chosen account's Google Drive tab loads.
+   - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads to Google Drive **only when changes occurred**, in addition to syncing on browser shutdown and via **Send to the cloud** (under **Sync now**).
 2. **Synced folder mode (OneDrive, Mega, Dropbox, USB drive):**
    - The user chooses a local directory via the native folder selector (`choose_backup_sync_folder`).
-   - When automatic saving is enabled, changes to bookmarks, workspaces, tabs, split layouts, notes, shortcuts or preferences write `browser.spark-backup.json` atomically into the selected folder, as well as on browser shutdown and via **Sync now (Save)**.
+   - When automatic saving is enabled, changes to bookmarks, workspaces, tabs, split layouts, notes, shortcuts or preferences write `browser.spark-backup.json` atomically into the selected folder, as well as on browser shutdown and via **Send to the cloud** (under **Sync now**).
 3. **Direct connection mode (WebDAV / Personal cloud):**
    - The user configures an `https://` WebDAV URL (loopback `http://127.0.0.1` / `localhost` is permitted only for local testing), username and app password/token.
    - Users can choose whether to **remember the password on this computer** (Windows Credential Manager or the Linux Secret Service through `secret-tool`) or keep it **only in memory for the current session**.
-   - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads (`PUT`) to the WebDAV target **only when changes occurred**, in addition to syncing on browser shutdown and via **Sync now (Save)**.
+   - When automatic saving is enabled, a 1-minute timer checks the streamed SHA-256 fingerprint of current data and preferences and uploads (`PUT`) to the WebDAV target **only when changes occurred**, in addition to syncing on browser shutdown and via **Send to the cloud** (under **Sync now**).
 4. **Two receive modes (`pull_backup_sync`):**
-   - **Fetch & review preview:** downloads/reads the backup and opens the standard review table before importing.
-   - **Fetch & apply directly (Auto-Merge):** validates and merges the backup immediately in a single step, optionally applying backup preferences when enabled.
+   - **Review before applying:** downloads/reads the backup and opens the standard review table before importing.
+   - **Apply directly:** validates and merges the backup immediately in a single step, optionally applying backup preferences when enabled.
 5. **Zero-leak boundary:** Sync folder paths, WebDAV endpoints and credentials are local-only settings and are never serialized into `BackupDocument`.
 
 ## Import and account safety
 
 Import preserves all existing live tabs, including disposable tabs, their order, active selection, split membership and account-container identity. Existing identities remain intact in the SQLite transaction; imported tabs use the default identity because backups exclude account-container data.
 
-Drive synchronization requires the explicit **Choose / Switch Google account** flow. It binds the selected persistent profile and account index and verifies the detected email before transfer. Disposable tabs and unrelated active profiles are never fallbacks. If the chosen profile has no resident tab on Windows, reopen a tab in that profile. Existing installations must choose their Google account once after upgrading.
+Drive synchronization requires the explicit **Choose or switch account** flow. It binds the selected persistent profile and account index and verifies the detected email before transfer. Disposable tabs and unrelated active profiles are never fallbacks. If the chosen profile has no resident tab on Windows, reopen a tab in that profile. Existing installations must choose their Google account once after upgrading.
 
 Remembered WebDAV passwords never enter new SQLite preference values. Linux requires `secret-tool` (the `libsecret-tools` package on Debian/Ubuntu) and an unlocked Secret Service provider. Storage errors are reported without plaintext fallback. Legacy SQLite passwords are removed with secure deletion enabled and migrated to the system store on startup; if migration fails, they remain only in process memory for that session. Historical database copies and backups cannot be erased by this migration. Changing the WebDAV server or username does not reuse the previous target's password.
 

@@ -20,31 +20,39 @@ A prévia fica vinculada aos dados e preferências atuais. Se houver alteraçõe
 
 Testes Rust cobrem ida e volta do arquivo, versões/referências/tamanho inválidos, substituição atômica, conflitos, contagens de ocorrências, remapeamento de IDs/divisões, rollback e isolamento da nova tentativa de preferências. `npm run test:native -- --case backup` exercita comandos reais, prévia desatualizada, hibernação, importação repetida e persistência após reinício. A seleção nativa usa o [plugin de diálogos do Tauri](https://v2.tauri.app/plugin/dialog/) pelo Rust, sem conceder seus comandos JavaScript de arquivos/diálogos.
 
+## Como a página é organizada
+
+**Configurações → Dados e backup** tem três categorias, cada uma com um título, nesta ordem:
+
+- **Sincronização**: um cartão em pé com o ícone do Drive, o nome do modo de sincronização em uso (Google Drive, Pasta, WebDAV ou "Sincronização desligada") e o estado dele. Clique nele para abrir as configurações de sincronização, divididas em partes com título: **Conta** (Google Drive), **Pasta** ou **Conexão** (WebDAV); **Automático**, com interruptores iguais aos do resto das configurações, cada um com uma linha explicando o que faz; e **Sincronizar agora**, em que **Enviar**, **Revisar** e **Aplicar** dizem o que cada um faz. Ela vem primeiro porque é o que a maioria das pessoas confere.
+- **Backups automáticos**: o status dos backups neste computador, o agendamento, a criptografia e o histórico (veja [Backups automáticos, histórico e criptografia](backup-automation.md)).
+- **Arquivos de backup**: **Backup completo** (exportar um arquivo de backup ou escolher um para restaurar) e **Favoritos** (exportar em HTML ou CSV para outro navegador). O pedido de senha de um arquivo criptografado, a prévia da importação, os erros e os resultados aparecem logo abaixo desses cartões.
+
 ## Sincronização automática isolada (Google Drive na Nuvem, Pasta e Conexão Direta WebDAV)
 
 Configurações → Dados e backup também inclui a **Sincronização automática isolada**, permitindo manter o arquivo `browser.spark-backup.json` sincronizado no armazenamento do próprio usuário sem servidores do Spark nem contas em consoles de nuvem de desenvolvedor:
 
 1. **Modo Google Drive na nuvem (usa o login do Gmail no navegador):**
    - Usa os cookies de login da conta Google/Gmail do navegador (`drive.google.com`) para criar/localizar automaticamente a pasta dedicada **`Spark Backup`** no `Meu Drive` e enviar/baixar o arquivo `browser.spark-backup.json` dentro dela, sem precisar de pasta no PC nem de projeto no Google Cloud Console. Ao buscar um backup, caso o arquivo ainda não esteja dentro da pasta `Spark Backup`, o navegador também verifica a raiz do `Meu Drive` para manter compatibilidade com backups anteriores.
-   - Exibe na interface o e-mail da conta Google conectada (`connected_account`) e oferece o botão **Escolher / Trocar conta do Google (Gmail)**, que abre o `AccountChooser` do Google (`accounts.google.com/AccountChooser`) e sincroniza automaticamente assim que a aba do Google Drive da conta escolhida é carregada.
-   - Com o salvamento automático ativo, um ciclo de 1 minuto verifica o fingerprint SHA-256 em streaming dos dados e preferências atuais e envia para o Google Drive **apenas quando houver alterações**, além de sincronizar ao fechar o navegador e pelo botão **Sincronizar agora (Salvar)**.
+   - Exibe na interface o e-mail da conta Google conectada (`connected_account`) e oferece o botão **Escolher ou trocar conta**, que abre o `AccountChooser` do Google (`accounts.google.com/AccountChooser`) e sincroniza automaticamente assim que a aba do Google Drive da conta escolhida é carregada.
+   - Com o salvamento automático ativo, um ciclo de 1 minuto verifica o fingerprint SHA-256 em streaming dos dados e preferências atuais e envia para o Google Drive **apenas quando houver alterações**, além de sincronizar ao fechar o navegador e por **Enviar para a nuvem** (em **Sincronizar agora**).
 2. **Modo Pasta sincronizada (OneDrive, Mega, Dropbox, Pendrive):**
    - O usuário escolhe um diretório local pelo seletor nativo de pastas (`choose_backup_sync_folder`).
-   - Com o salvamento automático ativo, alterações em favoritos, workspaces, abas, divisões, notas, atalhos ou preferências gravam atomicamente `browser.spark-backup.json` na pasta escolhida a cada alteração, além de salvar ao fechar o navegador e pelo botão **Sincronizar agora (Salvar)**.
+   - Com o salvamento automático ativo, alterações em favoritos, workspaces, abas, divisões, notas, atalhos ou preferências gravam atomicamente `browser.spark-backup.json` na pasta escolhida a cada alteração, além de salvar ao fechar o navegador e por **Enviar para a nuvem** (em **Sincronizar agora**).
 3. **Modo Conexão direta (WebDAV / Nuvem própria):**
    - O usuário informa uma URL WebDAV `https://` (`http://127.0.0.1` / `localhost` é aceito apenas para testes locais), usuário e senha de aplicativo ou token.
    - O usuário pode escolher entre **lembrar a senha neste computador** (Gerenciador de Credenciais do Windows ou Secret Service do Linux por meio de `secret-tool`) ou mantê-la **apenas na memória durante a sessão atual**.
-   - Com o salvamento automático ativo, um ciclo de 1 minuto verifica o fingerprint SHA-256 em streaming dos dados e preferências atuais e envia (`PUT`) para o servidor WebDAV **apenas quando houver alterações**, além de sincronizar ao fechar o navegador e pelo botão **Sincronizar agora (Salvar)**.
+   - Com o salvamento automático ativo, um ciclo de 1 minuto verifica o fingerprint SHA-256 em streaming dos dados e preferências atuais e envia (`PUT`) para o servidor WebDAV **apenas quando houver alterações**, além de sincronizar ao fechar o navegador e por **Enviar para a nuvem** (em **Sincronizar agora**).
 4. **Duas opções de recebimento (`pull_backup_sync`):**
-   - **Buscar e revisar prévia:** lê/baixa o backup e abre a tabela padrão de revisão antes de confirmar a importação.
-   - **Buscar e aplicar direto (Auto-Merge):** valida e mescla o backup imediatamente em um único passo, podendo aplicar também as preferências quando marcado.
+   - **Revisar antes de aplicar:** lê/baixa o backup e abre a tabela padrão de revisão antes de confirmar a importação.
+   - **Aplicar direto:** valida e mescla o backup imediatamente em um único passo, podendo aplicar também as preferências quando marcado.
 5. **Fronteira Zero-Leak:** Caminhos de pasta de sincronização, URLs WebDAV e credenciais são configurações estritamente locais e nunca são serializados dentro do `BackupDocument`.
 
 ## Segurança da importação e das contas
 
 A importação preserva todas as abas existentes em memória, inclusive descartáveis, sua ordem, seleção ativa, participação em divisão e identidade de container de conta. As identidades existentes são preservadas na transação SQLite; abas importadas usam a identidade padrão porque backups não incluem dados de containers de conta.
 
-A sincronização com o Drive exige o fluxo explícito **Escolher / Trocar conta Google**. Ela vincula o perfil persistente e o índice de conta selecionados e verifica o e-mail detectado antes da transferência. Abas descartáveis e outros perfis ativos nunca são alternativas. Se o perfil escolhido não tiver uma aba residente no Windows, reabra uma aba nesse perfil. Instalações existentes precisam escolher a conta Google uma vez após a atualização.
+A sincronização com o Drive exige o fluxo explícito **Escolher ou trocar conta**. Ela vincula o perfil persistente e o índice de conta selecionados e verifica o e-mail detectado antes da transferência. Abas descartáveis e outros perfis ativos nunca são alternativas. Se o perfil escolhido não tiver uma aba residente no Windows, reabra uma aba nesse perfil. Instalações existentes precisam escolher a conta Google uma vez após a atualização.
 
 Senhas WebDAV lembradas não entram em novos valores de preferências SQLite. No Linux, é necessário `secret-tool` (pacote `libsecret-tools` no Debian/Ubuntu) e um provedor de Secret Service desbloqueado. Falhas são informadas sem recorrer a texto simples. Senhas antigas no SQLite são removidas com exclusão segura ativada e migradas para o cofre do sistema na inicialização; se a migração falhar, permanecem somente na memória do processo durante essa sessão. Cópias históricas do banco e backups não podem ser apagados por essa migração. Alterar o servidor WebDAV ou o usuário não reutiliza a senha do destino anterior.
 

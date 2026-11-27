@@ -20,6 +20,7 @@
     syncPushNow,
     undoLastReplace,
   } from "../../stores/backupStore";
+  import AppIcon from "../icons/AppIcon.svelte";
   import GoogleDriveIcon from "../icons/GoogleDriveIcon.svelte";
   import BackupCard from "./backup/BackupCard.svelte";
   import BackupLocalPanel from "./BackupLocalPanel.svelte";
@@ -41,36 +42,9 @@
     syncExpanded = false;
     syncPanel?.querySelector<HTMLElement>("summary")?.focus();
   }
-  const SYNC_OPEN_WIDTH = 580;
-  const SYNC_EDGE = 12;
-  function scrollParent(element: HTMLElement): HTMLElement {
-    for (let node = element.parentElement; node; node = node.parentElement) {
-      const overflow = getComputedStyle(node).overflowY;
-      if (overflow === "auto" || overflow === "scroll") return node;
-    }
-    return document.documentElement;
-  }
-  /**
-   * Opens the panel centered on its card and nudged to stay inside the visible settings area, so it
-   * grows left, right, up and down as far as there is room. Offsets are relative to the card's slot.
-   */
-  function placeSyncPanel(): void {
-    const slot = syncPanel?.parentElement;
-    if (!syncPanel || !slot) return;
-    const area = scrollParent(slot).getBoundingClientRect();
-    const card = slot.getBoundingClientRect();
-    const width = Math.min(SYNC_OPEN_WIDTH, area.width - SYNC_EDGE * 2);
-    const left = Math.min(Math.max(card.left + (card.width - width) / 2, area.left + SYNC_EDGE), area.right - SYNC_EDGE - width);
-    const top = Math.max(card.top - 28, area.top + SYNC_EDGE);
-    const style = syncPanel.style;
-    style.setProperty("--sync-left", `${left - card.left}px`);
-    style.setProperty("--sync-right", `${card.right - (left + width)}px`);
-    style.setProperty("--sync-top", `${top - card.top}px`);
-    style.setProperty("--sync-max-height", `${Math.max(240, area.bottom - SYNC_EDGE - top)}px`);
-  }
-  $effect(() => {
-    if (syncExpanded) placeSyncPanel();
-  });
+  // Where the open panel goes is decided by CSS alone: the settings are usually projected onto a
+  // separate surface that copies classes but not inline styles, so positions set from script never
+  // reach the screen.
 
   let syncActionBusy = $state(false);
   let syncActionError = $state<string | null>(null);
@@ -185,23 +159,21 @@
   }
 </script>
 
-<svelte:window onresize={() => syncExpanded && placeSyncPanel()} />
+<!-- An option of the sync panel: what it does on the left, the same switch as the rest of Settings on the right. -->
+{#snippet switchRow(label: string, description: string, testid: string, checked: boolean, onchange: (checked: boolean) => void)}
+  <label class="sync-row">
+    <span class="sync-row-text"><span class="sync-row-label">{label}</span><span class="sync-row-desc">{description}</span></span>
+    <input type="checkbox" role="switch" data-testid={testid} {checked} disabled={$backupBusy} onchange={(event) => onchange(event.currentTarget.checked)} />
+  </label>
+{/snippet}
 
 <section class="setting-group backup-settings" aria-labelledby="backup-heading">
   <h2 class="group-title" id="backup-heading">{$t("backup.heading")}</h2>
   {#if !desktop}<p role="status">{$t("common.desktop_required")}</p>
   {:else}
-    <div class="backup-cards">
-      <BackupCard id="backup-manual-heading" icon="download" title={$t("backup.manual_heading")} description={$t("backup.manual_description")}>
-        {#snippet actions()}
-          <button class="pill-action primary-pill" data-testid="backup-export" disabled={$backupBusy} onclick={saveBackup}>{$t("backup.export")}</button>
-          <button class="pill-action" data-testid="backup-select" disabled={$backupBusy} onclick={selectBackup}>{$t("backup.import")}</button>
-        {/snippet}
-      </BackupCard>
-
-      <BookmarkExportCard />
-
-      <!-- The slot keeps the closed card's place in the row; the panel floats over it when open. -->
+    <div class="setting-subgroup sync-group" role="group" aria-labelledby="backup-sync-group-heading">
+      <h3 class="subgroup-title" id="backup-sync-group-heading">{$t("backup.group_sync")}</h3>
+      <!-- The slot keeps the closed card's place; the panel floats over it when open. -->
       <div class="sync-slot">
       <!--
         Click-outside is a real (invisible) button, not a window listener: the settings are shown in a separate
@@ -213,10 +185,16 @@
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <details class="sync-panel" bind:this={syncPanel} bind:open={syncExpanded} onkeydown={closeSyncOnEscape} data-testid="backup-sync-panel">
         <summary class="sync-compact-row" data-testid="backup-sync-settings-toggle" title={$t("backup.sync_settings")}>
-          <GoogleDriveIcon size={38} />
-          <span class="sync-state-chip connection" class:connected={Boolean($backupSyncState.connected_account)} role="status">
-            {$t($backupSyncState.connected_account ? "backup.sync_connection_connected" : "backup.sync_connection_disconnected")}
+          <span class="sync-icon" aria-hidden="true">
+            {#if $backupSyncState.config.mode === "google_drive_web"}<GoogleDriveIcon size={30} />{:else}<AppIcon name="refresh" size={24} />{/if}
           </span>
+          <strong class="sync-title" data-testid="backup-sync-title">{$t(`backup.sync_title_${$backupSyncState.config.mode}` as MessageKey)}</strong>
+          <span class="sync-chips">
+          {#if $backupSyncState.config.mode === "google_drive_web"}
+            <span class="sync-state-chip connection" class:connected={Boolean($backupSyncState.connected_account)} role="status">
+              {$t($backupSyncState.connected_account ? "backup.sync_connection_connected" : "backup.sync_connection_disconnected")}
+            </span>
+          {/if}
           {#if syncActionBusy}
             <span class="sync-state-chip busy" role="status">{$t("backup.sync_status_busy")}</span>
           {:else if linkNeeded}
@@ -241,16 +219,10 @@
           {:else}
             <span class="sync-state-chip neutral" role="status">{$t("backup.sync_status_not_synced")}</span>
           {/if}
+          </span>
         </summary>
 
         <div class="sync-settings" id="backup-sync-settings">
-        <div class="sync-panel-heading">
-          <div>
-            <h3>{selectedMode === "google_drive_web" ? $t("backup.sync_gdrive_heading") : $t("backup.sync_heading")}</h3>
-            <p>{$t("backup.sync_description")}</p>
-          </div>
-        </div>
-
         <label class="sync-field sync-mode-field">
           <span>{$t("backup.sync_mode_label")}</span>
           <select
@@ -264,10 +236,12 @@
             <option value="direct_webdav">{$t("backup.sync_mode_webdav")}</option>
             <option value="folder">{$t("backup.sync_mode_folder")}</option>
           </select>
+          <small>{$t("backup.sync_description")}</small>
         </label>
 
       {#if selectedMode === "google_drive_web"}
-        <div class="sync-mode-box">
+        <section class="sync-section" aria-labelledby="sync-account-title">
+          <h4 class="sync-section-title" id="sync-account-title">{$t("backup.sync_section_account")}</h4>
           <div
             class="gdrive-account-card"
             class:connected={Boolean($backupSyncState.connected_account)}
@@ -307,34 +281,19 @@
               </button>
             </div>
           </div>
-
           <p class="sync-hint">{$t("backup.sync_gdrive_hint")}</p>
+        </section>
 
-          <div class="sync-options-group">
-            <label class="preference-choice">
-              <input
-                type="checkbox"
-                data-testid="backup-sync-auto-save"
-                bind:checked={autoSave}
-                disabled={$backupBusy}
-                onchange={handleGDriveOptionsChange}
-              />
-              <span>{$t("backup.sync_auto_gdrive")}</span>
-            </label>
-            <label class="preference-choice">
-              <input
-                type="checkbox"
-                data-testid="backup-sync-direct-prefs"
-                bind:checked={directApplyPrefs}
-                disabled={$backupBusy}
-                onchange={handleGDriveOptionsChange}
-              />
-              <span>{$t("backup.sync_direct_apply_prefs")}</span>
-            </label>
+        <section class="sync-section" aria-labelledby="sync-auto-title">
+          <h4 class="sync-section-title" id="sync-auto-title">{$t("backup.sync_section_auto")}</h4>
+          <div class="sync-rows">
+            {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_gdrive"), "backup-sync-auto-save", autoSave, (on) => { autoSave = on; handleGDriveOptionsChange(); })}
+            {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => { directApplyPrefs = on; handleGDriveOptionsChange(); })}
           </div>
-        </div>
+        </section>
       {:else if selectedMode === "folder"}
-        <div class="sync-mode-box">
+        <section class="sync-section" aria-labelledby="sync-folder-title">
+          <h4 class="sync-section-title" id="sync-folder-title">{$t("backup.sync_section_folder")}</h4>
           <p class="sync-path" data-testid="backup-sync-folder-path">
             {folderPath ? $t("backup.sync_folder_current", { path: folderPath }) : $t("backup.sync_folder_none")}
           </p>
@@ -348,29 +307,18 @@
               {$t("backup.sync_choose_folder")}
             </button>
           </div>
-          <label class="preference-choice">
-            <input
-              type="checkbox"
-              data-testid="backup-sync-auto-save"
-              bind:checked={autoSave}
-              disabled={$backupBusy}
-              onchange={handleFolderOptionsChange}
-            />
-            {$t("backup.sync_auto_folder")}
-          </label>
-          <label class="preference-choice">
-            <input
-              type="checkbox"
-              data-testid="backup-sync-direct-prefs"
-              bind:checked={directApplyPrefs}
-              disabled={$backupBusy}
-              onchange={handleFolderOptionsChange}
-            />
-            {$t("backup.sync_direct_apply_prefs")}
-          </label>
-        </div>
+        </section>
+
+        <section class="sync-section" aria-labelledby="sync-auto-title">
+          <h4 class="sync-section-title" id="sync-auto-title">{$t("backup.sync_section_auto")}</h4>
+          <div class="sync-rows">
+            {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_folder"), "backup-sync-auto-save", autoSave, (on) => { autoSave = on; handleFolderOptionsChange(); })}
+            {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => { directApplyPrefs = on; handleFolderOptionsChange(); })}
+          </div>
+        </section>
       {:else if selectedMode === "direct_webdav"}
-        <div class="sync-mode-box">
+        <section class="sync-section" aria-labelledby="sync-connection-title">
+          <h4 class="sync-section-title" id="sync-connection-title">{$t("backup.sync_section_connection")}</h4>
           <label class="sync-field">
             <span>{$t("backup.sync_webdav_url")}</span>
             <input
@@ -405,36 +353,20 @@
               autocomplete="off"
             />
           </label>
-          <label class="preference-choice">
-            <input
-              type="checkbox"
-              data-testid="backup-sync-remember-secret"
-              bind:checked={rememberSecret}
-              disabled={$backupBusy}
-            />
-            {$t("backup.sync_remember_secret")}
-          </label>
-          <label class="preference-choice">
-            <input
-              type="checkbox"
-              data-testid="backup-sync-auto-save"
-              bind:checked={autoSave}
-              disabled={$backupBusy}
-            />
-            {$t("backup.sync_auto_webdav")}
-          </label>
-          <label class="preference-choice">
-            <input
-              type="checkbox"
-              data-testid="backup-sync-direct-prefs"
-              bind:checked={directApplyPrefs}
-              disabled={$backupBusy}
-            />
-            {$t("backup.sync_direct_apply_prefs")}
-          </label>
+          <div class="sync-rows">
+            {@render switchRow($t("backup.sync_remember_secret"), $t("backup.sync_remember_secret_desc"), "backup-sync-remember-secret", rememberSecret, (on) => (rememberSecret = on))}
+          </div>
+        </section>
+
+        <section class="sync-section" aria-labelledby="sync-auto-title">
+          <h4 class="sync-section-title" id="sync-auto-title">{$t("backup.sync_section_auto")}</h4>
+          <div class="sync-rows">
+            {@render switchRow($t("backup.sync_auto_label"), $t("backup.sync_auto_webdav"), "backup-sync-auto-save", autoSave, (on) => (autoSave = on))}
+            {@render switchRow($t("backup.sync_direct_prefs_label"), $t("backup.sync_direct_apply_prefs"), "backup-sync-direct-prefs", directApplyPrefs, (on) => (directApplyPrefs = on))}
+          </div>
           <div class="actions">
             <button
-              class="pill-action"
+              class="pill-action primary-pill"
               data-testid="backup-sync-save-webdav"
               disabled={$backupBusy}
               onclick={handleSaveWebdav}
@@ -442,36 +374,27 @@
               {$t("backup.sync_save_config")}
             </button>
           </div>
-        </div>
+        </section>
       {/if}
 
       {#if $backupSyncState.config.mode !== "disabled"}
-        <div class="actions sync-actions-bar">
-          <button
-            class="pill-action primary-pill"
-            data-testid="backup-sync-push"
-            disabled={$backupBusy}
-            onclick={() => void runSyncAction(syncPushNow)}
-          >
-            {$t("backup.sync_push_now")}
-          </button>
-          <button
-            class="pill-action"
-            data-testid="backup-sync-pull-preview"
-            disabled={$backupBusy}
-            onclick={() => void runSyncAction(syncPullPreview)}
-          >
-            {$t("backup.sync_pull_preview")}
-          </button>
-          <button
-            class="pill-action"
-            data-testid="backup-sync-pull-direct"
-            disabled={$backupBusy}
-            onclick={() => void runSyncAction(() => syncPullDirect(directApplyPrefs))}
-          >
-            {$t("backup.sync_pull_direct")}
-          </button>
-        </div>
+        <section class="sync-section" aria-labelledby="sync-now-title">
+          <h4 class="sync-section-title" id="sync-now-title">{$t("backup.sync_section_now")}</h4>
+          <div class="sync-rows">
+            <div class="sync-row">
+              <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_push_now")}</span><span class="sync-row-desc">{$t("backup.sync_push_desc")}</span></span>
+              <button class="pill-action primary-pill" data-testid="backup-sync-push" disabled={$backupBusy} onclick={() => void runSyncAction(syncPushNow)}>{$t("backup.sync_push_button")}</button>
+            </div>
+            <div class="sync-row">
+              <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_pull_preview")}</span><span class="sync-row-desc">{$t("backup.sync_pull_preview_desc")}</span></span>
+              <button class="pill-action" data-testid="backup-sync-pull-preview" disabled={$backupBusy} onclick={() => void runSyncAction(syncPullPreview)}>{$t("backup.sync_pull_preview_button")}</button>
+            </div>
+            <div class="sync-row">
+              <span class="sync-row-text"><span class="sync-row-label">{$t("backup.sync_pull_direct")}</span><span class="sync-row-desc">{$t("backup.sync_pull_direct_desc")}</span></span>
+              <button class="pill-action" data-testid="backup-sync-pull-direct" disabled={$backupBusy} onclick={() => void runSyncAction(() => syncPullDirect(directApplyPrefs))}>{$t("backup.sync_pull_direct_button")}</button>
+            </div>
+          </div>
+        </section>
       {/if}
 
         </div>
@@ -485,45 +408,78 @@
       </div>
     </div>
 
-    <BackupUnlockPrompt />
-    <BackupLocalPanel />
+    <div class="setting-subgroup" role="group" aria-labelledby="backup-local-heading">
+      <h3 class="subgroup-title" id="backup-local-heading">{$t("backup.local_heading")}</h3>
+      <p class="subgroup-desc">{$t("backup.local_description")}</p>
+      <BackupLocalPanel />
+    </div>
 
-    <ErrorMessage error={$backupError} />
-    {#if $backupExported}<p role="status">{$t("backup.exported")}</p>{/if}
-    {#if $pendingBackupPreferences}
-      <aside role="status"><p>{$t("backup.pending")}</p><ErrorMessage error={$pendingBackupPreferences.error} /><button data-testid="backup-retry-preferences" disabled={$backupBusy} onclick={retryBackupPreferences}>{$t("backup.retry")}</button></aside>
-    {/if}
-    <BackupPreviewPanel />
-    {#if $backupResult}
-      <p role="status" data-testid="backup-result">{$t("backup.imported")}</p>
-      {#if $backupResult.safety_snapshot}
-        <p role="status" data-testid="backup-safety-note">{$t("backup.safety_saved")}</p>
-        <div class="actions"><button class="pill-action" data-testid="backup-undo-replace" disabled={$backupBusy} onclick={undoLastReplace}>{$t("backup.undo_replace")}</button></div>
+    <div class="setting-subgroup" role="group" aria-labelledby="backup-files-heading">
+      <h3 class="subgroup-title" id="backup-files-heading">{$t("backup.group_files")}</h3>
+      <p class="subgroup-desc">{$t("backup.group_files_description")}</p>
+      <div class="backup-cards">
+        <BackupCard id="backup-manual-heading" icon="download" title={$t("backup.manual_heading")} description={$t("backup.manual_description")}>
+          {#snippet actions()}
+            <button class="pill-action primary-pill" data-testid="backup-export" disabled={$backupBusy} onclick={saveBackup}>{$t("backup.export")}</button>
+            <button class="pill-action" data-testid="backup-select" disabled={$backupBusy} onclick={selectBackup}>{$t("backup.import")}</button>
+          {/snippet}
+        </BackupCard>
+
+        <BookmarkExportCard />
+      </div>
+
+      <!-- What happens after exporting or choosing a file is shown next to the buttons that started it. -->
+      <BackupUnlockPrompt />
+      <ErrorMessage error={$backupError} />
+      {#if $backupExported}<p role="status">{$t("backup.exported")}</p>{/if}
+      {#if $pendingBackupPreferences}
+        <aside role="status"><p>{$t("backup.pending")}</p><ErrorMessage error={$pendingBackupPreferences.error} /><button data-testid="backup-retry-preferences" disabled={$backupBusy} onclick={retryBackupPreferences}>{$t("backup.retry")}</button></aside>
       {/if}
-    {/if}
+      <BackupPreviewPanel />
+      {#if $backupResult}
+        <p role="status" data-testid="backup-result">{$t("backup.imported")}</p>
+        {#if $backupResult.safety_snapshot}
+          <p role="status" data-testid="backup-safety-note">{$t("backup.safety_saved")}</p>
+          <div class="actions"><button class="pill-action" data-testid="backup-undo-replace" disabled={$backupBusy} onclick={undoLastReplace}>{$t("backup.undo_replace")}</button></div>
+        {/if}
+      {/if}
+    </div>
+
   {/if}
 </section>
 <style>
   p { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
   p { color: var(--text-secondary); }
-  h3 { margin: 0; color: var(--text-primary); font-size: 16px; line-height: 1.35; }
+  /* Every category keeps the same readable width, so the cards of one line up with the next. */
+  .backup-settings > .setting-subgroup { max-width: 960px; }
+  .subgroup-desc { margin: -4px 0 2px; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   aside { border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; margin-top: 0; background: var(--bg-glass, rgba(255, 255, 255, 0.025)); }
   /* Three cards of the same closed height. Rows do not stretch, so opening the Drive card grows only that card. */
-  .backup-cards { --backup-card-min-height: 148px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 280px)); align-items: start; justify-content: start; gap: 12px; }
+  .backup-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); align-items: stretch; gap: 12px; }
   /* Closed: exactly the size of its neighbours. Open: grows on every side over the page without moving anything. */
   .sync-scrim { position: fixed; inset: 0; z-index: 29; padding: 0; border: 0; background: transparent; cursor: default; }
-  .sync-slot { position: relative; min-width: 0; height: var(--backup-card-min-height, 148px); }
-  .sync-panel { position: absolute; top: 0; right: 0; left: 0; display: block; box-sizing: border-box; height: var(--backup-card-min-height, 148px); padding: 16px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255,255,255,.025)); interpolate-size: allow-keywords; transition: top 0.28s ease, right 0.28s ease, left 0.28s ease, height 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease; }
-  .sync-panel[open] { top: var(--sync-top, -28px); right: var(--sync-right, -150px); left: var(--sync-left, -150px); z-index: 30; height: auto; max-height: var(--sync-max-height, 640px); overflow-y: auto; background: var(--bg-permission-popover, #1c1c1c); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55); }
+  /* The category is the size reference of the open panel, so it can never grow past the section. */
+  .sync-group { container-type: inline-size; }
+  .sync-slot { --sync-closed-height: 200px; position: relative; width: min(100%, 300px); height: var(--sync-closed-height); }
+  .sync-panel { position: absolute; top: 0; left: 0; width: 100%; display: block; box-sizing: border-box; height: var(--sync-closed-height); padding: 16px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-glass, rgba(255,255,255,.025)); interpolate-size: allow-keywords; transition: width 0.28s ease, height 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease; }
+  /* Open: grows to the right and down from where the card is, within the width of the category. */
+  .sync-panel[open] { width: min(580px, 100cqw); z-index: 30; height: auto; max-height: min(640px, 80vh); overflow-y: auto; background: var(--bg-permission-popover, #1c1c1c); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55); }
   /* Keeps the content visible while the panel shrinks back (Chromium/WebView2; elsewhere it just snaps). */
   .sync-panel::details-content { transition: content-visibility 0.28s allow-discrete; }
-  @media (prefers-reduced-motion: reduce) { .sync-panel, .sync-panel::details-content { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .sync-panel, .sync-panel::details-content, .sync-icon { transition: none; } }
   /* Closed: exactly the size of its neighbours. Open: grows on every side over the page without moving anything. */
-  .sync-compact-row { display: flex; box-sizing: border-box; min-height: 102px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 2px; text-align: center; cursor: pointer; list-style: none; }
+  /* Closed: a standing block, the Drive icon on top, the mode name and its state below. */
+  .sync-compact-row { display: flex; box-sizing: border-box; height: var(--sync-closed-height); flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 2px; text-align: center; cursor: pointer; list-style: none; }
+  .sync-icon { display: grid; flex: 0 0 auto; width: 56px; height: 56px; place-items: center; border: 1px solid var(--border-subtle); border-radius: 16px; background: color-mix(in srgb, var(--text-primary) 6%, transparent); color: var(--accent-primary); transition: width 0.28s ease, height 0.28s ease, border-radius 0.28s ease; }
+  .sync-title { color: var(--text-primary); font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .sync-chips { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 100%; }
   .sync-compact-row::-webkit-details-marker, .sync-compact-row::marker { display: none; }
   .sync-compact-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 8px; }
-  .sync-panel[open] > .sync-compact-row { min-height: 0; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 8px 10px; padding-bottom: 12px; text-align: left; border-bottom: 1px solid var(--border-subtle); }
+  .sync-panel[open] > .sync-compact-row { height: auto; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 8px 10px; padding: 0 0 12px; text-align: left; border-bottom: 1px solid var(--border-subtle); }
+  .sync-panel[open] .sync-icon { width: 40px; height: 40px; border-radius: 12px; }
+  .sync-panel[open] .sync-icon :global(svg) { width: 24px; height: auto; }
+  .sync-panel[open] .sync-chips { flex-direction: row; flex-wrap: wrap; }
   /* Wide panel: description and mode on the left, the mode's fields on the right, sync buttons under the mode. */
   .sync-panel { container-type: inline-size; --text-secondary: color-mix(in srgb, var(--text-primary) 82%, transparent); --sync-error-text: color-mix(in srgb, #ef4444 52%, var(--text-primary)); }
   .sync-panel .pill-action { font-size: 12.5px; }
@@ -536,26 +492,28 @@
   .sync-error :global(.error-message p) { margin: 0; }
   .sync-error :global(.error-message summary) { margin-top: 8px; width: fit-content; cursor: pointer; font-size: 12.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
   .sync-error :global(.error-message pre) { margin: 8px 0 0; padding: 10px 12px; border-radius: 8px; background: rgba(0, 0, 0, 0.3); color: var(--text-primary); font-size: 12px; line-height: 1.5; }
-  @container (min-width: 520px) {
-    .sync-settings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: "head box" "mode box" "acts box"; grid-template-rows: auto auto 1fr; align-items: start; gap: 12px 20px; }
-    .sync-panel-heading { grid-area: head; }
-    .sync-mode-field { grid-area: mode; }
-    .sync-mode-box { grid-area: box; }
-    .sync-actions-bar { grid-area: acts; align-self: end; }
-  }
-  .sync-settings { display: flex; width: 100%; min-width: 0; flex-direction: column; gap: 9px; padding-top: 12px; }
+  .sync-settings { display: flex; width: 100%; min-width: 0; flex-direction: column; gap: 16px; padding-top: 14px; }
+  /* Each part of the open panel: a small title, then its options. */
+  .sync-section { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
+  .sync-section-title { margin: 0; color: var(--text-muted, var(--text-secondary)); font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+  .sync-rows { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 10px; background: rgba(255, 255, 255, 0.025); }
+  .sync-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 12px; }
+  .sync-row + .sync-row { border-top: 1px solid var(--border-subtle); }
+  label.sync-row { cursor: pointer; }
+  .sync-row-text { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+  .sync-row-label { color: var(--text-primary); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+  .sync-row-desc { color: var(--text-secondary); font-size: 11.5px; line-height: 1.5; }
+  .sync-row > button { flex: 0 0 auto; min-width: 96px; }
+  .sync-mode-field small { color: var(--text-secondary); font-size: 11.5px; font-weight: 400; line-height: 1.5; }
   .sync-state-chip { display: inline-flex; max-width: 100%; align-items: center; justify-content: center; padding: 5px 11px; border: 1px solid var(--border-subtle); border-radius: 999px; background: rgba(255,255,255,.04); color: var(--text-secondary); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
   .sync-state-chip.connection.connected, .sync-state-chip.synced { border-color: rgba(34, 197, 94, .35); background: rgba(34, 197, 94, .1); color: #86efac; }
   .sync-state-chip.connection:not(.connected) { border-color: rgba(255,255,255,.12); }
   .sync-state-chip.busy { border-color: rgba(66, 133, 244, .4); background: rgba(66, 133, 244, .12); color: #93c5fd; }
   .sync-state-chip.error { border-color: rgba(248, 113, 113, .42); background: rgba(248, 113, 113, .12); color: #fca5a5; }
   .sync-state-chip.neutral { color: var(--text-secondary); }
-  .sync-panel-heading p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.55; }
-  .preference-choice { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 12.5px; color: var(--text-primary); cursor: pointer; }
-  .sync-field { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+  .sync-field { display: flex; flex-direction: column; gap: 6px; margin: 0; font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
   .sync-field input, .sync-field select { min-width: 0; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border-subtle); background: var(--bg-glass-elevated); color: var(--text-primary); font-size: 12.5px; }
   .sync-path { font-family: monospace; color: var(--text-primary); padding: 8px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); }
-  .sync-mode-box { display: flex; flex-direction: column; gap: 8px; margin-top: 0; }
   .gdrive-account-card {
     display: flex;
     align-items: center;
@@ -629,16 +587,10 @@
     gap: 8px;
   }
   .sync-hint {
-    margin: 2px 0;
+    margin: 0;
     font-size: 12.5px;
     line-height: 1.6;
     color: var(--text-secondary);
-  }
-  .sync-options-group {
-    padding: 6px 9px;
-    border-radius: 7px;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid var(--border-subtle);
   }
   .primary-pill {
     background: rgba(66, 133, 244, 0.18);
@@ -649,16 +601,11 @@
   .primary-pill:hover:not(:disabled) {
     background: rgba(66, 133, 244, 0.28);
   }
-  .sync-actions-bar {
-    padding-top: 8px;
-    margin: 0;
-    border-top: 1px solid var(--border-subtle);
-  }
   @media (max-width: 520px) {
     aside { padding: 14px; border-radius: 12px; }
     .gdrive-account-card { align-items: flex-start; }
     .gdrive-account-actions { width: 100%; }
     .gdrive-account-actions :global(button) { max-width: 100%; white-space: normal; text-align: left; }
-    .sync-actions-bar > button { flex: 1 1 100%; }
+    .sync-row:has(> button) { flex-wrap: wrap; }
   }
 </style>
