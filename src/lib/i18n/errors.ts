@@ -74,6 +74,8 @@ const messages: Record<string, MessageKey> = {
   "backup.sync_not_configured": "backup.error_sync_not_configured",
   "backup.sync_folder_missing": "backup.error_sync_folder_missing",
   "backup.sync_file_not_found": "backup.error_sync_file_not_found",
+  "backup.sync_versions_failed": "backup.error_sync_versions_failed",
+  "backup.sync_version_not_found": "backup.error_sync_version_not_found",
   "backup.sync_invalid_url": "backup.error_sync_invalid_url",
   "backup.sync_https_required": "backup.error_sync_https_required",
   "backup.sync_auth_failed": "backup.error_sync_auth_failed",

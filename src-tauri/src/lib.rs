@@ -12,9 +12,10 @@ use commands::backup::{
     cancel_backup_unlock, choose_backup_file, choose_backup_sync_folder, commit_backup_import,
     create_local_backup, delete_local_backup, discard_backup_import, export_backup,
     finish_backup_preferences, get_backup_pending_preferences, get_backup_sync_state,
-    get_local_backup_state, preview_backup_import, pull_backup_sync, push_backup_sync,
-    restore_local_backup, set_backup_encryption, set_backup_sync_config, set_backup_sync_options,
-    set_local_backup_schedule, sync_backup_on_start, unlock_backup_file,
+    get_local_backup_state, list_backup_sync_versions, preview_backup_import, pull_backup_sync,
+    push_backup_sync, restore_local_backup, review_backup_sync_version, set_backup_encryption,
+    set_backup_sync_config, set_backup_sync_options, set_local_backup_schedule,
+    sync_backup_on_start, unlock_backup_file,
 };
 use commands::bookmark_export::export_bookmarks;
 use commands::browser_data::{clear_browser_data, estimate_cleanup};
@@ -774,6 +775,8 @@ pub fn run() {
             set_backup_sync_config,
             set_backup_sync_options,
             sync_backup_on_start,
+            list_backup_sync_versions,
+            review_backup_sync_version,
             push_backup_sync,
             pull_backup_sync,
             unlock_backup_file,

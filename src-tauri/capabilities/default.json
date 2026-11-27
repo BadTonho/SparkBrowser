@@ -238,6 +238,8 @@
     "allow-set-backup-sync-config",
     "allow-set-backup-sync-options",
     "allow-sync-backup-on-start",
+    "allow-list-backup-sync-versions",
+    "allow-review-backup-sync-version",
     "allow-push-backup-sync",
     "allow-pull-backup-sync",
     "allow-unlock-backup-file",

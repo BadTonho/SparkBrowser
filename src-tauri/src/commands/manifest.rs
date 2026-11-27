@@ -79,6 +79,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "set_backup_sync_config",
     "set_backup_sync_options",
     "sync_backup_on_start",
+    "list_backup_sync_versions",
+    "review_backup_sync_version",
     "push_backup_sync",
     "pull_backup_sync",
     "unlock_backup_file",

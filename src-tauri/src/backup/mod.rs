@@ -14,6 +14,7 @@ pub mod service;
 pub mod sync;
 pub mod sync_filter;
 pub mod sync_options;
+pub mod sync_versions;
 pub mod validation;
 
 #[cfg(test)]

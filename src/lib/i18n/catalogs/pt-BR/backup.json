@@ -269,5 +269,12 @@
   "backup.sync_start_review": "Este computador e a nuvem mudaram. Revise antes de aplicar o arquivo da nuvem.",
   "backup.sync_start_review_open": "Revisar",
   "backup.sync_section_groups": "O que sincroniza",
-  "backup.sync_groups_hint": "Vale para este computador: o que estiver desligado não é enviado daqui nem aplicado aqui a partir da nuvem. Pelo menos um fica ligado."
+  "backup.sync_groups_hint": "Vale para este computador: o que estiver desligado não é enviado daqui nem aplicado aqui a partir da nuvem. Pelo menos um fica ligado.",
+  "backup.sync_section_versions": "Versões anteriores",
+  "backup.sync_versions_hint_drive": "O Google Drive guarda versões anteriores do arquivo sozinho (normalmente por 30 dias). Revise uma para ver o que ela mudaria antes de aplicar.",
+  "backup.sync_versions_hint_copies": "Antes de um arquivo alterado substituir o atual, o atual fica guardado numa pasta \"versions\" ao lado dele (as 5 mais novas). Revise uma para ver o que ela mudaria antes de aplicar.",
+  "backup.sync_versions_show": "Ver versões",
+  "backup.sync_versions_empty": "Ainda não há versões anteriores. Elas aparecem depois que o arquivo da nuvem é substituído.",
+  "backup.error_sync_versions_failed": "Não foi possível ler ou guardar as versões anteriores do arquivo da nuvem.",
+  "backup.error_sync_version_not_found": "Essa versão do arquivo não está mais na nuvem."
 }

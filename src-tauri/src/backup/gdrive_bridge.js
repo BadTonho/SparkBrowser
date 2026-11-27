@@ -855,6 +855,68 @@
     throw new Error("backup.sync_network_failed");
   }
 
+  // Earlier versions: Drive keeps revisions of the same file on its own.
+  const REVISION_ID = /^[A-Za-z0-9_-]{1,200}$/;
+
+  async function backupFileForRevisions() {
+    const { headers, apiKeys } = await waitForDriveSession();
+    const found = await findBackupFileId(headers, apiKeys, false);
+    if (!found.id) {
+      throw new Error("backup.sync_file_not_found");
+    }
+    return { headers, ...found };
+  }
+
+  async function listBackupRevisions() {
+    const { headers, id, apiKey } = await backupFileForRevisions();
+    const url = withKey(
+      `https://clients6.google.com/drive/v3/files/${encodeURIComponent(id)}/revisions?fields=revisions(id,modifiedTime,size)&pageSize=200`,
+      apiKey
+    );
+    const resp = await smartFetch(url, { method: "GET", headers });
+    if (resp.status === 401) {
+      throw new Error("backup.sync_gdrive_login_required: drive-revisions-401");
+    }
+    if (!resp.ok) {
+      throw new Error(`backup.sync_versions_failed: HTTP ${resp.status}`);
+    }
+    const body = await resp.json();
+    const revisions = Array.isArray(body && body.revisions) ? body.revisions : [];
+    // The last revision is the current file; the earlier ones are the versions, newest first.
+    return revisions
+      .slice(0, -1)
+      .filter((rev) => rev && typeof rev.id === "string" && REVISION_ID.test(rev.id))
+      .map((rev) => ({
+        id: rev.id,
+        created_at: Math.floor((Date.parse(rev.modifiedTime) || 0) / 1000),
+        size: Number.isFinite(Number(rev.size)) ? Number(rev.size) : null,
+      }))
+      .reverse()
+      .slice(0, 20);
+  }
+
+  async function downloadBackupRevision(revisionId) {
+    if (!REVISION_ID.test(revisionId)) {
+      throw new Error("backup.sync_version_not_found");
+    }
+    const { headers, id, apiKey } = await backupFileForRevisions();
+    const url = withKey(
+      `https://clients6.google.com/drive/v3/files/${encodeURIComponent(id)}/revisions/${encodeURIComponent(revisionId)}?alt=media`,
+      apiKey
+    );
+    const resp = await smartFetch(url, { method: "GET", headers });
+    if (resp.status === 401) {
+      throw new Error("backup.sync_gdrive_login_required: drive-revision-401");
+    }
+    if (resp.status === 404) {
+      throw new Error("backup.sync_version_not_found");
+    }
+    if (!resp.ok) {
+      throw new Error(`backup.sync_versions_failed: HTTP ${resp.status}`);
+    }
+    return await resp.text();
+  }
+
   function normalizeBridgeError(err) {
     const raw = err instanceof Error ? err.message : String(err);
     if (raw.startsWith("backup.")) {
@@ -931,6 +993,26 @@
         request: requestId,
         data: normalizeBridgeError(err),
       });
+    }
+  };
+
+  window.__sparkGDriveVersions = async (token, requestId) => {
+    if (token !== BRIDGE_TOKEN) return;
+    try {
+      const list = await listBackupRevisions();
+      await sendPayloadToRust(requestId, encodeBase64Utf8(JSON.stringify(list)));
+    } catch (err) {
+      await sendBridgeMessage("error", { request: requestId, data: normalizeBridgeError(err) });
+    }
+  };
+
+  window.__sparkGDriveVersion = async (token, requestId, revisionId) => {
+    if (token !== BRIDGE_TOKEN) return;
+    try {
+      const jsonText = await downloadBackupRevision(String(revisionId));
+      await sendPayloadToRust(requestId, encodeBase64Utf8(jsonText));
+    } catch (err) {
+      await sendBridgeMessage("error", { request: requestId, data: normalizeBridgeError(err) });
     }
   };
 

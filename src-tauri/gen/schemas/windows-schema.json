@@ -927,6 +927,12 @@
           "markdownDescription": "Enables the install_update command without any pre-configured scope."
         },
         {
+          "description": "Enables the list_backup_sync_versions command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-list-backup-sync-versions",
+          "markdownDescription": "Enables the list_backup_sync_versions command without any pre-configured scope."
+        },
+        {
           "description": "Enables the list_profiles command without any pre-configured scope.",
           "type": "string",
           "const": "allow-list-profiles",
@@ -1153,6 +1159,12 @@
           "type": "string",
           "const": "allow-restore-named-session",
           "markdownDescription": "Enables the restore_named_session command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the review_backup_sync_version command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-review-backup-sync-version",
+          "markdownDescription": "Enables the review_backup_sync_version command without any pre-configured scope."
         },
         {
           "description": "Enables the save_bookmark command without any pre-configured scope.",
@@ -2565,6 +2577,12 @@
           "markdownDescription": "Denies the install_update command without any pre-configured scope."
         },
         {
+          "description": "Denies the list_backup_sync_versions command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-list-backup-sync-versions",
+          "markdownDescription": "Denies the list_backup_sync_versions command without any pre-configured scope."
+        },
+        {
           "description": "Denies the list_profiles command without any pre-configured scope.",
           "type": "string",
           "const": "deny-list-profiles",
@@ -2791,6 +2809,12 @@
           "type": "string",
           "const": "deny-restore-named-session",
           "markdownDescription": "Denies the restore_named_session command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the review_backup_sync_version command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-review-backup-sync-version",
+          "markdownDescription": "Denies the review_backup_sync_version command without any pre-configured scope."
         },
         {
           "description": "Denies the save_bookmark command without any pre-configured scope.",

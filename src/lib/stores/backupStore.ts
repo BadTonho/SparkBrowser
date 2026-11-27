@@ -27,6 +27,8 @@ import {
   saveBackupSyncConfig,
   saveBackupSyncOptions,
   syncBackupOnStart,
+  listBackupSyncVersions,
+  reviewBackupSyncVersion,
   saveLocalBackupSchedule,
   unlockBackupFile,
 } from "../services/bridge/backup";
@@ -54,7 +56,7 @@ import {
 import { languagePreference, t } from "../i18n";
 import { showToast } from "./notificationStore";
 import { followsEachChange, syncPaused, tickShouldSync } from "../services/backup/sync-schedule";
-import type { SyncOptions } from "../types/backup";
+import type { SyncOptions, SyncVersion } from "../types/backup";
 import { keyboardShortcuts } from "./shortcutsStore";
 import { pipWindowShadow } from "./pipAppearanceStore";
 import type {
@@ -481,6 +483,31 @@ export const syncPushNow = () =>
     const activeTab = get(tabs).find((t) => t.is_active);
     if (activeTab && activeTab.url.includes("drive.google.com")) {
       void reloadCurrentPage().catch(logIgnored);
+    }
+  }));
+
+/** Earlier versions of the file in the cloud, once they were asked for (null until then). */
+export const syncVersions = writable<SyncVersion[] | null>(null);
+
+export const loadSyncVersions = () =>
+  action(() => trackSync(async () => {
+    syncVersions.set(await listBackupSyncVersions());
+  }));
+
+/** Opens an earlier version in the review panel; nothing changes until it is confirmed there. */
+export const reviewSyncVersion = (id: string) =>
+  action(() => trackSync(async () => {
+    if (source) await discardBackupImport(source);
+    backupResult.set(null);
+    backupPreview.set(null);
+    source = null;
+    resetRestoreOptions();
+    await noteWriter.flushAll();
+    const res = await reviewBackupSyncVersion(id, capturePreferences());
+    backupSyncState.set(res.state);
+    if (res.kind === "preview") {
+      source = res.source_token;
+      await createPreview();
     }
   }));
 

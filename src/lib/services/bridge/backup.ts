@@ -1,5 +1,5 @@
 import { invoke } from "./runtime";
-import type { BackupImportResult, BookmarkExportFormat, BookmarkExportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, LocalBackupOutcome, LocalBackupReason, LocalBackupSchedule, LocalBackupState, RestoreOptions, SyncPullResponse, SyncPushResult, SyncOptions, SyncStartResponse, SyncStateSnapshot, SyncTargetConfig } from "../../types/backup";
+import type { BackupImportResult, BookmarkExportFormat, BookmarkExportResult, BackupPreferences, BackupPreferenceTask, BackupPreview, LocalBackupOutcome, LocalBackupReason, LocalBackupSchedule, LocalBackupState, RestoreOptions, SyncPullResponse, SyncPushResult, SyncOptions, SyncStartResponse, SyncStateSnapshot, SyncTargetConfig, SyncVersion } from "../../types/backup";
 export const exportBackup = (preferences: BackupPreferences) => invoke<boolean>("export_backup", { preferences });
 export const exportBookmarks = (format: BookmarkExportFormat) => invoke<BookmarkExportResult | null>("export_bookmarks", { format });
 export const chooseBackupFile = () => invoke<string | null>("choose_backup_file");
@@ -19,6 +19,9 @@ export const saveBackupSyncOptions = (options: SyncOptions) =>
   invoke<SyncStateSnapshot>("set_backup_sync_options", { options });
 export const syncBackupOnStart = (currentPreferences: BackupPreferences) =>
   invoke<SyncStartResponse>("sync_backup_on_start", { currentPreferences });
+export const listBackupSyncVersions = () => invoke<SyncVersion[]>("list_backup_sync_versions");
+export const reviewBackupSyncVersion = (id: string, currentPreferences: BackupPreferences) =>
+  invoke<SyncPullResponse>("review_backup_sync_version", { id, currentPreferences });
 export const pushBackupSync = (preferences: BackupPreferences, onlyIfChanged: boolean) =>
   invoke<SyncPushResult>("push_backup_sync", { preferences, onlyIfChanged });
 export const pullBackupSync = (currentPreferences: BackupPreferences, directApply: boolean, applyPreferencesOverride: boolean | null = null) =>

@@ -79,6 +79,15 @@ export interface SyncPushResult {
   state: SyncStateSnapshot;
 }
 
+/** An earlier version of the file in the cloud. */
+export interface SyncVersion {
+  /** The copy's file name (folder, WebDAV) or the Drive revision id. */
+  id: string;
+  /** Unix seconds: when that version was written. */
+  created_at: number;
+  size: number | null;
+}
+
 /** What the check made when Spark opened. */
 export type SyncStartResponse =
   | { kind: "skipped" | "up_to_date"; state: SyncStateSnapshot }

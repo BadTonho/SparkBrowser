@@ -275,6 +275,24 @@ pub async fn sync_backup_on_start(
     backup::sync::sync_on_start(&app, current_preferences).await
 }
 
+/// The earlier versions of the file in the cloud.
+#[tauri::command]
+pub async fn list_backup_sync_versions(
+    app: AppHandle,
+) -> Result<Vec<backup::sync_versions::SyncVersion>, String> {
+    backup::sync::list_versions(&app).await
+}
+
+/// Opens an earlier version of the file in the cloud in the review panel.
+#[tauri::command]
+pub async fn review_backup_sync_version(
+    app: AppHandle,
+    id: String,
+    current_preferences: BackupPreferences,
+) -> Result<backup::sync::SyncPullResponse, String> {
+    backup::sync::review_version(&app, id, current_preferences).await
+}
+
 #[tauri::command]
 pub async fn push_backup_sync(
     app: AppHandle,

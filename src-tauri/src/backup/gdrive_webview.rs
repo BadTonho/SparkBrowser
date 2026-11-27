@@ -427,6 +427,103 @@ pub async fn push_document_via_webview(
     Ok(())
 }
 
+/// Runs one bridge call in the hidden Drive page and returns its payload (base64 text). `call` builds
+/// the script from the encoded token and request id.
+async fn bridge_payload(
+    app: &AppHandle,
+    call: impl FnOnce(&str, &str) -> String,
+) -> Result<String, String> {
+    let (webview, token) = wait_until_webview_ready(app).await?;
+    let request_id = next_request_id();
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.state::<BackupService>()
+        .sync
+        .gdrive
+        .pending
+        .lock()
+        .map_err(|e| e.to_string())?
+        .insert(
+            request_id.clone(),
+            PendingGDriveRequest {
+                chunks: Vec::new(),
+                sender: Some(tx),
+            },
+        );
+    let script = call(
+        &serde_json::to_string(&token).map_err(|e| e.to_string())?,
+        &serde_json::to_string(&request_id).map_err(|e| e.to_string())?,
+    );
+    webview
+        .eval(&script)
+        .map_err(|e| format!("backup.sync_network_failed: {e}"))?;
+    let response = tokio::time::timeout(Duration::from_secs(25), rx)
+        .await
+        .map_err(|_| {
+            if let Some(service) = app.try_state::<BackupService>() {
+                if let Ok(mut pending) = service.sync.gdrive.pending.lock() {
+                    pending.remove(&request_id);
+                }
+            }
+            reset_gdrive_webview(app, &webview);
+            "backup.sync_network_failed: Google Drive web session timed out".to_string()
+        })?
+        .map_err(|_| "backup.sync_network_failed".to_string())?;
+    reset_gdrive_webview(app, &webview);
+    let payload = response?;
+    persist_detected_gdrive_email(app);
+    Ok(payload)
+}
+
+fn decode_payload(b64_payload: &str) -> Result<Vec<u8>, String> {
+    base64::engine::general_purpose::STANDARD
+        .decode(b64_payload.as_bytes())
+        .map_err(|e| format!("backup.invalid_document: {e}"))
+}
+
+/// The earlier versions Drive keeps of the sync file, newest first.
+pub async fn list_versions_via_webview(
+    app: &AppHandle,
+) -> Result<Vec<super::sync_versions::SyncVersion>, String> {
+    let payload = bridge_payload(app, |token, request| {
+        format!("window.__sparkGDriveVersions?.({token}, {request});")
+    })
+    .await?;
+    #[derive(serde::Deserialize)]
+    struct Revision {
+        id: String,
+        created_at: i64,
+        size: Option<u64>,
+    }
+    let revisions: Vec<Revision> = serde_json::from_slice(&decode_payload(&payload)?)
+        .map_err(|e| format!("backup.sync_versions_failed: {e}"))?;
+    Ok(revisions
+        .into_iter()
+        .filter(|rev| super::sync_versions::valid_revision_id(&rev.id))
+        .map(|rev| super::sync_versions::SyncVersion {
+            id: rev.id,
+            created_at: rev.created_at,
+            size: rev.size,
+        })
+        .collect())
+}
+
+/// Downloads one earlier version (a Drive revision) of the sync file.
+pub async fn pull_version_via_webview(
+    app: &AppHandle,
+    revision_id: &str,
+    password: Option<&str>,
+) -> Result<BackupDocument, String> {
+    if !super::sync_versions::valid_revision_id(revision_id) {
+        return Err("backup.sync_version_not_found".into());
+    }
+    let revision = serde_json::to_string(revision_id).map_err(|e| e.to_string())?;
+    let payload = bridge_payload(app, |token, request| {
+        format!("window.__sparkGDriveVersion?.({token}, {request}, {revision});")
+    })
+    .await?;
+    files::decode_with(&decode_payload(&payload)?, password)
+}
+
 pub async fn pull_document_via_webview(
     app: &AppHandle,
     password: Option<&str>,

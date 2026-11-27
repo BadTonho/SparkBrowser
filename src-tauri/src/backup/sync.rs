@@ -551,6 +551,29 @@ fn apply_auth(
     }
 }
 
+/// A request builder for the WebDAV target, with its authentication.
+fn webdav_requester(
+    username: &str,
+    secret: Option<&str>,
+) -> Result<impl Fn(reqwest::Method, url::Url) -> reqwest::blocking::RequestBuilder, String> {
+    let client = build_http_client()?;
+    let user = username.to_string();
+    let secret = secret.map(str::to_string);
+    Ok(move |method, url| apply_auth(client.request(method, url), &user, secret.as_deref()))
+}
+
+/// Keeping a version never stops a send: a failure is logged and the send goes on.
+fn report_version_failure(result: Result<(), String>) {
+    if let Err(error) = result {
+        crate::error_log::report(
+            crate::error_log::Level::Warning,
+            "backup",
+            "the replaced sync file could not be kept as a version",
+            &error,
+        );
+    }
+}
+
 pub fn webdav_put(
     endpoint_url: &str,
     username: &str,
@@ -690,6 +713,8 @@ pub async fn push_sync(
         });
     }
 
+    // A changed file keeps the one it replaces as a version; Drive keeps its own revisions.
+    let keep_version = previous_fp.as_deref() != Some(current_fp.as_str());
     let io_result = match &config {
         SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
         SyncTargetConfig::GoogleDriveWeb { .. } => {
@@ -700,8 +725,12 @@ pub async fn push_sync(
             let doc = document.clone();
             let password = password.clone();
             tauri::async_runtime::spawn_blocking(move || {
-                resolve_folder_file_path(&dir)
-                    .and_then(|file_path| files::write_with(&file_path, &doc, password.as_deref()))
+                resolve_folder_file_path(&dir).and_then(|file_path| {
+                    if keep_version {
+                        report_version_failure(super::sync_versions::archive_folder(&file_path));
+                    }
+                    files::write_with(&file_path, &doc, password.as_deref())
+                })
             })
             .await
             .map_err(|e| e.to_string())?
@@ -726,6 +755,12 @@ pub async fn push_sync(
             let doc = document.clone();
             let password = password.clone();
             tauri::async_runtime::spawn_blocking(move || {
+                if keep_version {
+                    report_version_failure(resolve_webdav_file_url(&url).and_then(|file_url| {
+                        let request = webdav_requester(&user, secret.as_deref())?;
+                        super::sync_versions::archive_webdav(&file_url, &request)
+                    }));
+                }
                 webdav_put(&url, &user, secret.as_deref(), &doc, password.as_deref())
             })
             .await
@@ -995,6 +1030,106 @@ pub async fn sync_on_start(
             })
         }
     }
+}
+
+/// The earlier versions of the file in the cloud, newest first.
+pub async fn list_versions(
+    app: &AppHandle,
+) -> Result<Vec<super::sync_versions::SyncVersion>, String> {
+    let backup_service = app.state::<service::BackupService>();
+    let (config, secret) = with_db(app, |conn| {
+        Ok((
+            load_config(conn)?,
+            resolve_secret(conn, &backup_service.sync)?,
+        ))
+    })?;
+    match config {
+        SyncTargetConfig::Disabled => Err("backup.sync_not_configured".into()),
+        SyncTargetConfig::GoogleDriveWeb { .. } => {
+            gdrive_webview::list_versions_via_webview(app).await
+        }
+        SyncTargetConfig::Folder { directory_path, .. } => {
+            tauri::async_runtime::spawn_blocking(move || {
+                super::sync_versions::list_folder(&resolve_folder_file_path(&directory_path)?)
+            })
+            .await
+            .map_err(|e| e.to_string())?
+        }
+        SyncTargetConfig::DirectWebdav {
+            endpoint_url,
+            username,
+            ..
+        } => tauri::async_runtime::spawn_blocking(move || {
+            let request = webdav_requester(&username, secret.as_deref())?;
+            super::sync_versions::list_webdav(&resolve_webdav_file_url(&endpoint_url)?, &request)
+        })
+        .await
+        .map_err(|e| e.to_string())?,
+    }
+}
+
+/// Opens one earlier version in the review panel; nothing is applied until it is confirmed there.
+pub async fn review_version(
+    app: &AppHandle,
+    id: String,
+    current_preferences: BackupPreferences,
+) -> Result<SyncPullResponse, String> {
+    let backup_service = app.state::<service::BackupService>();
+    let (config, secret, password, groups) = with_db(app, |conn| {
+        Ok((
+            load_config(conn)?,
+            resolve_secret(conn, &backup_service.sync)?,
+            encryption::read_password(conn, &backup_service.sync.credentials),
+            super::sync_options::groups(conn),
+        ))
+    })?;
+    let doc = match config {
+        SyncTargetConfig::Disabled => Err("backup.sync_not_configured".to_string()),
+        SyncTargetConfig::GoogleDriveWeb { .. } => {
+            gdrive_webview::pull_version_via_webview(app, &id, password.as_deref()).await
+        }
+        SyncTargetConfig::Folder { directory_path, .. } => {
+            tauri::async_runtime::spawn_blocking(move || {
+                super::sync_versions::read_folder_version(
+                    &resolve_folder_file_path(&directory_path)?,
+                    &id,
+                    password.as_deref(),
+                )
+            })
+            .await
+            .map_err(|e| e.to_string())?
+        }
+        SyncTargetConfig::DirectWebdav {
+            endpoint_url,
+            username,
+            ..
+        } => tauri::async_runtime::spawn_blocking(move || {
+            let request = webdav_requester(&username, secret.as_deref())?;
+            super::sync_versions::read_webdav_version(
+                &resolve_webdav_file_url(&endpoint_url)?,
+                &id,
+                &request,
+                password.as_deref(),
+            )
+        })
+        .await
+        .map_err(|e| e.to_string())?,
+    }?;
+    let source_token = backup_service.select(doc)?;
+    let preview = service::preview_with(
+        app,
+        None,
+        Some(source_token.clone()),
+        current_preferences,
+        sync_restore_options(&groups),
+    )
+    .await?;
+    let state = with_db(app, |conn| snapshot(conn, &backup_service.sync))?;
+    Ok(SyncPullResponse::Preview {
+        source_token,
+        preview: Box::new(preview),
+        state,
+    })
 }
 
 pub async fn pull_sync(

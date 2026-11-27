@@ -269,5 +269,12 @@
   "backup.sync_start_review": "This computer and the cloud both changed. Review before applying the file from the cloud.",
   "backup.sync_start_review_open": "Review",
   "backup.sync_section_groups": "What syncs",
-  "backup.sync_groups_hint": "Applies to this computer: what is off is not sent from here and not applied here from the cloud. At least one stays on."
+  "backup.sync_groups_hint": "Applies to this computer: what is off is not sent from here and not applied here from the cloud. At least one stays on.",
+  "backup.sync_section_versions": "Earlier versions",
+  "backup.sync_versions_hint_drive": "Google Drive keeps earlier versions of the file on its own (usually for 30 days). Review one to see what it would change before applying it.",
+  "backup.sync_versions_hint_copies": "Before a changed file replaces the current one, the current one is kept in a \"versions\" folder next to it (the newest 5). Review one to see what it would change before applying it.",
+  "backup.sync_versions_show": "Show versions",
+  "backup.sync_versions_empty": "No earlier versions yet. They appear after the file in the cloud is replaced.",
+  "backup.error_sync_versions_failed": "The earlier versions of the file in the cloud could not be read or kept.",
+  "backup.error_sync_version_not_found": "That version of the file is no longer in the cloud."
 }

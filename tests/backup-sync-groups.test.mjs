@@ -18,7 +18,7 @@ test('"What syncs" offers every group and keeps at least one on', () => {
 test('every sync path filters by the groups of this computer', () => {
   const sync = read('src-tauri/src/backup/sync.rs');
   assert.doesNotMatch(sync, /fingerprint_hex\((&?document|&remote|&local|&synced_doc)\)/, 'no sync path fingerprints unfiltered data');
-  assert.equal(sync.match(/sync_restore_options\(&groups\)/g).length, 2, 'the direct pull and the start-up apply only accept the synced groups');
+  assert.equal(sync.match(/sync_restore_options\(&groups\)/g).length, 3, 'the direct pull, the start-up apply and the version review only accept the synced groups');
   assert.match(sync, /super::sync_filter::filter\(&mut document, &groups\);/, 'only the synced groups leave this computer');
   assert.match(read('src-tauri/src/backup/sync_options.rs'), /groups: RestoreGroup::ALL\.to_vec\(\),/, 'everything syncs by default');
 });

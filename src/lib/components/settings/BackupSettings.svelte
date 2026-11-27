@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { t, formatDate, type MessageKey } from "../../i18n";
+  import { t, formatDate, formatNumber, type MessageKey } from "../../i18n";
+  import { formatBytes } from "./backup/backupFormat";
   import { isTauriRuntime } from "../../services/bridge/runtime";
   import {
     backupBusy,
@@ -10,7 +11,10 @@
     backupSyncNotice,
     backupSyncRunning,
     driveWaitingForAccount,
+    loadSyncVersions,
+    reviewSyncVersion,
     saveSyncOptions,
+    syncVersions,
     syncPausedNow,
     backupSyncState,
     openGoogleLoginTab,
@@ -487,6 +491,31 @@
               <button class="pill-action" data-testid="backup-sync-pull-direct" disabled={$backupBusy} onclick={() => void runSyncAction(() => syncPullDirect(directApplyPrefs))}>{$t("backup.sync_pull_direct_button")}</button>
             </div>
           </div>
+        </section>
+
+        <section class="sync-section" aria-labelledby="sync-versions-title">
+          <h4 class="sync-section-title" id="sync-versions-title">{$t("backup.sync_section_versions")}</h4>
+          <p class="sync-hint">{$t($backupSyncState.config.mode === "google_drive_web" ? "backup.sync_versions_hint_drive" : "backup.sync_versions_hint_copies")}</p>
+          {#if $syncVersions === null}
+            <div class="actions">
+              <button class="pill-action" data-testid="backup-sync-versions-load" disabled={$backupBusy} onclick={() => void runSyncAction(loadSyncVersions)}>{$t("backup.sync_versions_show")}</button>
+            </div>
+          {:else if $syncVersions.length === 0}
+            <p class="sync-hint" data-testid="backup-sync-versions-empty">{$t("backup.sync_versions_empty")}</p>
+          {:else}
+            <div class="sync-rows" data-testid="backup-sync-versions">
+              {#each $syncVersions as version (version.id)}
+                <div class="sync-row" data-testid="backup-sync-version">
+                  <span class="sync-row-text">
+                    <span class="sync-row-label">{$formatDate(version.created_at * 1000, { dateStyle: "medium", timeStyle: "short" })}</span>
+                    {#if version.size !== null}<span class="sync-row-desc">{formatBytes(version.size, $formatNumber)}</span>{/if}
+                  </span>
+                  <button class="pill-action" data-testid="backup-sync-version-review" disabled={$backupBusy}
+                    onclick={() => void runSyncAction(() => reviewSyncVersion(version.id)).then(() => { if (!syncActionError) syncExpanded = false; })}>{$t("backup.sync_pull_preview_button")}</button>
+                </div>
+              {/each}
+            </div>
+          {/if}
         </section>
       {/if}
 
