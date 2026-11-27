@@ -1,6 +1,7 @@
 //! Sync choices that apply to every target (Google Drive, folder, WebDAV): how often the automatic
 //! sync runs and whether it is paused. They live apart from the target configuration so changing
 //! them never touches the target, its account or its saved password.
+use super::model::RestoreGroup;
 use crate::database::preferences_repo;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -18,7 +19,7 @@ pub enum SyncInterval {
     OnExit,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default, deny_unknown_fields)]
 pub struct SyncOptions {
     pub interval: SyncInterval,
@@ -26,6 +27,24 @@ pub struct SyncOptions {
     pub paused_until: Option<i64>,
     /// When Spark opens, download the file in the cloud and apply it if it is newer.
     pub pull_on_start: bool,
+    /// What this computer sends and accepts (every group by default).
+    pub groups: Vec<RestoreGroup>,
+}
+
+impl Default for SyncOptions {
+    fn default() -> Self {
+        Self {
+            interval: SyncInterval::default(),
+            paused_until: None,
+            pull_on_start: false,
+            groups: RestoreGroup::ALL.to_vec(),
+        }
+    }
+}
+
+/// The options to use: what was saved, or the defaults when nothing valid was.
+pub fn groups(conn: &Connection) -> Vec<RestoreGroup> {
+    load(conn).groups
 }
 
 pub fn load(conn: &Connection) -> SyncOptions {
@@ -45,10 +64,15 @@ pub fn load(conn: &Connection) -> SyncOptions {
 }
 
 pub fn validate(options: &SyncOptions) -> Result<(), String> {
-    match options.paused_until {
-        Some(until) if until <= 0 => Err("backup.sync_invalid_config".into()),
-        _ => Ok(()),
+    if matches!(options.paused_until, Some(until) if until <= 0) {
+        return Err("backup.sync_invalid_config".into());
     }
+    // The same rules as a restore: at least one group, none twice.
+    super::model::RestoreOptions {
+        groups: options.groups.clone(),
+        mode: super::model::RestoreMode::Merge,
+    }
+    .validate()
 }
 
 pub fn save(conn: &Connection, options: &SyncOptions) -> Result<(), String> {
@@ -92,6 +116,7 @@ mod tests {
             interval: SyncInterval::FifteenMinutes,
             paused_until: Some(1_900_000_000),
             pull_on_start: true,
+            groups: vec![RestoreGroup::Bookmarks, RestoreGroup::Notes],
         };
         save(&conn, &options).unwrap();
         assert_eq!(load(&conn), options);
@@ -99,6 +124,25 @@ mod tests {
             &conn,
             &SyncOptions {
                 paused_until: Some(0),
+                ..options.clone()
+            }
+        )
+        .is_err());
+        assert!(
+            save(
+                &conn,
+                &SyncOptions {
+                    groups: vec![],
+                    ..options.clone()
+                }
+            )
+            .is_err(),
+            "nothing to sync"
+        );
+        assert!(save(
+            &conn,
+            &SyncOptions {
+                groups: vec![RestoreGroup::Notes, RestoreGroup::Notes],
                 ..options
             }
         )

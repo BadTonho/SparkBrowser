@@ -37,9 +37,17 @@
   import { gdriveFix } from "../../services/backup/gdrive-fix.js";
   import { summarizeSyncRing } from "../../services/backup/sync-ring";
   import { pauseUntil } from "../../services/backup/sync-schedule";
-  import type { SyncInterval } from "../../types/backup";
+  import type { RestoreGroup, SyncInterval } from "../../types/backup";
 
   const INTERVALS: SyncInterval[] = ["auto", "five_minutes", "fifteen_minutes", "on_exit"];
+  const SYNC_GROUPS: RestoreGroup[] = ["workspaces", "bookmarks", "sessions", "notes", "site_search", "settings", "shortcuts"];
+
+  /** Turns a group on or off; the last group left stays on (there must be something to sync). */
+  function toggleSyncGroup(group: RestoreGroup, on: boolean): void {
+    const current = $backupSyncState.options.groups;
+    const next = on ? SYNC_GROUPS.filter((item) => item === group || current.includes(item)) : current.filter((item) => item !== group);
+    if (next.length) void saveSyncOptions({ groups: next });
+  }
 
   const desktop = isTauriRuntime();
   let syncExpanded = $state(false);
@@ -412,6 +420,21 @@
       {/if}
 
       {#if $backupSyncState.config.mode !== "disabled"}
+        <section class="sync-section" aria-labelledby="sync-groups-title">
+          <h4 class="sync-section-title" id="sync-groups-title">{$t("backup.sync_section_groups")}</h4>
+          <p class="sync-hint">{$t("backup.sync_groups_hint")}</p>
+          <div class="sync-rows" data-testid="backup-sync-groups">
+            {#each SYNC_GROUPS as group}
+              {@const on = $backupSyncState.options.groups.includes(group)}
+              <label class="sync-row">
+                <span class="sync-row-text"><span class="sync-row-label">{$t(`backup.group_${group}` as MessageKey)}</span></span>
+                <input type="checkbox" role="switch" data-testid={"backup-sync-group-" + group} checked={on}
+                  disabled={$backupBusy || (on && $backupSyncState.options.groups.length === 1)} onchange={(event) => toggleSyncGroup(group, event.currentTarget.checked)} />
+              </label>
+            {/each}
+          </div>
+        </section>
+
         <section class="sync-section" aria-labelledby="sync-schedule-title">
           <h4 class="sync-section-title" id="sync-schedule-title">{$t("backup.sync_section_schedule")}</h4>
           <div class="sync-rows">

@@ -88,7 +88,7 @@ export const backupSyncState = writable<SyncStateSnapshot>({
   connected_account: null,
   last_synced_at: null,
   last_error: null,
-  options: { interval: "auto", paused_until: null, pull_on_start: false },
+  options: { interval: "auto", paused_until: null, pull_on_start: false, groups: ["workspaces", "bookmarks", "sessions", "notes", "site_search", "settings", "shortcuts"] },
   this_device: "",
   last_device: null,
 });

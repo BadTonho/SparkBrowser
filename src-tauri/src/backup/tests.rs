@@ -844,3 +844,62 @@ fn google_drive_web_mode_persists_and_restricts_allowed_webview_hosts() {
     );
     assert_eq!(rx.try_recv().unwrap(), Ok("abcdef".to_string()));
 }
+
+#[test]
+fn sync_groups_filter_the_file_and_the_fingerprint() {
+    use super::sync_filter::{filter, fingerprint};
+    let (_db, doc) = setup();
+    let all = RestoreGroup::ALL.to_vec();
+    let no_notes: Vec<_> = all
+        .iter()
+        .copied()
+        .filter(|g| *g != RestoreGroup::Notes)
+        .collect();
+    let mut changed_notes = doc.clone();
+    changed_notes
+        .data
+        .notes
+        .push(crate::database::notes_repo::PageNote {
+            url: "https://example.test/other".into(),
+            title: "Other".into(),
+            text: "Only here".into(),
+            updated_at: 3,
+        });
+    // A computer that does not sync notes sees no difference; one that does, sees it.
+    assert_eq!(
+        fingerprint(&doc, &no_notes).unwrap(),
+        fingerprint(&changed_notes, &no_notes).unwrap()
+    );
+    assert_ne!(
+        fingerprint(&doc, &all).unwrap(),
+        fingerprint(&changed_notes, &all).unwrap()
+    );
+    // The device name never counts.
+    let mut other_device = doc.clone();
+    other_device.device = Some("NOTEBOOK".into());
+    assert_eq!(
+        fingerprint(&doc, &all).unwrap(),
+        fingerprint(&other_device, &all).unwrap()
+    );
+    // Settings and shortcuts count only when synced.
+    let mut changed_prefs = doc.clone();
+    changed_prefs.preferences.show_bookmarks_bar = !doc.preferences.show_bookmarks_bar;
+    let data_only = RestoreGroup::DATA.to_vec();
+    assert_eq!(
+        fingerprint(&doc, &data_only).unwrap(),
+        fingerprint(&changed_prefs, &data_only).unwrap()
+    );
+    assert_ne!(
+        fingerprint(&doc, &all).unwrap(),
+        fingerprint(&changed_prefs, &all).unwrap()
+    );
+    // What is not synced does not leave this computer.
+    let mut sent = changed_notes.clone();
+    filter(&mut sent, &no_notes);
+    assert!(sent.data.notes.is_empty());
+    assert_eq!(
+        sent.data.workspaces.len(),
+        changed_notes.data.workspaces.len()
+    );
+    validation::document(&sent).unwrap();
+}

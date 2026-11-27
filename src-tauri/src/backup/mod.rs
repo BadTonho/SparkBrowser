@@ -12,6 +12,7 @@ pub mod migrate;
 pub mod model;
 pub mod service;
 pub mod sync;
+pub mod sync_filter;
 pub mod sync_options;
 pub mod validation;
 

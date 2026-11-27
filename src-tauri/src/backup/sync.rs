@@ -416,7 +416,11 @@ pub fn push_document_to_target(
         return Err("backup.sync_not_configured".into());
     }
 
-    let current_fp = fingerprint_hex(document)?;
+    let groups = super::sync_options::groups(conn);
+    let mut filtered = document.clone();
+    super::sync_filter::filter(&mut filtered, &groups);
+    let document = &filtered;
+    let current_fp = super::sync_filter::fingerprint(document, &groups)?;
     let previous_fp = preferences_repo::load(conn, preferences_repo::BACKUP_SYNC_FINGERPRINT_KEY)?;
 
     let target_exists = match &config {
@@ -638,8 +642,10 @@ pub async fn push_sync(
 ) -> Result<SyncPushResult, String> {
     let service = app.state::<service::BackupService>();
     let _serial = service.operation.lock().await;
-    let document = service::capture(app, preferences).await?;
-    let current_fp = fingerprint_hex(&document)?;
+    let mut document = service::capture(app, preferences).await?;
+    let groups = with_db(app, |conn| Ok(super::sync_options::groups(conn)))?;
+    super::sync_filter::filter(&mut document, &groups);
+    let current_fp = super::sync_filter::fingerprint(&document, &groups)?;
 
     let (config, previous_fp, password) = {
         let state = app.state::<BrowserState>();
@@ -851,6 +857,14 @@ async fn read_remote(app: &AppHandle) -> Result<(BackupDocument, bool), String> 
     Ok((doc, config_apply_prefs))
 }
 
+/// A merge restricted to the groups this computer syncs.
+fn sync_restore_options(groups: &[super::model::RestoreGroup]) -> super::model::RestoreOptions {
+    super::model::RestoreOptions {
+        groups: groups.to_vec(),
+        mode: super::model::RestoreMode::Merge,
+    }
+}
+
 /// Runs `work` with the profile database.
 fn with_db<T>(
     app: &AppHandle,
@@ -874,12 +888,19 @@ async fn apply_remote(
     current_preferences: BackupPreferences,
 ) -> Result<(BackupImportResult, SyncStateSnapshot), String> {
     let backup_service = app.state::<service::BackupService>();
-    let preview =
-        service::preview(app, None, Some(source_token), current_preferences.clone()).await?;
+    let groups = with_db(app, |conn| Ok(super::sync_options::groups(conn)))?;
+    let preview = service::preview_with(
+        app,
+        None,
+        Some(source_token),
+        current_preferences.clone(),
+        sync_restore_options(&groups),
+    )
+    .await?;
     let result =
         service::import(app, preview.token, apply_prefs, current_preferences.clone()).await?;
     let synced_doc = service::capture(app, current_preferences).await?;
-    let current_fp = fingerprint_hex(&synced_doc)?;
+    let current_fp = super::sync_filter::fingerprint(&synced_doc, &groups)?;
     let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
     let snap = with_db(app, |conn| {
         clear_error_and_record_sync(conn, &backup_service.sync, &current_fp, now)?;
@@ -943,9 +964,10 @@ pub async fn sync_on_start(
         }
         Err(error) => return Err(error),
     };
-    let remote_fp = fingerprint_hex(&remote)?;
+    let groups = with_db(app, |conn| Ok(super::sync_options::groups(conn)))?;
+    let remote_fp = super::sync_filter::fingerprint(&remote, &groups)?;
     let local = service::capture(app, current_preferences.clone()).await?;
-    let local_fp = fingerprint_hex(&local)?;
+    let local_fp = super::sync_filter::fingerprint(&local, &groups)?;
     match decide_on_start(&remote_fp, &local_fp, last_fp.as_deref()) {
         StartDecision::UpToDate => {
             let state = with_db(app, |conn| snapshot(conn, &backup_service.sync))?;
@@ -984,12 +1006,14 @@ pub async fn pull_sync(
     let backup_service = app.state::<service::BackupService>();
     let (doc, config_apply_prefs) = read_remote(app).await?;
 
+    let groups = with_db(app, |conn| Ok(super::sync_options::groups(conn)))?;
     let source_token = backup_service.select(doc)?;
-    let preview = service::preview(
+    let preview = service::preview_with(
         app,
         None,
         Some(source_token.clone()),
         current_preferences.clone(),
+        sync_restore_options(&groups),
     )
     .await?;
 
@@ -1013,7 +1037,7 @@ pub async fn pull_sync(
     let result =
         service::import(app, preview.token, apply_prefs, current_preferences.clone()).await?;
     let synced_doc = service::capture(app, current_preferences).await?;
-    let current_fp = fingerprint_hex(&synced_doc)?;
+    let current_fp = super::sync_filter::fingerprint(&synced_doc, &groups)?;
     let now = crate::state::tab_model::TabInfo::current_epoch_secs() as i64;
     let state = app.state::<BrowserState>();
     let db = state
@@ -1037,8 +1061,14 @@ mod start_tests {
     #[test]
     fn opening_applies_only_what_changed_in_the_cloud_alone() {
         // Nothing new in the cloud, or the cloud already holds this computer's data.
-        assert_eq!(decide_on_start("a", "b", Some("a")), StartDecision::UpToDate);
-        assert_eq!(decide_on_start("a", "a", Some("x")), StartDecision::UpToDate);
+        assert_eq!(
+            decide_on_start("a", "b", Some("a")),
+            StartDecision::UpToDate
+        );
+        assert_eq!(
+            decide_on_start("a", "a", Some("x")),
+            StartDecision::UpToDate
+        );
         // Another computer sent, and this one did not change since the last sync.
         assert_eq!(decide_on_start("b", "a", Some("a")), StartDecision::Apply);
         // Both changed, or nothing was ever synced here: the person reviews first.

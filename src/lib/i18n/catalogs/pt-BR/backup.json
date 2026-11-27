@@ -267,5 +267,7 @@
   "backup.sync_start_applied": "Atualizado com as mudanças de {device}.",
   "backup.sync_start_cloud": "a nuvem",
   "backup.sync_start_review": "Este computador e a nuvem mudaram. Revise antes de aplicar o arquivo da nuvem.",
-  "backup.sync_start_review_open": "Revisar"
+  "backup.sync_start_review_open": "Revisar",
+  "backup.sync_section_groups": "O que sincroniza",
+  "backup.sync_groups_hint": "Vale para este computador: o que estiver desligado não é enviado daqui nem aplicado aqui a partir da nuvem. Pelo menos um fica ligado."
 }

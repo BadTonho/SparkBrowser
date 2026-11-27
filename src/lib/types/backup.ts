@@ -68,6 +68,8 @@ export interface SyncOptions {
   paused_until: number | null;
   /** When Spark opens, download the file in the cloud and apply it if it is newer. */
   pull_on_start: boolean;
+  /** What this computer sends and accepts. */
+  groups: RestoreGroup[];
 }
 
 export interface SyncPushResult {

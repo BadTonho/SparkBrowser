@@ -267,5 +267,7 @@
   "backup.sync_start_applied": "Updated with the changes from {device}.",
   "backup.sync_start_cloud": "the cloud",
   "backup.sync_start_review": "This computer and the cloud both changed. Review before applying the file from the cloud.",
-  "backup.sync_start_review_open": "Review"
+  "backup.sync_start_review_open": "Review",
+  "backup.sync_section_groups": "What syncs",
+  "backup.sync_groups_hint": "Applies to this computer: what is off is not sent from here and not applied here from the cloud. At least one stays on."
 }
