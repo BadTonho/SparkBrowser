@@ -18,6 +18,7 @@
 - Com abas verticais e o modo split ativos, a lista de abas agora tem uma linha separando as abas de cada lado do split (lado direito e abas fora do split), para você saber quais abas pertencem a cada lado.
 - O log de erros agora informa quantas vezes uma entrada idêntica se repetiu e foi ignorada, na próxima entrada gravada para ela.
 - O visual da seção Sobre e atualizações nas configurações foi reformulado com um cartão de resumo de status, progresso e avisos mais claros e cartões lado a lado para o repositório do navegador e o mecanismo WebView2.
+- As páginas carregam com menos trabalho do escudo de privacidade: a folha de estilo que esconde anúncios com as regras genéricas das listas de filtros agora é preparada uma vez quando as listas carregam, em vez de ser refeita a cada página.
 
 ## Correções
 

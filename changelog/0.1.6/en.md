@@ -18,6 +18,7 @@
 - With vertical tabs and split view on, the tab list now has a line separating the tabs of each side of the split (right side and tabs outside the split), so you can tell which tabs belong to which side.
 - The error log now says how many times an identical entry was repeated and skipped, shown on the next entry written for it.
 - Redesigned the About & Updates settings section with a status summary card, clearer update progress and notices, and side-by-side cards for the browser repository and WebView2 runtime.
+- Pages load with less work from the privacy shield: the style sheet that hides ads with the generic rules of the filter lists is now prepared once when the lists load, instead of being rebuilt for every page.
 
 ## Fixes
 

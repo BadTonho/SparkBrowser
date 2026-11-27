@@ -94,7 +94,7 @@ impl Snapshots {
 pub struct FilterLists {
     engine: RwLock<Engine>,
     /// Generic element-hiding selectors of the current lists.
-    generic_hide: RwLock<Arc<Vec<String>>>,
+    generic_hide: RwLock<Arc<super::cosmetic::GenericHide>>,
     cache: PathBuf,
     /// The lists the engine was built from, kept to derive the WebKit content rules.
     #[cfg(target_os = "linux")]
@@ -113,8 +113,8 @@ impl FilterLists {
             .and_then(|data| serde_json::from_slice::<Snapshots>(&data).ok())
             .filter(|s| s.validate().is_ok());
         let snapshots = saved.unwrap_or_else(Snapshots::bundled);
-        let generic_hide = RwLock::new(Arc::new(super::cosmetic::generic_selectors(
-            &snapshots.lists,
+        let generic_hide = RwLock::new(Arc::new(super::cosmetic::GenericHide::new(
+            super::cosmetic::generic_selectors(&snapshots.lists),
         )));
         #[cfg(target_os = "linux")]
         let lists = RwLock::new(snapshots.lists.to_vec());
@@ -161,32 +161,35 @@ impl FilterLists {
         }
         serde_json::to_string(&rules).ok()
     }
-    /// The style sheet that hides ads on the page at `url`: the rules written for its site plus the
-    /// generic ones, unless the lists say not to use those there. Empty when there is nothing to hide.
-    pub fn cosmetic_css(&self, url: &str) -> String {
+    /// The rules that hide ads on the page at `url`: the ones written for its site plus the generic
+    /// ones, unless the lists say not to use those there.
+    pub fn cosmetics(&self, url: &str) -> super::cosmetic::PageCosmetics {
         let Ok(engine) = self.engine.read() else {
-            return String::new();
+            return super::cosmetic::PageCosmetics::new(&[], None, &Default::default());
         };
         let resources = engine.url_cosmetic_resources(url);
         drop(engine);
-        let mut selectors: Vec<String> = resources
+        let mut site: Vec<String> = resources
             .hide_selectors
             .iter()
             .filter(|selector| super::cosmetic::is_plain_selector(selector))
             .cloned()
             .collect();
-        selectors.sort();
-        if !resources.generichide {
-            if let Ok(generic) = self.generic_hide.read() {
-                selectors.extend(
-                    generic
-                        .iter()
-                        .filter(|selector| !resources.exceptions.contains(*selector))
-                        .cloned(),
-                );
-            }
-        }
-        super::cosmetic::stylesheet(&selectors)
+        site.sort();
+        let generic = if resources.generichide {
+            None
+        } else {
+            self.generic_hide
+                .read()
+                .ok()
+                .map(|generic| Arc::clone(&generic))
+        };
+        super::cosmetic::PageCosmetics::new(&site, generic, &resources.exceptions)
+    }
+    /// The whole style sheet for `url`.
+    #[cfg(test)]
+    pub fn cosmetic_css(&self, url: &str) -> String {
+        self.cosmetics(url).css()
     }
     pub fn blocks(&self, url: &str, source: &str, kind: &str, method: &str) -> bool {
         let Ok(request) = Request::new(url, source, kind, method) else {
@@ -204,7 +207,9 @@ impl FilterLists {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         let mut file = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
         serde_json::to_writer(&mut file, &snapshots).map_err(|e| e.to_string())?;
-        let generic = Arc::new(super::cosmetic::generic_selectors(&snapshots.lists));
+        let generic = Arc::new(super::cosmetic::GenericHide::new(
+            super::cosmetic::generic_selectors(&snapshots.lists),
+        ));
         let engine = snapshots.compile();
         file.flush().map_err(|e| e.to_string())?;
         file.as_file().sync_all().map_err(|e| e.to_string())?;

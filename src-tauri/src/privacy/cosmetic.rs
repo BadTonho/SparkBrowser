@@ -102,10 +102,108 @@ pub fn stylesheet(selectors: &[String]) -> String {
     css
 }
 
-/// A script that adds `css` to the page. A constructed style sheet is used first because a page's
-/// content security policy can refuse an inline `<style>` but not this.
+/// The generic hiding rules with their style sheet, made once per list update instead of once per
+/// page: there are thousands of them and they are the same on every site that does not except any.
+pub struct GenericHide {
+    selectors: Vec<String>,
+    /// The style sheet as a JavaScript string literal, ready for the injection script.
+    json: String,
+}
+
+impl GenericHide {
+    pub fn new(selectors: Vec<String>) -> Self {
+        let json = json_text(&stylesheet(&selectors));
+        Self { selectors, json }
+    }
+}
+
+/// The hiding rules of one page: its own, and the generic ones that apply there.
+pub struct PageCosmetics {
+    site: String,
+    generic: Generic,
+}
+
+enum Generic {
+    /// The site turns generic hiding off (`$generichide`).
+    Off,
+    /// No generic rule is excepted here, so the prepared style sheet is used as is.
+    Shared(Arc<GenericHide>),
+    /// The site excepts some generic rules, so they are left out of a style sheet made for it.
+    Filtered(String),
+}
+
+impl PageCosmetics {
+    pub fn new(
+        site: &[String],
+        generic: Option<Arc<GenericHide>>,
+        exceptions: &HashSet<String>,
+    ) -> Self {
+        let generic = match generic {
+            None => Generic::Off,
+            Some(shared) if !shared.selectors.iter().any(|s| exceptions.contains(s)) => {
+                Generic::Shared(shared)
+            }
+            Some(shared) => {
+                let kept: Vec<String> = shared
+                    .selectors
+                    .iter()
+                    .filter(|s| !exceptions.contains(*s))
+                    .cloned()
+                    .collect();
+                Generic::Filtered(stylesheet(&kept))
+            }
+        };
+        Self {
+            site: stylesheet(site),
+            generic,
+        }
+    }
+
+    /// The whole style sheet. The page itself gets it through [`PageCosmetics::script`].
+    #[cfg(test)]
+    pub fn css(&self) -> String {
+        let generic = match &self.generic {
+            Generic::Off => String::new(),
+            Generic::Shared(shared) => stylesheet(&shared.selectors),
+            Generic::Filtered(css) => css.clone(),
+        };
+        format!("{}{generic}", self.site)
+    }
+
+    /// The script that adds the style sheet to the page, or `None` when there is nothing to hide.
+    pub fn script(&self) -> Option<String> {
+        let generic = match &self.generic {
+            Generic::Off => None,
+            Generic::Shared(shared) if shared.selectors.is_empty() => None,
+            Generic::Shared(shared) => Some(shared.json.clone()),
+            Generic::Filtered(css) if css.is_empty() => None,
+            Generic::Filtered(css) => Some(json_text(css)),
+        };
+        let site = (!self.site.is_empty()).then(|| json_text(&self.site));
+        let expression = match (site, generic) {
+            (None, None) => return None,
+            (Some(site), None) => site,
+            (None, Some(generic)) => generic,
+            (Some(site), Some(generic)) => format!("{site}+{generic}"),
+        };
+        Some(injection_expression(&expression))
+    }
+}
+
+fn json_text(text: &str) -> String {
+    serde_json::to_string(text).expect("text is serializable")
+}
+
+/// A script that adds `css` to the page.
+#[cfg(test)]
 pub fn injection_script(css: &str) -> String {
-    let css = serde_json::to_string(css).expect("text is serializable");
+    injection_expression(&json_text(css))
+}
+
+/// A script that adds the style sheet that the JavaScript expression `css` evaluates to. A
+/// constructed style sheet is used first because a page's content security policy can refuse an
+/// inline `<style>` but not this.
+fn injection_expression(css: &str) -> String {
     format!(
         "(()=>{{try{{const css={css};const key='__sparkShieldCosmetic';\
          if(window[key])return;window[key]=true;\
@@ -134,9 +232,8 @@ pub fn loaded(view: &Webview, state: &crate::state::browser_state::BrowserState,
     else {
         return;
     };
-    let css = lists.cosmetic_css(url);
-    if !css.is_empty() {
-        crate::error_log::ignored(view.eval(injection_script(&css)));
+    if let Some(script) = lists.cosmetics(url).script() {
+        crate::error_log::ignored(view.eval(script));
     }
 }
 
@@ -187,5 +284,29 @@ mod tests {
         assert!(css.starts_with(":is(.a0,.a1"));
         let script = injection_script("a{color:\"x\"}");
         assert!(script.contains("a{color:\\\"x\\\"}"));
+    }
+
+    #[test]
+    fn the_prepared_generic_sheet_is_reused_unless_the_site_excepts_one_of_its_rules() {
+        let generic = Arc::new(GenericHide::new(vec![".ad".into(), ".promo".into()]));
+        let none = HashSet::new();
+        let shared = PageCosmetics::new(&[".site".into()], Some(generic.clone()), &none);
+        assert!(matches!(shared.generic, Generic::Shared(_)));
+        assert_eq!(
+            shared.css(),
+            stylesheet(&[".site".into()]) + &stylesheet(&[".ad".into(), ".promo".into()])
+        );
+        let script = shared.script().unwrap();
+        assert!(script.contains(".site") && script.contains(&generic.json));
+
+        let excepted = HashSet::from([".ad".to_string()]);
+        let filtered = PageCosmetics::new(&[], Some(generic.clone()), &excepted);
+        assert!(!filtered.css().contains(".ad,") && filtered.css().contains(".promo"));
+
+        assert!(PageCosmetics::new(&[], None, &none).script().is_none());
+        let empty = Arc::new(GenericHide::new(Vec::new()));
+        assert!(PageCosmetics::new(&[], Some(empty), &none)
+            .script()
+            .is_none());
     }
 }
