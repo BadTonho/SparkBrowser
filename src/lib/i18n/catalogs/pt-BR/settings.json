@@ -266,6 +266,8 @@
   "settings.show_or_hide_the_sidebar_6fc9": "Exibir ou ocultar a barra lateral",
   "settings.toggle_fullscreen_zen_focus_mode_9c87": "Alternar modo Zen / Foco em tela cheia",
   "settings.toggle_zen_mode_851a": "Alternar modo Zen",
+  "settings.open_or_close_split_view_4d1a": "Abrir ou sair do modo split",
+  "settings.split_window_between_two_tabs_7c3e": "Divide a janela entre duas guias, ou volta para uma só",
   "settings.open_sqlite_browsing_history_0cd0": "Abrir histórico de navegação SQLite",
   "settings.open_browsing_history_aa12": "Abrir histórico de navegação",
   "settings.open_download_manager_d563": "Abrir gerenciador de downloads",

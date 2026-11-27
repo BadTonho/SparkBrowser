@@ -9,6 +9,7 @@
   import { initializeShutdown, shutdownState } from "./lib/stores/shutdownStore";
   import { initializeTabDrag } from "./lib/stores/tabDragStore";
   import { splitLayout } from "./lib/stores/splitViewStore";
+  import { enterSplitView, exitSplitView } from "./lib/stores/splitViewActions";
   import { focusedTabs } from "./lib/services/split-tab-groups.js";
   import { initializeMedia } from "./lib/stores/mediaLifecycle";
   import { initializeWorkspaceHibernation } from "./lib/stores/workspaceHibernation";
@@ -419,6 +420,7 @@
         void focusAddressBar().then(() => document.querySelector<HTMLInputElement>(".omnibox-input")?.focus());
         break;
       case "sidebar": if (get(tabLayout) === "vertical") toggleSidebar(); break;
+      case "split-view": void (get(splitLayout) ? exitSplitView() : enterSplitView()); break;
       case "zen": toggleZenMode(); break;
       case "history": toggleHistoryDrawer(); break;
       case "downloads": toggleDownloadsDrawer(); break;

@@ -151,6 +151,20 @@
 {#if !$isZenMode}
   <header class="titlebar" class:split-horizontal={splitHorizontal} class:responsive-compact={responsiveCompact} class:density-compact={$compactToolbar} class:wide-address-bar={$wideAddressBar} data-tauri-drag-region={$tabLayout === "vertical" || splitHorizontal ? "" : undefined} use:focusShellOnDrag>
     <div class="titlebar-left">
+      {#if $tabLayout === "horizontal"}
+        <!-- Horizontal tabs have no split buttons in their list, so the toggle sits in the corner. -->
+        <button
+          class="nav-btn split-btn"
+          class:active={splitHorizontal}
+          data-testid="titlebar-split-toggle"
+          aria-pressed={splitHorizontal}
+          onclick={() => void (splitHorizontal ? exitSplitView() : enterSplitView())}
+          title={`${$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")} (${$keyboardShortcuts && shortcutLabel("split-view")})`}
+          aria-label={$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4v16" /></svg>
+        </button>
+      {/if}
       <PrivateBadge />
       {#if $tabLayout === "vertical"}
         <button
@@ -185,20 +199,6 @@
     <!-- Centered Omnibox / Search & URL Bar with Navigation Controls to the left -->
     <div class="titlebar-center">
       <div class="nav-controls">
-        {#if $tabLayout === "horizontal"}
-          <!-- Horizontal tabs have no split buttons in their list, so the toggle lives here. -->
-          <button
-            class="nav-btn split-btn"
-            class:active={splitHorizontal}
-            data-testid="titlebar-split-toggle"
-            aria-pressed={splitHorizontal}
-            onclick={() => void (splitHorizontal ? exitSplitView() : enterSplitView())}
-            title={$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")}
-            aria-label={$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4v16" /></svg>
-          </button>
-        {/if}
         <button
           class="nav-btn"
           disabled={$activeNavigation?.can_go_back === false}

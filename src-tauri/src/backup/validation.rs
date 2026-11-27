@@ -48,6 +48,7 @@ pub const SHORTCUT_IDS: &[&str] = &[
     "edit-url",
     "focus-address",
     "sidebar",
+    "split-view",
     "zen",
     "history",
     "downloads",

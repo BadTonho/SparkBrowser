@@ -266,6 +266,8 @@
   "settings.show_or_hide_the_sidebar_6fc9": "Show or hide the sidebar",
   "settings.toggle_fullscreen_zen_focus_mode_9c87": "Toggle Fullscreen Zen / Focus Mode",
   "settings.toggle_zen_mode_851a": "Toggle Zen mode",
+  "settings.open_or_close_split_view_4d1a": "Open or close split view",
+  "settings.split_window_between_two_tabs_7c3e": "Split the window between two tabs, or go back to one",
   "settings.open_sqlite_browsing_history_0cd0": "Open SQLite Browsing History",
   "settings.open_browsing_history_aa12": "Open browsing history",
   "settings.open_download_manager_d563": "Open Download Manager",

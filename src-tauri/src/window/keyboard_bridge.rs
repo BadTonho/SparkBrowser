@@ -588,6 +588,7 @@ fn valid_action(action: &str) -> bool {
             | "edit-url"
             | "focus-address"
             | "sidebar"
+            | "split-view"
             | "zen"
             | "history"
             | "downloads"

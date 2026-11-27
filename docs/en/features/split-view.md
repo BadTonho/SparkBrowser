@@ -12,7 +12,7 @@ The native preview uses a transparent, mouse-ignoring owned window covering the 
 
 In the vertical tab list, the **◫** button beside the new-tab buttons opens a split: the tab being viewed stays on the left and the most recently used other tab of the workspace opens on the right (ties keep the tab order); when it is the only tab, a new blank tab opens on the right. While split, that button is replaced by a **✕** button at the right end of the line between the panes, which exits the split.
 
-With horizontal tabs, the same **◫** button sits at the left of Back in the address row. It opens a split the same way and, while split, stays highlighted and closes it. Being part of the navigation buttons, it stays visible at the minimum window width.
+With horizontal tabs, the same **◫** button sits in the left corner of the address row. It opens a split the same way and, while split, stays highlighted and closes it. In either layout, **Ctrl+Shift+S** (the *Open or close split view* shortcut, changeable in Settings → Keyboard shortcuts) does the same, also while a page has focus.
 
 In **Tools → Tabs**, select two different tabs from the current workspace and choose **Split selected tabs**. Pages appear side by side with an 8 px divider. Drag the divider or focus it and use Left/Right; Home restores 50%. Ratios range from 20% to 80%, with each native view at least 100 logical pixels wide.
 
