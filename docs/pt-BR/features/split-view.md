@@ -12,6 +12,8 @@ A prévia nativa usa uma janela auxiliar transparente, vinculada à principal e 
 
 Na lista vertical de abas, o botão **◫** ao lado dos botões de nova aba abre um split: a aba que você está vendo fica à esquerda e a outra aba do workspace usada mais recentemente abre à direita (empates mantêm a ordem das abas); se for a única aba, uma nova guia em branco abre à direita. Com o split ativo, esse botão dá lugar a um botão **✕** na ponta direita da linha entre os painéis, que sai do split.
 
+Com abas horizontais, o mesmo botão **◫** fica à esquerda do Voltar, na linha do endereço. Ele abre um split do mesmo jeito e, com o split ativo, fica destacado e o fecha. Como faz parte dos botões de navegação, continua visível na largura mínima da janela.
+
 Em **Tools → Tabs**, selecione duas abas diferentes do workspace atual e escolha **Split selected tabs**. As páginas aparecem lado a lado com um divisor de 8 px. Arraste o divisor ou dê foco a ele e use Esquerda/Direita; Home restaura 50%. As proporções vão de 20% a 80%, com cada view nativa tendo pelo menos 100 pixels lógicos de largura.
 
 ## Abas independentes por painel

@@ -48,6 +48,7 @@
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import WindowControls from "./WindowControls.svelte";
   import { splitLayout } from "../../stores/splitViewStore";
+  import { enterSplitView, exitSplitView } from "../../stores/splitViewActions";
   import { titlebarMenu, openTitlebarMenu, closeTitlebarMenu } from "../../stores/titlebarMenuStore";
   import { suggestionState, requestSuggestions, closeSuggestions, moveSuggestion, highlightedSuggestion, chooseSuggestion } from "../../stores/addressSuggestionsStore";
   import { isTauriRuntime } from "../../services/bridge/runtime";
@@ -184,6 +185,20 @@
     <!-- Centered Omnibox / Search & URL Bar with Navigation Controls to the left -->
     <div class="titlebar-center">
       <div class="nav-controls">
+        {#if $tabLayout === "horizontal"}
+          <!-- Horizontal tabs have no split buttons in their list, so the toggle lives here. -->
+          <button
+            class="nav-btn split-btn"
+            class:active={splitHorizontal}
+            data-testid="titlebar-split-toggle"
+            aria-pressed={splitHorizontal}
+            onclick={() => void (splitHorizontal ? exitSplitView() : enterSplitView())}
+            title={$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")}
+            aria-label={$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4v16" /></svg>
+          </button>
+        {/if}
         <button
           class="nav-btn"
           disabled={$activeNavigation?.can_go_back === false}
@@ -414,6 +429,11 @@
 
   .nav-btn:active {
     transform: scale(0.94);
+  }
+
+  .nav-btn.split-btn.active {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
   }
 
   .nav-btn.spinning svg {
