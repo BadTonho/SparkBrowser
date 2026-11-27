@@ -23,6 +23,7 @@
 - Spark uses less power while idle: the audio background analyzer no longer wakes up five times a second when it is off or no new tab is open.
 - The settings window opens with much less to load: each section is now read the first time you open it, instead of all of them at once.
 - **Settings → Appearance & Layout** is now split into categories (Language and windows, Theme and colors, Window background, Layout, Toolbar and content), so each option is easier to find.
+- **Settings → Privacy & Security** is now split into categories (Network privacy, Local history, Safe browsing, Privacy shield, Tracking), every option is a card with the same switches as the rest of the settings, and excluded sites are added inside their option's card and shown as removable chips.
 
 ## Fixes
 

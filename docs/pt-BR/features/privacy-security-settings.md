@@ -2,6 +2,8 @@
 
 A categoria **Privacidade e segurança** reúne o histórico de navegação local, as permissões de sites, o comportamento de pop-ups, o escudo contra rastreadores e a proteção de navegação segura disponível.
 
+Ela é dividida em categorias com título: **Privacidade de rede** (DNS sobre HTTPS, modo somente HTTPS), **Histórico local** (exclusão e retenção), **Navegação segura** (SmartScreen), **Escudo de privacidade** (o escudo com seus sites excluídos, listas avançadas, pop-ups) e **Rastreamento** (Global Privacy Control e remoção de parâmetros de rastreamento, cada um com seus sites excluídos), seguidas de **Permissões de sites**. Cada opção é um cartão; os sites excluídos são adicionados num campo dentro do cartão da opção e listados como etiquetas removíveis.
+
 ## Histórico de navegação local
 
 A ação **Apagar histórico de navegação local** remove o histórico de navegação do perfil do Spark e o cache de ícones dos sites recentes. Ela não apaga cookies, armazenamento dos sites, cache do navegador nem downloads.

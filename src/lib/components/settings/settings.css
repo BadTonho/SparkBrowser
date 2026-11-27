@@ -392,6 +392,98 @@
     background: var(--settings-row-border);
   }
 
+  /* A card whose option has more below it, such as a list of excluded sites. */
+  :where(.settings-modal) .setting-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    background: var(--settings-row-bg);
+    border: 1px solid var(--settings-row-border);
+  }
+
+  :where(.settings-modal) .setting-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    cursor: pointer;
+  }
+
+  :where(.settings-modal) .exception-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--settings-row-border);
+  }
+
+  :where(.settings-modal) .exception-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  :where(.settings-modal) .exception-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  :where(.settings-modal) .exception-input-row input {
+    flex: 1 1 200px;
+    max-width: 320px;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 12px;
+  }
+
+  :where(.settings-modal) .exception-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  :where(.settings-modal) .exception-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  :where(.settings-modal) .exception-remove {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: var(--text-muted);
+  }
+
+  :where(.settings-modal) .exception-remove:hover {
+    background: var(--bg-glass-hover);
+    color: var(--text-primary);
+  }
+
+  :where(.settings-modal) .settings-message {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
   :where(.settings-modal) label.setting-row {
     cursor: pointer;
   }

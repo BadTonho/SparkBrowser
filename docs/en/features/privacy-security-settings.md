@@ -2,6 +2,8 @@
 
 The browser's **Privacy & Security** category brings together local browsing data, site permissions, pop-up behavior, the tracker shield, and available safe-browsing protection.
 
+It is split into titled categories: **Network privacy** (DNS over HTTPS, HTTPS-only mode), **Local history** (clearing and retention), **Safe browsing** (SmartScreen), **Privacy shield** (the shield with its excluded sites, advanced lists, pop-ups) and **Tracking** (Global Privacy Control and tracking parameter removal, each with its excluded sites), followed by **Site permissions**. Every option is a card; excluded sites are added in a field inside their option's card and listed as removable chips.
+
 ## Local browsing history
 
 **Clear local browsing history** removes the Spark profile's navigation history and the derived recent-site icon cache. It does not remove cookies, website storage, browser cache, or downloads.

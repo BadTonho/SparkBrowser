@@ -23,6 +23,7 @@
 - O Spark gasta menos energia parado: o analisador do fundo de áudio não acorda mais cinco vezes por segundo quando está desligado ou quando nenhuma nova aba está aberta.
 - A janela de configurações abre com muito menos para carregar: cada seção agora é lida na primeira vez que você a abre, em vez de todas de uma vez.
 - **Configurações → Aparência e disposição** agora é dividida em categorias (Idioma e janelas, Tema e cores, Fundo da janela, Disposição, Barra e conteúdo), para cada opção ser mais fácil de achar.
+- **Configurações → Privacidade e segurança** agora é dividida em categorias (Privacidade de rede, Histórico local, Navegação segura, Escudo de privacidade, Rastreamento), cada opção é um cartão com os mesmos interruptores do resto das configurações, e os sites excluídos são adicionados dentro do cartão da opção e mostrados como etiquetas removíveis.
 
 ## Correções
 
