@@ -85,6 +85,14 @@ export const backupSyncState = writable<SyncStateSnapshot>({
   last_error: null,
 });
 export const backupSyncNotice = writable<"pushed" | "unchanged" | "config_saved" | "">("");
+/** Syncs in progress right now, manual or automatic. */
+export const backupSyncRunning = writable(0);
+/** True for a moment after the last sync in progress ended without an error. */
+export const backupSyncFinished = writable(false);
+/** Google Drive stopped sending on its own until an account is chosen or linked again. */
+export const driveWaitingForAccount = writable(false);
+const SYNC_FINISHED_MS = 2_000;
+let syncFinishedTimer: ReturnType<typeof setTimeout> | undefined;
 /** Set while an encrypted file waits for its password; `wrong` after a failed attempt. */
 export const backupLocked = writable<{ wrong: boolean } | null>(null);
 export const localBackupState = writable<LocalBackupState>({
@@ -115,10 +123,40 @@ let localChanges = 0;
 let localSavedChanges = 0;
 let autoSyncReady = false;
 let gdriveLoginRequiredPause = false;
+function setDrivePause(paused: boolean): void {
+  gdriveLoginRequiredPause = paused;
+  driveWaitingForAccount.set(paused);
+}
 let awaitingGoogleAccountSelection = false;
 let googleLoginTabId: string | null = null;
 let lastTabsSignature = "";
 let localScheduleInterval: ReturnType<typeof setInterval> | undefined;
+
+/**
+ * Marks a sync as running while `work` runs, for the ring around the sync card. When the last one ends
+ * without an error, the card shows that it finished for a moment.
+ */
+async function trackSync<T>(work: () => Promise<T>): Promise<T> {
+  if (syncFinishedTimer) clearTimeout(syncFinishedTimer);
+  syncFinishedTimer = undefined;
+  backupSyncFinished.set(false);
+  backupSyncRunning.update((count) => count + 1);
+  let succeeded = false;
+  try {
+    const value = await work();
+    succeeded = true;
+    return value;
+  } finally {
+    backupSyncRunning.update((count) => Math.max(0, count - 1));
+    if (succeeded && get(backupSyncRunning) === 0 && !get(backupSyncState).last_error) {
+      backupSyncFinished.set(true);
+      syncFinishedTimer = setTimeout(() => {
+        syncFinishedTimer = undefined;
+        backupSyncFinished.set(false);
+      }, SYNC_FINISHED_MS);
+    }
+  }
+}
 
 async function action(work: () => Promise<void>): Promise<void> {
   if (get(backupBusy) || !isTauriRuntime()) return;
@@ -297,7 +335,7 @@ export const saveBackupSyncSettings = (
       if (config.mode === "folder") {
         scheduleAutoSync();
       } else if (config.mode === "google_drive_web" || config.mode === "direct_webdav") {
-        gdriveLoginRequiredPause = false;
+        setDrivePause(false);
         setTimeout(() => void runBackgroundAutoSync(), 150);
       }
     }
@@ -317,7 +355,7 @@ function finishGoogleAccountSelection(items: TabItem[]): void {
     if (config.mode === "google_drive_web") {
       void saveBackupSyncConfig(config, null, selected.id).then(state => {
         backupSyncState.set(state);
-        gdriveLoginRequiredPause = false;
+        setDrivePause(false);
         hasPendingChangesForCloud = true;
         setTimeout(() => void runBackgroundAutoSync(true), 1200);
       }).catch(error => backupError.set(describeError(error)));
@@ -326,7 +364,7 @@ function finishGoogleAccountSelection(items: TabItem[]): void {
 }
 
 export async function openGoogleLoginTab(): Promise<void> {
-  gdriveLoginRequiredPause = false;
+  setDrivePause(false);
   awaitingGoogleAccountSelection = true;
   googleLoginTabId = null;
   await closeSettingsModal();
@@ -338,8 +376,8 @@ export async function openGoogleLoginTab(): Promise<void> {
 }
 
 export const syncPushNow = () =>
-  action(async () => {
-    gdriveLoginRequiredPause = false;
+  action(() => trackSync(async () => {
+    setDrivePause(false);
     await noteWriter.flushAll();
     const res = await pushBackupSync(capturePreferences(), false);
     backupSyncState.set(res.state);
@@ -349,10 +387,10 @@ export const syncPushNow = () =>
     if (activeTab && activeTab.url.includes("drive.google.com")) {
       void reloadCurrentPage().catch(logIgnored);
     }
-  });
+  }));
 
 export const syncPullPreview = () =>
-  action(async () => {
+  action(() => trackSync(async () => {
     if (source) await discardBackupImport(source);
     backupResult.set(null);
     backupPreview.set(null);
@@ -366,10 +404,10 @@ export const syncPullPreview = () =>
       // The pull previews with backend defaults; re-plan with the UI selection (preferences off by default).
       await createPreview();
     }
-  });
+  }));
 
 export const syncPullDirect = (applyPreferencesOverride: boolean | null = null) =>
-  action(async () => {
+  action(() => trackSync(async () => {
     if (source) await discardBackupImport(source);
     backupResult.set(null);
     backupPreview.set(null);
@@ -381,7 +419,7 @@ export const syncPullDirect = (applyPreferencesOverride: boolean | null = null) 
       hasPendingChangesForCloud = false;
       await applyImportedResult(res.result);
     }
-  });
+  }));
 
 async function localAction(work: () => Promise<void>): Promise<void> {
   if (get(localBackupBusy) || !isTauriRuntime()) return;
@@ -501,11 +539,14 @@ async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<v
   if (current.mode === "disabled" || !current.auto_save) return;
   if (current.mode === "google_drive_web" && gdriveLoginRequiredPause) return;
   try {
-    await noteWriter.flushAll();
-    const res = await pushBackupSync(capturePreferences(), true);
-    backupSyncState.set(res.state);
+    const res = await trackSync(async () => {
+      await noteWriter.flushAll();
+      const pushed = await pushBackupSync(capturePreferences(), true);
+      backupSyncState.set(pushed.state);
+      return pushed;
+    });
     hasPendingChangesForCloud = false;
-    gdriveLoginRequiredPause = false;
+    setDrivePause(false);
     if (reloadDriveTabOnSuccess && res.synced) {
       const activeTab = get(tabs).find((t) => t.is_active);
       if (activeTab && activeTab.url.includes("drive.google.com")) {
@@ -515,7 +556,7 @@ async function runBackgroundAutoSync(reloadDriveTabOnSuccess = false): Promise<v
   } catch (error) {
     const raw = String(error);
     if (raw.includes("backup.sync_gdrive_login_required")) {
-      gdriveLoginRequiredPause = true;
+      setDrivePause(true);
     }
     backupSyncState.update((s) => ({ ...s, last_error: describeError(error) }));
   }

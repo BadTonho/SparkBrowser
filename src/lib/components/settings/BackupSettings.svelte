@@ -6,7 +6,10 @@
     backupError,
     backupExported,
     backupResult,
+    backupSyncFinished,
     backupSyncNotice,
+    backupSyncRunning,
+    driveWaitingForAccount,
     backupSyncState,
     openGoogleLoginTab,
     pendingBackupPreferences,
@@ -30,6 +33,7 @@
   import ErrorMessage from "../status/ErrorMessage.svelte";
   import { errorDetails } from "../../services/user-errors.js";
   import { gdriveFix } from "../../services/backup/gdrive-fix.js";
+  import { summarizeSyncRing } from "../../services/backup/sync-ring";
 
   const desktop = isTauriRuntime();
   let syncExpanded = $state(false);
@@ -54,6 +58,20 @@
   const driveFix = $derived(driveLogin ? gdriveFix(errorDetails(syncProblem).detail) : null);
   /** Only a missing link is guidance rather than a failure; every other reason is shown as an error. */
   const linkNeeded = $derived(driveFix === "link");
+  /** A sync runs now: a button of the panel, or the automatic one in the background. */
+  const syncing = $derived(syncActionBusy || $backupSyncRunning > 0);
+  /** The ring around the closed card, like the download button's. Classes only: projection drops inline styles. */
+  const ring = $derived.by(() => {
+    const config = $backupSyncState.config;
+    return summarizeSyncRing({
+      mode: config.mode,
+      autoSave: "auto_save" in config ? config.auto_save : false,
+      running: syncing ? 1 : 0,
+      finished: $backupSyncFinished,
+      problem: syncProblem || null,
+      waitingForAccount: linkNeeded || $driveWaitingForAccount,
+    });
+  });
 
   let selectedMode = $state<"disabled" | "google_drive_web" | "folder" | "direct_webdav">("disabled");
   let folderPath = $state("");
@@ -174,7 +192,8 @@
     <div class="setting-subgroup sync-group" role="group" aria-labelledby="backup-sync-group-heading">
       <h3 class="subgroup-title" id="backup-sync-group-heading">{$t("backup.group_sync")}</h3>
       <!-- The slot keeps the closed card's place; the panel floats over it when open. -->
-      <div class="sync-slot">
+      <div class="sync-slot" class:ring-syncing={!syncExpanded && ring === "syncing"} class:ring-done={!syncExpanded && ring === "done"}
+        class:ring-paused={!syncExpanded && ring === "paused"} class:ring-error={!syncExpanded && ring === "error"} data-ring={ring} data-testid="backup-sync-ring">
       <!--
         Click-outside is a real (invisible) button, not a window listener: the settings are shown in a separate
         native surface that only forwards clicks on buttons, so a pointer listener here would never fire.
@@ -195,7 +214,7 @@
               {$t($backupSyncState.connected_account ? "backup.sync_connection_connected" : "backup.sync_connection_disconnected")}
             </span>
           {/if}
-          {#if syncActionBusy}
+          {#if syncing}
             <span class="sync-state-chip busy" role="status">{$t("backup.sync_status_busy")}</span>
           {:else if linkNeeded}
             <span class="sync-state-chip warn" role="status">{$t("backup.sync_status_link_needed")}</span>
@@ -474,6 +493,19 @@
   .sync-icon { display: grid; flex: 0 0 auto; width: 56px; height: 56px; place-items: center; border: 1px solid var(--border-subtle); border-radius: 16px; background: color-mix(in srgb, var(--text-primary) 6%, transparent); color: var(--accent-primary); transition: width 0.28s ease, height 0.28s ease, border-radius 0.28s ease; }
   .sync-title { color: var(--text-primary); font-size: 14px; font-weight: 700; line-height: 1.3; }
   .sync-chips { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 100%; }
+  /* The status ring over the closed card (the slot has its size): a conic gradient cut down to the border, filled by --sync-fill (see settings.css). */
+  .sync-slot::before { content: ""; position: absolute; inset: 0; z-index: 2; padding: 2px; border-radius: 14px; background: conic-gradient(var(--sync-ring-color, transparent) var(--sync-fill), transparent 0); opacity: 0; pointer-events: none; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; transition: opacity 180ms ease; }
+  .sync-slot:is(.ring-syncing, .ring-done, .ring-paused, .ring-error)::before { opacity: 1; }
+  .sync-slot.ring-syncing { --sync-ring-color: var(--download-status-completed, #22c55e); }
+  .sync-slot.ring-syncing::before { animation: sync-fill 1.6s linear infinite; }
+  .sync-slot.ring-done { --sync-ring-color: var(--download-status-completed, #22c55e); }
+  .sync-slot.ring-done::before { --sync-fill: 100%; animation: sync-done 320ms ease-out; }
+  .sync-slot.ring-paused { --sync-ring-color: var(--download-status-paused, #eab308); }
+  .sync-slot.ring-error { --sync-ring-color: var(--download-status-error, #ef4444); }
+  .sync-slot:is(.ring-paused, .ring-error)::before { --sync-fill: 100%; }
+  @keyframes sync-fill { from { --sync-fill: 0%; } to { --sync-fill: 100%; } }
+  @keyframes sync-done { from { opacity: 0.4; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .sync-slot::before { animation: none !important; transition: none; } .sync-slot.ring-syncing::before { --sync-fill: 35%; } }
   .sync-compact-row::-webkit-details-marker, .sync-compact-row::marker { display: none; }
   .sync-compact-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 8px; }
   .sync-panel[open] > .sync-compact-row { height: auto; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 8px 10px; padding: 0 0 12px; text-align: left; border-bottom: 1px solid var(--border-subtle); }

@@ -846,3 +846,10 @@
 :where(.settings-modal) .palette-emerald { --swatch: linear-gradient(135deg, #34d399 0%, #059669 100%); }
 :where(.settings-modal) .palette-rose { --swatch: linear-gradient(135deg, #fb7185 0%, #e11d48 100%); }
 :where(.settings-modal) .palette-amber { --swatch: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
+
+/* How much of the sync card ring is filled (Data & Backup). Registered so it can be animated. */
+@property --sync-fill {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
