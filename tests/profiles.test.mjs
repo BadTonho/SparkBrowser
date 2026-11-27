@@ -72,7 +72,7 @@ test('the Profiles category is reachable from Settings and searchable', () => {
   assert.match(read('src/lib/components/settings/settings-catalog.ts'), /id: "profiles", icon: "user", label: "Profiles"/);
   assert.match(read('src/lib/components/settings/settings-catalog.ts'), /category: "profiles", targetId: "profiles-heading"/);
   assert.match(read('src/lib/stores/settingsStore.ts'), /\| "profiles"/);
-  assert.match(read('src/lib/components/settings/SettingsModal.svelte'), /=== "profiles"\}\s*<ProfilesSettings \/>/);
+  assert.match(read('src/lib/components/settings/settings-sections.ts'), /profiles: \(\) => import\("\.\/ProfilesSettings\.svelte"\)/);
 });
 
 test('every message the profiles screen can show exists in both languages', () => {

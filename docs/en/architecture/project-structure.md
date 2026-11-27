@@ -46,7 +46,8 @@ src/
         ├── downloads/
         │   └── DownloadsDrawer.svelte # Slide-over Download Manager drawer (Ctrl+J)
         ├── settings/
-        │   └── SettingsModal.svelte   # Browser settings, theme picker, Zen Mode & shortcuts modal (Ctrl+,)
+        │   ├── SettingsModal.svelte   # Browser settings, theme picker, Zen Mode & shortcuts modal (Ctrl+,)
+        │   └── settings-sections.ts   # One loader per category: each section is read when first shown
         ├── commandbar/
         │   └── CommandBar.svelte      # Spotlight-style floating Command Bar (Ctrl+T / Ctrl+K)
         └── viewport/

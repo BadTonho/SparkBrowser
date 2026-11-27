@@ -21,6 +21,7 @@
 - As páginas carregam com menos trabalho do escudo de privacidade: a folha de estilo que esconde anúncios com as regras genéricas das listas de filtros agora é preparada uma vez quando as listas carregam, em vez de ser refeita a cada página.
 - As sugestões do histórico na barra de endereço e na página de nova aba mostram mais sites diferentes: um site que você visita muito não ocupa mais várias das linhas que a lista lê, e quantas vezes você o visita agora conta por inteiro na ordem da lista.
 - O Spark gasta menos energia parado: o analisador do fundo de áudio não acorda mais cinco vezes por segundo quando está desligado ou quando nenhuma nova aba está aberta.
+- A janela de configurações abre com muito menos para carregar: cada seção agora é lida na primeira vez que você a abre, em vez de todas de uma vez.
 
 ## Correções
 

@@ -4,19 +4,10 @@
 import "./settings.css";
 import { normalizeSearch as normalizeSearchText } from "../../services/command-ranking.js";
 import { createShortcutRecorder } from "./shortcut-recorder.svelte";
-import AppearanceSettings from "./AppearanceSettings.svelte";
-import BackupSettings from "./BackupSettings.svelte";
-import UpdateSettings from "./UpdateSettings.svelte";
-import PasswordSettings from "./passwords/PasswordSettings.svelte";
-import ChangelogSettings from "./ChangelogSettings.svelte";
-import NavigationSettings from "./NavigationSettings.svelte";
-import PerformanceSettings from "./PerformanceSettings.svelte";
-import DownloadSettings from "./DownloadSettings.svelte";
-import ProfilesSettings from "./ProfilesSettings.svelte";
-import PrivacySecuritySettings from "./PrivacySecuritySettings.svelte";
-import ShortcutSettings from "./ShortcutSettings.svelte";
-  import DiagnosticsSettings from "./DiagnosticsSettings.svelte";
 import { focusDialog } from "../../actions/focusDialog";
+import { loadSection } from "./settings-sections";
+import { logIgnored } from "../../services/ignored-error";
+import type { Component } from "svelte";
 import { isTauriRuntime } from "../../services/bridge/runtime";
 import { mountPanelHost } from "../panels/panel-host";
 import { settingsOverlaySession, settingsTabSession, closeSettingsTab } from "../../stores/settingsStore";
@@ -59,7 +50,6 @@ import {
   setActiveSettingsCategory,
   type SettingsCategory,
 } from "../../stores/settingsStore";
-import WorkspaceSettings from "./WorkspaceSettings.svelte";
 
 import {
   SHORTCUT_DEFINITIONS,
@@ -70,6 +60,23 @@ import {
 } from "../../stores/shortcutsStore";
 
 import { categories, searchableSettings, type SearchEntry } from "./settings-catalog";
+// The section on screen. A newly chosen one replaces it once it is read, so switching never shows
+// an empty page; it is usually ready at once.
+let Section = $state<Component<any> | null>(null);
+let shownCategory = $state<SettingsCategory | null>(null);
+async function showSection(category: SettingsCategory): Promise<boolean> {
+  try {
+    const section = await loadSection(category);
+    if ($activeSettingsCategory !== category) return false;
+    Section = section;
+    shownCategory = category;
+    return true;
+  } catch (error) {
+    logIgnored(error);
+    return false;
+  }
+}
+$effect(() => { void showSection($activeSettingsCategory); });
 let searchQuery = $state("");
 // The search starts as a single icon; it opens on click and closes again when it is empty and loses focus.
 let searchOpen = $state(false);
@@ -141,6 +148,8 @@ async function selectSearchResult(entry: SearchEntry): Promise<void> {
   searchOpen = false;
   recordingShortcutId.set(null);
   setActiveSettingsCategory(entry.category);
+  // The result is inside its section, which may still be being read.
+  if (!(await showSection(entry.category))) return;
   await tick();
 
   const target = document.getElementById(entry.targetId);
@@ -316,32 +325,10 @@ function handleWindowMousedown(event: MouseEvent): void {
                 </p>
               {/if}
             </section>
-          {:else if $activeSettingsCategory === "appearance_layout"}
-            <AppearanceSettings />
-          {:else if $activeSettingsCategory === "search_navigation"}
-            <NavigationSettings />
-          {:else if $activeSettingsCategory === "workspaces"}
-            <WorkspaceSettings />
-          {:else if $activeSettingsCategory === "performance_privacy"}
-            <PerformanceSettings />
-          {:else if $activeSettingsCategory === "privacy_security"}
-            <PrivacySecuritySettings />
-          {:else if $activeSettingsCategory === "profiles"}
-            <ProfilesSettings />
-          {:else if $activeSettingsCategory === "passwords"}
-            <PasswordSettings />
-          {:else if $activeSettingsCategory === "downloads"}
-            <DownloadSettings />
-          {:else if $activeSettingsCategory === "shortcuts"}
-            <ShortcutSettings error={recorder.error} onStart={recorder.start} />
-          {:else if $activeSettingsCategory === "diagnostics"}
-            <DiagnosticsSettings />
-          {:else if $activeSettingsCategory === "data_backup"}
-            <BackupSettings />
-          {:else if $activeSettingsCategory === "updates"}
-            <UpdateSettings />
-          {:else if $activeSettingsCategory === "changelog"}
-            <ChangelogSettings />
+          {:else if Section && shownCategory === "shortcuts"}
+            <Section error={recorder.error} onStart={recorder.start} />
+          {:else if Section}
+            <Section />
           {/if}
         </main>
       </div>

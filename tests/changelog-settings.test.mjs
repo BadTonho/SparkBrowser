@@ -68,7 +68,8 @@ test('the settings window lists the changelog as a category, a search result and
   assert.match(catalog, /\{ id: "changelog", icon: "books", label: "Changelog" \}/);
   assert.match(catalog, /id: "changelog", title: "Changelog"[^\n]*targetId: "changelog-heading"/);
   const modal = read('src/lib/components/settings/SettingsModal.svelte');
-  assert.match(modal, /\$activeSettingsCategory === "changelog"\}\s*<ChangelogSettings \/>/);
+  assert.match(modal, /<Section \/>/);
+  assert.match(read('src/lib/components/settings/settings-sections.ts'), /changelog: \(\) => import\("\.\/ChangelogSettings\.svelte"\)/);
   const component = read('src/lib/components/settings/ChangelogSettings.svelte');
   assert.ok(!component.includes('{@html'), 'release notes are rendered as text, never as HTML');
   assert.match(component, /id="changelog-heading"/);

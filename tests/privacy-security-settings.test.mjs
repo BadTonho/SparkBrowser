@@ -10,8 +10,8 @@ test('privacy and security controls are searchable and rendered in their own set
   for (const id of ['privacy_security', 'clear-local-history', 'history-retention', 'popup-setting', 'smart-screen', 'site-permissions', 'adblock-shield']) {
     assert.match(catalog, new RegExp(`id: "${id}"`));
   }
-  assert.match(modal, /activeSettingsCategory === "privacy_security"/);
-  assert.match(modal, /<PrivacySecuritySettings\s*\/>/);
+  assert.match(modal, /showSection\(\$activeSettingsCategory\)/);
+  assert.match(read('src/lib/components/settings/settings-sections.ts'), /privacy_security: \(\) => import\("\.\/PrivacySecuritySettings\.svelte"\)/);
 });
 
 test('local history retention and pop-up choices persist through shell-only native commands', () => {

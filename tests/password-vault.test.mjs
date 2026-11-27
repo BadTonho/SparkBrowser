@@ -87,7 +87,7 @@ test('Settings has a Passwords category with search entries and the not-audited 
   const catalog = read('src/lib/components/settings/settings-catalog.ts');
   assert.match(catalog, /id: "passwords", icon: "lock", label: "Autofill & Passwords"/);
   assert.match(catalog, /category: "passwords", targetId: "passwords-heading"/);
-  assert.match(read('src/lib/components/settings/SettingsModal.svelte'), /=== "passwords"\}\s*<PasswordSettings/);
+  assert.match(read('src/lib/components/settings/settings-sections.ts'), /passwords: \(\) => import\("\.\/passwords\/PasswordSettings\.svelte"\)/);
   const screen = read('src/lib/components/settings/passwords/PasswordSettings.svelte');
   assert.match(screen, /id="passwords-heading"/);
   assert.match(screen, /passwords\.warning_title/);

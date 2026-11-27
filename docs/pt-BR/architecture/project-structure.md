@@ -46,7 +46,8 @@ src/
         ├── downloads/
         │   └── DownloadsDrawer.svelte # Painel deslizante do Gerenciador de Downloads (Ctrl+J)
         ├── settings/
-        │   └── SettingsModal.svelte   # Modal de Configurações, Temas, Modo Zen e Atalhos (Ctrl+,)
+        │   ├── SettingsModal.svelte   # Modal de Configurações, Temas, Modo Zen e Atalhos (Ctrl+,)
+        │   └── settings-sections.ts   # Um carregador por categoria: cada seção é lida quando aparece pela primeira vez
         ├── commandbar/
         │   └── CommandBar.svelte      # Command Bar flutuante estilo Spotlight (Ctrl+T / Ctrl+K)
         └── viewport/
