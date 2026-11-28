@@ -17,8 +17,8 @@ test('horizontal tabs get a split toggle in the left corner of the address row',
 });
 
 test('the toggle opens or closes the split and shows its shortcut', () => {
-  assert.match(titlebar, /import \{ enterSplitView, exitSplitView \} from "\.\.\/\.\.\/stores\/splitViewActions";/);
-  assert.match(titlebar, /onclick=\{\(\) => void \(splitHorizontal \? exitSplitView\(\) : enterSplitView\(\)\)\}/);
+  assert.match(titlebar, /import \{ toggleSplitView \} from "\.\.\/\.\.\/stores\/splitViewActions";/);
+  assert.match(titlebar, /onclick=\{\(\) => void toggleSplitView\(\)\}/);
   assert.match(titlebar, /aria-pressed=\{splitHorizontal\}/);
   assert.match(titlebar, /aria-label=\{\$t\(splitHorizontal \? "tabs\.split_exit" : "tabs\.split_enter"\)\}/);
   assert.match(titlebar, /shortcutLabel\("split-view"\)/);
@@ -30,7 +30,7 @@ test('the toggle opens or closes the split and shows its shortcut', () => {
 
 test('the split-view shortcut is defined, handled and accepted by the native side and backups', () => {
   assert.match(read('src/lib/stores/shortcutsStore.ts'), /\{ id: "split-view", label: "Open or close split view"[^\n]*defaults: \[combo\("S", \{ alt: true \}\)\] \}/);
-  assert.match(read('src/App.svelte'), /case "split-view": void \(get\(splitLayout\) \? exitSplitView\(\) : enterSplitView\(\)\); break;/);
+  assert.match(read('src/App.svelte'), /case "split-view": void toggleSplitView\(\); break;/);
   // Pressed inside a page, the shortcut reaches the shell only for actions the bridge accepts.
   assert.match(read('src-tauri/src/window/keyboard_bridge.rs'), /\| "split-view"/);
   for (const language of ['en', 'pt-BR']) {

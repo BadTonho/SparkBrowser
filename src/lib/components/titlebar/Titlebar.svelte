@@ -48,7 +48,7 @@
   import WorkspaceSwitcher from "../workspaces/WorkspaceSwitcher.svelte";
   import WindowControls from "./WindowControls.svelte";
   import { splitLayout } from "../../stores/splitViewStore";
-  import { enterSplitView, exitSplitView } from "../../stores/splitViewActions";
+  import { toggleSplitView } from "../../stores/splitViewActions";
   import { titlebarMenu, openTitlebarMenu, closeTitlebarMenu } from "../../stores/titlebarMenuStore";
   import { suggestionState, requestSuggestions, closeSuggestions, moveSuggestion, highlightedSuggestion, chooseSuggestion } from "../../stores/addressSuggestionsStore";
   import { isTauriRuntime } from "../../services/bridge/runtime";
@@ -158,7 +158,7 @@
           class:active={splitHorizontal}
           data-testid="titlebar-split-toggle"
           aria-pressed={splitHorizontal}
-          onclick={() => void (splitHorizontal ? exitSplitView() : enterSplitView())}
+          onclick={() => void toggleSplitView()}
           title={`${$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")} (${$keyboardShortcuts && shortcutLabel("split-view")})`}
           aria-label={$t(splitHorizontal ? "tabs.split_exit" : "tabs.split_enter")}
         >
